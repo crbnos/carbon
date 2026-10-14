@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { existsSync } from "node:fs";
 import {
   cancel,
@@ -24,6 +28,17 @@ import { listSlugs } from "./worktree.js";
 const INVALID_BRANCH_RE =
   /(^[/-])|([/-]$)|(\.\.)|(@\{)|([\s~^:?*[\\])|(\/{2,})/;
 
+// A clack prompt with no terminal neither waits nor cancels — the process just
+// ends mid-command. Say what was needed, and how to run without a terminal.
+export function requireTerminal(what: string, instead: string) {
+  if (process.stdin.isTTY) return;
+  // Not a throw: citty prints a thrown error with its stack, twice.
+  cancel(`${what} needs a terminal. ${instead}`);
+  process.exit(1);
+}
+
+const CONFIRM_BY_ENV = "Set CARBON_DEV_YES=1 to confirm without one.";
+
 export async function pickBorrowSlug(currentSlug: string): Promise<string> {
   const registry = listSlugs();
   const others = Object.entries(registry).filter(([s]) => s !== currentSlug);
@@ -36,6 +51,10 @@ export async function pickBorrowSlug(currentSlug: string): Promise<string> {
     log.info(`auto-selecting only available worktree: ${others[0]![0]}`);
     return others[0]![0];
   }
+  requireTerminal(
+    "Choosing a worktree to borrow from",
+    "Run `crbn up --borrow` in a terminal."
+  );
   const picked = await select({
     message: "Borrow containers from which worktree?",
     options: others.map(([s, entry]) => ({
@@ -56,7 +75,7 @@ export async function pickApps(): Promise<AppId[]> {
       .map((s) => s.trim())
       .filter((s): s is AppId => APP_CHOICES.some((c) => c.value === s));
   }
-  const optInApps: readonly AppId[] = ["assembler", "email"];
+  const optInApps: readonly AppId[] = ["assembler", "email", "studio"];
   const defaultApps = APP_CHOICES.filter(
     (c) => !optInApps.includes(c.value)
   ).map((c) => c.value);
@@ -194,8 +213,28 @@ export async function promptCopyEnv(): Promise<boolean> {
 
 export async function confirmReset(projectName: string): Promise<boolean> {
   if (process.env.CARBON_DEV_YES === "1") return true;
+  requireTerminal("Confirming a reset", CONFIRM_BY_ENV);
   const ok = await confirm({
     message: `Destroy all volumes for ${pc.bold(projectName)}? (postgres, storage, inngest data will be wiped, redis db flushed)`,
+    initialValue: false
+  });
+  if (isCancel(ok)) return false;
+  return ok as boolean;
+}
+
+export async function confirmPrune(count: number, trees = 0): Promise<boolean> {
+  if (process.env.CARBON_DEV_YES === "1") return true;
+  requireTerminal("Confirming a prune", CONFIRM_BY_ENV);
+  const ok = await confirm({
+    // Only what will happen: a worktree-only prune wipes no data.
+    message: `${[
+      count
+        ? `Destroy ${count} stack(s) and their volumes (postgres, storage, inngest data will be wiped)`
+        : "",
+      trees ? `${count ? "remove" : "Remove"} ${trees} worktree(s)` : ""
+    ]
+      .filter(Boolean)
+      .join(", and ")}?`,
     initialValue: false
   });
   if (isCancel(ok)) return false;
@@ -208,6 +247,7 @@ export async function confirmRestore(opts: {
   mode: string;
 }): Promise<boolean> {
   if (process.env.CARBON_DEV_YES === "1") return true;
+  requireTerminal("Confirming a restore", CONFIRM_BY_ENV);
   const ok = await confirm({
     message: `Replace the database on 127.0.0.1:${pc.bold(String(opts.port))} with ${pc.bold(opts.file)}? (mode: ${opts.mode} — the current data, including any seeded test data, is wiped)`,
     initialValue: false
@@ -220,6 +260,8 @@ export async function confirmRemove(opts: {
   branchOrPath: string;
   hasStack: boolean;
 }): Promise<boolean> {
+  if (process.env.CARBON_DEV_YES === "1") return true;
+  requireTerminal("Confirming a removal", CONFIRM_BY_ENV);
   const ok = await confirm({
     message: `Permanently remove ${opts.branchOrPath} and ${opts.hasStack ? "wipe its docker volumes" : "the worktree"}?`,
     initialValue: false

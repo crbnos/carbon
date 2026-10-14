@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { defineConfig } from "@lingui/cli";
 
 export default defineConfig({
@@ -6,11 +10,10 @@ export default defineConfig({
   fallbackLocales: {
     default: "en"
   },
-  // Plain string format kept for tooling compat (linguito, weblate). Origin
-  // refs (`#: path:lineno`) and POT-Creation-Date are stripped post-extract
-  // in scripts/strip-po-headers.mjs — those metadata lines churn on every PR
+  // Default `po` format (linguito, weblate). Origin refs (`#: path:lineno`)
+  // and POT-Creation-Date are stripped post-extract in
+  // scripts/strip-po-headers.mjs — those metadata lines churn on every PR
   // and account for ~half of the diff in our .po files.
-  format: "po",
   catalogs: [
     {
       path: "<rootDir>/packages/locale/locales/{locale}/erp",
@@ -19,8 +22,9 @@ export default defineConfig({
         "packages/react/src",
         "packages/form/src",
         "packages/printing/src/ui",
-        "packages/glossary/src",
+        "docs/content/src/glossary",
         "packages/onboarding/src",
+        "packages/account/src",
         "packages/ee/src/workflows"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
@@ -31,7 +35,8 @@ export default defineConfig({
         "apps/mes/app",
         "packages/react/src",
         "packages/form/src",
-        "packages/printing/src/ui"
+        "packages/printing/src/ui",
+        "packages/account/src"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     }

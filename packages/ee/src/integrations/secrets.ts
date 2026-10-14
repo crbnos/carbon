@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database, Json as DatabaseJson } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -48,6 +52,7 @@ export const SECRET_KEYS: Record<string, string[]> = {
   ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
+  sense: ["apiKey"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export { accountingConsolidationFunction } from "./accounting-consolidation";
 export { accountingJournalBackfillFunction } from "./accounting-journal-backfill";
 export { accountingMasterSyncFunction } from "./accounting-master-sync";
@@ -7,6 +11,9 @@ export { accountingReconciliationFunction } from "./accounting-reconciliation";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { mountPublishFunction } from "./mount-publish";
+export { mountSweepFunction } from "./mount-sweep";
+export { oeeSweepFunction } from "./oee-sweep";
+export { oeeSyncFunction } from "./oee-sync";
 export { onshapeBackfillFunction } from "./onshape-backfill";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";

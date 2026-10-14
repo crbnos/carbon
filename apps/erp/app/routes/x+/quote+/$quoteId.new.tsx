@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -9,9 +13,8 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { breakQuantities } from "@carbon/utils";
+import { breakQuantities, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getQuote,
   isQuoteLocked,
@@ -24,6 +27,7 @@ import {
 } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -202,14 +206,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (d.methodType === "Make to Order") {
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId,
-      itemId: d.itemId,
-      configuration,
-      companyId,
-      userId
-    });
+    const upsertMethod = await upsertQuoteLineMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        quoteId,
+        quoteLineId,
+        itemId: d.itemId,
+        configuration,
+        companyId,
+        userId
+      }
+    );
 
     if (upsertMethod.error) {
       throw redirect(

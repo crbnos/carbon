@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The ONE server-side entry point for running a Carbon API operation outside HTTP:
 // MCP call_tool, the in-app agent, and the workflow dispatcher all call this. It
 // runs the operation through the real oRPC procedure (gate middleware included) via
@@ -6,7 +10,6 @@
 
 import { getLogger } from "@carbon/logger";
 import { call, ORPCError } from "@orpc/server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
 import { unwrapArgsEnvelope } from "./args-envelope";
 import type { AuthedContext } from "./base.server";
@@ -33,19 +36,6 @@ const logger = getLogger("erp", "api", "call-operation");
 export type CallResult =
   | { success: true; data: unknown; count?: number }
   | { success: false; error: string; errorKind: "database" | "execution" };
-
-async function edgeFunctionMessage(
-  error: SupabaseFailure
-): Promise<string | null> {
-  if (
-    error.name !== "FunctionsHttpError" ||
-    !("context" in error) ||
-    !error.context
-  )
-    return null;
-  const message = await getEdgeFunctionErrorMessage(error, "");
-  return message === "" ? null : message;
-}
 
 export async function callOperation(
   name: string,
@@ -114,12 +104,10 @@ export async function callOperation(
       };
     }
     if (supabase) {
-      const edgeMessage = await edgeFunctionMessage(supabase);
       logger.error("Operation failed", {
         name,
         kind: classifyDatabaseFailure(supabase),
-        supabase,
-        ...(edgeMessage ? { edgeMessage } : {})
+        supabase
       });
       return {
         success: false,

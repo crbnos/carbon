@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { pageSchema } from "fumadocs-core/source/schema";
 import { defineConfig, defineDocs } from "fumadocs-mdx/config";
 import { z } from "zod";
@@ -31,10 +35,23 @@ export const guide = defineDocs({
   },
 });
 
+// One file per dated entry. Carbon has no versions, so `date` is the ordering key.
+export const changelog = defineDocs({
+  dir: "content/changelog",
+  docs: {
+    schema: pageSchema.extend({
+      date: z.string().date(),
+      tags: z.array(z.string()).default([]),
+      // Optional hero image, a path under /public.
+      image: z.string().optional(),
+    }),
+  },
+});
+
 // Remove <AgentContext> blocks from the MDX AST before fumadocs' remark-structure
 // runs. AgentContext is agent-only: this keeps its content out of the rendered page
 // AND out of the site search index (structuredData). The in-app agent still receives
-// it — scripts/generate-agent-kb.ts reads the raw MDX source, not the compiled tree.
+// it — @carbon/content/agent-kb reads the raw MDX source, not the compiled tree.
 // fumadocs splices user remarkPlugins before remarkStructure, so this runs first.
 function remarkStripAgentContext() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

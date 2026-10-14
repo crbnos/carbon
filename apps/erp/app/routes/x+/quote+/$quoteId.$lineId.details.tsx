@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -9,18 +13,12 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
-import { breakQuantities } from "@carbon/utils";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { breakQuantities, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
@@ -156,9 +154,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       ...line.data,
       // Present quantity breaks least-to-greatest everywhere they're consumed
       // (line form, costing grid, pricing grid). Preserve null so the `?? [1]`
-      // fallbacks downstream still apply.
+      // fallbacks downstream still apply. Distinct: a line saved with a
+      // repeated break must not render twice (one price row per quantity).
       quantity: line.data.quantity
-        ? [...line.data.quantity].sort((a, b) => a - b)
+        ? [...new Set(line.data.quantity)].sort((a, b) => a - b)
         : line.data.quantity
     },
     operations: operations?.data ?? [],
@@ -453,7 +452,7 @@ export default function QuoteLine() {
       />
 
       {methodData && (
-        <VStack spacing={2}>
+        <VStack spacing={4}>
           <QuoteBillOfProcess
             key={`bop:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
@@ -465,7 +464,7 @@ export default function QuoteLine() {
           <QuoteBillOfMaterial
             key={`bom:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
-            // @ts-ignore
+            // @ts-expect-error
             materials={methodData.methodMaterials}
             // @ts-expect-error
             operations={methodData.methodOperations}
@@ -568,7 +567,7 @@ export default function QuoteLine() {
 
       <QuoteLineRiskRegister quoteLineId={lineId} itemId={line.itemId ?? ""} />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

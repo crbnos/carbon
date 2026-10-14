@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -16,10 +20,11 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import { LuShoppingCart } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import {
   CadModel,
   DeferredFiles,
@@ -27,7 +32,7 @@ import {
   SupplierAvatar
 } from "~/components";
 import { usePanels } from "~/components/Layout";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
@@ -40,6 +45,7 @@ import {
   getRootMakeMethod,
   isJobLocked,
   jobValidator,
+  makeToAssetItemError,
   recalculateJobRequirements,
   updateJob
 } from "~/modules/production";
@@ -55,6 +61,7 @@ import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools"
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { getTagsList } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
@@ -70,10 +77,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  // `client` is the service role (bypassRls) and every read keys on the URL id.
-  await requireCompanyRecord(client, "job", companyId, { id: jobId });
-
-  const job = await getJob(client, jobId);
+  // `client` is the service role (bypassRls) and every read keys on the URL id,
+  // so the job must be this company's. The check runs beside the reads it
+  // guards, not before them: it rejects the whole batch, and nothing read here
+  // is returned unless it passes.
+  const [, job, rootMethod, tags] = await Promise.all([
+    requireCompanyRecord(client, "job", companyId, { id: jobId }),
+    getJob(client, jobId),
+    getRootMakeMethod(client, jobId, companyId),
+    getTagsList(client, companyId, "operation")
+  ]);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -81,7 +94,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
@@ -101,10 +113,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodId = rootMethod.data.id;
 
-  const [materials, operations, tags, makeMethod] = await Promise.all([
+  const [materials, operations, makeMethod] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation"),
     getJobMakeMethodById(client, methodId, companyId)
   ]);
 
@@ -171,8 +182,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The asset target ids come from the form: prove they are this company's
+  // before the job points at them. The service role, since a production user
+  // may not hold accounting view and RLS would read their own class as absent.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    validation.data.fixedAssetClassId
+      ? requireCompanyRecord(serviceRole, "fixedAssetClass", companyId, {
+          id: validation.data.fixedAssetClassId
+        })
+      : null,
+    validation.data.fixedAssetId
+      ? requireCompanyRecord(serviceRole, "fixedAsset", companyId, {
+          id: validation.data.fixedAssetId
+        })
+      : null
+  ]);
+
+  // The same Make to Asset item rule the job form, release and completion
+  // apply, so a saved target or item is refused with the field it is about.
+  if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
+    const item = await client
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", validation.data.itemId)
+      .eq("companyId", companyId)
+      .single();
+    const itemError = makeToAssetItemError({
+      ...validation.data,
+      itemTrackingType: item.data?.itemTrackingType
+    });
+    if (itemError) {
+      return validationError({ fieldErrors: { itemId: itemError } });
+    }
+  }
+
   const result = await updateJob(client, {
     id,
+    companyId,
     quantity: validation.data.quantity,
     scrapQuantity: validation.data.scrapQuantity,
     itemId: validation.data.itemId,
@@ -183,6 +230,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     unitOfMeasureCode: validation.data.unitOfMeasureCode,
     customerId: validation.data.customerId || null,
     modelUploadId: validation.data.modelUploadId || null,
+    fixedAssetClassId: validation.data.fixedAssetClassId || null,
+    fixedAssetId: validation.data.fixedAssetId || null,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
@@ -193,11 +242,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id,
-    companyId,
-    userId
-  });
+  const recalculate = await recalculateJobRequirements(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      id,
+      companyId,
+      userId
+    }
+  );
   if (recalculate.error) {
     throw redirect(
       path.to.job(id),
@@ -234,14 +287,9 @@ export default function JobDetailsRoute() {
     }
   });
 
-  const jobData = useRouteData<{
-    job: Job;
-    files: Promise<StorageItem[]> | StorageItem[];
-  }>(path.to.job(jobId));
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
-
-  useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
   const methodId = makeMethod?.id;
 
@@ -262,9 +310,8 @@ export default function JobDetailsRoute() {
             <JobBillOfProcess
               key={`bop:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
               locationId={jobData?.job?.locationId ?? ""}
               tags={tags}
@@ -275,9 +322,9 @@ export default function JobDetailsRoute() {
             <JobBillOfMaterial
               key={`bom:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
+              // @ts-expect-error
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
             />
           </>
@@ -302,9 +349,8 @@ export default function JobDetailsRoute() {
           <Await resolve={productionData}>
             {(resolvedProductionData) => (
               <JobEstimatesVsActuals
-                // @ts-ignore
                 materials={materials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={operations}
                 productionEvents={resolvedProductionData.events}
                 productionQuantities={resolvedProductionData.quantities}

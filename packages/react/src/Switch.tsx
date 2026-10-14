@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import * as SwitchPrimitives from "@radix-ui/react-switch";
@@ -38,6 +42,8 @@ const Switch = forwardRef<
     <SwitchPrimitives.Root
       className={cn(
         "group flex items-center transition-colors focus-visible:outline-none",
+        // Phones: a 44x44 hit area around the visual switch.
+        "max-md:hit-area",
         container,
         className
       )}

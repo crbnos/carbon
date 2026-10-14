@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import {
   Badge,
@@ -180,7 +184,7 @@ const JobMaterialsTable = memo(
               <HStack className="py-1">
                 <ItemThumbnail
                   size="md"
-                  // @ts-ignore
+                  // @ts-expect-error
                   type={row.original.itemType}
                 />
 
@@ -247,6 +251,7 @@ const JobMaterialsTable = memo(
             );
           },
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
             // Filter by item id (a real column) so it filters server-side;
             // scoped to items on this job, with the readable id as the label.
@@ -291,6 +296,7 @@ const JobMaterialsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuShoppingCart />,
             // `header` is JSX (tooltip), so name the column for the filter UI.
             filterHeader: t`Status`,
@@ -396,6 +402,7 @@ const JobMaterialsTable = memo(
           ),
           cell: ({ row }) => formatter.format(row.original.estimatedQuantity),
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },

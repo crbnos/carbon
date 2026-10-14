@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Events } from "./events.ts";
 import { inngest } from "./inngest/client.ts";
 
@@ -20,6 +24,7 @@ const taskToEvent = {
   "company-template-finalize": "carbon/company-template-finalize",
   "company-template-revert": "carbon/company-template-revert",
   "generate-maintenance": "carbon/generate-maintenance",
+  "invoice-automate": "carbon/invoice.automate",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",
   notify: "carbon/notify",

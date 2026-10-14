@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -12,7 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -116,8 +121,8 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  {/* @ts-ignore */}
+                <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
+                  {/* @ts-expect-error */}
                   <Link to={getLinkToItemDetails(type, initialValues.id)}>
                     <Trans>View Item Master</Trans>
                   </Link>
@@ -203,6 +208,23 @@ export function getLinkToItemDetails(type: ItemType, id: string) {
       return path.to.consumableDetails(id);
     case "Service":
       return path.to.serviceDetails(id);
+    default:
+      throw new Error("Invalid type");
+  }
+}
+
+export function getLinkToItemPurchasing(type: ItemType, id: string) {
+  switch (type) {
+    case "Part":
+      return path.to.partPurchasing(id);
+    case "Material":
+      return path.to.materialPurchasing(id);
+    case "Tool":
+      return path.to.toolPurchasing(id);
+    case "Consumable":
+      return path.to.consumablePurchasing(id);
+    case "Service":
+      return path.to.servicePurchasing(id);
     default:
       throw new Error("Invalid type");
   }

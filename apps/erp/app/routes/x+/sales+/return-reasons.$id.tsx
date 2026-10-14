@@ -1,16 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getReturnReason,
   returnReasonValidator,
   upsertReturnReason
 } from "~/modules/sales";
 import ReturnReasonForm from "~/modules/sales/ui/ReturnReasons/ReturnReasonForm";
-
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -81,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditReturnReasonRoute() {
   const { returnReason } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: returnReason.id ?? undefined,
@@ -94,7 +99,7 @@ export default function EditReturnReasonRoute() {
     <ReturnReasonForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
 import {
@@ -14,6 +18,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -274,11 +279,12 @@ export function IssueAssociationItem({
                         icon={<LuEllipsisVertical />}
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1 flex-shrink-0 opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                        className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           onDelete(child);
@@ -353,7 +359,6 @@ function NewItemAssociation() {
       <Item
         name="id"
         label={itemType}
-        // @ts-ignore
         type={itemType}
         onTypeChange={onTypeChange}
       />

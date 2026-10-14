@@ -3,26 +3,15 @@ title: Change notices
 description: How Carbon drafts an engineering change against real methods, reviews it as a diff, and releases it so downstream planning supersedes the versions it replaces.
 ---
 
-A **change notice** groups the parts whose designs are changing, revises each one on a hidden draft, and
-releases them together. It answers "what changed, who owns it, and what does the new version supersede?"
-without touching a live method until you release.
+A **change notice** groups related part changes, stages each change in a hidden draft, and releases them together. Live methods remain unchanged until release.
 
-The model is deliberately top-down. You pick the affected items first, then edit each item's real
-<Term id="bom">method</Term> (its bill of materials and bill of process) inside the change notice. Nothing
-about the part moves for planning, jobs, or costing until release. Change notices live under **Items → Change
-Notices**, and every action is gated by the `parts` permission.
+Select affected items, then edit each item's <Term id="bom">method</Term>—its bill of materials and bill of process—inside the notice. Planning, jobs, and costing continue to use the live item until release. Change notices are under **Items → Change Notices** and require `parts` permission.
 
 ## The affected item is the unit of work
 
-A change notice is a header plus a list of **affected items**. The picker accepts **Parts only** — materials,
-consumables, services, and tools have no path in the change-notice UI, so they're excluded. Each affected item
-carries its own <Term id="change-order-change-type">change type</Term>, its own edits, and its own cutover
-configuration.
+A change notice contains a header and **affected items**. The picker accepts Parts only. Each affected item has its own <Term id="change-order-change-type">change type</Term>, edits, and cutover configuration.
 
-Adding an affected item snapshots the item's live **Active** method into a new **Draft** method stamped with
-the change notice's id. That draft is hidden from every version switcher, copy-target picker, and MRP, job, or
-cost read until release. You edit it with the same **Bill of Material**, **Bill of Process**, and **Part
-Properties** editors you use anywhere else.
+Adding an affected item copies its **Active** method into a **Draft** method associated with the change notice. The draft is excluded from version selectors, copy targets, MRP, jobs, and costing until release. Edit it with the standard **Bill of Material**, **Bill of Process**, and **Part Properties** editors.
 
 <Callout type="note" title="The draft is a real method, not a staged copy.">
 Carbon does not mirror your edits into shadow tables. An affected item's edits live on an actual make method

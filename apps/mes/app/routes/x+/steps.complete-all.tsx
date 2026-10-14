@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { completeAllStepsForUnit } from "~/services/operations.service";
 
 const log = getLogger("mes");
@@ -28,12 +33,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
-  const result = await completeAllStepsForUnit(serviceRole, {
-    operationId,
-    index,
-    companyId,
-    createdBy: userId
-  });
+  const result = await completeAllStepsForUnit(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      operationId,
+      index,
+      companyId,
+      createdBy: userId
+    }
+  );
 
   if (result.error) {
     return data(

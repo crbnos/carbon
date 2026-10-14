@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
   BarProgress,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -74,7 +79,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.quoteDetails(row.original.id!)}>
@@ -86,6 +91,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -93,9 +99,26 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         id: "customerId",
         header: t`Customer`,
         cell: ({ row }) => (
-          <CustomerAvatar customerId={row.original.customerId} />
+          // Phones: the expiry date follows the customer on line 2.
+          <div className="contents max-md:flex max-md:min-w-0 max-md:items-center max-md:gap-1">
+            <CustomerAvatar customerId={row.original.customerId} />
+            {row.original.expirationDate ? (
+              <span className="shrink-0 whitespace-nowrap md:hidden">
+                ·{" "}
+                <Trans>
+                  Exp.{" "}
+                  <DateTime
+                    value={row.original.expirationDate}
+                    variant="date"
+                    dateOptions={{ month: "short", day: "numeric" }}
+                  />
+                </Trans>
+              </span>
+            ) : null}
+          </div>
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -115,15 +138,26 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           const lines = row.original.lines ?? 0;
           const completedLines = row.original.completedLines ?? 0;
           return status === "Draft" ? (
-            <BarProgress
-              gradient
-              progress={lines === 0 ? 0 : (completedLines / lines) * 100}
-            />
+            <>
+              <BarProgress
+                className="max-md:hidden"
+                gradient
+                progress={lines === 0 ? 0 : (completedLines / lines) * 100}
+              />
+              {/* Phones: the status and the count in words, not a bare bar. */}
+              <span className="flex min-w-0 items-center gap-1.5 md:hidden">
+                <QuoteStatus status="Draft" />
+                <span className="truncate text-xs text-muted-foreground">
+                  {t`${completedLines} of ${lines} lines complete`}
+                </span>
+              </span>
+            </>
           ) : (
             <QuoteStatus status={status} />
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: quoteStatusType.map((status) => ({
@@ -192,6 +226,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -202,6 +239,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -284,11 +324,15 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const renderContextMenu = useMemo(() => {
     return (row: QuotationListItem) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.quoteDetails(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {

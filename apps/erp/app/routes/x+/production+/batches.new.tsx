@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getBatchableProcesses,
   getJobOperationBatchWithMembers
@@ -15,7 +21,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // The wizard's mutations submit to batching.update (update: "production") and
-  // the batch-operations edge fn also requires update: "production"; gate the
+  // the batch-operations server fn also requires update: "production"; gate the
   // wizard on the same permission so opening it never dead-ends at submit.
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
@@ -140,11 +146,11 @@ export default function NewBatchRoute() {
     initialProcessId,
     batch
   } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <BatchBuilder
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       defaultLocationId={defaultLocationId}
       initialLocationId={initialLocationId}
       initialProcessId={initialProcessId}

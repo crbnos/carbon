@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Plan-gate overlay for Settings → Approval Rules. Mirrors
 // `SalesRulesUpgradeOverlay`: shared overlay chrome via
 // `~/components/RulesUpgradeOverlay`, with an approval-rules preview, mock
@@ -45,13 +49,19 @@ export default function ApprovalRulesUpgradeOverlay() {
   return (
     <RulesUpgradeOverlay
       preview={
-        <ApprovalRules poRules={mockPoRules} qdRules={[]} supplierRules={[]} />
+        <ApprovalRules
+          poRules={mockPoRules}
+          qdRules={[]}
+          supplierRules={[]}
+          changeOrderRules={[]}
+        />
       }
       title={<Trans>Approval Rules</Trans>}
       description={
         <Trans>
-          Require tiered sign-off on purchase orders, quality documents, and
-          suppliers based on amount thresholds and approver groups.
+          Require tiered sign-off on purchase orders, quality documents,
+          suppliers, and change notices based on amount thresholds and approver
+          groups.
         </Trans>
       }
     />

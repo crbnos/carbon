@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
+import { requestReferrer } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -8,12 +13,12 @@ const ERP_URL = getAppUrl();
 export const path = {
   to: {
     authenticatedRoot: x,
-    accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     dashboard: `${ERP_URL}/x`,
-
+    // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
+    erpApi: `${x}/proxy/api`,
     health: "/health",
     login: "/login",
     logout: "/logout",
@@ -38,12 +43,10 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
-export const requestReferrer = (request: Request) => {
-  return request.headers.get("referer");
-};
+export { requestReferrer };
 
 export const getParams = (request: Request) => {
-  const url = new URL(requestReferrer(request) ?? "");
+  const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };

@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { requestReferrer } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 export const ERP_URL = getAppUrl();
@@ -13,7 +18,6 @@ const display = "/display";
 
 export const path = {
   to: {
-    accountSettings: `${ERP_URL}/x/account`,
     acknowledge: `${x}/acknowledge`,
     active: `${x}/active`,
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
@@ -63,6 +67,9 @@ export const path = {
     displays: display,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
+    erpAccountSecurity: `${ERP_URL}/x/account/security`,
+    // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
+    erpApi: `${x}/proxy/api`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
@@ -144,6 +151,8 @@ export const path = {
       generatePath(`${x}/inspection-lot/${id}/complete-passed`),
     inspectionDisposition: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/disposition`),
+    inspectionGauge: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/measurement`),
     inspectionSample: (id: string) =>
@@ -156,6 +165,8 @@ export const path = {
       `${getAppUrl()}${x}/${type.toLowerCase()}/${itemId}/details`,
     jobDag: (id: string) => generatePath(`${x}/job/${id}`),
     jobDetail: (id: string) => `${getAppUrl()}${x}/job/${id}/details`,
+    jobMakeMethodDetail: (jobId: string, makeMethodId: string) =>
+      `${getAppUrl()}${x}/job/${jobId}/make/${makeMethodId}`,
     jobs: `${x}/jobs`,
     kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     location: `${x}/location`,
@@ -232,12 +243,10 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
-export const requestReferrer = (request: Request) => {
-  return request.headers.get("referer");
-};
+export { requestReferrer };
 
 export const getParams = (request: Request) => {
-  const url = new URL(requestReferrer(request) ?? "");
+  const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };

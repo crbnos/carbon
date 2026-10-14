@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Values shared by the integration config (bundled for BOTH client and
  * server) and the API client (server-only). They live here, free of imports,
@@ -11,6 +15,13 @@ export const MOUNT_DEFAULT_BASE_URL = "https://api.mount.cloud";
 export const MOUNT_API_VERSION = "2026-06-01";
 
 export const MOUNT_INTEGRATION_ID = "mount";
+
+/** The integration's action ids, by the entity type each one publishes. */
+export const MOUNT_PUBLISH_ACTION_IDS = {
+  customer: "push-customers",
+  supplier: "push-suppliers",
+  item: "push-parts"
+} as const;
 
 export function isHttpsUrl(value: string) {
   try {

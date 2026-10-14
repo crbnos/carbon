@@ -1,26 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Result } from "@carbon/auth";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   TrackedEntityPicker,
   type TrackedEntitySelection,
   toast
 } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
 import {
@@ -29,9 +28,8 @@ import {
   resolveStockTransferPickForward,
   stockTransferLineScanValidator
 } from "~/modules/inventory";
-import { getItemStorageUnitQuantities } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -52,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const line = await client
     .from("stockTransferLine")
     .select(
-      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, stockTransfer(locationId)"
+      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, fromStorageUnitId, stockTransfer(locationId)"
     )
     .eq("id", lineId)
     .single();
@@ -72,7 +70,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           locationId,
           // A stock transfer moves stock between bins in the warehouse, so
           // lineside (work-center) bins are not valid sources.
-          excludeLineside: true
+          excludeLineside: true,
+          // Only lots in the line's source bin can be picked for it; an
+          // empty source is the unassigned bin, not "any bin".
+          inStorageUnit: { id: line.data.fromStorageUnitId }
         })
       : { data: [] };
 
@@ -127,53 +128,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const {
     id: lineId,
     stockTransferId,
-    itemId,
     locationId,
     trackedEntityId,
-    quantity,
-    storageUnitId
+    quantity
   } = validated.data;
 
-  const [stockTransferLine, itemStorageUnitQuantities] = await Promise.all([
-    client.from("stockTransferLines").select("*").eq("id", lineId!).single(),
-    getItemStorageUnitQuantities(client, itemId, companyId, locationId)
-  ]);
+  const stockTransferLine = await client
+    .from("stockTransferLines")
+    .select("*")
+    .eq("id", lineId!)
+    .single();
 
-  if (stockTransferLine.error || itemStorageUnitQuantities.error) {
+  if (stockTransferLine.error) {
     return data(
-      {
-        success: false,
-        message:
-          "Failed to load stock transfer line or item storage unit quantities"
-      },
+      { success: false, message: "Failed to load stock transfer line" },
       await flash(
         request,
-        error(
-          stockTransferLine.error || itemStorageUnitQuantities.error,
-          "Failed to load stock transfer line or item storage unit quantities"
-        )
+        error(stockTransferLine.error, "Failed to load stock transfer line")
       )
     );
   }
-
-  const currentStorageUnitId =
-    itemStorageUnitQuantities.data
-      ?.sort((a, b) => b.quantity - a.quantity)
-      .find((q) => q.trackedEntityId === trackedEntityId)?.storageUnitId ??
-    null;
 
   // Determine the type of transfer based on tracking requirements
   const transferType = stockTransferLine.data?.requiresBatchTracking
     ? "batch"
     : "serial";
 
-  // The edge function re-checks this under a row lock, but refusing an already-
+  // The server function re-checks this under a row lock, but refusing an already-
   // full line here avoids a round trip and a raw failure.
   const forward = resolveStockTransferPickForward({
     transferType,
     quantity,
-    storageUnitId,
-    currentStorageUnitId,
     lineQuantity: Number(stockTransferLine.data?.quantity ?? 0),
     pickedQuantity: Number(stockTransferLine.data?.pickedQuantity ?? 0)
   });
@@ -191,27 +176,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     stockTransferLineId: lineId,
     trackedEntityId,
     quantity: forward.quantity,
-    fromStorageUnitId: forward.fromStorageUnitId,
     locationId: locationId,
     userId,
     companyId
   };
 
   // Service role: `userId` is the effective (console pin-in) user, not the
-  // token's subject, which the edge function's membership check compares.
-  const { data: transferResult, error: functionError } =
-    await getCarbonServiceRole().functions.invoke("post-stock-transfer", {
-      body: JSON.stringify(functionPayload)
-    });
+  // token's subject, which the operation's membership check compares.
+  const { data: transferResult, error: functionError } = await serverFns
+    .system({
+      db: getDatabaseClient(),
+      companyId: functionPayload.companyId,
+      userId: functionPayload.userId
+    })
+    .invoke("post-stock-transfer", functionPayload);
 
   if (functionError) {
-    // The edge function returns its guard failures (over-pick, already picked)
-    // as a 400 with the real reason in the body; surface that, not the generic
-    // "non-2xx" wrapper text.
-    const message = await getEdgeFunctionErrorMessage(
-      functionError,
-      "Failed to pick line"
-    );
+    // The server function returns its guard failures (over-pick, already
+    // picked) with the real reason; surface that, not the generic fallback.
+    const message = getErrorMessage(functionError, "Failed to pick line");
     return data(
       { success: false, message },
       await flash(request, error(functionError, message))
@@ -281,13 +264,13 @@ export default function StockTransferScan() {
   const onClose = () =>
     navigate(path.to.stockTransfer(stockTransferLine.stockTransferId!));
 
-  const fetcher = useFetcher<Result>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message);
+  const fetcher = useAction<Result>({
+    onError: (data) => {
+      if (data?.success === false) {
+        toast.error(data.message);
+      }
     }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  });
 
   const locationId = routeData?.stockTransfer.locationId ?? "";
 
@@ -316,10 +299,8 @@ export default function StockTransferScan() {
         trackedEntityId: selection.trackedEntityId,
         itemId: stockTransferLine.itemId!,
         locationId,
-        // Forward the picker's clamped quantity and chosen bin — the host
-        // picking-list scanner does the same.
-        quantity: selection.quantity,
-        storageUnitId: selection.storageUnitId ?? null
+        // Forward the picker's clamped quantity; the source bin is the line's.
+        quantity: selection.quantity
       },
       {
         method: "POST",

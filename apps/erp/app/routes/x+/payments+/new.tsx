@@ -1,12 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { datetime, round, toBaseAmount, toDocumentAmount } from "@carbon/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@carbon/react";
+import {
+  datetime,
+  redirect,
+  round,
+  toBaseAmount,
+  toDocumentAmount
+} from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { getCurrencyByCode, getDefaultAccounts } from "~/modules/accounting";
 import {
   computeEarlyPaymentDiscounts,
@@ -18,6 +37,10 @@ import {
   replaceInvoiceSettlements,
   upsertPayment
 } from "~/modules/invoicing";
+import {
+  checkDepositDocument,
+  getDepositDocuments
+} from "~/modules/invoicing/invoicing.server";
 import { getCompany, getNextSequence } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -46,6 +69,7 @@ async function getSeedableOpenInvoices(
 //   invoiceId   -> one or more; their open balances are summed into the total
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
+//   salesOrderId / rentalAgreementId -> seeds the deposit document
 // Early-payment discount per invoice as of `asOfDate`, in the invoice's DOCUMENT
 // currency. It is computed from `remainingDocument` rather than `balance`
 // (which is company base) so it lines up with the payment's cash total, which
@@ -97,15 +121,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const supplierId = url.searchParams.get("supplierId");
   const invoiceIds = url.searchParams.getAll("invoiceId");
   const amount = url.searchParams.get("amount");
+  const salesOrderId = url.searchParams.get("salesOrderId");
+  const rentalAgreementId = url.searchParams.get("rentalAgreementId");
 
   const paymentType: "Receipt" | "Disbursement" = supplierId
     ? "Disbursement"
     : "Receipt";
   const partyId = paymentType === "Receipt" ? customerId : supplierId;
 
-  const [company, defaults] = await Promise.all([
+  const [company, defaults, depositDocuments] = await Promise.all([
     getCompany(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getDefaultAccounts(client, companyId),
+    getDepositDocuments(client, companyId, [salesOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";
 
@@ -179,9 +206,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       totalAmount,
       bankAccount,
       reference: "",
-      memo: ""
+      memo: "",
+      salesOrderId: salesOrderId ?? "",
+      rentalAgreementId: rentalAgreementId ?? ""
     },
-    seedInvoiceIds: invoiceIds
+    seedInvoiceIds: invoiceIds,
+    depositDocuments
   };
 }
 
@@ -201,6 +231,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(paymentValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // The deposit ids arrive as hidden fields: never trust them to name this
+  // company's, this customer's, open document.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    validation.data
+  );
+  if (depositError) {
+    return validationError({
+      fieldErrors: { depositDocument: depositError }
+    });
   }
 
   try {
@@ -337,13 +380,31 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPaymentRoute() {
-  const { initialValues, seedInvoiceIds } = useLoaderData<typeof loader>();
+  const { initialValues, seedInvoiceIds, depositDocuments } =
+    useLoaderData<typeof loader>();
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <PaymentForm
-        initialValues={initialValues}
-        seedInvoiceIds={seedInvoiceIds}
-      />
-    </div>
+    <NewRecordPage>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>New Payment</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>
+              Record a customer payment, supplier payment, refund, or employee
+              reimbursement. Applications to invoices, memos or reimbursements
+              are added after the payment is created.
+            </Trans>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="@container">
+          <PaymentForm
+            initialValues={initialValues}
+            seedInvoiceIds={seedInvoiceIds}
+            depositDocuments={depositDocuments}
+          />
+        </CardContent>
+      </Card>
+    </NewRecordPage>
   );
 }

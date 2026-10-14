@@ -1,23 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
-  SidebarTrigger,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
+import { MesEmptyState } from "~/components/MesEmptyState";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
 import { getAssignedPickingLists } from "~/services/picking.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["pickingList"]
+};
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
@@ -34,15 +42,9 @@ export default function PickingIndexRoute() {
   const { pickingLists } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">
-            <Trans>Picking</Trans>
-          </Heading>
-        </div>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <MesAppBar title={<Trans>Picking</Trans>} />
+      <MesQueueHeader title={<Trans>Picking</Trans>} />
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         {pickingLists.length > 0 ? (
@@ -72,14 +74,14 @@ export default function PickingIndexRoute() {
                     </CardHeader>
                     <CardContent>
                       <VStack className="gap-1">
-                        <HStack className="justify-between text-sm">
+                        <HStack className="justify-between text-sm max-md:w-full">
                           <span className="text-muted-foreground">
                             <Trans>Location</Trans>
                           </span>
                           <span>{pl.locationName}</span>
                         </HStack>
                         {pl.dueDate && (
-                          <HStack className="justify-between text-sm">
+                          <HStack className="justify-between text-sm max-md:w-full">
                             <span className="text-muted-foreground">
                               <Trans>Due Date</Trans>
                             </span>
@@ -88,7 +90,7 @@ export default function PickingIndexRoute() {
                             </span>
                           </HStack>
                         )}
-                        <HStack className="justify-between text-sm">
+                        <HStack className="justify-between text-sm max-md:w-full">
                           <span className="text-muted-foreground">
                             <Trans>Progress</Trans>
                           </span>
@@ -104,14 +106,10 @@ export default function PickingIndexRoute() {
             })}
           </div>
         ) : (
-          <div className="flex flex-col flex-1 w-full h-[calc(100%-var(--header-height))] items-center justify-center gap-4">
-            <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuTriangleAlert className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-mono font-light text-foreground uppercase">
-              <Trans>No picking lists assigned</Trans>
-            </span>
-          </div>
+          <MesEmptyState
+            className="flex-1 w-full h-[calc(100%-var(--header-height))]"
+            title={<Trans>No picking lists assigned</Trans>}
+          />
         )}
       </main>
     </div>

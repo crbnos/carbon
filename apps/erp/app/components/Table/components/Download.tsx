@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { downloadCsv } from "@carbon/files/csv";
 import {
   IconButton,
@@ -11,7 +15,7 @@ import { LuDownload } from "react-icons/lu";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 import { selectExportColumns } from "../utils";
 
-type DownloadProps = {
+export type DownloadProps = {
   data: object[];
   columnAccessors: Record<string, string>;
   exportValues: Record<string, (row: any) => unknown>;
@@ -22,16 +26,18 @@ type DownloadProps = {
   exportOnlyColumns: string[];
 };
 
-const Download = ({
+/**
+ * Builds the CSV of the current page (visible columns, view order) and
+ * downloads it. The desktop Download button and the compact ⋯ menu share it.
+ */
+export function useCsvDownload({
   data,
   columnAccessors,
   exportValues,
   columnOrder,
   columnVisibility,
   exportOnlyColumns
-}: DownloadProps) => {
-  const { t } = useLingui();
-
+}: DownloadProps) {
   const [items] = useItems();
   const [suppliers] = useSuppliers();
   const [people] = usePeople();
@@ -84,6 +90,14 @@ const Download = ({
     });
     downloadCsv(rows, "data.csv");
   }, [data, exportColumns, idNameMaps, columnAccessors, exportValues]);
+
+  return onClick;
+}
+
+const Download = (props: DownloadProps) => {
+  const { t } = useLingui();
+  const { data } = props;
+  const onClick = useCsvDownload(props);
 
   if (!data?.length) {
     return null;

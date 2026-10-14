@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Text formatting for describe_tool / search_tools output, extracted from the
 // @ts-nocheck server.ts so it is typed and unit-testable. Schemas print as
 // compact JSON on purpose — pretty-printing roughly doubles the whitespace
@@ -22,7 +26,7 @@ export function deriveNameDescription(name: string): string {
 /**
  * One-line argument summary for search results: required params spelled out,
  * optionals as a count — enough to call a simple tool without a describe round
- * trip. "(id)" / "(jobId, _operation, +12 optional)" / "()".
+ * trip. "(id)" / "(jobId, itemId, +12 optional)" / "()".
  */
 export function formatParamSummary(tool: ManifestEntry): string {
   const schema = tool.schema as {

@@ -77,7 +77,14 @@ The `detail` JSON shape is `NodeDetail` (`packages/ee/src/workflows/runtime/type
 ## Retention — four passes, nightly at 04:00
 
 `workflowRunRetentionFunction` in `packages/jobs/src/inngest/functions/scheduled/` runs four
-`step.run` passes in order. Every pass that touches finished runs filters on a TERMINAL status
+`step.run` passes in order. It has no cron of its own: the pg_cron job
+`workflow-run-retention-sweeper` runs `util.sweep_workflow_run_retention()` at 04:00 UTC, which
+sends `carbon/workflow-run-retention.process` only when
+`util.workflow_run_retention_has_work()` finds a run for one of the passes
+(`20261004183512_scheduled-jobs-from-database.sql`, pinned by
+`supabase/tests/scheduled-job-sweeps.test.sql`). That function repeats the ages in the table
+below: change a constant in one place and it must change in the other. Like every wake from
+Postgres it needs the Vault secret `inngest_event_url` (see `event-system.md`). Every pass that touches finished runs filters on a TERMINAL status
 (`Succeeded | Failed | Blocked | Skipped`). In-flight runs are never deleted by passes 2–4.
 
 | Pass | Step id | What it does | Constant |
@@ -135,5 +142,6 @@ information the tool exists to show.
 
 `RunLiveUpdates` / `RunsLiveUpdates` in `ui/Runs/RunLiveUpdates.tsx` use `useDebouncedRealtime`
 to revalidate the loader after 1.5 s of quiet. They mount only while at least one row is
-non-terminal — an unfiltered subscription on `workflowStepRun` would fire on every company's
-every step. Caller supplies the filter; the hook does not add `companyId` itself.
+non-terminal. The broadcast topic is per company, so the runs list follows `workflowRun`
+with no filter; the run drawer filters `workflowStepRun` on `runId` and `workflowRun` on
+`id` (see `realtime-system.md`).

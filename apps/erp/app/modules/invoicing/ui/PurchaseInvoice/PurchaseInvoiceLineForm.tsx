@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   Combobox,
   DatePicker,
@@ -27,14 +32,25 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  toast,
   useDisclosure,
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
+import {
+  distinctItemText,
+  getItemReadableId,
+  INPUT_FORMAT
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
+import {
+  LuBox,
+  LuChevronRight,
+  LuKeyRound,
+  LuLandmark,
+  LuReceipt
+} from "react-icons/lu";
 import { useParams } from "react-router";
 import type { z } from "zod";
 import {
@@ -52,6 +68,7 @@ import {
   UnitOfMeasure,
   useTaxPair
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -62,11 +79,15 @@ import {
 } from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
-import { getSupplierPartPriceBreaks } from "~/modules/items";
+import {
+  EACH_UNIT_OF_MEASURE_CODE,
+  getSupplierPartPricing
+} from "~/modules/items";
 import {
   type ItemType,
   itemType,
-  resolveSupplierPrice
+  resolveSupplierPrice,
+  type SupplierPartPricing
 } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -76,6 +97,7 @@ type PurchaseInvoiceLineFormProps = {
     taxPercent?: number;
     assetReadableId?: string;
     assetName?: string;
+    leaseReadableId?: string;
   };
   type?: "card" | "modal";
   onClose?: () => void;
@@ -86,7 +108,7 @@ const PurchaseInvoiceLineForm = ({
   type,
   onClose
 }: PurchaseInvoiceLineFormProps) => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const permissions = usePermissions();
   const { carbon } = useCarbon();
 
@@ -119,6 +141,11 @@ const PurchaseInvoiceLineForm = ({
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
   );
+  // The picker's type filter. It starts on every item type; the line's own
+  // type (above) is a real enum value — "Item" is not one — and follows the
+  // selected item.
+  const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
+  const isService = lineType === "Service";
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -133,7 +160,9 @@ const PurchaseInvoiceLineForm = ({
     minimumOrderQuantity?: number;
     taxAmount: number;
     taxPercent: number;
-    priceBreaks: Array<{ quantity: number; unitPrice: number }>;
+    pricing: SupplierPartPricing | null;
+    // In the INVOICE's currency: the price used when the supplier part has
+    // none for the quantity.
     fallbackUnitPrice: number;
   }>({
     itemId: initialValues.itemId ?? "",
@@ -148,13 +177,15 @@ const PurchaseInvoiceLineForm = ({
     minimumOrderQuantity: undefined,
     taxAmount: initialValues.supplierTaxAmount ?? 0,
     taxPercent: initialValues.taxPercent ?? 0,
-    priceBreaks: [],
-    // fallbackUnitPrice is BASE currency, matching what resolveSupplierPrice
-    // expects. initialValues.supplierUnitPrice is the SUPPLIER's, so divide.
-    fallbackUnitPrice:
-      (initialValues.supplierUnitPrice ?? 0) /
-      (routeData?.purchaseInvoice?.exchangeRate || 1)
+    pricing: null,
+    fallbackUnitPrice: initialValues.supplierUnitPrice ?? 0
   });
+
+  // The invoice's currency and rate: what a supplier part's price converts into.
+  const invoiceCurrencyRate = {
+    currencyCode: invoiceCurrency,
+    exchangeRate: routeData?.purchaseInvoice?.exchangeRate ?? 1
+  };
 
   // Re-derive the tax amount when the line's base changes — never on mount, so
   // a saved manual override survives being reopened.
@@ -173,9 +204,46 @@ const PurchaseInvoiceLineForm = ({
   const isEditing = initialValues.id !== undefined;
   const isGLAccount = initialValues.invoiceLineType === "G/L Account";
   const isFixedAsset = initialValues.invoiceLineType === "Fixed Asset";
-  const [activeTab, setActiveTab] = useState<"item" | "gl-account" | "asset">(
-    isFixedAsset ? "asset" : isGLAccount ? "gl-account" : "item"
+  const isLease = initialValues.invoiceLineType === "Lease";
+  // A lease payment the daily job drafted: its lease and amount come from the
+  // lease's payment row (they debit the lease liability), so they are locked.
+  const isLeasePayment = isLease && !!initialValues.leasePaymentId;
+  const [activeTab, setActiveTab] = useState<
+    "item" | "gl-account" | "asset" | "lease"
+  >(
+    isLease
+      ? "lease"
+      : isFixedAsset
+        ? "asset"
+        : isGLAccount
+          ? "gl-account"
+          : "item"
   );
+
+  // The supplier's leases a Lease line can bill: any lease that is or was
+  // in force (a final penalty or purchase price is billed after it ends).
+  const [leaseOptions, setLeaseOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  useMount(() => {
+    const supplierId = routeData?.purchaseInvoice?.supplierId;
+    if (!supplierId) return;
+    (async () => {
+      const leases = await carbon
+        .from("lease")
+        .select("id, leaseId, name")
+        .eq("companyId", company.id)
+        .eq("supplierId", supplierId)
+        .in("status", ["Active", "Expired", "Terminated", "Purchased"])
+        .order("leaseId");
+      setLeaseOptions(
+        (leases.data ?? []).map((lease) => ({
+          value: lease.id,
+          label: `${lease.leaseId} — ${lease.name}`
+        }))
+      );
+    })();
+  });
 
   const [assetOptions, setAssetOptions] = useState<
     { value: string; label: string; locationId: string | null }[]
@@ -187,7 +255,8 @@ const PurchaseInvoiceLineForm = ({
         .from("fixedAsset")
         .select("id, fixedAssetId, name, locationId")
         .eq("companyId", company.id)
-        .eq("status", "Draft")
+        // Under Construction too: a CIP asset collects purchased cost.
+        .in("status", ["Draft", "Under Construction"])
         .order("fixedAssetId");
       const options = (assets.data ?? []).map((a) => ({
         value: a.id,
@@ -221,6 +290,7 @@ const PurchaseInvoiceLineForm = ({
   const [indirectData, setIndirectData] = useState<{
     accountId: string;
     assetId: string;
+    leaseId: string;
     costCenterId: string;
     description: string;
     quantity: number;
@@ -232,6 +302,7 @@ const PurchaseInvoiceLineForm = ({
   }>({
     accountId: initialValues.accountId ?? "",
     assetId: initialValues.assetId ?? "",
+    leaseId: initialValues.leaseId ?? "",
     costCenterId: initialValues.costCenterId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
@@ -254,7 +325,8 @@ const PurchaseInvoiceLineForm = ({
       setIndirectData((d) => ({ ...d, taxPercent: percent, taxAmount: amount }))
   });
 
-  // Load price breaks
+  // Load price breaks. The part's own price is left out: below every break
+  // the line keeps the price it already has.
   useMount(() => {
     if (!isEditing || !initialValues.itemId) return;
     const supplierId = routeData?.purchaseInvoice?.supplierId;
@@ -263,18 +335,25 @@ const PurchaseInvoiceLineForm = ({
     (async () => {
       const supplierPart = await carbon
         .from("supplierPart")
-        .select("id")
+        .select("id, companyId, currencyCode, supplierUnitPrice")
         .eq("itemId", initialValues.itemId!)
         .eq("companyId", company.id)
         .eq("supplierId", supplierId)
         .maybeSingle();
 
       if (supplierPart?.data?.id) {
-        const breaks = await getSupplierPartPriceBreaks(
+        const pricing = await getSupplierPartPricing(
           carbon,
-          supplierPart.data.id
+          supplierPart.data,
+          company.baseCurrencyCode,
+          invoiceCurrency
         );
-        setItemData((d) => ({ ...d, priceBreaks: breaks }));
+        if (pricing.data) {
+          setItemData((d) => ({
+            ...d,
+            pricing: { ...pricing.data, supplierUnitPrice: null }
+          }));
+        }
       }
     })();
   });
@@ -298,7 +377,11 @@ const PurchaseInvoiceLineForm = ({
   const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: ItemType | "Item") => {
-    if (t === lineType) return;
+    if (t === itemFilter) return;
+    setItemFilter(t);
+    // Widening to every type keeps the selected item; narrowing to another
+    // type clears it.
+    if (t === "Item" || t === lineType) return;
     setLineType(t as ItemType);
     setItemData({
       itemId: "",
@@ -313,7 +396,7 @@ const PurchaseInvoiceLineForm = ({
       minimumOrderQuantity: undefined,
       taxAmount: 0,
       taxPercent: 0,
-      priceBreaks: [],
+      pricing: null,
       fallbackUnitPrice: 0
     });
   };
@@ -357,47 +440,61 @@ const PurchaseInvoiceLineForm = ({
 
         const itemCost = item?.data?.itemCost?.[0];
         const itemReplenishment = item?.data?.itemReplenishment;
-        const exchangeRate = routeData?.purchaseInvoice?.exchangeRate ?? 1;
         const initialQty = supplierPart?.data?.minimumOrderQuantity ?? 1;
-        // BASE currency: supplierPart.unitPrice and itemCost.unitCost are both
-        // stored in base. resolveSupplierPrice converts to the supplier's.
-        const baseFallback =
-          supplierPart?.data?.unitPrice !== null &&
-          supplierPart?.data?.unitPrice !== undefined
-            ? supplierPart.data.unitPrice
-            : (itemCost?.unitCost ?? 0);
-
-        const breaks = supplierPart?.data?.id
-          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
-          : [];
-        const resolvedPrice = resolveSupplierPrice(
-          breaks,
-          initialQty,
-          baseFallback,
-          exchangeRate
+        // The item's cost is in BASE currency; the line wants the invoice's.
+        const fallbackUnitPrice = convertUnitPrice(
+          itemCost?.unitCost ?? 0,
+          { currencyCode: company.baseCurrencyCode, exchangeRate: 1 },
+          invoiceCurrencyRate
         );
 
+        // The supplier's price is in the supplier part's currency, converted
+        // into the invoice's at the current rate.
+        const pricing = supplierPart?.data
+          ? await getSupplierPartPricing(
+              carbon,
+              supplierPart.data,
+              company.baseCurrencyCode,
+              invoiceCurrency
+            )
+          : null;
+        if (pricing?.error) {
+          toast.error(pricing.error.message);
+        }
+        const resolvedPrice = resolveSupplierPrice(
+          pricing?.data ?? null,
+          initialQty,
+          invoiceCurrencyRate,
+          fallbackUnitPrice
+        );
+
+        // A service is always bought and "stocked" in EA, 1:1.
+        const isServiceItem = item.data?.type === "Service";
         setItemData({
           itemId: itemId,
           description: item.data?.name ?? "",
           quantity: initialQty,
           supplierUnitPrice: resolvedPrice,
           supplierShippingCost: 0,
-          purchaseUom:
-            supplierPart?.data?.supplierUnitOfMeasureCode ??
-            itemReplenishment?.purchasingUnitOfMeasureCode ??
-            item.data?.unitOfMeasureCode ??
-            "EA",
-          inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-          conversionFactor:
-            supplierPart?.data?.conversionFactor ??
-            itemReplenishment?.conversionFactor ??
-            1,
+          purchaseUom: isServiceItem
+            ? EACH_UNIT_OF_MEASURE_CODE
+            : (supplierPart?.data?.supplierUnitOfMeasureCode ??
+              itemReplenishment?.purchasingUnitOfMeasureCode ??
+              item.data?.unitOfMeasureCode ??
+              "EA"),
+          inventoryUom: isServiceItem
+            ? EACH_UNIT_OF_MEASURE_CODE
+            : (item.data?.unitOfMeasureCode ?? "EA"),
+          conversionFactor: isServiceItem
+            ? 1
+            : (supplierPart?.data?.conversionFactor ??
+              itemReplenishment?.conversionFactor ??
+              1),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           taxAmount: 0,
           taxPercent: 0,
-          priceBreaks: breaks,
-          fallbackUnitPrice: baseFallback
+          pricing: pricing?.data ?? null,
+          fallbackUnitPrice
         });
 
         if (item.data?.type) {
@@ -433,10 +530,23 @@ const PurchaseInvoiceLineForm = ({
     }));
   };
 
+  const lineSubtitle = isLease
+    ? indirectData.description
+    : isFixedAsset
+      ? initialValues.assetName || indirectData.description
+      : isGLAccount
+        ? "G/L Account"
+        : distinctItemText(
+            getItemReadableId(items, itemData?.itemId),
+            itemData?.description
+          );
+
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(v) => setActiveTab(v as "item" | "gl-account" | "asset")}
+      onValueChange={(v) =>
+        setActiveTab(v as "item" | "gl-account" | "asset" | "lease")
+      }
       className="w-full"
     >
       <ModalCardProvider type={type}>
@@ -463,7 +573,7 @@ const PurchaseInvoiceLineForm = ({
             >
               <HStack
                 className={cn(
-                  "w-full justify-between items-start",
+                  "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                   type === "modal" && "pr-16"
                 )}
               >
@@ -473,30 +583,26 @@ const PurchaseInvoiceLineForm = ({
                       isEditing &&
                         !isGLAccount &&
                         !isFixedAsset &&
+                        !isLease &&
                         !itemData?.itemId &&
                         "text-muted-foreground"
                     )}
                   >
                     {isEditing
-                      ? isFixedAsset
-                        ? initialValues.assetReadableId || "Fixed Asset"
-                        : isGLAccount
-                          ? indirectData.description || "G/L Account"
-                          : (getItemReadableId(items, itemData?.itemId) ??
-                            "...")
+                      ? isLease
+                        ? initialValues.leaseReadableId || "Lease"
+                        : isFixedAsset
+                          ? initialValues.assetReadableId || "Fixed Asset"
+                          : isGLAccount
+                            ? indirectData.description || "G/L Account"
+                            : (getItemReadableId(items, itemData?.itemId) ??
+                              "...")
                       : "New Purchase Invoice Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>
-                          {isFixedAsset
-                            ? initialValues.assetName ||
-                              indirectData.description
-                            : isGLAccount
-                              ? "G/L Account"
-                              : itemData?.description}
-                        </span>
+                        {lineSubtitle && <span>{lineSubtitle}</span>}
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
                             {initialValues?.quantity}
@@ -523,7 +629,7 @@ const PurchaseInvoiceLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                   {!isEditing && (
                     <TabsList>
                       <TabsTrigger value="item">
@@ -537,6 +643,10 @@ const PurchaseInvoiceLineForm = ({
                       <TabsTrigger value="asset">
                         <LuLandmark className="mr-1" />
                         <Trans>Asset</Trans>
+                      </TabsTrigger>
+                      <TabsTrigger value="lease">
+                        <LuKeyRound className="mr-1" />
+                        <Trans>Lease</Trans>
                       </TabsTrigger>
                     </TabsList>
                   )}
@@ -557,14 +667,30 @@ const PurchaseInvoiceLineForm = ({
                   )}
                   <Hidden
                     name="inventoryUnitOfMeasureCode"
-                    value={itemData?.inventoryUom}
+                    value={
+                      isService
+                        ? EACH_UNIT_OF_MEASURE_CODE
+                        : itemData?.inventoryUom
+                    }
                   />
+                  {/* A service is always bought in EA, so no unit of
+                      measure or conversion factor is asked for. */}
+                  {isService && (
+                    <>
+                      <Hidden
+                        name="purchaseUnitOfMeasureCode"
+                        value={EACH_UNIT_OF_MEASURE_CODE}
+                      />
+                      <Hidden name="conversionFactor" value={1} />
+                    </>
+                  )}
                   <VStack>
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                       <Item
+                        autoFocus={!isEditing}
                         name="itemId"
-                        label={lineType}
-                        type={lineType}
+                        label={i18n._(itemTypeLabel(itemFilter))}
+                        type={itemFilter}
                         validItemTypes={[...itemType]}
                         locationId={locationId}
                         replenishmentSystem="Buy"
@@ -577,7 +703,7 @@ const PurchaseInvoiceLineForm = ({
                         onTypeChange={onTypeChange}
                       />
 
-                      <FormControl className="col-span-2">
+                      <FormControl className="col-span-2 max-md:col-span-full">
                         <FormLabel isOptional>
                           <Trans>Description</Trans>
                         </FormLabel>
@@ -608,46 +734,48 @@ const PurchaseInvoiceLineForm = ({
                             label={t`Quantity`}
                             value={itemData.quantity}
                             onChange={(value) => {
-                              const exchangeRate =
-                                routeData?.purchaseInvoice?.exchangeRate ?? 1;
                               setItemData((d) => ({
                                 ...d,
                                 quantity: value,
                                 supplierUnitPrice: resolveSupplierPrice(
-                                  d.priceBreaks,
+                                  d.pricing,
                                   value,
-                                  d.fallbackUnitPrice,
-                                  exchangeRate
+                                  invoiceCurrencyRate,
+                                  d.fallbackUnitPrice
                                 )
                               }));
                             }}
                           />
 
-                          <UnitOfMeasure
-                            name="purchaseUnitOfMeasureCode"
-                            label={t`Unit of Measure`}
-                            value={itemData.purchaseUom}
-                            onChange={(newValue) => {
-                              if (newValue) {
-                                setItemData((d) => ({
-                                  ...d,
-                                  purchaseUom: newValue?.value as string
-                                }));
-                              }
-                            }}
-                          />
-                          <ConversionFactor
-                            name="conversionFactor"
-                            purchasingCode={itemData.purchaseUom}
-                            inventoryCode={itemData.inventoryUom}
-                            value={itemData.conversionFactor}
-                            onChange={(value) => {
-                              setItemData((d) => ({
-                                ...d,
-                                conversionFactor: value
-                              }));
-                            }}
-                          />
+                          {!isService && (
+                            <>
+                              <UnitOfMeasure
+                                name="purchaseUnitOfMeasureCode"
+                                label={t`Unit of Measure`}
+                                value={itemData.purchaseUom}
+                                onChange={(newValue) => {
+                                  if (newValue) {
+                                    setItemData((d) => ({
+                                      ...d,
+                                      purchaseUom: newValue?.value as string
+                                    }));
+                                  }
+                                }}
+                              />
+                              <ConversionFactor
+                                name="conversionFactor"
+                                purchasingCode={itemData.purchaseUom}
+                                inventoryCode={itemData.inventoryUom}
+                                value={itemData.conversionFactor}
+                                onChange={(value) => {
+                                  setItemData((d) => ({
+                                    ...d,
+                                    conversionFactor: value
+                                  }));
+                                }}
+                              />
+                            </>
+                          )}
 
                           <NumberControlled
                             name="supplierUnitPrice"
@@ -762,18 +890,50 @@ const PurchaseInvoiceLineForm = ({
                   </VStack>
                 </TabsContent>
 
-                {(activeTab === "gl-account" || activeTab === "asset") && (
+                {(activeTab === "gl-account" ||
+                  activeTab === "asset" ||
+                  activeTab === "lease") && (
                   <>
                     <Hidden
                       name="invoiceLineType"
                       value={
-                        activeTab === "asset" ? "Fixed Asset" : "G/L Account"
+                        activeTab === "asset"
+                          ? "Fixed Asset"
+                          : activeTab === "lease"
+                            ? "Lease"
+                            : "G/L Account"
                       }
                     />
+                    {isLeasePayment && (
+                      <>
+                        <Hidden name="leaseId" value={indirectData.leaseId} />
+                        <Hidden
+                          name="leasePaymentId"
+                          value={initialValues.leasePaymentId}
+                        />
+                      </>
+                    )}
 
                     <VStack>
                       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                        {activeTab === "gl-account" ? (
+                        {activeTab === "lease" ? (
+                          // A lease line never carries a project or cost
+                          // center: it settles the lease, not a cost.
+                          <Combobox
+                            name={isLeasePayment ? "leasePicker" : "leaseId"}
+                            label={t`Lease`}
+                            isOptional={false}
+                            isReadOnly={isLeasePayment}
+                            options={leaseOptions}
+                            value={indirectData.leaseId}
+                            onChange={(selected) =>
+                              setIndirectData((d) => ({
+                                ...d,
+                                leaseId: (selected?.value as string) ?? ""
+                              }))
+                            }
+                          />
+                        ) : activeTab === "gl-account" ? (
                           <>
                             <Account
                               name="accountId"
@@ -822,7 +982,9 @@ const PurchaseInvoiceLineForm = ({
                         )}
                         <InputControlled
                           className={
-                            activeTab === "asset" ? "col-span-1" : "col-span-3"
+                            activeTab === "asset" || activeTab === "lease"
+                              ? "col-span-1"
+                              : "col-span-3 max-md:col-span-full"
                           }
                           label={t`Description`}
                           name="description"
@@ -850,9 +1012,13 @@ const PurchaseInvoiceLineForm = ({
                           name="quantity"
                           label={t`Quantity`}
                           isOptional={false}
-                          isDisabled={activeTab === "asset"}
+                          isDisabled={
+                            activeTab === "asset" || activeTab === "lease"
+                          }
                           value={
-                            activeTab === "asset" ? 1 : indirectData.quantity
+                            activeTab === "asset" || activeTab === "lease"
+                              ? 1
+                              : indirectData.quantity
                           }
                           onChange={(value) =>
                             setIndirectData((d) => ({
@@ -865,6 +1031,7 @@ const PurchaseInvoiceLineForm = ({
                           name="supplierUnitPrice"
                           label={t`Unit Price`}
                           isOptional={false}
+                          isDisabled={isLeasePayment}
                           value={indirectData.supplierUnitPrice}
                           formatOptions={INPUT_FORMAT.rate(
                             invoiceCurrency,

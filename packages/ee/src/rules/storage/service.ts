@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Cross-app DB queries for Storage Rules. Both ERP (admin UI, item/storage
 // surfaces) and MES (workCenter surfaces) import from here.
 //

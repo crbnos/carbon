@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   getItemPlanning,
@@ -23,8 +28,11 @@ import {
   ItemSupersessionForm
 } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
+import { replanAfterItemChange } from "~/modules/production/production.server";
 import { getLocationsList } from "~/modules/resources";
+import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -229,6 +237,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The column references the global user table, so the database would take
+  // a person from another company, or one since deactivated.
+  if (
+    validation.data.responsibleEmployee &&
+    !(await isActiveCompanyEmployee(
+      client,
+      companyId,
+      validation.data.responsibleEmployee
+    ))
+  ) {
+    return validationError({
+      fieldErrors: {
+        responsibleEmployee: "Choose an employee of this company"
+      },
+      formId: validation.formId
+    });
+  }
+
   const updatePartPlanning = await upsertItemPlanning(client, {
     ...validation.data,
     itemId,
@@ -244,6 +270,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  // The planning pages list MRP's suggestions; re-plan so they follow the
+  // new settings now, not at the next scheduled run.
+  await replanAfterItemChange(getDatabaseClient(), {
+    itemId,
+    companyId,
+    userId
+  });
 
   throw redirect(
     path.to.partPlanningLocation(itemId, validation.data.locationId),

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Checkbox,
@@ -20,6 +24,7 @@ import { forwardRef, useCallback, useEffect, useMemo, useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import { LuListFilter, LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import DateRangeFilter from "./DateRangeFilter";
 import type { ColumnFilter, Option } from "./types";
 import { useFilters } from "./useFilters";
 
@@ -106,7 +111,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
       } else if (filter.filter.type === "fetcher") {
         setLoading(true);
         fetcher.load(filter.filter.endpoint);
-      } else if (filter.filter.type === "custom") {
+      } else {
         setActiveOptions([]);
       }
     }, []);
@@ -196,6 +201,10 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                   ),
                 close: () => setOpen(false)
               })}
+            </div>
+          ) : activeFilter?.filter.type === "dateRange" ? (
+            <div className="w-auto min-w-[280px] p-2">
+              <DateRangeFilter accessorKey={activeFilter.accessorKey} />
             </div>
           ) : (
             <Command>

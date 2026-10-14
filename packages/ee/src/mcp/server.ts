@@ -1,5 +1,15 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // @ts-nocheck
 import { getLogger } from "@carbon/logger";
+import { describeRequest } from "@carbon/logger/middleware.server";
+import {
+  annotateRequestSpan,
+  nameRequestSpan,
+  withSpan
+} from "@carbon/logger/tracing.server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { requireEntitlement } from "../entitlements.server";
@@ -57,6 +67,25 @@ export async function createMcpServer<Ctx extends McpContext>(
     }
   );
 
+  // One span per tool call. An operation name comes from the client, so it is
+  // put in the span name only when it is a real operation.
+  const registerTool = server.registerTool.bind(server);
+  server.registerTool = (tool, config, handler) =>
+    registerTool(tool, config, (params, extra) => {
+      const operation = operationsByName.has(params?.name)
+        ? params.name
+        : undefined;
+      const attributes = {
+        "carbon.mcp.tool": tool,
+        ...(operation ? { "carbon.operation": operation } : {})
+      };
+      const call = operation ? `${tool} ${operation}` : tool;
+      annotateRequestSpan(attributes);
+      nameRequestSpan(`POST /api/mcp ${call}`);
+      describeRequest(call);
+      return withSpan(`mcp ${call}`, attributes, () => handler(params, extra));
+    });
+
   // Register describe_tool to get schema information for any tool
   server.registerTool(
     "describe_tool",
@@ -102,13 +131,20 @@ export async function createMcpServer<Ctx extends McpContext>(
           missing.push(toolName);
           continue;
         }
+        // A deprecated alias resolves to its replacement's entry (the app's
+        // `OPERATION_ALIASES`), so the names differ — say so, once, up front.
+        const deprecation =
+          meta.name === toolName
+            ? ""
+            : `'${toolName}' is deprecated — it now runs '${meta.name}'. Call '${meta.name}' instead.\n\n`;
         sections.push(
-          formatToolDescription(meta, {
-            isList: isListOperation(meta),
-            sibling: meta.paginates
-              ? null
-              : paginatingSibling(meta.name, (n) => operationsByName.get(n))
-          })
+          deprecation +
+            formatToolDescription(meta, {
+              isList: isListOperation(meta),
+              sibling: meta.paginates
+                ? null
+                : paginatingSibling(meta.name, (n) => operationsByName.get(n))
+            })
         );
       }
 

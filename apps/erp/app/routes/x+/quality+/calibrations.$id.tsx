@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import type z from "zod";
 import type { calibrationAttempt } from "~/modules/quality";
 import {
@@ -139,14 +145,14 @@ export default function GaugeCalibrationRecordRoute() {
     ...getCustomFields(record.customFields)
   };
 
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <GaugeCalibrationRecordForm
       key={id}
       initialValues={initialValues}
       files={files}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

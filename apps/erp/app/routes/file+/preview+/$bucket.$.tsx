@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { CompanyBucket } from "@carbon/files";
@@ -6,6 +10,7 @@ import {
   fileResponseHeaders,
   getCompanyPrivateBucket,
   getContentType,
+  imageTransformErrorMessage,
   isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
@@ -103,16 +108,20 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
         contentType = transformed.data.type || "image/jpeg";
         return transformed;
       }
-      // No imgproxy (stale self-host stack) — fall through to the raw bytes;
-      // Safari can still render them.
-      logger.error(transformed.error);
+      // No imgproxy (off by default locally, or a stale self-host stack) —
+      // fall through to the raw bytes; Safari can still render them.
+      logger.error(
+        imageTransformErrorMessage(
+          transformed.error,
+          "Failed to transform HEIC file"
+        ),
+        { path, error: transformed.error }
+      );
     }
     // Use the original encoded path for the storage API call
     return source.download(path);
   }
 
-  // No retry here: the client's fetchWithRetry already retries 5xx and
-  // network failures.
   const result = await downloadFile();
   if (result.error) {
     logger.error("Failed to download file", {

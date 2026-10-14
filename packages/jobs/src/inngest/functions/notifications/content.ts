@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
@@ -9,11 +13,17 @@ import {
 import { ERP_URL } from "@carbon/env";
 import {
   type NotificationDetail,
-  NotificationEvent
+  NotificationEvent,
+  type RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
+/** The approvable document of an Approval* event, or what a Recurring
+ *  invoicing notification lists. */
+type NotificationDocumentType =
+  | ApprovalDocumentType
+  | RecurringInvoicingDocumentType;
 
 // The ERP's /api/link route resolves event + documentId to the right page
 // (switching the user's active company first) — route shapes never leak here.
@@ -21,7 +31,7 @@ export function buildNotificationLink(
   event: NotificationEvent,
   documentId: string,
   companyId: string,
-  documentType?: ApprovalDocumentType
+  documentType?: NotificationDocumentType
 ): string {
   const params = new URLSearchParams({ event, documentId, companyId });
   if (documentType) params.set("documentType", documentType);
@@ -118,7 +128,7 @@ export function buildDetails(
 type EventContentOptions = {
   companyId: string;
   // Which approvable document an Approval* event is about.
-  documentType?: ApprovalDocumentType;
+  documentType?: NotificationDocumentType;
   documentIds?: string[];
   userId?: string;
   // Workflow-authored text, carried on the payload instead of read from a document.
@@ -1261,6 +1271,35 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "changeOrder") {
+        const co = await client
+          .from("changeOrder")
+          .select("changeOrderId, name, status")
+          .eq("id", documentId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (co.error || !co.data) {
+          console.error(
+            "Failed to retrieve change notice for approval notification",
+            co.error
+          );
+          return {
+            description: `Change notice ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `Change notice ${co.data.changeOrderId} ${docPhrase}`,
+          reference: co.data.changeOrderId ?? undefined,
+          details: buildDetails([
+            { label: "Name", value: co.data.name },
+            { label: "Status", value: co.data.status }
+          ])
+        };
+      }
+
       return {
         description:
           outcome === "requested"
@@ -1355,6 +1394,47 @@ async function buildEventContent(
       return {
         description: opts?.title ?? "Accounting sync needs attention",
         details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // The recurring-billing job says which date is coming up in `body`
+    // ("notice must be given by Jun 30, 2027"); the lease names the rest.
+    case NotificationEvent.LeaseCriticalDate: {
+      const lease = await client
+        .from("lease")
+        .select("leaseId, name, noticeDate, endDate, supplier(name)")
+        .eq("id", documentId)
+        .eq("companyId", opts.companyId)
+        .single();
+      if (lease.error) {
+        console.error("Failed to get lease", lease.error);
+        throw documentLookupError(lease.error);
+      }
+      return {
+        description: opts?.body
+          ? `Lease ${lease.data.leaseId}: ${opts.body}`
+          : `Lease ${lease.data.leaseId} has a date coming up`,
+        reference: lease.data.leaseId ?? undefined,
+        details: buildDetails([
+          { label: "Lease", value: lease.data.name },
+          { label: "Supplier", value: lease.data.supplier?.name },
+          {
+            label: "Notice by",
+            value: formatDetailDate(lease.data.noticeDate)
+          },
+          { label: "Ends", value: formatDetailDate(lease.data.endDate) }
+        ])
+      };
+    }
+
+    // Payload-carried digest: the recurring-billing job sends the counts as
+    // `body`; documentIds are the invoices it touched, but nothing is read.
+    case NotificationEvent.RecurringInvoicing: {
+      return {
+        description: opts?.body
+          ? `Recurring invoicing: ${opts.body}`
+          : "Recurring invoicing",
+        details: []
       };
     }
 

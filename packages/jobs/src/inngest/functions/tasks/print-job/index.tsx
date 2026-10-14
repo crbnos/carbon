@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { BINDERY_PRESS_API_KEY } from "@carbon/env";
@@ -309,7 +313,7 @@ async function processDocumentType(
         renderError instanceof Error
           ? renderError.message
           : String(renderError);
-      log.error(`Rendering failed for job ${jobId}`, { error: message });
+      log.error("Rendering failed for job {jobId}", { jobId, error: message });
       await updatePrintJobStatus(client, jobId, companyId, "failed", {
         error: `Rendering failed: ${message}`
       });

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   type CostingLine,
@@ -8,6 +12,7 @@ import {
 import { createMappingService } from "../../../core/external-mapping";
 import {
   JournalEntrySyncError,
+  noPostedJournalMessage,
   toPostingDateString
 } from "../../../core/posting";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
@@ -139,7 +144,7 @@ function describeCostingLine(line: CostingLine): string | undefined {
  * The costing lines carry base-currency debit-signed amounts;
  * `bill.exchangeRate` converts them to the invoice's transaction currency
  * (rounded at the document currency boundary). Throws structured Warnings when the journal is
- * missing (invoice not posted / accounting off) or an account is unmapped.
+ * missing (invoice not posted, or dated before the accounting cutover) or an account is unmapped.
  */
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
@@ -167,7 +172,11 @@ export function mapBillToRilletBill(args: {
   if (args.postingJournalLines.length === 0) {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
+      message: noPostedJournalMessage({
+        subject: `bill ${bill.invoiceId}`,
+        journal: "Purchase Invoice",
+        document: "invoice"
+      }),
       warning: true,
       metadata: { billId: bill.id }
     });

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -169,7 +173,7 @@ const SalesOrderShipmentForm = forwardRef<
             />
 
             <Input name="trackingNumber" label={t`Tracking Number`} />
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="dropShipment"
                 label={t`Drop Shipment`}

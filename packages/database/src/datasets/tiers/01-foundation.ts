@@ -1,4 +1,13 @@
-import { resolveDate } from "../dates.ts";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  monthBack,
+  resolveDate,
+  resolveTimestamp,
+  SEEDED_PERIOD_MONTHS
+} from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import {
   insertId,
@@ -29,6 +38,33 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.foundation;
   const { client, companyId, locationId } = ctx;
 
+  // ── Accounting cutover ───────────────────────────────────────────────────
+  // A demo company keeps its ledger in Carbon from its first seeded period
+  // (SEEDED_PERIOD_MONTHS back), so every seeded journal is on or after the
+  // cutover and every posting the user makes is Posted. seed-company leaves a
+  // new company without a cutover (it stays Provisional until activation), so
+  // this is usually the first one. Written even when the company already has
+  // one (an app-created company applied through Settings → Demo Data): a later
+  // cutover would leave the seeded journals before it. It is one-way otherwise;
+  // `check_accounting_config_locked` lets this write through only because
+  // `applyDatasetTiers` sets app.dataset_apply in the apply's transaction.
+  ctx.log("accounting cutover");
+  const cutover = monthBack(ctx.anchor, SEEDED_PERIOD_MONTHS - 1).start;
+  await insertRow(
+    ctx,
+    "companySettings",
+    {
+      id: companyId,
+      accountingCutoverDate: cutover.toString(),
+      accountingActivatedAt: resolveTimestamp(ctx.anchor, 0, "00:00:00"),
+      accountingActivatedBy: ctx.userId
+    },
+    {
+      onConflict:
+        '("id") DO UPDATE SET "accountingCutoverDate" = EXCLUDED."accountingCutoverDate", "accountingActivatedAt" = EXCLUDED."accountingActivatedAt", "accountingActivatedBy" = EXCLUDED."accountingActivatedBy"'
+    }
+  );
+
   // ── Departments ──────────────────────────────────────────────────────────
   ctx.log("departments");
   for (const name of data.departments) {
@@ -50,22 +86,17 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Abilities ─────────────────────────────────────────────────────────────
   // Each ability is the qualification for a process. Reuse a same-named process
-  // when the dataset already defines one (marking it as requiring the ability);
-  // otherwise mint a dedicated process for the qualification.
+  // when the dataset already defines one; otherwise mint a dedicated process for
+  // the qualification. No process requires its ability, so a demo user can run
+  // any operation without first being trained on it.
   ctx.log("abilities");
   for (const name of data.abilities) {
     let processId = ctx.refs.processes[name];
-    if (processId) {
-      await ctx.client.query(
-        `UPDATE "process" SET "requiresAbility" = true WHERE "id" = $1 AND "companyId" = $2`,
-        [processId, ctx.companyId]
-      );
-    } else {
+    if (!processId) {
       processId = await insertId(ctx, "process", {
         name,
         defaultStandardFactor: "Minutes/Piece",
-        processType: "Process",
-        requiresAbility: true
+        processType: "Process"
       });
       ctx.refs.processes[name] = processId;
     }

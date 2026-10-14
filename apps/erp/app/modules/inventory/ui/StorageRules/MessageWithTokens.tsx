@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, useField, useFormStateContext } from "@carbon/form";
 import {
   Button,
@@ -333,7 +337,7 @@ export default function MessageWithTokens({
   // Identical typography between the overlay and the textarea — any drift
   // here desyncs the highlighted rectangles from the rendered glyphs.
   const sharedTypography =
-    "px-3 py-2 text-sm leading-[1.25rem] font-sans whitespace-pre-wrap break-words";
+    "px-3 py-2 text-sm leading-[1.25rem] font-sans whitespace-pre-wrap break-words max-md:text-base max-md:leading-6";
 
   const inputProps = getInputProps<TextareaHTMLAttributes<HTMLTextAreaElement>>(
     {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Re-point the registered Ramp webhook at a new origin (e.g. an ngrok tunnel so
  * Ramp's sandbox can reach a local dev server).
@@ -24,7 +28,7 @@
  */
 
 // Deep subpath, NOT the `@carbon/auth` barrel: the barrel transitively pulls
-// `@carbon/react`, whose `LabelWithHelp` value-imports `@carbon/glossary`, whose
+// `@carbon/react`, whose `LabelWithHelp` value-imports `@carbon/content/glossary`, whose
 // `msg` Lingui macro throws under plain tsx ("msg is not a function"). This
 // module is server-only and macro-free.
 import { getCarbonServiceRole } from "@carbon/auth/client.server";

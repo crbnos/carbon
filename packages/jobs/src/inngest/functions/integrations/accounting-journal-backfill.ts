@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Journal posting-disposition backfill (spec I1 missed-event repair).
  *
@@ -16,8 +20,10 @@
  * that job. It is provider-agnostic here and reachable on its own.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   getAccountingIntegration,
+  isAccountingSyncEnabled,
   ProviderID,
   resolvePostingSyncSettings
 } from "@carbon/ee/accounting";
@@ -81,6 +87,11 @@ export const accountingJournalBackfillFunction = inngest.createFunction(
         skippedReason: null as string | null
       };
 
+      if (!isAccountingSyncEnabled(phaseIntegration.metadata)) {
+        summary.skippedReason = "sync is turned off for this integration";
+        return summary;
+      }
+
       if (!isJournalEntryPostingEnabled(phaseIntegration.metadata)) {
         summary.skippedReason = "posting sync (journalEntry) disabled";
         return summary;
@@ -104,7 +115,7 @@ export const accountingJournalBackfillFunction = inngest.createFunction(
           .from("journal")
           .select("id, sourceType, status, reversalOfId")
           .eq("companyId", payload.companyId)
-          .in("status", ["Posted", "Reversed"])
+          .in("status", GL_JOURNAL_STATUSES)
           .is("reversalOfId", null)
           .gte("postingDate", syncFromDate)
           .order("id", { ascending: true })

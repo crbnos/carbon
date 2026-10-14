@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -137,14 +141,14 @@ export default function SharedSectionsRoute() {
     <ScrollArea className="h-full w-full">
       <VStack
         spacing={4}
-        className="mx-auto h-full max-w-[60rem] gap-6 px-4 py-12"
+        className="mx-auto h-full max-w-[60rem] gap-6 px-4 py-12 max-md:py-3"
       >
-        <div className="flex w-full items-start justify-between">
+        <div className="flex w-full items-start justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
           <div className="flex items-center gap-3">
             <Link
               to={path.to.documentTemplates}
               aria-label="Back to templates"
-              className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground max-md:shrink-0 max-md:hit-area"
             >
               <LuArrowLeft className="size-4" />
             </Link>

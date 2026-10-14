@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { generateQRCode } from "../qr/qr-code";
@@ -14,6 +18,7 @@ interface KanbanLabel {
   storageUnitName?: string | null;
   fromStorageUnitName?: string | null;
   quantity: number;
+  replenishmentLevel?: number | null;
   unitOfMeasureCode?: string | null;
   thumbnail?: string | null;
 }
@@ -220,6 +225,20 @@ const KanbanLabelPDF = ({
                               ? ` ${label.unitOfMeasureCode}`
                               : ""}
                           </Text>
+                          {label.replenishmentLevel != null && (
+                            <Text
+                              style={{
+                                ...tw("text-center"),
+                                fontSize: "16pt",
+                                fontWeight: "bold"
+                              }}
+                            >
+                              {/* The level is in stock units at the To
+                                  storage unit; unitOfMeasureCode is the
+                                  purchase unit, so MIN prints no unit. */}
+                              MIN: {label.replenishmentLevel}
+                            </Text>
+                          )}
                         </View>
                       </View>
 

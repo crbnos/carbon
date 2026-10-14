@@ -26,7 +26,7 @@
     "zod-form-data": "catalog:"
   },
   "dependencies": {
-    "@carbon/glossary": "workspace:*",
+    "@carbon/content": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@internationalized/date": "catalog:",
     "@react-aria/i18n": "catalog:",

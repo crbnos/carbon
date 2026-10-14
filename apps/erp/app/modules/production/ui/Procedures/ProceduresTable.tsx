@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -65,6 +70,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -80,6 +86,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <TbRoute />,
           filter: {
             type: "static",
@@ -92,6 +99,8 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <ProcedureStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
+          mobilePill: true,
           icon: <LuCalendar />
         }
       },
@@ -102,6 +111,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuUser />
         }
       },
@@ -186,6 +196,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "production")}
             onClick={() => {
               navigate(`${path.to.procedure(row.id!)}`);
@@ -195,6 +206,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
             Edit Procedure
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => {

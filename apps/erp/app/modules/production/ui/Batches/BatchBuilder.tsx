@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -31,12 +36,14 @@ import {
   Spinner,
   toast,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
   type BatchRuleDimension,
   type BatchRules,
   type BatchType,
+  distinctItemText,
   formatDate,
   formatDurationMilliseconds,
   RoundingMode,
@@ -47,12 +54,10 @@ import {
   type CalendarDate,
   getLocalTimeZone,
   parseDate,
-  toCalendarDate,
   today
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import type { DateRange } from "@react-types/datepicker";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -72,6 +77,9 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { DateSelect, Enumerable, ItemThumbnail, Table } from "~/components";
+import DateRangeFields, {
+  type DateRangeValue
+} from "~/components/DateRangeFields";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
@@ -340,17 +348,13 @@ export function BatchBuilder({
   const [search, setSearch] = useState("");
   const [facets, setFacets] = useState<Record<string, string[]>>({});
   // The due filter as the standard DateSelect holds it: "all", a preset day
-  // count, or "custom" with the calendar's range.
+  // count, or "custom" with a From / To range, either side open.
   const [dueSelect, setDueSelect] = useState("all");
-  const [dueRange, setDueRange] = useState<DateRange | null>(null);
+  const [dueRange, setDueRange] = useState<DateRangeValue | null>(null);
   const due = useMemo<DueFilter | null>(() => {
     if (dueSelect === "custom") {
-      return dueRange
-        ? {
-            kind: "range",
-            start: toCalendarDate(dueRange.start),
-            end: toCalendarDate(dueRange.end)
-          }
+      return dueRange && (dueRange.from || dueRange.to)
+        ? { kind: "range", start: dueRange.from, end: dueRange.to }
         : null;
     }
     const days = Number(dueSelect);
@@ -407,22 +411,20 @@ export function BatchBuilder({
     processes
   ]);
 
-  const candidatesFetcher = useFetcher<CandidatesResponse>();
   const submitFetcher = useFetcher<{
     success?: boolean;
     message?: string;
     batchId?: string | null;
   }>();
 
-  // Load candidates whenever the scope is complete. Only the scope drives the
-  // fetch — the fetcher's `.load` identity is unstable and must not be a dep.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — scope-only trigger
-  useEffect(() => {
-    if (!locationId || !processId) return;
-    candidatesFetcher.load(
-      path.to.api.batchableOperations(locationId, processId)
-    );
-  }, [locationId, processId]);
+  // Candidates for the scope, once it is complete. `staleTime: 0`: operations
+  // move on the shop floor, so each scope change asks again.
+  const candidatesFetcher = useLoaderQuery<CandidatesResponse>(
+    locationId && processId
+      ? path.to.api.batchableOperations(locationId, processId)
+      : null,
+    { staleTime: 0 }
+  );
 
   // A scope change invalidates the current selection and filters.
   const resetComposition = useCallback(() => {
@@ -804,7 +806,7 @@ export function BatchBuilder({
         fd.set("lotNumbers", JSON.stringify(lots.lotNumbers));
       }
       // Create & Release: the create validator's zfd.checkbox reads "on" and
-      // the edge fn inserts the batch already Active (on the floor).
+      // the server fn inserts the batch already Active (on the floor).
       if (opts?.release) fd.set("release", "on");
       if (opts?.purchaseOrdersBySupplierId) {
         fd.set(
@@ -823,7 +825,7 @@ export function BatchBuilder({
   const isSubmitting = submitFetcher.state !== "idle";
   // Output lots are planned here; a batch never reaches the floor without them.
   const lotPlanIncomplete = outputLotsProblem(selected, outputLots) !== null;
-  const isLoading = candidatesFetcher.state !== "idle";
+  const isLoading = candidatesFetcher.isFetching;
 
   const locationOptions = useMemo(
     () =>
@@ -872,9 +874,9 @@ export function BatchBuilder({
   );
 
   // Release needs a work center the batch can run at: the explicit pick, or —
-  // mirroring the edge fn's adoption rule — the single distinct work center
+  // mirroring the server fn's adoption rule — the single distinct work center
   // the selected members already sit on (members without one don't block
-  // adoption). Otherwise the edge fn refuses Create & Release.
+  // adoption). Otherwise the server fn refuses Create & Release.
   const memberWorkCenterIds = useMemo(() => {
     const ids = new Set<string>();
     for (const c of selected) {
@@ -1143,6 +1145,16 @@ function DrawerBodyGrid({
   left: React.ReactNode;
   right: React.ReactNode;
 }) {
+  const { isPhone } = useViewport();
+  if (isPhone) {
+    return (
+      <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
+        <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
+        <div className="flex h-full flex-shrink-0 flex-col">{left}</div>
+        <div className="flex flex-shrink-0 flex-col border-t">{right}</div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
       <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
@@ -1252,7 +1264,7 @@ function ScopeBar({
             <Trans>Scope</Trans>
           </span>
         </HStack>
-        <div className="w-[220px]">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={locationId}
@@ -1261,7 +1273,7 @@ function ScopeBar({
             placeholder={t`Location`}
           />
         </div>
-        <div className="w-[220px]">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={processId ?? ""}
@@ -1623,8 +1635,8 @@ function ComposePanel({
   dimensions: FacetDimension[];
   dueSelect: string;
   onDueSelectChange: (value: string) => void;
-  dueRange: DateRange | null;
-  onDueRangeChange: (range: DateRange | null) => void;
+  dueRange: DateRangeValue | null;
+  onDueRangeChange: (range: DateRangeValue | null) => void;
   isDueFiltered: boolean;
   dueDays: Set<string>;
   suggestions: Suggestion[];
@@ -1714,10 +1726,17 @@ function ComposePanel({
             value={dueSelect}
             onValueChange={onDueSelectChange}
             options={dueOptions}
-            dateRange={dueRange}
-            onDateRangeChange={onDueRangeChange}
-            isDateMarked={isDueDay}
           />
+          {dueSelect === "custom" && (
+            <DateRangeFields
+              layout="inline"
+              autoOpen
+              defaultValue={dueRange ?? undefined}
+              // From after To: keep filtering by the last valid range
+              onChange={(range) => range && onDueRangeChange(range)}
+              isDateMarked={isDueDay}
+            />
+          )}
         </HStack>
         {view === "table" && suggestions.length > 0 && (
           <SuggestionsBanner
@@ -1848,7 +1867,8 @@ function CandidateTable({
         header: t`Job`,
         cell: ({ row }) => (
           <span className="font-medium">{row.original.jobReadableId}</span>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         id: "jobStatus",
@@ -1871,9 +1891,14 @@ function CandidateTable({
               <span className="text-sm truncate">
                 {row.original.itemReadableId}
               </span>
-              <span className="text-xs text-muted-foreground truncate">
-                {row.original.itemDescription}
-              </span>
+              {distinctItemText(
+                row.original.itemReadableId,
+                row.original.itemDescription
+              ) && (
+                <span className="text-xs text-muted-foreground truncate">
+                  {row.original.itemDescription}
+                </span>
+              )}
             </VStack>
           </HStack>
         )
@@ -1937,6 +1962,7 @@ function CandidateTable({
   return (
     <div className="flex-1 min-h-0 overflow-hidden w-full px-4">
       <Table<BatchCandidate>
+        mobileLayout="table"
         compact
         data={visible}
         columns={columns}

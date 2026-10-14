@@ -3,9 +3,9 @@ title: Jobs
 description: One run of production, covering a single item, a quantity to make, and its own copy of the method.
 ---
 
-A **job** is the unit of production work in Carbon. It pins down one item, how many to make, where, and by when, and carries its own copy of the <Term id="method">manufacturing method</Term> (the materials and operations) so the floor always builds from a fixed recipe, even as the part master changes underneath it.
+A **job** is a production order for one item, quantity, location, and due date. It contains a job-specific copy of the <Term id="method">manufacturing method</Term>, including materials and operations, so later changes to the item master do not alter released work.
 
-Everything on the shop floor hangs off a job: the schedule board places its <Term id="job-operation">operations</Term>, material is <Term id="material-issue">issued</Term> against it, time is logged to it, and cost accumulates into its <Term id="wip">work-in-process</Term>. A <Term id="sales-order">sales order</Term> line that's made to order becomes a job; planning turns a stock shortfall into one. It's the bridge between demand and the floor.
+The schedule places a job's <Term id="job-operation">operations</Term>; operators <Term id="material-issue">issue</Term> material and record time against it; and costs accumulate in <Term id="wip">work-in-process</Term>. Make-to-order <Term id="sales-order">sales order</Term> lines and planning shortages can create jobs.
 
 ## Fields
 
@@ -47,6 +47,8 @@ A **Completed**, **Closed**, or **Cancelled** job is locked. Its method, quantit
 In the Jobs list, the **Ready** status is labelled **"Released"** — the underlying value is still `Ready`. Note also the spelling: a job is **Cancelled** (two L's), but a job *operation* is **Canceled** (one L). Different enums, different spelling.
 </Callout>
 
+To release several jobs at once, select them in the Jobs list and choose **"Release Jobs"** from the actions menu. Only **Draft** and **Planned** jobs in the selection are released. There is no dialog here: a job that needs fixing, or whose outside operations go to a supplier that already has a draft purchase order to choose from, is skipped and named in the summary. Release those from the job itself.
+
 ## Operations
 
 The job's <Term id="routing">routing</Term> is copied into job-specific **operations** on release, each a process on a <Term id="work-center">work center</Term>, carrying its own setup, labor, and machine time. The floor runs the job by running its operations, and each carries its own status. A job reads **"In Progress"** the moment any single operation does.
@@ -75,7 +77,7 @@ The **order** field sets each operation's position, and operation order (*After 
 
 ### Time and output
 
-The floor reports two separate things against an operation. A <Term id="production-event">production event</Term> measures *time*, typed **Setup**, **Labor**, or **Machine**, with a start, an end, and the employee. A production quantity measures *units* (**Production**, [**Scrap**](/docs/reference/scrap), or **Rework**) and rolls up automatically into the operation's completed, scrapped, and reworked totals. Scrapped units don't count toward the target, so the operation keeps going until the good quantity is met. Logging time implies no output, and reporting output implies no particular time, which is what lets Carbon cost on actual events while measuring yield on actual quantities. Untracked materials are <Term id="backflush">backflushed</Term> as output is reported; tracked materials are issued deliberately.
+The floor records time and output separately. A <Term id="production-event">production event</Term> records **Setup**, **Labor**, or **Machine** time with start, end, and employee. A production quantity records **Production**, [**Scrap**](/docs/reference/scrap), or **Rework** units and updates operation totals. Scrap does not satisfy the target quantity. Untracked materials are <Term id="backflush">backflushed</Term> when output is reported; tracked materials are issued explicitly.
 
 ### Procedures
 

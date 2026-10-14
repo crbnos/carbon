@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -17,17 +21,14 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuShield } from "react-icons/lu";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import type { CompanyPermission } from "~/modules/users";
@@ -41,19 +42,18 @@ import {
 } from "~/modules/users";
 import { getClaims } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 // The per-user permissions editor is a modal over the accounts list; when the
 // company isn't entitled we show the upgrade prompt IN that modal (not a
 // full-page overlay), so closing it returns to the accounts list — which stays
 // fully usable (inviting people is a Community feature).
 function PermissionsUpgradeModal() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />
@@ -203,11 +203,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   throw redirect(path.to.employeeAccounts, await flash(request, result));
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function UsersEmployeeRoute() {

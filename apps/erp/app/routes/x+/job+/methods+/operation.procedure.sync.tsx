@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { procedureSyncValidator } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -23,16 +28,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = await getCarbonServiceRole();
-  const sync = await serviceRole.functions.invoke("get-method", {
-    body: {
+  const sync = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("get-method", {
       type: "procedureToOperation",
       sourceId: validation.data.procedureId,
-      targetId: validation.data.operationId,
-      companyId,
-      userId
-    }
-  });
+      targetId: validation.data.operationId
+    });
 
   if (sync.error) {
     return data(

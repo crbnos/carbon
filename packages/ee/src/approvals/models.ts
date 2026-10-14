@@ -1,19 +1,27 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+// The approve / reject form every approval document type posts.
 export const approvalDecisionValidator = z.object({
-  id: zfd.text(z.string().optional()),
+  approvalRequestId: z
+    .string()
+    .min(1, { message: "Approval request is required" }),
   decision: z.enum(["Approved", "Rejected"], {
     error: "Decision is required"
   }),
-  decisionNotes: zfd.text(z.string().optional())
+  notes: zfd.text(z.string().optional())
 });
 
 export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
-  "supplier"
+  "supplier",
+  "changeOrder"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -22,7 +30,8 @@ export type ApprovalDocumentType =
 export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
-  supplier: "Supplier"
+  supplier: "Supplier",
+  changeOrder: "Change Notice"
 };
 
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [

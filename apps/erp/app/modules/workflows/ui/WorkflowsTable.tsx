@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -29,6 +34,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -69,7 +75,7 @@ const WorkflowsTable = memo(
               {row.original.name}
             </Hyperlink>
           ),
-          meta: { icon: <LuWorkflow /> }
+          meta: { mobile: "P1", icon: <LuWorkflow /> }
         },
         {
           accessorKey: "description",
@@ -88,7 +94,7 @@ const WorkflowsTable = memo(
               </Tooltip>
             );
           },
-          meta: { icon: <LuText /> }
+          meta: { mobile: "P3", icon: <LuText /> }
         },
         {
           id: "status",
@@ -102,6 +108,7 @@ const WorkflowsTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuBadgeCheck />,
             filterHeader: t`Status`,
             filter: {
@@ -191,11 +198,15 @@ const WorkflowsTable = memo(
     const renderContextMenu = useCallback(
       (row: Workflow) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.workflow(row.id))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.open}
+            onClick={() => navigate(path.to.workflow(row.id))}
+          >
             <MenuIcon icon={<LuWorkflow />} />
             {t`Open Workflow`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.rename}
             disabled={!permissions.can("update", "workflows")}
             onClick={() => {
               flushSync(() => setSelectedWorkflow(row));
@@ -218,6 +229,7 @@ const WorkflowsTable = memo(
             {t`Unpublish`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "workflows")}
             onClick={() => {
@@ -248,12 +260,14 @@ const WorkflowsTable = memo(
           count={count}
           primaryAction={
             permissions.can("create", "workflows") && (
-              <Button
-                leftIcon={<LuCirclePlus />}
-                onClick={newDisclosure.onOpen}
-              >
-                {t`New Workflow`}
-              </Button>
+              <NewAction label={t`New Workflow`} onClick={newDisclosure.onOpen}>
+                <Button
+                  leftIcon={<LuCirclePlus />}
+                  onClick={newDisclosure.onOpen}
+                >
+                  {t`New Workflow`}
+                </Button>
+              </NewAction>
             )
           }
           renderContextMenu={renderContextMenu}

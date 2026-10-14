@@ -1,37 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { AccountClass } from "@carbon/database/ledger";
 import type { CalendarDate } from "@internationalized/date";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { formatDate } from "./date";
 
-type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
-type AccountClass = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
-
-export const credit = (accountType: AccountType, amount: number) => {
-  switch (accountType) {
-    case "asset":
-    case "expense":
-      return -amount;
-    case "liability":
-    case "equity":
-    case "revenue":
-      return amount;
-    default:
-      throw new Error(`Invalid account type: ${accountType}`);
-  }
-};
-
-export const debit = (accountType: AccountType, amount: number) => {
-  switch (accountType) {
-    case "asset":
-    case "expense":
-      return amount;
-    case "liability":
-    case "equity":
-    case "revenue":
-      return -amount;
-    default:
-      throw new Error(`Invalid account type: ${accountType}`);
-  }
-};
+export {
+  type AccountClass,
+  type AccountType,
+  accountTypeFromClass,
+  credit,
+  debit,
+  isAccountClass,
+  toStoredAmount
+} from "@carbon/database/ledger";
 
 function isNaturalDebitAccount(cls: AccountClass): boolean {
   return cls === "Asset" || cls === "Expense";
@@ -53,16 +37,6 @@ export function toDisplayCredit(
     ? amount < 0
     : amount > 0;
   return isCredit ? Math.abs(amount) : 0;
-}
-
-export function toStoredAmount(
-  debitAmount: number,
-  creditAmount: number,
-  accountClass: AccountClass
-): number {
-  const type = accountClass.toLowerCase() as AccountType;
-  if (debitAmount > 0) return debit(type, debitAmount);
-  return credit(type, creditAmount);
 }
 
 // Posting source distinguishes operational documents (receipts, shipments,

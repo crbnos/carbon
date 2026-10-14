@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Write a GLB from the tessellated assembly tree — port of `app/glb.py`. The
 //! glTF node tree mirrors graph.json 1:1, every node carries `extras.nodeId`,
 //! identical parts (same geometryHash) share one mesh, materials dedupe by RGBA.

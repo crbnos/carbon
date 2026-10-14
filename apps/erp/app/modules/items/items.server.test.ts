@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
 // items.server's only runtime dependency; stubbed so the pure verdict logic
@@ -5,10 +9,10 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("~/modules/settings", () => ({ getCompanySettings: vi.fn() }));
 
 // items.server pulls the items module graph (via ~/modules/items), which
-// transitively loads @carbon/glossary — whose module-load-time Lingui `msg`
+// transitively loads @carbon/content/glossary — whose module-load-time Lingui `msg`
 // macro isn't transformed under plain vitest and throws. Stub it; the verdict
 // logic under test needs none of it.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),
@@ -67,8 +71,9 @@ const MAX_ROWS = 1000;
 
 // Stands in for the two list reads the batch guard makes. Supabase builders are
 // thenables, so the chain resolves on await without a terminal method. Each
-// read is answered from the ids its own `in` filter carries and truncated at
-// MAX_ROWS, so a guard that stopped batching visibly drops rows.
+// read is answered from the ids its own `in` filter carries, sliced to the
+// `range` page fetchAllByIds asks for and truncated at MAX_ROWS, so a guard
+// that stopped batching or paging visibly drops rows.
 function fakeListClient(
   rows: { item?: Row[]; changeOrder?: Row[] },
   errors: { item?: boolean; changeOrder?: boolean } = {}
@@ -78,6 +83,7 @@ function fakeListClient(
       const failed = errors[table as keyof typeof errors] === true;
       const all = rows[table as keyof typeof rows] ?? [];
       let requested: string[] | null = null;
+      let page: [number, number] | null = null;
       const builder = {
         select: () => builder,
         in: (_column: string, ids: string[]) => {
@@ -85,6 +91,11 @@ function fakeListClient(
           return builder;
         },
         eq: () => builder,
+        order: () => builder,
+        range: (from: number, to: number) => {
+          page = [from, to];
+          return builder;
+        },
         then: (
           resolve: (value: {
             data: Row[] | null;
@@ -98,6 +109,7 @@ function fakeListClient(
                   .filter(
                     (row) => !requested || requested.includes(row?.id as string)
                   )
+                  .slice(page?.[0] ?? 0, page ? page[1] + 1 : undefined)
                   .slice(0, MAX_ROWS),
             error: failed ? { message: `failed to read ${table}` } : null
           })

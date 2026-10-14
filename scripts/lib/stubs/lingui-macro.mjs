@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Inert stand-in for the Lingui macro packages (`@lingui/react/macro`,
 // `@lingui/core/macro`, `@lingui/macro`), aliased in by `validator-loader.ts`.
 //

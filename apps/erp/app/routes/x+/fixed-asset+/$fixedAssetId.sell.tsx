@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,10 +15,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
 import { z } from "zod";
 import { Customer, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -28,14 +33,14 @@ const sellAssetValidator = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -73,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { customerId } = validation.data;
 
   const [asset, defaults] = await Promise.all([
-    getFixedAsset(client, fixedAssetId),
+    getFixedAsset(client, fixedAssetId, companyId),
     getUserDefaults(client, userId, companyId)
   ]);
 
@@ -129,14 +134,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function SellFixedAssetRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const permissions = usePermissions();
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalContent>
@@ -154,7 +159,7 @@ export default function SellFixedAssetRoute() {
               <Submit isDisabled={!permissions.can("create", "sales")}>
                 Create Sales Order
               </Submit>
-              <Button size="md" variant="solid" onClick={() => navigate(-1)}>
+              <Button size="md" variant="solid" onClick={() => closeRoute()}>
                 Cancel
               </Button>
             </HStack>

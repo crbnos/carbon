@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge, cn, HStack } from "@carbon/react";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
@@ -28,7 +32,7 @@ export function FileBadge({
         <DocumentPreview
           bucket="private"
           pathToFile={getPath(file)}
-          // @ts-ignore
+          // @ts-expect-error
           type={type}
         >
           <Badge variant="secondary" className={cn("max-w-[240px]", className)}>
@@ -45,7 +49,7 @@ export function FileBadge({
 
       <LuDownload
         onClick={() => download(file)}
-        className="cursor-pointer group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
+        className="cursor-pointer group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
       />
     </HStack>
   );

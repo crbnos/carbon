@@ -16,7 +16,7 @@ image="$REGISTRY/carbon/$name"
 target=""
 args=""
 
-# erp, mes and ops share the root Dockerfile's deps stage.
+# erp and mes share the root Dockerfile's deps stage.
 node=(Dockerfile .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml
   .npmrc turbo.json lingui.config.js apps/erp apps/mes packages patches scripts)
 
@@ -26,14 +26,16 @@ case "$name" in
     args="APP=$name"$'\n'"NODE_OPTIONS=--max-old-space-size=4096"
     paths=("${node[@]}")
     ;;
-  ops)
+  bootstrap)
+    # Installs only @carbon/database, so only that package rebuilds it.
     file=Dockerfile
-    target=ops
-    paths=("${node[@]}")
+    target=bootstrap
+    paths=(Dockerfile .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml
+      .npmrc patches packages/config packages/database)
     ;;
   edge-functions)
-    file=docker/edge-functions/Dockerfile
-    paths=(docker/edge-functions packages/database/supabase/functions)
+    file=packages/database/supabase/edge-runtime/Dockerfile
+    paths=(packages/database/supabase/edge-runtime packages/database/supabase/functions)
     ;;
   assembler)
     file=apps/assembler/Dockerfile

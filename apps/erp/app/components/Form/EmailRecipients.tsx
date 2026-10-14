@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useField } from "@carbon/form";
+import { cachedApiQuery, RefreshRate } from "@carbon/query";
 import {
   Badge,
   BadgeCloseButton,
@@ -29,13 +34,6 @@ import { LuUsers } from "react-icons/lu";
 import type { User, UserSelectGroup } from "~/modules/users";
 import { isValidEmail } from "~/utils/form";
 import { path } from "~/utils/path";
-import {
-  cachedApiQuery,
-  getCompanyId,
-  groupEmailsQuery,
-  userSelectGroupsQuery,
-  userSelectSearchQuery
-} from "~/utils/react-query";
 
 type EmailRecipientsProps = {
   name: string;
@@ -78,9 +76,7 @@ const useEmailOptions = (
   } | null>(null);
 
   useMount(() => {
-    const companyId = getCompanyId();
     cachedApiQuery<{ groups: UserSelectGroup[]; hasMore: boolean }>(
-      userSelectGroupsQuery(companyId, type, 0),
       path.to.api.userSelectGroups(type, 0)
     )
       .then((data) => setTopGroups(data.groups))
@@ -94,11 +90,10 @@ const useEmailOptions = (
       setSearchResults(null);
       return;
     }
-    const companyId = getCompanyId();
     const timeout = setTimeout(() => {
       cachedApiQuery<{ groups: UserSelectGroup[]; users: User[] }>(
-        userSelectSearchQuery(companyId, type, q, ""),
-        path.to.api.userSelectSearch(q, type)
+        path.to.api.userSelectSearch(q, type),
+        { staleTime: RefreshRate.High }
       )
         .then(setSearchResults)
         .catch(() => setSearchResults(null));
@@ -225,13 +220,9 @@ export default function EmailRecipients({
       addEmail(option.email);
     } else {
       try {
-        const companyId = getCompanyId();
         const { emails: groupEmails } = await cachedApiQuery<{
           emails: string[];
-        }>(
-          groupEmailsQuery(companyId, option.id),
-          path.to.api.userSelectGroupEmails(option.id)
-        );
+        }>(path.to.api.userSelectGroupEmails(option.id));
         addEmails(groupEmails);
       } catch {
         // leave the input as-is — selecting again retries
@@ -261,7 +252,7 @@ export default function EmailRecipients({
         <PopoverTrigger asChild>
           <div
             className={cn(
-              "flex flex-wrap gap-1 min-h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text",
+              "flex flex-wrap gap-1 min-h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text max-md:min-h-11 max-md:text-base",
               inputError ? "border-destructive" : "border-input"
             )}
             onClick={(e) => {
@@ -309,7 +300,7 @@ export default function EmailRecipients({
               placeholder={
                 emails.length === 0 ? "Search or enter email..." : ""
               }
-              className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground"
+              className="flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground max-md:text-base"
             />
           </div>
         </PopoverTrigger>

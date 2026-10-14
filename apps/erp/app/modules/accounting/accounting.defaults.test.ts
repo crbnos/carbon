@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -5,7 +9,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
-vi.mock("@carbon/glossary", () => ({ terms: {}, glossaryEntries: () => [] }));
+vi.mock("@carbon/content/glossary", () => ({
+  terms: {},
+  glossaryEntries: () => []
+}));
 vi.mock("@carbon/auth", () => ({
   assertIsPost: () => undefined,
   getMESUrl: () => "http://localhost",

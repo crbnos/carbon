@@ -13,6 +13,7 @@
     "@carbon/notifications": "workspace:*",
     "@carbon/planning": "workspace:*",
     "@carbon/printing": "workspace:*",
+    "@carbon/server-functions": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",
@@ -22,7 +23,7 @@
     "@slack/web-api": "catalog:",
     "@supabase/functions-js": "catalog:",
     "@supabase/supabase-js": "catalog:",
-    "ai": "5.0.172",
+    "ai": "catalog:",
     "axios": "catalog:",
     "inngest": "^3.52.7",
     "kysely": "catalog:",
@@ -34,12 +35,14 @@
     "supabase": "catalog:",
     "tsup": "catalog:",
     "undici": "^8.10.0",
+    "web-push": "^3.6.7",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@types/pg": "8.15.6",
     "@types/react": "catalog:",
+    "@types/web-push": "^3.6.4",
     "pg": "8.20.0",
     "tsx": "catalog:",
     "typescript": "catalog:",
@@ -49,8 +52,7 @@
     ".": "./src/index.ts",
     "./backups": "./src/backups/schema.ts",
     "./events": "./src/events.ts",
-    "./inngest": "./src/inngest/index.ts",
-    "./worker": "./src/inngest/worker.ts"
+    "./inngest": "./src/inngest/index.ts"
   },
   "main": "./src/index.ts",
   "name": "@carbon/jobs",

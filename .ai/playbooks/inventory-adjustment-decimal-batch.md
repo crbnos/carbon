@@ -1,13 +1,14 @@
 # Inventory Adjustment — decimal quantities on a batch-tracked item
 
-Last tested: 2026-09-23
+Last tested: 2026-09-30
 Route: `/x/inventory/quantities/<itemId>/details` → "Update Inventory" drawer
 
 ## Prerequisites
-- A **batch-tracked** item with a fractional UoM (e.g. `MAT-AL7075-PLT`,
-  `item_JGJDAeYjKqVoJicSCPT8bF`, UoM POUND, in Carbon Development).
+- A **batch-tracked** item with a fractional UoM (e.g. `MAT-AL7075-PLT`, UoM POUND,
+  in Carbon Development — look the id up by `readableIdWithRevision`; it changes on re-seed).
 - A storage unit to hold stock (e.g. `A2-L1`).
-- Edge functions healthy (`post-inventory-adjustment` hot).
+- ERP dev server running (`post-inventory-adjustment` is a server function in the ERP process).
+- With `itemCost.unitCost = 0` the cost layer is $0 and NO journal is posted (`cost === 0` guard) — expected.
 
 ## Steps
 

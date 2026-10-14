@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn } from "@carbon/react";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import type { KeyboardEvent, ReactNode } from "react";
@@ -120,6 +124,8 @@ export function NodeCard({
     <div
       className={cn(
         "relative rounded-lg border bg-card shadow-sm transition-[box-shadow,opacity]",
+        // Phones: a card is at most the screen wide, whatever its inline width.
+        "max-md:max-w-[calc(100vw-32px)]",
         isSelected && "border-primary ring-2 ring-primary/20",
         connectionState === "compatible" &&
           "border-primary ring-2 ring-primary/40",

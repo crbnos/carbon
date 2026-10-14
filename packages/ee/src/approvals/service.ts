@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -139,6 +143,27 @@ export async function approveRequest(
 
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
+        }
+      } else if (documentType === "changeOrder") {
+        // Approval is the gate on Engineering Complete -> Implementation, so
+        // approving performs that transition (only from the gated stage).
+        const changeOrderUpdate = await trx
+          .updateTable("changeOrder")
+          .set({
+            status: "Implementation",
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Engineering Complete")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeOrderUpdate) {
+          throw new Error(
+            "Failed to update change notice status - it may no longer be in 'Engineering Complete' state"
+          );
         }
       }
 
@@ -789,7 +814,17 @@ export async function hasPendingApproval(
     .eq("status", "Pending")
     .limit(1);
 
-  return (result.data?.length ?? 0) > 0;
+  // Fail closed: "false" would unlock edits and skip the approval gate.
+  if (result.error) {
+    logger.error("Failed to check for a pending approval request", {
+      documentType,
+      documentId,
+      error: result.error
+    });
+    throw new Error("Failed to read approval requests");
+  }
+
+  return result.data.length > 0;
 }
 
 export async function isApprovalRequired(
@@ -878,7 +913,8 @@ export async function rejectRequest(
           );
         }
       }
-      // Note: qualityDocument rejection doesn't change status (stays Draft)
+      // Note: qualityDocument rejection doesn't change status (stays Draft),
+      // and neither does changeOrder (stays Engineering Complete)
 
       if (documentType === "supplier") {
         const supplierUpdate = await trx

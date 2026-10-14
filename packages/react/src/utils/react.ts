@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { distinctItemText } from "@carbon/utils";
 import type {
   MutableRefObject,
   ReactElement,
@@ -44,6 +49,19 @@ export const reactNodeToString = function (reactNode: ReactNode): string {
   return string;
 };
 
+/**
+ * The plain text of a picker option. A JSX label whose text lives in a
+ * component's props (an avatar that looks up its own name) has none to
+ * extract, so it falls back to the option's `keywords`.
+ */
+export function optionLabelText(option: {
+  label: ReactNode;
+  keywords?: string;
+}): string {
+  if (typeof option.label === "string") return option.label;
+  return reactNodeToString(option.label) || (option.keywords ?? "");
+}
+
 export type Merge<T, P> = P & Omit<T, keyof P>;
 
 export type MaybeRenderProp<P> = ReactNode | ((props: P) => ReactNode);
@@ -75,4 +93,28 @@ export function mergeRefs<T>(...refs: (ReactRef<T> | null | undefined)[]) {
       assignRef(ref, node);
     });
   };
+}
+
+/**
+ * Drops an option's `helper` when it only repeats the option's label — an item
+ * picker shows the readable id with the name beneath it, and a service's
+ * readable id IS its name. Returns the same array when nothing changes, so a
+ * memoized caller keeps a stable reference.
+ */
+export function withDistinctHelpers<
+  T extends { label: ReactNode; helper?: string }
+>(options: T[]): T[] {
+  let out: T[] | undefined;
+  for (let i = 0; i < options.length; i++) {
+    const option = options[i]!;
+    if (!option.helper) continue;
+    const label =
+      typeof option.label === "string"
+        ? option.label
+        : reactNodeToString(option.label);
+    if (distinctItemText(label, option.helper) !== undefined) continue;
+    out ??= options.slice();
+    out[i] = { ...option, helper: undefined };
+  }
+  return out ?? options;
 }

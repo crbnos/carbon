@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
@@ -8,7 +12,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // Same module-graph stubs as production.service.test.ts: glossary and the
 // onboarding content build Lingui `msg` descriptors at module load.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),
@@ -176,7 +180,7 @@ describe("method row updates cannot re-parent a row", () => {
 
   it("upsertJobOperation strips parent ids and scopes to the company", async () => {
     const { client, calls } = recordingClient();
-    await upsertJobOperation(client, {
+    await upsertJobOperation(client, undefined as never, {
       id: "jo1",
       jobId: "victim-job",
       jobMakeMethodId: "victim-method",

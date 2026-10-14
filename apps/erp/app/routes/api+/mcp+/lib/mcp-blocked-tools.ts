@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Tools excluded from MCP discovery (tool-metadata.json) and blocked at runtime.
  * Keep this list small; add only operations that must never run via /api/mcp.
  */
 export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
+  // Needs a service-role client as its argument, which no API or MCP caller has.
+  "account_getChangelogPanelEntry",
   "settings_seedCompany",
   // Creating a company is an account-level operation that must not be exposed
   // as an MCP tool (it would let a company-scoped token create new tenants).
@@ -43,7 +49,26 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "sales_updateSalesOrderFavorite",
   "sales_updateSalesRFQFavorite",
   "purchasing_updateSupplierQuoteFavorite",
-  "resources_insertTrainingCompletion"
+  "resources_insertTrainingCompletion",
+  // Bare deletes that bypass the ERP's delete routes. Removing a sales invoice
+  // (or a line) that billed a rental period, a rental charge or a contract
+  // schedule line must release those stamps so they are billed again — the
+  // routes do that (`deleteSalesInvoiceReleasingRentals`); these plain deletes
+  // would orphan them, and the periods would never be re-billed.
+  "invoicing_deleteSalesInvoice",
+  "invoicing_deleteSalesInvoiceLine",
+  // Likewise a purchase invoice (or line) that billed a lease payment row:
+  // deleting its line returns the row to Pending
+  // (`purchaseInvoiceLine_release_lease_payment`), so it is billed again —
+  // right for a Draft, a double bill for a posted invoice. The routes check
+  // the invoice is Draft under a row lock
+  // (`deletePurchaseInvoiceReleasingLeases`); `deletePurchaseInvoiceLine`
+  // checks nothing.
+  "invoicing_deletePurchaseInvoice",
+  "invoicing_deletePurchaseInvoiceLine",
+  // Variadic (`...items`): the dispatcher fills one positional argument per
+  // parameter from a JSON object and has no slot for a rest tail.
+  "production_getPartDocuments"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {

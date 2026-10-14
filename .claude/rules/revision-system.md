@@ -54,12 +54,69 @@ the type-scoped `revisions` array.
   — `{ id?, type, copyFromId?, revision }`; requires `id` **or** `copyFromId`.
 - Route: `apps/erp/app/routes/x+/items+/revisions.new.tsx` (action). For a **new**
   revision it requires `copyFromId`, loads that item via `getItem`, then calls
-  `createRevision(getCarbonServiceRole(), { item, revision, createdBy })`. Redirects
-  to the new revision's detail page by type. URL: `path.to.newRevision`.
-- Service: `createRevision` (`items.service.ts`) inserts a new `item` row copying
-  the source's core fields (same `readableId`, new `revision`, `active: true`).
-  If `replenishmentSystem !== "Buy"`, it invokes the `get-method` edge function
-  (`type: "itemToItem"`) to copy the method/BOM from source to the new revision.
+  `createRevision(getCarbonServiceRole(), getDatabaseClient(), { item, revision, createdBy })`.
+  Redirects to the new revision's detail page by type. URL: `path.to.newRevision`.
+- Service: `createRevision(client, db, args)` (`items.service.ts`). In ONE Kysely
+  transaction it inserts a new `item` row copying the source's core fields (same
+  `readableId`, new `revision`, `active: true`) and copies the source's planning
+  and purchasing setup onto it (next bullet), so a revision with default planning
+  and no suppliers is never visible and a failure leaves no row holding the
+  revision label. After the commit, if `replenishmentSystem !== "Buy"`, it calls
+  the `get-method` server function (`@carbon/server-functions/get-method`,
+  `type: "itemToItem"`) to copy the method/BOM from source to the new revision.
+  That call runs its own transaction, so it cannot join this one: a failure is
+  logged and the revision stands (the method can be copied again). Three callers, one behaviour: the New Revision
+  route, material sizes (`upsertMaterial`), and a change notice's Revision draft
+  (`createChangeNoticeDraftMethod`, `active: false`).
+- **Authorization.** Kysely bypasses RLS, so before the transaction
+  `createRevision` calls `assert_company_access(companyId, 'parts_create')`
+  through the caller's `client` (`requireCompanyPermission`, shared with the
+  delete paths below) — the same predicate as the `item` INSERT policy
+  (`inCompany("companyId", "parts_create")`), and a no-op for a service-role
+  client. It matters: two change-notice routes (`$id.affected`,
+  `…change-type`) only require `parts_update`, so without the gate a user who
+  cannot create parts could mint a revision there. A refused caller gets the
+  function's error and nothing is written. A taken revision label comes back as
+  `{ code: "23505" }`.
+- **What a revision inherits** (`copyItemPlanningAndPurchasing(trx, …)`, inside
+  that transaction, every statement scoped to the company on both sides). The
+  item interceptor runs with the insert, so the new item's `itemReplenishment` /
+  `itemPlanning` / `itemCost` rows already exist with defaults and are updated
+  in place:
+  - `itemReplenishment`: `lotSize` (Batch Size), `scrapPercentage`, `leadTime`,
+    `preferredSupplierId`, and with it `purchasingUnitOfMeasureCode` +
+    `conversionFactor` (both derived from the preferred supplier's supplier part).
+  - `itemPlanning`, per location: `reorderingPolicy` and its sizing parameters
+    (accumulation period, safety stock, reorder point and quantity, maximum
+    inventory, min/max order quantity, order multiple). A policy without its
+    parameters is invalid, so they travel together. The two other fields on the
+    planning form, `planningHorizonDays` and `responsibleEmployee`, are NOT
+    copied (`copyItemPlanningAndPurchasing`, `items.service.ts`).
+  - `itemCost.itemPostingGroupId` (the item group).
+  - `supplierPart` rows and their `supplierPartPrice` price breaks, paired by
+    `supplierId` (unique per item).
+  NOT copied: costs, `itemUnitSalePrice`, `requiresConfiguration` and the
+  blocked flags, `minimumReserveQuantity`, supersession, pick method, shelf life,
+  `itemPlanning.planningHorizonDays`, `itemPlanning.responsibleEmployee`.
+- **Deleting an item deletes its price breaks first.** `supplierPart.itemId`
+  cascades from `item`, but `supplierPartPrice → supplierPart` is
+  `ON DELETE RESTRICT`, and every revision of an item with price breaks now
+  carries them. `deleteItemsWithPriceBreaks(trx, { itemIds, companyId })` deletes
+  the price breaks and then the items, scoped to the company, inside the
+  caller's Kysely transaction — so an item delete Postgres refuses (ledger
+  history, tracked entities) leaves the price breaks in place. Two callers, both
+  gated by `assert_company_access(companyId, 'parts_delete')` (the `item` /
+  `makeMethod` DELETE rule):
+  - `deleteItem(client, db, id, companyId)` — the Item Master delete. A refusal
+    keeps its SQLSTATE (`23503`), which the route maps to its message.
+  - `discardChangeNoticeDrafts(client, db, drafts, companyId)` — every draft of
+    the call (draft items, and Version draft methods) in ONE transaction, and it
+    returns the error. `removeChangeNoticeAffectedItem` and `deleteChangeNotice`
+    stop on it, so the affected row / notice is never removed while its draft
+    survives; `updateChangeNoticeAffectedItemChangeType` checks `parts_delete`
+    before it creates the replacement draft, and reports a late failure.
+  Deleting a single **supplier part** that has price breaks
+  (`deleteSupplierPart`) is still refused by the same constraint.
 - UI form: `RevisionForm.tsx`; version switcher menus ("Versions" submenu) live in
   the type tables (`PartsTable.tsx`, etc.), shown only when `revisions.length > 1`,
   linking each sibling by its item id. Badge component: `ItemWithRevision.tsx`.
@@ -75,7 +132,7 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   = `Draft | Active | Archived`. Unique `(itemId, version)`.
 - View `activeMakeMethods` ranks per `itemId`, preferring `status='Active'` then
   `version DESC` (excludes `Archived`) — picks the one current method per item.
-- `activateMethodVersion` (`items.service.ts`) invokes the `convert` edge function
+- `activateMethodVersion` (`items.service.ts`) calls the `convert` server function
   (`type: "methodVersionToActive"`). Route: `x+/items+/methods+/versions.activate.$id.tsx`.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item

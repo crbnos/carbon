@@ -145,13 +145,12 @@ the paywall check lives in `requireLicense()`.
 - **Renders nothing** on the published page, and a `remark` plugin (`source.config.ts`)
   strips it from the MDX AST before `remark-structure` runs — so it's also **excluded
   from site search**. Readers never see it.
-- `scripts/generate-agent-kb.ts` **unwraps** it into the agent KB
-  (`apps/erp/app/modules/agent/kb/<slug>.md`) — the in-app agent *does* read it.
+- `@carbon/content/agent-kb` **unwraps** it into the agent's corpus (via the shared
+  `@carbon/content/corpus` stripper) — the in-app agent *does* read it.
 - Use it for extra code/behavior detail that helps the agent answer accurately but
   would clutter or over-disclose to a human reader (internal table names, service
   functions, edge cases). Author normal markdown inside. Works on Guide and Reference.
-- Regenerate the KB after editing (`pnpm run generate:agent-kb`) — same commit-time
-  rule as any `docs/content` change (see `.claude/rules/agent-knowledge-base.md`).
+- Nothing to regenerate: the ERP bundles `docs/content` at build time.
 
 ---
 

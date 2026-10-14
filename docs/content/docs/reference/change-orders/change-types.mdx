@@ -3,10 +3,7 @@ title: Change types
 description: Version, Revision, Replacement Part, and New Part — the per-affected-item choice that decides what you can edit and what release creates.
 ---
 
-Change type is set per affected item (default **Version**) and is the most load-bearing field on the whole
-change notice. It decides two things at once: what you're allowed to edit on the draft, and what release
-creates from it. Two axes tell the four types apart: is there a **predecessor** item, and does the result keep
-the **same part number**.
+Each affected item has a change type, defaulting to **Version**. The type determines which draft fields are editable and what release creates. The four types differ by whether they have a predecessor and whether the result keeps the same part number.
 
 ## The four types
 
@@ -18,22 +15,16 @@ the **same part number**.
 | New Part | Attributes, documents, BoM and BoP | A **net-new part** minted under the change notice | None — it has no predecessor |
 
 <Callout type="info" title="A Version bumps the method; the two replacement types mint a new item; New Part is net-new.">
-Don't conflate them. A **Version** produces a new method version on the *same* item row, so existing stock and
-item history are untouched and nothing is superseded. A **Revision** and a **Replacement Part** each mint a
-*new* item derived from the affected part and leave the old one intact, so each auto-writes a
-<Term>supersession</Term> from old to new. A **New Part** has no predecessor at all — it introduces a brand-new
-part, so it supersedes nothing. See [Supersession & cutover](/docs/reference/change-orders/supersession).
+A **Version** creates a method version on the same item and does not supersede anything. A **Revision** or **Replacement Part** creates a new item derived from the affected part and writes a <Term>supersession</Term> from old to new. A **New Part** has no predecessor and therefore creates no supersession. See [Supersession & cutover](/docs/reference/change-orders/supersession).
 </Callout>
 
 ## When to use which
 
-- **Version** — the design is the same part, made a little differently. A tweaked operation, a swapped
-  component, a corrected quantity. There's no drawing-revision story and no reason to phase over stock.
+- **Version** — use for manufacturing-method changes that do not require a new item revision or stock phase-over.
 - **Revision** — the part is formally revising (new drawing revision, new dimension) and you want old and new
   to coexist while stock phases over. This is the everyday engineering-change case. You can name the revision
   (for example `A`) when you add the item, or leave it blank to take the next revision automatically.
-- **Replacement Part** — the change warrants a new part *number*, derived from the old one, with the old part
-  superseded by the new. The 1:1 replacement.
+- **Replacement Part** — use for a one-to-one replacement with a new part number derived from the old part.
 - **New Part** — you're introducing a genuinely new part under change control, with no old part behind it.
   Nothing is superseded. This is also how a consolidation is modeled: when several components collapse into
   one, the consolidated "1" is added as a **New Part** and the old lines are dropped from the parent
@@ -75,8 +66,7 @@ Choosing **New Part** in the change-type selector swaps the affected-item modal 
   <Field name="Tracking Type" required>Inventory, Non-Inventory, Serial, or Batch. Defaults to **Inventory**.</Field>
 </FieldTable>
 
-Submitting mints an inactive Part under the change notice and adds it as a **New Part** affected item. It stays
-hidden until release reveals it.
+Submitting creates an inactive Part and adds it as a **New Part** affected item. The part remains hidden until release.
 
 ## Supplier parts on a purchased line
 
@@ -86,12 +76,17 @@ how the new part or revision is bought: **Supplier**, **Supplier ID** (the suppl
 Price**, **Unit of Measure**, **Minimum Order Quantity**, and **Conversion Factor**. Add, edit, and delete rows
 here the same way you would on a live part.
 
-<Callout type="warning" title="Set suppliers up before you release, or the released part can't be bought.">
-A draft item starts with **no** supplier parts — the source item's suppliers aren't copied onto the draft. If a
-purchased Revision, Replacement Part, or New Part releases with an empty grid, the new part is stocked but has
-no way to buy it, so a purchase order can't reference it. Fill the grid on the line first. The suppliers you add
-show up in the change notice's [changes](/docs/reference/change-orders/lifecycle#review-the-changes-then-release)
-as additions.
+A **Revision** draft starts with the source revision's supplier parts and their price breaks, along with its
+batch size, scrap percent, lead time, reordering policy, preferred supplier, and item group. It releases ready
+to plan and buy, so edit the grid only where the new revision differs. The change notice's
+[changes](/docs/reference/change-orders/lifecycle#review-the-changes-then-release) list only the suppliers you
+added, changed, or removed.
+
+<Callout type="warning" title="Set suppliers up on a Replacement Part or New Part before you release.">
+These two drafts start with **no** supplier parts. A Replacement Part does not inherit the source item's
+suppliers, and a New Part has no source to inherit from. If a purchased one releases with an empty grid, the
+new part is stocked but has no way to buy it, so a purchase order can't reference it. Fill the grid on the line
+first. The suppliers you add show up in the change notice's changes as additions.
 </Callout>
 
 ## Related

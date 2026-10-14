@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getInventoryCounts, InventoryCountsTable } from "~/modules/inventory";
 import { getLocationsList } from "~/modules/resources";
 import type { Handle } from "~/utils/handle";
@@ -12,6 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["inventoryCount"],
   breadcrumb: msg`Inventory Count`,
   to: path.to.inventoryCounts
 };
@@ -65,7 +71,7 @@ export default function InventoryCountRoute() {
         count={count ?? 0}
         locations={locations}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

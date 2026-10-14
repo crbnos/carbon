@@ -1,18 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getDefaultAccounts,
   saveJournalEntryWithLines
 } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { getArTieOut } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Turns a non-zero AR tie-out variance into a balanced Draft journal entry — the
@@ -25,17 +29,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, { create: "accounting" });
 
-  // Adjusting entries only make sense when journals are being posted.
+  // Adjusting entries only make sense once journals count (after the cutover).
   const companySettings = await getCompanySettings(client, companyId);
-  if (
-    !(
-      (companySettings.data as { accountingEnabled?: boolean } | null)
-        ?.accountingEnabled ?? false
-    )
-  ) {
+  if (!hasAccountingCutover(companySettings.data)) {
     throw redirect(
       path.to.receivables,
-      await flash(request, error(null, "Accounting is not enabled"))
+      await flash(request, error(null, "Accounting is not set up"))
     );
   }
 
@@ -59,15 +58,9 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, "No receivables variance to adjust"))
     );
   }
-
-  const serviceRole = getCarbonServiceRole();
-  const journalEntry = await serviceRole.functions.invoke<{ id: string }>(
-    "create",
-    {
-      body: { type: "journalEntry", companyId, userId },
-      region: FunctionRegion.UsEast1
-    }
-  );
+  const journalEntry = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", { type: "journalEntry" });
 
   if (!journalEntry.data || journalEntry.error) {
     throw redirect(

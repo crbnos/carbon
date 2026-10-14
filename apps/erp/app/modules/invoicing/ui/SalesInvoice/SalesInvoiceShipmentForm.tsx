@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -12,6 +16,7 @@ import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
+  CustomerLocation,
   CustomFormFields,
   Hidden,
   Input,
@@ -115,6 +120,12 @@ const SalesInvoiceShipmentForm = forwardRef<
               name="locationId"
               label={t`Shipment Location`}
               isReadOnly={isCustomer}
+              isClearable
+            />
+            <CustomerLocation
+              name="customerLocationId"
+              label={t`Ship To`}
+              customer={routeData?.salesInvoice?.customerId ?? undefined}
               isClearable
             />
             <ShippingMethod

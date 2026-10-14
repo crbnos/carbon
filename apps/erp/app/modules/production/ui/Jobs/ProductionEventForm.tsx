@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { TextArea, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -8,6 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import type { CalendarDateTime } from "@internationalized/date";
@@ -18,7 +23,6 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import {
   DateTimePicker,
@@ -47,14 +51,14 @@ const ProductionEventForm = ({
 }: ProductionEventFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const eventTypeOptions = [
     { label: t`Labor`, value: "Labor" },
     { label: t`Machine`, value: "Machine" },
     { label: t`Setup`, value: "Setup" }
   ];
-  const onClose = () => navigate(-1);
+  const onClose = () => closeRoute();
 
   const [jobOperationId, setJobOperationId] = useState(
     initialValues.jobOperationId ?? ""

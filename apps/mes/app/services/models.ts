@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -205,7 +209,7 @@ export const issueTrackedEntityValidator = z.object({
   jobOperationId: z.string().optional(),
   itemId: z.string().optional(),
   // Batch mode: the pick covers every member of this operation batch — the
-  // edge fn splits it pro-rata and resolves each member's own parent entity,
+  // server fn splits it pro-rata and resolves each member's own parent entity,
   // so parentTrackedEntityId is not sent.
   batchId: z.string().optional(),
   parentTrackedEntityId: z.string().optional(),
@@ -264,7 +268,7 @@ export const completeJobOperationBatchValidator = z.object({
         // Optional: an excluded ("Not in this run") member's quantity input is
         // disabled and therefore omitted from FormData. The route forces
         // excluded members to 0 after validation and coerces an omitted
-        // included quantity to 0, so `undefined` never reaches the edge fn.
+        // included quantity to 0, so `undefined` never reaches the server fn.
         // Not integer-only: a job's operation quantity can be fractional (any
         // non-discrete unit of measure), so the pre-filled remainder — and the
         // operator's edit — must accept decimals, matching single-op completion
@@ -279,7 +283,7 @@ export const completeJobOperationBatchValidator = z.object({
         // "Not in this run": the operation was not physically part of the
         // batch run — it detaches back to the schedule instead of being
         // marked Done. String flag (same idiom as productionEventValidator's
-        // `exclusive`); the route maps "true" to a boolean for the edge fn.
+        // `exclusive`); the route maps "true" to a boolean for the server fn.
         excluded: zfd.text(z.string().optional())
       })
     )
@@ -464,4 +468,17 @@ export const inspectionMeasurementValidator = z.object({
   // Attribute (non-numeric) features toggle pass/fail instead of a value.
   passed: zfd.text(z.enum(["true", "false"]).optional()),
   notes: zfd.text(z.string().optional())
+});
+
+// Records the gauge used for one feature of a lot; an empty gaugeId clears it.
+export const inspectionGaugeValidator = z.object({
+  inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
+  gaugeId: zfd.text(z.string().optional())
+});
+
+// The "Forgot to Clock Out?" prompt: the clock-out is the time being set.
+export const setClockOutValidator = z.object({
+  intent: z.literal("clockOut"),
+  clockOut: z.string().min(1, { message: "Clock out is required" })
 });

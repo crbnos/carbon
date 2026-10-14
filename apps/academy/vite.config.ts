@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { linguiWithoutIdQuery } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
 import { lingui } from "@lingui/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
-import babelMacros from "vite-plugin-babel-macros";
 
 export default defineConfig(({ isSsrBuild }) => ({
   build: {
@@ -31,6 +35,8 @@ export default defineConfig(({ isSsrBuild }) => ({
       "react-icons",
       "react-phone-number-input",
       "tailwind-merge",
+      // Avatar styles are JSON loaded with import(); see apps/erp/vite.config.ts.
+      "@dicebear/styles",
     ],
   },
   server: {
@@ -39,8 +45,7 @@ export default defineConfig(({ isSsrBuild }) => ({
   },
   plugins: [
     tailwindcss(),
-    babelMacros(),
-    lingui(),
+    linguiWithoutIdQuery(lingui({ macroTransform: true })),
     reactRouter(),
   ] as PluginOption[],
   resolve: {
@@ -48,9 +53,9 @@ export default defineConfig(({ isSsrBuild }) => ({
     alias: {
       // Directory (not index.ts) so subpath imports like
       // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
-      "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
+      "@carbon/utils": path.resolve(import.meta.dirname, "../../packages/utils/src"),
       "@carbon/form": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "../../packages/form/src/index.tsx"
       ),
     },

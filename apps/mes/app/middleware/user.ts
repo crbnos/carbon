@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   clearConsolePinIn,
@@ -6,8 +10,8 @@ import {
 import { updateSessionConsole } from "@carbon/auth/session.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { MiddlewareFunction } from "react-router";
-import { redirect } from "react-router";
 import { userContext } from "~/context";
 import { getLocation, setLocation } from "~/services/location.server";
 import { path } from "~/utils/path";

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   cn,
   DateRangePicker,
@@ -13,7 +17,7 @@ import type { CalendarDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { DateRange } from "@react-types/datepicker";
 import { forwardRef, useMemo, useState } from "react";
-import { LuCalendar } from "react-icons/lu";
+import { LuCalendar, LuChevronDown } from "react-icons/lu";
 
 type DateSelectOption = {
   value: string;
@@ -76,8 +80,17 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
       >
         {/* Compact dropdown for small screens */}
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="md:hidden w-auto h-8 text-xs">
+          {/* Phones: a period chip with a ⌄ picker indicator,
+              32pt visual with a 44pt hit area like its neighbouring buttons. */}
+          <SelectTrigger
+            hideIcon
+            className={cn(
+              "md:hidden w-auto h-8 text-xs",
+              "max-md:relative max-md:h-8 max-md:rounded-full max-md:space-x-1 max-md:text-sm max-md:after:absolute max-md:after:-inset-[max(0px,calc((44px-100%)/2))]"
+            )}
+          >
             <SelectValue />
+            <LuChevronDown className="size-4 shrink-0 opacity-50" />
           </SelectTrigger>
           <SelectContent>
             {allOptions.map((option) => (
@@ -118,7 +131,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
               className={cn(
                 "h-7 w-7 rounded-full p-0",
                 "bg-transparent text-muted-foreground",
-                "hover:bg-active hover:text-active-foreground",
+                "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
                 "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
                 "transition-all duration-200"
               )}

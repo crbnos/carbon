@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { AccountSettings } from "@carbon/account/ui";
 import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getAppUrl,
   getCarbon,
   getCompanies,
   getUser,
@@ -24,8 +28,11 @@ import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime } from "@carbon/query";
+import { setClientCompanyId } from "@carbon/query/cache";
 import {
   Button,
+  cn,
   Heading,
   ItarEntityPendingBlock,
   ItarUserCertification,
@@ -38,13 +45,15 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
-  isSearchParamOnlyNavigation,
-  requiresItarEntityCertification
+  redirect,
+  redirectExternal,
+  requiresItarEntityCertification,
+  SHELL_MAX_AGE_MS
 } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -55,12 +64,13 @@ import {
   data,
   Form,
   Outlet,
-  redirect,
   useLoaderData,
+  useLocation,
   useNavigate
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
+import { isTabBarPath, MesTabBar } from "~/components/MesTabBar";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
@@ -78,13 +88,19 @@ import {
 import { getOpenClockEntry } from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
+// Set from the component when loader data arrives, not in shouldRevalidate:
+// link prefetching calls that too.
+let shellLoadedAt = Date.now();
+
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
-  nextUrl,
   formMethod,
   formAction,
   defaultShouldRevalidate
 }) => {
+  // The refreshed session reaches the client through this loader.
+  if (formAction === path.to.refreshSession) return true;
+
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
     currentUrl.pathname.startsWith("/switch-company") ||
@@ -104,16 +120,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // This loader is the app shell: 9 queries plus an auth round-trip. Without
-  // this it re-ran on every filter, sort and page click, none of which can
-  // change anything it returns.
-  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
-  // also looks like a same-pathname GET, so the shell does not re-run for
-  // realtime events either. Leaf loaders still refresh, which is the intent.
-  // Shell data that must react to a realtime change needs an explicit case
-  // above.
-  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
-    return false;
+  // Only a mutation can change what the shell returns, so a GET re-runs it
+  // only once the data has aged out — that covers out-of-band changes.
+  if (!formMethod || formMethod === "GET") {
+    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
   }
 
   return defaultShouldRevalidate;
@@ -128,26 +138,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // share a client between requests
   const client = getCarbon(accessToken);
 
-  // parallelize the requests
-  const [companies, user] = await Promise.all([
-    getCompanies(client, userId),
-    getUser(client, userId)
-  ]);
-
-  if (user.error || !user.data) {
-    throw await destroyAuthSession(request);
-  }
-
-  const company = companies.data?.find((c) => c.companyId === companyId);
-  if (!company) {
-    // A company-less authenticated user (e.g. an enterprise first-run user who
-    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
-    // Send them to a terminal screen that links to ERP onboarding, not into
-    // accountSettings (an ERP /x route that would itself bounce a no-company
-    // user, i.e. a redirect loop).
-    throw redirect(path.to.setupRequired);
-  }
-
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
   const locationId = ctx?.locationId;
@@ -158,6 +148,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   let [
+    companies,
+    user,
+    activeMaintenanceCount,
     companyPlan,
     locations,
     activeEvents,
@@ -166,6 +159,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     locationEmployees,
     printerRoutes
   ] = await Promise.all([
+    getCompanies(client, userId),
+    getUser(client, userId),
+    getActiveMaintenanceEventsCount(client, locationId),
     getStripeCustomerByCompanyId(companyId, userId),
     getLocationsByCompany(client, companyId),
     getActiveJobCount(client, {
@@ -190,6 +186,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] as { id: string }[] }),
     getPrinterRoutes(serviceRole, companyId)
   ]);
+
+  if (user.error || !user.data) {
+    throw await destroyAuthSession(request);
+  }
+
+  const company = companies.data?.find((c) => c.companyId === companyId);
+  if (!company) {
+    // A company-less authenticated user (e.g. an enterprise first-run user who
+    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
+    // Send them to a terminal screen that links to ERP onboarding, not into
+    // the ERP's /x routes (which would themselves bounce a no-company user,
+    // i.e. a redirect loop).
+    throw redirect(path.to.setupRequired);
+  }
 
   const locationEmployeeIds =
     locationEmployees.data?.map((e: { id: string }) => e.id) ?? [];
@@ -230,12 +240,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       ? !(await userHasVerifiedTotpFactor(userId))
       : false;
 
-  // Get active maintenance count after we have the location
-  const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
-    client,
-    locationId
-  );
-
   // ITAR gate — only queried in controlled environments. `entityRequired` is
   // false for Carbon staff: the Rider binds the customer's own organization, so
   // it is not ours to accept and the pending block would strand us behind a
@@ -249,7 +253,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     : { entityCertified: true, userCertified: true, entityRequired: false };
 
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
-    throw redirect(path.to.onboarding);
+    // Onboarding lives in the ERP: another origin.
+    throw redirectExternal(path.to.onboarding);
   }
 
   if (!locations.data || locations.data.length === 0) {
@@ -320,6 +325,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
+  const loaderData = useLoaderData<typeof loader>();
   const {
     session,
     activeEvents,
@@ -342,9 +348,18 @@ export default function AuthenticatedRoute() {
     itarCertification,
     mfaEnrollmentRequired,
     sessionTimeout
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
+  // During render, not in an effect: the first child reads it.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
+  useEffect(() => {
+    shellLoadedAt = Date.now();
+  }, [loaderData]);
 
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const showTabBar = isTabBarPath(pathname);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
@@ -439,7 +454,7 @@ export default function AuthenticatedRoute() {
             </Trans>
           </p>
           <Button size="lg" className="w-full" asChild>
-            <a href={`${getAppUrl()}/x/account/profile`}>
+            <a href={path.to.erpAccountSecurity}>
               <Trans>Set up in Carbon</Trans>
             </a>
           </Button>
@@ -477,7 +492,7 @@ export default function AuthenticatedRoute() {
   }
 
   return (
-    <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
+    <div className="h-dvh w-full overflow-y-auto lg:overflow-hidden">
       {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
       {isIdle && !itarScreen && !mfaScreen && (
         <SessionLockOverlay
@@ -500,7 +515,8 @@ export default function AuthenticatedRoute() {
             }}
           >
             <RealtimeDataProvider>
-              <SidebarProvider defaultOpen={false} touch>
+              {company?.id && <RouteRealtime companyId={company.id} />}
+              <SidebarProvider defaultOpen={false}>
                 <TooltipProvider delayDuration={0}>
                   <AppSidebar
                     activeEvents={activeEvents}
@@ -516,11 +532,36 @@ export default function AuthenticatedRoute() {
                     openClockEntry={openClockEntry}
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
                   />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
-                    <Outlet />
+                  {/* From lg the shell does not scroll, so the page area stops at the
+                      screen and each page's own scroller takes the overflow. */}
+                  <div
+                    className={cn(
+                      "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
+                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+                    )}
+                  >
+                    {/* A company switch stays on the same page. Without the key the page
+                        keeps its state, so a form still held the previous company's
+                        values and saving wrote them to the new one. */}
+                    <Outlet key={companyId} />
                   </div>
+                  <MesTabBar
+                    activeEvents={activeEvents}
+                    activeMaintenanceCount={activeMaintenanceCount}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
+                  />
                   <ShortcutHelp />
+                  {user && company?.id && (
+                    <AccountSettings
+                      api={path.to.erpApi}
+                      user={user}
+                      companyId={company.id}
+                    />
+                  )}
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>

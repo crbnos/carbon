@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // PDF *reading*: text extraction, metadata, page rasterisation. Generation
 // (react-pdf templates) is a document concern and lives in @carbon/documents.
 //

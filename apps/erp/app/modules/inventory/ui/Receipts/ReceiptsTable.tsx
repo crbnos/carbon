@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Checkbox,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -30,6 +35,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Receipt } from "~/modules/inventory";
@@ -43,17 +49,26 @@ import { path } from "~/utils/path";
 
 function NewReceipt() {
   const fetcher = useFetcher();
+  const { t } = useLingui();
   return (
-    <fetcher.Form method="post" action={path.to.newReceipt}>
-      <Button
-        type="submit"
-        leftIcon={<LuCirclePlus />}
-        variant="primary"
-        isLoading={fetcher.state !== "idle"}
-      >
-        <Trans>Add Receipt</Trans>
-      </Button>
-    </fetcher.Form>
+    <NewAction
+      label={t`Add Receipt`}
+      isDisabled={fetcher.state !== "idle"}
+      onClick={() =>
+        fetcher.submit(null, { method: "post", action: path.to.newReceipt })
+      }
+    >
+      <fetcher.Form method="post" action={path.to.newReceipt}>
+        <Button
+          type="submit"
+          leftIcon={<LuCirclePlus />}
+          variant="primary"
+          isLoading={fetcher.state !== "idle"}
+        >
+          <Trans>Add Receipt</Trans>
+        </Button>
+      </fetcher.Form>
+    </NewAction>
   );
 }
 
@@ -86,6 +101,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -94,6 +110,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
         header: t`Source Document`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: receiptSourceDocumentType.map((type) => ({
@@ -138,6 +155,16 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
+            case "Rental Agreement":
+              return (
+                <Hyperlink
+                  to={path.to.rentalAgreementDetails(
+                    row.original.sourceDocumentId!
+                  )}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             default:
               return null;
           }
@@ -155,6 +182,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           return <ReceiptStatus status={status} />;
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: receiptStatusType.map((type) => ({
@@ -190,6 +218,9 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -217,6 +248,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           return <SupplierAvatar supplierId={row.original.supplierId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: suppliers?.map((supplier) => ({
@@ -319,6 +351,11 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={
+              row.postingDate
+                ? MENU_ITEM_SHORTCUTS.view
+                : MENU_ITEM_SHORTCUTS.edit
+            }
             disabled={!permissions.can("update", "inventory")}
             onClick={() => {
               navigate(
@@ -330,6 +367,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
             {row.postingDate ? t`View Receipt` : t`Edit Receipt`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "inventory") ||
               !!row.postingDate ||

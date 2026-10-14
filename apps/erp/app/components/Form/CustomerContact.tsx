@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type {
   CustomerContact as CustomerContactType,
   getCustomerContacts
@@ -110,20 +114,10 @@ const CustomerContact = ({
 export default CustomerContact;
 
 function useCustomerContacts(customerId?: string) {
-  const customerContactsFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerContacts>>>();
-
-  const reload = useCallback(() => {
-    if (customerId) {
-      customerContactsFetcher.load(path.to.api.customerContacts(customerId));
-    }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
-  }, [customerId]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    reload();
-  }, [customerId]);
+  const customerContactsFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerContacts>>
+  >(customerId ? path.to.api.customerContacts(customerId) : null);
+  const reload = customerContactsFetcher.refetch;
 
   const options = useMemo(
     () =>

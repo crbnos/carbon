@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JobMethodTreeItem } from "@carbon/database/methods";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import type { AssemblyNode, BaseOperation } from "./types.ts";

@@ -1,14 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { RouteRealtimeTable } from "@carbon/database/realtime-tables";
 import type { MessageDescriptor } from "@lingui/core";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 export type Handle = {
   breadcrumb?: any;
   to?: string;
   module?: string;
-  // When true, a module _layout hides its GroupedContentSidebar for this route —
-  // used by full-screen detail views that provide their own left panel (e.g. the
+  // The tables this route shows. The shell (`RouteRealtime`) reloads the page
+  // when one of them changes; each must be in REALTIME_TABLES.
+  realtime?: RouteRealtimeTable[];
+  // A module layout's sub-navigation. The shell renders it in the one module
+  // sidebar (`ModuleSidebarLayout`), so it stays in place across modules.
+  sidebar?: ComponentType;
+  // When true, the module sidebar is hidden for this route — used by
+  // full-screen detail views that provide their own left panel (e.g. the
   // change-order workspace) so the app doesn't stack two left sidebars.
   hideModuleSidebar?: boolean;
+  // Phones only: the section switcher for a route that is a module section
+  // but has no desktop sidebar (desktop is unchanged). Makes it a root screen.
+  compactSidebar?: ComponentType;
+  // Phones only: the app bar's subtitle under a record's ID ("Sales Order"),
+  // in place of the list crumb. Child routes (a line page) inherit it.
+  appBarSubtitle?: MessageDescriptor;
 };
 
 // A breadcrumb label may be plain text/markup or a Lingui MessageDescriptor

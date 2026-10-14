@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { ManifestEntry } from "@carbon/api";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
@@ -35,6 +39,8 @@ export interface McpServerDeps<Ctx> {
     ctx: Ctx,
     args?: string | Record<string, unknown>
   ) => Promise<McpCallResult>;
+  /** Includes deprecated aliases, keyed by the OLD name and mapped to the
+   *  replacement's entry — so `get(name).name !== name` marks an alias. */
   operationsByName: Map<string, ManifestEntry>;
   isListOperation: (meta: ManifestEntry) => boolean;
   isMcpBlockedTool: (name: string) => boolean;

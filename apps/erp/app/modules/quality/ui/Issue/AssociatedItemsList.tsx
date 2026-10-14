@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Hidden,
   Input,
@@ -6,6 +10,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -33,7 +38,7 @@ import {
   NumberInput as NumberFieldInput,
   toast
 } from "@carbon/react";
-import { EPSILON, INPUT_FORMAT } from "@carbon/utils";
+import { distinctItemText, EPSILON, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -75,13 +80,13 @@ function DispositionQuantityInput({
   quantity: number;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
+  });
 
   // Show the submitted value while the save is in flight; once the fetcher is
   // idle this falls back to the loader's quantity, which also resets the field
@@ -173,18 +178,18 @@ export function AssociatedItemsList({
   const [items] = useItems();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
+    }
+  });
   const splitFetcher = useFetcher<typeof splitAction>();
   const assignFetcher = useFetcher<typeof assignAction>();
   const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
   const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
-    }
-  }, [fetcher.data]);
 
   useEffect(() => {
     if (
@@ -398,14 +403,19 @@ export function AssociatedItemsList({
                   }
                 }}
               >
-                <div className="flex items-start w-full gap-4">
-                  <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-start w-full gap-4 max-md:flex-wrap max-md:gap-y-2">
+                  <div className="flex flex-col min-w-0 flex-1 max-md:basis-full">
                     <h3 className="font-semibold truncate">
                       {item.readableIdWithRevision}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.name}
-                    </p>
+                    {distinctItemText(
+                      item.readableIdWithRevision,
+                      item.name
+                    ) && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.name}
+                      </p>
+                    )}
                   </div>
                   <div className="w-20 shrink-0 flex flex-col gap-1">
                     <span className="text-xs font-medium text-muted-foreground">

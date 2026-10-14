@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   getChangeNotice,
@@ -34,6 +38,7 @@ import type {
   getService,
   getServices,
   getSupplierParts,
+  getSupplierPartsBySupplier,
   getTool,
   getTools,
   getUnitOfMeasure,
@@ -229,6 +234,10 @@ export type Substance = NonNullable<
 
 export type SupplierPart = NonNullable<
   Awaited<ReturnType<typeof getSupplierParts>>["data"]
+>[number];
+
+export type SupplierPartWithItem = NonNullable<
+  Awaited<ReturnType<typeof getSupplierPartsBySupplier>>["data"]
 >[number];
 
 export type Tool = Database["public"]["Views"]["tools"]["Row"];

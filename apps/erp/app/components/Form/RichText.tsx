@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, useField } from "@carbon/form";
 import { FormControl, FormErrorMessage } from "@carbon/react";
 import { RichText as RichTextBase, useRichText } from "@carbon/react/RichText";
@@ -52,7 +56,6 @@ const RichText = ({ name, output = "html", ...props }: RichTextProps) => {
       <RichTextBase {...props} editor={richText} />
       <input
         {...getInputProps({
-          // @ts-ignore
           id: name
         })}
         value={value}

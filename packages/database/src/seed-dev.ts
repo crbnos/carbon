@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Development seed script for Carbon.
  *
@@ -24,7 +28,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { getPostgresConnectionPool } from "./client.ts";
+import { getProcessPool } from "./client.ts";
 import { bootstrap, DEV_PASSWORD } from "./datasets/bootstrap.ts";
 import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
 import { applyDataset, datasetKeys, getDataset } from "./datasets/index.ts";
@@ -45,7 +49,7 @@ async function main() {
     `\nSeeding development environment for: ${email} (${datasetKey})\n`
   );
 
-  const pool = getPostgresConnectionPool(1);
+  const pool = getProcessPool();
   const client = await pool.connect();
   let seeded: { companyId: string; userId: string } | null = null;
 
@@ -64,15 +68,6 @@ async function main() {
     const timeZone = await resolveCompanyTimeZone(client, companyId);
 
     if (skipWipe) console.log("Skipping wipe (--skip-wipe).");
-
-    // Dev/test convenience: enable accounting so posting flows create GL
-    // journals out of the box. Runs for pre-existing companies too (the
-    // bootstrap path also sets it for brand-new ones). Production keeps
-    // the column default (false) — this script is dev-seed only.
-    await client.query(
-      `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
-      [companyId]
-    );
 
     await applyDataset(client, {
       companyId,

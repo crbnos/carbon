@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { formatDate, formatMoney } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -48,7 +52,7 @@ const ReimbursementsTable = memo(
               {row.original.reimbursementId}
             </Hyperlink>
           ),
-          meta: { icon: <LuHash /> }
+          meta: { icon: <LuHash />, mobile: "P1" }
         },
         {
           accessorKey: "status",
@@ -57,6 +61,7 @@ const ReimbursementsTable = memo(
             <ReimbursementStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCircleDot />,
             filter: {
               type: "static",
@@ -75,6 +80,7 @@ const ReimbursementsTable = memo(
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             filter: {
               type: "static",
@@ -91,7 +97,7 @@ const ReimbursementsTable = memo(
           header: t`Date`,
           cell: (item) =>
             formatDate(item.getValue<string>(), undefined, locale),
-          meta: { icon: <LuCalendar /> }
+          meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
         },
         {
           accessorKey: "reference",
@@ -115,7 +121,7 @@ const ReimbursementsTable = memo(
               </span>
             );
           },
-          meta: { icon: <LuCoins /> }
+          meta: { icon: <LuCoins />, mobile: "P2" }
         },
         {
           accessorKey: "journalId",

@@ -1,14 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import {
   copyQuoteLine,
   getMethodValidator,
+  recalculateQuoteLinePrices,
   upsertQuoteLineMethod,
   upsertQuoteMaterialMakeMethod
 } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -56,11 +63,28 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const lineMethod = await upsertQuoteLineMethod(
       serviceRole,
+      getDatabaseClient(),
       lineMethodPayload
     );
 
+    if (lineMethod.error) {
+      return { error: "Failed to get quote line method" };
+    }
+
+    // A new method (or configuration) changes the line's cost and its
+    // configuration surcharges, so reprice its existing quantities.
+    const recalculate = await recalculateQuoteLinePrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      userId
+    );
+
     return {
-      error: lineMethod.error ? "Failed to get quote line method" : null
+      error: recalculate.error
+        ? "Failed to recalculate quote line prices"
+        : null
     };
   }
 
@@ -70,14 +94,31 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const copyLine = await copyQuoteLine(serviceRole, {
+    const copyLine = await copyQuoteLine(serviceRole, getDatabaseClient(), {
       ...validation.data,
       companyId,
       userId
     });
 
+    if (copyLine.error) {
+      return { error: "Failed to copy quote line" };
+    }
+
+    // The copied method re-seeds the line's prices at cost-plus only; apply
+    // the line's pricing rules and configuration prices on top.
+    const [quoteId, quoteLineId] = validation.data.targetId.split(":");
+    const recalculate = await recalculateQuoteLinePrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      userId
+    );
+
     return {
-      error: copyLine.error ? "Failed to copy quote line" : null
+      error: recalculate.error
+        ? "Failed to recalculate quote line prices"
+        : null
     };
   }
 
@@ -108,6 +149,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const makeMethod = await upsertQuoteMaterialMakeMethod(
       serviceRole,
+      getDatabaseClient(),
       makeMethodPayload
     );
 

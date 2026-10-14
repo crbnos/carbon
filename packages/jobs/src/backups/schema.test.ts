@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 import { assertBackupImportable } from "../inngest/functions/tasks/company-backup";
 import {
@@ -19,6 +23,10 @@ vi.mock("./renames", () => ({
     danglingRename: "alsoMissing"
   },
   COLUMN_RENAMES: { oldName: { legacyId: "newId" } },
+  renameLiveColumns: (table: string, columns: string[]) =>
+    table === "keptName" && !columns.includes("newPrice")
+      ? columns.map((c) => (c === "oldPrice" ? "newPrice" : c))
+      : columns,
   renameColumns: (table: string, columns: string[]) =>
     table === "oldName"
       ? columns.map((c) => (c === "legacyId" ? "newId" : c))
@@ -228,6 +236,16 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
     const result = reportBackupCompatibility(
       catalog([table("newName", [col("id"), col("newId")])]),
       backup([{ name: "oldName", rows: 2, columns: ["id", "legacyId"] }])
+    );
+
+    expect(result.findings).toEqual([]);
+    expect(result.blocked).toBe(false);
+  });
+
+  it("compares a renamed column on a kept table under its current name", () => {
+    const result = reportBackupCompatibility(
+      catalog([table("keptName", [col("id"), col("newPrice")])]),
+      backup([{ name: "keptName", rows: 1, columns: ["id", "oldPrice"] }])
     );
 
     expect(result.findings).toEqual([]);

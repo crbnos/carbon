@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getCustomerTypes } from "~/modules/sales";
 import { CustomerTypesTable } from "~/modules/sales/ui/CustomerTypes";
 import type { Handle } from "~/utils/handle";
@@ -41,7 +45,7 @@ export default function CustomerTypesRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <CustomerTypesTable data={data ?? []} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

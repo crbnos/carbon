@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
@@ -5,6 +9,7 @@ import {
   isMaintenanceDispatchLocked,
   updateMaintenanceDispatch
 } from "~/modules/resources";
+import { postMaintenanceLabor } from "~/modules/resources/resources.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 // Field changes that can move a work center's downtime window.
@@ -121,6 +126,24 @@ export async function action({ request }: ActionFunctionArgs) {
         "Machine downtime changed",
         workCenterId
       );
+    }
+  }
+
+  // Completing closes every open timecard (end_maintenance_events_on_complete)
+  // — post their labor.
+  if (field === "status" && value === "Completed") {
+    const postingError = await postMaintenanceLabor({
+      maintenanceDispatchIds: ids as string[],
+      companyId,
+      userId
+    });
+    if (postingError) {
+      return {
+        error: {
+          message: `Updated, but labor cost did not post: ${postingError}`
+        },
+        data: results.map((result) => result.data)
+      };
     }
   }
 

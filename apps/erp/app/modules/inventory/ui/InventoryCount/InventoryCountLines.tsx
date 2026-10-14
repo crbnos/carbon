@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Badge, HStack, Skeleton, Switch, toast, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -219,6 +223,7 @@ const InventoryCountLines = ({
           );
         },
         meta: {
+          mobile: "P1",
           icon: <LuPackage />,
           // Display column (no accessorKey) — without an exportValue it is
           // absent from the CSV entirely.
@@ -464,7 +469,7 @@ const InventoryCountLines = ({
           </span>
         );
       },
-      meta: { icon: <LuCalculator /> }
+      meta: { mobile: "P2", icon: <LuCalculator /> }
     });
 
     if (!hideSystem) {
@@ -672,6 +677,7 @@ const InventoryCountLines = ({
       )}
       <Table<InventoryCountLine>
         compact
+        mobileLayout="table"
         columns={columns}
         data={lines}
         count={count}

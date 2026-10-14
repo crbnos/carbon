@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
@@ -18,6 +22,7 @@ import {
   rilletOnInstall,
   rilletOnUninstall
 } from "./rillet/hooks.server";
+import { senseHealthcheck, senseOnUninstall } from "./sense/hooks.server";
 import {
   stripeConnectHealthcheck,
   stripeConnectOnInstall,
@@ -86,6 +91,10 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: rilletOnInstall,
     onUpdate: rilletOnInstall,
     onUninstall: rilletOnUninstall
+  },
+  sense: {
+    onHealthcheck: senseHealthcheck,
+    onUninstall: senseOnUninstall
   },
   xero: {
     onHealthcheck: xeroHealthcheck,

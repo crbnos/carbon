@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import { Slot } from "@radix-ui/react-slot";
@@ -7,7 +11,6 @@ import * as React from "react";
 import { LuPanelLeft } from "react-icons/lu";
 import type { Button } from "./Button";
 import { Drawer, DrawerContent } from "./Drawer";
-import { useIsMobile } from "./hooks";
 import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import { Input } from "./Input";
@@ -21,9 +24,8 @@ import {
   TooltipTrigger
 } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
-const SIDEBAR_COOKIE_NAME = "sidebar:state";
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
@@ -59,6 +61,8 @@ const SidebarProvider = React.forwardRef<
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     touch?: boolean;
+    /** Bind ⌘B to toggle the sidebar. */
+    keyboardShortcut?: boolean;
   }
 >(
   (
@@ -67,6 +71,7 @@ const SidebarProvider = React.forwardRef<
       open: openProp,
       onOpenChange: setOpenProp,
       touch = false,
+      keyboardShortcut = true,
       className,
       style,
       children,
@@ -74,7 +79,7 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile();
+    const { isPhone: isMobile } = useViewport();
     const [openMobile, setOpenMobile] = React.useState(false);
 
     // This is the internal state of the sidebar.
@@ -89,9 +94,6 @@ const SidebarProvider = React.forwardRef<
         } else {
           _setOpen(openState);
         }
-
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       },
       [setOpenProp, open]
     );
@@ -110,7 +112,8 @@ const SidebarProvider = React.forwardRef<
       action: (event) => {
         event.preventDefault();
         toggleSidebar();
-      }
+      },
+      disabled: !keyboardShortcut
     });
 
     // We add a state so that we can do data-state="expanded" or "collapsed".

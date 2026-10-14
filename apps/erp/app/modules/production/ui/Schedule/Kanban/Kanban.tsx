@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ClientOnly, cn, toast } from "@carbon/react";
+import { withUnorderedLast } from "@carbon/utils";
 import type {
   Active,
   Announcements,
@@ -18,13 +23,21 @@ import {
   useSensors
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext } from "@dnd-kit/sortable";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
 import { BatchItemCard } from "./components/BatchItemCard";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
+import type { KanbanMoveTo } from "./context/KanbanContext";
 import { KanbanProvider } from "./context/KanbanContext";
 import {
   calculateFractionalPriority,
@@ -66,6 +79,11 @@ type KanbanDragState = {
 };
 
 const KanbanDragPreviewContext = createContext<KanbanDragState | null>(null);
+
+// A new options object makes a new sensor, and with it new listeners for
+// every card on every render of the board.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };
+const NO_ITEMS: Item[] = [];
 
 function PreviewItemCard({
   item,
@@ -304,40 +322,50 @@ function resolveDragCommit(
   }
 
   if (overData?.type === "column") {
-    if (
-      overData.column.id !== overId ||
-      !columnsById.has(overId) ||
-      overId === origin.placement.columnId
-    ) {
-      return null;
-    }
-
-    const destinationColumn = columnsById.get(overId);
-    if (!destinationColumn?.type.includes(origin.item.columnType)) {
-      return null;
-    }
-
-    const placement = getColumnPlacement(origin, items, overId);
-    if (placement) {
-      return {
-        columnId: overId,
-        updates: [{ id: origin.item.id, priority: placement.priority }]
-      };
-    }
-
-    // A background/empty-column drop whose origin priority collides with an
-    // existing card — renumber, appending the dragged op to the column's end.
-    const destinationItems = getItemsInColumn(items, overId, origin.item.id);
-    const updates = planColumnReorder(
-      origin,
-      items,
-      overId,
-      destinationItems.length
-    );
-    return updates.length ? { columnId: overId, updates } : null;
+    if (overData.column.id !== overId) return null;
+    return resolveColumnCommit(origin, items, columnsById, overId);
   }
 
   return null;
+}
+
+/**
+ * The priority writes for dropping a card on a column's background (it lands
+ * at the column's end). Shared by the drop and by the phone "Move to" menu.
+ */
+function resolveColumnCommit(
+  origin: OperationDragOrigin,
+  items: readonly Item[],
+  columnsById: ReadonlyMap<string, Column>,
+  columnId: string
+): DragCommit | null {
+  if (!columnsById.has(columnId) || columnId === origin.placement.columnId) {
+    return null;
+  }
+
+  const destinationColumn = columnsById.get(columnId);
+  if (!destinationColumn?.type.includes(origin.item.columnType)) {
+    return null;
+  }
+
+  const placement = getColumnPlacement(origin, items, columnId);
+  if (placement) {
+    return {
+      columnId,
+      updates: [{ id: origin.item.id, priority: placement.priority }]
+    };
+  }
+
+  // A background/empty-column drop whose origin priority collides with an
+  // existing card — renumber, appending the dragged op to the column's end.
+  const destinationItems = getItemsInColumn(items, columnId, origin.item.id);
+  const updates = planColumnReorder(
+    origin,
+    items,
+    columnId,
+    destinationItems.length
+  );
+  return updates.length ? { columnId, updates } : null;
 }
 
 const Kanban = ({
@@ -385,43 +413,56 @@ const Kanban = ({
   }, [batchUpdateFetchers]);
 
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    // Get stored column order from localStorage
-    const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
-    if (storedOrder) {
-      const parsedOrder = JSON.parse(storedOrder) as string[];
-      // Add any new columns that aren't in stored order
-      const newOrder = [...parsedOrder];
-      columns.forEach((col) => {
-        if (!newOrder.includes(col.id)) {
-          newOrder.push(col.id);
-        }
-      });
-      return newOrder;
-    }
-    return columns.map((col) => col.id);
+  // Only the order the user chose is state. The columns come from the loader
+  // and change while the board is open (a filter, a work center's first
+  // operation): one copied in at mount never showed a column that arrived later.
+  const [storedOrder, setStoredOrder] = useState<string[]>(() => {
+    const stored = localStorage.getItem(COLUMN_ORDER_KEY);
+    return stored ? (JSON.parse(stored) as string[]) : [];
   });
-
-  // Update localStorage when column order changes
-  useEffect(() => {
-    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(columnOrder));
-  }, [columnOrder]);
-
-  const itemsById = new Map<string, Item>(
-    initialItems.map((item) => [item.id, item])
+  const columnOrder = useMemo(
+    () =>
+      withUnorderedLast(
+        storedOrder,
+        columns.map((col) => col.id)
+      ),
+    [storedOrder, columns]
   );
+
+  useEffect(() => {
+    localStorage.setItem(COLUMN_ORDER_KEY, JSON.stringify(storedOrder));
+  }, [storedOrder]);
+
   const pendingItems = usePendingItems();
-
-  // merge pending items and existing items
-  for (const pendingItem of pendingItems) {
-    const item = itemsById.get(pendingItem.id);
-    if (item) {
-      itemsById.set(pendingItem.id, { ...item, ...pendingItem });
+  // The board re-renders on every drag state change. Deriving these once per
+  // change of the data keeps each column's item array (and so its cards) the
+  // same object across those renders.
+  const pendingKey = JSON.stringify(pendingItems);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pendingItems is keyed by value
+  const { items, itemsById, itemsByColumn } = useMemo(() => {
+    const byId = new Map<string, Item>(
+      initialItems.map((item) => [item.id, item])
+    );
+    // merge pending items and existing items
+    for (const pendingItem of pendingItems) {
+      const item = byId.get(pendingItem.id);
+      if (item) {
+        byId.set(pendingItem.id, { ...item, ...pendingItem });
+      }
     }
-  }
-
-  const items = Array.from(itemsById.values()).sort(comparePriorityThenId);
-  const columnsById = new Map(columns.map((column) => [column.id, column]));
+    const sorted = Array.from(byId.values()).sort(comparePriorityThenId);
+    const byColumn = new Map<string, Item[]>();
+    for (const item of sorted) {
+      const column = byColumn.get(item.columnId);
+      if (column) column.push(item);
+      else byColumn.set(item.columnId, [item]);
+    }
+    return { items: sorted, itemsById: byId, itemsByColumn: byColumn };
+  }, [initialItems, pendingKey]);
+  const columnsById = useMemo(
+    () => new Map(columns.map((column) => [column.id, column])),
+    [columns]
+  );
 
   const pickedUpItemColumn = useRef<string | null>(null);
   const dragOriginRef = useRef<OperationDragOrigin | null>(null);
@@ -433,9 +474,7 @@ const Kanban = ({
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   function getDraggingItemData(itemId: UniqueIdentifier, columnId: string) {
@@ -544,12 +583,29 @@ const Kanban = ({
     }
   };
 
+  const moveTo: KanbanMoveTo = {
+    targetsFor: (itemId) => {
+      const item = itemsById.get(itemId);
+      if (!item) return [];
+      return columnOrder.flatMap((columnId) => {
+        const column = columnsById.get(columnId);
+        return column &&
+          column.id !== item.columnId &&
+          column.type.includes(item.columnType)
+          ? [{ id: column.id, title: column.title }]
+          : [];
+      });
+    },
+    onMove: moveToColumn
+  };
+
   return (
     <KanbanProvider
       displaySettings={displaySettings}
       selectedGroup={selectedGroup}
       setSelectedGroup={setSelectedGroup}
       tags={tags}
+      moveTo={moveTo}
     >
       <KanbanDragPreviewContext.Provider value={dragState}>
         <DndContext
@@ -572,7 +628,7 @@ const Kanban = ({
                   <ColumnCard
                     key={col.id}
                     column={col}
-                    items={items.filter((item) => item.columnId === col.id)}
+                    items={itemsByColumn.get(col.id) ?? NO_ITEMS}
                     progressByItemId={progressByItemId}
                     CardComponent={PreviewItemCard}
                   />
@@ -589,9 +645,7 @@ const Kanban = ({
                     <ColumnCard
                       isOverlay
                       column={activeColumn}
-                      items={items.filter(
-                        (item) => item.columnId === activeColumn.id
-                      )}
+                      items={itemsByColumn.get(activeColumn.id) ?? NO_ITEMS}
                       progressByItemId={progressByItemId}
                     />
                   )}
@@ -698,7 +752,7 @@ const Kanban = ({
         const overColumnIndex = columnOrder.findIndex((id) => id === overId);
 
         if (activeColumnIndex >= 0 && overColumnIndex >= 0) {
-          setColumnOrder(
+          setStoredOrder(
             arrayMove(columnOrder, activeColumnIndex, overColumnIndex)
           );
         }
@@ -725,73 +779,115 @@ const Kanban = ({
         columnsById
       );
 
-      if (commit) {
-        if (
-          isBatchItem(origin.item) &&
-          commit.columnId !== origin.placement.columnId
-        ) {
-          // A batch dropped on a DIFFERENT work center reassigns the whole batch
-          // (the edge fn writes the work center to every member) and reschedules;
-          // the priority renumber is left to the resulting replan wave.
+      if (commit) submitCommit(origin, commit);
+    }
+
+    clearDragState();
+  }
+
+  // Persists a resolved move: each moved card writes through its own endpoint.
+  function submitCommit(origin: OperationDragOrigin, commit: DragCommit) {
+    if (
+      isBatchItem(origin.item) &&
+      commit.columnId !== origin.placement.columnId
+    ) {
+      // A batch dropped on a DIFFERENT work center reassigns the whole batch
+      // (the server fn writes the work center to every member) and reschedules;
+      // the priority renumber is left to the resulting replan wave.
+      submit(
+        {
+          intent: "update",
+          batchId: origin.item.batchId,
+          workCenterId: commit.columnId
+        },
+        {
+          method: "post",
+          action: path.to.priorityBatchingUpdate,
+          navigate: false,
+          flushSync: true,
+          fetcherKey: `item:${origin.item.id}`
+        }
+      );
+    } else {
+      // Within-column reorder (or a non-batch cross-column move). Each
+      // renumbered card writes through its own endpoint: an operation writes
+      // its priority (+ work center), a batch card writes every member's
+      // priority so min(member) lands at the batch's new dispatch slot.
+      const flushSync = commit.updates.length === 1;
+      const isBatchCard = (id: string) => {
+        const target = itemsById.get(id);
+        return !!target && isBatchItem(target);
+      };
+      // Several operations renumbered by one drop go in ONE request. One
+      // request per card meant one page reload per card, and the board
+      // stuttered for seconds after the drop.
+      const operationUpdates = commit.updates.filter(
+        (update) => !isBatchCard(update.id)
+      );
+      if (operationUpdates.length > 1) {
+        submit(
+          {
+            columnId: commit.columnId,
+            updates: JSON.stringify(operationUpdates)
+          },
+          {
+            method: "post",
+            action: path.to.priorityOperationUpdate,
+            navigate: false,
+            // Not the card's own key: a later move of that card would
+            // replace this fetcher and drop the other cards' pending order.
+            fetcherKey: `reorder:${commit.columnId}`
+          }
+        );
+      }
+      for (const update of commit.updates) {
+        const target = itemsById.get(update.id);
+        if (operationUpdates.length > 1 && !isBatchCard(update.id)) {
+          continue;
+        }
+        if (target && isBatchItem(target)) {
           submit(
             {
-              intent: "update",
-              batchId: origin.item.batchId,
-              workCenterId: commit.columnId
+              intent: "reprioritize",
+              batchId: target.batchId,
+              priority: update.priority
             },
             {
               method: "post",
               action: path.to.priorityBatchingUpdate,
               navigate: false,
-              flushSync: true,
-              fetcherKey: `item:${origin.item.id}`
+              flushSync,
+              fetcherKey: `item:${update.id}`
             }
           );
         } else {
-          // Within-column reorder (or a non-batch cross-column move). Each
-          // renumbered card writes through its own endpoint: an operation writes
-          // its priority (+ work center), a batch card writes every member's
-          // priority so min(member) lands at the batch's new dispatch slot.
-          const flushSync = commit.updates.length === 1;
-          for (const update of commit.updates) {
-            const target = itemsById.get(update.id);
-            if (target && isBatchItem(target)) {
-              submit(
-                {
-                  intent: "reprioritize",
-                  batchId: target.batchId,
-                  priority: update.priority
-                },
-                {
-                  method: "post",
-                  action: path.to.priorityBatchingUpdate,
-                  navigate: false,
-                  flushSync,
-                  fetcherKey: `item:${update.id}`
-                }
-              );
-            } else {
-              submit(
-                {
-                  id: update.id,
-                  columnId: commit.columnId,
-                  priority: update.priority
-                },
-                {
-                  method: "post",
-                  action: path.to.priorityOperationUpdate,
-                  navigate: false,
-                  flushSync,
-                  fetcherKey: `item:${update.id}`
-                }
-              );
+          submit(
+            {
+              id: update.id,
+              columnId: commit.columnId,
+              priority: update.priority
+            },
+            {
+              method: "post",
+              action: path.to.priorityOperationUpdate,
+              navigate: false,
+              flushSync,
+              fetcherKey: `item:${update.id}`
             }
-          }
+          );
         }
       }
     }
+  }
 
-    clearDragState();
+  // Phones: "Move to" on a card makes the same move as dropping it on that
+  // column's background.
+  function moveToColumn(itemId: string, columnId: string) {
+    const activeItem = itemsById.get(itemId);
+    const origin = activeItem ? createDragOrigin(items, activeItem) : null;
+    if (!origin) return;
+    const commit = resolveColumnCommit(origin, items, columnsById, columnId);
+    if (commit) submitCommit(origin, commit);
   }
 
   function onDragOver(event: DragOverEvent) {
@@ -832,16 +928,25 @@ function usePendingItems() {
     .filter((fetcher): fetcher is PendingItem => {
       return fetcher.formAction === path.to.priorityOperationUpdate;
     })
-    .map((fetcher) => {
-      let columnId = String(fetcher.formData.get("columnId"));
-      let id = String(fetcher.formData.get("id"));
-      let priority = Number(fetcher.formData.get("priority"));
-      let item: { id: string; priority?: number; columnId: string } = {
-        id,
-        priority,
-        columnId
-      };
-      return item;
+    .flatMap((fetcher) => {
+      const columnId = String(fetcher.formData.get("columnId"));
+      const updates = fetcher.formData.get("updates");
+      const rows: { id: string; priority: number }[] =
+        typeof updates === "string"
+          ? JSON.parse(updates)
+          : [
+              {
+                id: String(fetcher.formData.get("id")),
+                priority: Number(fetcher.formData.get("priority"))
+              }
+            ];
+      return rows.map(
+        (row): { id: string; priority?: number; columnId: string } => ({
+          id: row.id,
+          priority: row.priority,
+          columnId
+        })
+      );
     });
 
   // A batch work-center reassignment in flight: keep the batch card in its

@@ -23,14 +23,21 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
-  in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`, and
-  `update{Sales,Purchase}InvoiceStatus` returns an error rather than writing either.
-  Base-status `Paid` is the manual/legacy/Xero "settled" signal, allowed by the route only
-  when accounting is disabled.
+  in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no
+  manual status change: Mark as Paid / Mark as Unpaid, their `$invoiceId.status.tsx` routes
+  and `update{Sales,Purchase}InvoiceStatus` are gone, so in Carbon a payment (through
+  `invoiceSettlement`) is the only way an invoice becomes paid. An accounting-provider pull
+  still writes the base status: the Xero and QuickBooks Online invoice and bill syncers
+  (`packages/ee/src/accounting/providers/{xero,quickbooks-online}/entities/{invoice,bill}.ts`,
+  `upsertLocal`) set `Paid` or `Partially Paid` from the remote document (Xero: `PAID` gives
+  `Paid`, and a bill with `AmountPaid` and `AmountDue` gives `Partially Paid`; QBO: `Balance`
+  against `TotalAmt`), and the bill syncers also set `datePaid`.
+  The `salesInvoices` / `purchaseInvoices` views show a base `Paid` as `Paid` with a zero
+  `balance`, whatever the settlements say.
 - **Due date** — `computeInvoiceDateDue` anchors `paymentTerm.daysDue` by `calculationMethod`
   (`Net` / `End of Month` / `Day of Month`, clamped). A missing term falls back to
   `DEFAULT_PAYMENT_TERM` (Net 30); a term *query failure* throws so the caller aborts instead
-  of persisting a stale `dateDue`. Mirrors `functions/shared/calculate-due-date.ts`.
+  of persisting a stale `dateDue`. The date math is `calculateDueDate` (`@carbon/utils`).
 - **Memo** — ONE `memo` table, and `direction` (`Credit`/`Debit`) is **orthogonal to party**:
   all four combinations are legal (`memoDirection` carries both values; the table's only party
   constraint is customer-XOR-supplier). `credit-memos.tsx` / `supplier-credits.tsx` filter on
@@ -66,8 +73,8 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   content change during the Draft→Posted flip. `ReimbursementEditForm` shows `currencyCode` and
   `exchangeRate` **read-only on purpose**: they are the source transaction's facts, a
   reimbursement has no `*.exchange-rate` route, and re-denominating an imported expense is not a
-  workflow. `linesBalanceHeader` (EPSILON — matching the edge function's `requireLineSum`, NOT
-  its 0.01 journal tolerance) is the only pre-edge-function guard against posting an unbalanced
+  workflow. `linesBalanceHeader` (EPSILON — matching the server function's `requireLineSum`, NOT
+  its 0.01 journal tolerance) is the only pre-posting guard against posting an unbalanced
   reimbursement; both `$reimbursementId.post.tsx` and `.edit.tsx` (`save-and-post`) call it.
 - **Party-contact gate** — `checkPartyContactRequirement`
   (`~/modules/settings/party-contact.server`) runs at BOTH invoice post routes. The route's own
@@ -114,8 +121,14 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 - Edit a posted document. `isMemoLocked` / `isPaymentLocked` / `isReimbursementLocked` are all
   "anything but Draft"; posting and voiding go through the `post-sales-invoice`,
   `post-purchase-invoice`, `post-memo`, `post-payment`, `post-charge`, `post-reimbursement`
-  edge functions — never a direct status write.
+  server functions — never a direct status write.
 - Re-export `reimbursement.server.ts` or `stripe-customer.server.ts` from `index.ts`.
+- Delete a purchase invoice, or one of its lines, with a plain delete when it may carry Lease
+  lines: `leasePayment.purchaseInvoiceLineId` has no FK, so the payment row stays Invoiced and
+  is never billed again. The delete routes call `deletePurchaseInvoiceReleasingLeases` /
+  `deletePurchaseInvoiceLineReleasingLeases` (`~/modules/purchasing/purchasing.server`), which
+  return the rows to Pending in the same transaction; the MCP `invoicing_deletePurchaseInvoice`
+  / `invoicing_deletePurchaseInvoiceLine` tools are blocked.
 
 ## Validation Commands
 
@@ -129,11 +142,11 @@ pnpm --filter erp test                                    # the whole app's vite
 
 | Table / View | Purpose |
 |---|---|
-| `salesInvoice` / `salesInvoices` (view) | AR header; view derives `balance`, `invoiceTotal`, `Partially Paid`/`Overdue`, `paymentTermName` |
-| `salesInvoiceLine` / `salesInvoiceLines` / `salesInvoiceLocations` (views) | AR lines (`salesInvoiceLineType` includes `Fixed Asset`) |
-| `salesInvoiceShipment` | Per-invoice shipping method/term/cost + incoterm |
+| `salesInvoice` / `salesInvoices` (view) | AR header; view derives `balance`, `invoiceTotal`, `Partially Paid`/`Overdue`, `paymentTermName`. Invoice automation columns: `automationHoldReason` (a Draft a person must review before automation posts it), `sentAt` / `sentTo` / `sendError` (the manual post route stamps `sentAt` when the email is QUEUED, or `sentTo: "Stripe"` once the Stripe send succeeds, and `sendError` when anything after the post — the PDF, the contact, the email or the Stripe send — fails; the automation stamps when it is SENT, and a sent stamp that fails to write becomes a `sendError` rather than a clean send). The header shows "Emailed", or "Sent via Stripe" when `sentTo` is `Stripe`. The view's `needsReview` = held Draft, or posted with `sendError` and no `sentAt` — the Sales Invoices list shows an orange "Needs Review" badge beside the status (tooltip: the hold reason or send error) and filters on the hidden `needsReview` column (`?filter=needsReview:eq:true`, the link the digest notification uses). There is no sidebar entry for it. A posted invoice that failed to send has a Send action (`$invoiceId.send.tsx`, fires `carbon/invoice.automate` with `resend: true`: the job sends through Stripe when the invoice's source mode is `Post and Send via Stripe`, otherwise by email — including a manually posted invoice with no recurring source). The posted PDF is stored under `{companyId}/opportunity/{opportunityId}/`, or `{companyId}/sales-invoice/{invoiceId}/` when the invoice has no opportunity; it is rendered by `@carbon/lib/sales-invoice-document.server` (shared with the PDF route and the automation job) |
+| `salesInvoiceLine` / `salesInvoiceLines` / `salesInvoiceLocations` (views) | AR lines (`salesInvoiceLineType` includes `Fixed Asset`). **Line discount** (migration `20261006221401`): `discountPercent` is a FRACTION 0–1 (CHECK, default 0) with generated `netUnitPrice` / `convertedNetUnitPrice`; it discounts the merchandise (`quantity × unitPrice`) only — add-ons and shipping never — and tax is charged on the discounted merchandise. `unitPrice` stays the LIST price. Every amount path applies it: the `salesInvoices` view totals, `calculateSalesPostingAmounts` (`@carbon/database`, `sales-posting-amounts.ts`), the PDF / email (`@carbon/documents` `utils/sales-invoice.ts`), `SalesInvoiceSummary`, Stripe (`toStripeInvoiceLines`) and the accounting providers (`sales-document-components.ts`). The form field "Discount (%)" posts percent POINTS; `$invoiceId.new` / `$invoiceId.$lineId.details` divide by 100 (`salesInvoiceLineValidator` accepts 0–100). `upsertSalesInvoiceLine` (an MCP tool) writes the value as given, so an MCP caller must send the fraction (20 is refused by the CHECK). Contract provenance: `customerContractId` / `customerContractLineId` / `customerContractInvoiceLineId` and `projectId` (written as the Project dimension on the line's revenue legs); `salesInvoice.customerContractId` and `memo.customerContractId` likewise. With these FKs, inferring a bare `salesInvoice(...)` embed from `salesInvoiceLine` exceeds TypeScript's instantiation depth (TS2589): name the FK, `salesInvoice!salesInvoiceLine_invoiceId_fkey(...)` |
+| `salesInvoiceShipment` | Per-invoice shipping method/term/cost + incoterm, and the customer ship-to `customerLocationId` ("Ship To" on `SalesInvoiceShipmentForm`; copied from the order / contract / rental agreement when one drafts the invoice; sales rules evaluate standalone lines against it, never the bill-to — see sales `AGENTS.md` "Invoice ship-to") |
 | `purchaseInvoice` / `purchaseInvoices` (view) | AP header; view derives `balance`, `orderTotal`, the derived statuses |
-| `purchaseInvoiceLine` / `purchaseInvoiceLines` (view) | AP lines (`purchaseInvoiceLineType` includes `G/L Account`) |
+| `purchaseInvoiceLine` / `purchaseInvoiceLines` (view) | AP lines (`invoiceLineType`, enum `payableLineType`, includes `G/L Account` and `Lease`). A **Lease** line (migrations `20261011163133` / `20261011202305`) has no item, account or asset: `leaseId` names the lessee lease (CHECK `purchaseInvoiceLine_lease_check`: type `Lease` iff `leaseId` set) and `leasePaymentId` the `leasePayment` row it bills when the `create-lease-invoices` server function drafted it (one line per leased asset's row, described with the asset; `upsertPurchaseInvoiceLine` never takes `leasePaymentId` from a caller). The view adds `leaseReadableId` / `leaseName`. `purchaseInvoiceLineValidator` requires `leaseId` and a description on a Lease line; `PurchaseInvoiceLineForm` has a **Lease** tab listing the supplier's Active / Expired / Terminated / Purchased leases, and locks the lease and amount of a drafted line. Posting (`post-purchase-invoice`; the account and checks in `resolveLeasePostingLine`, `post-purchase-invoice/lease-lines.ts`, shared with the cutover's legacy backfill; the lines in `kind: "lease"` of `posting-lines.ts`): by the classification of the row's asset (`leaseLine`), a capitalized (Operating / Finance) asset's line debits `leaseLiabilityAccount` with its NOMINAL amount (`nominalBaseCost`, quantity × base unit price), which must equal the row's amount (`equals`), and its tax, line shipping and share of the header freight to `operatingLeaseExpenseAccount`; a Short-Term asset's line debits `operatingLeaseExpenseAccount` in full; a line without a payment row debits `variableLeaseExpenseAccount` in full; AP is credited the whole total. Refused for a lease that is not billable (`BILLABLE_LEASE_STATUSES`: a Draft or Cancelled lease), a payment row of another lease, a row whose `purchaseInvoiceLineId` is not this line (billed by another line), or with a project. VOID returns the billed rows to Pending and stamps `voidedPurchaseInvoiceId`. See purchasing AGENTS → Leases |
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
@@ -169,9 +182,10 @@ guarded by `requireUnlockedBulk`, not validators.
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
 - `createSalesInvoiceFromSalesOrder` / `createSalesInvoiceFromShipment` /
-  `createPurchaseInvoiceFromPurchaseOrder` — all three invoke the `convert` edge function.
-- `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` / `DEFAULT_PAYMENT_TERM` — terms
-  math; discounts batch-load their terms in one query, never per invoice.
+  `createPurchaseInvoiceFromPurchaseOrder` — all three call the `convert` server function.
+- `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
+  `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
+  discounts batch-load their terms in one query, never per invoice.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos
@@ -198,7 +212,9 @@ guarded by `requireUnlockedBulk`, not validators.
 - **sales** / **purchasing** — invoices convert from sales orders, shipments and POs; sales
   rules gate the sales-invoice post; `getCustomerPayment`/`getCustomerShipping` (and the
   supplier equivalents) seed invoice headers.
-- **settings** — `getNextSequence`, `getCompanySettings` (`accountingEnabled`),
+- **settings** — `getNextSequence`, `getCompanySettings` (`accountingCutoverDate`, read through
+  `hasAccountingCutover` from `~/modules/accounting/accounting.utils`: before the cutover the receivables / payables
+  workbenches and the invoicing dashboard skip the GL tie-out, and the adjust routes refuse),
   `party-contact.server`.
 - **shared** — `getCompanyTimeZone` (`timezone.server`); `incoterms`/`itemType`/`methodType` from
   `shared.models` imported DIRECTLY, never via the `../shared` barrel (which drags Lingui macros
@@ -212,4 +228,4 @@ guarded by `requireUnlockedBulk`, not validators.
   and reimbursements reach Xero / QuickBooks / Rillet
 - `.claude/rules/ramp-integration.md` — where `charge` and `reimbursement` rows come from
 - `.claude/rules/conventions-forms.md` — `ValidatedForm` + zod + route-action shape
-- `.claude/rules/workflow-edge-function.md` — the `post-*` functions these routes invoke
+- `packages/server-functions/AGENTS.md` — the `post-*` server functions these routes call

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
@@ -97,6 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         fromStorageUnitName: kanban.fromStorageUnitName,
         supplierName: kanban.supplierName,
         quantity: kanban.quantity ?? 0,
+        replenishmentLevel: kanban.replenishmentLevel,
         unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,
         thumbnail: thumbnails[kanban.id!] || null
       };

@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
- * Shared contracts for animated work instructions (Phase 0).
- * These types mirror `docs/specs/animated-work-instructions-contracts.md` exactly.
- * Change them only by updating the geometry service, the ERP/Inngest layer, and
- * this package together.
+ * Shared contracts for animated work instructions. This file IS the contract:
+ * the geometry service writes these shapes into plan.json, the ERP/Inngest
+ * layer stores them on steps, and the player animates them. Change a shape the
+ * geometry service emits only by updating it, the ERP/Inngest layer, and this
+ * package together. `waypoints` is editor-only — the geometry service never
+ * reads or writes it.
  */
 
 export type Vec3 = [number, number, number];
@@ -48,6 +54,18 @@ export type PathMotion = {
   keyframes: { t: number; position: Vec3; quaternion: Quat }[];
 };
 
+/**
+ * Editor-authored path with rotation. Poses are RELATIVE to the moving set's
+ * seated pose: each waypoint turns the set by `rotation` about its seated
+ * center, then shifts it by `offset`. So one motion applies to a single part,
+ * a rigid group, or a whole sub-assembly. First = start, last = seat
+ * (offset [0,0,0], rotation [0,0,0,1]).
+ */
+export type WaypointsMotion = {
+  type: "waypoints";
+  waypoints: { offset: Vec3; rotation: Quat }[];
+};
+
 /** No geometry motion (process-only step: cure, inspect, torque pattern). */
 export type NoneMotion = {
   type: "none";
@@ -55,13 +73,16 @@ export type NoneMotion = {
 
 /**
  * Describes the insertion motion of a step's components into the assembly. The
- * viewer derives removal (the reverse) and start poses from it.
+ * viewer derives removal (the reverse) and start poses from it. The demo
+ * datasets restate the shapes they seed as `AssemblyStepMotionSpec`
+ * (@carbon/database cannot import this package).
  */
 export type Motion =
   | LinearMotion
   | LMotion
   | HelixMotion
   | PathMotion
+  | WaypointsMotion
   | NoneMotion;
 
 /** Step camera. `null` on a step means the viewer auto-frames the active components. */
@@ -115,11 +136,23 @@ export type AssemblyStep = {
    */
   hiddenComponentNodeIds?: string[];
   /**
-   * Built off to the side: the id of the later JOIN step where the group this
-   * step builds is carried into the main assembly (DB `parentStepId`).
-   * `null`/absent = built in place. See `staging.ts`.
+   * This row is a sub-assembly (a header): the steps whose `parentStepId` is
+   * its id are built on their own, directly before it. See `subassembly.ts`.
    */
-  joinStepId?: string | null;
+  isSubAssembly?: boolean;
+  /** The sub-assembly this step belongs to. `null`/absent = top level. */
+  parentStepId?: string | null;
+  /**
+   * On a header: the later step that fits the finished sub-assembly.
+   * `null`/absent = it joins the main build at the header itself.
+   */
+  usedInStepId?: string | null;
+  /**
+   * The build's orientation from this step on (see `orientation.ts`): a unit
+   * quaternion turning the model frame into the bench frame. `null`/absent =
+   * the same as the previous step in this build.
+   */
+  orientation?: Quat | null;
 };
 
 /** One node of the assembly tree in graph.json. */

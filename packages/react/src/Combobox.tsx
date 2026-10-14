@@ -1,24 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { matchSorter, rankings } from "match-sorter";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useMemo, useRef, useState } from "react";
-import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandTrigger
-} from "./Command";
+import { forwardRef, useMemo, useState } from "react";
+import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { CommandTrigger } from "./Command";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import type { PickerListOption } from "./PickerList";
+import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { Spinner } from "./Spinner";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { reactNodeToString, withDistinctHelpers } from "./utils/react";
+import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type ComboboxOption = {
   label: string | JSX.Element;
@@ -63,7 +62,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       asButton,
       size,
       value,
-      options,
+      options: optionsProp,
       filter,
       isClearable,
       isLoading,
@@ -79,11 +78,18 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // An item option's helper is its name, which for a service repeats the
+    // readable id in the label.
+    const options = useMemo(
+      () => withDistinctHelpers(optionsProp),
+      [optionsProp]
+    );
     // Treat the native `disabled` prop as equivalent to `isReadOnly`. The type
     // accepts `disabled` (it extends button props), so callers reasonably pass
     // it — honor it instead of silently overwriting it below.
     const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
+    const openAutoFocus = usePhoneOpenAutoFocus();
     const isInlinePreview = !!inline;
     const selectedOption = useMemo(
       () => options.find((option) => option.value === value),
@@ -178,6 +184,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
+            onOpenAutoFocus={openAutoFocus}
             className="w-auto min-w-[max(var(--radix-popover-trigger-width),14rem)] max-w-[min(560px,calc(100vw-2rem))] p-1"
           >
             {/* Zero-height sizer: the widest option, so the auto width fits it
@@ -192,13 +199,21 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             {emptyMessage && options.length === 0 ? (
               emptyMessage
             ) : (
-              <VirtualizedCommand
+              <PickerList
                 options={options}
-                filter={filter}
+                filter={filter ?? filterComboboxOptions}
+                selectionMode="single"
                 value={value}
-                onChange={onChange}
                 itemHeight={itemHeight}
-                setOpen={setOpen}
+                getItemValue={getComboboxItemValue}
+                isChecked={(_, itemValue) => itemValue === value}
+                isHelperPadded={(_, itemValue) => itemValue === value}
+                emptyMessage={t`No option found.`}
+                onSelect={(item, { setSearch }) => {
+                  onChange?.(item.value);
+                  setSearch("");
+                  setOpen(false);
+                }}
               />
             )}
           </PopoverContent>
@@ -219,15 +234,6 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
 Combobox.displayName = "Combobox";
 
 export { Combobox };
-
-type VirtualizedCommandProps = {
-  options: ComboboxOption[];
-  filter?: ComboboxFilter;
-  value?: string;
-  onChange?: (selected: string) => void;
-  itemHeight: number;
-  setOpen: (open: boolean) => void;
-};
 
 const labelOf = (option: ComboboxOption) =>
   typeof option.label === "string"
@@ -258,136 +264,7 @@ export function filterComboboxOptions(
   });
 }
 
-function VirtualizedCommand({
-  options,
-  filter = filterComboboxOptions,
-  value,
-  onChange,
-  itemHeight,
-  setOpen
-}: VirtualizedCommandProps) {
-  const { t } = useLingui();
-  const [search, setSearch] = useState("");
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const filteredOptions = useMemo(
-    () => filter(options, search),
-    [options, search, filter]
-  );
-
-  const virtualizer = useVirtualizer({
-    count: filteredOptions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: 12
-  });
-
-  const items = virtualizer.getVirtualItems();
-
-  return (
-    <Command shouldFilter={false}>
-      <CommandInput
-        value={search}
-        onValueChange={setSearch}
-        placeholder={t`Search...`}
-        className="h-9"
-      />
-      <CommandEmpty>{t`No option found.`}</CommandEmpty>
-      <div
-        ref={parentRef}
-        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
-        style={{
-          height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
-        }}
-      >
-        <CommandGroup
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative"
-          }}
-        >
-          {items.map((virtualRow) => {
-            const item = filteredOptions[virtualRow.index]!;
-            const itemValue =
-              typeof item.label === "string"
-                ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
-                : reactNodeToString(item.label);
-            const itemHoverText =
-              typeof item.label === "string"
-                ? [item.label, item.helper].filter(Boolean).join(" - ")
-                : [reactNodeToString(item.label), item.helper]
-                    .filter(Boolean)
-                    .join(" - ");
-
-            return (
-              <CommandItem
-                key={item.value}
-                value={
-                  typeof item.label === "string"
-                    ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
-                    : reactNodeToString(item.label)
-                }
-                onSelect={() => {
-                  onChange?.(item.value);
-                  setSearch("");
-                  setOpen(false);
-                }}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${itemHeight}px`,
-                  transform: `translateY(${virtualRow.start}px)`
-                }}
-              >
-                {item.helper ? (
-                  <div
-                    className={cn(
-                      "flex flex-col min-w-0 flex-1",
-                      itemValue === value && "pr-2"
-                    )}
-                  >
-                    <TruncatedTooltipText
-                      className="block w-full truncate"
-                      tooltip={itemHoverText}
-                    >
-                      {item.label}
-                    </TruncatedTooltipText>
-                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <TruncatedTooltipText
-                        className="truncate flex-1"
-                        tooltip={itemHoverText}
-                      >
-                        {item.helper}
-                      </TruncatedTooltipText>
-                      {item.helperRight && (
-                        <span className="flex-shrink-0">
-                          {item.helperRight}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <TruncatedTooltipText
-                    className="truncate flex-1"
-                    tooltip={itemHoverText}
-                  >
-                    {item.label}
-                  </TruncatedTooltipText>
-                )}
-                <LuCheck
-                  className={cn(
-                    "ml-auto h-4 w-4",
-                    itemValue === value ? "opacity-100" : "opacity-0 hidden"
-                  )}
-                />
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-      </div>
-    </Command>
-  );
-}
+const getComboboxItemValue = (item: PickerListOption) =>
+  typeof item.label === "string"
+    ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
+    : reactNodeToString(item.label);

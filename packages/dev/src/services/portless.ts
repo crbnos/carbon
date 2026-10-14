@@ -1,10 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
-import { confirm, isCancel, log, spinner } from "@clack/prompts";
+import { confirm, isCancel, log } from "@clack/prompts";
 import { execa, execaSync } from "execa";
+import { join } from "pathe";
 import pc from "picocolors";
-import { PORTLESS_MIN_VERSION } from "../constants.js";
+import { PORTLESS_MIN_VERSION, TLD } from "../constants.js";
+import { requireTerminal } from "../prompts.js";
+import { spinner } from "../ui.js";
 import type { PortMap } from "../worktree.js";
 
 // Strip npm_* / PNPM_* so portless doesn't refuse with "should not be run via
@@ -180,6 +187,10 @@ export async function ensureProxyPrivileges() {
     ? "Will bind :443, install the local CA, and write hosts entries (requires Administrator terminal)."
     : "Set it up now? Will run sudo to bind :443, install the local CA, and write /etc/hosts entries.";
 
+  requireTerminal(
+    "Setting up the portless proxy (it runs sudo)",
+    "Run `crbn up` once in a terminal, or pass --no-portless."
+  );
   const proceed = await confirm({
     message: elevateHint,
     initialValue: true
@@ -365,6 +376,57 @@ export async function unregisterAliases(root: string, branchPrefix: string) {
       })
     )
   );
+}
+
+type Route = { hostname: string; port: number; pid: number };
+
+// Static aliases (pid 0) crbn registered whose port no live slot owns: the
+// stack they pointed at is gone, and `portless prune` only reaps routes that
+// have a process. Returned as alias names (hostname minus the TLD). Exported
+// for tests.
+export function staleAliasNames(
+  routes: Route[],
+  livePorts: Set<number>
+): string[] {
+  const suffix = `.${TLD}`;
+  // The first label of every hostname crbn registers.
+  const labels = new Set(
+    aliasMap("x", {} as PortMap).map((a) => a.name.split(".")[0])
+  );
+  return routes
+    .filter(
+      (r) =>
+        r.pid === 0 &&
+        r.hostname.endsWith(suffix) &&
+        labels.has(r.hostname.split(".")[0]) &&
+        !livePorts.has(r.port)
+    )
+    .map((r) => r.hostname.slice(0, -suffix.length));
+}
+
+export function findStaleAliases(livePorts: Set<number>): string[] {
+  const file = join(
+    process.env.PORTLESS_STATE_DIR ?? join(homedir(), ".portless"),
+    "routes.json"
+  );
+  if (!existsSync(file)) return [];
+  try {
+    return staleAliasNames(JSON.parse(readFileSync(file, "utf8")), livePorts);
+  } catch {
+    return [];
+  }
+}
+
+// One at a time: each call rewrites portless's routes file.
+export async function removeAliases(names: string[]) {
+  for (const name of names) {
+    await execa("portless", ["alias", "--remove", name], {
+      reject: false,
+      stdio: "ignore",
+      extendEnv: false,
+      env: portlessEnv()
+    });
+  }
 }
 
 // Let portless handle its own cleanup — kills orphaned dev servers from

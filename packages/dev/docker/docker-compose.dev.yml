@@ -5,10 +5,14 @@
 # SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, plus user secrets passed through.
 ###
 
+# `restart: on-failure` on every service: a crashed container comes back, but
+# the stack does NOT restart with the Docker daemon. A stack is only useful
+# with its `crbn up` running, and `unless-stopped` brought every stack whose
+# terminal had died back to life on each Docker start.
 services:
   postgres:
     image: supabase/postgres:15.14.1.112
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -73,7 +77,7 @@ services:
 
   gotrue:
     image: supabase/gotrue:v2.189.0
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -86,7 +90,10 @@ services:
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
       GOTRUE_SITE_URL: ${ERP_URL}
-      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/callback,${MES_URL},${MES_URL}/callback,${GTM_URL}
+      # `/**` so a callback carrying `?redirectTo=` still matches — an exact
+      # entry does not, and GoTrue then falls back to GOTRUE_SITE_URL (the
+      # ERP). localhost:4000 is the starter (`pnpm dev:starter`).
+      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/**,${MES_URL},${MES_URL}/**,${GTM_URL},http://localhost:4000,http://localhost:4000/**
       GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600
@@ -129,7 +136,7 @@ services:
 
   postgrest:
     image: postgrest/postgrest:v13.0.8
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -155,7 +162,7 @@ services:
 
   realtime:
     image: supabase/realtime:v2.89.0
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -190,7 +197,7 @@ services:
 
   storage:
     image: supabase/storage-api:v1.58.4
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -231,7 +238,8 @@ services:
   # storage volume with no RLS.
   imgproxy:
     image: darthsim/imgproxy:v3.8.0
-    restart: unless-stopped
+    restart: on-failure
+    profiles: ["full"]
     deploy:
       resources:
         limits:
@@ -253,13 +261,13 @@ services:
 
   meta:
     image: supabase/postgres-meta:v0.96.5
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
           memory: ${MEM_META:-128m}
           cpus: ${CPU_META:-0.25}
-    profiles: ["full"]
+    profiles: ["full", "studio"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -273,13 +281,13 @@ services:
 
   studio:
     image: supabase/studio:2026.04.28-sha-89d08a2
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
           memory: ${MEM_STUDIO:-384m}
           cpus: ${CPU_STUDIO:-0.5}
-    profiles: ["full"]
+    profiles: ["full", "studio"]
     depends_on:
       meta:
         condition: service_started
@@ -302,26 +310,32 @@ services:
 
   inbucket:
     image: inbucket/inbucket:3.1.1
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
           memory: ${MEM_INBUCKET:-64m}
           cpus: ${CPU_INBUCKET:-0.25}
-    profiles: ["full"]
+    profiles: ["mail"]
     ports:
       - "${PORT_INBUCKET}:9000"
+    # The image declares /config and /storage as volumes; left unmounted, each
+    # `down` strands two anonymous volumes. /config is empty in the image.
+    tmpfs:
+      - /config
+    volumes:
+      - inbucket:/storage
 
   edge-runtime:
     image: supabase/edge-runtime:v1.74.0
-    restart: unless-stopped
+    restart: on-failure
+    profiles: ["full"]
     deploy:
       resources:
         limits:
           # The edge runtime compiles each function's TS module graph on worker
-          # boot (kysely/zod graphs take real CPU) and runs every privileged
-          # business function. Starved of CPU, worker boot outlives the isolate
-          # CPU budget and requests hang mid-kill — give it app-tier resources.
+          # boot. Starved of CPU, worker boot outlives the isolate CPU budget
+          # and requests hang mid-kill.
           memory: ${MEM_EDGE:-1g}
           cpus: ${CPU_EDGE:-3}
     depends_on:
@@ -333,21 +347,9 @@ services:
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/postgres
       VERIFY_JWT: "false"
-      # Backups edge fns (export/import/revert) send Inngest events. The edge
-      # runtime is a separate env from the ERP app, so without these its
-      # inngest.send() defaults to Inngest Cloud → 401. Point it at the local
-      # dev server via the compose-network alias (NOT localhost — that's the
-      # edge container itself).
-      INNGEST_DEV: "1"
-      INNGEST_BASE_URL: http://inngest:8288
-      # Local Chromium for the `thumbnail` edge fn (the `chrome` profile below).
-      # Prod reads no env → falls back to the remote browserless box.
-      BROWSERLESS_WS_URL: ws://chrome:3000
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
-      - ./packages/database/src:/home/src:ro
       # Dev-only dispatcher; lives outside supabase/functions/ so prod
       # `supabase functions deploy --all` can't pick it up.
       - ./packages/dev/docker/edge-main:/home/deno/main:ro
@@ -358,7 +360,7 @@ services:
 
   kong:
     image: kong:2.8.1
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -378,6 +380,7 @@ services:
         required: false
       edge-runtime:
         condition: service_started
+        required: false
     ports:
       - "${PORT_API}:8000"
     environment:
@@ -400,7 +403,7 @@ services:
 
   inngest:
     image: inngest/inngest:v1.19.4
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -421,35 +424,9 @@ services:
       - inngest:/data
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
 
-  # Local headless Chromium for the `thumbnail` edge fn — opt-in
-  # (`crbn up --thumbnails` enables this profile). v1 browserless (swiftshader
-  # WebGL, so the GLB render works) is compatible with the edge fn's puppeteer
-  # 16.2.0. edge-runtime reaches it at ws://chrome:3000; it in turn renders the
-  # portless ERP host (VERCEL_URL, e.g. erp.<prefix>.dev) through the portless
-  # proxy on the host — the same host-gateway path the inngest service uses. The
-  # raw ERP dev port only binds 127.0.0.1, so it is NOT container-reachable; the
-  # proxy is. The edge fn connects with ignoreHTTPSErrors for the self-signed CA.
-  chrome:
-    image: browserless/chrome:1-puppeteer-21.3.6
-    restart: unless-stopped
-    profiles: ["chrome"]
-    deploy:
-      resources:
-        limits:
-          memory: ${MEM_CHROME:-1g}
-          cpus: ${CPU_CHROME:-1}
-    environment:
-      # Match the edge fn's connect URL (ws://chrome:3000, no token).
-      TOKEN: ""
-      CONNECTION_TIMEOUT: "60000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      # Resolve the portless erp host (erp.<prefix>.dev) to the host, so the
-      # rendered VERCEL_URL reaches the portless proxy — mirrors inngest.
-      - "${INNGEST_TLS_HOST}:host-gateway"
-
 volumes:
   pgdata:
   pgconfig:
   storage:
   inngest:
+  inbucket:

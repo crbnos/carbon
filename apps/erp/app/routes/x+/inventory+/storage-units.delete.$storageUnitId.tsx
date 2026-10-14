@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Checkbox,
@@ -12,20 +17,11 @@ import {
   ModalOverlay,
   ModalTitle
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import {
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import { useRef, useState } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteStorageUnit,
@@ -33,7 +29,6 @@ import {
   getStorageUnit
 } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -110,19 +105,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  // Nothing to validate — ConfirmDelete-style forms only carry the cascade
-  // flag. Invalidate the cached list so the table refreshes after.
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return queryKey[0] === "storageUnits" && queryKey[1] === companyId;
-    }
-  });
-  return await serverAction();
-}
-
 export default function DeleteStorageUnitRoute() {
   const { storageUnitId } = useParams();
   if (!storageUnitId) throw notFound("storageUnitId not found");
@@ -170,15 +152,15 @@ function DeleteWithCascadeModal({
   onCancel: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        submitted.current = false;
+      }
+    }
+  });
   const [cascade, setCascade] = useState(false);
   const submitted = useRef(false);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      submitted.current = false;
-    }
-  }, [fetcher.state]);
 
   const disabled = !cascade;
 

@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import ReceiptDocuments from "./ReceiptDocuments";
 import ReceiptForm from "./ReceiptForm";
+import ReceiptHeader from "./ReceiptHeader";
 import ReceiptLines from "./ReceiptLines";
 import ReceiptPostModal from "./ReceiptPostModal";
 import ReceiptStatus from "./ReceiptStatus";
@@ -6,7 +12,9 @@ import ReceiptsTable from "./ReceiptsTable";
 import ReceiptVoidModal from "./ReceiptVoidModal";
 
 export {
+  ReceiptDocuments,
   ReceiptForm,
+  ReceiptHeader,
   ReceiptLines,
   ReceiptPostModal,
   ReceiptsTable,

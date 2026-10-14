@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -150,7 +154,7 @@ export async function updatePrintJobStatus(
   status: PrintJobStatus,
   opts?: { error?: string }
 ) {
-  const update: Record<string, unknown> = {
+  const update: Database["public"]["Tables"]["printJob"]["Update"] = {
     status,
     updatedAt: new Date().toISOString()
   };

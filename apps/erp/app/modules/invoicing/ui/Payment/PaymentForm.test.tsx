@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComponentProps, ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -41,25 +45,10 @@ vi.mock("react", async (importOriginal) => {
     }
   };
 });
-vi.mock("@carbon/react", () => {
-  const Box = ({ children }: { children?: ReactNode }) =>
-    createElement("div", null, children);
-  return {
-    Button: Box,
-    Card: Box,
-    CardContent: Box,
-    CardDescription: Box,
-    CardFooter: Box,
-    CardHeader: Box,
-    CardTitle: Box,
-    DropdownMenuIcon: Box,
-    DropdownMenuItem: Box,
-    Status: Box,
-    VStack: Box,
-    useDisclosure: () => ({ isOpen: false }),
-    useMount: () => undefined
-  };
-});
+// PaymentForm imports nothing from @carbon/react; `useCurrencies` needs useMount.
+vi.mock("@carbon/react", () => ({
+  useMount: () => undefined
+}));
 vi.mock("@carbon/form", () => ({
   ValidatedForm: ({
     children,
@@ -83,7 +72,6 @@ vi.mock("~/components/Form", () => {
     Hidden: ({ name, value }: { name: string; value?: string }) =>
       createElement("input", { type: "hidden", name, value, readOnly: true }),
     Input: Field,
-    Select: Field,
     SelectControlled: ({
       options,
       onChange
@@ -137,13 +125,18 @@ vi.mock("@lingui/react/macro", () => ({
       )
   })
 }));
+// The currency list is read through the query cache (`useCurrencies`).
+vi.mock("@carbon/query", () => ({
+  RefreshRate: { Never: Number.POSITIVE_INFINITY },
+  useLoaderQuery: () => ({
+    data: { data: harness.currencies },
+    isFetching: false
+  })
+}));
 vi.mock("react-router", () => ({
   generatePath: (path: string) => path,
-  useFetcher: () => ({ state: "idle", data: { data: harness.currencies } })
+  useFetcher: () => ({ state: "idle" })
 }));
-vi.mock("~/components", () => ({ DocumentHeader: () => null }));
-vi.mock("~/components/Enumerable", () => ({ Enumerable: () => null }));
-vi.mock("~/components/Modals", () => ({ ConfirmDelete: () => null }));
 vi.mock("~/hooks/useCompanySettings", () => ({
   useCompanySettings: () => ({ showCurrencyTrailingZeros: true })
 }));

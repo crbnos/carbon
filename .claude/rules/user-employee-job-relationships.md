@@ -96,6 +96,12 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `employee.active = false`, and invalidates the Redis claims cache. It does **not** clear
   `user.active` or scrub stored userId references (assignee columns, `workCenterEmployee`,
   notification-group settings arrays).
+- Planning stores more user ids the deactivation does not scrub: `itemPlanning.responsibleEmployee`,
+  `location.responsibleEmployee`, `companySettings.defaultResponsibleEmployee`,
+  `itemPostingGroupResponsibility.responsibleEmployee` and `planningAction.assignee` (all
+  `TEXT REFERENCES "user"("id")`, so the database accepts any user's id, including another
+  company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
+  (`apps/erp/app/modules/shared/shared.server.ts`), which fails closed on a read error.
 - Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved
   recipients against `userToCompany` for the notification's company — a missing membership row
   (i.e. a deactivated user) is dropped before any in-app/email/Slack delivery, regardless of how

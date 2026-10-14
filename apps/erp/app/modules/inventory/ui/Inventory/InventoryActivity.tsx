@@ -1,5 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { cn } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { memo } from "react";
 import {
+  LuArrowRight,
   LuArrowRightLeft,
   LuExternalLink,
   LuMoveDown,
@@ -7,65 +14,10 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import Activity from "~/components/Activity";
+import { useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ItemLedger } from "../../types";
-
-// A Direct Transfer writes two ledger rows in one transaction — the negative
-// out of the source bin and the positive into the destination — so the feed
-// renders the same move twice. Collapse each pair into the inbound row and hang
-// the source bin off it.
-//
-// The pair is identified by document + item + tracked entity + `createdAt`:
-// Postgres NOW() is transaction time, so both rows share it exactly. Keying on
-// the timestamp keeps repeat picks of the same line as separate entries, and
-// makes the merge idempotent, so it's safe to re-run over the accumulated list
-// as infinite scroll appends pages.
-export type CollapsedItemLedger = ItemLedger & {
-  transferFromStorageUnitName?: string | null;
-};
-
-export function collapseTransferPairs(
-  rows: ItemLedger[]
-): CollapsedItemLedger[] {
-  // Batch Split rows are internal net-zero bookkeeping — the Transfer/
-  // Consumption rows tell the real story, so they never reach the feed.
-  rows = rows.filter((row) => row.documentType !== "Batch Split");
-
-  const pairKey = (row: ItemLedger) =>
-    [row.documentId, row.itemId, row.trackedEntityId ?? "", row.createdAt].join(
-      "|"
-    );
-
-  const outboundByKey = new Map<string, ItemLedger>();
-  for (const row of rows) {
-    if (row.documentType !== "Direct Transfer" || row.quantity >= 0) continue;
-    outboundByKey.set(pairKey(row), row);
-  }
-
-  return rows.reduce<CollapsedItemLedger[]>((acc, row) => {
-    if (row.documentType !== "Direct Transfer") return [...acc, row];
-    const outbound = outboundByKey.get(pairKey(row));
-    // Drop the outbound half only when its inbound partner is present to
-    // absorb it — otherwise (destination page not loaded yet) keep it, so a
-    // transfer never vanishes from the feed.
-    if (row.quantity < 0) {
-      const hasInbound = rows.some(
-        (r) =>
-          r.documentType === "Direct Transfer" &&
-          r.quantity > 0 &&
-          pairKey(r) === pairKey(row)
-      );
-      return hasInbound ? acc : [...acc, row];
-    }
-    return [
-      ...acc,
-      {
-        ...row,
-        transferFromStorageUnitName: outbound?.storageUnit?.name ?? null
-      }
-    ];
-  }, []);
-}
+import type { CollapsedItemLedger } from "./ledgerFeed";
 
 const getActivityText = (
   ledgerRecord: CollapsedItemLedger,
@@ -324,6 +276,44 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
   }
 };
 
+// On hand before → after the entry, like the On Hand column of the item's
+// supply and demand list. Red once the balance is negative.
+function OnHandChange({
+  balanceBefore,
+  balanceAfter
+}: {
+  balanceBefore: number;
+  balanceAfter: number;
+}) {
+  const { t } = useLingui();
+  const formatQuantity = useQuantityFormatter();
+  const before = formatQuantity(balanceBefore);
+  const after = formatQuantity(balanceAfter);
+
+  return (
+    <span title={t`On hand`}>
+      <span className="sr-only">{t`On hand ${before} to ${after}`}</span>
+      <span
+        aria-hidden
+        className="flex items-center gap-1.5 text-sm tabular-nums"
+      >
+        <span
+          className={cn(
+            "text-muted-foreground",
+            balanceBefore < 0 && "text-red-500"
+          )}
+        >
+          {before}
+        </span>
+        <LuArrowRight className="size-3 text-muted-foreground" />
+        <span className={cn("font-medium", balanceAfter < 0 && "text-red-500")}>
+          {after}
+        </span>
+      </span>
+    </span>
+  );
+}
+
 type InventoryActivityProps = {
   item: CollapsedItemLedger;
   highlightId?: string;
@@ -343,7 +333,19 @@ const InventoryActivity = memo(
         employeeId={item.createdBy}
         activityMessage={getActivityText(item, trackingNoun)}
         activityTime={item.createdAt}
-        activityIcon={getActivityIcon(item)}
+        activityIcon={
+          item.balanceBefore != null && item.balanceAfter != null ? (
+            <div className="flex items-center gap-3">
+              <OnHandChange
+                balanceBefore={item.balanceBefore}
+                balanceAfter={item.balanceAfter}
+              />
+              {getActivityIcon(item)}
+            </div>
+          ) : (
+            getActivityIcon(item)
+          )
+        }
         comment={item.comment}
         highlighted={highlightId === item.id}
       />

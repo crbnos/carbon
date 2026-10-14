@@ -1,12 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, storage } from "@carbon/files";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -14,6 +20,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -27,7 +34,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuExternalLink, LuUpload } from "react-icons/lu";
-import { useFetchers, useRevalidator, useSubmit } from "react-router";
+import { useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
@@ -120,7 +127,7 @@ const RecordDocuments = ({
       </HStack>
       <CardContent>
         <Table>
-          <Thead>
+          <Thead className={cn(filesToRender.length === 0 && "max-md:hidden")}>
             <Tr>
               <Th>
                 <Trans>Name</Trans>
@@ -148,7 +155,7 @@ const RecordDocuments = ({
                         <DocumentPreview
                           bucket="private"
                           pathToFile={getPath(file)}
-                          // @ts-ignore
+                          // @ts-expect-error
                           type={getDocumentType(file.name)}
                         >
                           {file.name}
@@ -180,12 +187,18 @@ const RecordDocuments = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                           {isViewableInBrowser(file.name) && (
-                            <DropdownMenuItem onClick={() => view(file)}>
+                            <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.view}
+                              onClick={() => view(file)}
+                            >
                               <LuExternalLink className="mr-2" />
                               <Trans>View in new tab</Trans>
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => download(file)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
+                            onClick={() => download(file)}
+                          >
                             <Trans>Download</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -310,16 +323,7 @@ export const useRecordDocuments = ({
     async (file: FileObject) => {
       const url = path.to.file.previewFile(`private/${getPath(file)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error });

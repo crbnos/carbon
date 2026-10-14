@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { Outlet } from "react-router";
+
 import {
   getMaterialFormsList,
   getMaterialSubstancesList,
@@ -10,6 +15,8 @@ import {
 import { getLocationsList } from "~/modules/resources";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Materials" }];
@@ -42,5 +49,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaterialRoute() {
-  return <Outlet />;
+  return <RecordOutlet />;
 }

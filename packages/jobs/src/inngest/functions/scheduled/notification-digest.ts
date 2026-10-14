@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getNotificationTopicPhrase,
   NotificationEvent,
   type NotificationTopic
 } from "@carbon/notifications";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 // Roll up unread, undigested notifications older than DIGEST_MIN_AGE_MIN that
@@ -15,10 +20,14 @@ import { inngest } from "../../client";
 // Re-runs absorb new children into an existing unread digest for the same
 // group instead of creating a new digest each pass — that keeps the topbar
 // to one entry per topic regardless of how often the cron fires.
-const DIGEST_THRESHOLD = 5;
+// The threshold and the age below are repeated in
+// `util.notification_digest_has_work` (the migration that defines it). Change
+// both: a stricter rule there leaves these digests unmade.
+// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+export const DIGEST_THRESHOLD = 5;
 // Minutes. Set to 0 for instant testing; production target is ~60 so users
 // get a chance to see live notifications before they roll up.
-const DIGEST_MIN_AGE_MIN = 60;
+export const DIGEST_MIN_AGE_MIN = 60;
 const DIGEST_MAX_CANDIDATES = 5000;
 
 type Candidate = {
@@ -29,15 +38,40 @@ type Candidate = {
   createdAt: string;
 };
 
-type ExistingDigest = Candidate;
+type ExistingDigest = Candidate & { payload: unknown };
+
+type Keeper = { id: string; topic: NotificationTopic; count: number | null };
+
+/**
+ * The digests whose title no longer says how many notifications they hold.
+ * Rewriting the rest changed nothing, and was one count and one write per
+ * unread digest every fifteen minutes.
+ */
+export function staleDigests(
+  keepers: Keeper[],
+  children: ReadonlyMap<string, number>
+) {
+  return keepers.flatMap((keeper) => {
+    const total = children.get(keeper.id) ?? 0;
+    return total === keeper.count ? [] : [{ ...keeper, total }];
+  });
+}
+
+function digestCount(payload: unknown): number | null {
+  const count = (payload as { count?: unknown } | null)?.count;
+  return typeof count === "number" ? count : null;
+}
 
 function bucketKey(userId: string, companyId: string, topic: string): string {
   return `${userId}::${companyId}::${topic}`;
 }
 
 export const notificationDigestFunction = inngest.createFunction(
-  { id: "notification-digest", retries: 2 },
-  { cron: "*/15 * * * *" },
+  // Woken by the database, not the clock: pg_cron asks every 15 minutes
+  // whether a run would write anything (`util.notification_digest_has_work`)
+  // and only then sends this event.
+  { id: "notification-digest", retries: 2, concurrency: { limit: 1 } },
+  { event: "carbon/notification-digest.process" },
   async ({ step, logger }) => {
     const client = getCarbonServiceRole();
 
@@ -61,7 +95,7 @@ export const notificationDigestFunction = inngest.createFunction(
           .limit(DIGEST_MAX_CANDIDATES),
         client
           .from("notification")
-          .select("id, userId, companyId, topic, createdAt")
+          .select("id, userId, companyId, topic, createdAt, payload")
           .is("readAt", null)
           .is("digestedInto", null)
           .eq("event", NotificationEvent.Digest)
@@ -121,6 +155,7 @@ export const notificationDigestFunction = inngest.createFunction(
       let created = 0;
       let merged = 0;
       let absorbed = 0;
+      const keepers: Keeper[] = [];
 
       for (const group of work) {
         const newChildren = group.candidates;
@@ -234,33 +269,60 @@ export const notificationDigestFunction = inngest.createFunction(
           absorbed += newChildren.length;
         }
 
-        // Refresh title/count from the authoritative child count.
-        const { count: childCount, error: countErr } = await client
-          .from("notification")
-          .select("id", { count: "exact", head: true })
-          .eq("digestedInto", keeper.id);
+        keepers.push({
+          id: keeper.id,
+          topic: keeper.topic,
+          count: digestCount(keeper.payload)
+        });
+      }
 
-        if (countErr) {
-          logger.error("Failed to count digest children", { error: countErr });
-          continue;
-        }
+      // Refresh title/count from the authoritative child count: one grouped
+      // count for every digest, then a write only where the count moved.
+      // A failed count skips the refresh rather than failing the step: a
+      // retry would replay Case A and insert its digests a second time.
+      const counted =
+        keepers.length === 0
+          ? []
+          : await getJobDatabaseClient()
+              .selectFrom("notification")
+              .select((eb) => ["digestedInto", eb.fn.countAll().as("children")])
+              .where(
+                "digestedInto",
+                "in",
+                keepers.map((keeper) => keeper.id)
+              )
+              .groupBy("digestedInto")
+              .execute()
+              .catch((error) => {
+                logger.error("Failed to count digest children", { error });
+                return null;
+              });
 
-        const total = childCount ?? 0;
-        const description = getNotificationTopicPhrase(keeper.topic, total);
-        const { error: titleErr } = await client
-          .from("notification")
-          .update({
-            payload: {
-              count: total,
-              description,
-              event: NotificationEvent.Digest,
-              topic: keeper.topic
-            },
-            title: description
-          })
-          .eq("id", keeper.id);
-        if (titleErr) {
-          logger.error("Failed to refresh digest title", { error: titleErr });
+      if (counted) {
+        const children = new Map(
+          counted.map((row) => [row.digestedInto ?? "", Number(row.children)])
+        );
+
+        for (const keeper of staleDigests(keepers, children)) {
+          const description = getNotificationTopicPhrase(
+            keeper.topic,
+            keeper.total
+          );
+          const { error: titleErr } = await client
+            .from("notification")
+            .update({
+              payload: {
+                count: keeper.total,
+                description,
+                event: NotificationEvent.Digest,
+                topic: keeper.topic
+              },
+              title: description
+            })
+            .eq("id", keeper.id);
+          if (titleErr) {
+            logger.error("Failed to refresh digest title", { error: titleErr });
+          }
         }
       }
 

@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -80,19 +85,15 @@ export default function AffectedItemForm({
   // current (draft) make method to Active. Fetch the item's method status on
   // selection; the warning shows only when it has a method but none is Active.
   const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const methodStatusFetcher = useFetcher<{
+  const methodStatusFetcher = useLoaderQuery<{
     hasActiveMethod: boolean;
     hasAnyMethod: boolean;
-  }>();
+  }>(
+    changeType === "Version" && selectedItemId
+      ? path.to.api.itemMakeMethodStatus(selectedItemId)
+      : null
+  );
   // Only re-fetch when the item/type changes; the fetcher identity is stable.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable
-  useEffect(() => {
-    if (changeType === "Version" && selectedItemId) {
-      methodStatusFetcher.load(
-        path.to.api.itemMakeMethodStatus(selectedItemId)
-      );
-    }
-  }, [changeType, selectedItemId]);
   const willActivateDraft =
     changeType === "Version" &&
     !!selectedItemId &&

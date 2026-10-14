@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button, cn, Heading, IconButton, Subheading } from "@carbon/react";
 import {
+  distinctItemText,
   formatDateTimeInZone,
   formatDurationMilliseconds,
   formatRelativeTime
@@ -365,7 +370,21 @@ export function TimelineDetail({
               <DetailRow label={t`Status`} value={detail.status} />
             )}
             {detail.jobReadableId && (
-              <DetailRow label={t`Job`} value={detail.jobReadableId} />
+              <DetailRow
+                label={t`Job`}
+                value={
+                  linkedJobId ? (
+                    <Link
+                      to={path.to.job(linkedJobId)}
+                      className="underline decoration-muted-foreground/50 decoration-dotted underline-offset-[3px] transition-colors hover:decoration-foreground/70"
+                    >
+                      {detail.jobReadableId}
+                    </Link>
+                  ) : (
+                    detail.jobReadableId
+                  )
+                }
+              />
             )}
             {detail.itemReadableId && (
               <DetailRow
@@ -373,7 +392,10 @@ export function TimelineDetail({
                 value={
                   <span className="flex flex-col items-end">
                     <span>{detail.itemReadableId}</span>
-                    {detail.itemName && (
+                    {distinctItemText(
+                      detail.itemReadableId,
+                      detail.itemName
+                    ) && (
                       <span className="text-xs font-normal text-muted-foreground">
                         {detail.itemName}
                       </span>
@@ -423,9 +445,9 @@ export function TimelineDetail({
         )}
       </div>
 
-      {/* Footer action — a batch reservation opens the batch it coalesces, not
-          the anchor member's job */}
-      {detail.batchId ? (
+      {/* Footer action — a batch reservation opens the batch it coalesces; a
+          job is reached through the Job row's link */}
+      {detail.batchId && (
         <div className="border-t border-border p-4">
           <Button
             asChild
@@ -438,21 +460,6 @@ export function TimelineDetail({
             </Link>
           </Button>
         </div>
-      ) : (
-        linkedJobId && (
-          <div className="border-t border-border p-4">
-            <Button
-              asChild
-              variant="primary"
-              className="w-full justify-between"
-              rightIcon={<LuArrowRight />}
-            >
-              <Link to={path.to.job(linkedJobId)}>
-                <Trans>Open job</Trans>
-              </Link>
-            </Button>
-          </div>
-        )
       )}
     </div>
   );

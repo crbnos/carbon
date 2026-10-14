@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Integration } from "@carbon/ee";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import {
@@ -9,9 +13,12 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useRouteData
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
@@ -19,10 +26,19 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import { InstallModeDialog } from "./InstallModeDialog";
 
+/** Mirrors `IntegrationHealthStatus` in settings.server (not importable here). */
+type IntegrationHealthStatus =
+  | "healthy"
+  | "unhealthy"
+  | "inactive"
+  | "sync-off";
+
 export type IntegrationHealth = {
   id: string;
   active: boolean;
-  health: "healthy" | "unhealthy" | "inactive";
+  health: IntegrationHealthStatus;
+  /** Why the last check failed, when the integration says. */
+  healthReason?: string | null;
   /**
    * Which install mode this one is in, resolved SERVER-side.
    *
@@ -68,11 +84,14 @@ export function IntegrationCard({
   // refusal as a failed install — and it names the incumbent, so the next step
   // is obvious.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
-  const roleIncumbent = providerRole
-    ? (routeData?.activeRoles?.[providerRole] ?? null)
-    : null;
+  // Several OEE providers may be active at once (the database exempts the
+  // role), so an active one is never an incumbent.
+  const roleIncumbent =
+    providerRole && providerRole !== "oee"
+      ? (routeData?.activeRoles?.[providerRole] ?? null)
+      : null;
   const modes =
     (
       integration as {
@@ -226,7 +245,10 @@ export function IntegrationCard({
           </span>
         )}
         {installed && integration.active && (
-          <StatusBadge status={installed.health} />
+          <StatusBadge
+            status={installed.health}
+            reason={installed.healthReason}
+          />
         )}
       </CardFooter>
       {showModeDialog && (
@@ -242,40 +264,66 @@ export function IntegrationCard({
 }
 
 const StatusBadge = ({
-  status
+  status,
+  reason
 }: {
-  status: "healthy" | "unhealthy" | "inactive";
+  status: IntegrationHealthStatus;
+  reason?: string | null;
 }) => {
+  const { t } = useLingui();
+
   const colors = {
     healthy: "bg-green-500",
     unhealthy: "bg-red-500",
-    inactive: "bg-gray-400"
+    inactive: "bg-gray-400",
+    "sync-off": "bg-orange-500"
   } as const;
 
   const badgeVariants = {
     healthy: "green",
     unhealthy: "red",
-    inactive: "gray"
+    inactive: "gray",
+    "sync-off": "orange"
+  } as const;
+
+  const labels = {
+    healthy: t`Healthy`,
+    unhealthy: t`Unhealthy`,
+    inactive: t`Inactive`,
+    // Connected, but the accounting sync switch is off — a new connection
+    // still being set up, or one switched off since.
+    "sync-off": t`Sync Off`
   } as const;
 
   const ping = colors[status] || "text-gray-400";
-  return (
+  const badge = (
     <Badge
       variant={badgeVariants[status]}
       className="flex items-center mr-auto gap-x-2 py-0.5"
     >
       <span className="relative flex size-2">
-        <span
-          className={cn(
-            "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-            ping
-          )}
-        />
+        {/* Nothing is moving while sync is off, so the dot holds still. */}
+        {status !== "sync-off" && (
+          <span
+            className={cn(
+              "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+              ping
+            )}
+          />
+        )}
         <span
           className={cn("relative inline-flex size-2 rounded-full", ping)}
         />
       </span>
-      {status}
+      {labels[status]}
     </Badge>
+  );
+
+  if (!reason) return badge;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+    </Tooltip>
   );
 };

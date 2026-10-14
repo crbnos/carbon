@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
+  jobReleaseProblems,
   makeMethodsMissingOperations,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier,
@@ -96,5 +101,38 @@ describe("resolveOperationSupplier", () => {
         byProcess
       )
     ).toEqual({ missing: "none" });
+  });
+});
+
+describe("jobReleaseProblems", () => {
+  const ready = {
+    manufacturingBlocked: false,
+    missingAssemblies: [],
+    outsideOperationsWithoutSupplier: []
+  };
+
+  it("finds nothing to fix on a job that is ready", () => {
+    expect(jobReleaseProblems(ready)).toEqual([]);
+  });
+
+  it("names every problem, assemblies together and operations one by one", () => {
+    expect(
+      jobReleaseProblems({
+        manufacturingBlocked: true,
+        missingAssemblies: [
+          { description: "Bracket" },
+          { description: "Housing" }
+        ],
+        outsideOperationsWithoutSupplier: [
+          { description: "Heat Treat", missing: "choose" },
+          { description: "Paint", missing: "none" }
+        ]
+      })
+    ).toEqual([
+      "manufacturing is blocked",
+      "no operations on Bracket, Housing",
+      "choose a supplier for Heat Treat on the job",
+      "Paint has no supplier"
+    ]);
   });
 });

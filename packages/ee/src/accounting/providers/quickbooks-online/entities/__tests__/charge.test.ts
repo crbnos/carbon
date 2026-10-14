@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Qbo } from "../../models";
@@ -269,6 +273,9 @@ describe("mapChargeToQboPurchase", () => {
       expect((err as JournalEntrySyncError).failure).toMatchObject({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
+        message: expect.stringMatching(
+          /not posted yet.*dated before your accounting cutover/
+        ),
         metadata: { chargeId: "ct_1" }
       });
     }

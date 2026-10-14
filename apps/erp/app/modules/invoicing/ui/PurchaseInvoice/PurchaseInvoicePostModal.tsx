@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Alert,
   AlertDescription,
@@ -20,7 +24,7 @@ import {
   VStack
 } from "@carbon/react";
 
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -131,7 +135,10 @@ const PurchaseInvoicePostModal = ({
                           <span>
                             {getItemReadableId(items, line.itemId) ?? ""}
                           </span>
-                          {line.description && (
+                          {distinctItemText(
+                            getItemReadableId(items, line.itemId) ?? "",
+                            line.description
+                          ) && (
                             <span className="text-xs text-muted-foreground">
                               {line.description}
                             </span>

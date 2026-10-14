@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Array as ArrayInput,
   Hidden,
@@ -26,6 +30,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Switch,
   Tooltip,
@@ -37,8 +42,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { Reorder, useDragControls } from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -204,7 +209,6 @@ export default function TrainingExplorer() {
               values={sortOrder}
               onReorder={onReorder}
               className="w-full"
-              disabled={isDisabled}
             >
               {sortOrder.map((sortId) => (
                 <DraggableStepItem
@@ -281,7 +285,6 @@ export default function TrainingExplorer() {
       </VStack>
       {questionDisclosure.isOpen && (
         <TrainingQuestionForm
-          // @ts-ignore
           initialValues={trainingQuestionInitialValues}
           isDisabled={isDisabled}
           onClose={questionDisclosure.onClose}
@@ -418,7 +421,7 @@ function TrainingQuestionItem({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label={t`More`}
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                 icon={<LuEllipsisVertical />}
                 variant="solid"
                 onClick={(e) => e.stopPropagation()}
@@ -426,6 +429,7 @@ function TrainingQuestionItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(question);
@@ -435,6 +439,7 @@ function TrainingQuestionItem({
                 <Trans>Edit Question</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "resources")}
                 onClick={(e) => {

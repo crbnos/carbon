@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Formats the assembler's /v1/optimize can ingest: exact B-rep sources OCCT
 // tessellates (step/iges/brep + the compacted BinXCAF `xbf` retained-raw form)
 // and mesh sources it parses directly (glb/gltf/stl/obj/ply/off/bim/3mf/amf).

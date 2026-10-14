@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useRevalidator } from "@carbon/query";
 import { cn, useInterval } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { useRevalidator } from "react-router";
 import type { DisplayStatus } from "~/utils/display";
 
 /**

@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getKanban,
   KanbanForm,
@@ -30,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -47,6 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const updateKanban = await upsertKanban(client, {
     id,
     ...d,
+    companyId,
     updatedBy: userId
   });
 
@@ -65,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditKanbanRoute() {
   const { kanban } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: kanban?.id ?? undefined,
@@ -78,6 +85,7 @@ export default function EditKanbanRoute() {
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,
+    replenishmentLevel: kanban?.replenishmentLevel ?? undefined,
     autoRelease: kanban?.autoRelease ?? false,
     autoStartJob: kanban?.autoStartJob ?? false,
     completedBarcodeOverride: kanban?.completedBarcodeOverride ?? ""
@@ -88,7 +96,7 @@ export default function EditKanbanRoute() {
       key={initialValues.id}
       initialValues={initialValues}
       locationId={initialValues.locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

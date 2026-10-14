@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -17,7 +21,7 @@ import {
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCalendar, LuContainer, LuRedoDot } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
@@ -292,11 +296,7 @@ export function TaskItem({
       showDragHandle={showDragHandle}
       dragControls={dragControls}
       statusBadge={
-        <IssueTaskStatus
-          task={task}
-          type="investigation"
-          isDisabled={isDisabled}
-        />
+        <IssueTaskStatus task={task} type={type} isDisabled={isDisabled} />
       }
       headerExtras={
         <>
@@ -372,8 +372,7 @@ function useTaskNotes({
     async (content: JSONContent) => {
       // Update notes in Carbon database
       await carbon
-        // @ts-expect-error -
-        ?.from(table)
+        ?.from(table as "nonConformanceActionTask")
         .update({
           notes: content,
           updatedBy: userId

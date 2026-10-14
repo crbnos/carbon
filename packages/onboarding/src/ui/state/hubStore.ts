@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The hub store — a SERVER-DRIVEN distribution layer, not a client state owner.
 //
 // The React Router loader is the single source of truth. Each render the provider
@@ -36,7 +40,6 @@ import type {
   HubExclusions,
   HubStatus,
   ImplementationRowData,
-  Mod,
   Tier
 } from "../../types";
 import type { HubMutation } from "./mutations";
@@ -53,26 +56,11 @@ function mergeChecks(
   return map;
 }
 
-// The exclusions views filter by: the stored (staff-editable) exclusions with
-// the app-forced modules layered on top.
-function mergeForcedModules(
-  exclusions: HubExclusions,
-  forcedModules: Mod[]
-): HubExclusions {
-  const missing = forcedModules.filter((m) => !exclusions.modules.includes(m));
-  if (missing.length === 0) return exclusions;
-  return { ...exclusions, modules: [...exclusions.modules, ...missing] };
-}
-
 // The per-company server data the hub renders from (all loader-sourced).
 export interface HubData {
   tier: Tier;
   status: HubStatus;
   exclusions: HubExclusions;
-  // Modules forced out of scope by app settings (e.g. "acc" while the company's
-  // accountingEnabled setting is off). Merged into the exclusions every view
-  // filters by, but never written back to the stored, staff-editable exclusions.
-  forcedModules: Mod[];
   checkStates: CheckStateRow[];
   fieldValues: FieldValueRow[];
   rows: ImplementationRowData[];
@@ -96,10 +84,6 @@ export type ResolveScreenUrl = (appKey: string) => string | undefined;
 export interface HubState extends HubData, HubFlags {
   checkMap: Map<string, string>;
   fieldMap: Map<string, string>;
-  // `exclusions` merged with `forcedModules` — what every view filters by.
-  // The raw `exclusions` field stays the editing surface (Setup & Controls),
-  // so staff writes never persist an app-forced module.
-  effectiveExclusions: HubExclusions;
   // Pending optimistic check overrides (itemKey -> value), layered over the
   // server checkMap. Each is held until the loader reports the value we wrote,
   // so an in-flight toggle never flashes back when a stale/early revalidation
@@ -137,7 +121,6 @@ export const HUB_INITIAL: HubData & HubFlags = {
   tier: "self_serve",
   status: "tailoring",
   exclusions: EMPTY_EXCLUSIONS,
-  forcedModules: [],
   checkStates: [],
   fieldValues: [],
   rows: [],
@@ -155,10 +138,6 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
     optimisticChecks: new Map(),
     checkMap: stateMap(seed.checkStates),
     fieldMap: fieldMap(seed.fieldValues),
-    effectiveExclusions: mergeForcedModules(
-      seed.exclusions,
-      seed.forcedModules
-    ),
     // Stable wrapper, created once. Records an optimistic override for a
     // checkbox/gate toggle so the UI updates instantly, then round-trips. The
     // override is layered over the server checkMap and released by setData once
@@ -212,10 +191,6 @@ export function createHubStore(initial: Partial<HubData & HubFlags> = {}) {
         optimisticChecks,
         checkMap: mergeChecks(data.checkStates, optimisticChecks),
         fieldMap: fieldMap(data.fieldValues),
-        effectiveExclusions: mergeForcedModules(
-          data.exclusions,
-          data.forcedModules
-        ),
         serverDispatch,
         resolveScreenUrl,
         resolveVideoUrl

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { resolveIntegrationSecrets } from "../integrations/secrets";

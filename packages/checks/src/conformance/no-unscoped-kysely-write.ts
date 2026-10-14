@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ConformanceCheck, Violation } from "../check";
 
 /**
@@ -19,11 +23,17 @@ import type { ConformanceCheck, Violation } from "../check";
  * The rule is deliberately blunt: scope the WRITE itself, even when the ids
  * were read under `companyId` a few lines up. A scoped read proves nothing
  * once the code is refactored so the ids come from somewhere else, and the
- * extra predicate costs nothing. The only exemption is `company`, whose `id`
- * IS the tenant.
+ * extra predicate costs nothing. `company` and `companySettings` have no
+ * `companyId` column — their `id` IS the tenant — so for them
+ * `.where("id", …)` is the tenant predicate. A write to either still needs it:
+ * an UPDATE of `companySettings` with no WHERE changes every tenant's
+ * settings. Tables shared by a company GROUP carry no `companyId` at all
+ * (`GROUP_SCOPED_TABLES`); their tenant key is `companyGroupId`, so a write to
+ * one must name that instead.
  *
  * Scope: Node code that holds the superuser `db` — the ERP's modules and
- * routes, the MES app, and `packages/jobs`. Edge functions are out of scope
+ * routes, the MES app, `packages/jobs` and `packages/server-functions`. The
+ * remaining Deno edge functions are out of scope
  * (their document-level reads are scoped per
  * `.claude/rules/workflow-edge-function.md`, and their follow-on writes key on
  * ids from those reads), as is `packages/ee`, whose sync providers write
@@ -34,6 +44,10 @@ import type { ConformanceCheck, Violation } from "../check";
  * bracket that closes around it), comments blanked.
  * A statement built across several variables (`let q = …; q = q.where(…)`)
  * ends at the first `;` and is flagged — inline it or baseline it.
+ *
+ * `updateRows` / `deleteRows` (`@carbon/database/rows`) are the same writes in
+ * another spelling: their last argument is the WHERE, and it must name
+ * `companyId`.
  */
 
 const MESSAGE =
@@ -43,16 +57,55 @@ const SCOPED_PREFIXES = [
   "apps/erp/app/modules/",
   "apps/erp/app/routes/",
   "apps/mes/app/",
-  "packages/jobs/src/"
+  "packages/jobs/src/",
+  "packages/server-functions/src/"
 ];
 
-/** Tables whose own `id` is the tenant key. */
-const EXEMPT_TABLES = new Set(["company"]);
+/** Tables whose own `id` is the tenant key: `.where("id", …)` scopes them. */
+const ID_KEYED_TENANT_TABLES = new Set(["company", "companySettings"]);
+
+/** Tables keyed by user alone. */
+const EXEMPT_TABLES = new Set(["userPermission"]);
+
+/**
+ * Tables with no `companyId` column, shared by every company in a group. A
+ * `companyGroupId` predicate is their tenant boundary. Only add a table that
+ * genuinely lacks `companyId` — on any other table a group predicate is wider
+ * than the tenant.
+ */
+const GROUP_SCOPED_TABLES = new Set(["account", "currency"]);
 
 const WRITE = /\.(updateTable|deleteFrom)\s*\(/g;
 const COMPANY_PREDICATE =
   /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?companyId["'`]/;
+const ID_PREDICATE = /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?id["'`]/;
+const COMPANY_GROUP_PREDICATE =
+  /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?companyGroupId["'`]/;
 const STATEMENT_END = /^\.(?:execute\w*|compile)\s*\(/;
+const ROWS_WRITE = /\b(updateRows|deleteRows)\s*\(/g;
+const ROWS_MESSAGE =
+  "Kysely bypasses RLS: this updateRows/deleteRows filter has no companyId, so ids from the request can reach another tenant's rows. Add companyId to the filter (the last argument).";
+
+function callArguments(text: string, from: number): string[] {
+  const args: string[] = [];
+  let depth = 0;
+  let start = from;
+  for (let i = from; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      if (depth === 0) {
+        args.push(text.slice(start, i));
+        break;
+      }
+      depth--;
+    } else if (ch === "," && depth === 0) {
+      args.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  return args.filter((arg) => arg.trim() !== "");
+}
 
 /**
  * Replace comment text with spaces (newlines kept, so offsets and line numbers
@@ -135,10 +188,7 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
   },
   scan(file, contents) {
     if (!SCOPED_PREFIXES.some((prefix) => file.startsWith(prefix))) return [];
-    if (
-      !contents.includes(".updateTable") &&
-      !contents.includes(".deleteFrom")
-    ) {
+    if (!/\.updateTable|\.deleteFrom|updateRows|deleteRows/.test(contents)) {
       return [];
     }
 
@@ -152,6 +202,20 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
 
       const statement = statementFrom(text, start + 1);
       if (COMPANY_PREDICATE.test(statement)) continue;
+      if (
+        table &&
+        ID_KEYED_TENANT_TABLES.has(table) &&
+        ID_PREDICATE.test(statement)
+      ) {
+        continue;
+      }
+      if (
+        table &&
+        GROUP_SCOPED_TABLES.has(table) &&
+        COMPANY_GROUP_PREDICATE.test(statement)
+      ) {
+        continue;
+      }
 
       const call = text.slice(start, text.indexOf(")", openParen) + 1);
       violations.push({
@@ -159,6 +223,28 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
         line: text.slice(0, start).split("\n").length,
         snippet: call.length <= 80 ? call : m[0],
         message: MESSAGE
+      });
+    }
+    for (const m of text.matchAll(ROWS_WRITE)) {
+      const start = m.index ?? 0;
+      const args = callArguments(text, start + m[0].length);
+      if (args.length < 3) continue;
+      const table = args[1]?.trim().replace(/^["'`]|["'`]$/g, "");
+      if (table && EXEMPT_TABLES.has(table)) continue;
+      const filter = args[args.length - 1] ?? "";
+      if (/\bcompanyId\b/.test(filter)) continue;
+      if (
+        table &&
+        ID_KEYED_TENANT_TABLES.has(table) &&
+        /(?:^|[{,\s])id\b/.test(filter)
+      ) {
+        continue;
+      }
+      violations.push({
+        file,
+        line: text.slice(0, start).split("\n").length,
+        snippet: `${m[1]}(…, ${args[1]?.trim()}, …)`,
+        message: ROWS_MESSAGE
       });
     }
     return violations;

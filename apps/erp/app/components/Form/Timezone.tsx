@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Timezone as TimezoneBase } from "@carbon/form";
-import { useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
 import type { TimezoneGroup } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
-import { useFetcher } from "react-router";
 import type { getTimezoneNames } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
@@ -14,11 +17,9 @@ import { path } from "~/utils/path";
  * runtime's Intl list.
  */
 const Timezone = (props: ComponentProps<typeof TimezoneBase>) => {
-  const fetcher = useFetcher<Awaited<ReturnType<typeof getTimezoneNames>>>();
-
-  useMount(() => {
-    fetcher.load(path.to.api.timezones);
-  });
+  const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getTimezoneNames>>>(
+    path.to.api.timezones
+  );
 
   const options = useMemo<TimezoneGroup[] | undefined>(() => {
     const zones = fetcher.data?.data;

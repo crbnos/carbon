@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button, cn } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 
@@ -18,7 +22,7 @@ export function NavigationEditBar({
     <div
       className={cn(
         "flex gap-1 px-2",
-        "opacity-0 group-data-[state=expanded]:opacity-100",
+        "md:opacity-0 group-data-[state=expanded]:opacity-100",
         "transition-opacity"
       )}
     >

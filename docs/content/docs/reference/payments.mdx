@@ -3,10 +3,10 @@ title: Payments
 description: Cash receipts, disbursements, and credit or debit memos — the posted transactions that settle AR and AP.
 ---
 
-A **payment** is a posted cash event that settles what a party owes you or you owe them. A **Receipt** is money in from a customer; a **Disbursement** is money out to a supplier. Alongside cash, a **credit or debit memo** adjusts a balance without cash. Both are standalone documents with their own lifecycle, and both settle invoices through one shared row: the [invoice settlement](/docs/reference/invoices#settling-an-invoice). This page is the entity view. For settlement seen from the invoice's side, see [Invoices](/docs/reference/invoices).
+A **payment** is a posted cash transaction that settles receivables or payables. A **Receipt** records incoming cash; a **Disbursement** records outgoing cash. A **credit or debit memo** adjusts a balance without moving cash. Payments and memos are independent documents with separate lifecycles, but both apply to invoices through an [invoice settlement](/docs/reference/invoices#settling-an-invoice). See [Invoices](/docs/reference/invoices) for the invoice-side view.
 
 <Callout type="note">
-A payment is a real transaction record, not a field on an invoice. You create a payment, stage which invoices it applies to, then post it. Marking an invoice "Paid" is a *derived* status that follows from posted settlements, not something you set.
+A payment is a transaction record, not an invoice field. Create the payment, stage its invoice applications, and post it. **Paid** is a derived invoice status based on posted settlements.
 </Callout>
 
 ## Payments
@@ -75,7 +75,7 @@ Only a **Draft** can be deleted; a **Posted** payment or memo must be voided ins
 
 ## What posts to the general ledger
 
-Posting only touches the ledger when accounting is enabled for the company; otherwise the document still moves to **Posted** and its settlements still apply, but no journal is written.
+Posting always writes a journal and applies the settlements. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), the journal is Provisional and counts in no balance.
 
 - **A payment** books the **bank account** against the **AR or AP control account** (receivables for a customer, payables for a supplier), split per application. Each settlement's discount goes to the discount account and its write-off to the write-off account. Realized FX is computed **per application** — the carrying value released from the funding source, less the base principal relieved on the target — and stored on that settlement row as `fxGainLossAmount`. The journal then books the **net** of those to the realized exchange gain or loss account as one line.
 - **A memo** books a balanced two-line entry: the **control account** against the derived **reason account**. Applying a balance-reducing memo to an invoice afterward is GL-neutral — both sit in AR/AP — and realizes no FX, because Carbon only lets you apply a credit whose exchange rate matches the invoice's.
@@ -91,6 +91,12 @@ A payment's **cash total**, though, need not equal what it applies:
 - **Overpayment** — when a payment's cash exceeds the invoices it applies to, the remainder stays on the party's account as **on-account credit**, ready to apply to a later invoice.
 - **Pure credit-application** — a payment with **zero cash** that only applies the party's existing posted credits to open invoices. This is why `totalAmount` may be zero.
 - **Applying more than cash** — when applications exceed the payment's cash, the excess draws down the party's available on-account credit (the net unapplied cash on their other posted same-direction payments). Only same-direction payments contribute: a Receipt from a customer leaves credit, a Disbursement to the same customer consumes it. Applying more credit than the party actually has errors out.
+
+A customer receipt can also be a <Term id="customer-deposit">customer deposit</Term>. On a **"Payment from Customer"**, pick one of that customer's open sales orders or Draft or Active [rental agreements](/docs/reference/rental-agreements#deposits) under **"Deposit for"**, and its unapplied cash posts to **Customer Prepayments** instead of on-account credit. It is applied like any other credit, but only to invoices of the document it was taken for.
+
+A **"Refund to Customer"** with **"Refund deposit for"** pays the balance back, and that picker also lists closed documents that still hold a deposit.
+
+<Screenshot label="Payment from Customer form with the Deposit for picker open, listing the customer's open sales orders and rental agreements" caption="Deposit for narrows to the selected customer's open documents." />
 
 <Callout type="success">
 Carbon forgives **dust**. When settlements leave a balance under one cent — smaller than the currency can represent — the invoice reads fully **Paid** rather than sitting a fraction of a cent short.
@@ -143,6 +149,6 @@ The payment applies more than its cash, and the shortfall exceeds the party's un
 ### "Cannot post payment: memo … is … (must be Posted)" / "Staged credit … exceeds remaining amount … on memo …"
 A credit staged on this payment draws on a memo that was voided, or already drawn down, since staging. Post or re-select an available credit memo.
 
-### "Accounting is enabled but this company has no account defaults configured"
-Posting a payment or memo to the GL needs the company's account defaults (control, discount, write-off, realized-FX, and — for memos — the reason account). Configure account defaults in accounting settings.
+### "Accounting defaults are required before posting"
+Posting a payment or memo needs the company's account defaults (control, discount, write-off, realized-FX, and — for memos — the reason account). Configure account defaults in accounting settings.
 </AgentContext>

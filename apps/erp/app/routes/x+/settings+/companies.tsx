@@ -1,22 +1,27 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  Heading,
   HStack,
+  RecordOutlet,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import { getSubsidiaries } from "~/modules/settings";
 import {
   CompaniesListView,
@@ -78,9 +83,11 @@ export default function SubsidiariesRoute() {
 
   return (
     <Tabs defaultValue="tree" className="w-full">
-      <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
-        <Heading size="h3">Companies</Heading>
-        <HStack>
+      <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:justify-start max-md:p-0 max-md:border-b-0">
+        <SettingsPageHeading>
+          <Trans>Companies</Trans>
+        </SettingsPageHeading>
+        <HStack className="max-md:w-full">
           <TabsList>
             <TabsTrigger value="tree">Tree View</TabsTrigger>
             <TabsTrigger value="list">List View</TabsTrigger>
@@ -95,7 +102,7 @@ export default function SubsidiariesRoute() {
 
       <TabsContent value="tree">
         <CompaniesTreeView
-          // @ts-ignore
+          // @ts-expect-error
           companies={companies}
           onDelete={handleDelete}
           onAddChild={handleAddChild}
@@ -104,14 +111,14 @@ export default function SubsidiariesRoute() {
 
       <TabsContent value="list">
         <CompaniesListView
-          // @ts-ignore
+          // @ts-expect-error
           companies={companies}
           onDelete={handleDelete}
           onAddChild={handleAddChild}
         />
       </TabsContent>
 
-      <Outlet />
+      <RecordOutlet />
     </Tabs>
   );
 }

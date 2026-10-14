@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { InputProps } from "@carbon/react";
 import {
   FormControl,
@@ -21,7 +25,11 @@ const Hidden = forwardRef<HTMLInputElement, HiddenProps>(
     });
 
     return (
-      <FormControl isInvalid={!!error}>
+      // Phones: an empty hidden field must not take a row in the form.
+      <FormControl
+        isInvalid={!!error}
+        className={error ? undefined : "max-md:hidden"}
+      >
         <InputBase
           ref={ref}
           {...inputProps}

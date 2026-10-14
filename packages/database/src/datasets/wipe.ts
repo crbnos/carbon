@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { PoolClient } from "pg";
-import { getGroupId, groups } from "../../supabase/functions/lib/seed.data.ts";
+import { getGroupId, groups } from "../seed-data.ts";
 import { resolveDate } from "./dates.ts";
 import { insertId, nextJournalEntryId, quote, resetSequences } from "./sql.ts";
 import type { Ctx } from "./types.ts";
@@ -58,6 +62,10 @@ const PRESERVED_TABLES = new Set([
   "oauthCode",
   "oauthToken",
   "searchIndexRegistry",
+  // The change log open clients read to learn what the wipe just deleted: every
+  // delete below writes to it, so it can never be empty afterwards. It prunes
+  // itself by age, and backups already leave it alone (STRUCTURAL_TABLES).
+  "tableChange",
   "tableView",
   "userAttributeCategory",
   "userModulePreference",
@@ -65,15 +73,20 @@ const PRESERVED_TABLES = new Set([
 ]);
 
 /**
- * MRP planning output — regenerated wholesale on the next run, and deleted
- * before the FK-nulling pass because their discriminator CHECKs cannot survive
- * it. Mirrors TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts.
+ * MRP planning output — regenerated on the next run, and deleted before the
+ * FK-nulling pass because their CHECKs cannot survive it. The first four are
+ * also TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts; planningAction
+ * is NOT (a backup keeps it: Dismissed and assigneeOverridden are the planner's
+ * own state), it is only transient for a dataset apply.
  */
 const TRANSIENT_MRP_TABLES = [
   "demandForecastSource",
   "demandActual",
   "supplyForecast",
-  "supplyActual"
+  "supplyActual",
+  // planningAction_change_target_chk: a change action must keep its job or
+  // PO line, and the FK-nulling pass would clear jobId while jobs still exist.
+  "planningAction"
 ];
 
 // Their content CHECK (imagePath OR modelUploadId) cannot survive the FK-nulling
@@ -83,6 +96,14 @@ const MODEL_SLIDE_TABLES = [
   "methodOperationStepSlide",
   "jobOperationStepSlide",
   "quoteOperationStepSlide"
+];
+
+// Other tables whose CHECK needs one of several nullable FKs to stay set, so
+// the FK-nulling pass would empty all of them and trip the CHECK. A new table
+// with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
+const PARENT_CHECK_TABLES = [
+  // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
+  "customerContractInvoiceLine"
 ];
 
 type ForeignKey = {
@@ -367,10 +388,14 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // so on for jobId / demandProjectionId) over columns that are all nullable,
   // so nullNullableReferences below — which nulls every nullable FK whose
   // parent is being deleted — would violate the CHECK and abort the wipe.
-  // Deleting outright is safe and loses nothing: MRP regenerates these wholesale
-  // on its next run, which is why the backup catalog also treats them as
-  // transient (see TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts).
-  for (const t of [...TRANSIENT_MRP_TABLES, ...MODEL_SLIDE_TABLES]) {
+  // Deleting outright is safe for a dataset apply: MRP regenerates these on
+  // its next run (the planner's dismissals and assignments on planningAction
+  // go with the rest of the company's data, as the apply intends).
+  for (const t of [
+    ...TRANSIENT_MRP_TABLES,
+    ...MODEL_SLIDE_TABLES,
+    ...PARENT_CHECK_TABLES
+  ]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
         companyId

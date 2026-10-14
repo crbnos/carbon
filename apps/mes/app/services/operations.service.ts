@@ -1,12 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
+import {
+  lockMachinePress,
+  recordManualMachinePress
+} from "@carbon/database/machine-time";
 import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
 import {
+  async,
   datetime,
   type FlatTree,
   flattenTree,
@@ -118,10 +130,11 @@ export async function getJobOperationBatch(
   // (summed into the work-type toggle), completion pre-fill quantities, the
   // member's job id for the chip / completion table, and the due dates and
   // customers the batch's header summarizes.
+  // @ts-ignore TS2589: the PostgREST select parse crosses the instantiation-depth limit (see .ai/lessons.md)
   const operations = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, dueDate, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, customer(name))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, dueDate, customer(name))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId)
@@ -143,7 +156,10 @@ export async function getJobOperationBatch(
         .select("id, readableId, attributes, createdAt")
         .in("attributes->>Job Make Method", makeMethodIds)
         .eq("companyId", companyId)
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
         .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true })
     : { data: [], error: null };
   const entityByMakeMethod = new Map<
     string,
@@ -304,6 +320,7 @@ export async function deleteAttributeRecord(
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
@@ -321,7 +338,7 @@ export async function finishJobOperation(
     })
     .eq("id", args.jobOperationId)
     .eq("companyId", args.companyId)
-    .select("id");
+    .select("id, jobId");
 
   if (!result.error && result.data.length === 0) {
     log.warn("finishJobOperation: job operation not found in company", {
@@ -332,34 +349,49 @@ export async function finishJobOperation(
   }
 
   if (!result.error) {
-    client
-      .from("productionEvent")
-      .select("id")
-      .eq("jobOperationId", args.jobOperationId)
-      .not("endTime", "is", null)
-      .eq("postedToGL", false)
-      .then((unpostedEvents) => {
-        if (unpostedEvents.data?.length) {
-          Promise.all(
-            unpostedEvents.data.map((event) =>
-              client.functions.invoke("post-production-event", {
-                body: {
-                  productionEventId: event.id,
-                  userId: args.userId,
-                  companyId: args.companyId
-                }
-              })
-            )
-          );
-        }
-      });
+    // System: every caller passes the service role. An operation's own
+    // failure is logged inside it; onError catches anything that escapes (the
+    // query, the import).
+    async.background(
+      async () => {
+        const unposted = await client
+          .from("productionEvent")
+          .select("id")
+          .eq("jobOperationId", args.jobOperationId)
+          .not("endTime", "is", null)
+          .eq("postedToGL", false);
+        if (unposted.error) throw unposted.error;
+        if (unposted.data.length === 0) return;
+
+        const fns = serverFns.system({
+          db,
+          companyId: args.companyId,
+          userId: args.userId
+        });
+        await async.map(
+          unposted.data,
+          (event) =>
+            fns.invoke("post-production-event", {
+              productionEventId: event.id
+            }),
+          { concurrency: 4 }
+        );
+      },
+      (error) =>
+        log.error("finishJobOperation: posting production events failed", {
+          companyId: args.companyId,
+          jobOperationId: args.jobOperationId,
+          error
+        })
+    );
 
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the
     // last operation. Return any picked-but-unconsumed stock staged at lineside
-    // back to its warehouse source — the SQL trigger can't call edge functions,
+    // back to its warehouse source — the SQL trigger can't run app code,
     // so we orchestrate it here.
-    const { jobId } = await returnPickedRemainders(client, args);
+    await returnPickedRemainders(client, db, args);
+    const jobId = result.data[0]?.jobId;
 
     if (jobId) {
       await raiseMoment("production.jobOperationCompleted", {
@@ -412,70 +444,32 @@ export async function finishJobOperation(
 }
 
 /**
- * Flush un-consumed picked material (tracked AND untracked) from the lineside
- * shelf back to the warehouse via the post-picking sweep cases. Job just
- * completed → sweep the whole job (runs under both returnPickedMaterialTiming
- * policies). Otherwise → sweep this operation's lines; the edge function itself
- * no-ops unless the company policy is 'operation'. Both sweeps are idempotent.
- *
- * Uses the client `finishJobOperation` is given — every caller passes a
- * service-role client, so the picking lines (an inventory table the finishing
- * operator may not have RLS access to) are always readable and the returns
- * aren't silently skipped for production-only roles.
+ * Returns picked-but-unconsumed material a Done operation left at lineside —
+ * the whole job's remainder when it completed the job. Logged, never thrown:
+ * the status change has already happened.
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
     companyId: string;
   }
-): Promise<{ jobId: string | undefined }> {
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { jobId: undefined };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { jobId };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
-  // inspect and log, otherwise a stranded lineside remainder is lost silently.
-  const { error } = await client.functions.invoke("post-picking", { body });
+): Promise<void> {
+  const { error } = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnOperationRemainders",
+      ...args
+    });
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
-      jobId,
-      scope: body.type,
+      jobOperationId: args.jobOperationId,
       companyId: args.companyId
     });
   }
-
-  return { jobId };
 }
 
 export async function getActiveJobOperationsByEmployee(
@@ -672,7 +666,7 @@ export async function getAssemblyPlaybackByOperationId(
   const steps = await client
     .from("assemblyInstructionStep")
     .select(
-      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, motion, camera, fastener, durationSeconds, warnings"
+      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, usedInStepId, isSubAssembly, motion, camera, orientation, fastener, durationSeconds, warnings"
     )
     .eq("assemblyInstructionId", instructionId)
     .order("sortOrder", { ascending: true });
@@ -1409,6 +1403,7 @@ export async function getJobMaterialsByOperationId(
  */
 export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
   const step = await client
@@ -1546,19 +1541,17 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     }
     const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
-    const issue = await client.functions.invoke("issue", {
-      body: {
+    const issued = await serverFns
+      .as({ client, db, companyId: args.companyId, userId: args.userId })
+      .invoke("issue", {
         id: operationId,
         type: "partToOperation",
         itemId: material.itemId,
         materialId: material.id,
         quantity: delta,
-        adjustmentType: "Negative Adjmt.",
-        companyId: args.companyId,
-        userId: args.userId
-      }
-    });
-    if (issue.error) failures.push(material.itemId);
+        adjustmentType: "Negative Adjmt."
+      });
+    if (issued.error) failures.push(material.itemId);
   }
 
   return {
@@ -1903,6 +1896,34 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
+/**
+ * The tracked entities of a make method in UNIT-AXIS order — position `i` here is
+ * the `index` every `jobOperationStepRecord` (and inspection result) for unit `i`
+ * is stored under (`deriveUnits` in `~/utils/units`). So this order is not
+ * cosmetic: it is the join key between a recorded value and the serial it was
+ * recorded for, and it must be the same on every read, forever.
+ *
+ * `createdAt` alone is NOT that. `assign-serial-numbers` used to mint every
+ * serial after the first in one INSERT, so they share a `createdAt`; Postgres
+ * returns tied rows in physical order, and any UPDATE moves a row to the end of
+ * it. Logging one serial complete therefore reshuffled the others, and the
+ * values recorded at position 2 displayed under whichever serial slid into
+ * position 2 — and the Assembly view then auto-completed that unit.
+ *
+ * The tiebreakers make the order a pure function of immutable columns:
+ * `readableId` puts tied serials back in the sequence they were minted in
+ * (serials are zero-padded, so text order is number order within a batch) and
+ * `id` settles anything left. New serials no longer tie at all — the mint now
+ * spaces their `createdAt` — so this only decides rows minted before that.
+ *
+ * ponytail: text order, so a batch whose counter overflowed its pad width
+ * (…99 → …100 at size 2) sorts wrong among PRE-EXISTING tied rows. Sort with a
+ * numeric collator in JS if that ever turns up.
+ *
+ * Kept in step with the ERP copy (`inventory.service.ts`), the inline copies
+ * (`getJobOperationBatch` here, `JobHeader.tsx`) and the `issue` edge
+ * function's serial-complete branch — they all index into this same axis.
+ */
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string,
@@ -1913,7 +1934,9 @@ export async function getTrackedEntitiesByMakeMethodId(
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", companyId)
-    .order("createdAt", { ascending: true });
+    .order("createdAt", { ascending: true })
+    .order("readableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
 type SerialEntityForSelection = Pick<
@@ -1948,7 +1971,7 @@ export function isSerialEntityIncompleteForOperation(
  * when every entity is already complete it falls back to the last entity, which
  * preserves the prior end-state behavior. This unifies both the pre-split flow
  * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` edge function spawns the next entity on each completion).
+ * `issue` server function spawns the next entity on each completion).
  */
 export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
@@ -2295,6 +2318,7 @@ export async function insertBatchStepRecords(
 // operator data. Gated at the route on the Production DELETE permission.
 export async function completeAllStepsForUnit(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     operationId: string;
     index: number;
@@ -2340,7 +2364,7 @@ export async function completeAllStepsForUnit(
   // operation-wide, so one call after the inserts tops up this unit's shortfall.
   // Non-blocking: a failure (e.g. insufficient stock) leaves parts manually
   // issuable, matching the per-step record path.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, db, {
     jobOperationStepId: missing[0].id,
     companyId: args.companyId,
     userId: args.createdBy
@@ -2370,10 +2394,18 @@ export async function insertReworkQuantity(
     .insert(
       sanitize({
         ...insert,
-        type: "Rework"
+        type: "Rework" as const
       })
     )
     .select("*");
+}
+
+// The tracked entity is recorded by the issue path, not on productionQuantity.
+function withoutTracking<
+  T extends { trackedEntityId?: unknown; trackingType?: unknown }
+>(data: T): Omit<T, "trackedEntityId" | "trackingType"> {
+  const { trackedEntityId: _entity, trackingType: _tracking, ...rest } = data;
+  return rest;
 }
 
 export async function insertProductionQuantity(
@@ -2393,8 +2425,8 @@ export async function insertProductionQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Production"
+        ...withoutTracking(data),
+        type: "Production" as const
       })
     )
     .select("*");
@@ -2427,8 +2459,8 @@ export async function insertScrapQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Scrap"
+        ...withoutTracking(data),
+        type: "Scrap" as const
       })
     )
     .select("*");
@@ -2440,13 +2472,100 @@ export async function endProductionEvent(
     id: string;
     endTime: string;
     employeeId: string;
+    companyId: string;
   }
 ) {
+  // Only an open event ends: a repeated End must not move its end time.
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
+    .is("endTime", null)
     .select("*");
+}
+
+/** A Machine press refused to end an event (already ended, or started later). */
+class MachineEventNotEnded extends Error {}
+
+/**
+ * Ends an operator's open Machine event with a press: the press ends every
+ * open Machine event on the work center, this one included, in one
+ * transaction. Null when the event is no longer open, or the press could not
+ * end it (it starts after the press), and then nothing was ended. Skips RLS:
+ * the caller checks that the user may update production events first.
+ */
+export async function endMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; workCenterId: string; companyId: string; userId: string }
+) {
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await lockMachinePress(trx, args);
+      const open = await trx
+        .selectFrom("productionEvent")
+        .select("id")
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .where("endTime", "is", null)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!open) throw new MachineEventNotEnded();
+      const press = await recordManualMachinePress(trx, args);
+      if (!press.endedEventIds.includes(args.id)) {
+        throw new MachineEventNotEnded();
+      }
+      return press;
+    });
+  } catch (error) {
+    if (error instanceof MachineEventNotEnded) return null;
+    throw error;
+  }
+}
+
+/**
+ * Posts the events a press ended (machine cost to WIP), as an operator's own
+ * End posts theirs. Batch timers post at batch completion, so they are left.
+ * A failure is logged, never thrown: the operation-finish catch-up posts what
+ * is still unposted.
+ */
+export async function postEndedProductionEvents(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; ids: string[] }
+) {
+  if (args.ids.length === 0) return;
+  const events = await client
+    .from("productionEvent")
+    .select("id")
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .is("jobOperationBatchId", null);
+  if (events.error) {
+    log.error("Failed to read the events a press ended", {
+      companyId: args.companyId,
+      error: events.error
+    });
+    return;
+  }
+  const functions = serverFns.system({
+    db,
+    companyId: args.companyId,
+    userId: args.userId
+  });
+  for (const event of events.data ?? []) {
+    try {
+      await functions.invoke("post-production-event", {
+        productionEventId: event.id
+      });
+    } catch (error) {
+      log.error("Failed to post an event a press ended", {
+        companyId: args.companyId,
+        productionEventId: event.id,
+        error
+      });
+    }
+  }
 }
 
 export async function endProductionEventsForJobOperation(
@@ -2613,7 +2732,7 @@ export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "hasActiveEvents" | "unitIndex"
+    "id" | "action" | "hasActiveEvents" | "unitIndex" | "exclusive"
   > & {
     startTime: string;
     employeeId: string;
@@ -2636,11 +2755,14 @@ export async function startProductionEvent(
   });
   if (!refs.ok) return notFoundResponse(refs.message);
 
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
   if (trackedEntityId) {
     const activityId = nanoid();
 
     const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(data).select("id").single(),
+      client.from("productionEvent").insert(event).select("id").single(),
       client
         .from("jobOperation")
         .select("*")
@@ -2719,7 +2841,7 @@ export async function startProductionEvent(
 
   const eventInsert = await client
     .from("productionEvent")
-    .insert(data)
+    .insert(event)
     .select("*");
 
   if (!eventInsert.error) {
@@ -2743,6 +2865,115 @@ export async function startProductionEvent(
   }
 
   return eventInsert;
+}
+
+/**
+ * A Machine start on a work center: the press, which ends the work center's
+ * open machine time, the new event and its tracked activity commit in one
+ * transaction, at the press time read under the press locks. If any of it
+ * fails, nothing was ended. Skips RLS: the caller checks that the user may
+ * create production events first.
+ */
+export async function startMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  data: Parameters<typeof startProductionEvent>[1] & { workCenterId: string },
+  trackedEntityId: string | undefined,
+  unitIndex?: number,
+  source: WorkSource = "mes"
+): Promise<{
+  data: { id: string; endedEventIds: string[] } | null;
+  error: unknown;
+}> {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
+  try {
+    const started = await db.transaction().execute(async (trx) => {
+      const press = await recordManualMachinePress(trx, {
+        workCenterId: data.workCenterId,
+        companyId: data.companyId,
+        userId: data.createdBy
+      });
+      const inserted = await trx
+        .insertInto("productionEvent")
+        .values({ ...event, startTime: press.pressedAt })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      if (trackedEntityId) {
+        const operation = await trx
+          .selectFrom("jobOperation")
+          .select(["description", "jobId"])
+          .where("id", "=", data.jobOperationId)
+          .where("companyId", "=", data.companyId)
+          .executeTakeFirstOrThrow();
+        const activityId = nanoid();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: activityId,
+            type: `${operation.description} (${data.type})`,
+            sourceDocument: "Production Event",
+            sourceDocumentId: inserted.id,
+            attributes: toJson({
+              Job: operation.jobId,
+              "Job Operation": data.jobOperationId,
+              "Production Event": inserted.id,
+              "Work Center": data.workCenterId,
+              Employee: data.employeeId,
+              ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
+            }),
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+        await trx
+          .insertInto("trackedActivityOutput")
+          .values({
+            trackedActivityId: activityId,
+            trackedEntityId,
+            quantity: 1,
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+      }
+
+      return { id: inserted.id, endedEventIds: press.endedEventIds };
+    });
+
+    await autoStartJobAndOperation(client, {
+      jobOperationId: data.jobOperationId,
+      userId: data.createdBy,
+      companyId: data.companyId
+    });
+    trackWorkEvent("job_operation_started", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionEventId: started.id,
+      jobOperationId: data.jobOperationId,
+      eventType: data.type,
+      source
+    });
+    return { data: started, error: null };
+  } catch (error) {
+    log.error("Failed to start the Machine event", {
+      companyId: data.companyId,
+      workCenterId: data.workCenterId,
+      error
+    });
+    return { data: null, error };
+  }
 }
 
 type JobMethod = {

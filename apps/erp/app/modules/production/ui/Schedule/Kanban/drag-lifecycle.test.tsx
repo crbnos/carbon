@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactElement } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -51,7 +55,7 @@ type TestFetcher = {
 
 const fetchers = vi.hoisted(() => ({ current: [] as TestFetcher[] }));
 
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),
@@ -65,7 +69,9 @@ vi.mock("@carbon/logger", () => ({
 vi.mock("@carbon/react", () => ({
   ClientOnly: () => null,
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(" "),
-  toast: { error: vi.fn() }
+  toast: { error: vi.fn() },
+  // The board's provider reads the dates route's timezone once for its cards.
+  useRouteData: () => undefined
 }));
 vi.mock("@lingui/react/macro", () => ({
   useLingui: () => ({ t: () => "translated" })

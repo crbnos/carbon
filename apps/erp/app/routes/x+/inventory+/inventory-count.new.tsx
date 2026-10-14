@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { data } from "react-router";
 import {
   deleteInventoryCount,
   generateInventoryCountLines,
@@ -106,12 +112,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewInventoryCountRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <InventoryCountForm
       initialValues={{ locationId: "", isBlind: false }}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

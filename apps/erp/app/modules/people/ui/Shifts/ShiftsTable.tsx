@@ -1,4 +1,8 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { formatTimeOfDay } from "@carbon/utils";
 import {
   parseTime,
@@ -106,6 +110,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
           <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCalendarRange />
         }
       },
@@ -115,6 +120,21 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         cell: ({ row }) =>
           renderShiftTime(row.original.startTime, row.original.locationId),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 shows the whole span, start – end.
+          mobileCell: ({ row }) =>
+            row.original.endTime ? (
+              <>
+                {renderShiftTime(
+                  row.original.startTime,
+                  row.original.locationId
+                )}
+                {" – "}
+                {renderShiftTime(row.original.endTime, row.original.locationId)}
+              </>
+            ) : (
+              renderShiftTime(row.original.startTime, row.original.locationId)
+            ),
           icon: <LuClock />
         }
       },
@@ -145,7 +165,6 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
       {
         id: "days",
         header: t`Days`,
-        // @ts-ignore
         cell: ({ row }) => renderDays(row.original),
         meta: {
           icon: <LuCalendarDays />,
@@ -177,6 +196,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.shift(row.id!)}?${params.toString()}}`);
             }}
@@ -185,6 +205,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
             <Trans>Edit Shift</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "people")}
             onClick={() => {

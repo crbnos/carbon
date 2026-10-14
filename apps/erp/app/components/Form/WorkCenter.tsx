@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
@@ -49,7 +53,7 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
           props?.autoSelectSingleOption &&
           Boolean(props?.processId) &&
           options.length === 1 &&
-          workCenterFetcher.state === "idle"
+          !workCenterFetcher.isFetching
         }
         ref={triggerRef}
         options={options.map((o) => ({
@@ -102,12 +106,9 @@ export const useWorkCenters = (args: {
   locationId?: string;
 }) => {
   const { processId, locationId } = args;
-  const workCenterFetcher =
-    useFetcher<Awaited<ReturnType<typeof getWorkCentersList>>>();
-
-  useMount(() => {
-    workCenterFetcher.load(path.to.api.workCenters);
-  });
+  const workCenterFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getWorkCentersList>>
+  >(path.to.api.workCenters);
 
   const options = useMemo(
     () =>

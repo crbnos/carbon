@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ShikiTransformer } from "@shikijs/types";
 import type { PropsWithChildren } from "react";
 import { useEffect, useState } from "react";
@@ -69,7 +73,7 @@ const CodeBlockHighlighted = ({
       </ShikiHighlighter>
 
       {showCopy && (
-        <div className="invisible absolute right-0 top-0 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
+        <div className="invisible absolute right-0 top-0 md:opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
           <Button size="sm" onClick={handleCopyCode}>
             {showCopied ? "Copied" : "Copy"}
           </Button>

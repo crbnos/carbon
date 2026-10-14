@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { Email } from "./email/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
@@ -9,6 +13,7 @@ import { QuickBooks } from "./quickbooks/config";
 import { Ramp } from "./ramp/config";
 import { Rillet } from "./rillet/config";
 import { Sage } from "./sage/config";
+import { Sense } from "./sense/config";
 import { Slack } from "./slack/config";
 import { StripeConnect } from "./stripe-connect/config";
 import type { QuickInstallConnector } from "./types";
@@ -21,6 +26,7 @@ export type {
   IntegrationAction,
   IntegrationClientHooks,
   IntegrationConfig,
+  IntegrationHealthcheckResult,
   IntegrationOptions,
   IntegrationServerHooks,
   IntegrationSetting,
@@ -61,6 +67,7 @@ export const integrations = [
   Ramp,
   Rillet,
   Sage,
+  Sense,
   Slack,
   Xero,
   StripeConnect
@@ -87,6 +94,7 @@ export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
 export { Ramp } from "./ramp/config";
 export { Rillet } from "./rillet/config";
+export { Sense } from "./sense/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
 export { StripeConnect } from "./stripe-connect/config";
@@ -110,7 +118,7 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
  * in the accounting layout, and `.eq("id","ramp")` in the Ramp sweep. A new
  * provider joins by declaring its role, not by being added to a list.
  */
-export type ProviderRole = "accounting" | "spend";
+export type ProviderRole = "accounting" | "spend" | "oee";
 
 /**
  * `integrations` is a union of concrete descriptor types, and only the four

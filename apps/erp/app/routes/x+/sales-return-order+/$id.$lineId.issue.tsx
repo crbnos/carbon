@@ -1,12 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
-import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
 import {
   getSalesReturnOrder,
@@ -342,15 +345,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw await failWithRollback(err, "Failed to set the Issue's item");
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
+  const tasks = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "nonConformanceTasks",
-      id: ncrId,
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
-  });
+      id: ncrId
+    });
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);
     throw await failWith(tasks.error, "Failed to create Issue tasks");

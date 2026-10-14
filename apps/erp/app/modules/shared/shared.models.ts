@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type {
+  BuyPriceBreak,
+  CurrencyRate,
+  SupplierPriceBreak,
+  SupplierPriceMap
+} from "@carbon/database/supplier-part-price";
 import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -143,16 +153,23 @@ export type OperationType = (typeof operationTypes)[number];
 // inspectionDocumentId. Writes go through this so a stale pointer can't survive
 // a type change (sanitize() only nullifies present-undefined keys — it never
 // clears an omitted field). See .ai/specs/2026-07-21-operation-instruction-sources.md.
+// The same holds for the work center: Outside Processing runs at the supplier,
+// and a work center left over from an in-house type put the operation on the
+// MES Work Centers board.
 export function normalizeOperationSourceIds<
   T extends {
     operationType?: string;
     procedureId?: string | null;
     assemblyInstructionId?: string | null;
     inspectionDocumentId?: string | null;
+    workCenterId?: string | null;
   }
 >(operation: T): T {
   return {
     ...operation,
+    ...(operation.operationType === "Outside Processing"
+      ? { workCenterId: null }
+      : {}),
     procedureId:
       operation.operationType === "Process"
         ? operation.procedureId || null
@@ -217,9 +234,9 @@ export const oAuthCallbackSchema = z.object({
  * `json`, and they MUST hold an object. A JSON string scalar stored there is
  * read back by supabase-js as a JS string; when the row is later copied through
  * Kysely (quote → sales order, RFQ → quote, quote → revision, method copies)
- * deno-postgres sends that string as raw text and Postgres rejects it with
- * `invalid input syntax for type json`. The edge functions now serialise on
- * their side too (`lib/json.ts`), but the write side must never store the
+ * the Postgres driver sends that string as raw text and Postgres rejects it
+ * with `invalid input syntax for type json`. The server functions serialise on
+ * their side too (`@carbon/database/json`), but the write side must never store the
  * scalar in the first place. Never drops content to `{}`.
  *
  * Returns `any`: the doc is consumed both as a DB Json value and as editor
@@ -433,15 +450,17 @@ export const standardFactorType = [
   "Total Minutes"
 ] as const;
 
-export type PriceBreak = {
-  quantity: number;
-  unitPrice: number;
-};
+/** A costing break: inventory quantity, base-currency price per inventory unit. */
+export type PriceBreak = BuyPriceBreak;
 
-export type SupplierPriceMap = Record<
-  string,
-  {
-    priceBreaks: PriceBreak[];
-    fallbackUnitPrice: number | null;
-  }
->;
+export type { SupplierPriceMap };
+
+/**
+ * A supplier part's pricing as the supplier quoted it — per purchase unit, in
+ * `currency.currencyCode` — with that currency's current rate.
+ */
+export type SupplierPartPricing = {
+  priceBreaks: SupplierPriceBreak[];
+  supplierUnitPrice: number | null;
+  currency: CurrencyRate;
+};

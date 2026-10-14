@@ -21,11 +21,14 @@ the procedure, not a re-description — it does not repeat that detail.
 | Handler functions (one per type) | `packages/jobs/src/inngest/functions/events/<type>.ts` |
 | Handler barrel | `packages/jobs/src/inngest/functions/events/index.ts` |
 | Drainer (event-triggered, drains pgmq, fans out) | `packages/jobs/src/inngest/functions/events/queue.ts` |
-| Wake edge fn (DB → Inngest doorbell) | `packages/database/supabase/functions/event-wake/index.ts` |
+| Wake (DB → Inngest doorbell) | `util.wake_event_queue()` (`packages/database/src/event-system/functions/util.wake_event_queue.sql`) → `util.send_inngest_event` (`packages/database/supabase/migrations/20261002170250_send-inngest-events-from-postgres.sql`) |
 | Served `functions` array | `packages/jobs/src/inngest/index.ts` |
 | Event-name type registry (`Events`) | `packages/lib/src/events.ts` (re-exported, NOT defined, by `packages/jobs/src/events.ts`) |
 | Zod schemas + subscription helpers | `packages/database/src/event.ts` |
-| `attach_event_trigger`, handler-type CHECK | `packages/database/supabase/migrations/` |
+| `attach_event_trigger`, `dispatch_event_batch` and the other event-system functions | `packages/database/src/event-system/functions/<name>.sql` (edit the file, then `authz migration`; see `authz-manifest.md`) |
+| Handler-type CHECK | `packages/database/supabase/migrations/` |
+| Which functions run on which table (event triggers) | `packages/database/src/event-system/attachments.ts` |
+| Interceptor and statement-handler bodies | `packages/database/src/event-system/handlers/<name>.sql` |
 
 ## Use cases → handler type
 
@@ -44,7 +47,18 @@ the procedure, not a re-description — it does not repeat that detail.
 
 ### 1. Create a migration
 
-Triggers are wired by the SQL helper `attach_event_trigger`. Its current signature
+Triggers are declared in `packages/database/src/event-system/attachments.ts`, never in a
+migration (see `authz-manifest.md` → Event triggers). Add the table's entry there:
+
+```ts
+yourNewTable: { events: true },                                     // async only
+yourNewTable: { before: ["validate_before_insert"], events: true }, // BEFORE ROW interceptors
+yourNewTable: { after: ["sync_create_entries"], events: true },     // AFTER ROW interceptors
+```
+
+Then `pnpm db:migrate` and `pnpm --filter @carbon/database authz migration <name>`. The
+SQL below is what that renders through `set_event_triggers`; it is shown for the meaning
+of each list, not to be written by hand. `attach_event_trigger`'s signature
 takes **three** args (the 3rd added in `20260410030406_event-system-after-interceptors.sql`):
 
 ```sql
@@ -200,7 +214,8 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
    ```
 2. Add a dispatch block **inside the drain loop** (the body runs once per `pass`;
    step ids must include the pass suffix or replays break). Use
-   `chunk(..., CHUNK_SIZE)` to stay under Inngest's 256KB event limit.
+   `packBySize(..., MAX_EVENT_BYTES, MAX_RECORDS)` to stay under Inngest's 256KB
+   event limit (`MAX_SLOW_RECORDS` if the handler calls an external service per record).
    **Batched** (like SEARCH — one event per chunk, `data.records` is an array):
    ```typescript
    if (grouped.YOUR_NEW_TYPE.length > 0) {
@@ -208,9 +223,9 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
        event: job.message.event,
        companyId: job.message.companyId,
      }));
-     const chunks = chunk(records, CHUNK_SIZE);
+     const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
      for (let i = 0; i < chunks.length; i++) {
-       await step.sendEvent(`dispatch-your-new-type-${pass}-${i}`, {
+       await step.sendEvent(`send-your-new-type-${pass}-${i}`, {
          name: "carbon/event-your-new-type" as const,
          data: { records: chunks[i] },
        });
@@ -231,7 +246,7 @@ Two edits:
 
 1. Export it from the barrel `packages/jobs/src/inngest/functions/events/index.ts`.
 2. Add it to the `functions` array in **`packages/jobs/src/inngest/index.ts`** (under
-   the "Event handlers" group). That array is what `serve()` / `connect()` serves.
+   the "Event handlers" group). That array is what `serve()` serves.
 
 There is **no** `packages/jobs/src/inngest/functions/index.ts` — older docs referenced
 that path; it does not exist.
@@ -250,11 +265,11 @@ that path; it does not exist.
   SELECT * FROM "eventSystemSubscription" WHERE "companyId" = '…' AND "active";
   SELECT * FROM "eventSystemTrigger" WHERE "table" = 'yourTable'; -- view over pg_trigger
   ```
-- **Wake path (push):** the DB posts to the `event-wake` edge fn via pg_net; check
+- **Wake path (push):** the DB posts `carbon/event-queue.process` straight to Inngest via pg_net (`util.send_inngest_event`); check
   ```sql
   SELECT * FROM net._http_response ORDER BY created DESC LIMIT 5;  -- 200 = wake delivered
   SELECT * FROM cron.job_run_details WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'event-queue-sweeper') ORDER BY start_time DESC LIMIT 5;
-  SELECT * FROM "config";  -- must be seeded (apiUrl/anonKey) or wakes silently no-op
+  SELECT name FROM vault.secrets WHERE name = 'inngest_event_url';  -- must exist or wakes silently no-op
   ```
 - **Inngest:** in the dashboard (or local Dev Server), confirm the
   `carbon/event-queue.process` event arrives and `event-queue` (event-triggered,
@@ -268,19 +283,20 @@ that path; it does not exist.
 1. **Latency** — handlers fire ~3–5s after the write (sub-second wake + the drain run), worst
    case ~1 min via the pg_cron sweeper if a push is lost. Still async, not inline: for
    data-integrity / real-time needs use sync interceptors (`attach_event_trigger`'s 2nd/3rd
-   arg), not subscriptions. A missing `config` row means events never process at all.
+   arg), not subscriptions. A missing `inngest_event_url` Vault secret means events never
+   process at all.
 2. **Missing `companyId`** — events without a `companyId` are skipped; subscriptions are
    company-scoped.
 3. **Operation casing** — `["INSERT"]`, not `["insert"]`.
 4. **Forgot to register** — a new handler must be in BOTH the `events/index.ts` barrel AND
    the `functions` array in `packages/jobs/src/inngest/index.ts`, or it is never served.
-5. **Event size** — always `chunk(..., CHUNK_SIZE)`; Inngest caps events at 256KB.
+5. **Event size** — always `packBySize(..., MAX_EVENT_BYTES, …)`; Inngest caps events at 256KB.
 6. **Wrong dispatch shape** — match the queue branch to the handler: per-row (`msgId` +
    flattened config) vs batched (`{ records: [...] }`). Mixing them breaks Zod parsing.
 
 ## Checklist
 
-- [ ] Trigger attached via `attach_event_trigger(table, sync[], after_sync[])` (3-arg)
+- [ ] Trigger declared in `event-system/attachments.ts` and shipped with `authz migration`
 - [ ] Subscription(s) created with correct `companyId` and uppercase `operations`
 - [ ] (new type) `HandlerTypeSchema` widened in `packages/database/src/event.ts`
 - [ ] (new type) `handlerType` CHECK widened in a new migration

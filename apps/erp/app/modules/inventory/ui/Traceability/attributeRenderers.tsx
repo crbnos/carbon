@@ -1,11 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { cn, useMount } from "@carbon/react";
+import { cn, PrefetchLink, useMount } from "@carbon/react";
 import type {
   TrackedActivityAttributes,
   TrackedEntityAttributes
 } from "@carbon/utils";
 import { useState } from "react";
-import { Link } from "react-router";
 import { CustomerAvatar, EmployeeAvatar, SupplierAvatar } from "~/components";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { path } from "~/utils/path";
@@ -20,9 +23,8 @@ function InlineLink({
   className?: string;
 }) {
   return (
-    <Link
+    <PrefetchLink
       to={to}
-      prefetch="intent"
       className={cn(
         "text-sm font-medium text-foreground hover:underline truncate",
         className
@@ -30,7 +32,7 @@ function InlineLink({
       onClick={(e) => e.stopPropagation()}
     >
       {children}
-    </Link>
+    </PrefetchLink>
   );
 }
 
@@ -49,7 +51,7 @@ const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "To Storage Unit Name"
 ]);
 
-// The edge functions still write "Shelf" keys into trackedActivity/trackedEntity
+// The server functions still write "Shelf" keys into trackedActivity/trackedEntity
 // attributes. Renaming them there would mean every historical row keeps the old
 // key and every reader needs a fallback (post-picking reads "From Shelf" back to
 // decide where to return stock), so the rename is display-only: stored key on the
