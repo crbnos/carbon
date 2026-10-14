@@ -11,18 +11,12 @@ import {
   Button,
   ClientOnly,
   Spinner,
-  toast,
   useInterval,
   useMode,
   useViewport
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type {
-  AssemblyGraph,
-  AssemblyPlayerHandle,
-  CameraPose,
-  Motion
-} from "@carbon/viewer";
+import type { AssemblyGraph, AssemblyPlayerHandle } from "@carbon/viewer";
 import {
   AssemblyPlayer,
   buildSubAssemblyPlan,
@@ -68,6 +62,8 @@ import AssemblyInstructionHeader, {
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
 import { SUB_ASSEMBLY_PARAM } from "~/modules/production/ui/Assemblies/AssemblyStepList";
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
+import { useBuildOrientation } from "~/modules/production/ui/Assemblies/useBuildOrientation";
+import { useStepMotionEditor } from "~/modules/production/ui/Assemblies/useStepMotionEditor";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -322,7 +318,7 @@ export default function AssemblyInstructionRoute() {
   }, [hiddenFetcher.state, hiddenFetcher.data]);
 
   // The selected step shows its hidden draft before the autosave round-trips.
-  const viewerSteps = useMemo(
+  const savedViewerSteps = useMemo(
     () =>
       steps.map((step) => {
         const viewerStep = toViewerStep(step);
@@ -332,6 +328,21 @@ export default function AssemblyInstructionRoute() {
       }),
     [steps, draftHiddenNodeIds, selectedStep]
   );
+
+  const playerRef = useRef<AssemblyPlayerHandle>(null);
+  const { viewerSteps, orientation } = useBuildOrientation({
+    id,
+    steps: savedViewerSteps,
+    playerRef
+  });
+  const { editMotion, onMotionChange, leaveEdit, motionEditing, camera } =
+    useStepMotionEditor({
+      id,
+      viewerSteps,
+      playerRef,
+      selectedStepId: selectedStep?.id ?? null,
+      setSelectedStepId
+    });
 
   const subPlan = useMemo(
     () => buildSubAssemblyPlan(viewerSteps),
@@ -428,6 +439,10 @@ export default function AssemblyInstructionRoute() {
   const carriedIn = (activeInfo?.carriesIn ?? []).filter(
     (headerId) => headerId !== playerStepId
   );
+  const pathToolLabels = useMemo(
+    () => ({ move: t`Move`, rotate: t`Rotate` }),
+    [t]
+  );
   const carryInLabel =
     carriedIn.length > 0
       ? carriedIn
@@ -447,9 +462,7 @@ export default function AssemblyInstructionRoute() {
       setDraftComponentNodeIds(null);
       setDraftHiddenNodeIds(null);
       setIsAddingComponents(false);
-      // Leave any open motion-path edit session when moving to another step.
-      setEditingStepId(null);
-      setDraftMotion(null);
+      leaveEdit();
       // Changing steps drops any isolate — the new step's parts should be visible.
       setFocusedNodeIds([]);
       // Selecting a step makes its components the active selection — red in the
@@ -463,7 +476,7 @@ export default function AssemblyInstructionRoute() {
         setSelectedNodeIds(step.componentNodeIds ?? []);
       }
     },
-    []
+    [leaveEdit]
   );
 
   // Opening a sub-assembly lands on its first step (the player only plays its
@@ -614,78 +627,6 @@ export default function AssemblyInstructionRoute() {
   const cancelPlanFetcher = useFetcher<{ success: boolean }>();
   const retryFetcher = useFetcher<{}>();
 
-  // --- Motion path + camera editing (viewer-driven) ------------------------
-  // The 3D viewer edits the active step's motion path (drag waypoints) and
-  // captures its camera; both autosave via a dedicated partial-update route so
-  // they never round-trip the whole step form. `draftMotion` is the controlled
-  // value the viewer renders while editing.
-  const playerRef = useRef<AssemblyPlayerHandle>(null);
-  const motionFetcher = useFetcher<{ success: boolean }>();
-  const [editingStepId, setEditingStepId] = useState<string | null>(null);
-  const [draftMotion, setDraftMotion] = useState<Motion | null>(null);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const saveMotion = useCallback(
-    (stepId: string, body: { motion?: Motion; camera?: CameraPose | null }) => {
-      const formData = new FormData();
-      if (body.motion !== undefined) {
-        formData.set("motion", JSON.stringify(body.motion));
-      }
-      if (body.camera !== undefined) {
-        formData.set("camera", JSON.stringify(body.camera));
-      }
-      motionFetcher.submit(formData, {
-        method: "post",
-        action: path.to.assemblyInstructionStepMotion(id, stepId)
-      });
-    },
-    [motionFetcher, id]
-  );
-
-  const onEditMotion = useCallback(
-    (stepId: string) => {
-      const viewerStep = viewerSteps.find((s) => s.id === stepId);
-      setSelectedStepId(stepId);
-      setEditingStepId(stepId);
-      setDraftMotion(viewerStep?.motion ?? { type: "none" });
-    },
-    [viewerSteps]
-  );
-
-  const onStopEditMotion = useCallback(() => {
-    setEditingStepId(null);
-    setDraftMotion(null);
-  }, []);
-
-  const onMotionChange = useCallback(
-    (stepId: string, motion: Motion) => {
-      setDraftMotion(motion);
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => saveMotion(stepId, { motion }), 400);
-    },
-    [saveMotion]
-  );
-
-  const onSetCamera = useCallback(
-    (stepId: string) => {
-      const pose = playerRef.current?.captureCameraPose();
-      if (!pose) {
-        toast.error("The model isn't ready yet");
-        return;
-      }
-      saveMotion(stepId, { camera: pose });
-    },
-    [saveMotion]
-  );
-
-  const onClearCamera = useCallback(
-    (stepId: string) => saveMotion(stepId, { camera: null }),
-    [saveMotion]
-  );
-
-  const isEditingSelectedMotion =
-    editingStepId !== null && selectedStep?.id === editingStepId;
-
   return (
     <PanelProvider key={id}>
       <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
@@ -761,6 +702,7 @@ export default function AssemblyInstructionRoute() {
                             scopeStepIds={scopeStepIds}
                             isolationLabel={isolationLabel}
                             carryInLabel={carryInLabel}
+                            pathToolLabels={pathToolLabels}
                             activeStepIndex={Math.max(playerStepIndex, 0)}
                             playFromStepIndex={playFromStepIndex}
                             playStepNonce={playStepNonce}
@@ -776,13 +718,7 @@ export default function AssemblyInstructionRoute() {
                             highlightedNodeIds={selectedNodeIds}
                             focusedNodeIds={focusedNodeIds}
                             readOnly={isDisabled}
-                            editMotion={
-                              editingStepId &&
-                              selectedStep?.id === editingStepId &&
-                              draftMotion
-                                ? { stepId: editingStepId, motion: draftMotion }
-                                : null
-                            }
+                            editMotion={editMotion}
                             onMotionChange={onMotionChange}
                             units={namedUnits}
                             suppressFallbackMotions={isPlanning}
@@ -855,11 +791,9 @@ export default function AssemblyInstructionRoute() {
                   onRemoveComponents={onRemoveComponents}
                   hiddenNodeIds={selectedHiddenNodeIds}
                   onSetHiddenComponents={onSetHiddenComponents}
-                  isEditingMotion={isEditingSelectedMotion}
-                  onEditMotion={onEditMotion}
-                  onStopEditMotion={onStopEditMotion}
-                  onSetCamera={onSetCamera}
-                  onClearCamera={onClearCamera}
+                  motionEditing={motionEditing}
+                  camera={camera}
+                  orientation={orientation}
                   stepMaterials={selectedStepMaterials}
                   stepSlides={selectedStepSlides}
                   stepTools={selectedStepTools}

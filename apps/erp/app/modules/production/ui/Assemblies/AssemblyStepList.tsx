@@ -27,6 +27,7 @@ import type { AssemblyStep, SubAssemblyInfo } from "@carbon/viewer";
 import {
   buildSubAssemblyPlan,
   displayOrder,
+  isPlanFlagged,
   subAssemblyPartIds,
   validateSubAssemblies
 } from "@carbon/viewer";
@@ -79,10 +80,7 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import {
-  assemblyStepStatuses,
-  stepPlanWarningsSchema
-} from "../../production.models";
+import { assemblyStepStatuses } from "../../production.models";
 import type { AssemblyInstructionStepRow } from "../../types";
 import type { AssemblyStepStatusValue } from "./AssemblyStepStatus";
 import {
@@ -1001,8 +999,7 @@ function StepRow({
   const stepType = step.type ?? "Task";
   const needsSupport = (step.warnings as { needsSupport?: boolean } | null)
     ?.needsSupport;
-  const flagged =
-    stepPlanWarningsSchema.safeParse(step.warnings).data?.flagged === true;
+  const flagged = isPlanFlagged(step.warnings, step.motion);
   const isMember = info.headerId !== null;
   const displayTitle = title || t`Untitled step`;
 

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { single, updateRows } from "@carbon/database/rows";
 import {
@@ -30,9 +30,7 @@ import {
   unitOfMeasures
 } from "@carbon/database/seed-data";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
-import { startOfMonth } from "@internationalized/date";
-import type { Insertable, Kysely } from "kysely";
+import { type Insertable, type Kysely, type Selectable, sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
@@ -356,6 +354,12 @@ const seedCompany = defineServerFn({
 
         // Shared tables: only seed for new groups (existing groups already have these)
         let accountIdByKey: Record<string, string> = {};
+        let siblingDefaults:
+          | Selectable<KyselyDatabase["accountDefault"]>
+          | undefined;
+        let siblingAssetClasses: Selectable<
+          KyselyDatabase["fixedAssetClass"]
+        >[] = [];
         if (isNewGroup) {
           await trx
             .insertInto("currency")
@@ -392,59 +396,73 @@ const seedCompany = defineServerFn({
             )
             .execute();
         } else {
-          // For subsidiaries joining an existing group, look up account IDs by number
-          const existingAccounts = await trx
-            .selectFrom("account")
-            .select([
-              "id",
-              "number",
-              "name",
-              "companyGroupId",
-              "active",
-              "isGroup",
-              "class",
-              "incomeBalance",
-              "accountType",
-              "consolidatedRate",
-              "parentId"
-            ])
-            .where("companyGroupId", "=", companyGroupId!)
-            .execute();
-          for (const acc of existingAccounts) {
-            if (acc.number) {
-              accountIdByKey[acc.number] = acc.id;
+          // A subsidiary joining an existing group copies the account ids of a
+          // company already in it. Its chart may have been imported, so the
+          // seeded numbers below are only the fallback for a group with none.
+          const sibling = await trx
+            .selectFrom("accountDefault")
+            .innerJoin("company", "company.id", "accountDefault.companyId")
+            .selectAll("accountDefault")
+            .where("company.companyGroupId", "=", companyGroupId!)
+            .where("accountDefault.companyId", "!=", companyId)
+            .orderBy(
+              sql`"accountDefault"."companyId" = ${parentCompanyId ?? ""}`,
+              "desc"
+            )
+            .orderBy("accountDefault.companyId")
+            .executeTakeFirst();
+          if (sibling) {
+            siblingDefaults = sibling;
+            siblingAssetClasses = await trx
+              .selectFrom("fixedAssetClass")
+              .selectAll()
+              .where("companyId", "=", sibling.companyId)
+              .execute();
+          } else {
+            const existingAccounts = await trx
+              .selectFrom("account")
+              .select([
+                "id",
+                "number",
+                "name",
+                "companyGroupId",
+                "active",
+                "isGroup",
+                "class",
+                "incomeBalance",
+                "accountType",
+                "consolidatedRate",
+                "parentId"
+              ])
+              .where("companyGroupId", "=", companyGroupId!)
+              .execute();
+            for (const acc of existingAccounts) {
+              if (acc.number) {
+                accountIdByKey[acc.number] = acc.id;
+              }
             }
+            accountIdByKey["4050"] = resolveShippingDefault({
+              parentDefaultId: null,
+              accounts: existingAccounts.filter(
+                (account) => account.id !== accountIdByKey["4010"]
+              ),
+              companyGroupId: companyGroupId!
+            });
           }
-          const parentDefaults = parentCompanyId
-            ? await trx
-                .selectFrom("accountDefault")
-                .innerJoin("company", "company.id", "accountDefault.companyId")
-                .select([
-                  "accountDefault.salesShippingRevenueAccount",
-                  "accountDefault.salesAccount"
-                ])
-                .where("accountDefault.companyId", "=", parentCompanyId)
-                .where("company.companyGroupId", "=", companyGroupId!)
-                .executeTakeFirst()
-            : undefined;
-          const parentDefaultId = parentDefaults?.salesShippingRevenueAccount;
-          accountIdByKey["4050"] = resolveShippingDefault({
-            parentDefaultId:
-              parentDefaultId &&
-              parentDefaultId !== parentDefaults?.salesAccount
-                ? parentDefaultId
-                : null,
-            accounts: existingAccounts.filter(
-              (account) => account.id !== accountIdByKey["4010"]
-            ),
-            companyGroupId: companyGroupId!
-          });
         }
 
         // Resolve account numbers to IDs for account defaults
         const resolvedDefaults: Record<string, string | null> = {};
         for (const [key, number] of Object.entries(accountDefaults)) {
           resolvedDefaults[key] = accountIdByKey[number] ?? null;
+        }
+        // A sibling's defaults are copied exactly, empty ones included: after
+        // a chart import the seeded numbers may name unrelated accounts.
+        if (siblingDefaults) {
+          for (const column of ACCOUNT_DEFAULT_COLUMNS) {
+            resolvedDefaults[column] =
+              (siblingDefaults[column] as string | null) ?? null;
+          }
         }
 
         // These defaults are NOT NULL in the schema. If a customized COA
@@ -489,26 +507,23 @@ const seedCompany = defineServerFn({
           .values([{ ...fiscalYearSettings, companyId }])
           .execute();
 
-        // A new company keeps its ledger in Carbon from day one: its
-        // accounting cutover is the first day of the current period, so
-        // every posting is Posted and there is nothing to migrate
-        // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 7).
-        const today = datetime.today(await getCompanyTimeZone(trx, companyId));
-        await trx
-          .updateTable("companySettings")
-          .set({
-            accountingCutoverDate: startOfMonth(today).toString(),
-            accountingActivatedAt: datetime.timestamp(),
-            accountingActivatedBy: userId
-          })
-          .where("id", "=", companyId)
-          .where("accountingCutoverDate", "is", null)
-          .execute();
+        // A new company stays Provisional until the activation wizard sets
+        // its cutover, so the chart can be imported before anything is
+        // Posted (.ai/specs/2026-10-12-chart-of-accounts-import.md).
 
-        await trx
-          .insertInto("fixedAssetClass")
-          .values(
-            fixedAssetClasses.map((fac) => ({
+        // A subsidiary copies the group's fixed asset classes from a sibling,
+        // every setting included; a new group seeds them by account number.
+        const classRows = siblingDefaults
+          ? siblingAssetClasses.map(
+              ({
+                id: _id,
+                createdAt: _createdAt,
+                updatedAt: _updatedAt,
+                updatedBy: _updatedBy,
+                ...fac
+              }) => ({ ...fac, companyId, createdBy: userId })
+            )
+          : fixedAssetClasses.map((fac) => ({
               name: fac.name,
               depreciationMethod: fac.depreciationMethod,
               usefulLifeMonths: fac.usefulLifeMonths,
@@ -527,9 +542,10 @@ const seedCompany = defineServerFn({
               isConstructionInProgress: fac.isConstructionInProgress,
               companyId,
               createdBy: userId
-            }))
-          )
-          .execute();
+            }));
+        if (classRows.length > 0) {
+          await trx.insertInto("fixedAssetClass").values(classRows).execute();
+        }
       } // end if (!identityOnly)
 
       const user = await single(

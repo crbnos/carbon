@@ -399,6 +399,9 @@ msgstr "Fermer"
 msgid "Collapse characteristics table"
 msgstr "Réduire le tableau des caractéristiques"
 
+msgid "Collapse navigation"
+msgstr "Réduire la navigation"
+
 msgid "Collapse panel"
 msgstr "Réduire le panneau"
 
@@ -421,6 +424,9 @@ msgstr "Colonne : {0}"
 
 msgid "Columns"
 msgstr "Colonnes"
+
+msgid "Companies"
+msgstr "Sociétés"
 
 msgid "Company"
 msgstr "Société"
@@ -814,6 +820,9 @@ msgstr "Je travaille encore"
 msgid "Ideas, suggestions or problems?"
 msgstr "Des idées, suggestions ou problèmes ?"
 
+msgid "Idle"
+msgstr "Disponible"
+
 msgid "Idle for"
 msgstr "Inactif depuis"
 
@@ -905,6 +914,9 @@ msgstr "Fiche suiveuse"
 msgid "Jobs"
 msgstr "Ordres de fabrication"
 
+msgid "Keep navigation open"
+msgstr "Garder la navigation ouverte"
+
 msgid "Keep picking"
 msgstr "Continuer le prélèvement"
 
@@ -955,6 +967,9 @@ msgstr "Vue liste"
 
 msgid "Load list"
 msgstr "Charger la liste"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Chargée : {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Chargement des détails de l'article..."
@@ -1277,6 +1292,9 @@ msgstr "Intervention OEM requise"
 msgid "of {0}"
 msgstr "de {0}"
 
+msgid "Offline"
+msgstr "Hors ligne"
+
 msgid "Oldest first"
 msgstr "Le plus ancien en premier"
 
@@ -1307,6 +1325,9 @@ msgstr "Ouvrir un ordre de fabrication dans ce lot de production"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Ouvrir une NCR pour le traitement du MRB"
+
+msgid "Open ERP"
+msgstr "Ouvrir l'ERP"
 
 msgid "Open Jobs"
 msgstr "Ordres de fabrication ouvertes"

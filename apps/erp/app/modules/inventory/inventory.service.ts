@@ -9,6 +9,7 @@ import {
   type LinesideClaim,
   linesideCredit
 } from "@carbon/database/picked-consumption";
+import { expandSerialTrackedLines } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -20,7 +21,7 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import type { StorageItem } from "~/types";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
   setGenericQueryFilters,
@@ -578,6 +579,20 @@ export async function getKanban(
 }
 
 /** @mcp read */
+export async function getKanbanProjectedQuantities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  kanbanIds: string[]
+) {
+  // Projected quantity at each armed Transfer kanban's To storage unit:
+  // on-hand plus the outstanding quantity of open transfers into it.
+  return client.rpc("get_kanban_projected_quantities", {
+    company_id: companyId,
+    kanban_ids: kanbanIds
+  });
+}
+
+/** @mcp read */
 export async function getStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -652,7 +667,23 @@ export async function getStockTransfers(
     query = query.eq("locationId", args.locationId);
   }
 
-  query = setGenericQueryFilters(query, args, [
+  // "source" is derived: Kanban means the transfer has a kanbanId, Manual
+  // means it has none. There is no source column, so translate it into a
+  // kanbanId null test and keep it out of the generic column filters.
+  const sourceFilters: Filter[] = [];
+  const columnFilters: Filter[] = [];
+  for (const filter of args.filters ?? []) {
+    (filter.column === "source" ? sourceFilters : columnFilters).push(filter);
+  }
+  for (const filter of sourceFilters) {
+    if (filter.value === "Kanban") {
+      query = query.not("kanbanId", "is", null);
+    } else if (filter.value === "Manual") {
+      query = query.is("kanbanId", null);
+    }
+  }
+
+  query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
     { column: "stockTransferId", ascending: false }
   ]);
   return query;
@@ -2490,22 +2521,43 @@ export async function upsertKanban(
       })
     | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
   // kanban has no customFields column.
   const { customFields: _customFields, ...row } = kanban;
+  // zod omits a blank optional field, so a plain spread would keep the old
+  // level on update. Write null when the field is blank or the kanban is not
+  // a Transfer kanban.
+  // The same goes for the From storage unit, which only a Transfer kanban uses:
+  // switching a kanban to Buy or Make must not keep a stale source bin.
+  const isTransfer = row.replenishmentSystem === "Transfer";
+  const replenishmentLevel = isTransfer
+    ? (row.replenishmentLevel ?? null)
+    : null;
+  const fromStorageUnitId = isTransfer ? (row.fromStorageUnitId ?? null) : null;
   if ("createdBy" in row) {
-    return client.from("kanban").insert(row).select("id").single();
+    return client
+      .from("kanban")
+      .insert({ ...row, replenishmentLevel, fromStorageUnitId })
+      .select("id")
+      .single();
   }
+  // Scoped by company, not left to RLS: the update names its row by id, and a
+  // user can belong to several companies.
+  const { companyId, ...update } = row;
   return client
     .from("kanban")
     .update({
-      ...sanitize(row),
+      ...sanitize(update),
+      replenishmentLevel,
+      fromStorageUnitId,
       updatedAt: datetime.timestamp()
     })
     .eq("id", row.id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -4514,6 +4566,19 @@ export async function insertStockTransfer(
 }> {
   const { locationId, lines, companyId, createdBy, customFields } = input;
 
+  // Before the sequence, so a refused line does not use up a transfer number.
+  let linesWithExpandedSerialTracking: typeof lines;
+  try {
+    linesWithExpandedSerialTracking = expandSerialTrackedLines(lines);
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message: getErrorMessage(err, "Failed to prepare stock transfer lines")
+      }
+    };
+  }
+
   let stockTransferId = input.stockTransferId;
   if (!stockTransferId) {
     const sequence = await client.rpc("get_next_sequence", {
@@ -4528,26 +4593,6 @@ export async function insertStockTransfer(
     }
     stockTransferId = sequence.data;
   }
-
-  const linesWithExpandedSerialTracking = lines.reduce<typeof lines>(
-    (acc, line) => {
-      if (line.quantity && !Number.isInteger(line.quantity)) {
-        return acc;
-      }
-      if (line.requiresSerialTracking && line.quantity && line.quantity > 1) {
-        acc.push(
-          ...Array.from({ length: line.quantity }, () => ({
-            ...line,
-            quantity: 1
-          }))
-        );
-      } else {
-        acc.push(line);
-      }
-      return acc;
-    },
-    []
-  );
 
   const createTransfer = await client
     .from("stockTransfer")

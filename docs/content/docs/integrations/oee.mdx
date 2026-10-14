@@ -1,0 +1,156 @@
+---
+title: Machine monitoring
+plan: Business
+description: Record machine time on job operations from Sense machine sensors, and assign the run time that no operation claims.
+---
+
+An **OEE provider** is a machine-monitoring service that reports when each machine runs. Carbon reads those reports and records machine time on the operation loaded on the <Term>work center</Term>, so an operator does not have to start a Machine timer for every run. Carbon supports **Sense**, which clips a current sensor onto each machine.
+
+Machine monitoring requires Enterprise Edition or the Carbon Cloud Business plan.
+
+## What an OEE provider does
+
+Each provider device maps to one work center. Sense calls a device a **station**. Sense has no webhooks, so Carbon polls it every 2 minutes and stores each state change it reads. Carbon maps the four Sense statuses to four machine states:
+
+| Sense status | Carbon machine state |
+| --- | --- |
+| Active | Running |
+| Idle | Idle |
+| Alert | Down |
+| Offline | Offline |
+
+A **Running** state opens machine time. Any other state ends it.
+
+<Callout type="note" title="One device per work center, across every provider">
+You can install several OEE providers at once, for a shop that mixes vendors. A work center still holds at most one device in total. A pool work center that stands for three machines must become three work centers before you map it.
+</Callout>
+
+## Install Sense
+
+You need the `settings` update permission and a company API key from Sense.
+
+<Steps>
+  <Step>
+  ### Open Sense
+
+  Open **Settings → Integrations** and select **Sense**.
+  </Step>
+  <Step>
+  ### Enter the connection fields
+
+  Paste the API key and set the fields below.
+  </Step>
+  <Step>
+  ### Install
+
+  Select **Install**. Then open **Sense** again. The drawer now has a **Devices** tab.
+  </Step>
+</Steps>
+
+<FieldTable>
+  <Field name="API key" required>A company API key from Sense. It gives Carbon read access to your sites and stations. Stored as a secret.</Field>
+  <Field name="Environment" required>**Production** (`bifrost.sensemfg.com`) or **Staging**, which is for testing only. Staging uses plain HTTP, so Carbon refuses it in production.</Field>
+  <Field name="Minimum state (seconds)" required>Carbon ignores a run or a stop shorter than this, so a brief blip does not split machine time. The default is 60.</Field>
+</FieldTable>
+
+## Map devices to work centers
+
+The **Devices** tab lists every Sense station by site, with its manufacturer and model. A station that has not been calibrated says **"Not calibrated"**. Select a work center for a station and Carbon saves it at once. To unmap a station, clear its work center. The dot before each station shows its machine state; hover it to see when it last synced.
+
+Carbon records a station's state changes from the moment you save the mapping. Carbon never charges time before the mapping. If the machine already runs when you map it, its time starts at the mapping. Mapping a station to a different work center starts again from the new mapping.
+
+After each sync, the row shows the machine state, when it last synced, and the last sync error in red. A warning icon appears when the Sense site's time zone differs from the time zone of the work center's location (or the company's, when the location has none). A station's work center list leaves out the work centers that another station already holds.
+
+When you uninstall Sense (**Settings → Integrations**, then **Uninstall** on its card), Carbon ends the machine time that its stations have open at that moment. The mappings stay, so after you install Sense again each station continues from where it stopped.
+
+<Screenshot label="Sense integration drawer on the Devices tab, with stations mapped to work centers and their machine state dots" />
+
+## How machine time reaches a job
+
+### The loaded operation
+
+Each work center has a [loaded operation](/docs/reference/work-centers#loaded-operation): the operation of the latest <Term>production event</Term> started there. A Setup, Labor or Machine start loads it, so operators change nothing in how they work. The operation stays loaded until it is **"Done"** or **"Canceled"**, is deleted, or moves to another work center.
+
+Carbon keeps the history of the loads on each work center. A run that the station reports late still goes to the operation that was loaded when the machine ran.
+
+### Running time
+
+When a station reports Running, Carbon opens a Machine production event on the loaded operation at the time of the change. When the station reports Idle, Down or Offline, Carbon ends the event. A sensor event has no employee.
+
+If an operator starts Setup or Labor on operation B while the machine runs on operation A, B becomes the loaded operation. The sensor's machine time moves to B from that moment: the event on A ends there, and a new event on B starts. If the operator starts a Machine timer on B, the press ends the running event on A instead (see below). An operator's own Machine timer stays on its operation when another operation loads.
+
+<Callout type="note" title="Sensor time posts when the operation finishes">
+Carbon posts a sensor event to the general ledger when its operation finishes or the job completes. If an operator's Machine press ends the event first, it posts at the press. Until it posts, you can correct the event in the job's **Production Events** view.
+</Callout>
+
+### One machine time per work center
+
+A machine has one machine time, and operators share it. On any work center, a **"Start"** or **"Pause"** press with **"Machine"** selected ends every open Machine timer on that work center at the press, whoever started it. A Start then opens the new one.
+
+Carbon posts every Machine timer that a press ends to the general ledger at the press. A batch timer is the exception: it posts when its batch completes.
+
+On a work center with a mapped device, the press decides the operator's machine time, and the station decides whether the machine ran. A late poll never undoes a press. For example, the machine runs and the operator selects **"Pause"** at 10:03. Machine time on the operation stops at 10:03. If the machine runs on until 10:20, the time from 10:03 to 10:20 goes to unattributed time for a supervisor to review. A machine that stops within the **Minimum state** of the Pause (60 seconds by default) adds nothing.
+
+A station can report a start late. For example, the machine starts at 10:00, the operator selects **"Start"** at 10:03, and the station reports the 10:00 start after the press. The operator's machine time starts at 10:03. The time from 10:00 to 10:03 goes to the operation that was loaded at 10:00, the same result as a report on time. If nothing was loaded then, it goes to unattributed time. Carbon never records the same minutes twice.
+
+A station can also report a stop late. If the stop falls inside unattributed time that a press already ended, Carbon shortens that unattributed time to the minutes the machine ran. Carbon never shortens machine time on an operation.
+
+The work center display shows the station's state. It hides the state when the station has a sync error or has not synced for 10 minutes.
+
+### Unattributed time
+
+Carbon cannot charge run time to an operation in four cases. Then the time goes to **Production → Unattributed Time**, which appears once an OEE provider is installed:
+
+- No operation is loaded on the work center at that moment. This includes the part of a run before an operation was loaded, and a run that the station reported only after an operator's Machine press when nothing was loaded then.
+- The work center is blocked by [maintenance](/docs/reference/maintenance): a dispatch with an OEE impact of **"Down"** from the moment it is reported until it is completed or cancelled, or one with **"Planned"** from its start while it is In Progress. A Machine event already running when maintenance starts stops there, and the rest of the run goes to unattributed time. When the maintenance ends while the machine still runs, the time goes back to the loaded operation.
+- The loaded operation is **"Done"** or **"Canceled"**, or its job is Completed, Closed or Cancelled. When an operation finishes while the machine keeps running, the rest of the run goes there.
+- The machine runs on after an operator's Machine press in the same run, such as a **"Pause"**. The time until it stops goes there.
+
+Carbon removes unattributed time shorter than the **Minimum state**.
+
+The list holds only time that still needs an answer. Each row shows the work center, location, start, end, duration and state (**"Running"** or **"Stopped"**), in the time zone of the work center's location. Filter the list by work center, location, start date, end date or state. The dates follow the time zone of each work center's location, the same time zone the list shows.
+
+Select **Review**, or open a row, to work through the rows the list shows, one at a time. A row whose machine still runs is outside the review until the machine stops:
+
+- **Which operation was this?** shows a card for each operation that ran on the same work center on the days the time covers, best match first. An operation that ran during the time says **"Ran at the time"**. Select a card, or press its number key, to assign the time to it.
+- **Another job or operation** searches the open operations at the work center's location, including operations with no work center.
+- **Not job time** dismisses the time, for example warm-up, prove-out or maintenance.
+- **Skip**, or <kbd>J</kbd> and <kbd>K</kbd>, move to the next and previous row.
+
+Each answer takes you to the next row. Closing the review returns you to the list with your filters. Assigning creates a Machine production event for the row's interval and removes the row. Dismissing removes the row. A row that nobody answers is removed 30 days after the machine stopped.
+
+You cannot answer a row while the machine still runs. You cannot assign time to a Done or Canceled operation, or to a locked job. Answering needs the `production` update permission.
+
+<Screenshot label="Unattributed Time drawer with operation cards for the work center's day, the search card, and Not job time and Skip" />
+
+<AgentContext>
+Tables: `workCenterDevice` (one row per mapped device; `UNIQUE(workCenterId, companyId)` across every OEE integration; holds `currentState`, `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `unplannedPressAt`, `lastSyncedAt`, `lastSyncError`), `machineStateChange` (every state change read, unique per device and provider event id), `unattributedMachineTime` (a review queue: a row is deleted when it is assigned or dismissed, and 30 days after its `endTime`). `workCenterLoad` holds the history of loads (one row per load, `loadedAt` and `unloadedAt`); the row with no `unloadedAt` is the loaded operation. `workCenterDevice.unplannedPressAt` holds the earliest Machine press since the last sync.
+
+Exact errors and causes:
+
+- Devices tab shows a red provider error and no stations: the API key is wrong, the integration is inactive ("Integration is not active"), or the key is empty ("No API key").
+- "Failed to save device mapping" with `{work center} already has {device} from {integration}`: the work center already holds a device. Unmap that device first.
+- A device row shows `Unknown Sense status: {status}`: Sense sent a status outside Active, Idle, Alert and Offline. The device keeps its cursor and retries on the next sync.
+- A device row shows "Station has no site": the Sense station is not in a site, so Carbon cannot read its events.
+- "The machine is still running" (assign) or "Machine time not found, or the machine is still running" (dismiss): the unattributed row has no end time yet, or another user already answered it. Wait for the machine to stop.
+- "This event has already ended" in the MES: the timer was already ended, for example by another operator's Machine press on the same work center.
+- "You do not have permission to start machine time" / "You do not have permission to end machine time" in the MES: the user lacks the `production` create or update permission.
+- "That machine time is no longer open": another user answered the row, or it aged out after 30 days.
+- "The operation is Done" / "The operation is Canceled": pick an open operation.
+- "Cannot modify a locked job. Reopen it first.": the operation's job is Completed, Closed or Cancelled.
+- Unattributed time appears after a Pause press while the machine runs: expected. The machine ran, and a supervisor decides whose time it was.
+</AgentContext>
+
+## Related
+
+<Cards>
+  <Card title="Work centers" href="/docs/reference/work-centers">
+    Where operations run, and the loaded operation that receives machine time.
+  </Card>
+  <Card title="MES" href="/docs/reference/mes">
+    The shop-floor Machine timer and the work center display.
+  </Card>
+  <Card title="Maintenance" href="/docs/reference/maintenance">
+    Dispatches that block a work center and send its run time to the unattributed list.
+  </Card>
+</Cards>

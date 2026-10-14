@@ -84,11 +84,14 @@ export function IntegrationCard({
   // refusal as a failed install — and it names the incumbent, so the next step
   // is obvious.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
-  const roleIncumbent = providerRole
-    ? (routeData?.activeRoles?.[providerRole] ?? null)
-    : null;
+  // Several OEE providers may be active at once (the database exempts the
+  // role), so an active one is never an incumbent.
+  const roleIncumbent =
+    providerRole && providerRole !== "oee"
+      ? (routeData?.activeRoles?.[providerRole] ?? null)
+      : null;
   const modes =
     (
       integration as {

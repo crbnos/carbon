@@ -573,6 +573,25 @@ const convert = defineServerFn({
             ? "To Ship and Invoice"
             : "To Invoice";
 
+          // An order always has a location. A quote can reach here without
+          // one (Paperless Parts imports never set it), so fall back to the
+          // quote's shipment location, then the company's first location.
+          const locationId =
+            quote.data.locationId ??
+            quoteShipping.data.locationId ??
+            (
+              await trx
+                .selectFrom("location")
+                .select("id")
+                .where("companyId", "=", companyId)
+                .orderBy("createdAt")
+                .orderBy("id")
+                .executeTakeFirst()
+            )?.id;
+          if (!locationId) {
+            throw new Error("The company has no location for the sales order");
+          }
+
           const salesOrder = await trx
             .insertInto("salesOrder")
             .values([
@@ -586,7 +605,7 @@ const convert = defineServerFn({
                   quote.data.customerEngineeringContactId,
                 customerLocationId: quote.data.customerLocationId,
                 customerReference: purchaseOrderNumber ?? "",
-                locationId: quote.data.locationId,
+                locationId,
                 salesPersonId: quote.data.salesPersonId ?? userId,
                 status: salesOrderStatus,
                 createdBy: userId,
@@ -622,12 +641,14 @@ const convert = defineServerFn({
 
           // One read for every picked line's default bin, keyed by item and location.
           const pickedLines = selectedQuoteLines.flatMap((line) => {
-            const locationId = line.locationId ?? quote.data.locationId;
-            return line.id &&
-              line.itemId &&
-              locationId &&
-              line.methodType !== "Make to Order"
-              ? [{ id: line.id, itemId: line.itemId, locationId }]
+            return line.id && line.itemId && line.methodType !== "Make to Order"
+              ? [
+                  {
+                    id: line.id,
+                    itemId: line.itemId,
+                    locationId: line.locationId ?? locationId
+                  }
+                ]
               : [];
           });
           const pickMethods = pickedLines.length
@@ -685,7 +706,7 @@ const convert = defineServerFn({
                 nonTaxableAddOnCost: addOn - taxableAddOn,
                 description: line.description,
                 itemId: line.itemId,
-                locationId: line.locationId ?? quote.data.locationId,
+                locationId: line.locationId ?? locationId,
                 methodType: line.methodType,
                 storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
                 internalNotes: toJson(line.internalNotes),
@@ -732,6 +753,7 @@ const convert = defineServerFn({
             .values({
               ...quoteShipping.data,
               id: insertedSalesOrderId,
+              locationId: quoteShipping.data.locationId ?? locationId,
               receiptRequestedDate:
                 quoteShipping.data.receiptRequestedDate ?? receiptPromisedDate,
               receiptPromisedDate

@@ -41,6 +41,7 @@ export * from "./hash";
 export * from "./headers";
 export * from "./intercompany-capture";
 export * from "./items";
+export * from "./job-status";
 export * from "./journal-dimensions";
 export * from "./keyboard";
 export * from "./labels";

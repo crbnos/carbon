@@ -399,6 +399,9 @@ msgstr "关闭"
 msgid "Collapse characteristics table"
 msgstr "折叠特性表格"
 
+msgid "Collapse navigation"
+msgstr "收起导航"
+
 msgid "Collapse panel"
 msgstr "折叠面板"
 
@@ -421,6 +424,9 @@ msgstr "列：{0}"
 
 msgid "Columns"
 msgstr "列"
+
+msgid "Companies"
+msgstr "公司"
 
 msgid "Company"
 msgstr "公司"
@@ -814,6 +820,9 @@ msgstr "我还在工作"
 msgid "Ideas, suggestions or problems?"
 msgstr "有想法、建议或问题？"
 
+msgid "Idle"
+msgstr "空闲"
+
 msgid "Idle for"
 msgstr "闲置时间"
 
@@ -905,6 +914,9 @@ msgstr "工单流转卡"
 msgid "Jobs"
 msgstr "工单"
 
+msgid "Keep navigation open"
+msgstr "保持导航展开"
+
 msgid "Keep picking"
 msgstr "继续拣货"
 
@@ -955,6 +967,9 @@ msgstr "列表视图"
 
 msgid "Load list"
 msgstr "加载列表"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "已加载: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
@@ -1277,6 +1292,9 @@ msgstr "需要 OEM"
 msgid "of {0}"
 msgstr "/"
 
+msgid "Offline"
+msgstr "离线"
+
 msgid "Oldest first"
 msgstr "最早优先"
 
@@ -1307,6 +1325,9 @@ msgstr "打开此生产批次中的工单"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "为MRB处置打开NCR"
+
+msgid "Open ERP"
+msgstr "打开 ERP"
 
 msgid "Open Jobs"
 msgstr "未结工单"

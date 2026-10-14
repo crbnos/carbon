@@ -49,7 +49,7 @@ import {
   selectUnmappedRequiredAccounts,
   suggestAccountMatchesWithAI,
   transitionOperation,
-  upsertAccountMapping,
+  upsertAccountMappings,
   upsertDimensionValueMapping,
   validateDimensionSlots,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
@@ -93,11 +93,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
+  Link,
   useLoaderData,
   useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
+import { useSettings } from "~/hooks";
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
@@ -105,6 +107,7 @@ import {
   getAccountsList,
   getActiveDimensionsWithValues
 } from "~/modules/accounting/accounting.service";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getIntegration,
   IntegrationForm,
@@ -112,9 +115,12 @@ import {
   syncOperationTransitionValidator
 } from "~/modules/settings";
 import {
+  getOeeDevicesTabData,
+  saveWorkCenterDeviceMapping
+} from "~/modules/settings/oee-devices.server";
+import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
-  accountMappingUpsertValidator,
   dimensionSlotsUpdateValidator,
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
@@ -131,6 +137,7 @@ import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMappin
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
+import { OeeDevices } from "~/modules/settings/ui/Integrations/OeeDevices.ee";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
@@ -686,24 +693,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountMapping: null,
       accountingSync: null,
       postingSync: null,
-      dimensionSync: null
+      dimensionSync: null,
+      devices: null
     };
   }
 
   // The DECLARED role, not the display category and not an id literal.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
 
   const isAccountingInstalled =
     providerRole === "accounting" && integrationData.data.active;
 
+  // The OEE Devices tab reads the provider (cached for 60 seconds). Started
+  // here and awaited at the end, so it runs alongside the reads below.
+  const devicesPromise =
+    providerRole === "oee" && integrationData.data.active
+      ? getOeeDevicesTabData(client, companyId, integrationId)
+      : Promise.resolve(null);
+
   // Any provider-role integration writes accountingSyncOperation rows — a spend
   // provider records its own inbound/outbound dispositions there — so it gets
   // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
   // surfaces stay gated on isAccountingInstalled below.
+  // OEE providers record their sync state on each device, not here.
   const producesSyncOperations =
-    providerRole !== undefined && integrationData.data.active;
+    providerRole !== undefined &&
+    providerRole !== "oee" &&
+    integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
   // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
@@ -1139,6 +1157,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
+  const devices = await devicesPromise;
+
   return {
     installed: integrationData.data.active,
     metadata: flattenedMetadata,
@@ -1147,7 +1167,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountMapping,
     accountingSync,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    devices
   };
 }
 
@@ -1217,45 +1238,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Save one account mapping row (Account Mapping tab). The mapping
-  // services are Kysely-based (RLS bypassed) — requirePermissions above +
-  // companyId scoping is the auth gate. Stays on the page so the tab
-  // revalidates in place.
-  if (formData.get("intent") === "upsert-account-mapping") {
-    const validation = await validator(accountMappingUpsertValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const { accountId, externalId, externalCode, externalName } =
-      validation.data;
-
-    const result = await upsertAccountMapping(getDatabaseClient(), {
-      companyId,
-      integration: integrationId,
-      accountId,
-      externalId,
-      externalCode,
-      externalName,
-      userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(result.error, "Failed to save account mapping")
-        )
-      );
-    }
-
-    return data({}, await flash(request, success("Saved account mapping")));
-  }
-
   // "Suggest with AI" from the Account Mapping tab: ask gpt-4o for a
   // best-guess pairing of the still-unmapped Carbon accounts to the
   // provider chart. Writes nothing — returns proposals for the confirm
@@ -1289,8 +1271,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ proposals: result.data });
   }
 
-  // Confirm-all from the match-by-code drawer: repeated JSON-encoded
-  // `mappings` fields, one upsert per proposal.
+  // Save on the Account Mapping tab, match-by-code confirm-all and AI apply:
+  // repeated JSON-encoded `mappings` fields, written in one batch. The
+  // mapping services are Kysely-based (RLS bypassed) — requirePermissions
+  // above + companyId scoping is the auth gate. Stays on the page so the tab
+  // revalidates in place.
   if (formData.get("intent") === "bulk-upsert-account-mappings") {
     const validation = await validator(
       accountMappingBulkUpsertValidator
@@ -1301,33 +1286,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const { mappings } = validation.data;
-    const db = getDatabaseClient();
-    const failures: string[] = [];
+    const result = await upsertAccountMappings(getDatabaseClient(), {
+      companyId,
+      integration: integrationId,
+      userId,
+      mappings
+    });
 
-    for (const mapping of mappings) {
-      const result = await upsertAccountMapping(db, {
-        companyId,
-        integration: integrationId,
-        ...mapping,
-        userId
-      });
-      if (result.error) {
-        failures.push(result.error);
-      }
-    }
-
-    if (failures.length > 0) {
-      const succeeded = mappings.length - failures.length;
+    if (result.error) {
       return data(
-        {},
+        { success: false },
         await flash(
           request,
-          error(
-            failures[0],
-            succeeded > 0
-              ? `Saved ${succeeded} of ${mappings.length} account mappings`
-              : "Failed to save account mappings"
-          )
+          error(result.error, "Failed to save account mappings")
         )
       );
     }
@@ -1786,6 +1757,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Map or unmap one device (Devices tab of an OEE integration). An empty
+  // work center unmaps. Stays on the page so the tab revalidates in place.
+  if (formData.get("intent") === "upsert-work-center-device") {
+    return saveWorkCenterDeviceMapping(request, formData, {
+      client,
+      companyId,
+      userId,
+      integrationId
+    });
+  }
+
   if (!isIntegrationWhitelisted(integrationId)) {
     await requireFeature({
       request,
@@ -1890,8 +1872,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // OAuth providers make the same decision in their callbacks.
   if (
     !wasInstalled &&
-    (integration as { providerRole?: "accounting" | "spend" }).providerRole ===
-      "accounting"
+    (integration as { providerRole?: "accounting" | "spend" | "oee" })
+      .providerRole === "accounting"
   ) {
     metadata.settings = {
       ...((metadata.settings as Record<string, unknown> | undefined) ?? {}),
@@ -1911,7 +1893,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "paperless-parts",
     "email",
     "ramp",
-    "rillet"
+    "rillet",
+    "sense"
   ]);
   if (
     FORM_SECRET_INTEGRATIONS.has(integrationId) ||
@@ -2143,6 +2126,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function IntegrationRoute() {
+  // Invoice and bill sync reads Posted journals, so a company that has not
+  // activated accounting (still Provisional) has nothing to send yet.
+  const accountingSetUp = hasAccountingCutover(useSettings());
   const {
     installed,
     metadata,
@@ -2151,7 +2137,8 @@ export default function IntegrationRoute() {
     accountMapping,
     accountingSync,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    devices
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -2165,6 +2152,13 @@ export default function IntegrationRoute() {
   // and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (devices) {
+    tabs.push({
+      value: "devices",
+      label: <Trans>Devices</Trans>,
+      content: (tabBar) => <OeeDevices tabs={tabBar} {...devices} />
+    });
+  }
   if (accountMapping) {
     tabs.push({
       value: "account-mapping",
@@ -2267,10 +2261,22 @@ export default function IntegrationRoute() {
       defaultTab={defaultTab}
       headerExtra={
         accountingSync ? (
-          <AccountingSyncControl
-            enabled={accountingSync.enabled}
-            unmappedRequiredCount={accountingSync.unmappedRequiredCount}
-          />
+          <div className="flex items-center gap-3">
+            {!accountingSetUp && (
+              <Link
+                to={path.to.accountingActivation}
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                <Trans>
+                  Invoices and bills sync after you activate accounting
+                </Trans>
+              </Link>
+            )}
+            <AccountingSyncControl
+              enabled={accountingSync.enabled}
+              unmappedRequiredCount={accountingSync.unmappedRequiredCount}
+            />
+          </div>
         ) : undefined
       }
       {...(integrationId === "mount" && installed
