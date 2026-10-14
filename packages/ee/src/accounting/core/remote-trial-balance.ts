@@ -14,6 +14,7 @@ import { getAccountMappings, getCompanyGroupId } from "./account-mapping";
 import type { ProviderID } from "./models";
 import { getAccountingIntegration, getProviderIntegration } from "./service";
 import {
+  fiscalYearStart,
   type MappedTrialBalance,
   mapRemoteTrialBalance,
   type RemoteTrialBalance,
@@ -30,8 +31,10 @@ import {
  * debit-signed per remote account. Dispatches on the concrete provider class,
  * the same discrimination `fetchRemoteJournalTotals` uses.
  *
- * Rillet's `ending_balance` sign is not documented; `parseRilletTrialBalance`
- * reads it the way the report itself agrees with.
+ * Rillet reads from `fiscalYearStartMonth`'s fiscal year start, where it
+ * closes income and expense into retained earnings — the fiscal year to
+ * date, like Xero's YTD columns. Its signs are not documented;
+ * `parseRilletTrialBalance` reads them the way the report itself agrees with.
  *
  * Provider errors propagate (AccountingApiError, AccountingAuthError,
  * RatelimitError); `pullTrialBalanceFromProvider` turns them into a
@@ -39,7 +42,8 @@ import {
  */
 export async function fetchRemoteTrialBalance(
   provider: AccountingProvider,
-  asOfDate: string
+  asOfDate: string,
+  fiscalYearStartMonth: string
 ): Promise<RemoteTrialBalance> {
   if (provider instanceof XeroProvider) {
     return { supported: true, rows: await provider.getTrialBalance(asOfDate) };
@@ -50,7 +54,13 @@ export async function fetchRemoteTrialBalance(
   }
 
   if (provider instanceof RilletProvider) {
-    return { supported: true, rows: await provider.getTrialBalance(asOfDate) };
+    return {
+      supported: true,
+      rows: await provider.getTrialBalance(
+        asOfDate,
+        fiscalYearStart(asOfDate, fiscalYearStartMonth)
+      )
+    };
   }
 
   return { supported: false };
@@ -135,6 +145,12 @@ export async function pullTrialBalanceFromProvider(
     );
   }
 
+  const fiscalYear = await db
+    .selectFrom("fiscalYearSettings")
+    .select("startMonth")
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
   let remote: RemoteTrialBalance;
   try {
     const provider = getProviderIntegration(
@@ -143,7 +159,11 @@ export async function pullTrialBalanceFromProvider(
       integration.id,
       integration.metadata
     );
-    remote = await fetchRemoteTrialBalance(provider, asOfDate);
+    remote = await fetchRemoteTrialBalance(
+      provider,
+      asOfDate,
+      fiscalYear?.startMonth ?? "January"
+    );
   } catch (error) {
     throw toPullError(error);
   }

@@ -95,7 +95,11 @@ describe("fetchRemoteTrialBalance", () => {
       })
     );
 
-    const result = await fetchRemoteTrialBalance(makeXero(), "2026-09-30");
+    const result = await fetchRemoteTrialBalance(
+      makeXero(),
+      "2026-09-30",
+      "January"
+    );
 
     expect(result).toEqual({
       supported: true,
@@ -115,9 +119,11 @@ describe("fetchRemoteTrialBalance", () => {
       jsonResponse({ Title: "Forbidden", Status: 403 }, 403)
     );
 
-    const error = await fetchRemoteTrialBalance(makeXero(), "2026-09-30").catch(
-      (e: unknown) => e
-    );
+    const error = await fetchRemoteTrialBalance(
+      makeXero(),
+      "2026-09-30",
+      "January"
+    ).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(AccountingApiError);
     expect((error as AccountingApiError).details.statusCode).toBe(403);
@@ -147,7 +153,11 @@ describe("fetchRemoteTrialBalance", () => {
       })
     );
 
-    const result = await fetchRemoteTrialBalance(makeQbo(), "2026-09-30");
+    const result = await fetchRemoteTrialBalance(
+      makeQbo(),
+      "2026-09-30",
+      "January"
+    );
 
     expect(result).toEqual({
       supported: true,
@@ -160,7 +170,7 @@ describe("fetchRemoteTrialBalance", () => {
     expect(url.searchParams.has("minorversion")).toBe(true);
   });
 
-  it("reads Rillet's trial balance for the year to the date, in its subsidiary", async () => {
+  it("reads Rillet's trial balance from the fiscal year start, in its subsidiary", async () => {
     const rillet = new RilletProvider({
       companyId: "company-1",
       credentials: {
@@ -199,16 +209,20 @@ describe("fetchRemoteTrialBalance", () => {
             name: "Payables",
             beginning_balance: money("0.00"),
             debit_total: money("0.00"),
-            credit_total: money("500.00"),
-            ending_balance: money("500.00")
+            // Rillet sends credit totals negative.
+            credit_total: money("-500.00"),
+            ending_balance: money("-500.00")
           }
         ]
       });
     });
 
-    const result = await fetchRemoteTrialBalance(rillet, "2026-09-30");
+    const result = await fetchRemoteTrialBalance(
+      rillet,
+      "2026-09-30",
+      "October"
+    );
 
-    // `ending_balance` was natural-signed here: the payable is a credit.
     expect(result).toEqual({
       supported: true,
       rows: [

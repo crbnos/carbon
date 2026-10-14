@@ -3,7 +3,6 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { createHash } from "node:crypto";
-import { parseDate } from "@internationalized/date";
 import type {
   CounterpartSearchKeys,
   ExternalIdentityKind,
@@ -599,20 +598,17 @@ export class RilletProvider extends BaseProvider {
 
   /**
    * The trial balance as at `date` (YYYY-MM-DD), one row per account
-   * (GET /reports/trial-balance), scoped to the configured subsidiary. The
-   * report covers the year to `date`, so most accounts move in it: that
-   * movement is how `parseRilletTrialBalance` tells which sign
-   * `ending_balance` uses. Account types come from GET /accounts, inactive
+   * (GET /reports/trial-balance), scoped to the configured subsidiary.
+   * Rillet closes income and expense into retained earnings at `fromDate`,
+   * so pass the fiscal year start: income and expense then hold the
+   * fiscal year to date. Account types come from GET /accounts, inactive
    * accounts included, since a closed account can still carry a balance.
    */
-  async getTrialBalance(date: string): Promise<RemoteTrialBalanceRow[]> {
-    const params = new URLSearchParams({
-      from_date: parseDate(date)
-        .subtract({ years: 1 })
-        .add({ days: 1 })
-        .toString(),
-      to_date: date
-    });
+  async getTrialBalance(
+    date: string,
+    fromDate: string
+  ): Promise<RemoteTrialBalanceRow[]> {
+    const params = new URLSearchParams({ from_date: fromDate, to_date: date });
     if (this.subsidiaryId) params.set("subsidiary_id", this.subsidiaryId);
 
     const [report, accounts] = await Promise.all([
