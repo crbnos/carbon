@@ -79,8 +79,8 @@ When a station reports Running, Carbon opens a Machine production event on the l
 
 If an operator starts Setup or Labor on operation B while the machine runs on operation A, B becomes the loaded operation. The sensor's machine time moves to B from that moment: the event on A ends there, and a new event on B starts. If the operator starts a Machine timer on B, the press ends the running event on A instead (see below). An operator's own Machine timer stays on its operation when another operation loads.
 
-<Callout type="note" title="Sensor time posts when the operation finishes">
-Carbon posts a sensor event to the general ledger when its operation finishes or the job completes. If an operator's Machine press ends the event first, it posts at the press. Until it posts, you can correct the event in the job's **Production Events** view.
+<Callout type="note" title="Sensor time posts when it ends">
+Carbon posts a sensor event to the general ledger as soon as the event ends: its machine and overhead cost goes to the job's work in progress, at the work center's machine and overhead rates. That is at the sync that ends it, at an operator's press, when the operation finishes, or when you unmap the station or uninstall Sense. You can still correct a posted event in the job's **Production Events** view; Carbon posts the difference.
 </Callout>
 
 ### One machine time per work center
@@ -117,7 +117,7 @@ Select **Review**, or open a row, to work through the rows the list shows, one a
 - **Not job time** dismisses the time, for example warm-up, prove-out or maintenance.
 - **Skip**, or <kbd>J</kbd> and <kbd>K</kbd>, move to the next and previous row.
 
-Each answer takes you to the next row. Closing the review returns you to the list with your filters. Assigning creates a Machine production event for the row's interval and removes the row. Dismissing removes the row. A row that nobody answers is removed 30 days after the machine stopped.
+Each answer takes you to the next row. Closing the review returns you to the list with your filters. Assigning creates a Machine production event for the row's interval, posts it to the general ledger, and removes the row. Dismissing removes the row and posts nothing. A row that nobody answers is removed 30 days after the machine stopped.
 
 You cannot answer a row while the machine still runs. You cannot assign time to a Done or Canceled operation, or to a locked job. Answering needs the `production` update permission.
 

@@ -24,7 +24,7 @@ import { credit, datetime, debit, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError, NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
 import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
@@ -43,6 +43,9 @@ export const postProductionEventInput = z.object({
  * its own decision.
  */
 export type PostProductionEventResult = { success: boolean; reason?: string };
+
+export const PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR =
+  "This production event was just posted by another process.";
 
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 const postProductionEvent = defineServerFn({
@@ -436,6 +439,24 @@ const postProductionEvent = defineServerFn({
 
     await db.transaction().execute(async (trx) => {
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // Several callers post an event as it ends: a press, the OEE sync, an
+      // operation finish. Under the row lock, a second caller that read the
+      // event before the first committed sees the flag the first wrote and
+      // stops, instead of absorbing the cost twice.
+      const locked = await trx
+        .selectFrom("productionEvent")
+        .select("postedToGL")
+        .where("id", "=", productionEventId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!locked || locked.postedToGL !== event.postedToGL) {
+        throw new ServerFnError(
+          PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR,
+          409
+        );
+      }
 
       const journalEntryId = await getNextSequence(
         trx,

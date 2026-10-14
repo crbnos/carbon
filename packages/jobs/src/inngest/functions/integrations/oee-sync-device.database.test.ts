@@ -293,7 +293,7 @@ describe.skipIf(!hasLocalDatabase)(
         }
       ]);
 
-      await sync(provider);
+      const result = await sync(provider);
 
       expect(await machineEvents()).toEqual([
         {
@@ -304,6 +304,8 @@ describe.skipIf(!hasLocalDatabase)(
           endTime: null
         }
       ]);
+      // An open event has nothing to post yet.
+      expect(result.endedEventIds).toEqual([]);
       expect(await unattributedTime()).toEqual([]);
       expect(await deviceState()).toEqual({
         currentState: "Running",
@@ -435,7 +437,7 @@ describe.skipIf(!hasLocalDatabase)(
       );
       const { provider } = fakeProvider([]);
 
-      await sync(provider);
+      const result = await sync(provider);
 
       expect(await machineEvents()).toEqual([
         {
@@ -446,6 +448,8 @@ describe.skipIf(!hasLocalDatabase)(
           endTime: "2026-10-13T10:45:00.000Z"
         }
       ]);
+      // The event it ended goes to the caller to post.
+      expect(result.endedEventIds).toEqual([id("running")]);
       // The machine still runs with nothing loaded: the rest is unattributed.
       expect(await unattributedTime()).toEqual([
         { startTime: "2026-10-13T10:45:00.000Z", endTime: null }

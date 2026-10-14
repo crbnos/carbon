@@ -5,14 +5,15 @@
 /**
  * Syncs every mapped device of one company's OEE integration. All devices run
  * in ONE step: a step per device would multiply the Inngest cost by the device
- * count every 2 minutes. Each device is isolated — a failure is recorded on
+ * count every 2 minutes. The Machine events a device's sync ends post to the
+ * GL right after it commits. Each device is isolated — a failure is recorded on
  * that device (`lastSyncError`) and keeps its cursor; the others continue.
  * An `OeeProviderUnavailableError` stops the run instead: every remaining
  * device would fail the same way.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { OeeProviderUnavailableError } from "@carbon/ee/oee";
-import { getOeeProvider } from "@carbon/ee/oee.server";
+import { getOeeProvider, postEndedMachineEvents } from "@carbon/ee/oee.server";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { syncOeeDevice } from "./oee-sync-device";
@@ -72,7 +73,18 @@ export const oeeSyncFunction = inngest.createFunction(
       let stopped: string | undefined;
       for (const device of devices) {
         try {
-          await syncOeeDevice({ db, provider, device, minimumStateSeconds });
+          const { endedEventIds } = await syncOeeDevice({
+            db,
+            provider,
+            device,
+            minimumStateSeconds
+          });
+          // Sensor time posts when it ends, as an operator's press does.
+          await postEndedMachineEvents(db, {
+            companyId,
+            userId: "system",
+            productionEventIds: endedEventIds
+          });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : String(error);

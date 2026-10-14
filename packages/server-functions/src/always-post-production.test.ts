@@ -277,6 +277,40 @@ databaseTest(
 );
 
 databaseTest(
+  "two posts of one production event at once absorb its cost once",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const workCenterId = await workCenterFixture(f);
+      const job = await jobFixture(f, "1");
+      const eventId = await laborEvent(f, job.operationId, workCenterId);
+
+      // The OEE sync posts a sensor event as it ends it while an operation
+      // finish posts the same event: the second must not add it again.
+      const results: Awaited<ReturnType<typeof postProductionEvent>>[] = [];
+      const journals = await newJournals(f, async () => {
+        results.push(
+          ...(await Promise.all([
+            postProductionEvent(f.ctx, { productionEventId: eventId }),
+            postProductionEvent(f.ctx, { productionEventId: eventId })
+          ]))
+        );
+      });
+
+      const wip = (await journalLinesOf(f, journals))
+        .filter((line) => line.accountId === f.account("wip"))
+        .reduce((sum, line) => sum + line.amount, 0);
+      expect(wip).toBe(60);
+      for (const result of results) {
+        if (result.error) expect(result.error.status).toBe(409);
+      }
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
   "a maintenance event posts a labor absorption stand-in before the cutover and refuses an empty default after it",
   async () => {
     const f = await alwaysPostFixture();
