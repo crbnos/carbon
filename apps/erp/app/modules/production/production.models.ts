@@ -106,17 +106,8 @@ export function isJobEditableFromPlanning(
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
 
-export const JOB_LOCKED_STATUSES = [
-  "Completed",
-  "Closed",
-  "Cancelled"
-] as const;
-
-export function isJobLocked(status: string | null | undefined): boolean {
-  return JOB_LOCKED_STATUSES.includes(
-    status as (typeof JOB_LOCKED_STATUSES)[number]
-  );
-}
+// The one definition lives in @carbon/utils, shared with the OEE sync.
+export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
 export const DATE_COLUMN_SENTINELS = [
   "unscheduled",
@@ -1047,6 +1038,15 @@ export const productionEventValidator = z
       path: ["endTime"]
     }
   );
+
+export const assignMachineTimeValidator = z.object({
+  intent: z.literal("assign"),
+  jobOperationId: z.string().min(1, { message: "Operation is required" })
+});
+
+export const dismissMachineTimeValidator = z.object({
+  intent: z.literal("dismiss")
+});
 
 export const productionOrderValidator = z.object({
   startDate: zfd.text(z.string().nullable()),

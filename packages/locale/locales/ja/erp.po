@@ -542,6 +542,9 @@ msgstr "キューに{load}件"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（リースの拠点）"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{totalCount} 件中 {mappedCount} 件をマッピング済み"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -616,6 +619,9 @@ msgstr "{passing}/{total}の資産"
 msgid "{percent} picked"
 msgstr "{percent}ピッキング済"
 
+msgid "{position} of {total}"
+msgstr "{position}/{total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} 明細"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} に同期"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ヶ月} other {# ヶ月}}"
@@ -2668,6 +2677,9 @@ msgstr "年間。会社の増分借入金利から開始します"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
 
+msgid "Another job or operation"
+msgstr "別のジョブまたは工程"
+
 msgid "Another spend integration is already active"
 msgstr "別の支出統合が既にアクティブです"
 
@@ -3539,6 +3551,9 @@ msgstr "資産"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "読み込まれた工程に割り当てられていない機械加工時間を正しい製造指図に割り当てるか、却下してください。"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
@@ -5425,6 +5440,9 @@ msgstr "Jira課題に接続"
 msgid "Connect Linear issue"
 msgstr "Linear イシューを接続"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "機械監視デバイスを作業区に接続して、読み込まれた工程に対して機械時間を記録します。"
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "まず設定→連携の下でSlackに接続します。"
 
@@ -6000,6 +6018,15 @@ msgstr "PDFを作成できませんでした。もう一度お試しください
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}を解除できません: {1} — 生産がすでに記録されています"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "プロバイダーのデバイスを取得できませんでした。マッピング済みのデバイスは引き続き表示されます。"
+
+msgid "Could not load operations"
+msgstr "工程を読み込むことができませんでした"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName}で実行された内容を読み込むことができませんでした。"
 
 msgid "Could not predict lead time"
 msgstr "リードタイムを予測できませんでした"
@@ -7660,6 +7687,9 @@ msgstr "モーションプランナーで検出されました"
 msgid "Developer"
 msgstr "開発者"
 
+msgid "Devices"
+msgstr "デバイス"
+
 msgid "Difference"
 msgstr "差異"
 
@@ -7927,6 +7957,9 @@ msgstr "ダブルクリックするとこのサブアセンブリが開きます
 
 msgid "Double-click to play this step"
 msgstr "このステップを再生するにはダブルクリック"
+
+msgid "Down"
+msgstr "停止"
 
 msgid "Download"
 msgstr "ダウンロード"
@@ -11028,6 +11061,9 @@ msgstr "IDプロバイダー"
 msgid "Identity provider (IdP)"
 msgstr "IDプロバイダー（IdP）"
 
+msgid "Idle"
+msgstr "待機中"
+
 msgid "IdP Metadata URL"
 msgstr "IdP メタデータURL"
 
@@ -11936,6 +11972,9 @@ msgstr "ジョブ進行中"
 msgid "Job Location"
 msgstr "ジョブロケーション"
 
+msgid "Job locked"
+msgstr "ジョブはロック済み"
+
 msgid "Job make method"
 msgstr "ジョブ製造方法"
 
@@ -12758,6 +12797,9 @@ msgstr "機械費"
 msgid "Machine Hours"
 msgstr "機械時間"
 
+msgid "Machine monitoring"
+msgstr "機械監視"
+
 msgid "Machine rate"
 msgstr "機械費率"
 
@@ -12968,6 +13010,9 @@ msgstr "勘定科目表をプロバイダーの表にマップしてください
 
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
+
+msgid "Mapped devices"
+msgstr "マッピング済みのデバイス"
 
 msgid "Mapped values"
 msgstr "マップされた値"
@@ -14340,6 +14385,12 @@ msgstr "この契約の前受金が受け取られていません。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "会計開始日前には減価償却は実行されません。会計開始日の前日時点での各資産の減価償却累計額を入力してください。"
 
+msgid "No devices found"
+msgstr "デバイスが見つかりません"
+
+msgid "No devices match your search"
+msgstr "検索に一致するデバイスはありません"
+
 msgid "No dimension slots configured"
 msgstr "ディメンションスロットが構成されていません"
 
@@ -14475,6 +14526,9 @@ msgstr "アイテムなし"
 msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
+msgid "No job at this location has an open operation."
+msgstr "この拠点の製造指図にはオープン状態の工程がありません。"
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
 
@@ -14567,6 +14621,9 @@ msgstr "未完了の明細はありません。変更するにはサービスを
 
 msgid "No open memos"
 msgstr "オープンなメモはありません"
+
+msgid "No open operations"
+msgstr "オープン状態の工程がありません"
 
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"
@@ -14932,6 +14989,9 @@ msgstr "通常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく総勘定元帳の残高です。指図材料が払い出されると原価が累積され、製造指図が在庫として受領されたときにクリアされます。"
 
+msgid "Not calibrated"
+msgstr "検定されていない"
+
 msgid "Not certified"
 msgstr "認定されていない"
 
@@ -14952,6 +15012,12 @@ msgstr "個データが不足しています"
 
 msgid "Not feasible"
 msgstr "実現不可能"
+
+msgid "Not job time"
+msgstr "ジョブの時間ではない"
+
+msgid "Not mapped"
+msgstr "未マッピング"
 
 msgid "Not now"
 msgstr "後で"
@@ -15017,6 +15083,9 @@ msgstr "MESでまだ何も完了していません"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "その日、{workCenterName} では他に何も稼働していません。"
+
 msgid "Nothing here matches your search and filters."
 msgstr "検索と絞り込み条件に一致するものがありません"
 
@@ -15074,6 +15143,9 @@ msgstr "通知"
 msgid "Notify someone"
 msgstr "誰かに通知"
 
+msgid "now"
+msgstr "現在"
+
 msgid "Number"
 msgstr "数字"
 
@@ -15116,6 +15188,9 @@ msgstr "オフ — 同期外で処理"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
+
+msgid "Offline"
+msgstr "オフライン"
 
 msgid "Offset Account"
 msgstr "相殺勘定"
@@ -16067,6 +16142,9 @@ msgid "Path"
 msgstr "パス"
 
 msgid "Pause"
+msgstr "一時停止"
+
+msgid "Paused"
 msgstr "一時停止"
 
 msgid "Pay"
@@ -17579,6 +17657,9 @@ msgstr "Ramp が認可コードを返しませんでした"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp が認可を拒否しました"
 
+msgid "Ran at the time"
+msgstr "その時間に稼働"
+
 msgid "Rate"
 msgstr "レート"
 
@@ -18106,6 +18187,9 @@ msgstr "リリース済（警告あり）: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
+
+msgid "Reload the page to try again."
+msgstr "ページを再度読み込んで、もう一度試してください。"
 
 msgid "Remaining"
 msgstr "残高"
@@ -19595,6 +19679,9 @@ msgstr "得意先とタイプを検索..."
 msgid "Search customers or types..."
 msgstr "得意先またはタイプを検索..."
 
+msgid "Search devices"
+msgstr "デバイスを検索"
+
 msgid "Search employees..."
 msgstr "従業員を検索..."
 
@@ -19618,6 +19705,9 @@ msgstr "アイテムまたはビンを検索"
 
 msgid "Search Job"
 msgstr "ジョブを検索"
+
+msgid "Search jobs and operations"
+msgstr "ジョブと工程を検索"
 
 msgid "Search jobs or items"
 msgstr "製造指図または品目を検索"
@@ -20945,6 +21035,9 @@ msgstr "開始中…"
 msgid "Starts"
 msgstr "開始"
 
+msgid "State"
+msgstr "状態"
+
 msgid "State / Province"
 msgstr "都道府県"
 
@@ -21095,6 +21188,9 @@ msgstr "配送を停止"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "{0} をこのステップで使用しない"
+
+msgid "Stopped"
+msgstr "停止"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "この日付以降、新規の購買提案が行われなくなります。"
@@ -22187,6 +22283,9 @@ msgstr "得意先の見積および販売注文明細に適用される既定の
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "デバイスのサイトは {siteTimezone} にあります。Carbon は {locationTimezone} を使用します"
+
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
 
@@ -22458,6 +22557,9 @@ msgstr "ロットの特性別抜取検査方式は選択された文書から再
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "この仕入先がこの工法に対して請求する最低金額（数量に関係なく）。損益分岐点量以下の製造指図でも、最低でもこの金額がかかります。"
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "機械はまだ稼働中です。停止後にこの時間を割り当ててください。"
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "あなたの仕事が実行される機械、セル、およびステーション"
@@ -24068,6 +24170,9 @@ msgstr "ルールの割り当てを解除"
 msgid "Unassigned"
 msgstr "未割り当て"
 
+msgid "Unattributed Time"
+msgstr "未割り当て時間"
+
 msgid "Unbalanced"
 msgstr "差額有り"
 
@@ -24843,6 +24948,9 @@ msgstr "仕訳行を表示"
 msgid "View Lists"
 msgstr "リストを表示"
 
+msgid "View Machine Time"
+msgstr "機械時間を表示"
+
 msgid "View maintenance dispatch"
 msgstr "保全指示を表示"
 
@@ -25021,6 +25129,12 @@ msgstr "この出荷をキャンセルすると、以下のようになります
 
 msgid "Waited"
 msgstr "待機"
+
+msgid "Waiting"
+msgstr "待機中"
+
+msgid "Waiting for the first sync"
+msgstr "最初の同期を待っています"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "チャンピオンと一緒に各エリアを確認し、範囲外のものをトグルしてください。コードはModule.Area.Numberを読みます（ACC.GL.01 = 会計、総勘定元帳、品目1）。"
@@ -25527,6 +25641,9 @@ msgstr "送信するリクエストの種類を選択します：GETは何かを
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"
+
+msgid "Which operation was this?"
+msgstr "これはどの工程でしたか?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "このディスパッチがオープンの間、作業区はスケジュールに対して利用できません（計画終了時刻まで、またはディスパッチが完了するまで）。"

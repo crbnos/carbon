@@ -12,11 +12,14 @@ import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   getNextIncompleteSerialEntity,
   getOperationEligibility,
   getTrackedEntitiesByMakeMethodId,
+  postEndedProductionEvents,
+  startMachineProductionEvent,
   startProductionEvent
 } from "~/services/operations.service";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
@@ -47,6 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .from("jobOperation")
     .select("*")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .maybeSingle();
 
   if (jobOperation.error || !jobOperation.data) {
@@ -239,37 +243,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  // If type is Machine, cancel all setup and labor production events for this operation
-  if (type === "Machine") {
-    const currentTime = datetime.timestamp();
-
-    await serviceRole
-      .from("productionEvent")
-      .update({
-        endTime: currentTime,
-        updatedAt: currentTime,
-        updatedBy: userId
-      })
-      .eq("jobOperationId", operationId)
-      .in("type", ["Setup", "Labor"])
-      .is("endTime", null);
+  // A machine has one machine time: a Machine start ends every open Machine
+  // event on the work center (from any operator or the sensor) and, with a
+  // device, the open unattributed time, in one transaction with the new
+  // event. That write skips RLS, so its permission is checked first.
+  const machineWorkCenterId =
+    type === "Machine" ? jobOperation.data.workCenterId : null;
+  if (machineWorkCenterId) {
+    await requirePermissions(request, { create: "production" });
   }
 
-  const startEvent = await startProductionEvent(
-    serviceRole,
-    {
-      type,
-      jobOperationId: operationId,
-      workCenterId: jobOperation.data.workCenterId!,
-      startTime: datetime.timestamp(),
-      employeeId: userId,
-      companyId,
-      createdBy: userId
-    },
-    trackedEntityId || undefined,
-    undefined,
-    "mes_qr"
-  );
+  const db = getDatabaseClient();
+  const event = {
+    type,
+    jobOperationId: operationId,
+    workCenterId: jobOperation.data.workCenterId!,
+    startTime: datetime.timestamp(),
+    employeeId: userId,
+    companyId,
+    createdBy: userId
+  };
+  const startEvent = machineWorkCenterId
+    ? await startMachineProductionEvent(
+        db,
+        serviceRole,
+        { ...event, workCenterId: machineWorkCenterId },
+        trackedEntityId || undefined,
+        undefined,
+        "mes_qr"
+      )
+    : await startProductionEvent(
+        serviceRole,
+        event,
+        trackedEntityId || undefined,
+        undefined,
+        "mes_qr"
+      );
 
   if (startEvent.error) {
     throw redirect(
@@ -277,6 +286,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(startEvent.error, "Failed to start event"))
     );
   }
+
+  // A Machine start ends this operation's Setup and Labor timers, once the
+  // Machine time is running. Every event ended here is posted.
+  const ended =
+    startEvent.data && "endedEventIds" in startEvent.data
+      ? [...startEvent.data.endedEventIds]
+      : [];
+  if (type === "Machine") {
+    const endTime = datetime.timestamp();
+    const setupAndLabor = await serviceRole
+      .from("productionEvent")
+      .update({ endTime, updatedAt: endTime, updatedBy: userId })
+      .eq("jobOperationId", operationId)
+      .eq("companyId", companyId)
+      .in("type", ["Setup", "Labor"])
+      .is("endTime", null)
+      .select("id");
+    if (setupAndLabor.error) {
+      logger.error("Failed to end Setup and Labor at a Machine start", {
+        companyId,
+        operationId,
+        error: setupAndLabor.error
+      });
+    }
+    for (const row of setupAndLabor.data ?? []) ended.push(row.id);
+  }
+  await postEndedProductionEvents(serviceRole, db, {
+    companyId,
+    userId,
+    ids: ended
+  });
 
   throw redirect(path.to.operation(operationId));
 }

@@ -34,6 +34,8 @@ export type DisplayWorkCenter = {
   isBlocked: boolean;
   blockingDispatchId: string | null;
   blockingDispatchReadableId: string | null;
+  /** The operation loaded on this work center (the last timer started there), if any. */
+  loadedJobOperationId: string | null;
 };
 
 /**
@@ -48,7 +50,7 @@ export async function getDisplayWorkCenter(
   const { data, error } = await client
     .from("workCentersWithBlockingStatus")
     .select(
-      "id, name, locationId, locationName, isBlocked, blockingDispatchId, blockingDispatchReadableId"
+      "id, name, locationId, locationName, isBlocked, blockingDispatchId, blockingDispatchReadableId, loadedJobOperationId"
     )
     .eq("id", args.workCenterId)
     .eq("companyId", args.companyId)
@@ -63,8 +65,64 @@ export async function getDisplayWorkCenter(
     locationName: data.locationName ?? null,
     isBlocked: data.isBlocked ?? false,
     blockingDispatchId: data.blockingDispatchId ?? null,
-    blockingDispatchReadableId: data.blockingDispatchReadableId ?? null
+    blockingDispatchReadableId: data.blockingDispatchReadableId ?? null,
+    loadedJobOperationId: data.loadedJobOperationId ?? null
   };
+}
+
+/** The operation loaded onto a work center: its job and description. */
+export async function getDisplayLoadedOperation(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; companyId: string }
+) {
+  const { data } = await client
+    .from("jobOperation")
+    .select("id, description, job:jobId(jobId)")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const job = data.job as { jobId: string | null } | null;
+  return {
+    id: data.id,
+    description: data.description ?? null,
+    jobReadableId: job?.jobId ?? null
+  };
+}
+
+/** A device state older than this is hidden: the sync may have stopped. */
+const DEVICE_STATE_MAX_AGE_MS = 10 * 60 * 1000;
+
+/**
+ * The live state of the OEE device mapped to a work center, or null when there
+ * is no device, its last sync failed, it has never synced, or it last synced
+ * more than 10 minutes before `now`. A wall display must not show "Running"
+ * from a sync that stopped hours ago.
+ */
+export async function getDisplayDeviceState(
+  client: SupabaseClient<Database>,
+  args: { workCenterId: string; companyId: string; now: string }
+): Promise<Database["public"]["Enums"]["machineState"] | null> {
+  const { data } = await client
+    .from("workCenterDevice")
+    .select("currentState, lastSyncedAt, lastSyncError")
+    .eq("workCenterId", args.workCenterId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (!data || data.lastSyncError || !data.lastSyncedAt) return null;
+
+  // Comparing two absolute instants: the date rule's narrow exception.
+  if (
+    Date.parse(args.now) - Date.parse(data.lastSyncedAt) >
+    DEVICE_STATE_MAX_AGE_MS
+  ) {
+    return null;
+  }
+
+  return data.currentState;
 }
 
 export async function getWorkCentersForDisplayPicker(

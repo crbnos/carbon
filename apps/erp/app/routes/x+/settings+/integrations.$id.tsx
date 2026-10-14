@@ -115,6 +115,10 @@ import {
   syncOperationTransitionValidator
 } from "~/modules/settings";
 import {
+  getOeeDevicesTabData,
+  saveWorkCenterDeviceMapping
+} from "~/modules/settings/oee-devices.server";
+import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
   dimensionSlotsUpdateValidator,
@@ -133,6 +137,7 @@ import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMappin
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
+import { OeeDevices } from "~/modules/settings/ui/Integrations/OeeDevices.ee";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
@@ -688,24 +693,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountMapping: null,
       accountingSync: null,
       postingSync: null,
-      dimensionSync: null
+      dimensionSync: null,
+      devices: null
     };
   }
 
   // The DECLARED role, not the display category and not an id literal.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
 
   const isAccountingInstalled =
     providerRole === "accounting" && integrationData.data.active;
 
+  // The OEE Devices tab reads the provider (cached for 60 seconds). Started
+  // here and awaited at the end, so it runs alongside the reads below.
+  const devicesPromise =
+    providerRole === "oee" && integrationData.data.active
+      ? getOeeDevicesTabData(client, companyId, integrationId)
+      : Promise.resolve(null);
+
   // Any provider-role integration writes accountingSyncOperation rows — a spend
   // provider records its own inbound/outbound dispositions there — so it gets
   // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
   // surfaces stay gated on isAccountingInstalled below.
+  // OEE providers record their sync state on each device, not here.
   const producesSyncOperations =
-    providerRole !== undefined && integrationData.data.active;
+    providerRole !== undefined &&
+    providerRole !== "oee" &&
+    integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
   // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
@@ -1141,6 +1157,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
+  const devices = await devicesPromise;
+
   return {
     installed: integrationData.data.active,
     metadata: flattenedMetadata,
@@ -1149,7 +1167,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountMapping,
     accountingSync,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    devices
   };
 }
 
@@ -1738,6 +1757,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Map or unmap one device (Devices tab of an OEE integration). An empty
+  // work center unmaps. Stays on the page so the tab revalidates in place.
+  if (formData.get("intent") === "upsert-work-center-device") {
+    return saveWorkCenterDeviceMapping(request, formData, {
+      client,
+      companyId,
+      userId,
+      integrationId
+    });
+  }
+
   if (!isIntegrationWhitelisted(integrationId)) {
     await requireFeature({
       request,
@@ -1842,8 +1872,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // OAuth providers make the same decision in their callbacks.
   if (
     !wasInstalled &&
-    (integration as { providerRole?: "accounting" | "spend" }).providerRole ===
-      "accounting"
+    (integration as { providerRole?: "accounting" | "spend" | "oee" })
+      .providerRole === "accounting"
   ) {
     metadata.settings = {
       ...((metadata.settings as Record<string, unknown> | undefined) ?? {}),
@@ -1863,7 +1893,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "paperless-parts",
     "email",
     "ramp",
-    "rillet"
+    "rillet",
+    "sense"
   ]);
   if (
     FORM_SECRET_INTEGRATIONS.has(integrationId) ||
@@ -2106,7 +2137,8 @@ export default function IntegrationRoute() {
     accountMapping,
     accountingSync,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    devices
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -2120,6 +2152,13 @@ export default function IntegrationRoute() {
   // and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (devices) {
+    tabs.push({
+      value: "devices",
+      label: <Trans>Devices</Trans>,
+      content: (tabBar) => <OeeDevices tabs={tabBar} {...devices} />
+    });
+  }
   if (accountMapping) {
     tabs.push({
       value: "account-mapping",

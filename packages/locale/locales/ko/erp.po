@@ -542,6 +542,9 @@ msgstr "큐에 {load}개 대기 중"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (리스의 사업장)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{totalCount}개 중 {mappedCount}개 매핑됨"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -616,6 +619,9 @@ msgstr "총 {total}개 자산 중 {passing}개"
 msgid "{percent} picked"
 msgstr "{percent} 피킹 완료"
 
+msgid "{position} of {total}"
+msgstr "{position}/{total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} 라인"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} 동기화됨"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 개월} other {# 개월}}"
@@ -2668,6 +2677,9 @@ msgstr "연간. 회사의 증분 차입 이율부터 시작합니다."
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "이 원가 센터가 롤업되는 다른 원가 센터로, 계층적 원가 보고를 위해 부서를 상위 항목 아래에 중첩시킬 수 있게 함"
 
+msgid "Another job or operation"
+msgstr "다른 작업 또는 공정"
+
 msgid "Another spend integration is already active"
 msgstr "다른 지출 통합이 이미 활성화되어 있습니다"
 
@@ -3539,6 +3551,9 @@ msgstr "자산"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "로드된 공정이 청구하지 않은 기계 시간을 올바른 작업 지시에 할당하거나 거부하세요."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
@@ -5425,6 +5440,9 @@ msgstr "Jira 이슈 연결"
 msgid "Connect Linear issue"
 msgstr "Linear 이슈 연결"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "기계 모니터링 기기를 작업장에 연결하여 로드된 공정에 대해 기계 시간을 기록하세요."
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "설정 → 연동에서 먼저 Slack을 연결합니다."
 
@@ -6000,6 +6018,15 @@ msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}을(를) 해제할 수 없습니다: {1} — 생산이 이미 기록됨"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "공급자의 장치 목록을 가져올 수 없습니다. 매핑된 장치는 계속 표시됩니다."
+
+msgid "Could not load operations"
+msgstr "공정을 로드할 수 없습니다"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName}에서 실행된 항목을 로드할 수 없습니다."
 
 msgid "Could not predict lead time"
 msgstr "리드타임을 예측할 수 없습니다"
@@ -7660,6 +7687,9 @@ msgstr "모션 플래너가 감지함"
 msgid "Developer"
 msgstr "개발자"
 
+msgid "Devices"
+msgstr "기기"
+
 msgid "Difference"
 msgstr "차액"
 
@@ -7927,6 +7957,9 @@ msgstr "이 하위 조립품을 열려면 이중 클릭하세요"
 
 msgid "Double-click to play this step"
 msgstr "이 단계를 재생하려면 더블 클릭"
+
+msgid "Down"
+msgstr "가동중단"
 
 msgid "Download"
 msgstr "다운로드"
@@ -11028,6 +11061,9 @@ msgstr "자격 증명 공급자"
 msgid "Identity provider (IdP)"
 msgstr "자격 증명 공급자(IdP)"
 
+msgid "Idle"
+msgstr "유휴"
+
 msgid "IdP Metadata URL"
 msgstr "IdP 메타데이터 URL"
 
@@ -11936,6 +11972,9 @@ msgstr "진행 중인 작업"
 msgid "Job Location"
 msgstr "작업 위치"
 
+msgid "Job locked"
+msgstr "작업 잠김"
+
 msgid "Job make method"
 msgstr "작업 지시 생산 방법"
 
@@ -12758,6 +12797,9 @@ msgstr "기계 비용"
 msgid "Machine Hours"
 msgstr "기계 시간"
 
+msgid "Machine monitoring"
+msgstr "기계 모니터링"
+
 msgid "Machine rate"
 msgstr "기계비율"
 
@@ -12968,6 +13010,9 @@ msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비�
 
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
+
+msgid "Mapped devices"
+msgstr "매핑된 장치"
 
 msgid "Mapped values"
 msgstr "매핑된 값"
@@ -14340,6 +14385,12 @@ msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "전환 이전에는 감가상각이 실행되지 않습니다. 전환 이전 날 기준으로 각 자산의 감가상각누계액을 입력하세요."
 
+msgid "No devices found"
+msgstr "기기를 찾을 수 없음"
+
+msgid "No devices match your search"
+msgstr "검색과 일치하는 장치가 없습니다"
+
 msgid "No dimension slots configured"
 msgstr "구성된 차원 슬롯이 없습니다"
 
@@ -14475,6 +14526,9 @@ msgstr "품목 없음"
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
+msgid "No job at this location has an open operation."
+msgstr "이 사업장에는 미결 공정이 있는 작업 지시가 없습니다."
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "아직 이 사업장에 스케줄된 작업 지시가 없습니다 — 작업 지시를 릴리스하여 작업장 부하를 확인하세요."
 
@@ -14567,6 +14621,9 @@ msgstr "열린 라인이 없습니다. 변경하려면 서비스를 추가하세
 
 msgid "No open memos"
 msgstr "미결 메모 없음"
+
+msgid "No open operations"
+msgstr "미결 공정 없음"
 
 msgid "No open orders for this item are available to link."
 msgstr "이 품목에 연결할 수 있는 미결 발주서가 없습니다."
@@ -14932,6 +14989,9 @@ msgstr "일반"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "표가 아니라 총계정원장 잔액입니다: 작업 지시 자재가 지급될 때 원가가 누적되고 작업 지시가 재고로 입고될 때 원가가 소거됩니다."
 
+msgid "Not calibrated"
+msgstr "보정되지 않음"
+
 msgid "Not certified"
 msgstr "인증되지 않음"
 
@@ -14952,6 +15012,12 @@ msgstr "개에 대한 데이터가 부족합니다."
 
 msgid "Not feasible"
 msgstr "불가능"
+
+msgid "Not job time"
+msgstr "작업 시간 아님"
+
+msgid "Not mapped"
+msgstr "매핑되지 않음"
 
 msgid "Not now"
 msgstr "나중에"
@@ -15017,6 +15083,9 @@ msgstr "MES에서 아직 완료된 항목이 없습니다"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "그날 {workCenterName}에서 실행된 다른 것이 없습니다."
+
 msgid "Nothing here matches your search and filters."
 msgstr "검색 및 필터와 일치하는 항목이 없습니다."
 
@@ -15074,6 +15143,9 @@ msgstr "알림"
 msgid "Notify someone"
 msgstr "누군가에게 알림"
 
+msgid "now"
+msgstr "지금"
+
 msgid "Number"
 msgstr "번호"
 
@@ -15116,6 +15188,9 @@ msgstr "끔 — 동기화 외부에서 처리됨"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
+
+msgid "Offline"
+msgstr "오프라인"
 
 msgid "Offset Account"
 msgstr "상계 계정"
@@ -16068,6 +16143,9 @@ msgstr "경로"
 
 msgid "Pause"
 msgstr "일시 중지"
+
+msgid "Paused"
+msgstr "일시 중지됨"
 
 msgid "Pay"
 msgstr "지불"
@@ -17579,6 +17657,9 @@ msgstr "Ramp에서 인증 코드를 반환하지 않았습니다"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp에서 인증을 거부했습니다"
 
+msgid "Ran at the time"
+msgstr "해당 시간에 실행됨"
+
 msgid "Rate"
 msgstr "환율"
 
@@ -18106,6 +18187,9 @@ msgstr "릴리스됨 (문제 있음): {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "배치를 릴리스하면 포함된 작업 지시들도 릴리스되고, 각각은 현장에 준비되어야 합니다."
+
+msgid "Reload the page to try again."
+msgstr "페이지를 새로고침하여 다시 시도하세요."
 
 msgid "Remaining"
 msgstr "남음"
@@ -19595,6 +19679,9 @@ msgstr "고객 및 유형 검색..."
 msgid "Search customers or types..."
 msgstr "고객 또는 유형 검색..."
 
+msgid "Search devices"
+msgstr "장치 검색"
+
 msgid "Search employees..."
 msgstr "직원 검색..."
 
@@ -19618,6 +19705,9 @@ msgstr "품목 또는 빈 검색"
 
 msgid "Search Job"
 msgstr "작업 검색"
+
+msgid "Search jobs and operations"
+msgstr "작업 및 공정 검색"
 
 msgid "Search jobs or items"
 msgstr "작업 지시 또는 품목 검색"
@@ -20945,6 +21035,9 @@ msgstr "시작 중…"
 msgid "Starts"
 msgstr "시작"
 
+msgid "State"
+msgstr "상태"
+
 msgid "State / Province"
 msgstr "주/도"
 
@@ -21095,6 +21188,9 @@ msgstr "배송 중지"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "이 단계에서 {0} 사용 중지"
+
+msgid "Stopped"
+msgstr "정지됨"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "이 날짜 이후로 새로운 구매 제안을 중단합니다."
@@ -22187,6 +22283,9 @@ msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "장치 사이트는 {siteTimezone}에 있습니다. Carbon은 {locationTimezone}을(를) 사용합니다"
+
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."
 
@@ -22458,6 +22557,9 @@ msgstr "로트의 특성별 샘플링 계획은 선택한 문서에서 다시 �
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "이 공급업체가 수량과 관계없이 이 공법에 대해 청구할 최소 금액; 손익분기점 이하의 작업 지시도 최소한 이 금액이 들어갑니다."
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "기계가 아직 가동 중입니다. 멈춘 후에 이 시간을 할당하세요."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "작업이 거쳐가는 기계, 셀, 스테이션"
@@ -24068,6 +24170,9 @@ msgstr "규칙 할당 해제"
 msgid "Unassigned"
 msgstr "미배정"
 
+msgid "Unattributed Time"
+msgstr "미귀속 시간"
+
 msgid "Unbalanced"
 msgstr "불균형"
 
@@ -24843,6 +24948,9 @@ msgstr "분개 보기"
 msgid "View Lists"
 msgstr "목록 보기"
 
+msgid "View Machine Time"
+msgstr "기계 시간 보기"
+
 msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"
 
@@ -25021,6 +25129,12 @@ msgstr "이 출하를 무효화하면 다음과 같은 결과가 발생합니다
 
 msgid "Waited"
 msgstr "대기함"
+
+msgid "Waiting"
+msgstr "대기 중"
+
+msgid "Waiting for the first sync"
+msgstr "첫 동기화를 기다리는 중"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "담당자와 함께 각 영역을 살펴보고 범위에서 벗어난 항목은 토글로 제외하세요. 코드는 모듈.영역.번호 형식입니다(ACC.GL.01 = 회계, 총계정원장, 1번 항목)."
@@ -25527,6 +25641,9 @@ msgstr "전송할 요청의 종류: GET은 무언가를 읽고, POST는 생성�
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
+
+msgid "Which operation was this?"
+msgstr "어떤 공정이었나요?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "이 유지보수 지시가 열려 있는 동안 작업장은 일정에 사용할 수 없습니다(계획된 종료 시간까지 또는 지시가 완료될 때까지)."

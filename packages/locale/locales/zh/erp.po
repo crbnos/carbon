@@ -542,6 +542,9 @@ msgstr "{load} 在队列中"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（该租赁的地点）"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "已映射 {mappedCount} / {totalCount}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -616,6 +619,9 @@ msgstr "{passing} 项，共 {total} 项资产"
 msgid "{percent} picked"
 msgstr "{percent}已拣货"
 
+msgid "{position} of {total}"
+msgstr "{position}/{total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} 行"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} 已同步"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
@@ -2668,6 +2677,9 @@ msgstr "每年。从公司的增量借款利率开始"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
 
+msgid "Another job or operation"
+msgstr "其他工单或工序"
+
 msgid "Another spend integration is already active"
 msgstr "另一个支出集成已处于活跃状态"
 
@@ -3539,6 +3551,9 @@ msgstr "资产"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "将未被加载工序认领的机器工时分配给正确的工单，或将其放弃。"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
@@ -5425,6 +5440,9 @@ msgstr "连接 Jira 问题"
 msgid "Connect Linear issue"
 msgstr "连接 Linear 问题"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "将机器监测设备连接到工作中心，以便将机器工时记录到已加载的工序。"
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "先在设置 → 集成中连接 Slack。"
 
@@ -6000,6 +6018,15 @@ msgstr "无法生成 PDF。请重试。"
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "无法解散 {0}: {1} — 生产已记录"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "无法列出提供商的设备。已映射的设备仍会显示。"
+
+msgid "Could not load operations"
+msgstr "无法加载工序"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "无法加载在 {workCenterName} 上运行的内容。"
 
 msgid "Could not predict lead time"
 msgstr "无法预测提前期"
@@ -7660,6 +7687,9 @@ msgstr "由运动规划器检测"
 msgid "Developer"
 msgstr "开发人员"
 
+msgid "Devices"
+msgstr "设备"
+
 msgid "Difference"
 msgstr "差异"
 
@@ -7927,6 +7957,9 @@ msgstr "双击以打开此子装配"
 
 msgid "Double-click to play this step"
 msgstr "双击播放此步骤"
+
+msgid "Down"
+msgstr "停机"
 
 msgid "Download"
 msgstr "下载"
@@ -11028,6 +11061,9 @@ msgstr "身份提供商"
 msgid "Identity provider (IdP)"
 msgstr "身份提供商 (IdP)"
 
+msgid "Idle"
+msgstr "空闲"
+
 msgid "IdP Metadata URL"
 msgstr "IdP 元数据 URL"
 
@@ -11936,6 +11972,9 @@ msgstr "作业进行中"
 msgid "Job Location"
 msgstr "工作地点"
 
+msgid "Job locked"
+msgstr "工单已锁定"
+
 msgid "Job make method"
 msgstr "工单制造方法"
 
@@ -12758,6 +12797,9 @@ msgstr "机器成本"
 msgid "Machine Hours"
 msgstr "机器小时"
 
+msgid "Machine monitoring"
+msgstr "机器监测"
+
 msgid "Machine rate"
 msgstr "机器费率"
 
@@ -12968,6 +13010,9 @@ msgstr "将您的会计科目表映射到提供商的。过账默认账户和费
 
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
+
+msgid "Mapped devices"
+msgstr "已映射的设备"
 
 msgid "Mapped values"
 msgstr "已映射的值"
@@ -14340,6 +14385,12 @@ msgstr "未收到此协议的押金。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "在截断前不进行折旧计算。输入每项资产截断前一天的累计折旧。"
 
+msgid "No devices found"
+msgstr "未找到设备"
+
+msgid "No devices match your search"
+msgstr "没有与搜索匹配的设备"
+
 msgid "No dimension slots configured"
 msgstr "未配置维度插槽"
 
@@ -14475,6 +14526,9 @@ msgstr "没有物料"
 msgid "No items have inventory activity here yet."
 msgstr "此处尚无物料库存活动。"
 
+msgid "No job at this location has an open operation."
+msgstr "此地点没有工单有未结工序。"
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
 
@@ -14567,6 +14621,9 @@ msgstr "没有未结行。添加服务以进行修改。"
 
 msgid "No open memos"
 msgstr "无未结单据"
+
+msgid "No open operations"
+msgstr "没有未结工序"
 
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
@@ -14932,6 +14989,9 @@ msgstr "正常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表，而是总账余额：成本随着工单物料的领料而累积，工单收到库存时清空。"
 
+msgid "Not calibrated"
+msgstr "未校准"
+
 msgid "Not certified"
 msgstr "未认证"
 
@@ -14952,6 +15012,12 @@ msgstr "单位数据不足"
 
 msgid "Not feasible"
 msgstr "不可行"
+
+msgid "Not job time"
+msgstr "不是工单时间"
+
+msgid "Not mapped"
+msgstr "未映射"
 
 msgid "Not now"
 msgstr "暂不"
@@ -15017,6 +15083,9 @@ msgstr "MES中尚未完成任何内容"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "当天 {workCenterName} 上没有其他运行记录。"
+
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
 
@@ -15074,6 +15143,9 @@ msgstr "通知"
 msgid "Notify someone"
 msgstr "通知某人"
 
+msgid "now"
+msgstr "现在"
+
 msgid "Number"
 msgstr "数字"
 
@@ -15116,6 +15188,9 @@ msgstr "关闭 — 在同步外处理"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已下达修订版保持可编辑"
+
+msgid "Offline"
+msgstr "离线"
 
 msgid "Offset Account"
 msgstr "抵消账户"
@@ -16068,6 +16143,9 @@ msgstr "路径"
 
 msgid "Pause"
 msgstr "暂停"
+
+msgid "Paused"
+msgstr "已暂停"
 
 msgid "Pay"
 msgstr "支付"
@@ -17579,6 +17657,9 @@ msgstr "Ramp 未返回授权代码"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp 拒绝了授权"
 
+msgid "Ran at the time"
+msgstr "当时在运行"
+
 msgid "Rate"
 msgstr "汇率"
 
@@ -18106,6 +18187,9 @@ msgstr "已下达，存在问题：{0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
+
+msgid "Reload the page to try again."
+msgstr "重新加载页面以重试。"
 
 msgid "Remaining"
 msgstr "剩余"
@@ -19595,6 +19679,9 @@ msgstr "搜索客户和类型..."
 msgid "Search customers or types..."
 msgstr "搜索客户或类型..."
 
+msgid "Search devices"
+msgstr "搜索设备"
+
 msgid "Search employees..."
 msgstr "搜索员工..."
 
@@ -19618,6 +19705,9 @@ msgstr "搜索物料或料箱"
 
 msgid "Search Job"
 msgstr "搜索任务"
+
+msgid "Search jobs and operations"
+msgstr "搜索工单和工序"
 
 msgid "Search jobs or items"
 msgstr "搜索工单或物品"
@@ -20945,6 +21035,9 @@ msgstr "正在启动…"
 msgid "Starts"
 msgstr "开始"
 
+msgid "State"
+msgstr "状态"
+
 msgid "State / Province"
 msgstr "州/省"
 
@@ -21095,6 +21188,9 @@ msgstr "停止发货"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "在此步骤中停止使用 {0}"
+
+msgid "Stopped"
+msgstr "已停止"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "在此日期之后停止新采购建议。"
@@ -22187,6 +22283,9 @@ msgstr "适用于此客户的报价和销售订单行的默认税率，在每行
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "设备所在站点位于 {siteTimezone}；Carbon 使用 {locationTimezone}"
+
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
 
@@ -22458,6 +22557,9 @@ msgstr "该批次各特征的抽样方案将从所选文件重新确定。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商对此工艺收费的最低金额，无论数量如何；低于盈亏平衡量的工单仍至少成本此金额。"
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "机器仍在运行。请在停止后分配此时间。"
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "您的工作运行所经过的机器、单元和工作站"
@@ -24068,6 +24170,9 @@ msgstr "取消分配规则"
 msgid "Unassigned"
 msgstr "未分配"
 
+msgid "Unattributed Time"
+msgstr "未归属时间"
+
 msgid "Unbalanced"
 msgstr "不平衡"
 
@@ -24843,6 +24948,9 @@ msgstr "查看日记账分录"
 msgid "View Lists"
 msgstr "查看列表"
 
+msgid "View Machine Time"
+msgstr "查看机器工时"
+
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"
 
@@ -25021,6 +25129,12 @@ msgstr "作废此发货将："
 
 msgid "Waited"
 msgstr "已等待"
+
+msgid "Waiting"
+msgstr "等待中"
+
+msgid "Waiting for the first sync"
+msgstr "正在等待首次同步"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "与您的冠军一起查看每个区域，切换任何超出范围的内容。代码格式为 Module.Area.Number（ACC.GL.01 = 会计、总账、项目 1）。"
@@ -25527,6 +25641,9 @@ msgstr "发送哪种类型的请求：GET 读取内容，POST 创建，PUT 和 P
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
+
+msgid "Which operation was this?"
+msgstr "这是哪个工序?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "当此派遣打开时，工作中心对计划不可用（直到计划结束时间或派遣完成）。"

@@ -542,6 +542,9 @@ msgstr "{load} в очереди"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (площадка аренды)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "Сопоставлено {mappedCount} из {totalCount}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -616,6 +619,9 @@ msgstr "{passing} из {total} активов"
 msgid "{percent} picked"
 msgstr "{percent} отобрано"
 
+msgid "{position} of {total}"
+msgstr "{position} из {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} строк"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · синхронизировано {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# месяц} few {# месяца} many {# месяцев} other {# месяцев}}"
@@ -2668,6 +2677,9 @@ msgstr "Ежегодно. Начинается с дополнительной �
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Еще один центр затрат, в который входит этот, позволяя вложить подразделение под его родительский центр затрат для иерархической отчетности по затратам."
 
+msgid "Another job or operation"
+msgstr "Другое задание или операция"
+
 msgid "Another spend integration is already active"
 msgstr "Другая интеграция расходов уже активна"
 
@@ -3539,6 +3551,9 @@ msgstr "Активы"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "Назначьте машинное время обработки, которое ни одна загруженная операция не требовала, правильному производственному заказу, или отклоните его."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
@@ -5425,6 +5440,9 @@ msgstr "Подключить проблему Jira"
 msgid "Connect Linear issue"
 msgstr "Подключить Linear issue"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "Подключите устройства мониторинга станков к рабочим центрам, чтобы машинное время записывалось против загруженной операции."
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Сначала подключите Slack в разделе Настройки → Интеграции."
 
@@ -6000,6 +6018,15 @@ msgstr "Не удалось создать PDF. Попробуйте еще ра
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Не удалось растворить {0}: {1} — производство уже записано"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Не удалось получить список устройств поставщика. Сопоставленные устройства по-прежнему отображаются."
+
+msgid "Could not load operations"
+msgstr "Не удалось загрузить операции"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Не удалось загрузить то, что выполнялось на {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Не удалось предсказать срок поставки"
@@ -7660,6 +7687,9 @@ msgstr "Обнаружено планировщиком движения"
 msgid "Developer"
 msgstr "Разработчик"
 
+msgid "Devices"
+msgstr "Устройства"
+
 msgid "Difference"
 msgstr "Разница"
 
@@ -7927,6 +7957,9 @@ msgstr "Дважды щелкните, чтобы открыть эту подс
 
 msgid "Double-click to play this step"
 msgstr "Дважды щелкните, чтобы воспроизвести этот шаг"
+
+msgid "Down"
+msgstr "Простой"
 
 msgid "Download"
 msgstr "Скачать"
@@ -11028,6 +11061,9 @@ msgstr "Поставщик удостоверений"
 msgid "Identity provider (IdP)"
 msgstr "Поставщик удостоверений (IdP)"
 
+msgid "Idle"
+msgstr "Ожидание"
+
 msgid "IdP Metadata URL"
 msgstr "URL метаданных IdP"
 
@@ -11936,6 +11972,9 @@ msgstr "Задание в работе"
 msgid "Job Location"
 msgstr "Местоположение задания"
 
+msgid "Job locked"
+msgstr "Задание заблокировано"
+
 msgid "Job make method"
 msgstr "Метод производства заказа"
 
@@ -12758,6 +12797,9 @@ msgstr "Стоимость станка"
 msgid "Machine Hours"
 msgstr "Часы станка"
 
+msgid "Machine monitoring"
+msgstr "Мониторинг станков"
+
 msgid "Machine rate"
 msgstr "Ставка станка"
 
@@ -12968,6 +13010,9 @@ msgstr "Сопоставьте ваш план счетов с планом сч
 
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
+
+msgid "Mapped devices"
+msgstr "Сопоставленные устройства"
 
 msgid "Mapped values"
 msgstr "Отображенные значения"
@@ -14340,6 +14385,12 @@ msgstr "Авансовый платеж не получен по этому со
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "До даты перехода не производится расчет амортизации. Введите накопленную амортизацию каждого актива на день перед датой перехода."
 
+msgid "No devices found"
+msgstr "Устройства не найдены"
+
+msgid "No devices match your search"
+msgstr "Нет устройств, соответствующих поиску"
+
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
 
@@ -14475,6 +14526,9 @@ msgstr "Нет позиций"
 msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
+msgid "No job at this location has an open operation."
+msgstr "Ни один производственный заказ на этой площадке не имеет открытой операции."
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "На этой площадке еще не запланированы производственные заказы — запустите производственный заказ в работу, чтобы увидеть нагрузку на рабочий центр."
 
@@ -14567,6 +14621,9 @@ msgstr "Нет открытых строк. Добавьте услугу, чт�
 
 msgid "No open memos"
 msgstr "Нет открытых служебных записок"
+
+msgid "No open operations"
+msgstr "Нет открытых операций"
 
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
@@ -14932,6 +14989,9 @@ msgstr "Обычный"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Это не таблица, а остаток главной книги: себестоимость накапливается по мере выдачи материалов производственного заказа и очищается при получении заказа на запас."
 
+msgid "Not calibrated"
+msgstr "Не откалиброван"
+
 msgid "Not certified"
 msgstr "Не сертифицировано"
 
@@ -14952,6 +15012,12 @@ msgstr "Недостаточно данных единицы"
 
 msgid "Not feasible"
 msgstr "Невозможно выполнить"
+
+msgid "Not job time"
+msgstr "Не время задания"
+
+msgid "Not mapped"
+msgstr "Не сопоставлено"
 
 msgid "Not now"
 msgstr "Не сейчас"
@@ -15017,6 +15083,9 @@ msgstr "В MES пока ничего не завершено"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "В тот день на {workCenterName} больше ничего не работало."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Здесь нет ничего, соответствующего вашему поиску и фильтрам."
 
@@ -15074,6 +15143,9 @@ msgstr "Уведомить"
 msgid "Notify someone"
 msgstr "Уведомить кого-то"
 
+msgid "now"
+msgstr "сейчас"
+
 msgid "Number"
 msgstr "Число"
 
@@ -15116,6 +15188,9 @@ msgstr "Отключено — обработано вне синхрониза�
 
 msgid "Off — released revisions stay editable"
 msgstr "Отключено — выпущенные ревизии остаются редактируемыми"
+
+msgid "Offline"
+msgstr "Отключено"
 
 msgid "Offset Account"
 msgstr "Счет компенсации"
@@ -16068,6 +16143,9 @@ msgstr "Путь"
 
 msgid "Pause"
 msgstr "Приостановить"
+
+msgid "Paused"
+msgstr "Приостановлено"
 
 msgid "Pay"
 msgstr "Оплатить"
@@ -17579,6 +17657,9 @@ msgstr "Ramp не вернул код авторизации"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp отклонил авторизацию"
 
+msgid "Ran at the time"
+msgstr "Работало в это время"
+
 msgid "Rate"
 msgstr "Курс"
 
@@ -18106,6 +18187,9 @@ msgstr "Запущено с проблемами: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
+
+msgid "Reload the page to try again."
+msgstr "Перезагрузите страницу и попробуйте снова."
 
 msgid "Remaining"
 msgstr "Остаток"
@@ -19595,6 +19679,9 @@ msgstr "Поиск покупателей и типов..."
 msgid "Search customers or types..."
 msgstr "Поиск покупателей или типов..."
 
+msgid "Search devices"
+msgstr "Поиск устройств"
+
 msgid "Search employees..."
 msgstr "Поиск сотрудников..."
 
@@ -19618,6 +19705,9 @@ msgstr "Поиск номенклатуры или ячеек"
 
 msgid "Search Job"
 msgstr "Поиск задания"
+
+msgid "Search jobs and operations"
+msgstr "Поиск заданий и операций"
 
 msgid "Search jobs or items"
 msgstr "Поиск производственных заказов или номенклатуры"
@@ -20945,6 +21035,9 @@ msgstr "Начинаю…"
 msgid "Starts"
 msgstr "Начинается"
 
+msgid "State"
+msgstr "Состояние"
+
 msgid "State / Province"
 msgstr "Штат / Провинция"
 
@@ -21095,6 +21188,9 @@ msgstr "Остановить отправку"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Прекратить использование {0} на этом шаге"
+
+msgid "Stopped"
+msgstr "Остановлено"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Останавливает новые предложения по закупкам после этой даты."
@@ -22187,6 +22283,9 @@ msgstr "Налоговая ставка по умолчанию, применя�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Площадка устройства находится в {siteTimezone}; Carbon использует {locationTimezone}"
+
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
 
@@ -22458,6 +22557,9 @@ msgstr "План выборочного контроля для каждой х�
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Минимальная сумма, которую этот поставщик будет взимать за этот процесс, независимо от количества; производственные заказы ниже объема безубыточности все равно стоят как минимум столько."
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "Машина ещё работает. Назначьте это время после её остановки."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Машины, ячейки и станции, через которые проходит ваша работа"
@@ -24068,6 +24170,9 @@ msgstr "Отменить назначение правила"
 msgid "Unassigned"
 msgstr "Не назначено"
 
+msgid "Unattributed Time"
+msgstr "Неучтённое время"
+
 msgid "Unbalanced"
 msgstr "Не сбалансировано"
 
@@ -24843,6 +24948,9 @@ msgstr "Просмотр Проводки"
 msgid "View Lists"
 msgstr "Просмотр списков"
 
+msgid "View Machine Time"
+msgstr "Просмотр машинного времени"
+
 msgid "View maintenance dispatch"
 msgstr "Просмотр Заявки на техобслуживание"
 
@@ -25021,6 +25129,12 @@ msgstr "Аннулирование этой отгрузки приведет к
 
 msgid "Waited"
 msgstr "Ожидание"
+
+msgid "Waiting"
+msgstr "Ожидание"
+
+msgid "Waiting for the first sync"
+msgstr "Ожидание первой синхронизации"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Проведите обзор каждой области вместе с вашим лидером и отключите всё, что выходит за границы проекта. Коды читаются как Модуль.Область.Номер (ACC.GL.01 = Бухгалтерия, Главная книга, элемент 1)."
@@ -25527,6 +25641,9 @@ msgstr "Какой вид запроса отправить: GET читает ч
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
+
+msgid "Which operation was this?"
+msgstr "Какая это была операция?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Пока это отправление открыто, рабочий центр недоступен для расписания (до запланированного времени окончания или до завершения отправления)."

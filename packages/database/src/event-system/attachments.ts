@@ -177,7 +177,8 @@ export const attachments = {
     before: ["sync_finish_job_operation"],
     after: [
       "set_shelf_life_on_operation_done",
-      "set_shelf_life_on_operation_started"
+      "set_shelf_life_on_operation_started",
+      "sync_unload_work_center_operation"
     ],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -267,6 +268,7 @@ export const attachments = {
   process: { statement: ["broadcast_reference_changes"] },
   productionEvent: {
     before: ["sync_set_job_operation_in_progress"],
+    after: ["sync_load_work_center_operation"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -430,6 +432,7 @@ export const attachments = {
   },
   trackedActivity: { statement: ["broadcast_table_changes"] },
   trackedEntity: { statement: ["broadcast_table_changes"] },
+  unattributedMachineTime: { statement: ["broadcast_table_changes"] },
   unitOfMeasure: { statement: ["broadcast_reference_changes"] },
   user: {
     after: [
@@ -450,6 +453,7 @@ export const attachments = {
   },
   webhook: { after: ["sync_webhook_subscription"], events: true },
   workCenter: { events: true, statement: ["broadcast_reference_changes"] },
+  workCenterDevice: { statement: ["broadcast_table_changes"] },
   workCenterProcess: { events: true },
   workflowRun: { statement: ["broadcast_table_changes"] },
   workflowStepRun: { statement: ["broadcast_table_changes"] }

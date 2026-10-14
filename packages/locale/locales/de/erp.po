@@ -542,6 +542,9 @@ msgstr "{load} in Warteschlange"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (des Leasings)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{mappedCount} von {totalCount} zugeordnet"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB-Limit"
 
@@ -616,6 +619,9 @@ msgstr "{passing} von {total} Anlagen"
 msgid "{percent} picked"
 msgstr "{percent} kommissioniert"
 
+msgid "{position} of {total}"
+msgstr "{position} von {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# Zeile dauerhaft löschen?} other {# Zeilen dauerhaft löschen?}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} Positionen"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} ausgewählt"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · synchronisiert {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# Monat} other {# Monate}}"
@@ -2668,6 +2677,9 @@ msgstr "Jährlich. Startet ab dem inkrementellen Kreditzins des Unternehmens"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Ein anderes Kostenzentrum, dem dieses untergeordnet ist, was es ermöglicht, eine Unterkostenstelle unter ihrer Muttergesellschaft für hierarchische Kostenberichterstattung zu verschachteln."
 
+msgid "Another job or operation"
+msgstr "Anderer Auftrag oder Arbeitsgang"
+
 msgid "Another spend integration is already active"
 msgstr "Eine andere Ausgabenintegration ist bereits aktiv"
 
@@ -3539,6 +3551,9 @@ msgstr "Vermögenswerte"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "Weisen Sie die Maschinenbearbeitungszeit, die kein geladener Arbeitsgang beansprucht hat, dem richtigen Fertigungsauftrag zu oder lehnen Sie sie ab."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Weisen Sie Druckern Standorte zu. Versand, Wareneingang und Arbeitsplätze erben die Standort-Standardeinstellungen, sofern nicht manuell überschrieben."
@@ -5425,6 +5440,9 @@ msgstr "Jira-Problem verbinden"
 msgid "Connect Linear issue"
 msgstr "Linear-Problem verbinden"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "Verbinden Sie Maschinenüberwachungsgeräte mit Arbeitsplätzen, damit die Maschinenzeit für den geladenen Arbeitsgang aufgezeichnet wird."
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Verbinden Sie Slack zuerst unter Einstellungen → Integrationen."
 
@@ -6000,6 +6018,15 @@ msgstr "PDF konnte nicht erstellt werden. Versuchen Sie es erneut."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Konnte {0} nicht auflösen: {1} — Produktion bereits erfasst"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Die Geräte des Anbieters konnten nicht abgerufen werden. Zugeordnete Geräte werden weiterhin angezeigt."
+
+msgid "Could not load operations"
+msgstr "Arbeitsgänge konnten nicht geladen werden"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Konnte nicht laden, was auf {workCenterName} gelaufen ist."
 
 msgid "Could not predict lead time"
 msgstr "Beschaffungszeit konnte nicht vorhergesagt werden"
@@ -7660,6 +7687,9 @@ msgstr "Erkannt vom Bewegungsplaner"
 msgid "Developer"
 msgstr "Entwickler"
 
+msgid "Devices"
+msgstr "Geräte"
+
 msgid "Difference"
 msgstr "Differenz"
 
@@ -7927,6 +7957,9 @@ msgstr "Doppelklicken Sie, um diese Unterbaugruppe zu öffnen"
 
 msgid "Double-click to play this step"
 msgstr "Doppelklicken Sie, um diesen Schritt abzuspielen"
+
+msgid "Down"
+msgstr "Stillstand"
 
 msgid "Download"
 msgstr "Herunterladen"
@@ -11028,6 +11061,9 @@ msgstr "Identitätsanbieter"
 msgid "Identity provider (IdP)"
 msgstr "Identitätsanbieter (IdP)"
 
+msgid "Idle"
+msgstr "Leerlauf"
+
 msgid "IdP Metadata URL"
 msgstr "IdP-Metadaten-URL"
 
@@ -11936,6 +11972,9 @@ msgstr "Auftrag in Bearbeitung"
 msgid "Job Location"
 msgstr "Auftragsort"
 
+msgid "Job locked"
+msgstr "Auftrag gesperrt"
+
 msgid "Job make method"
 msgstr "Auftragsfertigungsmethode"
 
@@ -12758,6 +12797,9 @@ msgstr "Maschinenkosten"
 msgid "Machine Hours"
 msgstr "Maschinenstunden"
 
+msgid "Machine monitoring"
+msgstr "Maschinenüberwachung"
+
 msgid "Machine rate"
 msgstr "Maschinensatz"
 
@@ -12968,6 +13010,9 @@ msgstr "Ordnen Sie Ihren Kontenplan dem des Anbieters zu. Buchungs-Standardkonte
 
 msgid "Map your current process, systems, and data"
 msgstr "Ordnen Sie Ihren aktuellen Prozess, Ihre Systeme und Daten"
+
+msgid "Mapped devices"
+msgstr "Zugeordnete Geräte"
 
 msgid "Mapped values"
 msgstr "Zugeordnete Werte"
@@ -14340,6 +14385,12 @@ msgstr "Für diese Vereinbarung wurde keine Anzahlung eingezogen."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Keine Abschreibungslaufzahl erfolgt vor dem Stichtag. Geben Sie die kumulierte Abschreibung jedes Vermögenswerts vom Tag vor dem Stichtag ein."
 
+msgid "No devices found"
+msgstr "Keine Geräte gefunden"
+
+msgid "No devices match your search"
+msgstr "Keine Geräte entsprechen Ihrer Suche"
+
 msgid "No dimension slots configured"
 msgstr "Keine Dimensions-Slots konfiguriert"
 
@@ -14475,6 +14526,9 @@ msgstr "Keine Artikel"
 msgid "No items have inventory activity here yet."
 msgstr "Hier gibt es noch keine Bestandsbewegungen."
 
+msgid "No job at this location has an open operation."
+msgstr "Kein Fertigungsauftrag an diesem Standort hat einen offenen Arbeitsgang."
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Noch keine Fertigungsaufträge an diesem Standort geplant — geben Sie einen Fertigungsauftrag frei, um die Arbeitszentrums-Auslastung zu sehen."
 
@@ -14567,6 +14621,9 @@ msgstr "Keine offenen Positionen. Fügen Sie eine Dienstleistung hinzu, um zu ä
 
 msgid "No open memos"
 msgstr "Keine offenen Notizen"
+
+msgid "No open operations"
+msgstr "Keine offenen Arbeitsgänge"
 
 msgid "No open orders for this item are available to link."
 msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verfügbar."
@@ -14932,6 +14989,9 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Nicht eine Tabelle, sondern ein Hauptbuch-Saldo: Kosten sammeln sich, wenn Auftragsmaterialien ausgegeben werden, und werden gelöscht, wenn der Auftrag im Bestand empfangen wird."
 
+msgid "Not calibrated"
+msgstr "Nicht kalibriert"
+
 msgid "Not certified"
 msgstr "Nicht zertifiziert"
 
@@ -14952,6 +15012,12 @@ msgstr "Nicht genug Einheitendaten"
 
 msgid "Not feasible"
 msgstr "Nicht machbar"
+
+msgid "Not job time"
+msgstr "Keine Auftragszeit"
+
+msgid "Not mapped"
+msgstr "Nicht zugeordnet"
 
 msgid "Not now"
 msgstr "Jetzt nicht"
@@ -15017,6 +15083,9 @@ msgstr "In MES noch nichts abgeschlossen"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "An diesem Tag lief sonst nichts auf {workCenterName}."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Nichts hier entspricht Ihrer Suche und Ihren Filtern."
 
@@ -15074,6 +15143,9 @@ msgstr "Benachrichtigen"
 msgid "Notify someone"
 msgstr "Jemanden benachrichtigen"
 
+msgid "now"
+msgstr "jetzt"
+
 msgid "Number"
 msgstr "Zahl"
 
@@ -15116,6 +15188,9 @@ msgstr "Aus — außerhalb der Synchronisierung behandelt"
 
 msgid "Off — released revisions stay editable"
 msgstr "Aus — ausgegebene Revisionen bleiben bearbeitbar"
+
+msgid "Offline"
+msgstr "Offline"
 
 msgid "Offset Account"
 msgstr "Gegenkonto"
@@ -16068,6 +16143,9 @@ msgstr "Pfad"
 
 msgid "Pause"
 msgstr "Unterbrechen"
+
+msgid "Paused"
+msgstr "Pausiert"
 
 msgid "Pay"
 msgstr "Zahlen"
@@ -17579,6 +17657,9 @@ msgstr "Ramp hat keinen Autorisierungscode zurückgegeben"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp hat die Autorisierung abgelehnt"
 
+msgid "Ran at the time"
+msgstr "Lief zu dieser Zeit"
+
 msgid "Rate"
 msgstr "Kurs"
 
@@ -18106,6 +18187,9 @@ msgstr "Freigegeben mit Problemen: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Die Freigabe des Loses gibt seine Fertigungsaufträge frei, und jeder muss für die Werkstatt bereit sein."
+
+msgid "Reload the page to try again."
+msgstr "Seite neu laden, um es erneut zu versuchen."
 
 msgid "Remaining"
 msgstr "Verbleibend"
@@ -19595,6 +19679,9 @@ msgstr "Kunden und Typen durchsuchen..."
 msgid "Search customers or types..."
 msgstr "Kunden oder Typen durchsuchen..."
 
+msgid "Search devices"
+msgstr "Geräte suchen"
+
 msgid "Search employees..."
 msgstr "Mitarbeiter durchsuchen..."
 
@@ -19618,6 +19705,9 @@ msgstr "Artikel oder Lagerplätze suchen"
 
 msgid "Search Job"
 msgstr "Job durchsuchen"
+
+msgid "Search jobs and operations"
+msgstr "Aufträge und Arbeitsgänge suchen"
 
 msgid "Search jobs or items"
 msgstr "Fertigungsaufträge oder Artikel durchsuchen"
@@ -20945,6 +21035,9 @@ msgstr "Wird gestartet…"
 msgid "Starts"
 msgstr "Startet"
 
+msgid "State"
+msgstr "Zustand"
+
 msgid "State / Province"
 msgstr "Bundesland / Provinz"
 
@@ -21095,6 +21188,9 @@ msgstr "Versand stoppen"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Verwendung von {0} in diesem Schritt beenden"
+
+msgid "Stopped"
+msgstr "Gestoppt"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Beendet neue Kaufvorschläge nach diesem Datum."
@@ -22187,6 +22283,9 @@ msgstr "Der Steuersatz, der auf die Angebots- und Kundenauftrags-Positionen dies
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hierarchien untergeordnet ist; leer lassen für eine Abteilung der obersten Ebene."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Der Standort des Geräts liegt in {siteTimezone}; Carbon verwendet {locationTimezone}"
+
 msgid "The early hours, {name}."
 msgstr "Die frühen Stunden, {name}."
 
@@ -22458,6 +22557,9 @@ msgstr "Der Stichprobenplan pro Merkmal der Charge wird aus dem ausgewählten Do
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Der niedrigste Betrag, den dieser Lieferant für dieses Verfahren berechnet, unabhängig von der Menge; Fertigungsaufträge unter dem Break-Even-Volumen kosten mindestens diesen Betrag."
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "Die Maschine läuft noch. Ordnen Sie diese Zeit zu, nachdem sie stoppt."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Die Maschinen, Zellen und Stationen, durch die Ihre Arbeit läuft"
@@ -24068,6 +24170,9 @@ msgstr "Regel entfernen"
 msgid "Unassigned"
 msgstr "Nicht zugewiesen"
 
+msgid "Unattributed Time"
+msgstr "Nicht zugeordnete Zeit"
+
 msgid "Unbalanced"
 msgstr "Nicht ausgeglichen"
 
@@ -24843,6 +24948,9 @@ msgstr "Buchungszeile anzeigen"
 msgid "View Lists"
 msgstr "Listen anzeigen"
 
+msgid "View Machine Time"
+msgstr "Maschinenzeit anzeigen"
+
 msgid "View maintenance dispatch"
 msgstr "Instandhaltungsauftrag anzeigen"
 
@@ -25021,6 +25129,12 @@ msgstr "Das Stornieren dieser Lieferung wird:"
 
 msgid "Waited"
 msgstr "Wartezeit"
+
+msgid "Waiting"
+msgstr "Wartet"
+
+msgid "Waiting for the first sync"
+msgstr "Warten auf die erste Synchronisierung"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Gehen Sie mit Ihrem Champion jeden Bereich durch und deaktivieren Sie alles, das außerhalb des Umfangs liegt. Codes werden gelesen als Modul.Bereich.Nummer (ACC.GL.01 = Buchhaltung, Hauptbuch, Position 1)."
@@ -25527,6 +25641,9 @@ msgstr "Welche Art von Anfrage zu senden ist: GET liest etwas, POST erstellt, PU
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Welches Fertigungsereignis die Lagerfrist-Uhr startet — z. B. Füllen, Versiegeln oder endgültiges QS."
+
+msgid "Which operation was this?"
+msgstr "Welcher Arbeitsgang war das?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Während dieser Instandhaltungsauftrag offen ist, ist der Arbeitsplatz für den Terminplan nicht verfügbar (bis zur geplanten Endzeit oder bis der Instandhaltungsauftrag fertiggestellt ist)."

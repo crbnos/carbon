@@ -135,6 +135,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Ramp integration (charges, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
 | Jira integration | `.claude/rules/jira-integration.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |
+| OEE providers / machine monitoring (Sense, loaded operation, unattributed machine time) | `.claude/rules/oee-provider.md` + `apps/erp/app/modules/production/AGENTS.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |

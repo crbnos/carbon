@@ -5,6 +5,11 @@
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
+import {
+  lockMachinePress,
+  recordManualMachinePress
+} from "@carbon/database/machine-time";
 import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -2467,13 +2472,100 @@ export async function endProductionEvent(
     id: string;
     endTime: string;
     employeeId: string;
+    companyId: string;
   }
 ) {
+  // Only an open event ends: a repeated End must not move its end time.
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
+    .is("endTime", null)
     .select("*");
+}
+
+/** A Machine press refused to end an event (already ended, or started later). */
+class MachineEventNotEnded extends Error {}
+
+/**
+ * Ends an operator's open Machine event with a press: the press ends every
+ * open Machine event on the work center, this one included, in one
+ * transaction. Null when the event is no longer open, or the press could not
+ * end it (it starts after the press), and then nothing was ended. Skips RLS:
+ * the caller checks that the user may update production events first.
+ */
+export async function endMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; workCenterId: string; companyId: string; userId: string }
+) {
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await lockMachinePress(trx, args);
+      const open = await trx
+        .selectFrom("productionEvent")
+        .select("id")
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .where("endTime", "is", null)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!open) throw new MachineEventNotEnded();
+      const press = await recordManualMachinePress(trx, args);
+      if (!press.endedEventIds.includes(args.id)) {
+        throw new MachineEventNotEnded();
+      }
+      return press;
+    });
+  } catch (error) {
+    if (error instanceof MachineEventNotEnded) return null;
+    throw error;
+  }
+}
+
+/**
+ * Posts the events a press ended (machine cost to WIP), as an operator's own
+ * End posts theirs. Batch timers post at batch completion, so they are left.
+ * A failure is logged, never thrown: the operation-finish catch-up posts what
+ * is still unposted.
+ */
+export async function postEndedProductionEvents(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; ids: string[] }
+) {
+  if (args.ids.length === 0) return;
+  const events = await client
+    .from("productionEvent")
+    .select("id")
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .is("jobOperationBatchId", null);
+  if (events.error) {
+    log.error("Failed to read the events a press ended", {
+      companyId: args.companyId,
+      error: events.error
+    });
+    return;
+  }
+  const functions = serverFns.system({
+    db,
+    companyId: args.companyId,
+    userId: args.userId
+  });
+  for (const event of events.data ?? []) {
+    try {
+      await functions.invoke("post-production-event", {
+        productionEventId: event.id
+      });
+    } catch (error) {
+      log.error("Failed to post an event a press ended", {
+        companyId: args.companyId,
+        productionEventId: event.id,
+        error
+      });
+    }
+  }
 }
 
 export async function endProductionEventsForJobOperation(
@@ -2773,6 +2865,115 @@ export async function startProductionEvent(
   }
 
   return eventInsert;
+}
+
+/**
+ * A Machine start on a work center: the press, which ends the work center's
+ * open machine time, the new event and its tracked activity commit in one
+ * transaction, at the press time read under the press locks. If any of it
+ * fails, nothing was ended. Skips RLS: the caller checks that the user may
+ * create production events first.
+ */
+export async function startMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  data: Parameters<typeof startProductionEvent>[1] & { workCenterId: string },
+  trackedEntityId: string | undefined,
+  unitIndex?: number,
+  source: WorkSource = "mes"
+): Promise<{
+  data: { id: string; endedEventIds: string[] } | null;
+  error: unknown;
+}> {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
+  try {
+    const started = await db.transaction().execute(async (trx) => {
+      const press = await recordManualMachinePress(trx, {
+        workCenterId: data.workCenterId,
+        companyId: data.companyId,
+        userId: data.createdBy
+      });
+      const inserted = await trx
+        .insertInto("productionEvent")
+        .values({ ...event, startTime: press.pressedAt })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      if (trackedEntityId) {
+        const operation = await trx
+          .selectFrom("jobOperation")
+          .select(["description", "jobId"])
+          .where("id", "=", data.jobOperationId)
+          .where("companyId", "=", data.companyId)
+          .executeTakeFirstOrThrow();
+        const activityId = nanoid();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: activityId,
+            type: `${operation.description} (${data.type})`,
+            sourceDocument: "Production Event",
+            sourceDocumentId: inserted.id,
+            attributes: toJson({
+              Job: operation.jobId,
+              "Job Operation": data.jobOperationId,
+              "Production Event": inserted.id,
+              "Work Center": data.workCenterId,
+              Employee: data.employeeId,
+              ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
+            }),
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+        await trx
+          .insertInto("trackedActivityOutput")
+          .values({
+            trackedActivityId: activityId,
+            trackedEntityId,
+            quantity: 1,
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+      }
+
+      return { id: inserted.id, endedEventIds: press.endedEventIds };
+    });
+
+    await autoStartJobAndOperation(client, {
+      jobOperationId: data.jobOperationId,
+      userId: data.createdBy,
+      companyId: data.companyId
+    });
+    trackWorkEvent("job_operation_started", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionEventId: started.id,
+      jobOperationId: data.jobOperationId,
+      eventType: data.type,
+      source
+    });
+    return { data: started, error: null };
+  } catch (error) {
+    log.error("Failed to start the Machine event", {
+      companyId: data.companyId,
+      workCenterId: data.workCenterId,
+      error
+    });
+    return { data: null, error };
+  }
 }
 
 type JobMethod = {

@@ -820,6 +820,9 @@ msgstr "मैं अभी भी काम कर रहा हूँ"
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
+msgid "Idle"
+msgstr "निष्क्रिय"
+
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
 
@@ -964,6 +967,9 @@ msgstr "सूची दृश्य"
 
 msgid "Load list"
 msgstr "सूची लोड करें"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
@@ -1285,6 +1291,9 @@ msgstr "OEM आवश्यक"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "का {0}"
+
+msgid "Offline"
+msgstr "ऑफलाइन"
 
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"

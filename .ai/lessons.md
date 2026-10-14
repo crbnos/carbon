@@ -3669,3 +3669,23 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Leave an item out only when the sub-ledger can say it is closed: an invoice is marked Paid the day before the cutover by the enable. Refuse it when Carbon settles it on or after the cutover (`settledFromCutoverIds`). Any other item type (memo, payment, WIP, lease, inventory, fixed asset) has no such state and stays in the opening journal.
 
 **Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `packages/server-functions/src/activate-accounting/`.
+
+## A second foreign key between two tables breaks every PostgREST embed between them
+
+**Context:** The OEE provider work (2026-10-13) added `workCenter."loadedJobOperationId"` with a foreign key to `jobOperation`, which already had `"workCenterId"` → `workCenter`.
+
+**Problem:** With two relationships between the same pair of tables, PostgREST cannot pick one, and every existing embed of one from the other (`jobOperation` → `workCenter(name)`: batches, the batch PDF, notifications) failed at runtime with PGRST201. Typecheck passed, because the generated types still compiled; only a request to an affected screen showed it.
+
+**Rule:** Before adding a foreign key, grep for embeds between the two tables in both directions (`table(` inside `.select(…)` strings). If any exist, either leave the new column without a foreign key and keep it consistent another way (an interceptor that clears it on delete), or disambiguate every embed with `table!constraint_name(…)` in the same change. When replacing a foreign key (a composite one for tenancy), drop the old one in the same migration, never add beside it.
+
+**Applies to:** migrations that add a foreign key, especially to widely embedded tables (`workCenter`, `jobOperation`, `item`, `job`).
+
+## One fact, one source: a pointer beside its own history lost the order of loads
+
+**Context:** The OEE work (2026-10-13) kept the loaded operation twice: the pointer `workCenter."loadedJobOperationId"` + `"loadedAt"`, and the history table `workCenterLoad` that the same interceptors wrote.
+
+**Problem:** The unload cleared `loadedAt` with the pointer. That timestamp was the only watermark that ordered loads: the rule "an older start never replaces a newer load" compared against it. After an unload there was nothing to compare, so a late event (a start older than the unload) loaded the operation that had been replaced, and opened a history row that overlapped its neighbours. The pointer and the history then disagreed, and the sync gave run time to the wrong operation.
+
+**Rule:** Keep one source for a fact. When a history exists, the current value is a row of it (here the open `workCenterLoad` row), not a second column to keep in step. Order writes against the history itself: refuse a write that is older than the newest boundary (any `loadedAt` or `unloadedAt`), and back it with constraints (a CHECK that an interval does not end before it starts, a partial unique index for one open row).
+
+**Applies to:** `workCenterLoad` and its interceptors (`sync_load_work_center_operation`, `sync_unload_work_center_operation`), and any "current pointer + history" pair (statuses with a status log, assignments with an assignment history).

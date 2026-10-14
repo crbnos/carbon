@@ -384,7 +384,6 @@ const SalesOrderProperties = () => {
               onUpdate("locationId", value.value);
             }
           }}
-          termId="sales-order"
         />
       </ValidatedForm>
 

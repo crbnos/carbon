@@ -542,6 +542,15 @@ export const syncOperationTransitionValidator = z.object({
   to: z.enum(["Pending", "Skipped"])
 });
 
+export const workCenterDeviceUpsertValidator = z.object({
+  intent: z.literal("upsert-work-center-device"),
+  externalDeviceId: z.string().min(1, { message: "Device is required" }),
+  deviceName: z.string().min(1, { message: "Device name is required" }),
+  externalSiteId: zfd.text(z.string().optional()),
+  siteTimezone: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional())
+});
+
 /**
  * One account mapping (Carbon account.id → provider account id).
  * externalCode / externalName are captured from the selected provider

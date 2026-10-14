@@ -542,6 +542,9 @@ msgstr "{load} कतार में"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (पट्टे का)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{totalCount} में से {mappedCount} मैप किए गए"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
@@ -616,6 +619,9 @@ msgstr "{total} संपत्तियों में से {passing}"
 msgid "{percent} picked"
 msgstr "{percent} पिक किया गया"
 
+msgid "{position} of {total}"
+msgstr "{position} में से {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} पंक्तियाँ"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} सिंक हुआ"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# महीना} other {# महीने}}"
@@ -2668,6 +2677,9 @@ msgstr "वार्षिक। कंपनी की वृद्धिशी
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "एक अन्य लागत केंद्र जिसमें यह रोल हो जाता है, आपको एक उप-लागत केंद्र को इसके मूल के अंतर्गत घोंसले के लिए सक्षम करता है जो पदानुक्रमित लागत रिपोर्टिंग के लिए।"
 
+msgid "Another job or operation"
+msgstr "कोई अन्य जॉब या ऑपरेशन"
+
 msgid "Another spend integration is already active"
 msgstr "एक अन्य व्यय एकीकरण पहले से सक्रिय है"
 
@@ -3539,6 +3551,9 @@ msgstr "संपत्तियां"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "असाइन करें मशीन रन समय जो किसी लोड किए गए ऑपरेशन ने क्लेम नहीं किया, सही जॉब को, या इसे खारिज करें।"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
@@ -5425,6 +5440,9 @@ msgstr "Jira समस्या से कनेक्ट करें"
 msgid "Connect Linear issue"
 msgstr "Linear समस्या से कनेक्ट करें"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "मशीन मॉनिटरिंग डिवाइस को वर्क सेंटर से कनेक्ट करें ताकि मशीन समय लोड किए गए ऑपरेशन के विरुद्ध रिकॉर्ड किया जाए।"
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "पहले सेटिंग्स → एकीकरण के तहत Slack कनेक्ट करें।"
 
@@ -6000,6 +6018,15 @@ msgstr "PDF नहीं बना सके। फिर से कोशिश
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0} को भंग नहीं कर सके: {1} — उत्पादन पहले से दर्ज है"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "प्रदाता के डिवाइस सूचीबद्ध नहीं किए जा सके। मैप किए गए डिवाइस अब भी दिखाए जा रहे हैं।"
+
+msgid "Could not load operations"
+msgstr "ऑपरेशन लोड नहीं कर सके"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName} पर चलने वाले डेटा को लोड नहीं कर सके।"
 
 msgid "Could not predict lead time"
 msgstr "लीड टाइम की भविष्यवाणी नहीं कर सके"
@@ -7660,6 +7687,9 @@ msgstr "गति योजनाकार द्वारा पहचाना
 msgid "Developer"
 msgstr "डेवलपर"
 
+msgid "Devices"
+msgstr "डिवाइस"
+
 msgid "Difference"
 msgstr "अंतर"
 
@@ -7927,6 +7957,9 @@ msgstr "इस उप-विधानसभा को खोलने के ल
 
 msgid "Double-click to play this step"
 msgstr "इस चरण को चलाने के लिए डबल-क्लिक करें"
+
+msgid "Down"
+msgstr "डाउन"
 
 msgid "Download"
 msgstr "डाउनलोड करें"
@@ -11028,6 +11061,9 @@ msgstr "आइडेंटिटी प्रदाता"
 msgid "Identity provider (IdP)"
 msgstr "आइडेंटिटी प्रदाता (IdP)"
 
+msgid "Idle"
+msgstr "निष्क्रिय"
+
 msgid "IdP Metadata URL"
 msgstr "IdP मेटाडेटा URL"
 
@@ -11936,6 +11972,9 @@ msgstr "प्रगति में जॉब"
 msgid "Job Location"
 msgstr "जॉब स्थान"
 
+msgid "Job locked"
+msgstr "जॉब लॉक है"
+
 msgid "Job make method"
 msgstr "जॉब निर्माण विधि"
 
@@ -12758,6 +12797,9 @@ msgstr "मशीन लागत"
 msgid "Machine Hours"
 msgstr "मशीन घंटे"
 
+msgid "Machine monitoring"
+msgstr "मशीन मॉनिटरिंग"
+
 msgid "Machine rate"
 msgstr "मशीन दर"
 
@@ -12968,6 +13010,9 @@ msgstr "अपने खातों का चार्ट को प्रद�
 
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
+
+msgid "Mapped devices"
+msgstr "मैप किए गए डिवाइस"
 
 msgid "Mapped values"
 msgstr "मैप किए गए मान"
@@ -14340,6 +14385,12 @@ msgstr "इस समझौते के लिए कोई जमा राश
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "संक्रमण से पहले कोई मूल्यह्रास चलाया नहीं जाता। संक्रमण से पहले के दिन तक प्रत्येक परिसंपत्ति का संचित मूल्यह्रास दर्ज करें।"
 
+msgid "No devices found"
+msgstr "कोई डिवाइस नहीं मिला"
+
+msgid "No devices match your search"
+msgstr "आपकी खोज से कोई डिवाइस मेल नहीं खाता"
+
 msgid "No dimension slots configured"
 msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
 
@@ -14475,6 +14526,9 @@ msgstr "कोई आइटम नहीं"
 msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
+msgid "No job at this location has an open operation."
+msgstr "इस स्थान पर कोई जॉब खुला ऑपरेशन नहीं है।"
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
 
@@ -14567,6 +14621,9 @@ msgstr "कोई खुली पंक्ति नहीं। संशो�
 
 msgid "No open memos"
 msgstr "कोई खुला ज्ञापन नहीं"
+
+msgid "No open operations"
+msgstr "कोई खुला ऑपरेशन नहीं"
 
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
@@ -14932,6 +14989,9 @@ msgstr "सामान्य"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य खाता बही शेष: लागत जमा होती है जब जॉब सामग्री जारी की जाती है और साफ़ होती है जब जॉब स्टॉक में प्राप्त होता है।"
 
+msgid "Not calibrated"
+msgstr "कैलिब्रेट नहीं किया गया"
+
 msgid "Not certified"
 msgstr "प्रमाणित नहीं"
 
@@ -14952,6 +15012,12 @@ msgstr "पर्याप्त यूनिट डेटा नहीं"
 
 msgid "Not feasible"
 msgstr "संभव नहीं"
+
+msgid "Not job time"
+msgstr "जॉब का समय नहीं"
+
+msgid "Not mapped"
+msgstr "मैप नहीं किया गया"
 
 msgid "Not now"
 msgstr "अभी नहीं"
@@ -15017,6 +15083,9 @@ msgstr "MES में अभी तक कुछ भी पूर्ण नह�
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "उस दिन {workCenterName} पर और कुछ नहीं चला।"
+
 msgid "Nothing here matches your search and filters."
 msgstr "यहां कुछ भी आपकी खोज और फ़िल्टर से मेल नहीं खाता।"
 
@@ -15074,6 +15143,9 @@ msgstr "सूचित करें"
 msgid "Notify someone"
 msgstr "किसी को सूचित करें"
 
+msgid "now"
+msgstr "अभी"
+
 msgid "Number"
 msgstr "संख्या"
 
@@ -15116,6 +15188,9 @@ msgstr "बंद — सिंक के बाहर संभाला गय
 
 msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए रिवीजन संपादन योग्य रहते हैं"
+
+msgid "Offline"
+msgstr "ऑफलाइन"
 
 msgid "Offset Account"
 msgstr "ऑफसेट खाता"
@@ -16068,6 +16143,9 @@ msgstr "पथ"
 
 msgid "Pause"
 msgstr "रोकें"
+
+msgid "Paused"
+msgstr "रुका हुआ"
 
 msgid "Pay"
 msgstr "भुगतान करें"
@@ -17579,6 +17657,9 @@ msgstr "Ramp ने प्राधिकरण कोड नहीं लौट
 msgid "Ramp rejected the authorization"
 msgstr "Ramp ने प्राधिकरण अस्वीकार कर दिया"
 
+msgid "Ran at the time"
+msgstr "उस समय चल रहा था"
+
 msgid "Rate"
 msgstr "दर"
 
@@ -18106,6 +18187,9 @@ msgstr "समस्याओं के साथ जारी: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
+
+msgid "Reload the page to try again."
+msgstr "फिर से कोशिश करने के लिए पृष्ठ पुनः लोड करें।"
 
 msgid "Remaining"
 msgstr "शेष"
@@ -19595,6 +19679,9 @@ msgstr "ग्राहकों और प्रकारों को खो�
 msgid "Search customers or types..."
 msgstr "ग्राहकों या प्रकारों को खोजें..."
 
+msgid "Search devices"
+msgstr "डिवाइस खोजें"
+
 msgid "Search employees..."
 msgstr "कर्मचारियों को खोजें..."
 
@@ -19618,6 +19705,9 @@ msgstr "आइटम या बिन खोजें"
 
 msgid "Search Job"
 msgstr "Job खोजें"
+
+msgid "Search jobs and operations"
+msgstr "जॉब और ऑपरेशन खोजें"
 
 msgid "Search jobs or items"
 msgstr "जॉब या आइटम खोजें"
@@ -20945,6 +21035,9 @@ msgstr "शुरू हो रहा है…"
 msgid "Starts"
 msgstr "शुरू होता है"
 
+msgid "State"
+msgstr "स्थिति"
+
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
 
@@ -21095,6 +21188,9 @@ msgstr "शिपिंग बंद करें"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "इस चरण में {0} का उपयोग बंद करें"
+
+msgid "Stopped"
+msgstr "रुका हुआ"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
@@ -22187,6 +22283,9 @@ msgstr "डिफ़ॉल्ट कर दर इस ग्राहक की 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "विभाग जिसके अंतर्गत यह रिपोर्टिंग और हेडकाउंट पदानुक्रमों के लिए रोल अप करता है; शीर्ष स्तरीय विभाग के लिए खाली छोड़ें।"
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "डिवाइस की साइट {siteTimezone} में है; Carbon {locationTimezone} का उपयोग करता है"
+
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
 
@@ -22458,6 +22557,9 @@ msgstr "लॉट की प्रति-विशेषता नमूना�
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "यह न्यूनतम राशि जो यह आपूर्तिकर्ता इस प्रक्रिया के लिए चार्ज करेगा, मात्रा की परवाह किए बिना; ब्रेकइवन वॉल्यूम के नीचे जॉब की लागत कम से कम यह राशि ही होगी।"
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "मशीन अभी भी चल रही है। रुकने के बाद यह समय असाइन करें।"
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "वे मशीनें, सेल और स्टेशन जिनके माध्यम से आपका काम चलता है"
@@ -24068,6 +24170,9 @@ msgstr "नियम को अनअसाइन करें"
 msgid "Unassigned"
 msgstr "अनुत्तरित"
 
+msgid "Unattributed Time"
+msgstr "अनिर्दिष्ट समय"
+
 msgid "Unbalanced"
 msgstr "असंतुलित"
 
@@ -24843,6 +24948,9 @@ msgstr "जर्नल प्रविष्टि देखें"
 msgid "View Lists"
 msgstr "सूचियाँ देखें"
 
+msgid "View Machine Time"
+msgstr "मशीन समय देखें"
+
 msgid "View maintenance dispatch"
 msgstr "रखरखाव कार्य देखें"
 
@@ -25021,6 +25129,12 @@ msgstr "इस शिपमेंट को रद्द करने से:"
 
 msgid "Waited"
 msgstr "प्रतीक्षा की"
+
+msgid "Waiting"
+msgstr "प्रतीक्षा में"
+
+msgid "Waiting for the first sync"
+msgstr "पहले सिंक की प्रतीक्षा है"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "अपने चैंपियन के साथ प्रत्येक क्षेत्र पर चलें और स्कोप से बाहर कुछ भी टॉगल करें। कोड मॉड्यूल.क्षेत्र.संख्या पढ़ता है (ACC.GL.01 = लेखांकन, सामान्य खाता बही, आइटम 1)।"
@@ -25527,6 +25641,9 @@ msgstr "किस प्रकार का अनुरोध भेजना �
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "कौन सी विनिर्माण घटना शेल्फ-जीवन घड़ी शुरू करती है — उदाहरण के लिए, भरना, सील करना, या अंतिम क्यूसी।"
+
+msgid "Which operation was this?"
+msgstr "यह कौन-सा ऑपरेशन था?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "जबकि यह रखरखाव कार्य खुला है, वर्क सेंटर शेड्यूल के लिए अनुपलब्ध है (योजनाबद्ध समाप्ति समय तक, या जब तक रखरखाव कार्य पूर्ण नहीं हो जाता)।"

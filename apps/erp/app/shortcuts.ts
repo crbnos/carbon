@@ -65,6 +65,18 @@ export const PAGINATION_SHORTCUTS = {
 } as const satisfies Record<string, ShortcutInput>;
 
 /**
+ * Unattributed Time review drawer. The table behind it pages on the arrows,
+ * so the queue moves on j/k; 1–6 assign the matching suggestion card.
+ */
+export const MACHINE_TIME_REVIEW_SHORTCUTS = {
+  previous: "k",
+  next: "j",
+  // One key per card: matches MACHINE_TIME_SUGGESTION_LIMIT
+  // (ui/MachineTime/machine-time-suggestions.ee.ts).
+  choose: ["1", "2", "3", "4", "5", "6"]
+} as const satisfies Record<string, ShortcutInput | readonly ShortcutInput[]>;
+
+/**
  * g-then-letter module go-to, keyed by the stable module `key` from
  * useModules() — never by position, since module order and visibility are
  * per-user. `shopFloor` is an external MES link and deliberately absent.

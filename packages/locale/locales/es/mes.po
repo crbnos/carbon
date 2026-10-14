@@ -820,6 +820,9 @@ msgstr "Sigo trabajando"
 msgid "Ideas, suggestions or problems?"
 msgstr "¿Ideas, sugerencias o problemas?"
 
+msgid "Idle"
+msgstr "Parado"
+
 msgid "Idle for"
 msgstr "Inactivo durante"
 
@@ -964,6 +967,9 @@ msgstr "Vista de lista"
 
 msgid "Load list"
 msgstr "Cargar lista"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Cargado: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Cargando detalles del artículo..."
@@ -1285,6 +1291,9 @@ msgstr "Requiere OEM"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "de {0}"
+
+msgid "Offline"
+msgstr "Sin conexión"
 
 msgid "Oldest first"
 msgstr "Más antiguo primero"

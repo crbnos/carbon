@@ -542,6 +542,9 @@ msgstr "{load} in queue"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (the lease's)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{mappedCount} of {totalCount} mapped"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -616,6 +619,9 @@ msgstr "{passing} of {total} assets"
 msgid "{percent} picked"
 msgstr "{percent} picked"
 
+msgid "{position} of {total}"
+msgstr "{position} of {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 
@@ -639,6 +645,9 @@ msgstr "{sectionLineCount} lines"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · synced {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# month} other {# months}}"
@@ -2668,6 +2677,9 @@ msgstr "Annual. Starts from the company's incremental borrowing rate"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 
+msgid "Another job or operation"
+msgstr "Another job or operation"
+
 msgid "Another spend integration is already active"
 msgstr "Another spend integration is already active"
 
@@ -3539,6 +3551,9 @@ msgstr "Assets"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
@@ -5425,6 +5440,9 @@ msgstr "Connect Jira issue"
 msgid "Connect Linear issue"
 msgstr "Connect Linear issue"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Connect Slack under Settings → Integrations first."
 
@@ -6000,6 +6018,15 @@ msgstr "Could not build PDF. Try again."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Could not dissolve {0}: {1} — production already recorded"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Could not list the provider's devices. Mapped devices are still shown."
+
+msgid "Could not load operations"
+msgstr "Could not load operations"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Could not load what ran on {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Could not predict lead time"
@@ -7660,6 +7687,9 @@ msgstr "Detected by the motion planner"
 msgid "Developer"
 msgstr "Developer"
 
+msgid "Devices"
+msgstr "Devices"
+
 msgid "Difference"
 msgstr "Difference"
 
@@ -7927,6 +7957,9 @@ msgstr "Double-click to open this sub-assembly"
 
 msgid "Double-click to play this step"
 msgstr "Double-click to play this step"
+
+msgid "Down"
+msgstr "Down"
 
 msgid "Download"
 msgstr "Download"
@@ -11028,6 +11061,9 @@ msgstr "Identity Provider"
 msgid "Identity provider (IdP)"
 msgstr "Identity provider (IdP)"
 
+msgid "Idle"
+msgstr "Idle"
+
 msgid "IdP Metadata URL"
 msgstr "IdP Metadata URL"
 
@@ -11936,6 +11972,9 @@ msgstr "Job in progress"
 msgid "Job Location"
 msgstr "Job Location"
 
+msgid "Job locked"
+msgstr "Job locked"
+
 msgid "Job make method"
 msgstr "Job make method"
 
@@ -12758,6 +12797,9 @@ msgstr "Machine Costs"
 msgid "Machine Hours"
 msgstr "Machine Hours"
 
+msgid "Machine monitoring"
+msgstr "Machine monitoring"
+
 msgid "Machine rate"
 msgstr "Machine rate"
 
@@ -12968,6 +13010,9 @@ msgstr "Map your chart of accounts to the provider's. Posting-default and expens
 
 msgid "Map your current process, systems, and data"
 msgstr "Map your current process, systems, and data"
+
+msgid "Mapped devices"
+msgstr "Mapped devices"
 
 msgid "Mapped values"
 msgstr "Mapped values"
@@ -14340,6 +14385,12 @@ msgstr "No deposit has been received for this agreement."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 
+msgid "No devices found"
+msgstr "No devices found"
+
+msgid "No devices match your search"
+msgstr "No devices match your search"
+
 msgid "No dimension slots configured"
 msgstr "No dimension slots configured"
 
@@ -14475,6 +14526,9 @@ msgstr "No items"
 msgid "No items have inventory activity here yet."
 msgstr "No items have inventory activity here yet."
 
+msgid "No job at this location has an open operation."
+msgstr "No job at this location has an open operation."
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "No jobs are scheduled at this location yet — release a job to see work-center load."
 
@@ -14567,6 +14621,9 @@ msgstr "No open lines. Add a service to amend."
 
 msgid "No open memos"
 msgstr "No open memos"
+
+msgid "No open operations"
+msgstr "No open operations"
 
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
@@ -14932,6 +14989,9 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 
+msgid "Not calibrated"
+msgstr "Not calibrated"
+
 msgid "Not certified"
 msgstr "Not certified"
 
@@ -14952,6 +15012,12 @@ msgstr "Not enough unit data"
 
 msgid "Not feasible"
 msgstr "Not feasible"
+
+msgid "Not job time"
+msgstr "Not job time"
+
+msgid "Not mapped"
+msgstr "Not mapped"
 
 msgid "Not now"
 msgstr "Not now"
@@ -15017,6 +15083,9 @@ msgstr "Nothing completed in MES yet"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "Nothing else ran on {workCenterName} that day."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Nothing here matches your search and filters."
 
@@ -15074,6 +15143,9 @@ msgstr "Notify"
 msgid "Notify someone"
 msgstr "Notify someone"
 
+msgid "now"
+msgstr "now"
+
 msgid "Number"
 msgstr "Number"
 
@@ -15116,6 +15188,9 @@ msgstr "Off — handled outside the sync"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
+
+msgid "Offline"
+msgstr "Offline"
 
 msgid "Offset Account"
 msgstr "Offset Account"
@@ -16068,6 +16143,9 @@ msgstr "Path"
 
 msgid "Pause"
 msgstr "Pause"
+
+msgid "Paused"
+msgstr "Paused"
 
 msgid "Pay"
 msgstr "Pay"
@@ -17579,6 +17657,9 @@ msgstr "Ramp didn't return an authorization code"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp rejected the authorization"
 
+msgid "Ran at the time"
+msgstr "Ran at the time"
+
 msgid "Rate"
 msgstr "Rate"
 
@@ -18106,6 +18187,9 @@ msgstr "Released with problems: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Releasing the batch releases its jobs, and each one must be ready for the floor."
+
+msgid "Reload the page to try again."
+msgstr "Reload the page to try again."
 
 msgid "Remaining"
 msgstr "Remaining"
@@ -19595,6 +19679,9 @@ msgstr "Search customers and types..."
 msgid "Search customers or types..."
 msgstr "Search customers or types..."
 
+msgid "Search devices"
+msgstr "Search devices"
+
 msgid "Search employees..."
 msgstr "Search employees..."
 
@@ -19618,6 +19705,9 @@ msgstr "Search items or bins"
 
 msgid "Search Job"
 msgstr "Search Job"
+
+msgid "Search jobs and operations"
+msgstr "Search jobs and operations"
 
 msgid "Search jobs or items"
 msgstr "Search jobs or items"
@@ -20945,6 +21035,9 @@ msgstr "Starting…"
 msgid "Starts"
 msgstr "Starts"
 
+msgid "State"
+msgstr "State"
+
 msgid "State / Province"
 msgstr "State / Province"
 
@@ -21095,6 +21188,9 @@ msgstr "Stop Shipping"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Stop using {0} in this step"
+
+msgid "Stopped"
+msgstr "Stopped"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Stops new purchase suggestions after this date."
@@ -22187,6 +22283,9 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
 
@@ -22458,6 +22557,9 @@ msgstr "The lot's per-characteristic sampling plan will be re-resolved from the 
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
+
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "The machine is still running. Assign this time after it stops."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "The machines, cells, and stations your work runs through"
@@ -24068,6 +24170,9 @@ msgstr "Unassign rule"
 msgid "Unassigned"
 msgstr "Unassigned"
 
+msgid "Unattributed Time"
+msgstr "Unattributed Time"
+
 msgid "Unbalanced"
 msgstr "Unbalanced"
 
@@ -24843,6 +24948,9 @@ msgstr "View Journal Entry"
 msgid "View Lists"
 msgstr "View Lists"
 
+msgid "View Machine Time"
+msgstr "View Machine Time"
+
 msgid "View maintenance dispatch"
 msgstr "View maintenance dispatch"
 
@@ -25021,6 +25129,12 @@ msgstr "Voiding this shipment will:"
 
 msgid "Waited"
 msgstr "Waited"
+
+msgid "Waiting"
+msgstr "Waiting"
+
+msgid "Waiting for the first sync"
+msgstr "Waiting for the first sync"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
@@ -25527,6 +25641,9 @@ msgstr "Which kind of request to send: GET reads something, POST creates, PUT an
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
+
+msgid "Which operation was this?"
+msgstr "Which operation was this?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."

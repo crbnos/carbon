@@ -22,6 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { Integration } from "~/modules/settings/types";
 import { sanitize } from "~/utils/supabase";
+import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import type { customFieldValidator } from "./settings.models";
 
 const INTEGRATION_CACHE_TTL = 3600;
@@ -80,8 +81,15 @@ export async function clearCompanyIntegrationCache(
   const cacheKey = `integrations:${companyId}`;
 
   try {
-    // Clear both old and new key formats
-    await redis.del(cacheKey, `json:${cacheKey}`);
+    // Clear both old and new key formats, and the OEE device lists: a new API
+    // key or environment can name different stations.
+    await redis.del(
+      cacheKey,
+      `json:${cacheKey}`,
+      ...getIntegrationIdsByRole("oee").map((integrationId) =>
+        oeeDevicesCacheKey(companyId, integrationId)
+      )
+    );
   } catch (error) {
     logger.error("Redis cache invalidation error", { error });
   }

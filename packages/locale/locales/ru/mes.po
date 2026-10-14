@@ -820,6 +820,9 @@ msgstr "Я ещё работаю"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Idle"
+msgstr "Ожидание"
+
 msgid "Idle for"
 msgstr "Простой в течение"
 
@@ -964,6 +967,9 @@ msgstr "Вид списка"
 
 msgid "Load list"
 msgstr "Загрузить список"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Загружена: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
@@ -1285,6 +1291,9 @@ msgstr "Требуется OEM"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "из {0}"
+
+msgid "Offline"
+msgstr "Отключено"
 
 msgid "Oldest first"
 msgstr "Самые старые первыми"

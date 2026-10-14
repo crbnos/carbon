@@ -820,6 +820,9 @@ msgstr "まだ作業中です"
 msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
 
+msgid "Idle"
+msgstr "待機中"
+
 msgid "Idle for"
 msgstr "待機時間"
 
@@ -964,6 +967,9 @@ msgstr "リスト表示"
 
 msgid "Load list"
 msgstr "リストをロード"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "ロード済み: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
@@ -1285,6 +1291,9 @@ msgstr "OEM対応必要"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "の{0}"
+
+msgid "Offline"
+msgstr "オフライン"
 
 msgid "Oldest first"
 msgstr "最も古い順"

@@ -820,6 +820,9 @@ msgstr "我还在工作"
 msgid "Ideas, suggestions or problems?"
 msgstr "有想法、建议或问题？"
 
+msgid "Idle"
+msgstr "空闲"
+
 msgid "Idle for"
 msgstr "闲置时间"
 
@@ -964,6 +967,9 @@ msgstr "列表视图"
 
 msgid "Load list"
 msgstr "加载列表"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "已加载: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
@@ -1285,6 +1291,9 @@ msgstr "需要 OEM"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "/"
+
+msgid "Offline"
+msgstr "离线"
 
 msgid "Oldest first"
 msgstr "最早优先"

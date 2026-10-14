@@ -1145,7 +1145,7 @@
     {"name":"resources_getWorkCenters","classification":"READ","paramCount":1,"schema":"ed8b79d0644f","response":"0340d99e8700","injectAuth":"companyId","permission":"resources:view","paginates":true,"defaults":"always"},
     {"name":"resources_getWorkCentersByLocation","classification":"READ","paramCount":1,"schema":"de371a276a58","response":"f602591e2bf5","injectAuth":"companyId","permission":"resources:view","paginates":false},
     {"name":"resources_getWorkCentersList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"0340d99e8700","injectAuth":"companyId","permission":"resources:view","paginates":false},
-    {"name":"resources_getWorkCentersListWithBlockingStatus","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"63fcba641f9a","injectAuth":"companyId","permission":"resources:view","paginates":false},
+    {"name":"resources_getWorkCentersListWithBlockingStatus","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"fcb9583f02e0","injectAuth":"companyId","permission":"resources:view","paginates":false},
     {"name":"resources_insertMaintenanceDispatch","classification":"WRITE","paramCount":14,"schema":"b192bab74c65","response":"ede36af7307d","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create","paginates":false},
     {"name":"resources_processDeactivate","classification":"WRITE","paramCount":1,"schema":"01edb53077b2","response":"bcde375ebd4c","injectAuth":"companyId","permission":"resources:update","paginates":false},
     {"name":"resources_resolveEmployeeAbilityExpiresAt","classification":"WRITE","paramCount":3,"schema":"ec5fc6dfaa43","response":"174e29b899b9","injectAuth":"companyId","permission":"resources:update","paginates":false},
