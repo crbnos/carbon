@@ -619,6 +619,9 @@ msgstr "{total} संपत्तियों में से {passing}"
 msgid "{percent} picked"
 msgstr "{percent} पिक किया गया"
 
+msgid "{position} of {total}"
+msgstr "{position} में से {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} पंक्तियाँ"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · {0} सिंक हुआ"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} सिंक हुआ"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# महीना} other {# महीने}}"
@@ -6019,6 +6021,12 @@ msgstr "{0} को भंग नहीं कर सके: {1} — उत्प
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "प्रदाता के डिवाइस सूचीबद्ध नहीं किए जा सके। मैप किए गए डिवाइस अब भी दिखाए जा रहे हैं।"
+
+msgid "Could not load operations"
+msgstr "ऑपरेशन लोड नहीं कर सके"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName} पर चलने वाले डेटा को लोड नहीं कर सके।"
 
 msgid "Could not predict lead time"
 msgstr "लीड टाइम की भविष्यवाणी नहीं कर सके"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "इस स्थान पर कोई जॉब खुला ऑपरेशन नहीं है।"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "कोई खुला ज्ञापन नहीं"
 
 msgid "No open operations"
-msgstr ""
+msgstr "कोई खुला ऑपरेशन नहीं"
 
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
@@ -16135,6 +16143,9 @@ msgstr "पथ"
 
 msgid "Pause"
 msgstr "रोकें"
+
+msgid "Paused"
+msgstr "रुका हुआ"
 
 msgid "Pay"
 msgstr "भुगतान करें"
@@ -18176,6 +18187,9 @@ msgstr "समस्याओं के साथ जारी: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
+
+msgid "Reload the page to try again."
+msgstr "फिर से कोशिश करने के लिए पृष्ठ पुनः लोड करें।"
 
 msgid "Remaining"
 msgstr "शेष"
@@ -22269,9 +22283,8 @@ msgstr "डिफ़ॉल्ट कर दर इस ग्राहक की 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "विभाग जिसके अंतर्गत यह रिपोर्टिंग और हेडकाउंट पदानुक्रमों के लिए रोल अप करता है; शीर्ष स्तरीय विभाग के लिए खाली छोड़ें।"
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "डिवाइस की साइट {0} में है; Carbon {locationTimezone} का उपयोग करता है"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "डिवाइस की साइट {siteTimezone} में है; Carbon {locationTimezone} का उपयोग करता है"
 
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
@@ -24157,9 +24170,6 @@ msgstr "नियम को अनअसाइन करें"
 msgid "Unassigned"
 msgstr "अनुत्तरित"
 
-msgid "Unattributed time"
-msgstr "अनिर्दिष्ट समय"
-
 msgid "Unattributed Time"
 msgstr "अनिर्दिष्ट समय"
 
@@ -25119,6 +25129,9 @@ msgstr "इस शिपमेंट को रद्द करने से:"
 
 msgid "Waited"
 msgstr "प्रतीक्षा की"
+
+msgid "Waiting"
+msgstr "प्रतीक्षा में"
 
 msgid "Waiting for the first sync"
 msgstr "पहले सिंक की प्रतीक्षा है"

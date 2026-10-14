@@ -106,17 +106,8 @@ export function isJobEditableFromPlanning(
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
 
-export const JOB_LOCKED_STATUSES = [
-  "Completed",
-  "Closed",
-  "Cancelled"
-] as const;
-
-export function isJobLocked(status: string | null | undefined): boolean {
-  return JOB_LOCKED_STATUSES.includes(
-    status as (typeof JOB_LOCKED_STATUSES)[number]
-  );
-}
+// The one definition lives in @carbon/utils, shared with the OEE sync.
+export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
 export const DATE_COLUMN_SENTINELS = [
   "unscheduled",

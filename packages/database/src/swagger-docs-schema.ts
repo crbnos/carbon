@@ -30667,12 +30667,6 @@ export default {
             $ref: "#/parameters/rowFilter.workCenters.minimumBatchQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.workCenters.loadedJobOperationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCenters.loadedAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.workCenters.locationName"
           },
           {
@@ -89146,12 +89140,6 @@ export default {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.minimumBatchQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.loadedJobOperationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.loadedAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.locationName"
           },
           {
@@ -89162,6 +89150,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.blockingDispatchReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.loadedJobOperationId"
           },
           {
             $ref: "#/parameters/select"
@@ -95878,12 +95869,6 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.workCenter.loadedJobOperationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCenter.loadedAt"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -96006,12 +95991,6 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.workCenter.loadedJobOperationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCenter.loadedAt"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96088,12 +96067,6 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
-            $ref: "#/parameters/rowFilter.workCenter.loadedJobOperationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workCenter.loadedAt"
-          },
-          {
             $ref: "#/parameters/body.workCenter"
           },
           {
@@ -96167,6 +96140,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.unplannedPressAt"
           },
           {
             $ref: "#/parameters/select"
@@ -96285,6 +96261,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenterDevice.unplannedPressAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96353,6 +96332,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.unplannedPressAt"
           },
           {
             $ref: "#/parameters/body.workCenterDevice"
@@ -132445,14 +132427,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        loadedJobOperationId: {
-          format: "text",
-          type: "string"
-        },
-        loadedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         locationName: {
           format: "text",
           type: "string"
@@ -160142,14 +160116,6 @@ export default {
           format: "numeric",
           type: "number"
         },
-        loadedJobOperationId: {
-          format: "text",
-          type: "string"
-        },
-        loadedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         locationName: {
           format: "text",
           type: "string"
@@ -160163,6 +160129,10 @@ export default {
           type: "string"
         },
         blockingDispatchReadableId: {
+          format: "text",
+          type: "string"
+        },
+        loadedJobOperationId: {
           format: "text",
           type: "string"
         }
@@ -163865,14 +163835,6 @@ export default {
             "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
           format: "numeric",
           type: "number"
-        },
-        loadedJobOperationId: {
-          format: "text",
-          type: "string"
-        },
-        loadedAt: {
-          format: "timestamp with time zone",
-          type: "string"
         }
       },
       type: "object"
@@ -163976,6 +163938,10 @@ export default {
           type: "string"
         },
         updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        unplannedPressAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -184086,18 +184052,6 @@ export default {
     },
     "rowFilter.workCenters.minimumBatchQuantity": {
       name: "minimumBatchQuantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workCenters.loadedJobOperationId": {
-      name: "loadedJobOperationId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workCenters.loadedAt": {
-      name: "loadedAt",
       required: false,
       in: "query",
       type: "string"
@@ -214977,18 +214931,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.workCentersWithBlockingStatus.loadedJobOperationId": {
-      name: "loadedJobOperationId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workCentersWithBlockingStatus.loadedAt": {
-      name: "loadedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.workCentersWithBlockingStatus.locationName": {
       name: "locationName",
       required: false,
@@ -215009,6 +214951,12 @@ export default {
     },
     "rowFilter.workCentersWithBlockingStatus.blockingDispatchReadableId": {
       name: "blockingDispatchReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCentersWithBlockingStatus.loadedJobOperationId": {
+      name: "loadedJobOperationId",
       required: false,
       in: "query",
       type: "string"
@@ -219163,18 +219111,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.workCenter.loadedJobOperationId": {
-      name: "loadedJobOperationId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workCenter.loadedAt": {
-      name: "loadedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.workCenterDevice": {
       name: "workCenterDevice",
       description: "workCenterDevice",
@@ -219294,6 +219230,12 @@ export default {
     },
     "rowFilter.workCenterDevice.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.unplannedPressAt": {
+      name: "unplannedPressAt",
       required: false,
       in: "query",
       type: "string"

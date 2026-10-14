@@ -619,6 +619,9 @@ msgstr "{passing}/{total}の資産"
 msgid "{percent} picked"
 msgstr "{percent}ピッキング済"
 
+msgid "{position} of {total}"
+msgstr "{position}/{total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} 明細"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · {0} に同期"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} に同期"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ヶ月} other {# ヶ月}}"
@@ -6019,6 +6021,12 @@ msgstr "{0}を解除できません: {1} — 生産がすでに記録されて�
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "プロバイダーのデバイスを取得できませんでした。マッピング済みのデバイスは引き続き表示されます。"
+
+msgid "Could not load operations"
+msgstr "工程を読み込むことができませんでした"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName}で実行された内容を読み込むことができませんでした。"
 
 msgid "Could not predict lead time"
 msgstr "リードタイムを予測できませんでした"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "この拠点の製造指図にはオープン状態の工程がありません。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "オープンなメモはありません"
 
 msgid "No open operations"
-msgstr ""
+msgstr "オープン状態の工程がありません"
 
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"
@@ -16134,6 +16142,9 @@ msgid "Path"
 msgstr "パス"
 
 msgid "Pause"
+msgstr "一時停止"
+
+msgid "Paused"
 msgstr "一時停止"
 
 msgid "Pay"
@@ -18176,6 +18187,9 @@ msgstr "リリース済（警告あり）: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
+
+msgid "Reload the page to try again."
+msgstr "ページを再度読み込んで、もう一度試してください。"
 
 msgid "Remaining"
 msgstr "残高"
@@ -22269,9 +22283,8 @@ msgstr "得意先の見積および販売注文明細に適用される既定の
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "デバイスのサイトは {0} にあります。Carbon は {locationTimezone} を使用します"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "デバイスのサイトは {siteTimezone} にあります。Carbon は {locationTimezone} を使用します"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -24157,9 +24170,6 @@ msgstr "ルールの割り当てを解除"
 msgid "Unassigned"
 msgstr "未割り当て"
 
-msgid "Unattributed time"
-msgstr "未割り当て時間"
-
 msgid "Unattributed Time"
 msgstr "未割り当て時間"
 
@@ -25119,6 +25129,9 @@ msgstr "この出荷をキャンセルすると、以下のようになります
 
 msgid "Waited"
 msgstr "待機"
+
+msgid "Waiting"
+msgstr "待機中"
 
 msgid "Waiting for the first sync"
 msgstr "最初の同期を待っています"

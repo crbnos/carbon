@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.broadcast_table_changes()
  SET search_path TO ''
 AS $function$
 DECLARE
-  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding', 'loadedJobOperationId', 'loadedAt'];
+  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];
   -- Tables whose rows hang off a record through another table. Each hop is
   -- [column of the row, table it points at, column to read there]: its value is
   -- added to the message under that column's name, so a job page can follow

@@ -12,15 +12,20 @@ import {
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import {
+  now,
   parseAbsolute,
   toCalendarDate,
   toZoned
 } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import {
+  data,
+  useLoaderData,
+  useNavigate,
+  useSearchParams
+} from "react-router";
 import {
   assignMachineTimeValidator,
   dismissMachineTimeValidator,
@@ -77,10 +82,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const { workCenterId, startTime, endTime, workCenter } = machineTime.data;
-  const companyTimeZone = await getCompanyTimeZone(client, companyId);
+  // `getLocationTimeZone` falls back to the company's itself; read the
+  // company's directly only when there is no location.
   const timeZone = workCenter.locationId
     ? await getLocationTimeZone(client, workCenter.locationId, companyId)
-    : companyTimeZone;
+    : await getCompanyTimeZone(client, companyId);
 
   // The queue walks the list's rows: the same search and filters, read from
   // the list's query string.
@@ -88,11 +94,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     new URL(request.url).searchParams
   );
 
-  // The work center's calendar day the time started on.
-  const date = toCalendarDate(parseAbsolute(startTime, timeZone));
-  const day = {
-    start: toZoned(date, timeZone).toAbsoluteString(),
-    end: toZoned(date.add({ days: 1 }), timeZone).toAbsoluteString()
+  // The work center's calendar days the time touches: from the start of the
+  // day it started to the end of the day it ended (today, while it runs).
+  const firstDay = toCalendarDate(parseAbsolute(startTime, timeZone));
+  const lastDay = toCalendarDate(
+    endTime ? parseAbsolute(endTime, timeZone) : now(timeZone)
+  );
+  const days = {
+    start: toZoned(firstDay, timeZone).toAbsoluteString(),
+    end: toZoned(lastDay.add({ days: 1 }), timeZone).toAbsoluteString()
   };
 
   const [neighbors, events, candidates] = await Promise.all([
@@ -106,8 +116,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getWorkCenterDayEvents(client, {
       companyId,
       workCenterId,
-      dayStart: day.start,
-      dayEnd: day.end
+      dayStart: days.start,
+      dayEnd: days.end
     }),
     getMachineTimeOperationCandidates(client, {
       workCenterId,
@@ -116,22 +126,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
+  // A failed read leaves the drawer usable: the drawer says which part did
+  // not load rather than showing it empty.
+  if (neighbors.error) {
+    logger.error("Failed to load the machine time queue", {
+      companyId,
+      id,
+      error: neighbors.error
+    });
+  }
+  if (events.error) {
+    logger.error("Failed to load the work center's production events", {
+      companyId,
+      id,
+      error: events.error
+    });
+  }
+  if (candidates.error) {
+    logger.error("Failed to load the machine time operation candidates", {
+      companyId,
+      id,
+      error: candidates.error
+    });
+  }
+
   return {
     machineTime: machineTime.data,
     timeZone,
     queue: neighbors.data ?? {
-      position: endTime ? 1 : null,
-      total: 1,
+      position: null,
+      total: 0,
       previousId: null,
       nextId: null
     },
     suggestions: suggestMachineTimeOperations({
       events: events.data ?? [],
       interval: { startTime, endTime },
-      day,
+      window: days,
       nowMs: Date.now()
     }),
-    operationOptions: candidates.data ?? []
+    operationOptions: candidates.data ?? [],
+    loadErrors: {
+      queue: Boolean(neighbors.error),
+      suggestions: Boolean(events.error),
+      operations: Boolean(candidates.error)
+    }
   };
 }
 
@@ -157,8 +196,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   // Answering one moves on: to the row below, else the row above, else the
-  // list. Read before the write, which deletes this row.
+  // list. Read before the write, which deletes this row. A failed read only
+  // loses the move: the answer still goes back to the list.
   const machineTime = await getUnattributedMachineTime(client, id, companyId);
+  if (machineTime.error) {
+    logger.error("Failed to load machine time", {
+      companyId,
+      id,
+      error: machineTime.error
+    });
+  }
   const filters = parseMachineTimeListFilters(
     new URL(request.url).searchParams
   );
@@ -171,6 +218,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         filters
       })
     : null;
+  if (neighbors?.error) {
+    logger.error("Failed to load the machine time queue", {
+      companyId,
+      id,
+      error: neighbors.error
+    });
+  }
   const nextId = neighbors?.data?.nextId ?? neighbors?.data?.previousId;
   const nextPath = nextId
     ? `${path.to.unattributedMachineTime(nextId)}?${query}`
@@ -273,9 +327,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MachineTimeDetailRoute() {
-  const { machineTime, timeZone, queue, suggestions, operationOptions } =
-    useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const {
+    machineTime,
+    timeZone,
+    queue,
+    suggestions,
+    operationOptions,
+    loadErrors
+  } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  // The drawer's query string is the list's search and filters.
+  const [searchParams] = useSearchParams();
 
   return (
     <MachineTimeDrawer
@@ -285,7 +347,12 @@ export default function MachineTimeDetailRoute() {
       queue={queue}
       suggestions={suggestions}
       operationOptions={operationOptions}
-      onClose={() => closeRoute()}
+      loadErrors={loadErrors}
+      // Back to the list, with its filters. Not history back: the queue's
+      // moves replace the entry, and the drawer may be the first page.
+      onClose={() =>
+        navigate(`${path.to.unattributedMachineTimes}?${searchParams}`)
+      }
     />
   );
 }

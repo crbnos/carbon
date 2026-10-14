@@ -707,6 +707,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isAccountingInstalled =
     providerRole === "accounting" && integrationData.data.active;
 
+  // The OEE Devices tab reads the provider (cached for 60 seconds). Started
+  // here and awaited at the end, so it runs alongside the reads below.
+  const devicesPromise =
+    providerRole === "oee" && integrationData.data.active
+      ? getOeeDevicesTabData(client, companyId, integrationId)
+      : Promise.resolve(null);
+
   // Any provider-role integration writes accountingSyncOperation rows — a spend
   // provider records its own inbound/outbound dispositions there — so it gets
   // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
@@ -1151,10 +1158,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
-  const devices =
-    providerRole === "oee" && integrationData.data.active
-      ? await getOeeDevicesTabData(client, companyId, integrationId)
-      : null;
+  const devices = await devicesPromise;
 
   return {
     installed: integrationData.data.active,

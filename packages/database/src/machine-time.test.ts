@@ -156,6 +156,43 @@ describe.skipIf(!url)("machine time against a migrated database", () => {
       expect(await endedAt("unattributedMachineTime", "other-wc")).toBeNull();
     });
 
+    it("records the press: never earlier than the last one, and keeps the earliest unplanned one", async () => {
+      await seed();
+      const press = (pressedAt: string) =>
+        db.transaction().execute((trx) =>
+          recordManualMachinePress(trx, {
+            workCenterId,
+            companyId,
+            userId: operator,
+            pressedAt
+          })
+        );
+      // A late press with an earlier time must not move the latest back.
+      await press(at);
+      await press(after);
+      await press(before);
+
+      const result = await client.query(
+        `SELECT "lastManualChangeAt" = $2::timestamptz AS "latest",
+                "unplannedPressAt" = $3::timestamptz AS "earliest"
+         FROM "workCenterDevice" WHERE "id" = $1`,
+        [id("device"), after, before]
+      );
+      expect(result.rows[0]).toEqual({ latest: true, earliest: true });
+    });
+
+    it("takes the press time under the lock when none is given", async () => {
+      await seed();
+      const result = await db.transaction().execute((trx) =>
+        recordManualMachinePress(trx, {
+          workCenterId,
+          companyId,
+          userId: operator
+        })
+      );
+      expect(Number.isNaN(Date.parse(result.pressedAt))).toBe(false);
+    });
+
     it("ends another operator's Machine event", async () => {
       await seed();
       await machineEvent("operator", { createdBy: operator });

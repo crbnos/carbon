@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { DayEvent } from "../app/modules/production/ui/MachineTime/machine-time-suggestions.ee";
 import { suggestMachineTimeOperations } from "../app/modules/production/ui/MachineTime/machine-time-suggestions.ee";
 
+// One day in America/Chicago (UTC−5 in October).
 const day = {
   start: "2026-10-12T05:00:00.000Z",
   end: "2026-10-13T05:00:00.000Z"
@@ -44,7 +45,13 @@ function event(
 }
 
 const suggest = (events: DayEvent[], limit?: number) =>
-  suggestMachineTimeOperations({ events, interval, day, nowMs, limit });
+  suggestMachineTimeOperations({
+    events,
+    interval,
+    window: day,
+    nowMs,
+    limit
+  });
 
 describe("suggestMachineTimeOperations", () => {
   it("puts the operation that ran during the time first", () => {
@@ -72,9 +79,9 @@ describe("suggestMachineTimeOperations", () => {
     ]);
   });
 
-  it("groups an operation's events and counts only time inside the day", () => {
+  it("groups an operation's events and counts only time inside the window", () => {
     const [suggestion] = suggest([
-      // Started the evening before: only the 1 hour after day start counts.
+      // Started the evening before: only the 1 hour after the window starts counts.
       event("op", "2026-10-12T03:00:00.000Z", "2026-10-12T06:00:00.000Z"),
       event("op", "2026-10-12T15:00:00.000Z", "2026-10-12T15:30:00.000Z")
     ]);
@@ -89,7 +96,7 @@ describe("suggestMachineTimeOperations", () => {
       event("op", "2026-10-13T04:00:00.000Z", null)
     ]);
     expect(suggestion?.lastEnd).toBeNull();
-    // 5 minutes, plus the running event clipped at the day's end.
+    // 5 minutes, plus the running event clipped at the window's end.
     expect(suggestion?.totalMs).toBe((5 + 60) * 60 * 1000);
   });
 
@@ -107,6 +114,30 @@ describe("suggestMachineTimeOperations", () => {
       ["open", null],
       ["done", "Done"],
       ["locked", "Locked"]
+    ]);
+  });
+
+  it("suggests from both days of an interval across midnight", () => {
+    // 23:30 to 00:30 local: the window runs from the start of the first day
+    // to the end of the second.
+    const result = suggestMachineTimeOperations({
+      events: [
+        event("before", "2026-10-13T03:00:00.000Z", "2026-10-13T04:00:00.000Z"),
+        event("after", "2026-10-13T06:00:00.000Z", "2026-10-13T07:00:00.000Z")
+      ],
+      interval: {
+        startTime: "2026-10-13T04:30:00.000Z",
+        endTime: "2026-10-13T05:30:00.000Z"
+      },
+      window: {
+        start: "2026-10-12T05:00:00.000Z",
+        end: "2026-10-14T05:00:00.000Z"
+      },
+      nowMs
+    });
+    expect(result.map((s) => [s.jobOperationId, s.totalMs])).toEqual([
+      ["before", 60 * 60 * 1000],
+      ["after", 60 * 60 * 1000]
     ]);
   });
 

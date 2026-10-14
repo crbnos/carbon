@@ -34,6 +34,15 @@ export type UnattributedMachineTime = NonNullable<
   Awaited<ReturnType<typeof getUnattributedMachineTimes>>["data"]
 >[number];
 
+/** The text of an instant on the work center's clock: the cell and the CSV. */
+function formatMachineTimeInstant(
+  value: string,
+  timeZone: string,
+  locale: string
+) {
+  return formatDateTimeInZone(value, timeZone, locale, { timeStyle: "short" });
+}
+
 /** An instant on the work center's clock (its location), else the company's. */
 export function MachineTimeInstant({
   value,
@@ -46,9 +55,7 @@ export function MachineTimeInstant({
   return (
     <DateTime value={value} locationTimeZone={timeZone} side="left">
       <span className="tabular-nums">
-        {formatDateTimeInZone(value, timeZone, locale, {
-          timeStyle: "short"
-        })}
+        {formatMachineTimeInstant(value, timeZone, locale)}
       </span>
     </DateTime>
   );
@@ -75,8 +82,9 @@ export function useMachineTimeDuration() {
 export function useMachineTimeZone() {
   const companyTimeZone = useCompanyTimeZone();
   return useCallback(
+    // `||`: a location with no timezone of its own may store ''.
     (row: Pick<UnattributedMachineTime, "workCenter">) =>
-      row.workCenter?.location?.timezone ?? companyTimeZone,
+      row.workCenter?.location?.timezone || companyTimeZone,
     [companyTimeZone]
   );
 }
@@ -92,6 +100,7 @@ const MachineTimeTable = memo(
   ({ data, count, workCenters, locations }: MachineTimeTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const { locale } = useLocale();
     const navigate = useNavigate();
     const duration = useMachineTimeDuration();
     const timeZoneOf = useMachineTimeZone();
@@ -103,7 +112,9 @@ const MachineTimeTable = memo(
           header: t`Work Center`,
           enableSorting: false,
           cell: ({ row }) => (
-            <Hyperlink to={row.original.id}>
+            <Hyperlink
+              to={`${path.to.unattributedMachineTime(row.original.id)}?${params.toString()}`}
+            >
               <Enumerable
                 value={
                   row.original.workCenter?.name ?? row.original.workCenterId
@@ -166,7 +177,9 @@ const MachineTimeTable = memo(
           meta: {
             mobile: "P2",
             icon: <LuCalendar />,
-            filter: { type: "dateRange" }
+            filter: { type: "dateRange" },
+            exportValue: (row: UnattributedMachineTime) =>
+              formatMachineTimeInstant(row.startTime, timeZoneOf(row), locale)
           }
         },
         {
@@ -182,7 +195,11 @@ const MachineTimeTable = memo(
             ) : null,
           meta: {
             icon: <LuCalendar />,
-            filter: { type: "dateRange" }
+            filter: { type: "dateRange" },
+            exportValue: (row: UnattributedMachineTime) =>
+              row.endTime
+                ? formatMachineTimeInstant(row.endTime, timeZoneOf(row), locale)
+                : null
           }
         },
         {
@@ -195,7 +212,9 @@ const MachineTimeTable = memo(
             ),
           meta: {
             mobile: "P3",
-            icon: <LuHourglass />
+            icon: <LuHourglass />,
+            exportValue: (row: UnattributedMachineTime) =>
+              duration.between(row.startTime, row.endTime) ?? t`Running`
           }
         },
         {
@@ -230,7 +249,7 @@ const MachineTimeTable = memo(
           }
         }
       ],
-      [duration, locations, t, timeZoneOf, workCenters]
+      [duration, locale, locations, params, t, timeZoneOf, workCenters]
     );
 
     const renderContextMenu = useCallback(

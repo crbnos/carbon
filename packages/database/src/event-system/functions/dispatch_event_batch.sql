@@ -16,7 +16,7 @@ DECLARE
   record_id_expr TEXT;
   query_text TEXT;
   did_enqueue BOOLEAN := FALSE;
-  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding', 'loadedJobOperationId', 'loadedAt'];
+  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];
 BEGIN
   current_actor_id := auth.uid()::TEXT;
   current_workflow_run_id :=

@@ -619,6 +619,9 @@ msgstr "{passing} sur {total} actifs"
 msgid "{percent} picked"
 msgstr "{percent} prélevé"
 
+msgid "{position} of {total}"
+msgstr "{position} sur {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Supprimer définitivement # ligne ?} other {Supprimer définitivement # lignes ?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} lignes"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} sélectionnés"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · synchronisé {0}"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · synchronisé {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mois} other {# mois}}"
@@ -6019,6 +6021,12 @@ msgstr "Impossible de dissoudre {0}: {1} — production déjà enregistrée"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "Impossible de lister les appareils du fournisseur. Les appareils associés restent affichés."
+
+msgid "Could not load operations"
+msgstr "Impossible de charger les opérations"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Impossible de charger ce qui s'est exécuté sur {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Impossible de prédire le délai d'approvisionnement"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Aucun article n'a encore d'activité d'inventaire ici."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "Aucun ordre de fabrication sur ce site n'a d'opération ouverte."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Aucun ordre de fabrication n'est programmé sur ce site pour l'instant — lancez un ordre de fabrication pour voir la charge du poste de travail."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "Aucun mémo ouvert"
 
 msgid "No open operations"
-msgstr ""
+msgstr "Aucune opération ouverte"
 
 msgid "No open orders for this item are available to link."
 msgstr "Aucune commande ouverte pour cet article n'est disponible pour la liaison."
@@ -16135,6 +16143,9 @@ msgstr "Chemin"
 
 msgid "Pause"
 msgstr "Mettre en pause"
+
+msgid "Paused"
+msgstr "Suspendu"
 
 msgid "Pay"
 msgstr "Payer"
@@ -18176,6 +18187,9 @@ msgstr "Lancé avec des problèmes : {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Lancer le lot de production lance ses ordres de fabrication, et chacun doit être prêt pour l'atelier."
+
+msgid "Reload the page to try again."
+msgstr "Rechargez la page pour réessayer."
 
 msgid "Remaining"
 msgstr "Restant"
@@ -22269,9 +22283,8 @@ msgstr "Le taux de taxe par défaut appliqué aux lignes de devis et de commande
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Le département sous lequel celui-ci se cumule pour la déclaration et les hiérarchies de dénombrement; laisser vide pour un département au niveau supérieur."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Le site de l'appareil est en {0} ; Carbon utilise {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Le site de l'appareil est en {siteTimezone} ; Carbon utilise {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Les premières heures, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Retirer la règle"
 msgid "Unassigned"
 msgstr "Non assigné"
 
-msgid "Unattributed time"
-msgstr "Temps non attribué"
-
 msgid "Unattributed Time"
 msgstr "Temps non attribué"
 
@@ -25118,6 +25128,9 @@ msgid "Voiding this shipment will:"
 msgstr "L'invalidation de cette expédition :"
 
 msgid "Waited"
+msgstr "En attente"
+
+msgid "Waiting"
 msgstr "En attente"
 
 msgid "Waiting for the first sync"

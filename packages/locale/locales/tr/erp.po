@@ -619,6 +619,9 @@ msgstr "{passing} / {total} varlık"
 msgid "{percent} picked"
 msgstr "{percent} toplandı"
 
+msgid "{position} of {total}"
+msgstr "{position} / {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# satırı kalıcı olarak sil?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} satır"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · {0} eşitlendi"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} eşitlendi"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -6019,6 +6021,12 @@ msgstr "{0} çözülemedi: {1} — üretim zaten kaydedildi"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "Sağlayıcının cihazları listelenemedi. Eşlenen cihazlar yine de gösteriliyor."
+
+msgid "Could not load operations"
+msgstr "Operasyonlar yüklenemedi"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName} üzerinde çalışan operasyonlar yüklenemedi."
 
 msgid "Could not predict lead time"
 msgstr "Tedarik süresi tahmin edilemedi"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "Bu lokasyonda açık bir operasyonu olan İş emri yok."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Bu Lokasyonda henüz İş emri planlanmamış — çalışma merkezinin yükünü görmek için İş emrini Serbest bırakın."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "Açık muhasebe notları yok"
 
 msgid "No open operations"
-msgstr ""
+msgstr "Açık operasyon yok"
 
 msgid "No open orders for this item are available to link."
 msgstr "Bu Stok kartı için bağlantı kurmak amacıyla Açık siparişler bulunmamaktadır."
@@ -16135,6 +16143,9 @@ msgstr "Yol"
 
 msgid "Pause"
 msgstr "Duraklat"
+
+msgid "Paused"
+msgstr "Durdurulmuş"
 
 msgid "Pay"
 msgstr "Öde"
@@ -18176,6 +18187,9 @@ msgstr "Sorunlarla serbest bırakıldı: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birinin atölye için hazır olması gerekir."
+
+msgid "Reload the page to try again."
+msgstr "Sayfayı yeniden yükleyin ve tekrar deneyin."
 
 msgid "Remaining"
 msgstr "Kalan"
@@ -22269,9 +22283,8 @@ msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan va
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Cihazın sahası {0} saat diliminde; Carbon {locationTimezone} kullanıyor"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Cihazın sahası {siteTimezone} saat diliminde; Carbon {locationTimezone} kullanıyor"
 
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Kuralı kaldır"
 msgid "Unassigned"
 msgstr "Atanmamış"
 
-msgid "Unattributed time"
-msgstr "Atanmamış süre"
-
 msgid "Unattributed Time"
 msgstr "Atanmamış Süre"
 
@@ -25118,6 +25128,9 @@ msgid "Voiding this shipment will:"
 msgstr "Bu sevkiyatı geçersiz kılmak şunları yapacaktır:"
 
 msgid "Waited"
+msgstr "Beklemede"
+
+msgid "Waiting"
 msgstr "Beklemede"
 
 msgid "Waiting for the first sync"

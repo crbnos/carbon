@@ -71814,8 +71814,6 @@ export type Database = {
           description: string | null
           id: string
           laborRate: number
-          loadedAt: string | null
-          loadedJobOperationId: string | null
           locationId: string | null
           machineRate: number
           minimumBatchQuantity: number | null
@@ -71839,8 +71837,6 @@ export type Database = {
           description?: string | null
           id?: string
           laborRate?: number
-          loadedAt?: string | null
-          loadedJobOperationId?: string | null
           locationId?: string | null
           machineRate?: number
           minimumBatchQuantity?: number | null
@@ -71864,8 +71860,6 @@ export type Database = {
           description?: string | null
           id?: string
           laborRate?: number
-          loadedAt?: string | null
-          loadedJobOperationId?: string | null
           locationId?: string | null
           machineRate?: number
           minimumBatchQuantity?: number | null
@@ -72023,6 +72017,7 @@ export type Database = {
           lastSyncedAt: string | null
           lastSyncError: string | null
           siteTimezone: string | null
+          unplannedPressAt: string | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string
@@ -72044,6 +72039,7 @@ export type Database = {
           lastSyncedAt?: string | null
           lastSyncError?: string | null
           siteTimezone?: string | null
+          unplannedPressAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId: string
@@ -72065,6 +72061,7 @@ export type Database = {
           lastSyncedAt?: string | null
           lastSyncError?: string | null
           siteTimezone?: string | null
+          unplannedPressAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string
@@ -91373,8 +91370,6 @@ export type Database = {
           description: string | null
           id: string | null
           laborRate: number | null
-          loadedAt: string | null
-          loadedJobOperationId: string | null
           locationId: string | null
           locationName: string | null
           machineRate: number | null
@@ -91533,7 +91528,6 @@ export type Database = {
           id: string | null
           isBlocked: boolean | null
           laborRate: number | null
-          loadedAt: string | null
           loadedJobOperationId: string | null
           locationId: string | null
           locationName: string | null

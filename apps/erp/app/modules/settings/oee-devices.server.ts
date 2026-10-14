@@ -19,6 +19,7 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
+import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import { workCenterDeviceUpsertValidator } from "./settings.models";
 
 const logger = getLogger("erp", "oee-devices");
@@ -30,15 +31,12 @@ const logger = getLogger("erp", "oee-devices");
 // The @carbon/kv wrapper fails soft: a Redis miss or outage just calls the
 // provider.
 const DEVICES_TTL_SECONDS = 60;
-export const oeeDevicesCacheKey = (companyId: string, integrationId: string) =>
-  `oee-devices:${companyId}:${integrationId}`;
-const devicesKey = oeeDevicesCacheKey;
 
 async function getCachedDevices(
   companyId: string,
   integrationId: string
 ): Promise<OeeDevice[] | null> {
-  const key = devicesKey(companyId, integrationId);
+  const key = oeeDevicesCacheKey(companyId, integrationId);
   const cached = await redis.get(key);
   if (!cached) return null;
   try {
@@ -77,7 +75,7 @@ async function listOeeDevices(
     } else {
       const devices = await oee.data.provider.listDevices();
       await redis.set(
-        devicesKey(companyId, integrationId),
+        oeeDevicesCacheKey(companyId, integrationId),
         JSON.stringify(devices),
         "EX",
         DEVICES_TTL_SECONDS
@@ -109,20 +107,19 @@ export async function getOeeDevicesTabData(
   companyId: string,
   integrationId: string
 ) {
-  const { devices, error: providerError } = await listOeeDevices(
-    companyId,
-    integrationId
-  );
-
-  // Mappings first: the work center list must include an inactive work
-  // center a device is still mapped to, or its row shows no work center.
-  const mappings = await client
-    .from("workCenterDevice")
-    .select(
-      "externalDeviceId, deviceName, externalSiteId, siteTimezone, workCenterId, currentState, lastSyncedAt, lastSyncError"
-    )
-    .eq("companyId", companyId)
-    .eq("integration", integrationId);
+  // The provider read runs alongside the mappings. Mappings come before the
+  // work centers: the work center list must include an inactive work center a
+  // device is still mapped to, or its row shows no work center.
+  const [{ devices, error: providerError }, mappings] = await Promise.all([
+    listOeeDevices(companyId, integrationId),
+    client
+      .from("workCenterDevice")
+      .select(
+        "externalDeviceId, deviceName, externalSiteId, siteTimezone, workCenterId, currentState, lastSyncedAt, lastSyncError"
+      )
+      .eq("companyId", companyId)
+      .eq("integration", integrationId)
+  ]);
 
   const mappedIds = (mappings.data ?? []).map((m) => m.workCenterId);
   const workCentersQuery = client
@@ -159,7 +156,9 @@ export async function getOeeDevicesTabData(
     workCenters: (workCenters.data ?? []).map((workCenter) => ({
       id: workCenter.id,
       name: workCenter.name,
-      locationTimezone: workCenter.location?.timezone ?? null
+      // Null when the location inherits the company's timezone ('' or null):
+      // the tab falls back to the company's.
+      locationTimezone: workCenter.location?.timezone || null
     })),
     error: providerError
   };
@@ -193,23 +192,19 @@ export async function saveWorkCenterDeviceMapping(
     return validationError(validation.error);
   }
 
-  const {
-    externalDeviceId,
-    deviceName,
-    externalSiteId,
-    siteTimezone,
-    workCenterId
-  } = validation.data;
+  const { externalDeviceId, deviceName, workCenterId } = validation.data;
 
   // Map only a station the current connection reports: a list read before
   // the API key changed could name a station this provider does not have,
-  // and its mapping would never sync.
+  // and its mapping would never sync. The stored name, site and timezone are
+  // the provider's, not the form's.
+  let device: OeeDevice | undefined;
   if (workCenterId) {
     const provider = await listOeeDevices(companyId, integrationId);
-    const known = provider.devices.some(
-      (device) => device.externalDeviceId === externalDeviceId
+    device = provider.devices.find(
+      (candidate) => candidate.externalDeviceId === externalDeviceId
     );
-    if (!known) {
+    if (!device) {
       const message =
         provider.error ?? `${deviceName} is not a station of this provider`;
       return data(
@@ -224,23 +219,24 @@ export async function saveWorkCenterDeviceMapping(
 
   let result: { error: string | null };
   try {
-    result = workCenterId
-      ? await upsertWorkCenterDevice(client, getDatabaseClient(), {
-          companyId,
-          userId,
-          integration: integrationId,
-          externalDeviceId,
-          externalSiteId: externalSiteId ?? null,
-          siteTimezone: siteTimezone ?? null,
-          deviceName,
-          workCenterId
-        })
-      : await deleteWorkCenterDevice(client, getDatabaseClient(), {
-          companyId,
-          userId,
-          integration: integrationId,
-          externalDeviceId
-        });
+    result =
+      workCenterId && device
+        ? await upsertWorkCenterDevice(client, getDatabaseClient(), {
+            companyId,
+            userId,
+            integration: integrationId,
+            externalDeviceId,
+            externalSiteId: device.externalSiteId,
+            siteTimezone: device.siteTimezone,
+            deviceName: device.name,
+            workCenterId
+          })
+        : await deleteWorkCenterDevice(client, getDatabaseClient(), {
+            companyId,
+            userId,
+            integration: integrationId,
+            externalDeviceId
+          });
   } catch (err) {
     if (!(err instanceof EntitlementError)) throw err;
     logger.error("OEE device mapping refused: not entitled", {

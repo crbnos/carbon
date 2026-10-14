@@ -22,7 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { Integration } from "~/modules/settings/types";
 import { sanitize } from "~/utils/supabase";
-import { oeeDevicesCacheKey } from "./oee-devices.server";
+import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import type { customFieldValidator } from "./settings.models";
 
 const INTEGRATION_CACHE_TTL = 3600;

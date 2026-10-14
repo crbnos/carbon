@@ -22,7 +22,7 @@ import {
   rilletOnInstall,
   rilletOnUninstall
 } from "./rillet/hooks.server";
-import { senseHealthcheck } from "./sense/hooks.server";
+import { senseHealthcheck, senseOnUninstall } from "./sense/hooks.server";
 import {
   stripeConnectHealthcheck,
   stripeConnectOnInstall,
@@ -93,7 +93,8 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onUninstall: rilletOnUninstall
   },
   sense: {
-    onHealthcheck: senseHealthcheck
+    onHealthcheck: senseHealthcheck,
+    onUninstall: senseOnUninstall
   },
   xero: {
     onHealthcheck: xeroHealthcheck,

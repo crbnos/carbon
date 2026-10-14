@@ -619,6 +619,9 @@ msgstr "{passing} von {total} Anlagen"
 msgid "{percent} picked"
 msgstr "{percent} kommissioniert"
 
+msgid "{position} of {total}"
+msgstr "{position} von {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# Zeile dauerhaft löschen?} other {# Zeilen dauerhaft löschen?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} Positionen"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} ausgewählt"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · synchronisiert {0}"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · synchronisiert {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# Monat} other {# Monate}}"
@@ -6019,6 +6021,12 @@ msgstr "Konnte {0} nicht auflösen: {1} — Produktion bereits erfasst"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "Die Geräte des Anbieters konnten nicht abgerufen werden. Zugeordnete Geräte werden weiterhin angezeigt."
+
+msgid "Could not load operations"
+msgstr "Arbeitsgänge konnten nicht geladen werden"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Konnte nicht laden, was auf {workCenterName} gelaufen ist."
 
 msgid "Could not predict lead time"
 msgstr "Beschaffungszeit konnte nicht vorhergesagt werden"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Hier gibt es noch keine Bestandsbewegungen."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "Kein Fertigungsauftrag an diesem Standort hat einen offenen Arbeitsgang."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Noch keine Fertigungsaufträge an diesem Standort geplant — geben Sie einen Fertigungsauftrag frei, um die Arbeitszentrums-Auslastung zu sehen."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "Keine offenen Notizen"
 
 msgid "No open operations"
-msgstr ""
+msgstr "Keine offenen Arbeitsgänge"
 
 msgid "No open orders for this item are available to link."
 msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verfügbar."
@@ -16135,6 +16143,9 @@ msgstr "Pfad"
 
 msgid "Pause"
 msgstr "Unterbrechen"
+
+msgid "Paused"
+msgstr "Pausiert"
 
 msgid "Pay"
 msgstr "Zahlen"
@@ -18176,6 +18187,9 @@ msgstr "Freigegeben mit Problemen: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Die Freigabe des Loses gibt seine Fertigungsaufträge frei, und jeder muss für die Werkstatt bereit sein."
+
+msgid "Reload the page to try again."
+msgstr "Seite neu laden, um es erneut zu versuchen."
 
 msgid "Remaining"
 msgstr "Verbleibend"
@@ -22269,9 +22283,8 @@ msgstr "Der Steuersatz, der auf die Angebots- und Kundenauftrags-Positionen dies
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hierarchien untergeordnet ist; leer lassen für eine Abteilung der obersten Ebene."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Der Standort des Geräts liegt in {0}; Carbon verwendet {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Der Standort des Geräts liegt in {siteTimezone}; Carbon verwendet {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Die frühen Stunden, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Regel entfernen"
 msgid "Unassigned"
 msgstr "Nicht zugewiesen"
 
-msgid "Unattributed time"
-msgstr "Nicht zugeordnete Zeit"
-
 msgid "Unattributed Time"
 msgstr "Nicht zugeordnete Zeit"
 
@@ -25119,6 +25129,9 @@ msgstr "Das Stornieren dieser Lieferung wird:"
 
 msgid "Waited"
 msgstr "Wartezeit"
+
+msgid "Waiting"
+msgstr "Wartet"
 
 msgid "Waiting for the first sync"
 msgstr "Warten auf die erste Synchronisierung"

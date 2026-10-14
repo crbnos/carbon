@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { Database } from "@carbon/database";
 import {
   Badge,
   Button,
@@ -42,6 +43,8 @@ import {
 } from "./MachineTimeTable.ee";
 import type { MachineTimeSuggestion } from "./machine-time-suggestions.ee";
 
+type JobOperationStatus = Database["public"]["Enums"]["jobOperationStatus"];
+
 type MachineTime = NonNullable<
   Awaited<ReturnType<typeof getUnattributedMachineTime>>["data"]
 >;
@@ -57,7 +60,14 @@ type MachineTimeDrawerProps = {
     nextId: string | null;
   };
   suggestions: MachineTimeSuggestion[];
-  operationOptions: { value: string; label: string; helper?: string }[];
+  operationOptions: {
+    value: string;
+    label: string;
+    workCenterName: string | null;
+    status: JobOperationStatus | null;
+  }[];
+  /** The reads that failed: the drawer says so instead of showing them empty. */
+  loadErrors: { queue: boolean; suggestions: boolean; operations: boolean };
   onClose: () => void;
 };
 
@@ -67,6 +77,7 @@ const MachineTimeDrawer = ({
   queue,
   suggestions,
   operationOptions,
+  loadErrors,
   onClose
 }: MachineTimeDrawerProps) => {
   const { t } = useLingui();
@@ -85,10 +96,33 @@ const MachineTimeDrawer = ({
   const workCenterName =
     machineTime.workCenter?.name ?? machineTime.workCenterId;
 
+  // A queue move replaces the entry, so Back leaves the review instead of
+  // walking back through every row.
   const goTo = (id: string | null) => {
     if (!id) return;
-    navigate(`${path.to.unattributedMachineTime(id)}?${searchParams}`);
+    navigate(`${path.to.unattributedMachineTime(id)}?${searchParams}`, {
+      replace: true
+    });
   };
+
+  const statusLabels: Record<JobOperationStatus, string> = {
+    Todo: t`Todo`,
+    Ready: t`Ready`,
+    Waiting: t`Waiting`,
+    "In Progress": t`In Progress`,
+    Paused: t`Paused`,
+    Done: t`Done`,
+    Canceled: t`Canceled`
+  };
+  const searchOptions = operationOptions.map(
+    ({ workCenterName, status, ...option }) => ({
+      ...option,
+      helper: workCenterName ?? (status ? statusLabels[status] : undefined)
+    })
+  );
+
+  const position = queue.position;
+  const total = queue.total;
 
   // One answer per row: a held key, or a second click before the fetcher
   // re-renders as busy, must not post twice.
@@ -151,16 +185,16 @@ const MachineTimeDrawer = ({
           <div className="flex min-w-0 flex-col gap-1">
             <DrawerTitle>{workCenterName}</DrawerTitle>
             <DrawerDescription>
-              <Trans>Unattributed time</Trans>
+              <Trans>Unattributed Time</Trans>
             </DrawerDescription>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <span className="mr-1 text-xs tabular-nums text-muted-foreground">
-              {queue.position === null ? (
+              {loadErrors.queue ? null : position === null ? (
                 <Trans>Running</Trans>
               ) : (
                 <Trans>
-                  {queue.position} of {queue.total}
+                  {position} of {total}
                 </Trans>
               )}
             </span>
@@ -220,7 +254,11 @@ const MachineTimeDrawer = ({
                 </p>
               )}
 
-              {suggestions.length === 0 ? (
+              {loadErrors.suggestions ? (
+                <p className="text-sm text-muted-foreground">
+                  <Trans>Could not load what ran on {workCenterName}.</Trans>
+                </p>
+              ) : suggestions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   <Trans>Nothing else ran on {workCenterName} that day.</Trans>
                 </p>
@@ -300,13 +338,20 @@ const MachineTimeDrawer = ({
                 <Combobox
                   size="sm"
                   value=""
-                  options={operationOptions}
+                  options={searchOptions}
                   placeholder={t`Search jobs and operations`}
                   emptyMessage={
-                    <FieldEmptyState
-                      title={t`No open operations`}
-                      description={t`No job at this location has an open operation.`}
-                    />
+                    loadErrors.operations ? (
+                      <FieldEmptyState
+                        title={t`Could not load operations`}
+                        description={t`Reload the page to try again.`}
+                      />
+                    ) : (
+                      <FieldEmptyState
+                        title={t`No open operations`}
+                        description={t`No job at this location has an open operation.`}
+                      />
+                    )
                   }
                   isReadOnly={!canAnswer || isBusy}
                   onChange={(jobOperationId) => {

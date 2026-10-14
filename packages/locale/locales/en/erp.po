@@ -619,6 +619,9 @@ msgstr "{passing} of {total} assets"
 msgid "{percent} picked"
 msgstr "{percent} picked"
 
+msgid "{position} of {total}"
+msgstr "{position} of {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} lines"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · synced {0}"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · synced {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# month} other {# months}}"
@@ -6019,6 +6021,12 @@ msgstr "Could not dissolve {0}: {1} — production already recorded"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "Could not list the provider's devices. Mapped devices are still shown."
+
+msgid "Could not load operations"
+msgstr "Could not load operations"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Could not load what ran on {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Could not predict lead time"
@@ -16136,6 +16144,9 @@ msgstr "Path"
 msgid "Pause"
 msgstr "Pause"
 
+msgid "Paused"
+msgstr "Paused"
+
 msgid "Pay"
 msgstr "Pay"
 
@@ -18176,6 +18187,9 @@ msgstr "Released with problems: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Releasing the batch releases its jobs, and each one must be ready for the floor."
+
+msgid "Reload the page to try again."
+msgstr "Reload the page to try again."
 
 msgid "Remaining"
 msgstr "Remaining"
@@ -22269,9 +22283,8 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Unassign rule"
 msgid "Unassigned"
 msgstr "Unassigned"
 
-msgid "Unattributed time"
-msgstr "Unattributed time"
-
 msgid "Unattributed Time"
 msgstr "Unattributed Time"
 
@@ -25119,6 +25129,9 @@ msgstr "Voiding this shipment will:"
 
 msgid "Waited"
 msgstr "Waited"
+
+msgid "Waiting"
+msgstr "Waiting"
 
 msgid "Waiting for the first sync"
 msgstr "Waiting for the first sync"

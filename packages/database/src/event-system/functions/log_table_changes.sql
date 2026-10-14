@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.log_table_changes()
  SET search_path TO ''
 AS $function$
 DECLARE
-  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding', 'loadedJobOperationId', 'loadedAt'];
+  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];
   changed_rows TEXT;
 BEGIN
   -- Records which rows of this table changed, in public."tableChange", so a

@@ -80,3 +80,16 @@ export function parseMachineTimeListFilters(
 
   return filters;
 }
+
+/**
+ * PostgREST `or` filters for the rows above and below a row in the queue's
+ * order (newest start first, then `id`, both descending). A tie on
+ * `startTime` falls to `id`, so every row has exactly one place.
+ */
+export function machineTimeQueueKeyset(row: { id: string; startTime: string }) {
+  const at = `"${row.startTime}"`;
+  return {
+    above: `startTime.gt.${at},and(startTime.eq.${at},id.gt.${row.id})`,
+    below: `startTime.lt.${at},and(startTime.eq.${at},id.lt.${row.id})`
+  };
+}

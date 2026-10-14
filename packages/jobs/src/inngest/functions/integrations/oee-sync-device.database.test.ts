@@ -120,10 +120,13 @@ describe.skipIf(!hasLocalDatabase)(
     } = {}) {
       await client.query("BEGIN");
       await client.query("SET LOCAL session_replication_role = replica");
+      // The load lives in workCenterLoad; a seeded load is written there.
+      const { loadedJobOperationId, loadedAt, ...workCenterColumns } =
+        workCenter;
       await insert("workCenter", {
         id: workCenterId,
         name: "Mill",
-        ...workCenter
+        ...workCenterColumns
       });
       await insert("jobOperation", {
         id: operationId,
@@ -132,18 +135,13 @@ describe.skipIf(!hasLocalDatabase)(
         status: "In Progress",
         ...operation
       });
-      // Triggers are off here, so the load history the interceptor would
-      // write is seeded with the pointer.
-      if (workCenter.loadedJobOperationId && workCenter.loadedAt) {
+      // Triggers are off here, so the load the interceptor would write is
+      // seeded directly.
+      if (loadedJobOperationId && loadedAt) {
         await client.query(
           `INSERT INTO "workCenterLoad" ("companyId", "workCenterId", "jobOperationId", "loadedAt")
            VALUES ($1, $2, $3, $4)`,
-          [
-            companyId,
-            workCenterId,
-            workCenter.loadedJobOperationId,
-            workCenter.loadedAt
-          ]
+          [companyId, workCenterId, loadedJobOperationId, loadedAt]
         );
       }
       await insert("workCenterDevice", {
@@ -402,8 +400,8 @@ describe.skipIf(!hasLocalDatabase)(
       expect(await unattributedTime()).toEqual([]);
     });
 
-    it("closes an open system event on a Canceled operation when it was canceled", async () => {
-      // The unload took the canceled operation off the work center.
+    it("closes an open system event where its Canceled operation was unloaded", async () => {
+      // Canceling the operation at 10:45 ended its load there.
       await seed({
         operation: {
           status: "Canceled",
@@ -424,6 +422,17 @@ describe.skipIf(!hasLocalDatabase)(
         type: "Machine",
         startTime: "2026-10-13T10:00:00.000Z"
       });
+      await client.query(
+        `INSERT INTO "workCenterLoad" ("companyId", "workCenterId", "jobOperationId", "loadedAt", "unloadedAt")
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          companyId,
+          workCenterId,
+          operationId,
+          "2026-10-13T09:00:00.000Z",
+          "2026-10-13T10:45:00.000Z"
+        ]
+      );
       const { provider } = fakeProvider([]);
 
       await sync(provider);
@@ -682,6 +691,53 @@ describe.skipIf(!hasLocalDatabase)(
           endTime: "2026-10-13T10:35:00.000Z"
         }
       ]);
+    });
+
+    it("records the time between two presses no sync saw, and clears the press marker", async () => {
+      // The machine runs from 09:00. The operator paused at 10:00 and started
+      // again at 10:10, with no sync between.
+      await seed({
+        device: {
+          currentState: "Running",
+          currentStateAt: "2026-10-13T09:00:00.000Z",
+          appliedThrough: "2026-10-13T09:00:00.000Z",
+          lastEventAt: "2026-10-13T09:00:00.000Z",
+          lastManualChangeAt: "2026-10-13T10:10:00.000Z",
+          unplannedPressAt: "2026-10-13T10:00:00.000Z",
+          lastSyncedAt: "2026-10-13T09:58:00.000Z"
+        }
+      });
+      await insert("productionEvent", {
+        id: id("first"),
+        jobOperationId: operationId,
+        workCenterId,
+        type: "Machine",
+        startTime: "2026-10-13T09:30:00.000Z",
+        endTime: "2026-10-13T10:00:00.000Z",
+        createdBy: "operator"
+      });
+      await insert("productionEvent", {
+        id: id("second"),
+        jobOperationId: operationId,
+        workCenterId,
+        type: "Machine",
+        startTime: "2026-10-13T10:10:00.000Z",
+        createdBy: "operator"
+      });
+
+      await sync(fakeProvider([]).provider);
+
+      expect(await unattributedTime()).toEqual([
+        {
+          startTime: "2026-10-13T10:00:00.000Z",
+          endTime: "2026-10-13T10:10:00.000Z"
+        }
+      ]);
+      const marker = await client.query(
+        `SELECT "unplannedPressAt" FROM "workCenterDevice" WHERE "id" = $1`,
+        [deviceId]
+      );
+      expect(marker.rows[0]?.unplannedPressAt).toBeNull();
     });
   }
 );

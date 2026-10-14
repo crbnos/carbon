@@ -619,6 +619,9 @@ msgstr "총 {total}개 자산 중 {passing}개"
 msgid "{percent} picked"
 msgstr "{percent} 피킹 완료"
 
+msgid "{position} of {total}"
+msgstr "{position}/{total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} 라인"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · {0} 동기화됨"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} 동기화됨"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 개월} other {# 개월}}"
@@ -6019,6 +6021,12 @@ msgstr "{0}을(를) 해제할 수 없습니다: {1} — 생산이 이미 기록�
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "공급자의 장치 목록을 가져올 수 없습니다. 매핑된 장치는 계속 표시됩니다."
+
+msgid "Could not load operations"
+msgstr "공정을 로드할 수 없습니다"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "{workCenterName}에서 실행된 항목을 로드할 수 없습니다."
 
 msgid "Could not predict lead time"
 msgstr "리드타임을 예측할 수 없습니다"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "이 사업장에는 미결 공정이 있는 작업 지시가 없습니다."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "아직 이 사업장에 스케줄된 작업 지시가 없습니다 — 작업 지시를 릴리스하여 작업장 부하를 확인하세요."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "미결 메모 없음"
 
 msgid "No open operations"
-msgstr ""
+msgstr "미결 공정 없음"
 
 msgid "No open orders for this item are available to link."
 msgstr "이 품목에 연결할 수 있는 미결 발주서가 없습니다."
@@ -16135,6 +16143,9 @@ msgstr "경로"
 
 msgid "Pause"
 msgstr "일시 중지"
+
+msgid "Paused"
+msgstr "일시 중지됨"
 
 msgid "Pay"
 msgstr "지불"
@@ -18176,6 +18187,9 @@ msgstr "릴리스됨 (문제 있음): {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "배치를 릴리스하면 포함된 작업 지시들도 릴리스되고, 각각은 현장에 준비되어야 합니다."
+
+msgid "Reload the page to try again."
+msgstr "페이지를 새로고침하여 다시 시도하세요."
 
 msgid "Remaining"
 msgstr "남음"
@@ -22269,9 +22283,8 @@ msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "장치 사이트는 {0}에 있습니다. Carbon은 {locationTimezone}을(를) 사용합니다"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "장치 사이트는 {siteTimezone}에 있습니다. Carbon은 {locationTimezone}을(를) 사용합니다"
 
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."
@@ -24157,9 +24170,6 @@ msgstr "규칙 할당 해제"
 msgid "Unassigned"
 msgstr "미배정"
 
-msgid "Unattributed time"
-msgstr "미귀속 시간"
-
 msgid "Unattributed Time"
 msgstr "미귀속 시간"
 
@@ -25119,6 +25129,9 @@ msgstr "이 출하를 무효화하면 다음과 같은 결과가 발생합니다
 
 msgid "Waited"
 msgstr "대기함"
+
+msgid "Waiting"
+msgstr "대기 중"
 
 msgid "Waiting for the first sync"
 msgstr "첫 동기화를 기다리는 중"

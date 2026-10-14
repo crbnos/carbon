@@ -619,6 +619,9 @@ msgstr "{passing} di {total} beni"
 msgid "{percent} picked"
 msgstr "{percent} prelevato"
 
+msgid "{position} of {total}"
+msgstr "{position} di {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {Eliminare definitivamente # righe?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} righe"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selezionati"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · sincronizzato {0}"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · sincronizzato {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mese} other {# mesi}}"
@@ -6019,6 +6021,12 @@ msgstr "Impossibile dissolvere {0}: {1} — produzione già registrata"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "Impossibile elencare i dispositivi del fornitore. I dispositivi associati sono ancora visibili."
+
+msgid "Could not load operations"
+msgstr "Impossibile caricare le operazioni"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Impossibile caricare ciò che è stato eseguito su {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Impossibile prevedere il lead time"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Nessun articolo ha attività di inventario qui ancora."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "Nessun ordine di produzione in questa ubicazione ha un'operazione aperta."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Nessun ordine di produzione programmato in questa ubicazione ancora — rilascia un ordine di produzione per visualizzare il carico del centro di lavoro."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "Nessun memo aperto"
 
 msgid "No open operations"
-msgstr ""
+msgstr "Nessuna operazione aperta"
 
 msgid "No open orders for this item are available to link."
 msgstr "Nessun ordine aperto per questo articolo disponibile per il collegamento."
@@ -16135,6 +16143,9 @@ msgstr "Percorso"
 
 msgid "Pause"
 msgstr "Sospendi"
+
+msgid "Paused"
+msgstr "In pausa"
 
 msgid "Pay"
 msgstr "Paga"
@@ -18176,6 +18187,9 @@ msgstr "Rilasciato con problemi: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Rilasciare il lotto di produzione rilascia i suoi ordini di produzione, e ognuno deve essere pronto per l'officina."
+
+msgid "Reload the page to try again."
+msgstr "Ricarica la pagina per riprovare."
 
 msgid "Remaining"
 msgstr "Rimanente"
@@ -22269,9 +22283,8 @@ msgstr "L'aliquota fiscale predefinita applicata alle righe di offerta e ordine 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Il reparto sotto il quale questo si aggrega per la reportistica e le gerarchie organizzative; lasciare vuoto per un reparto di primo livello."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Il sito del dispositivo è in {0}; Carbon usa {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Il sito del dispositivo è in {siteTimezone}; Carbon usa {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Le prime ore, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Annulla assegnazione regola"
 msgid "Unassigned"
 msgstr "Non assegnato"
 
-msgid "Unattributed time"
-msgstr "Tempo non attribuito"
-
 msgid "Unattributed Time"
 msgstr "Tempo non attribuito"
 
@@ -25119,6 +25129,9 @@ msgstr "Annullare questa spedizione comporterà:"
 
 msgid "Waited"
 msgstr "Atteso"
+
+msgid "Waiting"
+msgstr "In attesa"
 
 msgid "Waiting for the first sync"
 msgstr "In attesa della prima sincronizzazione"

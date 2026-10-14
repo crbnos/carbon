@@ -4,12 +4,14 @@
 
 /**
  * The best guesses for a slice of unattributed machine time: the operations
- * that ran on the same work center that day. Pure, so it is tested without a
- * database (`apps/erp/test/machine-time-suggestions.ee.test.ts`).
+ * that ran on the same work center on the days it touches. Pure, so it is
+ * tested without a database (`apps/erp/test/machine-time-suggestions.ee.test.ts`).
  *
  * Instants are compared as epoch milliseconds, which is safe for absolute
  * instants (`.claude/rules/date-handling.md` → Narrow exception).
  */
+
+import { type MachineTimeRefusal, machineTimeRefusal } from "@carbon/ee/oee";
 
 export type DayEvent = {
   jobOperationId: string;
@@ -30,37 +32,36 @@ export type DayEvent = {
 
 export type MachineTimeSuggestion = {
   jobOperationId: string;
-  jobId: string;
   jobReadableId: string;
   description: string;
   itemReadableId: string | null;
   firstStart: string;
   lastEnd: string | null;
-  /** Time the operation's events covered inside the day. */
+  /** Time the operation's events covered inside the window. */
   totalMs: number;
   /** An event of the operation overlaps the unattributed interval. */
   overlaps: boolean;
   /** Why it cannot take the time, or null when it can. */
-  blockedBy: "Done" | "Canceled" | "Locked" | null;
+  blockedBy: MachineTimeRefusal | null;
 };
 
 /** The most cards the drawer shows; one shortcut key each. */
 export const MACHINE_TIME_SUGGESTION_LIMIT = 6;
 
-// A copy of `JOB_LOCKED_STATUSES` (`production.models.ts`), the source. That
-// module pulls in Lingui macros, which fail outside the Vite build, so this
-// pure file cannot import it.
-const LOCKED_JOB_STATUSES = new Set(["Completed", "Closed", "Cancelled"]);
-
 export function suggestMachineTimeOperations(args: {
   events: DayEvent[];
   interval: { startTime: string; endTime: string | null };
-  day: { start: string; end: string };
+  /**
+   * The start of the interval's first day to the end of its last day (the
+   * end of today for a running interval), in the work center's timezone. An
+   * interval across midnight takes suggestions from both days.
+   */
+  window: { start: string; end: string };
   nowMs: number;
   limit?: number;
 }): MachineTimeSuggestion[] {
-  const dayStart = Date.parse(args.day.start);
-  const dayEnd = Date.parse(args.day.end);
+  const windowStart = Date.parse(args.window.start);
+  const windowEnd = Date.parse(args.window.end);
   const from = Date.parse(args.interval.startTime);
   const to = args.interval.endTime
     ? Date.parse(args.interval.endTime)
@@ -78,7 +79,7 @@ export function suggestMachineTimeOperations(args: {
     const end = event.endTime ? Date.parse(event.endTime) : args.nowMs;
     const covered = Math.max(
       0,
-      Math.min(end, dayEnd) - Math.max(start, dayStart)
+      Math.min(end, windowEnd) - Math.max(start, windowStart)
     );
     const overlaps = start < to && end > from;
     const gapMs = overlaps ? 0 : start >= to ? start - to : from - end;
@@ -104,7 +105,6 @@ export function suggestMachineTimeOperations(args: {
 
     groups.set(operation.id, {
       jobOperationId: operation.id,
-      jobId: job.id,
       jobReadableId: job.jobId,
       description: operation.description ?? "",
       itemReadableId: job.item?.readableIdWithRevision ?? null,
@@ -113,12 +113,7 @@ export function suggestMachineTimeOperations(args: {
       totalMs: covered,
       overlaps,
       gapMs,
-      blockedBy:
-        operation.status === "Done" || operation.status === "Canceled"
-          ? operation.status
-          : LOCKED_JOB_STATUSES.has(job.status ?? "")
-            ? "Locked"
-            : null
+      blockedBy: machineTimeRefusal(operation.status, job.status)
     });
   }
 

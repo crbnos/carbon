@@ -619,6 +619,9 @@ msgstr "{passing} 项，共 {total} 项资产"
 msgid "{percent} picked"
 msgstr "{percent}已拣货"
 
+msgid "{position} of {total}"
+msgstr "{position}/{total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} 行"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · {0} 已同步"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · {syncedAgo} 已同步"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
@@ -6019,6 +6021,12 @@ msgstr "无法解散 {0}: {1} — 生产已记录"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "无法列出提供商的设备。已映射的设备仍会显示。"
+
+msgid "Could not load operations"
+msgstr "无法加载工序"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "无法加载在 {workCenterName} 上运行的内容。"
 
 msgid "Could not predict lead time"
 msgstr "无法预测提前期"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "此处尚无物料库存活动。"
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "此地点没有工单有未结工序。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "无未结单据"
 
 msgid "No open operations"
-msgstr ""
+msgstr "没有未结工序"
 
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
@@ -16135,6 +16143,9 @@ msgstr "路径"
 
 msgid "Pause"
 msgstr "暂停"
+
+msgid "Paused"
+msgstr "已暂停"
 
 msgid "Pay"
 msgstr "支付"
@@ -18176,6 +18187,9 @@ msgstr "已下达，存在问题：{0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
+
+msgid "Reload the page to try again."
+msgstr "重新加载页面以重试。"
 
 msgid "Remaining"
 msgstr "剩余"
@@ -22269,9 +22283,8 @@ msgstr "适用于此客户的报价和销售订单行的默认税率，在每行
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "设备所在站点位于 {0}；Carbon 使用 {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "设备所在站点位于 {siteTimezone}；Carbon 使用 {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -24157,9 +24170,6 @@ msgstr "取消分配规则"
 msgid "Unassigned"
 msgstr "未分配"
 
-msgid "Unattributed time"
-msgstr "未归属时间"
-
 msgid "Unattributed Time"
 msgstr "未归属时间"
 
@@ -25119,6 +25129,9 @@ msgstr "作废此发货将："
 
 msgid "Waited"
 msgstr "已等待"
+
+msgid "Waiting"
+msgstr "等待中"
 
 msgid "Waiting for the first sync"
 msgstr "正在等待首次同步"

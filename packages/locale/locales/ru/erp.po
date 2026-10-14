@@ -619,6 +619,9 @@ msgstr "{passing} из {total} активов"
 msgid "{percent} picked"
 msgstr "{percent} отобрано"
 
+msgid "{position} of {total}"
+msgstr "{position} из {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Окончательно удалить # строку?} other {Окончательно удалить # строк?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} строк"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · синхронизировано {0}"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · синхронизировано {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# месяц} few {# месяца} many {# месяцев} other {# месяцев}}"
@@ -6019,6 +6021,12 @@ msgstr "Не удалось растворить {0}: {1} — производс
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "Не удалось получить список устройств поставщика. Сопоставленные устройства по-прежнему отображаются."
+
+msgid "Could not load operations"
+msgstr "Не удалось загрузить операции"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Не удалось загрузить то, что выполнялось на {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Не удалось предсказать срок поставки"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "Ни один производственный заказ на этой площадке не имеет открытой операции."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "На этой площадке еще не запланированы производственные заказы — запустите производственный заказ в работу, чтобы увидеть нагрузку на рабочий центр."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "Нет открытых служебных записок"
 
 msgid "No open operations"
-msgstr ""
+msgstr "Нет открытых операций"
 
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
@@ -16135,6 +16143,9 @@ msgstr "Путь"
 
 msgid "Pause"
 msgstr "Приостановить"
+
+msgid "Paused"
+msgstr "Приостановлено"
 
 msgid "Pay"
 msgstr "Оплатить"
@@ -18176,6 +18187,9 @@ msgstr "Запущено с проблемами: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
+
+msgid "Reload the page to try again."
+msgstr "Перезагрузите страницу и попробуйте снова."
 
 msgid "Remaining"
 msgstr "Остаток"
@@ -22269,9 +22283,8 @@ msgstr "Налоговая ставка по умолчанию, применя�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Площадка устройства находится в {0}; Carbon использует {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Площадка устройства находится в {siteTimezone}; Carbon использует {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Отменить назначение правила"
 msgid "Unassigned"
 msgstr "Не назначено"
 
-msgid "Unattributed time"
-msgstr "Неучтённое время"
-
 msgid "Unattributed Time"
 msgstr "Неучтённое время"
 
@@ -25118,6 +25128,9 @@ msgid "Voiding this shipment will:"
 msgstr "Аннулирование этой отгрузки приведет к:"
 
 msgid "Waited"
+msgstr "Ожидание"
+
+msgid "Waiting"
 msgstr "Ожидание"
 
 msgid "Waiting for the first sync"

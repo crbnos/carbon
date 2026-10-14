@@ -619,6 +619,9 @@ msgstr "{passing} de {total} activos"
 msgid "{percent} picked"
 msgstr "{percent} preparados"
 
+msgid "{position} of {total}"
+msgstr "{position} de {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {¿Eliminar permanentemente # fila?} other {¿Eliminar permanentemente # filas?}}"
 
@@ -643,9 +646,8 @@ msgstr "{sectionLineCount} líneas"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seleccionados"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "{state} · synced {0}"
-msgstr "{state} · sincronizado {0}"
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · sincronizado {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mes} other {# meses}}"
@@ -6019,6 +6021,12 @@ msgstr "No se pudo disolver {0}: {1} — producción ya registrada"
 
 msgid "Could not list the provider's devices. Mapped devices are still shown."
 msgstr "No se pudieron listar los dispositivos del proveedor. Los dispositivos asignados se siguen mostrando."
+
+msgid "Could not load operations"
+msgstr "No se pudieron cargar las operaciones"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "No se pudo cargar lo que se ejecutó en {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "No se pudo predecir el plazo de entrega"
@@ -14519,7 +14527,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Aún no hay actividad de inventario de artículos aquí."
 
 msgid "No job at this location has an open operation."
-msgstr ""
+msgstr "Ninguna orden de trabajo en esta ubicación tiene una operación abierta."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "No hay órdenes de trabajo programadas en esta ubicación aún — libera una orden de trabajo para ver la carga del centro de trabajo."
@@ -14615,7 +14623,7 @@ msgid "No open memos"
 msgstr "Sin memorandos abiertos"
 
 msgid "No open operations"
-msgstr ""
+msgstr "Sin operaciones abiertas"
 
 msgid "No open orders for this item are available to link."
 msgstr "No hay pedidos abiertos disponibles para este artículo."
@@ -16135,6 +16143,9 @@ msgstr "Ruta"
 
 msgid "Pause"
 msgstr "Pausar"
+
+msgid "Paused"
+msgstr "Pausado"
 
 msgid "Pay"
 msgstr "Pagar"
@@ -18176,6 +18187,9 @@ msgstr "Liberado con problemas: {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Liberar el lote de producción libera sus órdenes de trabajo, y cada una debe estar lista para la planta."
+
+msgid "Reload the page to try again."
+msgstr "Recargue la página para intentar de nuevo."
 
 msgid "Remaining"
 msgstr "Restante"
@@ -22269,9 +22283,8 @@ msgstr "La tasa fiscal predeterminada aplicada a las líneas de cotización y or
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "El departamento bajo el cual se agrupa para informes y jerarquías de conteo de encabezados; dejar en blanco para un departamento de nivel superior."
 
-#. placeholder {0}: device.siteTimezone
-msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
-msgstr "El sitio del dispositivo está en {0}; Carbon usa {locationTimezone}"
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "El sitio del dispositivo está en {siteTimezone}; Carbon usa {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Las primeras horas, {name}."
@@ -24157,9 +24170,6 @@ msgstr "Desasignar regla"
 msgid "Unassigned"
 msgstr "Sin asignar"
 
-msgid "Unattributed time"
-msgstr "Tiempo no atribuido"
-
 msgid "Unattributed Time"
 msgstr "Tiempo no atribuido"
 
@@ -25119,6 +25129,9 @@ msgstr "Anular este envío hará lo siguiente:"
 
 msgid "Waited"
 msgstr "Esperado"
+
+msgid "Waiting"
+msgstr "Esperando"
 
 msgid "Waiting for the first sync"
 msgstr "Esperando la primera sincronización"

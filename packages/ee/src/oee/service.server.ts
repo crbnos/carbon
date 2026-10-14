@@ -11,6 +11,7 @@ import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import { integrations } from "../index";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
 import { companyHasFeature } from "../plan.server";
+import { machineTimeRefusal } from "./assignable";
 import { createOeeProvider, isOeeProviderId } from "./registry";
 import type { OeeProvider } from "./types";
 
@@ -21,14 +22,6 @@ import type { OeeProvider } from "./types";
  */
 
 type Result<T> = { data: T; error: null } | { data: null; error: string };
-
-// A job in one of these statuses takes no more time. Mirrors the ERP's
-// JOB_LOCKED_STATUSES (apps/erp production.models.ts), which ee cannot import.
-const LOCKED_JOB_STATUSES = new Set<string | null>([
-  "Completed",
-  "Closed",
-  "Cancelled"
-]);
 
 const fail = (error: unknown): { data: null; error: string } => {
   if (error instanceof EntitlementError) throw error;
@@ -134,10 +127,10 @@ export async function upsertWorkCenterDevice(
 
       const taken = await trx
         .selectFrom("workCenterDevice")
-        .innerJoin(
-          "workCenter",
-          "workCenter.id",
-          "workCenterDevice.workCenterId"
+        .innerJoin("workCenter", (join) =>
+          join
+            .onRef("workCenter.id", "=", "workCenterDevice.workCenterId")
+            .onRef("workCenter.companyId", "=", "workCenterDevice.companyId")
         )
         .select([
           "workCenterDevice.deviceName",
@@ -232,7 +225,7 @@ export async function deleteWorkCenterDevice(
         .where("companyId", "=", args.companyId)
         .execute();
     });
-    return { data: null, error: null } as Result<null>;
+    return { data: null, error: null };
   } catch (error) {
     return fail(error);
   }
@@ -283,15 +276,14 @@ export async function assignUnattributedMachineTime(
         .forUpdate()
         .executeTakeFirst();
       if (!operation) return { data: null, error: "Operation not found" };
-      if (operation.status === "Done" || operation.status === "Canceled") {
-        return { data: null, error: `The operation is ${operation.status}` };
-      }
-      if (LOCKED_JOB_STATUSES.has(operation.jobStatus)) {
+      const refusal = machineTimeRefusal(operation.status, operation.jobStatus);
+      if (refusal === "Locked") {
         return {
           data: null,
           error: "Cannot modify a locked job. Reopen it first."
         };
       }
+      if (refusal) return { data: null, error: `The operation is ${refusal}` };
 
       const event = await trx
         .insertInto("productionEvent")
@@ -347,7 +339,7 @@ export async function dismissUnattributedMachineTime(
         error: "Machine time not found, or the machine is still running"
       };
     }
-    return { data: null, error: null } as Result<null>;
+    return { data: null, error: null };
   } catch (error) {
     return fail(error);
   }

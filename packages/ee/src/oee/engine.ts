@@ -6,8 +6,20 @@ import type { MachineState } from "./types";
 
 /**
  * The attribution engine: which job operation gets a device's run time.
- * Pure — no database, no env — so it imports nothing but types. The spec is
- * `.ai/specs/2026-10-12-oee-provider-integration.md` → "Attribution rules".
+ * Pure — no database, no env — so it imports nothing but types. The rules are
+ * in `.claude/rules/oee-provider.md` → "Attribution rules".
+ *
+ * The sensor decides WHETHER the machine ran. The owner of each moment of a
+ * run decides WHO gets it:
+ *
+ * - a moment while maintenance blocks the work center → the queue;
+ * - a moment after an operator press in the same run → the queue (the press
+ *   stopped the operator's time, not the machine);
+ * - else the operation loaded at that moment, if it can still take time;
+ * - else the queue.
+ *
+ * The facts give the same owners whatever order they arrive in. Time that a
+ * Machine event or an unattributed row already holds is never recorded again.
  *
  * Instants are compared with `Date.parse`: they are absolute UTC instants,
  * the narrow exception in `.claude/rules/date-handling.md`.
@@ -18,14 +30,24 @@ export type StoredStateChange = { changedAt: string; state: MachineState };
 /**
  * One load of an operation on the work center (`workCenterLoad`): from
  * `from` until `to` (null while it is still loaded). `assignable` is false
- * once the operation is Done or Canceled or its job is locked: time then goes
- * to the queue.
+ * once the operation is Done or Canceled or its job is locked.
  */
 export type LoadPeriod = {
   jobOperationId: string;
   from: string;
   to: string | null;
   assignable: boolean;
+};
+
+/** A period maintenance blocks the work center (`to` null while it does). */
+export type BlockPeriod = { from: string; to: string | null };
+
+/** Time a Machine event or an unattributed row already holds. */
+export type RecordedInterval = {
+  id: string;
+  kind: "event" | "unattributed";
+  startTime: string;
+  endTime: string | null;
 };
 
 export type PlanMachineTimeInput = {
@@ -35,23 +57,25 @@ export type PlanMachineTimeInput = {
   mappedAt: string;
   currentState: MachineState | null;
   currentStateAt: string | null;
+  /** The latest operator press. */
   lastManualChangeAt: string | null;
+  /** The earliest press since the last sync, or null when there was none. */
+  firstUnplannedPressAt: string | null;
   /** The work center's loads that may overlap the time planned. */
   loads: LoadPeriod[];
-  /**
-   * When maintenance began blocking the work center, or null when nothing
-   * blocks it. Run time from then on is unattributed, never the job's.
-   */
-  blockedSince: string | null;
-  openMachineEvent: { id: string; startTime: string } | null;
+  /** The work center's maintenance blocks that may overlap the time planned. */
+  blocks: BlockPeriod[];
+  /** The newest open Machine event; `system` when the sync created it. */
+  openMachineEvent: {
+    id: string;
+    jobOperationId: string;
+    startTime: string;
+    system: boolean;
+  } | null;
   openUnattributed: { id: string; startTime: string } | null;
   lastMachineEventEndTime: string | null;
-  /**
-   * Machine events and unattributed rows on the work center that may overlap
-   * the time around the last press (`endTime` null while open). Time they
-   * already hold is never recorded twice.
-   */
-  recordedIntervals: { startTime: string; endTime: string | null }[];
+  /** Machine events and unattributed rows around the presses. */
+  recordedIntervals: RecordedInterval[];
   /** Stored changes after `appliedThrough`, ascending by `changedAt`. */
   changes: StoredStateChange[];
 };
@@ -65,7 +89,14 @@ export type MachineTimeWrite =
     }
   | { kind: "closeMachineEvent"; productionEventId: string; endTime: string }
   | { kind: "insertUnattributed"; startTime: string; endTime: string | null }
-  | { kind: "closeUnattributed"; unattributedId: string; endTime: string };
+  | { kind: "closeUnattributed"; unattributedId: string; endTime: string }
+  | {
+      kind: "updateUnattributed";
+      unattributedId: string;
+      startTime: string;
+      endTime: string;
+    }
+  | { kind: "deleteUnattributed"; unattributedId: string };
 
 export type PlanMachineTimeResult = {
   writes: MachineTimeWrite[];
@@ -75,23 +106,36 @@ export type PlanMachineTimeResult = {
   appliedThrough: string | null;
 };
 
-/** An open interval this run found (`existing`, closed by id) or opened (`new`). */
-type EventSlot =
-  | { kind: "existing"; id: string; startTime: string }
-  | { kind: "new"; jobOperationId: string; startTime: string };
-type UnattributedSlot =
-  | { kind: "existing"; id: string; startTime: string }
-  | { kind: "new"; startTime: string };
+type Interval = { startTime: string; endTime: string };
+
+/**
+ * An open interval: an event or a queue row this run found (`id` set) or
+ * opened. `owner` is the operation, or null for the queue; `system` is false
+ * only for an operator's event.
+ */
+type Slot = {
+  id: string | null;
+  owner: string | null;
+  startTime: string;
+  system: boolean;
+};
 
 const at = (iso: string) => Date.parse(iso);
+
+const contains = (
+  period: { from: string; to: string | null },
+  instant: string
+) =>
+  at(period.from) <= at(instant) &&
+  (period.to === null || at(instant) < at(period.to));
 
 /** The parts of `[start, end)` that no recorded interval holds. */
 function unrecordedParts(
   start: string,
   end: string,
-  recorded: PlanMachineTimeInput["recordedIntervals"]
-) {
-  const parts: { startTime: string; endTime: string }[] = [];
+  recorded: { startTime: string; endTime: string | null }[]
+): Interval[] {
+  const parts: Interval[] = [];
   let cursor = start;
   const sorted = [...recorded].sort(
     (a, b) => at(a.startTime) - at(b.startTime)
@@ -112,243 +156,324 @@ function unrecordedParts(
   return parts;
 }
 
+/** `interval` less `cut`: zero, one or two intervals. */
+function subtract(interval: Interval, cut: Interval): Interval[] {
+  return [
+    { startTime: interval.startTime, endTime: cut.startTime },
+    { startTime: cut.endTime, endTime: interval.endTime }
+  ]
+    .map((part) => ({
+      startTime:
+        at(part.startTime) < at(interval.startTime)
+          ? interval.startTime
+          : part.startTime,
+      endTime:
+        at(part.endTime) > at(interval.endTime)
+          ? interval.endTime
+          : part.endTime
+    }))
+    .filter((part) => at(part.endTime) > at(part.startTime));
+}
+
 export function planMachineTime(
   input: PlanMachineTimeInput
 ): PlanMachineTimeResult {
   const writes: MachineTimeWrite[] = [];
   const minimumMs = input.minimumStateSeconds * 1000;
-  const pressedAt =
-    input.lastManualChangeAt === null ? null : at(input.lastManualChangeAt);
+  const lastPress = input.lastManualChangeAt;
+  const presses = [input.firstUnplannedPressAt, lastPress].filter(
+    (press): press is string => press !== null
+  );
+  const recorded = [...input.recordedIntervals];
 
   let state = input.currentState;
   let stateAt = input.currentStateAt;
   let appliedThrough: string | null = null;
-  let openEvent: EventSlot | null = input.openMachineEvent
-    ? {
-        kind: "existing",
-        id: input.openMachineEvent.id,
-        startTime: input.openMachineEvent.startTime
-      }
-    : null;
-  let openUnattributed: UnattributedSlot | null = input.openUnattributed
-    ? {
-        kind: "existing",
-        id: input.openUnattributed.id,
-        startTime: input.openUnattributed.startTime
-      }
-    : null;
-  const blockedAt = input.blockedSince === null ? null : at(input.blockedSince);
 
-  // The operation that takes running time starting at `at`: the one loaded
-  // then (not now), if it can still take time and maintenance did not block
-  // the work center by then. Null means the queue.
-  const ownerAt = (instant: string) => {
-    if (blockedAt !== null && at(instant) >= blockedAt) return null;
-    const load = input.loads.find(
-      (period) =>
-        at(period.from) <= at(instant) &&
-        (period.to === null || at(instant) < at(period.to))
+  const slots: Slot[] = [];
+  if (input.openMachineEvent) {
+    slots.push({
+      id: input.openMachineEvent.id,
+      owner: input.openMachineEvent.jobOperationId,
+      startTime: input.openMachineEvent.startTime,
+      system: input.openMachineEvent.system
+    });
+  }
+  if (input.openUnattributed) {
+    slots.push({
+      id: input.openUnattributed.id,
+      owner: null,
+      startTime: input.openUnattributed.startTime,
+      system: true
+    });
+  }
+
+  // ── Owners ──────────────────────────────────────────────────────────────
+  const blocked = (instant: string) =>
+    input.blocks.some((block) => contains(block, instant));
+  const pressedInRun = (instant: string, runStart: string) =>
+    presses.some(
+      (press) => at(runStart) < at(press) && at(press) <= at(instant)
     );
+  const ownerAt = (instant: string, runStart: string) => {
+    if (blocked(instant) || pressedInRun(instant, runStart)) return null;
+    const load = input.loads.find((period) => contains(period, instant));
     return load?.assignable ? load.jobOperationId : null;
   };
+  // Where an owner can change: a load or a block begins or ends, or a press.
+  const edges = [
+    ...input.loads.flatMap((load) => [load.from, load.to]),
+    ...input.blocks.flatMap((block) => [block.from, block.to]),
+    ...presses
+  ]
+    .filter((edge): edge is string => edge !== null)
+    .sort((a, b) => at(a) - at(b));
+  const edgesWithin = (start: string, end: string) =>
+    edges.filter((edge) => at(edge) > at(start) && at(edge) < at(end));
 
-  const openRunning = (start: string) => {
-    if (openEvent || openUnattributed) return;
-    const owner = ownerAt(start);
+  // ── Writes ──────────────────────────────────────────────────────────────
+  // Closed time goes to its owner. Queue time shorter than the minimum is
+  // dropped, like a short state.
+  const writeClosed = (
+    { startTime, endTime }: Interval,
+    owner: string | null
+  ) => {
+    const interval = { startTime, endTime };
     if (owner) {
-      openEvent = { kind: "new", jobOperationId: owner, startTime: start };
+      writes.push({
+        kind: "insertMachineEvent",
+        jobOperationId: owner,
+        ...interval
+      });
+    } else if (at(interval.endTime) - at(interval.startTime) >= minimumMs) {
+      writes.push({ kind: "insertUnattributed", ...interval });
     } else {
-      openUnattributed = { kind: "new", startTime: start };
+      return;
+    }
+    recorded.push({
+      id: "",
+      kind: owner ? "event" : "unattributed",
+      ...interval
+    });
+  };
+
+  // A slot that ends at or before its start writes nothing new, and an
+  // existing one closes at its own start.
+  const closeSlot = (slot: Slot, end: string) => {
+    const ends = at(end) > at(slot.startTime);
+    if (slot.id === null) {
+      if (ends)
+        writeClosed({ startTime: slot.startTime, endTime: end }, slot.owner);
+      return;
+    }
+    const endTime = ends ? end : slot.startTime;
+    writes.push(
+      slot.owner === null
+        ? { kind: "closeUnattributed", unattributedId: slot.id, endTime }
+        : { kind: "closeMachineEvent", productionEventId: slot.id, endTime }
+    );
+    // The interval it held now ends: replace the open one read from the
+    // database, if there is one.
+    const held = recorded.findIndex((interval) => interval.id === slot.id);
+    if (held >= 0) recorded.splice(held, 1);
+    recorded.push({
+      id: slot.id,
+      kind: slot.owner === null ? "unattributed" : "event",
+      startTime: slot.startTime,
+      endTime
+    });
+  };
+
+  const closeSlots = (end: string, which: (slot: Slot) => boolean) => {
+    for (const slot of slots.filter(which)) {
+      slots.splice(slots.indexOf(slot), 1);
+      closeSlot(slot, end);
     }
   };
 
-  // Closed time no slot holds, written where it belongs. `byLoad` splits it
-  // where a load or the block begins or ends and gives each piece to its
-  // owner; otherwise all of it is unattributed. Unattributed time shorter
-  // than the minimum is dropped, like a short state.
-  const recordParts = (start: string, end: string, byLoad: boolean) => {
-    for (const part of unrecordedParts(start, end, input.recordedIntervals)) {
-      const edges = byLoad
-        ? [
-            ...input.loads.flatMap((load) =>
-              load.to === null ? [load.from] : [load.from, load.to]
-            ),
-            ...(input.blockedSince ? [input.blockedSince] : [])
-          ].filter(
-            (edge) =>
-              at(edge) > at(part.startTime) && at(edge) < at(part.endTime)
-          )
-        : [];
+  // The pieces of `[start, end)` that nothing holds, split where the owner
+  // changes, each written to its owner. A piece that reaches `now` while the
+  // machine runs opens instead (a queue piece once it has lasted the
+  // minimum, so a machine winding down after a Pause records nothing).
+  const recordRun = (start: string, end: string, runStart: string) => {
+    for (const part of unrecordedParts(start, end, recorded)) {
       const bounds = [
         part.startTime,
-        ...edges.sort((a, b) => at(a) - at(b)),
+        ...edgesWithin(part.startTime, part.endTime),
         part.endTime
       ];
-      // Adjacent pieces with one owner are one piece.
-      const pieces: {
-        owner: string | null;
-        startTime: string;
-        endTime: string;
-      }[] = [];
+      const pieces: (Interval & { owner: string | null })[] = [];
       for (const [i, startTime] of bounds.slice(0, -1).entries()) {
         const endTime = bounds[i + 1] ?? startTime;
         if (at(endTime) <= at(startTime)) continue;
-        const owner = byLoad ? ownerAt(startTime) : null;
+        const owner = ownerAt(startTime, runStart);
         const last = pieces.at(-1);
         if (last && last.owner === owner) last.endTime = endTime;
         else pieces.push({ owner, startTime, endTime });
       }
       for (const piece of pieces) {
-        if (piece.owner) {
-          writes.push({
-            kind: "insertMachineEvent",
-            jobOperationId: piece.owner,
+        if (piece.endTime !== input.now || state !== "Running") {
+          writeClosed(piece, piece.owner);
+        } else if (
+          piece.owner ||
+          at(input.now) - at(piece.startTime) >= minimumMs
+        ) {
+          slots.push({
+            id: null,
+            owner: piece.owner,
             startTime: piece.startTime,
-            endTime: piece.endTime
-          });
-        } else if (at(piece.endTime) - at(piece.startTime) >= minimumMs) {
-          writes.push({
-            kind: "insertUnattributed",
-            startTime: piece.startTime,
-            endTime: piece.endTime
+            system: true
           });
         }
       }
     }
   };
 
-  // A close always clears the slot. An end at or before the start drops a slot
-  // this run opened, and closes an existing one at its own start.
-  const closeEvent = (end: string) => {
-    const slot = openEvent;
-    if (!slot) return;
-    openEvent = null;
-    const ends = at(end) > at(slot.startTime);
-    if (slot.kind === "existing") {
-      writes.push({
-        kind: "closeMachineEvent",
-        productionEventId: slot.id,
-        endTime: ends ? end : slot.startTime
-      });
-    } else if (ends) {
-      writes.push({
-        kind: "insertMachineEvent",
-        jobOperationId: slot.jobOperationId,
-        startTime: slot.startTime,
-        endTime: end
-      });
+  // Open slots follow their owner up to `until`: where the owner changes, a
+  // slot closes and the new owner records the rest. An operator's event
+  // follows only maintenance: a block stops it, a load change does not.
+  const follow = (until: string) => {
+    const runStart = stateAt ?? until;
+    for (const slot of [...slots]) {
+      const change = slot.system
+        ? edgesWithin(slot.startTime, until).find(
+            (edge) => ownerAt(edge, runStart) !== slot.owner
+          )
+        : input.blocks
+            .map((block) => block.from)
+            .find(
+              (from) => at(from) > at(slot.startTime) && at(from) < at(until)
+            );
+      if (!change) continue;
+      slots.splice(slots.indexOf(slot), 1);
+      closeSlot(slot, change);
+      recordRun(change, until, runStart);
     }
   };
 
-  const closeUnattributed = (end: string) => {
-    const slot = openUnattributed;
-    if (!slot) return;
-    openUnattributed = null;
-    const ends = at(end) > at(slot.startTime);
-    if (slot.kind === "existing") {
+  // ── Late stops trim the queue ──────────────────────────────────────────
+  // A stop reported only after a press: a queue row that the press closed
+  // may hold time the machine was idle. Queue rows are not posted, so they
+  // are cut to the running time. Machine events are never trimmed.
+  const trimIdle = (idle: Interval) => {
+    for (const interval of [...recorded]) {
+      if (
+        interval.kind !== "unattributed" ||
+        !interval.id ||
+        interval.endTime === null ||
+        at(idle.endTime) <= at(interval.startTime) ||
+        at(idle.startTime) >= at(interval.endTime)
+      ) {
+        continue;
+      }
+      const row = { startTime: interval.startTime, endTime: interval.endTime };
+      const [first, second] = subtract(row, idle);
+      recorded.splice(recorded.indexOf(interval), 1);
+      if (!first) {
+        writes.push({
+          kind: "deleteUnattributed",
+          unattributedId: interval.id
+        });
+        continue;
+      }
       writes.push({
-        kind: "closeUnattributed",
-        unattributedId: slot.id,
-        endTime: ends ? end : slot.startTime
+        kind: "updateUnattributed",
+        unattributedId: interval.id,
+        ...first
       });
-    } else if (ends) {
-      writes.push({
-        kind: "insertUnattributed",
-        startTime: slot.startTime,
-        endTime: end
-      });
+      recorded.push({ ...interval, ...first });
+      if (second) {
+        writes.push({ kind: "insertUnattributed", ...second });
+        recorded.push({ id: "", kind: "unattributed", ...second });
+      }
     }
   };
 
-  const closeAll = (end: string) => {
-    closeEvent(end);
-    closeUnattributed(end);
-  };
-
-  // A slot this run opened and did not close is inserted open.
-  const insertStillOpen = () => {
-    if (openEvent?.kind === "new") {
-      writes.push({
-        kind: "insertMachineEvent",
-        jobOperationId: openEvent.jobOperationId,
-        startTime: openEvent.startTime,
-        endTime: null
-      });
-    }
-    if (openUnattributed?.kind === "new") {
-      writes.push({
-        kind: "insertUnattributed",
-        startTime: openUnattributed.startTime,
-        endTime: null
-      });
-    }
-  };
-
-  // Maintenance begins: an event that started before the block stops at it,
-  // and a running machine carries on as unattributed time. An operator press
-  // after the block already decided ("latest change wins").
-  let blockPending =
-    blockedAt !== null && (pressedAt === null || pressedAt < blockedAt);
-  const enterBlock = () => {
-    if (!blockPending || input.blockedSince === null) return;
-    blockPending = false;
-    if (!openEvent || at(openEvent.startTime) >= (blockedAt ?? 0)) return;
-    closeEvent(input.blockedSince);
-    if (state === "Running") openRunning(input.blockedSince);
-  };
-
-  // A run the provider reported only after an operator press: the machine
-  // ran before the press, and nothing recorded it (the press ended nothing).
-  // The time up to the press goes to the operation loaded then, or to the
-  // queue, less what an event or a row already holds. That is what an
-  // earlier report would have recorded, so the order of arrival does not
-  // change the result.
-  let unrecordedFrom: string | null = null;
-  const recordUnrecorded = (end: string) => {
-    const start = unrecordedFrom;
-    if (start === null) return;
-    unrecordedFrom = null;
-    recordParts(start, end, true);
-  };
-
-  // A machine already running at the press and still running after it: the
-  // press (a Pause) stopped the operator's time, not the machine. The time
-  // after the press that nothing holds is unattributed, never the loaded
-  // operation's: the operator said to stop charging it.
-  let runningPastPressFrom: string | null = null;
+  // ── The time around the presses ────────────────────────────────────────
+  // Time before the last press that no sync planned yet: from the earliest
+  // unplanned press when the machine already ran then, or from a late
+  // Running change. It ends at a late stop, or at the last press.
+  let unplanned: { from: string; runStart: string } | null =
+    state === "Running" &&
+    stateAt !== null &&
+    input.firstUnplannedPressAt !== null &&
+    at(stateAt) <= at(input.firstUnplannedPressAt)
+      ? { from: input.firstUnplannedPressAt, runStart: stateAt }
+      : null;
+  let idleFrom: string | null = null;
+  // A machine running at the last press and still running after it.
+  // (Typed by a cast: only the closures below assign it, which TypeScript's
+  // narrowing cannot see.)
+  let pastPress = null as { from: string; runStart: string } | null;
   let pressCrossed = false;
-  const crossPress = () => {
-    if (pressCrossed || input.lastManualChangeAt === null) return;
+
+  // Leaving the time before the last press. `end` is a stop still pending
+  // before the press: the run may end there, so nothing past it is recorded
+  // until it settles.
+  const crossPress = (end: string | null) => {
+    if (pressCrossed || lastPress === null) return;
     pressCrossed = true;
-    recordUnrecorded(input.lastManualChangeAt);
+    if (unplanned) {
+      recordRun(unplanned.from, end ?? lastPress, unplanned.runStart);
+    }
+    unplanned = null;
+    if (idleFrom !== null)
+      trimIdle({ startTime: idleFrom, endTime: lastPress });
+    idleFrom = null;
     if (
+      end === null &&
       state === "Running" &&
       stateAt !== null &&
-      at(stateAt) <= (pressedAt ?? 0)
+      at(stateAt) <= at(lastPress)
     ) {
-      runningPastPressFrom = input.lastManualChangeAt;
+      pastPress = { from: lastPress, runStart: stateAt };
     }
   };
 
   const apply = (next: MachineState, changedAt: string) => {
     if (next === state) return;
-    // Latest change wins: an operator press after this change already decided.
-    if (pressedAt !== null && at(changedAt) <= pressedAt) {
+    // A change at or before the last press: the press decided what came
+    // after it, so this fills only the time the press could not see.
+    if (lastPress !== null && at(changedAt) <= at(lastPress)) {
+      if (next === "Running") {
+        if (idleFrom !== null) {
+          trimIdle({ startTime: idleFrom, endTime: changedAt });
+          idleFrom = null;
+        }
+        unplanned = { from: changedAt, runStart: changedAt };
+      } else {
+        if (unplanned) {
+          recordRun(unplanned.from, changedAt, unplanned.runStart);
+          unplanned = null;
+        }
+        idleFrom = changedAt;
+      }
       state = next;
       stateAt = changedAt;
-      if (next === "Running") unrecordedFrom = changedAt;
-      else recordUnrecorded(changedAt);
       return;
     }
-    crossPress();
-    if (runningPastPressFrom !== null && next !== "Running") {
-      recordParts(runningPastPressFrom, changedAt, false);
-      runningPastPressFrom = null;
+    crossPress(null);
+    if (next === "Running") {
+      state = next;
+      stateAt = changedAt;
+      if (slots.length === 0) {
+        slots.push({
+          id: null,
+          owner: ownerAt(changedAt, changedAt),
+          startTime: changedAt,
+          system: true
+        });
+      }
+      return;
     }
+    follow(changedAt);
+    if (pastPress) {
+      recordRun(pastPress.from, changedAt, pastPress.runStart);
+      pastPress = null;
+    }
+    closeSlots(changedAt, () => true);
     state = next;
     stateAt = changedAt;
-    if (next === "Running") openRunning(changedAt);
-    else closeAll(changedAt);
   };
 
   let changes = input.changes;
@@ -379,7 +504,6 @@ export function planMachineTime(
   // stays pending until it has lasted the minimum.
   let pending: StoredStateChange | null = null;
   for (const [i, run] of runs.entries()) {
-    if (blockedAt !== null && at(run.changedAt) >= blockedAt) enterBlock();
     const next = runs[i + 1];
     const end = next ? next.changedAt : input.now;
     if (at(end) - at(run.changedAt) < minimumMs) {
@@ -394,52 +518,59 @@ export function planMachineTime(
     appliedThrough = run.through;
   }
 
-  if (blockedAt !== null && blockedAt <= at(input.now)) enterBlock();
-
-  // The run before the press ends at the press, or at a change still pending
-  // debounce before it: that change may yet stop the machine earlier.
-  if (input.lastManualChangeAt !== null) {
-    recordUnrecorded(
-      pending && at(pending.changedAt) < at(input.lastManualChangeAt)
+  if (lastPress !== null) {
+    crossPress(
+      pending && at(pending.changedAt) <= at(lastPress)
         ? pending.changedAt
-        : input.lastManualChangeAt
+        : null
     );
-    crossPress();
   }
 
-  // Still running past the press: once the machine has run the minimum past
-  // the press, the time nothing holds opens as unattributed time. A machine
-  // that stops sooner, as it winds down after a Pause, records nothing.
-  if (runningPastPressFrom !== null && !openEvent && !openUnattributed) {
-    for (const part of unrecordedParts(
-      runningPastPressFrom,
-      input.now,
-      input.recordedIntervals
-    )) {
-      if (at(part.endTime) - at(part.startTime) < minimumMs) continue;
-      // The part that reaches now is still running: it opens.
-      if (part.endTime === input.now) {
-        openUnattributed = { kind: "new", startTime: part.startTime };
-      } else {
-        writes.push({ kind: "insertUnattributed", ...part });
-      }
+  if (state === "Running") {
+    // Still running past the press: the time after it that nothing holds.
+    if (pastPress && slots.length === 0) {
+      recordRun(pastPress.from, input.now, pastPress.runStart);
     }
+    // Steady state: the machine runs, nothing holds its time, and no press
+    // decided it — an operation went Done mid-run, or maintenance or End
+    // Shift closed the event.
+    if (
+      slots.length === 0 &&
+      stateAt !== null &&
+      (lastPress === null || at(stateAt) > at(lastPress))
+    ) {
+      const lastEnd = input.lastMachineEventEndTime;
+      recordRun(
+        lastEnd && at(lastEnd) > at(stateAt) ? lastEnd : stateAt,
+        input.now,
+        stateAt
+      );
+    }
+    follow(input.now);
+  } else if (stateAt !== null) {
+    // Stopped by a late change before the press: the engine's own open time
+    // ends at the stop (or at its start, when it opened after the stop).
+    closeSlots(stateAt, (slot) => slot.system);
   }
 
-  // Steady state: the machine runs and nothing holds its time — an operation
-  // went Done mid-run, or maintenance / End Shift closed the event.
-  if (
-    state === "Running" &&
-    stateAt !== null &&
-    (pressedAt === null || at(stateAt) > pressedAt) &&
-    !openEvent &&
-    !openUnattributed
-  ) {
-    const lastEnd = input.lastMachineEventEndTime;
-    openRunning(lastEnd && at(lastEnd) > at(stateAt) ? lastEnd : stateAt);
+  // A slot this run opened and did not close is inserted open.
+  for (const slot of slots) {
+    if (slot.id !== null) continue;
+    writes.push(
+      slot.owner === null
+        ? {
+            kind: "insertUnattributed",
+            startTime: slot.startTime,
+            endTime: null
+          }
+        : {
+            kind: "insertMachineEvent",
+            jobOperationId: slot.owner,
+            startTime: slot.startTime,
+            endTime: null
+          }
+    );
   }
-
-  insertStillOpen();
 
   return {
     writes,

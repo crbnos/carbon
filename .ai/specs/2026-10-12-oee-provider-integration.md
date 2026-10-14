@@ -4,22 +4,19 @@
 > Author: barbinbrad
 > Date: 2026-10-12
 
-> **Where the build differs from this spec (the code wins; `.claude/rules/oee-provider.md`):**
-> - Unattributed machine time is a review queue with no status: assigning (a
->   Machine event) or dismissing deletes the row, and rows are purged 30 days
->   after the machine stopped. The drawer walks the queue one row at a time
->   with suggestion cards for what ran on the work center that day. There is
->   no Assigned / Dismissed state, no dismiss reason and no Reopen.
-> - The MES operation page shows no device badge (the Machine toggle's dot
->   already does); only the work center display shows the device state.
-> - Maintenance blocks from `blockedSince`: a Down dispatch from when it is
->   reported, a Planned one once In Progress. An event running when the block
->   begins stops there and the run continues as unattributed time.
-> - `workCenter."loadedJobOperationId"` has no foreign key; the unload
->   interceptor also clears it when the operation is deleted.
-> - The OEE tables are read-only through the API, a device maps only to its
->   own company's work center (composite FK), and Sense staging (plain HTTP)
->   is refused in production.
+> **Where the build differs from the first draft (the code wins; `.claude/rules/oee-provider.md`):**
+> - Unattributed machine time is a review queue with no status. Assign and
+>   dismiss delete the row. There is no dismiss reason and no Reopen.
+> - The MES operation page shows no device badge. Only the work center
+>   display shows the device state.
+> - The loaded operation is a history table, `workCenterLoad`. The open row
+>   is the load. `workCenter` has no pointer column.
+> - The engine gives each moment of a run to an owner. Open sensor time
+>   follows its owner when a load, a block or a press changes it.
+> - The MES press rules apply on every work center, with or without a device.
+> - The OEE tables are read-only through the API. A device maps only to its
+>   own company's work center (composite FK). Carbon refuses Sense staging
+>   (plain HTTP) in production.
 
 ## TLDR
 
@@ -54,13 +51,12 @@ sequenceDiagram
     J->>S: GET device events since cursor
     S-->>J: Active at 10:00
     J->>D: Open Machine event on op A
-    O->>D: Press Machine Stop at 10:30
+    O->>D: Press Machine Pause at 10:30 (ends the event)
     S-->>J: Idle at 11:00, Active at 11:05
-    J->>D: Close nothing, open new event on A
+    J->>D: Queue 10:30 to 11:00, open new event on A at 11:05
     D->>D: Op A Done unloads A
-    S-->>J: Still Active, nothing loaded
-    J->>D: Open unattributed machine time
-    V->>D: Assign it to op B
+    J->>D: End A's event at the unload, queue the rest of the run
+    V->>D: Assign the queued time to op B
 ```
 
 ## Problem Statement
@@ -186,71 +182,147 @@ copies the Rillet descriptor. It has 3 settings:
 ### 3. Device mapping
 
 The drawer of each OEE integration gets a **Devices** tab. The loader calls
-`listDevices()`. The tab shows one row per device:
+`listDevices()` and reads the mappings in parallel. Redis caches the device
+list for 60 seconds. Each integration save clears the cache. The tab shows one
+row per device:
 
 | Column | Source |
 |---|---|
 | Device | `name`, then manufacturer, model and machine type as muted text |
 | Site | `siteName` |
 | Calibrated | `calibrated` as a badge |
-| Work center | a `Combobox` of active work centers |
+| Work center | a `Combobox` of active work centers, plus a mapped work center that is inactive |
 
 Rules:
 
 1. The user picks a work center and saves the row. The action upserts a
-   `workCenterDevice` row.
-2. If the work center already has a device from any OEE provider, the action
-   refuses. The message names the other device and provider.
-3. If the device's site timezone differs from the work center's
-   `location.timezone`, the row shows a warning icon. The tooltip names both
-   timezones. Carbon uses the location timezone for all local time.
-4. The user clears the combobox to unmap. The action deletes the
-   `workCenterDevice` row. Rows in `machineStateChange` and
-   `unattributedMachineTime` keep their `workCenterId`.
-5. A new mapping starts its cursor at the moment of the save. Carbon imports
-   no history.
+   `workCenterDevice` row. It stores the name, site and site timezone of the
+   device in the current provider list, not the form's values.
+2. If the device is not in the current provider list, the action refuses.
+3. If the work center already has a device from any OEE provider, the action
+   refuses. The message names the other device and provider. The combobox
+   leaves out the work centers that another device holds.
+4. If the device's site timezone differs from the work center's location
+   timezone, the row shows a warning icon. The tooltip names both timezones.
+   A location with no timezone (null or `''`) uses the company's. Carbon uses
+   the location timezone for all local time.
+5. The user clears the combobox to unmap. The action ends the time that the
+   device's sensor opened on the work center (`endSensorMachineTime`). Then it
+   deletes the `workCenterDevice` row. A remap does the same on the old work
+   center and inserts a new row.
+6. A new mapping charges no time before the moment of the save. The first
+   sync reads the 24 hours before the mapping only to learn the starting
+   state.
 
 ### 4. The loaded operation (community)
 
-`workCenter` gets 2 columns: `loadedJobOperationId` and `loadedAt`. The
-loaded operation is the operation that is physically on the machine. It does
-not depend on a sensor, so it is AGPL code.
+The table `workCenterLoad` holds the loads of each work center. Each row has
+`jobOperationId`, `loadedAt` and `unloadedAt`. The row with `unloadedAt` null
+is the loaded operation. The loaded operation is the operation that is
+physically on the machine. It does not depend on a sensor, so it is AGPL code.
+It exists on every work center, with or without a device.
+
+Two interceptors write the table. The API can only read it.
 
 1. A writer inserts a `productionEvent` row with `endTime IS NULL` and a
-   `workCenterId`. Then a sync interceptor sets that work center's
-   `loadedJobOperationId` to the row's `jobOperationId`. It also sets
-   `loadedAt` to the row's `startTime`. Setup, Labor and Machine starts all
-   load. So does the QR start (`/x/start/:operationId`).
-2. If `NEW.startTime < loadedAt`, the interceptor changes nothing. A row
-   inserted with an `endTime` (an ERP entry or an assigned interval) never
-   loads.
-3. When a `jobOperation` status changes to `Done` or `Canceled`, a sync
-   interceptor clears `loadedJobOperationId` and `loadedAt` on each work
-   center that points at it.
-4. Stopping a timer does not unload the operation. That is what lets an
+   `workCenterId`. Then `sync_load_work_center_operation` loads the row's
+   operation. Setup, Labor and Machine starts all load. So does the QR start
+   (`/x/start/:operationId`).
+2. The interceptor takes a transaction advisory lock for the work center.
+   Loads on one work center run one at a time.
+3. If the event's `startTime` is earlier than the newest `loadedAt` or
+   `unloadedAt` of the work center, the interceptor writes nothing. A late
+   event never undoes a later load or unload.
+4. If the operation is already loaded, the interceptor writes nothing.
+5. Else the interceptor ends the open row at `startTime`. Then it inserts a
+   row with `loadedAt` = `startTime`.
+6. A row inserted with an `endTime` (an ERP entry or an assigned interval)
+   never loads. An event loads only its own company's operation onto its own
+   company's work center.
+7. `sync_unload_work_center_operation` ends the operation's open row. It does
+   this when the status changes to `Done` or `Canceled`, when the operation
+   is deleted, and when it moves to another work center. It sets
+   `unloadedAt` = `GREATEST(NOW(), loadedAt)`.
+8. Stopping a timer does not unload the operation. That is what lets an
    unattended run reach the job.
 
+The interceptor has no status rule. A starting event reopens a Done operation
+first (`sync_set_job_operation_in_progress`, a BEFORE interceptor).
+
+A CHECK refuses `unloadedAt < loadedAt`. A partial unique index allows one
+open row per work center. `jobOperationId` has no foreign key. A second
+relationship between `jobOperation` and `workCenter` makes PostgREST refuse
+the existing embeds between the two tables (PGRST201).
+
+The sync reads this history. A run that the provider reports late goes to
+the operation that was loaded when the machine ran.
+
 The MES work-center display (`/display/:workCenterId/work`) shows the loaded
-operation. If the work center has a `workCenterDevice`, it also shows the
-machine state.
+operation. It reads `loadedJobOperationId` from the view
+`workCentersWithBlockingStatus`, which takes it from the open row. If the work
+center has a `workCenterDevice`, the display also shows the machine state.
+
+pg_cron deletes a row 7 days after its `unloadedAt`. It keeps the row longer
+while a device on the work center has not planned past the unload
+(`appliedThrough` is null or earlier than `unloadedAt`). It never deletes an
+open row.
 
 ### 5. Attribution rules
 
 The engine is a pure function, `planMachineTime`, in
-`packages/ee/src/oee/engine.ts`. It takes the device's current state, its
-`lastManualChangeAt`, the loaded operation, the work center's blocked flag,
-the open Machine event and the open unattributed row. It also takes the new
-state changes. It returns a list of writes. The sync job applies them.
+`packages/ee/src/oee/engine.ts`. It returns a list of writes. The sync job
+applies them.
+
+**Inputs.**
+
+| Input | Meaning |
+|---|---|
+| `loads` | The work center's loads in the planned window. Each has `jobOperationId`, `from`, `to` and `assignable`. |
+| `blocks` | The periods when maintenance blocks the work center (`from`, `to`). |
+| `lastManualChangeAt` | The latest operator press. |
+| `firstUnplannedPressAt` | The earliest press since the last sync (`workCenterDevice.unplannedPressAt`). |
+| `openMachineEvent` | The newest open Machine event on the work center: `id`, `jobOperationId`, `startTime`, and `system` (true when the sync created it). |
+| `openUnattributed` | The open unattributed row. |
+| `lastMachineEventEndTime` | The latest Machine `endTime` after `currentStateAt`. |
+| `recordedIntervals` | The Machine events and unattributed rows in the window: `id`, `kind`, `startTime`, `endTime`. |
+| `currentState`, `currentStateAt` | The applied state. |
+| `mappedAt`, `minimumStateSeconds`, `now` | The mapping time, the debounce and the clock. |
+| `changes` | The stored changes after `appliedThrough`, in time order. |
+
+`assignable` is false when the operation is Done or Canceled, when its job is
+locked (Completed, Closed or Cancelled), or when the operation no longer
+exists. `machineTimeRefusal` (`packages/ee/src/oee/assignable.ts`) holds this
+rule. The sync, the assign write and the ERP suggestion cards all use it.
+
+**The owner rule.** The sensor decides whether the machine ran. The owner of
+each moment of a run decides who gets the time:
+
+1. If maintenance blocks the work center at that moment, the owner is the
+   queue.
+2. If an operator pressed Machine after the run started, and at or before
+   that moment, the owner is the queue. The press stopped the operator's
+   time, not the machine.
+3. Else, if the operation loaded at that moment is `assignable`, the owner is
+   that operation.
+4. Else the owner is the queue.
+
+"The queue" is `unattributedMachineTime`. The owner changes only at an edge:
+a load begins or ends, a block begins or ends, or a press. The engine splits
+each stretch of run time at these edges and gives each piece to its owner. It
+never records time that a Machine event or an unattributed row already holds.
+So the same facts give the same result in any order of arrival.
+
+A closed piece for an operation becomes a Machine event with `employeeId` =
+null and `createdBy` = `system`. The engine drops a closed queue piece shorter
+than `minimumStateSeconds`. A piece that reaches the present while the
+machine runs stays open. A queue piece opens only after it lasts
+`minimumStateSeconds`.
 
 **Debounce.** The engine drops a state that lasts less than
-`minimumStateSeconds`. The previous state continues through it. The engine applies a state change
-only after the change has lasted `minimumStateSeconds`, or after the next
-change confirms it.
-
-**Inputs at the moment of the sync.** The engine uses the loaded operation
-and the blocked flag as they are when the sync runs. It does not rebuild their
-history. It charges a `Running` change to the loaded operation only when
-`loadedAt <= changedAt`. Otherwise the run is unattributed.
+`minimumStateSeconds`. The previous state continues through it. The engine
+applies a state change only after the change has lasted
+`minimumStateSeconds`, or after the next change confirms it. Repeated reports
+of one state count as one run.
 
 **Applied state.** `currentState` is the state the engine applied last.
 `currentStateAt` is the time that state began. `appliedThrough` is the
@@ -265,74 +337,122 @@ as the starting state, at the time of the mapping. So a machine that was
 already running when the user mapped it opens time from the mapping, never
 earlier.
 
-**Latest change wins.** Two inputs change machine time on a mapped work
-center: sensor state changes and operator presses of the MES Machine button.
-The engine orders all inputs by their timestamp. It ignores a sensor change
-that is older than `lastManualChangeAt`. Polling is late, so this
-guarantees that a press is never undone by an older sensor change.
+**State changes.** For each new state change, in time order:
 
-For each new state change, in time order:
+1. If the state does not change, skip it.
+2. If `changedAt <= lastManualChangeAt`, the provider reported the change
+   late. The press already decided the time after it. A late run is recorded
+   closed by the owner rule, up to the press or up to an earlier stop. A late
+   stop trims the queue (see "Time around a press").
+3. If the state is `Running` and a Machine event or an unattributed row is
+   open, do nothing.
+4. If the state is `Running`, open time for the owner at `changedAt`: a
+   Machine event on the loaded operation, or an unattributed row.
+5. If the state is `Idle`, `Down` or `Offline`, end the open Machine event and
+   the open unattributed row at `changedAt`.
 
-1. If `changedAt <= lastManualChangeAt`, skip it. Record it in
-   `machineStateChange` only.
-2. If the state is `Running` and an open Machine event exists on the work
-   center, do nothing.
-3. If the state is `Running`, the work center is not blocked, and an
-   operation is loaded, insert a Machine `productionEvent`. Use
-   `jobOperationId` = the loaded operation, `startTime` = `changedAt`,
-   `endTime` = null, `employeeId` = null and `createdBy` = `system`.
-4. If the state is `Running` and nothing is loaded, insert an
-   `unattributedMachineTime` row with `startTime` = `changedAt` and
-   `status` = `Open`.
-5. If the state is `Running` and the work center is blocked, do the same as
-   step 4. A blocked work center has an In Progress maintenance dispatch with
-   OEE impact Down or Planned (`workCentersWithBlockingStatus`). A
-   supervisor dismisses that time as maintenance.
-6. If the state is `Idle`, `Down` or `Offline`, set `endTime` = `changedAt` on
-   the open Machine event of the work center. Also set `endTime` = `changedAt`
-   on the open unattributed row.
+**Open time follows its owner.** An open sensor event or open unattributed
+row closes at the first edge where its owner changes. The new owner gets the
+rest of the run. Examples:
+
+- An operator starts Setup on operation B while a sensor event runs on A. The
+  next sync ends the event on A at B's `loadedAt`. It opens an event on B at
+  the same instant.
+- Maintenance ends while the machine runs. The open unattributed row ends,
+  and an event on the loaded operation opens.
+- Operation A goes Done while the machine runs. The unload ends A's load, so
+  A's event ends at the unload. The rest of the run goes to the queue.
+
+An operator's open Machine event follows only the start of a block. A load
+change does not move it.
+
+**Blocked work center.** A `Down` dispatch blocks the work center from its
+`createdAt` until it is Completed or Cancelled. A `Planned` dispatch blocks it
+from `actualStartTime` while it is In Progress. The view
+`workCentersWithBlockingStatus` counts In Progress dispatches only. The engine
+uses the broader periods, because the MES ends every event on the work center
+when a user creates a Down dispatch. A supervisor dismisses the queued time
+as maintenance.
 
 **Steady state.** After the changes, the engine checks one more case. The
-device is `Running`, `currentStateAt > lastManualChangeAt`, and the work
-center has no open Machine event and no open unattributed row. Then the
-engine opens time again. The start is the latest `endTime` of a Machine event
-on the work center, or `currentStateAt` when that is later. It applies steps 3
-to 5 to that start.
+device is `Running`, `currentStateAt > lastManualChangeAt`, and nothing is
+open. Then the engine records the run up to now, by the owner rule. The start
+is the latest Machine `endTime` after `currentStateAt`, or `currentStateAt`
+when that is later. This rule covers a Machine event that a maintenance
+dispatch or End Shift closed during a run.
 
-This rule covers an operation that went `Done` while the machine kept running.
-`sync_finish_job_operation` closes the event and unloads the operation. The
-rest of the run then becomes unattributed. The rule also covers a Machine
-event that a maintenance dispatch or End Shift closed during a run.
+**Time around a press.**
 
-**A load change during a run.** If an operator loads operation B while a
-sensor event runs on A, the event stays on A. The next `Running` change goes
-to B. A machine idles during setup, so the sensor normally closes A's event
-first.
+- **Running past a press.** The machine runs at a press and keeps running.
+  The time after the press goes to the queue. If the machine stops within
+  `minimumStateSeconds` of the press, the engine records nothing.
+- **Two presses between syncs.** The sync passes the earliest press since the
+  last sync. If the machine ran through it, the time between the presses that
+  nothing holds goes to the queue.
+- **A late stop.** A stop can arrive after a press and fall inside a queue
+  row that the press ended. The engine cuts the row to the time the machine
+  ran: it updates, splits or deletes the row. The engine never trims a
+  Machine event. Queue rows do not post, so a trim is safe.
 
-### 6. The MES Machine button on a mapped work center (community)
+**Short rows.** Each sync deletes the closed unattributed rows on its work
+center that are shorter than `minimumStateSeconds`.
+
+### 6. The MES Machine button (community)
 
 The Machine timer stays visible. It shows the open Machine event, as it does
 today (`useOperation` treats an open Machine event as active for every
-operator). A small badge next to it shows the device state from
-`workCenterDevice.currentState`.
+operator). The MES operation page shows no device badge. The work center
+display shows the device state.
 
-The button changes machine time, and it is an input of equal weight to the
-sensor:
+A machine has one machine time, and operators share it. The press rules apply
+on every work center, with or without a device:
 
-1. **Start** on operation C: end any open Machine event on the work center at
-   the press time. Insert a Machine event on C that starts at the press time.
-   The insert loads C. Set `workCenterDevice.lastManualChangeAt` to the press
-   time.
-2. **Stop**: end the open Machine event at the press time. Set
-   `lastManualChangeAt` to the press time. The operation stays loaded.
+1. **Start** on operation C: end every open Machine event on the work center
+   at the press time, from any operator or the sensor. Insert a Machine event
+   on C that starts at the press time. The insert loads C.
+2. **Pause**: end every open Machine event on the work center at the press
+   time. The operation stays loaded.
 
-Example: the machine is Active. The operator presses Stop at 10:03. Machine
-time stops at 10:03. It stays stopped until the sensor reports the next
-change from Idle to Active.
+A press does not end an event that starts after the press time. On a work
+center with a device, the press also does 2 things:
 
-The QR start with `type=Machine` follows rule 1. `x+/event.tsx` and
-`start.$operationId.tsx` apply these rules only when the work center has a
-`workCenterDevice` row. Other work centers behave as they do today.
+1. It ends the open unattributed row at the press time.
+2. It sets `lastManualChangeAt` to the later of its value and the press time.
+   It sets `unplannedPressAt` to the earlier of its value and the press time.
+   The sync clears `unplannedPressAt`.
+
+Example: the machine is Active. The operator presses Pause at 10:03. Machine
+time on the operation stops at 10:03. If the machine runs on, the time after
+10:03 goes to the queue until the machine stops.
+
+**Locks.** A press takes its locks in one order:
+
+1. The `workCenterDevice` row `FOR UPDATE` (`lockWorkCenterDevice`). The sync
+   takes this lock first too.
+2. A transaction advisory lock on the work center. It exists with or without
+   a device.
+3. For an End only: the event row `FOR UPDATE`, while the event is open.
+
+`lockMachinePress` (`@carbon/database/machine-time`) takes the first 2 locks.
+`recordManualMachinePress` reads the press time under them. So presses on one
+work center run one at a time, and the recorded press never moves backwards.
+
+**Start and End.** `startMachineProductionEvent` (MES
+`operations.service.ts`) runs the press, the event insert and the tracked
+activity in one Kysely transaction. If one write fails, nothing ends.
+`endMachineProductionEvent` refuses an event that has already ended, and an
+event that starts after the press. The route then says "This event has
+already ended". The End route reads the event's own work center and type, not
+the form's values.
+
+**Permissions.** The Kysely writes skip RLS. So `event.tsx` and
+`start.$operationId.tsx` check `create` or `update` on `production` before
+any write. `event.tsx` returns a flash message when it refuses.
+
+**Posting.** The routes post every event that a press ends, except batch
+events (`postEndedProductionEvents`). The QR start with `type=Machine`
+follows rule 1. After the start, it ends the operation's Setup and Labor
+events and posts them.
 
 ### 7. The sync job
 
@@ -340,59 +460,98 @@ The QR start with `type=Machine` follows rule 1. `x+/event.tsx` and
    `companyIntegration` rows whose integration has `providerRole = 'oee'` and
    at least 1 `workCenterDevice`. It sends one `carbon/oee-sync` event per
    (company, integration). It copies `ramp-sweep.ts`.
-2. `oee-sync` runs with concurrency 1 per company. For each device it reads
-   state changes from `lastEventAt − 10 minutes` to now. The overlap catches
-   events that Sense stores late.
-3. The job inserts the changes into `machineStateChange` with
+2. `oee-sync` runs with concurrency 1 per company and a `singleton` (skip)
+   per company and integration. It syncs all devices of the integration
+   inside one `step.run`. One step per device would multiply the Inngest cost
+   by the device count.
+3. If the company is not entitled to `INTEGRATIONS`, the integration is
+   inactive, or the key is empty, `getOeeProvider` returns an error. The job
+   skips the integration.
+4. For each device, the job reads state changes from `lastEventAt − 10
+   minutes` to now. The overlap catches events that Sense stores late. The
+   first sync reads from 24 hours before the mapping.
+5. The job inserts the changes into `machineStateChange` with
    `ON CONFLICT DO NOTHING`. The unique key is
-   (`workCenterDeviceId`, `externalEventId`).
-4. The job opens one Kysely transaction per device. It locks the
-   `workCenterDevice` row `FOR UPDATE`, runs `planMachineTime` and applies the
-   writes. The MES route takes the same lock through
-   `lockWorkCenterDevice` (`@carbon/database/machine-time`), so a press and a
-   sync never interleave.
-5. The job sets `lastEventAt`, `currentState`, `currentStateAt` and
-   `lastSyncedAt` in the same transaction. It clears `lastSyncError`.
-6. If one device fails, the job writes `lastSyncError` on that device and
-   keeps its cursor. The other devices continue.
-7. The job syncs all devices of a company inside one `step.run`. One step per
-   device would multiply the Inngest cost by the device count.
-8. If the company is not entitled to `INTEGRATIONS`, `getOeeProvider` returns
-   an error through `companyHasFeature`, and the job skips the company.
+   (`workCenterDeviceId`, `externalEventId`, `companyId`).
+6. The job opens one Kysely transaction per device. It locks the
+   `workCenterDevice` row `FOR UPDATE`. The MES press takes the same lock
+   first, so a press and a sync never interleave.
+7. The job reads the open Machine event, the open unattributed row, the
+   latest Machine `endTime` and the stored changes. It computes the start of
+   the window: the earliest instant this plan can touch. It reads the loads,
+   the block periods and the recorded intervals inside the window.
+8. The job runs `planMachineTime` and applies the writes. A close matches
+   only a row that is still open.
+9. The job deletes the closed unattributed rows on the work center that are
+   shorter than `minimumStateSeconds`.
+10. In the same transaction, the job sets `currentState`, `currentStateAt`,
+    `appliedThrough`, `lastEventAt` and `lastSyncedAt`. It clears
+    `unplannedPressAt` and `lastSyncError`. `lastEventAt` follows the newest
+    stored change, never the clock.
+11. If one device fails, the job writes `lastSyncError` on that device and
+    keeps its cursor. The other devices continue. An
+    `OeeProviderUnavailableError` (network failure, timeout, 5xx) stops the
+    run, because every device would fail the same way.
 
-The job never posts to the GL. A sensor event is an ordinary Machine event
-with an `endTime`. The existing sweep posts it when its operation is finished
-(`finishJobOperation`), and `complete_job_to_inventory` posts any event left
-over at job completion. Until then a supervisor can edit it on the job's
-Events tab.
+The job never posts to the GL. Carbon has no scheduled sweep that posts
+production events. An event posts at one of 3 moments:
+
+1. At a press: the MES routes post every event that the press ended, except
+   batch events.
+2. At operation finish: `finishJobOperation` (MES) and `completeOperation`
+   (ERP) post the operation's ended, unposted events.
+3. At job completion: `complete_job_to_inventory` posts every ended, unposted
+   event of the job.
+
+A sensor event that the sync closes posts at operation finish or job
+completion. Until it posts, a supervisor can edit it on the job's Events tab.
+
+When a user uninstalls Sense, its `onUninstall` hook (`senseOnUninstall`) ends
+the open sensor time of every Sense device of the company. The mappings stay.
 
 ### 8. Unattributed machine time (ERP)
 
-Production → **Unattributed Machine Time**
-(`x+/production+/machine-time.tsx`). The list copies the Batches list.
+Production → **Unattributed Time** (`x+/production+/machine-time.tsx`). The
+nav item shows only while an OEE integration is active. The list copies the
+Batches list.
 
 | Column | Value |
 |---|---|
 | Work center | name |
+| Location | the work center's location |
 | Start, End | in the work center's location timezone |
 | Duration | `endTime − startTime`; "Running" while open |
-| Status | `Open`, `Assigned`, `Dismissed` |
+| State | "Running" (blue) or "Stopped" (green) |
 
-The default filter is `status = Open`. A row action opens a drawer
-(`machine-time.$id.tsx`) with 2 choices:
+The list has 5 filters: work center, location, start date, end date and
+state. The date filters use the same timezone as the list (the view
+`unattributedMachineTimes`). The list has no sort.
 
-1. **Assign**: pick a job operation. The combobox lists operations on that
-   work center whose status is not Done or Canceled. In Progress operations
-   come first, then the operations with the most recent production event at
-   that work center. On save, the action inserts a Machine `productionEvent`
-   with the row's `startTime` and `endTime`, `employeeId` = null and
-   `createdBy` = the user. It sets the row to `Assigned` and stores
-   `productionEventId`.
-2. **Dismiss**: enter a reason (for example warm-up, prove-out or
-   maintenance). The action sets the row to `Dismissed`.
+`unattributedMachineTime` is a review queue, not a record. It has no status. A
+row leaves the queue in 3 ways:
 
-A supervisor cannot assign an `Open` row that has no `endTime`. The drawer
-says that the machine is still running.
+1. **Assign**: the action inserts a Machine `productionEvent` with the row's
+   `startTime` and `endTime`, `employeeId` = null and `createdBy` = the user.
+   Then it deletes the row. The event is the record.
+2. **Not job time** (dismiss): the action deletes the row. It takes no
+   reason.
+3. pg_cron deletes the row 30 days after its `endTime`.
+
+Assign and dismiss refuse a row that has no `endTime`: the machine is still
+running. Assign also refuses a Done or Canceled operation and a locked job. It
+checks them under row locks, inside its transaction.
+
+The drawer (`machine-time.$id.tsx`) reviews the rows of the filtered list one
+at a time:
+
+- Suggestion cards show the operations that ran on the work center on the
+  days the row covers, best match first. Keys 1 to 6 assign a card.
+- A search card lists the open operations at the work center's location,
+  including operations with no work center.
+- "Not job time" dismisses the row. Skip, j and k move between rows.
+
+Each answer moves to the next row. Closing the drawer returns to the list with
+its filters.
 
 ### 9. Out of scope for v1
 
@@ -416,157 +575,76 @@ says that the machine is still running.
 | Attribution | The loaded operation per work center. It is never the top of the schedule. Carbon never infers a job. | User decision (Q2). Research: every vendor keeps an explicit active job per machine. |
 | How an operation is loaded | Any open `productionEvent` insert on the work center | Setup, Labor, Machine and the QR start already insert one. Shops change nothing. |
 | Unattributed time | Its own table, cleared from an ERP list | User decision (Q3). `productionEvent.jobOperationId` is NOT NULL, so unattributed time cannot be a production event. |
-| Manual Machine timer on a mapped work center | Kept. The sensor drives it. An operator press and a sensor change are equal inputs, and the latest one by timestamp wins. Stop keeps the operation loaded. | User decision (Q4, Q4b, Q4c). One Machine event exists at a time, so time is never counted twice. |
-| GL posting | Sensor events post at operation finish or job completion, through the existing sweeps | User decision (Q5). No new posting path. A wrong attribution stays editable until the operation is done. |
+| Manual Machine timer | Kept on every work center. A press ends every open Machine event on the work center. The time after a press in the same run goes to the queue. Pause keeps the operation loaded. | User decision (Q4, Q4b, Q4c). A work center has one machine time, so time is never counted twice. |
+| GL posting | Sensor events post at operation finish or job completion. Events that a press ends post at the press. There is no posting sweep. | User decision (Q5). A wrong sensor attribution stays editable until the operation is done. |
 | License boundary | Provider, sync, mapping and the unattributed list are commercial (`packages/ee`, `.ee.tsx`), gated by `INTEGRATIONS`. The loaded operation, the MES button rules and the display are AGPL. | User decision (Q6). Matches every other integration. |
 | Timezone | Store UTC instants. Use the work center's `location.timezone` for local time. Warn on a site/location mismatch. | User decision (Q7). |
-| Polling | Inngest cron every 2 minutes, 10-minute overlap, idempotent insert | Sense has no webhooks. A 2-minute delay keeps the MES badge useful. The overlap plus the unique key makes a re-read safe. |
+| Polling | Inngest cron every 2 minutes, 10-minute overlap, idempotent insert | Sense has no webhooks. A 2-minute delay keeps the work center display useful. The overlap plus the unique key makes a re-read safe. |
 | Debounce | `minimumStateSeconds`, default 60 | Research: MachineMetrics uses 60 s for micro-stops. Vendors use 30 s to 3 min. |
 | `Alert` and `Offline` | Both end machine time. `Offline` means "no data", not "down". | Research: vendors treat a sensor gap as unknown, never as running. |
 | Blocked work center | Running time goes to the unattributed list | Maintenance run time must not reach a job. The supervisor dismisses it as maintenance. |
-| Backfill | None. A mapping starts at the moment of the save. | Attribution needs the loaded operation at that time, and Carbon has no history of it. |
+| Backfill | None. A mapping charges no time before the moment of the save. | The first sync reads the 24 hours before the mapping only to learn the starting state. |
+| Load storage | The history table `workCenterLoad`. The open row is the load. | A pointer column held the same fact twice. Clearing its timestamp on unload let a late event load a replaced operation (`.ai/lessons.md`). |
+| Who gets each moment | The owner rule (section 5) | The same facts give the same result in any order of arrival. |
 | Sync errors | `lastSyncError` and `lastSyncedAt` on `workCenterDevice`, shown in the Devices tab | `accountingSyncOperation.direction` allows only accounting directions. A per-device column is enough for v1. |
 | Heuristic 1: multi-tenancy | Every new table has `companyId`, composite PK `("id", "companyId")` and `id('prefix')` | `.claude/rules/conventions-database.md` |
 | Heuristic 2: service shape | Service functions take `client` first and return `{ data, error }`. The ee write functions call `requireEntitlement(client, companyId, "INTEGRATIONS")` first. | `.claude/rules/conventions-services.md`, `.claude/rules/commercial-licensing.md` |
-| Heuristic 3: RLS | Add 3 lines to `packages/database/src/authz/manifest.ts`: `workCenterDevice: company("resources")`, `machineStateChange: company("production")`, `unattributedMachineTime: company("production")`. | The manifest renders the 4 standard policies (`.claude/rules/authz-manifest.md`). The sync job writes with the service role. |
-| Heuristic 4: permissions | Devices tab: `settings_update`. Unattributed list: `production_view`. Assign or dismiss: `production_update`. | Same scopes as integration settings and job events. |
-| Heuristic 5: forms | Assign and Dismiss use `ValidatedForm` with zod validators in `production.models.ts` | `.claude/rules/conventions-forms.md` |
+| Heuristic 3: RLS | `workCenterDevice`, `machineStateChange`, `unattributedMachineTime` and `workCenterLoad` are SELECT-only for company employees (`packages/database/src/authz/manifest.ts`). | Every write goes through Kysely in the sync, the MES press, the Sense uninstall hook, an entitlement-gated ee function or an interceptor (`.claude/rules/authz-manifest.md`). |
+| Heuristic 4: permissions | Devices tab: `settings_update`. Unattributed list: `production_view`. Assign or dismiss: `production_update`. MES Machine start: `production_create`. MES Machine end: `production_update`. | Same scopes as integration settings and job events. The MES routes check them because the Kysely writes skip RLS. |
+| Heuristic 5: forms | The drawer submits Assign and Dismiss with a fetcher. The route action validates them with zod validators in `production.models.ts`. | `.claude/rules/conventions-forms.md` |
 | Heuristic 6: module layout | ERP UI in `modules/production/ui/MachineTime/*.ee.tsx` and `modules/settings/ui/Integrations/OeeDevices.ee.tsx`. Reads in `production.service.ts`. Writes in `@carbon/ee/oee.server`. | One service and one models file per module. Gated writes live in `packages/ee`. |
-| Heuristic 7: compatibility | Additive only. Work centers with no device behave exactly as today. | No public contract changes. |
+| Heuristic 7: compatibility | Additive, with one change for work centers with no device: a Machine press ends every open Machine event on the work center. | No public contract changes. |
 
 ## Data Model Changes
 
 ```mermaid
 erDiagram
     workCenter ||--o| workCenterDevice : "mapped to"
-    workCenter }o--o| jobOperation : "loaded operation"
+    workCenter ||--o{ workCenterLoad : "loads"
+    workCenterLoad }o--|| jobOperation : "loaded operation (no FK)"
     workCenterDevice ||--o{ machineStateChange : "reports"
     workCenter ||--o{ unattributedMachineTime : "has"
-    unattributedMachineTime |o--o| productionEvent : "assigned as"
     jobOperation ||--o{ productionEvent : "has"
 ```
 
-```sql
--- 1. Provider role
-ALTER TABLE "integration" DROP CONSTRAINT "integration_providerRole_check";
-ALTER TABLE "integration" ADD CONSTRAINT "integration_providerRole_check"
-  CHECK ("providerRole" IS NULL OR "providerRole" IN ('accounting', 'spend', 'oee'));
--- Fork the newest check_single_active_provider_role(): return early when the
--- role is 'oee'. Several OEE providers may be active at once.
+The migrations, in order:
 
-INSERT INTO "integration" ("id", "jsonschema") VALUES ('sense', '{…}');
-UPDATE "integration" SET "providerRole" = 'oee' WHERE "id" = 'sense';
+| Migration | Change |
+|---|---|
+| `20261013030022_oee-provider.sql` | The role, the `machineState` enum and the three OEE tables |
+| `20261013170425_unattributed-time-queue.sql` | The queue drops its status columns |
+| `20261013191915`, `20261013201722` | Composite foreign keys to `workCenter`, and retention |
+| `20261013233811` | The view `unattributedMachineTimes` |
+| `20261014010130_work-center-load-history.sql` | The table `workCenterLoad` |
+| `20261014024119_oee-load-is-history.sql` | Drops the pointer columns. Adds the constraints, `unplannedPressAt` and the sync's indexes |
 
--- 2. Loaded operation (community)
-ALTER TABLE "workCenter"
-  ADD COLUMN "loadedJobOperationId" TEXT REFERENCES "jobOperation"("id") ON DELETE SET NULL,
-  ADD COLUMN "loadedAt" TIMESTAMP WITH TIME ZONE;
+| Table | Columns and constraints |
+|---|---|
+| `integration` | `providerRole` CHECK allows `'oee'`. `check_single_active_provider_role()` returns early for `oee`. Row `sense` with `providerRole = 'oee'`. |
+| `workCenterDevice` (`id('wcd')`) | `workCenterId`, `integration`, `externalDeviceId`, `externalSiteId`, `siteTimezone`, `deviceName`, `currentState` (`machineState`), `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `unplannedPressAt`, `lastSyncedAt`, `lastSyncError`, audit columns. `UNIQUE (workCenterId, companyId)`, `UNIQUE (integration, externalDeviceId, companyId)`. FK `(workCenterId, companyId)` → `workCenter`. |
+| `machineStateChange` (`id('msc')`) | `workCenterDeviceId`, `workCenterId`, `externalEventId`, `state`, `changedAt`. `UNIQUE (workCenterDeviceId, externalEventId, companyId)`. FK `(workCenterId, companyId)` → `workCenter`. pg_cron deletes rows older than 30 days and rows of an unmapped device. |
+| `unattributedMachineTime` (`id('umt')`) | `workCenterId`, `startTime`, `endTime`, audit columns. No status. FK `(workCenterId, companyId)` → `workCenter`. pg_cron deletes rows 30 days after `endTime`. |
+| `workCenterLoad` (`id('wcl')`) | `workCenterId`, `jobOperationId` (no FK), `loadedAt`, `unloadedAt`, `createdAt`. CHECK `unloadedAt IS NULL OR unloadedAt >= loadedAt`. Partial unique index: one open row per work center. FK `(workCenterId, companyId)` → `workCenter`. |
 
--- 3. Machine state
-CREATE TYPE "machineState" AS ENUM ('Running', 'Idle', 'Down', 'Offline');
+`machineState` is the enum `'Running', 'Idle', 'Down', 'Offline'`. The view
+`workCentersWithBlockingStatus` exposes `loadedJobOperationId` from the open
+`workCenterLoad` row. Two indexes serve the sync: `productionEvent
+(workCenterId, endTime) WHERE type = 'Machine'` and `maintenanceDispatch
+(workCenterId)`.
 
-CREATE TABLE "workCenterDevice" (
-  "id" TEXT NOT NULL DEFAULT id('wcd'),
-  "companyId" TEXT NOT NULL,
-  "workCenterId" TEXT NOT NULL REFERENCES "workCenter"("id") ON DELETE CASCADE,
-  "integration" TEXT NOT NULL REFERENCES "integration"("id"),
-  "externalDeviceId" TEXT NOT NULL,
-  "externalSiteId" TEXT,
-  "siteTimezone" TEXT,
-  "deviceName" TEXT NOT NULL,
-  "currentState" "machineState",
-  "currentStateAt" TIMESTAMP WITH TIME ZONE,
-  "lastEventAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "lastManualChangeAt" TIMESTAMP WITH TIME ZONE,
-  "appliedThrough" TIMESTAMP WITH TIME ZONE,
-  "lastSyncedAt" TIMESTAMP WITH TIME ZONE,
-  "lastSyncError" TEXT,
-  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "updatedBy" TEXT REFERENCES "user"("id"),
-  "updatedAt" TIMESTAMP WITH TIME ZONE,
-  CONSTRAINT "workCenterDevice_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "workCenterDevice_companyId_fkey" FOREIGN KEY ("companyId")
-    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "workCenterDevice_workCenter_key" UNIQUE ("workCenterId", "companyId"),
-  CONSTRAINT "workCenterDevice_device_key" UNIQUE ("integration", "externalDeviceId", "companyId")
-);
-
-CREATE TABLE "machineStateChange" (
-  "id" TEXT NOT NULL DEFAULT id('msc'),
-  "companyId" TEXT NOT NULL,
-  "workCenterDeviceId" TEXT NOT NULL,
-  "workCenterId" TEXT NOT NULL REFERENCES "workCenter"("id") ON DELETE CASCADE,
-  "externalEventId" TEXT NOT NULL,
-  "state" "machineState" NOT NULL,
-  "changedAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  CONSTRAINT "machineStateChange_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "machineStateChange_companyId_fkey" FOREIGN KEY ("companyId")
-    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "machineStateChange_event_key"
-    UNIQUE ("workCenterDeviceId", "externalEventId", "companyId")
-);
-CREATE INDEX "machineStateChange_workCenter_changedAt_idx"
-  ON "machineStateChange" ("workCenterId", "changedAt");
-
-CREATE TYPE "unattributedMachineTimeStatus" AS ENUM ('Open', 'Assigned', 'Dismissed');
-
-CREATE TABLE "unattributedMachineTime" (
-  "id" TEXT NOT NULL DEFAULT id('umt'),
-  "companyId" TEXT NOT NULL,
-  "workCenterId" TEXT NOT NULL REFERENCES "workCenter"("id") ON DELETE CASCADE,
-  "startTime" TIMESTAMP WITH TIME ZONE NOT NULL,
-  "endTime" TIMESTAMP WITH TIME ZONE,
-  "status" "unattributedMachineTimeStatus" NOT NULL DEFAULT 'Open',
-  "productionEventId" TEXT REFERENCES "productionEvent"("id") ON DELETE SET NULL,
-  "dismissReason" TEXT,
-  "resolvedBy" TEXT REFERENCES "user"("id"),
-  "resolvedAt" TIMESTAMP WITH TIME ZONE,
-  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "updatedBy" TEXT REFERENCES "user"("id"),
-  "updatedAt" TIMESTAMP WITH TIME ZONE,
-  CONSTRAINT "unattributedMachineTime_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "unattributedMachineTime_companyId_fkey" FOREIGN KEY ("companyId")
-    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "unattributedMachineTime_dismiss_check"
-    CHECK ("status" <> 'Dismissed' OR "dismissReason" IS NOT NULL)
-);
-CREATE INDEX "unattributedMachineTime_open_idx"
-  ON "unattributedMachineTime" ("companyId", "workCenterId") WHERE "status" = 'Open';
-
--- 4. Missing index the engine needs
-CREATE INDEX "productionEvent_workCenterId_open_idx"
-  ON "productionEvent" ("workCenterId") WHERE "endTime" IS NULL;
-
--- 5. Indexes the conventions require: companyId, createdBy and each FK
-CREATE INDEX "workCenter_loadedJobOperationId_idx" ON "workCenter" ("loadedJobOperationId");
-CREATE INDEX "workCenterDevice_companyId_idx" ON "workCenterDevice" ("companyId");
-CREATE INDEX "workCenterDevice_integration_idx" ON "workCenterDevice" ("integration");
-CREATE INDEX "workCenterDevice_createdBy_idx" ON "workCenterDevice" ("createdBy");
-CREATE INDEX "machineStateChange_companyId_idx" ON "machineStateChange" ("companyId");
-CREATE INDEX "unattributedMachineTime_companyId_idx" ON "unattributedMachineTime" ("companyId");
-CREATE INDEX "unattributedMachineTime_workCenterId_idx" ON "unattributedMachineTime" ("workCenterId");
-CREATE INDEX "unattributedMachineTime_productionEventId_idx" ON "unattributedMachineTime" ("productionEventId");
-CREATE INDEX "unattributedMachineTime_createdBy_idx" ON "unattributedMachineTime" ("createdBy");
-
--- 6. The views "workCenters" and "workCentersWithBlockingStatus" select wc.*.
--- Drop and recreate both, forked verbatim from
--- 20260905132037_job-operation-batching.sql, so they expose the new columns.
-```
-
-The migration writes no policies. The authz manifest renders them (Heuristic
-3). Declare the two new interceptors in `packages/database/src/event-system/attachments.ts`
-as AFTER interceptors: `sync_load_work_center_operation` on `productionEvent`
-and `sync_unload_work_center_operation` on `jobOperation`. An interceptor cannot
-change NEW, so each one runs its own UPDATE on `workCenter`. The dispatchers are
-`SECURITY DEFINER`, so the UPDATE succeeds for an operator who has no
-`resources_update` permission. Ship them with
-`pnpm --filter @carbon/database authz migration <name>`. Give
-`workCenterDevice` and `unattributedMachineTime` a statement broadcast, so
-the MES badge and the ERP list update live. Then run
-`pnpm run generate:types`.
+The migrations write no policies. The authz manifest renders them: the four
+OEE tables are SELECT-only for company employees. Every write goes through
+Kysely in the sync, the MES press, the Sense uninstall hook or an
+entitlement-gated `@carbon/ee/oee.server` function. The two interceptors are
+AFTER interceptors in `packages/database/src/event-system/attachments.ts`:
+`sync_load_work_center_operation` on `productionEvent` and
+`sync_unload_work_center_operation` on `jobOperation`. The dispatchers are
+`SECURITY DEFINER`, so the interceptors write `workCenterLoad` for an
+operator who has no `resources_update` permission.
+`workCenterDevice` and `unattributedMachineTime` have a statement broadcast
+(`broadcast_table_changes`). Backups remap
+`workCenterLoad.jobOperationId` and `machineStateChange.workCenterDeviceId`
+(`packages/jobs/src/backups/id-refs.ts`).
 
 `SECRET_KEYS` (`packages/ee/src/integrations/secrets.ts`) gets
 `sense: ["apiKey"]`. The key stays at `metadata.apiKey`, as Linear's does, so
@@ -584,16 +662,19 @@ enters it. The integration drawer hides Sync Activity for the `oee` role, and
 |---|---|---|
 | `packages/ee/src/oee/types.ts` | `OeeProvider`, `MachineState`, `OeeDevice`, `OeeStateChange` | The provider contract |
 | `packages/ee/src/oee/engine.ts` | `planMachineTime` | Pure attribution rules (section 5). Unit-tested. |
-| `packages/ee/src/oee/service.server.ts` | `getOeeProvider`, `upsertWorkCenterDevice`, `deleteWorkCenterDevice`, `assignUnattributedMachineTime`, `dismissUnattributedMachineTime` | Gated writes. Each one calls `requireEntitlement` first. |
+| `packages/ee/src/oee/assignable.ts` | `machineTimeRefusal` | Can an operation take machine time |
+| `packages/ee/src/oee/service.server.ts` | `getOeeProvider`, `upsertWorkCenterDevice`, `deleteWorkCenterDevice`, `assignUnattributedMachineTime`, `dismissUnattributedMachineTime` | The writes call `requireEntitlement` first. |
 | `packages/ee/src/sense/provider.ts` | `SenseProvider` | The Sense adapter |
-| `packages/ee/src/sense/config.tsx`, `hooks.server.ts` | `Sense` descriptor, `onHealthcheck` | Install and health |
-| `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | cron, every 2 minutes | Sends `carbon/oee-sync` per company |
-| `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | `oeeSyncFunction` | Section 7 |
-| `apps/erp/app/modules/production/production.service.ts` | `getUnattributedMachineTimes`, `getUnattributedMachineTime`, `getMachineTimeOperationCandidates` | Reads for the list and the drawer |
+| `packages/ee/src/sense/config.tsx`, `hooks.server.ts` | `Sense` descriptor, `senseHealthcheck`, `senseOnUninstall` | Install, health and uninstall |
+| `packages/database/src/machine-time.ts` | `lockWorkCenterDevice`, `lockMachinePress`, `recordManualMachinePress`, `endSensorMachineTime` | The locks and the writes that end machine time |
+| `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | cron, every 2 minutes | Sends `carbon/oee-sync` per company and integration |
+| `packages/jobs/src/inngest/functions/integrations/oee-sync.ts`, `oee-sync-device.ts` | `oeeSyncFunction`, `syncOeeDevice` | Section 7 |
+| `apps/erp/app/modules/production/production.service.ts` | `getUnattributedMachineTimes`, `getUnattributedMachineTime`, `getUnattributedMachineTimeNeighbors`, `getWorkCenterDayEvents`, `getMachineTimeOperationCandidates` | Reads for the list and the drawer |
 | `apps/erp/app/modules/production/production.models.ts` | `assignMachineTimeValidator`, `dismissMachineTimeValidator` | Form validators |
-| `apps/erp/app/routes/x+/settings+/integrations.$id.tsx` | loader branch for `providerRole === "oee"`, intents `upsert-oee-device`, `delete-oee-device` | Devices tab |
-| `apps/mes/app/routes/x+/event.tsx`, `start.$operationId.tsx` | Machine start/stop on a mapped work center | Section 6, with the `workCenterDevice` row lock |
-| `apps/mes/app/services/display.service.ts` | read the loaded operation and the device state | Work-center display |
+| `apps/erp/app/modules/settings/oee-devices.server.ts` | `getOeeDevicesTabData`, `saveWorkCenterDeviceMapping` | Devices tab loader and action |
+| `apps/mes/app/services/operations.service.ts` | `startMachineProductionEvent`, `endMachineProductionEvent`, `postEndedProductionEvents` | Section 6 |
+| `apps/mes/app/routes/x+/event.tsx`, `start.$operationId.tsx` | Machine start and end on every work center | Section 6 |
+| `apps/mes/app/services/display.service.ts` | `getDisplayWorkCenter`, `getDisplayDeviceState` | Work-center display |
 
 ## Closest Sibling
 
@@ -618,15 +699,16 @@ Design Decisions:
 | Surface | Change | Archetype |
 |---|---|---|
 | ERP Settings → Integrations → Sense | New integration card. Drawer with Connection settings and a **Devices** tab. | Integration drawer (same as Rillet) |
-| ERP Production nav | New item **Unattributed Machine Time** in the Production group, after Batches | List page with a drawer (same as Batches) |
-| ERP Production → Unattributed Machine Time → row | Drawer with Assign and Dismiss | Drawer form (same as job events) |
-| MES operation screen | Machine timer badge with the device state on a mapped work center. Button rules in section 6. | No new archetype |
+| ERP Production nav | New item **Unattributed Time** in the Production group, after Batches. It shows only while an OEE integration is active. | List page with a drawer (same as Batches) |
+| ERP Production → Unattributed Time → row | Review drawer: suggestion cards, a search card, "Not job time" and Skip | Drawer |
+| MES operation screen | No change. The Machine toggle's dot already marks running time. Button rules in section 6. | No new archetype |
 | MES work-center display | Loaded operation, and the device state when mapped | Existing display |
 | Docs | `docs/content/docs/integrations/oee.mdx`, added to `meta.json`; a "Loaded operation" section in `docs/content/docs/reference/work-centers.mdx` | Integration guide |
 
 If the company is not entitled to `INTEGRATIONS`, the Devices tab and the
-Unattributed Machine Time page render the upgrade overlay
-(`usePlanGate`). They stay visible in the nav.
+Unattributed Time page render the upgrade overlay (`usePlanGate`). The
+Unattributed Time nav item shows only while an OEE integration is active, so
+a company with no OEE integration does not see it.
 
 ## Acceptance Criteria
 
@@ -634,34 +716,37 @@ Unattributed Machine Time page render the upgrade overlay
 - [ ] Mapping Station 0002 to work center W1 saves a `workCenterDevice` row. The action refuses a second station on W1. Its message names Station 0002.
 - [ ] Mapping a station from site `Reston - 2` (UTC) to a work center whose location is in `America/New_York` shows the timezone warning.
 - [ ] Activating Sense while another `oee` integration is active succeeds. The single-active trigger still refuses a second active `accounting` integration.
-- [ ] An operator starts Setup on operation A at W1 and stops it. `workCenter.loadedJobOperationId` is A.
+- [ ] An operator starts Setup on operation A at W1 and stops it. The open `workCenterLoad` row of W1 names A.
+- [ ] An event that starts before the newest `loadedAt` or `unloadedAt` of W1 loads nothing.
 - [ ] Sense reports Active at T1 and Idle at T2 for the mapped station. Within 2 sync runs, a Machine `productionEvent` on A exists with `startTime` = T1, `endTime` = T2, `employeeId` null and `postedToGL` false.
 - [ ] After operation A is finished, that event has `postedToGL` = true. Its cost is (T2 − T1) × W1's machine rate plus overhead.
-- [ ] With nothing loaded on W1, an Active change creates an `Open` `unattributedMachineTime` row. The row appears on Production → Unattributed Machine Time.
-- [ ] Assigning a closed row to operation B creates a Machine event on B with the row's start and end. The row status becomes `Assigned`.
-- [ ] Dismissing a row without a reason fails validation. With a reason, the row is `Dismissed` and no event exists.
-- [ ] The machine is Active and the operator presses Stop at 10:03. The event ends at 10:03. A later sync with an older Active change does not reopen it. The next Idle→Active change opens a new event on the same operation.
+- [ ] With nothing loaded on W1, an Active change creates an open `unattributedMachineTime` row. The row appears on Production → Unattributed Time.
+- [ ] Assigning a stopped row to operation B creates a Machine event on B with the row's start and end, and deletes the row.
+- [ ] Dismissing a stopped row deletes it, and no event exists. Dismissing a running row fails.
+- [ ] The machine is Active and the operator presses Pause at 10:03. The event ends at 10:03. The time after 10:03 until the machine stops goes to an unattributed row. The next Idle→Active change opens a new event on the same operation.
 - [ ] A sensor event runs on A, and the operator presses Machine Start on operation C. A's event ends at the press time. C's event starts at the press time. C is loaded.
+- [ ] A sensor event runs on A, and an operator starts Setup on operation B. The next sync ends A's event at B's `loadedAt` and opens an event on B at that instant.
 - [ ] Running the sync twice over the same window creates no duplicate `machineStateChange`, `productionEvent` or `unattributedMachineTime` rows.
 - [ ] A state that lasts 30 seconds with `minimumStateSeconds` = 60 creates no event and does not close an open one.
 - [ ] If Sense returns a status outside the allowlist, that station gets `lastSyncError` and keeps its cursor. Other stations still sync.
 - [ ] W1 has an In Progress maintenance dispatch with OEE impact Down. Running time on W1 creates an unattributed row, not an event on the loaded operation.
-- [ ] Operation A goes Done while the machine runs. The event ends at the completion time, and the rest of the run becomes an unattributed row that starts at that time.
-- [ ] On a work center with no `workCenterDevice`, the MES Machine timer behaves exactly as before.
+- [ ] Operation A goes Done while the machine runs. The event ends at the unload, and the rest of the run becomes an unattributed row that starts at that time.
+- [ ] On a work center with no `workCenterDevice`, a Machine press ends every open Machine event on the work center and writes no device column.
+- [ ] Uninstalling Sense ends the open sensor events and unattributed rows of its devices. The `workCenterDevice` rows stay.
 - [ ] On a plan without `INTEGRATIONS`, the Devices tab and the list show the upgrade overlay. Calling `assignUnattributedMachineTime` throws `EntitlementError`.
-- [ ] `planMachineTime` has unit tests for every rule in section 5 and the override example in section 6.
+- [ ] `planMachineTime` has unit tests for every rule in section 5 and the press examples in section 6, including the same facts in different orders of arrival.
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| A stale loaded operation: nobody finishes or reloads it, so another job's run time goes to it | Med | The display and the MES badge show the loaded operation. Any timer start on the right operation reloads. A supervisor can edit the event on the job's Events tab until the operation is finished. |
+| A stale loaded operation: nobody finishes or reloads it, so another job's run time goes to it | Med | The work center display shows the loaded operation. Any timer start on the right operation reloads. A supervisor can edit the event on the job's Events tab until the operation is finished. |
 | The staging host is plain HTTP, so the API key travels unencrypted | Med | Production uses HTTPS. The Staging option says "testing only" in its description. |
 | Sense rate limits and backfill behavior are not documented | Med | Verify with one curl before the job is wired into the cron (`.ai/lessons.md` → "A VERIFY-flagged provider endpoint in a cron loop is an outage"). The 10-minute overlap tolerates late events. Confirm the limits with Sense before launch. |
 | Inngest cost of a 2-minute cron | Low | The sweep sends events only for companies with at least one mapped device. |
-| `sync_set_job_operation_in_progress` reopens a Done operation on an open-event insert | Low | The engine only inserts on the loaded operation, which is never Done or Canceled. The assign drawer lists only operations that are not Done or Canceled. |
+| `sync_set_job_operation_in_progress` reopens a Done operation on an open-event insert | Low | The engine opens an event only on an `assignable` operation, which is never Done or Canceled. Assign inserts a closed event and refuses a Done or Canceled operation. |
 | A long Sensor Offline gap hides real run time | Low | Offline ends machine time. The Devices tab shows `currentState` = Offline and the time of the last sync. |
-| An operator presses Machine Start while the machine is Idle. The event runs until the sensor reports the next change. | Med | This is the override the user chose (Q4c). The MES badge shows the sensor's Idle state next to the running timer. The supervisor can edit the event until the operation is finished. |
+| An operator presses Machine Start while the machine is Idle. The event runs until the sensor reports the next change. | Med | This is the override the user chose (Q4c). The work center display shows the sensor's Idle state. The supervisor can edit the event until the operation is finished. |
 | One work center models a pool of machines | Low | Out of scope. The mapping refuses a second device, and the docs say to split the work center. |
 
 ## Open Questions
@@ -670,14 +755,16 @@ Unattributed Machine Time page render the upgrade overlay
 
 - [x] Can a company have more than one OEE provider active at once? — **Answer:** Yes. A work center has at most one device across all providers.
 - [x] How does Carbon pick the job operation for sensor run time? — **Answer:** The loaded operation per work center. The latest Setup, Labor or Machine start there sets it, and it survives clock-out. Run time with nothing loaded is unattributed. Never the top of the schedule. No inference from In Progress operations.
-- [x] Where is unattributed time resolved in v1? — **Answer:** An ERP supervisor list only. Assign to a job operation, or dismiss with a reason. The MES prompt is later work.
+- [x] Where is unattributed time resolved in v1? — **Answer:** An ERP supervisor list only. Assign to a job operation, or dismiss. The MES prompt is later work. (Shipped: dismiss takes no reason and deletes the row.)
 - [x] What happens to the manual MES Machine timer on a mapped work center? — **Answer:** It stays visible and in sync with the sensor. There is one Machine event at a time, so no duplicates.
-- [x] What does the Machine button do when the sensor drives the timer? — **Answer:** It overrides the sensor. The latest change wins, ordered by timestamp. Stop keeps the operation loaded.
-- [x] When does sensor machine time post to the GL? — **Answer:** At operation finish or job completion, through the existing sweeps.
+- [x] What does the Machine button do when the sensor drives the timer? — **Answer:** It overrides the sensor for the operator's time. Pause keeps the operation loaded. (Shipped as the owner rule: the time after a press in the same run goes to the queue.)
+- [x] When does sensor machine time post to the GL? — **Answer:** At operation finish or job completion. (Shipped: there is no posting sweep; section 7 lists the 3 moments an event posts.)
 - [x] Which parts are commercial? — **Answer:** The provider, the sync, the mapping and the unattributed list are in `packages/ee`, gated by `INTEGRATIONS`. The loaded operation and its MES display are AGPL.
 - [x] Which timezone wins for local time? — **Answer:** The work center's location timezone. Store UTC. Warn when the Sense site timezone differs.
 
 ## Changelog
 
+- 2026-10-14: Fixes from the strict self-review (`.ai/plans/2026-10-14-oee-review-fixes.md`). The open `workCenterLoad` row is the load: the migration drops `workCenter.loadedJobOperationId` and `loadedAt`. A load older than the newest boundary in the history writes nothing. An unload ends the open row at `GREATEST(NOW(), loadedAt)`. The engine applies one owner rule to every piece of a run. Open sensor time follows its owner across load, block and press edges. A late stop trims the closed queue rows. A press takes its time under the locks and records `unplannedPressAt`. A Machine start writes the press, the event and the tracked activity in one transaction. The routes check permission before any write and post every event a press ends. Uninstalling Sense ends its open sensor time. The ERP review keeps the list filters and spans the days of the row.
+- 2026-10-13: Build changes. Unattributed time became a queue with no status. Maintenance blocks became periods. The load gained its history table, `workCenterLoad`. The OEE tables became read-only through the API, with composite foreign keys to `workCenter`. The MES press rules apply on every work center.
 - 2026-10-12: Planning pass. Corrected the secret path, the interceptor timing, the view recreation and the indexes. Added the engine's inputs, applied state (`appliedThrough`) and first-sync rules. The steady-state rule now reopens time on the loaded operation when the rules allow it.
 - 2026-10-12: Created. Research: `.ai/research/oee-provider-integration.md`. Prior thinking: the kyoto session of 2026-10-07 ("Current clip job identification").

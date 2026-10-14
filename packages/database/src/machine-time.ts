@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import type { KyselyTx } from "./client";
 
 export async function lockWorkCenterDevice(
@@ -60,18 +61,50 @@ export async function endSensorMachineTime(trx: KyselyTx, args: CloseArgs) {
 }
 
 /**
+ * The locks a Machine press holds, in the one order every writer takes them:
+ * the device row first (the sync locks it, then ends events), then a lock on
+ * the work center itself, which exists with or without a device. Anything
+ * that ends a Machine event under a press takes these before any event row.
+ * Returns the device, if the work center has one.
+ */
+export async function lockMachinePress(
+  trx: KyselyTx,
+  args: { workCenterId: string; companyId: string }
+) {
+  const device = await lockWorkCenterDevice(trx, args);
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`machinePress:${args.workCenterId}`}, 0))`.execute(
+    trx
+  );
+  return device;
+}
+
+/** The time now, read inside the transaction (an absolute instant). */
+async function lockedNow(trx: KyselyTx) {
+  const { rows } = await sql<{
+    now: Date;
+  }>`SELECT clock_timestamp() AS now`.execute(trx);
+  const now = rows[0]?.now;
+  if (!now) throw new Error("Could not read the time");
+  return now.toISOString();
+}
+
+/**
  * A machine has one machine time. An operator pressed Machine Start or Pause
  * on a work center: separate operators share a single machine time, so on
  * any work center, with or without a device, the press ends every open
  * Machine event there at the press time — from any operator or the sensor.
  * An event that starts after the press stays open. A Start then opens the
- * new one.
+ * new one in the same transaction.
  *
  * On a work center with a device, the press also ends the open unattributed
  * time at the press time and records the press, so an older sensor change
  * never undoes it. Without the unattributed close, a Start on a running
  * machine with no loaded operation counted the same minutes twice: once on
  * the operator's event and once in the supervisor queue.
+ *
+ * Presses on one work center run one at a time, and the press time is read
+ * under the locks (unless the caller fixes it), so two presses never leave
+ * two Machine events open and the recorded press never moves backwards.
  */
 export async function recordManualMachinePress(
   trx: KyselyTx,
@@ -79,49 +112,50 @@ export async function recordManualMachinePress(
     workCenterId: string;
     companyId: string;
     userId: string;
-    pressedAt: string;
+    pressedAt?: string;
   }
-): Promise<{ mapped: boolean; endedEventIds: string[] }> {
-  // The device lock comes first, as in the sync and the mapping writes: the
-  // sync locks the device and then ends events, so ending events first and
-  // then waiting for the device could deadlock with it.
-  const device = await lockWorkCenterDevice(trx, args);
+): Promise<{ mapped: boolean; endedEventIds: string[]; pressedAt: string }> {
+  const device = await lockMachinePress(trx, args);
+  const pressedAt = args.pressedAt ?? (await lockedNow(trx));
 
   const ended = await trx
     .updateTable("productionEvent")
     .set({
-      endTime: args.pressedAt,
+      endTime: pressedAt,
       updatedBy: args.userId,
-      updatedAt: args.pressedAt
+      updatedAt: pressedAt
     })
     .where("workCenterId", "=", args.workCenterId)
     .where("companyId", "=", args.companyId)
     .where("type", "=", "Machine")
     .where("endTime", "is", null)
-    .where("startTime", "<=", args.pressedAt)
+    .where("startTime", "<=", pressedAt)
     .returning("id")
     .execute();
   const endedEventIds = ended.map((row) => row.id);
 
-  if (!device) return { mapped: false, endedEventIds };
+  if (!device) return { mapped: false, endedEventIds, pressedAt };
 
   await endOpenUnattributedTime(trx, {
     workCenterId: args.workCenterId,
     companyId: args.companyId,
     userId: args.userId,
-    at: args.pressedAt
+    at: pressedAt
   });
 
+  // The latest press never moves backwards, and the earliest one since the
+  // last sync is kept for the sync to plan from.
   await trx
     .updateTable("workCenterDevice")
     .set({
-      lastManualChangeAt: args.pressedAt,
+      lastManualChangeAt: sql`GREATEST(COALESCE("lastManualChangeAt", ${pressedAt}::timestamptz), ${pressedAt}::timestamptz)`,
+      unplannedPressAt: sql`LEAST(COALESCE("unplannedPressAt", ${pressedAt}::timestamptz), ${pressedAt}::timestamptz)`,
       updatedBy: args.userId,
-      updatedAt: args.pressedAt
+      updatedAt: pressedAt
     })
     .where("id", "=", device.id)
     .where("companyId", "=", args.companyId)
     .execute();
 
-  return { mapped: true, endedEventIds };
+  return { mapped: true, endedEventIds, pressedAt };
 }

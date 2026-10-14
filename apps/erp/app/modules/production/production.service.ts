@@ -128,7 +128,10 @@ import {
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
-import type { MachineTimeListFilters } from "./ui/MachineTime/machine-time-filters.ee";
+import {
+  type MachineTimeListFilters,
+  machineTimeQueueKeyset
+} from "./ui/MachineTime/machine-time-filters.ee";
 
 const logger = getLogger("erp", "production");
 
@@ -6751,7 +6754,7 @@ export async function getUnattributedMachineTime(
 ) {
   return client
     .from("unattributedMachineTime")
-    .select("*, workCenter!inner(name, locationId, location(timezone))")
+    .select("*, workCenter!inner(name, locationId)")
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -6773,7 +6776,7 @@ export async function getUnattributedMachineTimeNeighbors(
     filters: MachineTimeListFilters;
   }
 ) {
-  const at = `"${args.startTime}"`;
+  const keyset = machineTimeQueueKeyset(args);
   const queue = (options?: { count: "exact"; head: true }) =>
     applyMachineTimeListFilters(
       client
@@ -6786,16 +6789,14 @@ export async function getUnattributedMachineTimeNeighbors(
 
   const [total, above, previous, next] = await Promise.all([
     queue({ count: "exact", head: true }),
-    queue({ count: "exact", head: true }).or(
-      `startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`
-    ),
+    queue({ count: "exact", head: true }).or(keyset.above),
     queue()
-      .or(`startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`)
+      .or(keyset.above)
       .order("startTime", { ascending: true })
       .order("id", { ascending: true })
       .limit(1),
     queue()
-      .or(`startTime.lt.${at},and(startTime.eq.${at},id.lt.${args.id})`)
+      .or(keyset.below)
       .order("startTime", { ascending: false })
       .order("id", { ascending: false })
       .limit(1)
@@ -6829,8 +6830,9 @@ export async function getMachineTimeAssignTarget(
     .maybeSingle();
 }
 
-// Every production event on the work center that overlaps the day, with its
-// operation and job: what ran there, for the suggestion cards.
+// Every production event on the work center that overlaps the window (the
+// days of the unattributed time), with its operation and job: what ran there,
+// for the suggestion cards.
 export async function getWorkCenterDayEvents(
   client: SupabaseClient<Database>,
   args: {
@@ -6880,9 +6882,12 @@ export async function getMachineTimeOperationCandidates(
           .select(operationSelect)
           .eq("companyId", args.companyId)
           .eq("job.locationId", args.locationId)
-          .neq("workCenterId", args.workCenterId)
+          // `neq` alone drops an operation with no work center (NULL).
+          .or(`workCenterId.is.null,workCenterId.neq.${args.workCenterId}`)
           .not("status", "in", "(Done,Canceled)")
           .not("job.status", "in", lockedJobStatuses)
+          // The rank below sets the order; this one decides which rows the
+          // cap keeps: the most recently touched.
           .order("updatedAt", { ascending: false })
           .limit(1000)
       : null,
@@ -6934,7 +6939,10 @@ export async function getMachineTimeOperationCandidates(
     data: ranked.map((operation) => ({
       value: operation.id,
       label: `${operation.job?.jobId ?? ""} · ${operation.description ?? ""}`,
-      helper: operation.workCenter?.name ?? operation.status
+      // The drawer shows the status when there is no work center: it
+      // translates it, so it stays the enum here.
+      workCenterName: operation.workCenter?.name ?? null,
+      status: operation.status
     })),
     error: null
   };

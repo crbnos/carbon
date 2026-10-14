@@ -24,6 +24,7 @@ import { LuSearch, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import RulesUpgradeOverlay from "~/components/RulesUpgradeOverlay";
 import { useDateFormatter, usePermissions } from "~/hooks";
+import { useCompanyTimeZone } from "~/hooks/useCompanyTimeZone";
 import { usePlanGate } from "~/hooks/usePlanGate";
 
 /**
@@ -64,6 +65,7 @@ export type OeeTakenWorkCenterRow = {
 export type OeeWorkCenterRow = {
   id: string;
   name: string;
+  /** Null when the location inherits the company's timezone. */
   locationTimezone: string | null;
 };
 
@@ -193,13 +195,24 @@ function OeeDeviceList({
     [workCenters]
   );
   // A work center holds one device across every OEE provider: leave the ones
-  // another integration already maps out of the options.
+  // another integration already maps out of the options. The ones another
+  // device of this integration holds are left out per row, below.
   const workCenterOptions = useMemo(() => {
     const taken = new Set(takenWorkCenters.map((row) => row.workCenterId));
     return workCenters
       .filter((workCenter) => !taken.has(workCenter.id))
       .map((workCenter) => ({ value: workCenter.id, label: workCenter.name }));
   }, [workCenters, takenWorkCenters]);
+  const deviceIdByWorkCenterId = useMemo(
+    () =>
+      new Map(
+        mappings.map((mapping) => [
+          mapping.workCenterId,
+          mapping.externalDeviceId
+        ])
+      ),
+    [mappings]
+  );
 
   // A mapped device stays listed when the provider cannot list its devices
   // (a slow or failing API), so it can still be seen and unmapped.
@@ -312,6 +325,7 @@ function OeeDeviceList({
                       mapping={mapping ?? null}
                       workCenterById={workCenterById}
                       workCenterOptions={workCenterOptions}
+                      deviceIdByWorkCenterId={deviceIdByWorkCenterId}
                       canUpdate={canUpdate}
                     />
                   );
@@ -334,15 +348,19 @@ function OeeDeviceTableRow({
   mapping,
   workCenterById,
   workCenterOptions,
+  deviceIdByWorkCenterId,
   canUpdate
 }: {
   device: OeeDeviceRow;
   mapping: OeeDeviceMappingRow | null;
   workCenterById: Map<string, OeeWorkCenterRow>;
   workCenterOptions: { value: string; label: string }[];
+  /** This integration's mappings: work center → the device it holds. */
+  deviceIdByWorkCenterId: Map<string, string>;
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
+  const companyTimeZone = useCompanyTimeZone();
   const fetcher = useFetcher();
   const isSaving = fetcher.state !== "idle";
 
@@ -353,13 +371,23 @@ function OeeDeviceTableRow({
     : null;
   const workCenterId = pendingWorkCenterId ?? mapping?.workCenterId ?? "";
 
-  const locationTimezone = workCenterId
-    ? (workCenterById.get(workCenterId)?.locationTimezone ?? null)
+  // The work center keeps time on its location's clock, else the company's.
+  const workCenter = workCenterId ? workCenterById.get(workCenterId) : null;
+  const locationTimezone = workCenter
+    ? workCenter.locationTimezone || companyTimeZone
     : null;
+  const siteTimezone = device.siteTimezone;
   const timezoneMismatch =
-    device.siteTimezone !== null &&
+    siteTimezone !== null &&
     locationTimezone !== null &&
-    device.siteTimezone !== locationTimezone;
+    siteTimezone !== locationTimezone;
+
+  // A work center another device of this integration holds is refused on
+  // save, so it is not offered; this row's own stays.
+  const options = workCenterOptions.filter((option) => {
+    const holder = deviceIdByWorkCenterId.get(option.value);
+    return holder === undefined || holder === device.externalDeviceId;
+  });
 
   const save = (nextWorkCenterId: string) => {
     if (nextWorkCenterId === (mapping?.workCenterId ?? "")) return;
@@ -403,7 +431,7 @@ function OeeDeviceTableRow({
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <Trans>
-                  The device's site is in {device.siteTimezone}; Carbon uses{" "}
+                  The device's site is in {siteTimezone}; Carbon uses{" "}
                   {locationTimezone}
                 </Trans>
               </TooltipContent>
@@ -413,7 +441,7 @@ function OeeDeviceTableRow({
             <Combobox
               size="sm"
               value={workCenterId}
-              options={workCenterOptions}
+              options={options}
               placeholder={t`Not mapped`}
               isClearable
               isLoading={isSaving}
@@ -454,9 +482,10 @@ function DeviceStatusDot({ mapping }: { mapping: OeeDeviceMappingRow | null }) {
   } else if (mapping?.currentState) {
     const state = stateLabels[mapping.currentState];
     dotClassName = stateDots[mapping.currentState];
-    labelText = mapping.lastSyncedAt
-      ? t`${state} · synced ${formatTimeAgo(mapping.lastSyncedAt)}`
-      : state;
+    const syncedAgo = mapping.lastSyncedAt
+      ? formatTimeAgo(mapping.lastSyncedAt)
+      : null;
+    labelText = syncedAgo ? t`${state} · synced ${syncedAgo}` : state;
   } else if (mapping) {
     dotClassName = "bg-muted-foreground/40";
     labelText = t`Waiting for the first sync`;
