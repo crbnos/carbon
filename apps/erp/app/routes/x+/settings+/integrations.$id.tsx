@@ -49,7 +49,7 @@ import {
   selectUnmappedRequiredAccounts,
   suggestAccountMatchesWithAI,
   transitionOperation,
-  upsertAccountMapping,
+  upsertAccountMappings,
   upsertDimensionValueMapping,
   validateDimensionSlots,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
@@ -121,7 +121,6 @@ import {
 import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
-  accountMappingUpsertValidator,
   dimensionSlotsUpdateValidator,
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
@@ -1239,45 +1238,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Save one account mapping row (Account Mapping tab). The mapping
-  // services are Kysely-based (RLS bypassed) — requirePermissions above +
-  // companyId scoping is the auth gate. Stays on the page so the tab
-  // revalidates in place.
-  if (formData.get("intent") === "upsert-account-mapping") {
-    const validation = await validator(accountMappingUpsertValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const { accountId, externalId, externalCode, externalName } =
-      validation.data;
-
-    const result = await upsertAccountMapping(getDatabaseClient(), {
-      companyId,
-      integration: integrationId,
-      accountId,
-      externalId,
-      externalCode,
-      externalName,
-      userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(result.error, "Failed to save account mapping")
-        )
-      );
-    }
-
-    return data({}, await flash(request, success("Saved account mapping")));
-  }
-
   // "Suggest with AI" from the Account Mapping tab: ask gpt-4o for a
   // best-guess pairing of the still-unmapped Carbon accounts to the
   // provider chart. Writes nothing — returns proposals for the confirm
@@ -1311,8 +1271,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ proposals: result.data });
   }
 
-  // Confirm-all from the match-by-code drawer: repeated JSON-encoded
-  // `mappings` fields, one upsert per proposal.
+  // Save on the Account Mapping tab, match-by-code confirm-all and AI apply:
+  // repeated JSON-encoded `mappings` fields, written in one batch. The
+  // mapping services are Kysely-based (RLS bypassed) — requirePermissions
+  // above + companyId scoping is the auth gate. Stays on the page so the tab
+  // revalidates in place.
   if (formData.get("intent") === "bulk-upsert-account-mappings") {
     const validation = await validator(
       accountMappingBulkUpsertValidator
@@ -1323,33 +1286,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const { mappings } = validation.data;
-    const db = getDatabaseClient();
-    const failures: string[] = [];
+    const result = await upsertAccountMappings(getDatabaseClient(), {
+      companyId,
+      integration: integrationId,
+      userId,
+      mappings
+    });
 
-    for (const mapping of mappings) {
-      const result = await upsertAccountMapping(db, {
-        companyId,
-        integration: integrationId,
-        ...mapping,
-        userId
-      });
-      if (result.error) {
-        failures.push(result.error);
-      }
-    }
-
-    if (failures.length > 0) {
-      const succeeded = mappings.length - failures.length;
+    if (result.error) {
       return data(
-        {},
+        { success: false },
         await flash(
           request,
-          error(
-            failures[0],
-            succeeded > 0
-              ? `Saved ${succeeded} of ${mappings.length} account mappings`
-              : "Failed to save account mappings"
-          )
+          error(result.error, "Failed to save account mappings")
         )
       );
     }

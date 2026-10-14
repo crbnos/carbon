@@ -542,21 +542,6 @@ export const syncOperationTransitionValidator = z.object({
   to: z.enum(["Pending", "Skipped"])
 });
 
-/**
- * Saves one account mapping row (Carbon account.id → provider account id)
- * from the integration drawer's Account Mapping tab. externalCode /
- * externalName are display metadata captured from the selected provider
- * account — the journal syncer resolves provider account codes from the
- * mapping's stored externalCode, so the code must be persisted.
- */
-export const accountMappingUpsertValidator = z.object({
-  intent: z.literal("upsert-account-mapping"),
-  accountId: z.string().min(1, { message: "Account is required" }),
-  externalId: z.string().min(1, { message: "Provider account is required" }),
-  externalCode: zfd.text(z.string().optional()),
-  externalName: zfd.text(z.string().optional())
-});
-
 export const workCenterDeviceUpsertValidator = z.object({
   intent: z.literal("upsert-work-center-device"),
   externalDeviceId: z.string().min(1, { message: "Device is required" }),
@@ -566,6 +551,12 @@ export const workCenterDeviceUpsertValidator = z.object({
   workCenterId: zfd.text(z.string().optional())
 });
 
+/**
+ * One account mapping (Carbon account.id → provider account id).
+ * externalCode / externalName are captured from the selected provider
+ * account — the journal syncer resolves provider account codes from the
+ * mapping's stored externalCode, so the code must be persisted.
+ */
 const accountMappingEntrySchema = z.object({
   accountId: z.string().min(1),
   externalId: z.string().min(1),
@@ -574,10 +565,10 @@ const accountMappingEntrySchema = z.object({
 });
 
 /**
- * Confirm-all from the match-by-code drawer. `mappings` is a repeated form
- * field (per the sync-operation `ids` precedent) — each entry a
- * JSON-encoded proposal validated against the same shape as the single-row
- * upsert.
+ * Save from the Account Mapping tab, and confirm-all from match-by-code and
+ * AI suggest. `mappings` is a repeated form field (per the sync-operation
+ * `ids` precedent) — each entry a JSON-encoded account → provider account
+ * pair.
  */
 export const accountMappingBulkUpsertValidator = z.object({
   intent: z.literal("bulk-upsert-account-mappings"),
