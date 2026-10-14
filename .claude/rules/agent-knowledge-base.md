@@ -25,8 +25,8 @@ renamed) so ERP's `^build` never runs the Next docs build.
 
 There is no generator and no committed copy: a docs edit reaches the agent at the next ERP
 build, and in dev immediately (Vite watches the glob). The ERP Docker image copies
-`docs/content` into its build stage (`.dockerignore` re-includes it), and `deploy.yml` fires on
-`docs/content/**`, so a glossary or docs change redeploys ERP/MES.
+`docs/content` into its build stage (`.dockerignore` re-includes it), and `build-images.yml`
+deploys when a push touches `docs/content/**`, so a glossary or docs change redeploys ERP/MES.
 
 All three machine-readable consumers strip MDX through the one `stripComponents` in
 `src/corpus.ts`, so the agent, llms.txt and anything else can never disagree about a page.

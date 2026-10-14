@@ -4,6 +4,7 @@ paths:
   - "sst.config.ts"
   - "ci/**"
   - ".github/workflows/deploy.yml"
+  - ".github/workflows/build-images.yml"
   - ".github/workflows/inngest.yml"
   - "Dockerfile"
   - "apps/erp/app/utils/inngest-self-sync.server.ts"
@@ -47,19 +48,30 @@ alternative deployment, not a replacement. Both build from the same root `Docker
 - `sst-env.d.ts` files (repo root, `ci/`, per app/package) are SST-generated type
   stubs; do not hand-edit.
 
-## Images (`.github/workflows/deploy.yml`, job `images`)
-Triggers on push to `main` touching `apps/erp/**`, `apps/mes/**`, `packages/**`,
-`docs/content/**` (or manual `workflow_dispatch`).
-- `deploy.yml` builds nothing. `build-images.yml` runs on the same push and
-  publishes `carbon/erp` and `carbon/mes` tagged with the commit sha to
-  `vars.IMAGE_REGISTRY`; the `images` job polls until both tags exist (30 minute
-  limit), so a failed image build fails the deploy.
+## Images, then deploy (`.github/workflows/build-images.yml`)
+Every push to `main` runs `build-images.yml`, which builds or re-tags every image
+for the commit (`carbon/<image>:<sha>` in `vars.IMAGE_REGISTRY`). The deploy is a
+job of that same run, chained with `needs:` — there is no polling:
+- `apps` builds `carbon/erp` and `carbon/mes`; `services` builds `bootstrap`,
+  `edge-functions` and `assembler` with the same steps (a YAML anchor). Split so
+  the deploy needs only the app images: a failed assembler build does not hold
+  back a release.
+- `changes` diffs `github.event.before..sha` over `apps/erp`, `apps/mes`,
+  `packages`, `docs/content`; a new branch or force-push (no usable `before`)
+  counts as changed. A manual run of `build-images.yml` never deploys.
+- `deploy` (`needs: [apps, changes]`) calls `deploy.yml` (`workflow_call`,
+  `secrets: inherit`). A failed or cancelled app image skips it at once.
+- Image concurrency is per image and per job (`build-images-<image>`), not per
+  workflow, so a deploy still running does not hold up the next commit's builds.
 - The services pull `${IMAGE_REGISTRY}/carbon/<app>:${IMAGE_TAG}`. With
   `IMAGE_REGISTRY` unset `sst.config.ts` falls back to the workspace account's
   private ECR (`${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com`), which is
   what a deployment that builds its own images uses.
 
-## Deploy (job `deploy`, needs `images`)
+## Deploy (`deploy.yml`, `workflow_call` + `workflow_dispatch`)
+- Run by hand, it deploys the commit it is run on, whose images must already exist.
+- One deploy at a time (`concurrency: deploy-apps`); a newer commit waiting
+  replaces an older one that had not started.
 - Sets `IMAGE_TAG: ${{ github.sha }}` (this is what `sst.config.ts` interpolates
   into the ECR image ref — so prod runs the exact SHA, not `:latest`).
 - Installs Pulumi `3.212.0` (SST v3 uses Pulumi under the hood), `pnpm install
@@ -102,7 +114,8 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   path (`server/app.ts`, `@vercel/react-router` in `entry.server.tsx`) is
   still live, so this stays inert there rather than retrying uselessly.
 - **CI-triggered sync** (`.github/workflows/inngest.yml`, `ci/src/jobs.ts`):
-  runs after "Deploy Apps" succeeds on `main`. Reads every row in the
+  called by `deploy.yml` (job `sync`) after its deploy job succeeds; also
+  runnable by hand. Reads every row in the
   `workspaces` table and does the same `PUT .../api/inngest` against each
   `url_erp`. Redundant with boot self-sync today, but kept as an
   externally-triggered backstop (e.g. if a task's own retries were exhausted
@@ -140,8 +153,10 @@ OAuth state uses the already-required `SESSION_SECRET`, so there is no extra Ram
 secret to provision.
 
 ## /health
-`apps/{erp,mes}/app/routes/_public+/health.tsx` — used by the ECS/ALB health checks
-(`/health`, HTTP). Same endpoint the compose stack uses.
+`apps/erp/app/routes/health.ts` and `apps/mes/app/routes/_public+/health.tsx` — used
+by the ECS/ALB health checks (`/health`, HTTP). Same endpoint the compose stack uses.
+With `MAINTENANCE_MODE=true` the route is not reached: `maintenanceMiddleware`
+answers `/health` with 200 so tasks are not replaced during the maintenance.
 
 ## Notes / gotchas
 - `npm run deploy` (root) = `turbo run deploy`; real prod deploy goes through CI →
