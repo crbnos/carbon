@@ -14495,6 +14495,9 @@ msgstr "No items"
 msgid "No items have inventory activity here yet."
 msgstr "No items have inventory activity here yet."
 
+msgid "No job at this location has an open operation."
+msgstr "No job at this location has an open operation."
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "No jobs are scheduled at this location yet — release a job to see work-center load."
 
@@ -14587,6 +14590,9 @@ msgstr "No open lines. Add a service to amend."
 
 msgid "No open memos"
 msgstr "No open memos"
+
+msgid "No open operations"
+msgstr "No open operations"
 
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."

@@ -14495,6 +14495,9 @@ msgstr "Nessun articolo"
 msgid "No items have inventory activity here yet."
 msgstr "Nessun articolo ha attività di inventario qui ancora."
 
+msgid "No job at this location has an open operation."
+msgstr ""
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Nessun ordine di produzione programmato in questa ubicazione ancora — rilascia un ordine di produzione per visualizzare il carico del centro di lavoro."
 
@@ -14587,6 +14590,9 @@ msgstr "Nessuna riga aperta. Aggiungi un servizio per modificare."
 
 msgid "No open memos"
 msgstr "Nessun memo aperto"
+
+msgid "No open operations"
+msgstr ""
 
 msgid "No open orders for this item are available to link."
 msgstr "Nessun ordine aperto per questo articolo disponibile per il collegamento."

@@ -14495,6 +14495,9 @@ msgstr "Keine Artikel"
 msgid "No items have inventory activity here yet."
 msgstr "Hier gibt es noch keine Bestandsbewegungen."
 
+msgid "No job at this location has an open operation."
+msgstr ""
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Noch keine Fertigungsaufträge an diesem Standort geplant — geben Sie einen Fertigungsauftrag frei, um die Arbeitszentrums-Auslastung zu sehen."
 
@@ -14587,6 +14590,9 @@ msgstr "Keine offenen Positionen. Fügen Sie eine Dienstleistung hinzu, um zu ä
 
 msgid "No open memos"
 msgstr "Keine offenen Notizen"
+
+msgid "No open operations"
+msgstr ""
 
 msgid "No open orders for this item are available to link."
 msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verfügbar."

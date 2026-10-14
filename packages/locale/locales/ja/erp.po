@@ -14495,6 +14495,9 @@ msgstr "アイテムなし"
 msgid "No items have inventory activity here yet."
 msgstr "ここにはまだアイテムの在庫活動がありません。"
 
+msgid "No job at this location has an open operation."
+msgstr ""
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
 
@@ -14587,6 +14590,9 @@ msgstr "未完了の明細はありません。変更するにはサービスを
 
 msgid "No open memos"
 msgstr "オープンなメモはありません"
+
+msgid "No open operations"
+msgstr ""
 
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"

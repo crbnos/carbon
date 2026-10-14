@@ -31,6 +31,7 @@ import {
   LuLoaderCircle
 } from "react-icons/lu";
 import { useFetcher, useNavigate, useSearchParams } from "react-router";
+import { FieldEmptyState } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { MACHINE_TIME_REVIEW_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
@@ -301,6 +302,12 @@ const MachineTimeDrawer = ({
                   value=""
                   options={operationOptions}
                   placeholder={t`Search jobs and operations`}
+                  emptyMessage={
+                    <FieldEmptyState
+                      title={t`No open operations`}
+                      description={t`No job at this location has an open operation.`}
+                    />
+                  }
                   isReadOnly={!canAnswer || isBusy}
                   onChange={(jobOperationId) => {
                     if (jobOperationId) assign(jobOperationId);

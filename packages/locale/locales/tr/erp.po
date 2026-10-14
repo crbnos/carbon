@@ -14495,6 +14495,9 @@ msgstr "Öğe yok"
 msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
+msgid "No job at this location has an open operation."
+msgstr ""
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Bu Lokasyonda henüz İş emri planlanmamış — çalışma merkezinin yükünü görmek için İş emrini Serbest bırakın."
 
@@ -14587,6 +14590,9 @@ msgstr "Açık satır yok. Değişiklik için bir hizmet ekleyin."
 
 msgid "No open memos"
 msgstr "Açık muhasebe notları yok"
+
+msgid "No open operations"
+msgstr ""
 
 msgid "No open orders for this item are available to link."
 msgstr "Bu Stok kartı için bağlantı kurmak amacıyla Açık siparişler bulunmamaktadır."

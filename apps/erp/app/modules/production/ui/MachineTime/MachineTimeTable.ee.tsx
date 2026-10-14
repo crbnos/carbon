@@ -46,7 +46,9 @@ export function MachineTimeInstant({
   return (
     <DateTime value={value} locationTimeZone={timeZone} side="left">
       <span className="tabular-nums">
-        {formatDateTimeInZone(value, timeZone, locale)}
+        {formatDateTimeInZone(value, timeZone, locale, {
+          timeStyle: "short"
+        })}
       </span>
     </DateTime>
   );
@@ -202,10 +204,10 @@ const MachineTimeTable = memo(
           enableSorting: false,
           cell: ({ row }) =>
             row.original.endTime ? (
-              <Status color="blue">{t`Stopped`}</Status>
+              <Status color="green">{t`Stopped`}</Status>
             ) : (
-              // Green matches the MES dot for a running machine.
-              <Status color="green">{t`Running`}</Status>
+              // Blue is in progress (a spinner); green is finished (a check).
+              <Status color="blue">{t`Running`}</Status>
             ),
           meta: {
             icon: <LuActivity />,
@@ -215,11 +217,11 @@ const MachineTimeTable = memo(
               options: [
                 {
                   value: "Running",
-                  label: <Status color="green">{t`Running`}</Status>
+                  label: <Status color="blue">{t`Running`}</Status>
                 },
                 {
                   value: "Stopped",
-                  label: <Status color="blue">{t`Stopped`}</Status>
+                  label: <Status color="green">{t`Stopped`}</Status>
                 }
               ]
             },

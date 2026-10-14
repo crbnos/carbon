@@ -24,7 +24,7 @@
 - [x] Task 15: Polish the review drawer
 - [x] Task 16: Move the Devices tab server code out of the route and fix its gaps
 - [x] Task 17: Update the rule, AGENTS.md files and the guide
-- [ ] Task 18: Verify in the browser
+- [x] Task 18: Verify in the browser
 
 ## Decisions taken
 
