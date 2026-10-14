@@ -67,8 +67,9 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
       };
     }
 
-    // Thrown by `maintenanceMiddleware` while MAINTENANCE_MODE is on.
-    if (error.status === 503) {
+    // Thrown by `maintenanceMiddleware` while MAINTENANCE_MODE is on. A 503
+    // from anywhere else (a gateway, an overloaded upstream) is not maintenance.
+    if (error.status === 503 && error.data?.message === "maintenance") {
       return {
         code: "503",
         eyebrow: "— scheduled maintenance",

@@ -163,7 +163,11 @@ jobs:
           # A new branch or a force-push leaves no usable BEFORE: deploy.
           if [[ $BEFORE =~ ^0+$ ]] || ! git fetch --quiet --depth=1 origin "$BEFORE"; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "$BEFORE" "$SHA" -- apps/erp apps/mes packages docs/content; then
+          # The erp/mes inputs of .github/scripts/build-images.sh, plus the
+          # docs the ERP bundles: a lockfile-only push rebuilds the images too.
+          elif git diff --quiet "$BEFORE" "$SHA" -- Dockerfile .dockerignore \
+              package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json \
+              lingui.config.js apps/erp apps/mes packages patches scripts docs/content; then
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=true" >> "$GITHUB_OUTPUT"

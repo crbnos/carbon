@@ -554,7 +554,9 @@ export default function AuthenticatedRoute() {
                         values and saving wrote them to the new one. */}
                     <AnnouncementBar
                       announcement={systemStatus.data?.announcement}
-                      userId={user?.id ?? ""}
+                      // The pinned-in operator on a console, so one
+                      // operator's dismissal is not everyone's.
+                      userId={loaderData.effectiveUserId ?? user?.id ?? ""}
                       dismissLabel={t`Dismiss`}
                       defaultLinkLabel={t`Learn more`}
                     />
