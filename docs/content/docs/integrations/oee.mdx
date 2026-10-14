@@ -85,19 +85,22 @@ A machine has one machine time, and operators share it. On any work center, a **
 
 On a work center with a mapped device, the press also wins over older sensor data. Carbon ignores any sensor change older than the press, so a late poll never undoes it. For example, the machine runs and the operator selects **"Pause"** at 10:03. Machine time stops at 10:03. It stays stopped until the station reports its next change to Running.
 
+A station can report a start late. For example, the machine starts at 10:00, the operator selects **"Start"** at 10:03, and the station reports the 10:00 start after the press. Machine time on the operation starts at 10:03, and the time from 10:00 to 10:03 goes to unattributed time. Carbon never records the same minutes twice.
+
 The work center display shows the station's state. It hides the state when the station has a sync error or has not synced for 10 minutes.
 
 ### Unattributed time
 
-Carbon cannot charge run time to an operation in three cases. Then the time goes to **Production → Unattributed Time**, which appears once an OEE provider is installed:
+Carbon cannot charge run time to an operation in four cases. Then the time goes to **Production → Unattributed Time**, which appears once an OEE provider is installed:
 
 - No operation is loaded on the work center.
 - The work center is blocked by [maintenance](/docs/reference/maintenance): a dispatch with an OEE impact of **"Down"** from the moment it is reported until it is completed or cancelled, or one with **"Planned"** while it is In Progress. A Machine event already running when maintenance starts stops there, and the rest of the run goes to unattributed time.
 - The run started before the operation was loaded.
+- The station reported the run only after an operator's Machine press. The time before the press goes to unattributed time.
 
 Time also goes there when an operation finishes while the machine keeps running.
 
-The list holds only time that still needs an answer. Each row shows the work center, location, start, end, duration and state (**"Running"** or **"Stopped"**), in the time zone of the work center's location. Filter the list by work center, location, start date, end date or state. The dates follow your company's time zone.
+The list holds only time that still needs an answer. Each row shows the work center, location, start, end, duration and state (**"Running"** or **"Stopped"**), in the time zone of the work center's location. Filter the list by work center, location, start date, end date or state. The dates follow the time zone of each work center's location, the same time zone the list shows.
 
 Select **Review**, or open a row, to work through the rows the list shows, one at a time. A row whose machine still runs is outside the review until the machine stops:
 

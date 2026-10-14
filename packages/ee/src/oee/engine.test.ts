@@ -22,6 +22,7 @@ const base = (
   openMachineEvent: null,
   openUnattributed: null,
   lastMachineEventEndTime: null,
+  recordedIntervals: [],
   changes: [],
   ...overrides
 });
@@ -226,6 +227,134 @@ describe("planMachineTime", () => {
     );
     expect(result.writes).toEqual([]);
     expect(result.currentState).toBe("Idle");
+  });
+
+  describe("a run reported only after the operator's press", () => {
+    // The machine started at 10:00. The operator pressed Start at 10:03,
+    // which opened the operator's event; the provider reported 10:00 later.
+    const pressed = {
+      lastManualChangeAt: t("10:03:00"),
+      recordedIntervals: [{ startTime: t("10:03:00"), endTime: null }]
+    };
+
+    it("records the time before the press as unattributed", () => {
+      const result = planMachineTime(
+        base({
+          ...pressed,
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:00:00"),
+          endTime: t("10:03:00")
+        }
+      ]);
+      expect(result.currentState).toBe("Running");
+    });
+
+    it("records nothing that an event already holds", () => {
+      const result = planMachineTime(
+        base({
+          lastManualChangeAt: t("10:03:00"),
+          recordedIntervals: [
+            { startTime: t("09:30:00"), endTime: t("10:03:00") }
+          ],
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      expect(result.writes).toEqual([]);
+    });
+
+    it("records only the part no event holds", () => {
+      const result = planMachineTime(
+        base({
+          lastManualChangeAt: t("10:05:00"),
+          recordedIntervals: [
+            { startTime: t("10:02:00"), endTime: t("10:05:00") },
+            { startTime: t("10:05:00"), endTime: null }
+          ],
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:00:00"),
+          endTime: t("10:02:00")
+        }
+      ]);
+    });
+
+    it("ends the time where the machine stopped before the press", () => {
+      const result = planMachineTime(
+        base({
+          ...pressed,
+          changes: [
+            { state: "Running", changedAt: t("09:58:00") },
+            { state: "Idle", changedAt: t("10:01:00") }
+          ]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("09:58:00"),
+          endTime: t("10:01:00")
+        }
+      ]);
+    });
+
+    it("ends the time at the press when a later change follows", () => {
+      const result = planMachineTime(
+        base({
+          ...pressed,
+          changes: [
+            { state: "Running", changedAt: t("10:00:00") },
+            { state: "Idle", changedAt: t("10:30:00") }
+          ]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:00:00"),
+          endTime: t("10:03:00")
+        }
+      ]);
+    });
+
+    it("drops time shorter than the minimum", () => {
+      const result = planMachineTime(
+        base({
+          ...pressed,
+          changes: [{ state: "Running", changedAt: t("10:02:30") }]
+        })
+      );
+      expect(result.writes).toEqual([]);
+    });
+
+    it("ends the time at a stop still pending before the press", () => {
+      const result = planMachineTime(
+        base({
+          now: t("10:03:00"),
+          lastManualChangeAt: t("10:02:45"),
+          recordedIntervals: [{ startTime: t("10:02:45"), endTime: null }],
+          changes: [
+            { state: "Running", changedAt: t("10:00:00") },
+            { state: "Idle", changedAt: t("10:02:30") }
+          ]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:00:00"),
+          endTime: t("10:02:30")
+        }
+      ]);
+    });
   });
 
   it("drops a state shorter than the minimum", () => {

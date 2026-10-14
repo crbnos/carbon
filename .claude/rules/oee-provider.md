@@ -99,7 +99,13 @@ The engine reads the stored changes after `appliedThrough`, in time order.
 
 1. If the state does not change, skip it.
 2. If `changedAt <= lastManualChangeAt`, update the state only. The engine
-   writes no machine time for it ("latest change wins").
+   opens no event for it ("latest change wins"). One exception: a change to
+   `Running` before the press means the machine ran before the press, and
+   the provider reported it late, so the press ended nothing. That run, up to
+   the press (or up to an earlier stop), becomes a closed unattributed row,
+   less the time that a Machine event or an unattributed row already holds
+   (`recordedIntervals`, read by the sync). A part shorter than
+   `minimumStateSeconds` is dropped.
 3. If the state is `Running` and an open Machine event or an open
    unattributed row exists, do nothing.
 4. If the state is `Running`, check the work center. If it was not blocked
@@ -233,12 +239,16 @@ is more than 30 days old. A running row is never purged.
 The drawer (`x+/production+/machine-time.$id.tsx`, `MachineTimeDrawer.ee.tsx`)
 walks the queue in the list's order (`startTime` desc, then `id`; the list
 has no sort, `sort={null}`). The list has 5 filters: work center, location,
-start date, end date, and state (Running green / Stopped blue).
-`parseMachineTimeListFilters` (`machine-time-filters.ee.ts`, pinned by
-`apps/erp/test/machine-time-filters.ee.test.ts`) turns each date range into
-instants at the company's day bounds; the generic `between` filter is not used
-for them. `applyMachineTimeListFilters` applies them to the list and to the
-queue alike. The queue holds stopped rows only; a running row opens but shows
+start date, end date, and state (Running blue / Stopped green: `Status`
+draws blue as a spinner and green as a check). The list shows each row in
+its location's timezone, so the date filters use the same days: the list and
+the queue read the view `unattributedMachineTimes` (migration
+`20261013233811`), which adds `startDate` and `endDate` in the location's
+timezone (else the company's, else UTC). `parseMachineTimeListFilters`
+(`machine-time-filters.ee.ts`, pinned by
+`apps/erp/test/machine-time-filters.ee.test.ts`) reads each range as two
+inclusive `YYYY-MM-DD` days, and `applyMachineTimeListFilters` applies them to
+the list and to the queue alike. The queue holds stopped rows only; a running row opens but shows
 "Running" in place of N of M:
 `getUnattributedMachineTimeNeighbors` gives the position and the rows above
 and below, and every answer redirects to the row below, else the row above,

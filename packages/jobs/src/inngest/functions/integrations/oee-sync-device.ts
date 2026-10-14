@@ -260,13 +260,52 @@ export async function syncOeeDevice({
           : later(lastMachineEventEndTime, canceledAt);
     }
 
+    // Time already recorded on the work center since the first change read,
+    // up to the last press. A run the provider reports only after a press is
+    // recorded as unattributed time, less what these hold.
+    const lastManualChangeAt = toInstant(locked.lastManualChangeAt);
+    const firstChangeAt = toInstant(stored[0]?.changedAt);
+    const recordedIntervals =
+      lastManualChangeAt !== null &&
+      firstChangeAt !== null &&
+      compareInstants(firstChangeAt, lastManualChangeAt) <= 0
+        ? await trx
+            .selectFrom("productionEvent")
+            .select(["startTime", "endTime"])
+            .where("workCenterId", "=", device.workCenterId)
+            .where("companyId", "=", device.companyId)
+            .where("type", "=", "Machine")
+            .where("startTime", "<", lastManualChangeAt)
+            .where((eb) =>
+              eb.or([
+                eb("endTime", "is", null),
+                eb("endTime", ">", firstChangeAt)
+              ])
+            )
+            .unionAll(
+              trx
+                .selectFrom("unattributedMachineTime")
+                .select(["startTime", "endTime"])
+                .where("workCenterId", "=", device.workCenterId)
+                .where("companyId", "=", device.companyId)
+                .where("startTime", "<", lastManualChangeAt)
+                .where((eb) =>
+                  eb.or([
+                    eb("endTime", "is", null),
+                    eb("endTime", ">", firstChangeAt)
+                  ])
+                )
+            )
+            .execute()
+        : [];
+
     const plan = planMachineTime({
       now,
       minimumStateSeconds,
       mappedAt,
       currentState: locked.currentState,
       currentStateAt: toInstant(locked.currentStateAt),
-      lastManualChangeAt: toInstant(locked.lastManualChangeAt),
+      lastManualChangeAt,
       loadedJobOperationId: workCenter?.loadedJobOperationId ?? null,
       loadedAt: toInstant(workCenter?.loadedAt),
       blockedSince: toInstant(blocking?.blockedSince),
@@ -278,6 +317,10 @@ export async function syncOeeDevice({
           }
         : null,
       lastMachineEventEndTime,
+      recordedIntervals: recordedIntervals.map((row) => ({
+        startTime: toInstant(row.startTime),
+        endTime: toInstant(row.endTime)
+      })),
       changes: stored.map((row) => ({
         state: row.state,
         changedAt: toInstant(row.changedAt)

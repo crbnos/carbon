@@ -33,6 +33,12 @@ export type PlanMachineTimeInput = {
   openMachineEvent: { id: string; startTime: string } | null;
   openUnattributed: { id: string; startTime: string } | null;
   lastMachineEventEndTime: string | null;
+  /**
+   * Machine events and unattributed rows on the work center that may overlap
+   * the time before the last press (`endTime` null while open). Time they
+   * already hold is never recorded twice.
+   */
+  recordedIntervals: { startTime: string; endTime: string | null }[];
   /** Stored changes after `appliedThrough`, ascending by `changedAt`. */
   changes: StoredStateChange[];
 };
@@ -65,6 +71,33 @@ type UnattributedSlot =
   | { kind: "new"; startTime: string };
 
 const at = (iso: string) => Date.parse(iso);
+
+/** The parts of `[start, end)` that no recorded interval holds. */
+function unrecordedParts(
+  start: string,
+  end: string,
+  recorded: PlanMachineTimeInput["recordedIntervals"]
+) {
+  const parts: { startTime: string; endTime: string }[] = [];
+  let cursor = start;
+  const sorted = [...recorded].sort(
+    (a, b) => at(a.startTime) - at(b.startTime)
+  );
+  for (const interval of sorted) {
+    if (at(cursor) >= at(end)) break;
+    if (interval.endTime !== null && at(interval.endTime) <= at(cursor)) {
+      continue;
+    }
+    if (at(interval.startTime) >= at(end)) break;
+    if (at(interval.startTime) > at(cursor)) {
+      parts.push({ startTime: cursor, endTime: interval.startTime });
+    }
+    if (interval.endTime === null) return parts;
+    if (at(interval.endTime) > at(cursor)) cursor = interval.endTime;
+  }
+  if (at(cursor) < at(end)) parts.push({ startTime: cursor, endTime: end });
+  return parts;
+}
 
 export function planMachineTime(
   input: PlanMachineTimeInput
@@ -190,12 +223,34 @@ export function planMachineTime(
     if (state === "Running") openRunning(input.blockedSince);
   };
 
+  // A run the provider reported only after an operator press: the machine
+  // ran before the press, and nothing recorded it (the press ended nothing).
+  // The time up to the press is unattributed, less what an event or a row
+  // already holds. The press still decides everything after it.
+  let unrecordedFrom: string | null = null;
+  const recordUnrecorded = (end: string) => {
+    const start = unrecordedFrom;
+    if (start === null) return;
+    unrecordedFrom = null;
+    for (const part of unrecordedParts(start, end, input.recordedIntervals)) {
+      if (at(part.endTime) - at(part.startTime) < minimumMs) continue;
+      writes.push({ kind: "insertUnattributed", ...part });
+    }
+  };
+
   const apply = (next: MachineState, changedAt: string) => {
     if (next === state) return;
     state = next;
     stateAt = changedAt;
     // Latest change wins: an operator press after this change already decided.
-    if (pressedAt !== null && at(changedAt) <= pressedAt) return;
+    if (pressedAt !== null && at(changedAt) <= pressedAt) {
+      if (next === "Running") unrecordedFrom = changedAt;
+      else recordUnrecorded(changedAt);
+      return;
+    }
+    if (input.lastManualChangeAt !== null) {
+      recordUnrecorded(input.lastManualChangeAt);
+    }
     if (next === "Running") openRunning(changedAt);
     else closeAll(changedAt);
   };
@@ -226,12 +281,16 @@ export function planMachineTime(
 
   // Debounce: a state shorter than the minimum is dropped; the last change
   // stays pending until it has lasted the minimum.
+  let pending: StoredStateChange | null = null;
   for (const [i, run] of runs.entries()) {
     if (blockedAt !== null && at(run.changedAt) >= blockedAt) enterBlock();
     const next = runs[i + 1];
     const end = next ? next.changedAt : input.now;
     if (at(end) - at(run.changedAt) < minimumMs) {
-      if (!next) break;
+      if (!next) {
+        pending = run;
+        break;
+      }
       appliedThrough = run.through;
       continue;
     }
@@ -240,6 +299,16 @@ export function planMachineTime(
   }
 
   if (blockedAt !== null && blockedAt <= at(input.now)) enterBlock();
+
+  // The run before the press ends at the press, or at a change still pending
+  // debounce before it: that change may yet stop the machine earlier.
+  if (input.lastManualChangeAt !== null) {
+    recordUnrecorded(
+      pending && at(pending.changedAt) < at(input.lastManualChangeAt)
+        ? pending.changedAt
+        : input.lastManualChangeAt
+    );
+  }
 
   // Steady state: the machine runs and nothing holds its time — an operation
   // went Done mid-run, or maintenance / End Shift closed the event.
