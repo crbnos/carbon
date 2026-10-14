@@ -94,8 +94,20 @@ without a device.
   `20261013172620`): a second `jobOperation`↔`workCenter` relationship made
   PostgREST refuse every existing embed of one from the other (PGRST201), so
   the unload interceptor also handles DELETE instead.
+- **History.** The pointer holds only the current load, so the same two
+  interceptors also write `workCenterLoad` (migration `20261014010130`):
+  each load opens a row (`loadedAt` = the event's `startTime`) and ends the
+  work center's open one at that instant; each unload sets `unloadedAt` to
+  now. A reload of the operation already loaded writes nothing. Its
+  `jobOperationId` has no foreign key, for the same PGRST201 reason.
+  SELECT-only through the API. pg_cron `work-center-load-retention` (04:35
+  UTC, `util.purge_work_center_loads()`) deletes a row 7 days after its
+  `unloadedAt`; an open load is never deleted. Pinned by
+  `supabase/tests/work-center-loaded-operation.test.sql`.
 
-Carbon never infers a job from the schedule. Only the load attributes time.
+Carbon never infers a job from the schedule. Only the load attributes time,
+and it is the load at the moment the run started, read from the history:
+the order in which reports and presses arrive does not change the operation.
 
 ## Attribution rules (`planMachineTime`)
 
@@ -106,16 +118,21 @@ The engine reads the stored changes after `appliedThrough`, in time order.
    opens no event for it ("latest change wins"). One exception: a change to
    `Running` before the press means the machine ran before the press, and
    the provider reported it late, so the press ended nothing. That run, up to
-   the press (or up to an earlier stop), becomes a closed unattributed row,
-   less the time that a Machine event or an unattributed row already holds
-   (`recordedIntervals`, read by the sync). A part shorter than
-   `minimumStateSeconds` is dropped.
+   the press (or up to an earlier stop), is recorded closed, less the time
+   that a Machine event or an unattributed row already holds
+   (`recordedIntervals`, read by the sync). It splits where a load or the
+   block begins or ends: a part with an assignable load and no block becomes
+   a system Machine event on that operation, the rest unattributed time. That
+   is what an earlier report would have recorded. An unattributed part
+   shorter than `minimumStateSeconds` is dropped.
 3. If the state is `Running` and an open Machine event or an open
    unattributed row exists, do nothing.
 4. If the state is `Running`, check the work center. If it was not blocked
-   at `changedAt` and its operation loaded at or before `changedAt`, open a
-   Machine event on that operation. Set `employeeId` to null and `createdBy`
-   to `system`.
+   at `changedAt` and an operation was loaded at `changedAt` (the load whose
+   period holds it, from `loads`) and is `assignable`, open a Machine event
+   on that operation. Set `employeeId` to null and `createdBy` to `system`.
+   `assignable` is false once the operation is Done or Canceled or its job
+   is locked (Completed, Closed, Cancelled).
 5. Else, if the state is `Running`, open an `unattributedMachineTime` row.
 6. If the state is `Idle`, `Down` or `Offline`, end the open Machine event
    and the open unattributed row at `changedAt`.
@@ -159,6 +176,21 @@ unattributed time, never on the operation.
 **A load change mid-run.** The open event stays on the old operation. The
 next `Running` change goes to the new one.
 
+**Running past a press.** A machine that is `Running` at the press
+(`currentStateAt <= lastManualChangeAt`) and runs on after it: the press, a
+Pause, stopped the operator's time, not the machine. The time after the
+press that no event or row holds is unattributed time, never the loaded
+operation's, since the operator said to stop charging it. A sync while the
+machine still runs opens the row once it has run `minimumStateSeconds` past
+the press; a stop reported with no sync between records the same interval
+closed. A machine that stops sooner, as it winds down after a Pause, records
+nothing. After a Start the operator's open event holds the time, so nothing
+is recorded.
+
+**Short rows.** Each sync deletes the closed unattributed rows on its work
+center shorter than `minimumStateSeconds`, whoever closed them (the sync, a
+press or an unmapping).
+
 ## The MES Machine button
 
 A machine has one machine time: operators share it. A "Start" or "Pause"
@@ -186,8 +218,9 @@ type (`event.tsx`), not the form's, and refuses an event that has already
 ended ("This event has already ended"): for a Machine event it locks the
 device, then the event row while it is still open, and the press ends it; any
 other event's update matches only while `endTime` is null. A repeated End
-therefore never moves an end time or ends a newer event. After a Pause on a running machine, no sensor time opens until the
-device reports its next change to `Running`.
+therefore never moves an end time or ends a newer event. After a Pause on a
+running machine, the time until it stops goes to the queue ("Running past a
+press").
 
 ## The sync
 

@@ -54,6 +54,14 @@ function toInstant(value: Date | string | null | undefined): string | null {
 const minus = (iso: string, duration: { hours?: number; minutes?: number }) =>
   parseAbsolute(iso, "UTC").subtract(duration).toAbsoluteString();
 
+// A job in one of these statuses takes no more time. Mirrors the ERP's
+// JOB_LOCKED_STATUSES (apps/erp production.models.ts), which jobs cannot import.
+const LOCKED_JOB_STATUSES = new Set<string | null>([
+  "Completed",
+  "Closed",
+  "Cancelled"
+]);
+
 const compareInstants = (a: string, b: string) =>
   parseAbsolute(a, "UTC").compare(parseAbsolute(b, "UTC"));
 
@@ -146,14 +154,33 @@ export async function syncOeeDevice({
 
     const appliedThrough = toInstant(locked.appliedThrough);
 
-    const [workCenter, blocking, openEvent, openUnattributed, lastEnd, stored] =
+    const [loadRows, blocking, openEvent, openUnattributed, lastEnd, stored] =
       await Promise.all([
+        // The work center's load history (kept 7 days after each unload):
+        // time goes to the operation loaded when it ran, not the current one.
         trx
-          .selectFrom("workCenter")
-          .select(["loadedJobOperationId", "loadedAt"])
-          .where("id", "=", device.workCenterId)
-          .where("companyId", "=", device.companyId)
-          .executeTakeFirst(),
+          .selectFrom("workCenterLoad")
+          .leftJoin("jobOperation", (join) =>
+            join
+              .onRef("jobOperation.id", "=", "workCenterLoad.jobOperationId")
+              .onRef("jobOperation.companyId", "=", "workCenterLoad.companyId")
+          )
+          .leftJoin("job", (join) =>
+            join
+              .onRef("job.id", "=", "jobOperation.jobId")
+              .onRef("job.companyId", "=", "jobOperation.companyId")
+          )
+          .select([
+            "workCenterLoad.jobOperationId",
+            "workCenterLoad.loadedAt",
+            "workCenterLoad.unloadedAt",
+            "jobOperation.status as operationStatus",
+            "job.status as jobStatus"
+          ])
+          .where("workCenterLoad.workCenterId", "=", device.workCenterId)
+          .where("workCenterLoad.companyId", "=", device.companyId)
+          .orderBy("workCenterLoad.loadedAt", "asc")
+          .execute(),
         // When maintenance began blocking the work center. A Down dispatch
         // blocks from the moment it is reported (the MES ends every event on
         // the work center when one is created), until it is Completed or
@@ -260,26 +287,30 @@ export async function syncOeeDevice({
           : later(lastMachineEventEndTime, canceledAt);
     }
 
-    // Time already recorded on the work center since the first change read,
-    // up to the last press. A run the provider reports only after a press is
-    // recorded as unattributed time, less what these hold.
+    // Time already recorded on the work center around the last press, from
+    // the first change read (or the press) on. A run the provider reports
+    // after a press, and a run that goes on past a Pause, are recorded less
+    // what these hold.
     const lastManualChangeAt = toInstant(locked.lastManualChangeAt);
     const firstChangeAt = toInstant(stored[0]?.changedAt);
+    const recordedFrom =
+      lastManualChangeAt !== null && firstChangeAt !== null
+        ? compareInstants(firstChangeAt, lastManualChangeAt) <= 0
+          ? firstChangeAt
+          : lastManualChangeAt
+        : lastManualChangeAt;
     const recordedIntervals =
-      lastManualChangeAt !== null &&
-      firstChangeAt !== null &&
-      compareInstants(firstChangeAt, lastManualChangeAt) <= 0
+      recordedFrom !== null
         ? await trx
             .selectFrom("productionEvent")
             .select(["startTime", "endTime"])
             .where("workCenterId", "=", device.workCenterId)
             .where("companyId", "=", device.companyId)
             .where("type", "=", "Machine")
-            .where("startTime", "<", lastManualChangeAt)
             .where((eb) =>
               eb.or([
                 eb("endTime", "is", null),
-                eb("endTime", ">", firstChangeAt)
+                eb("endTime", ">", recordedFrom)
               ])
             )
             .unionAll(
@@ -288,11 +319,10 @@ export async function syncOeeDevice({
                 .select(["startTime", "endTime"])
                 .where("workCenterId", "=", device.workCenterId)
                 .where("companyId", "=", device.companyId)
-                .where("startTime", "<", lastManualChangeAt)
                 .where((eb) =>
                   eb.or([
                     eb("endTime", "is", null),
-                    eb("endTime", ">", firstChangeAt)
+                    eb("endTime", ">", recordedFrom)
                   ])
                 )
             )
@@ -306,8 +336,16 @@ export async function syncOeeDevice({
       currentState: locked.currentState,
       currentStateAt: toInstant(locked.currentStateAt),
       lastManualChangeAt,
-      loadedJobOperationId: workCenter?.loadedJobOperationId ?? null,
-      loadedAt: toInstant(workCenter?.loadedAt),
+      loads: loadRows.map((row) => ({
+        jobOperationId: row.jobOperationId,
+        from: toInstant(row.loadedAt),
+        to: toInstant(row.unloadedAt),
+        assignable:
+          row.operationStatus !== null &&
+          row.operationStatus !== "Done" &&
+          row.operationStatus !== "Canceled" &&
+          !LOCKED_JOB_STATUSES.has(row.jobStatus)
+      })),
       blockedSince: toInstant(blocking?.blockedSince),
       openMachineEvent,
       openUnattributed: openUnattributed
@@ -383,6 +421,19 @@ export async function syncOeeDevice({
           break;
       }
     }
+
+    // Unattributed time shorter than the minimum is not kept, whoever closed
+    // it: the sync, an operator's press or an unmapping. Like a short state,
+    // it is noise in the review queue.
+    await trx
+      .deleteFrom("unattributedMachineTime")
+      .where("workCenterId", "=", device.workCenterId)
+      .where("companyId", "=", device.companyId)
+      .where("endTime", "is not", null)
+      .where(
+        sql<boolean>`"endTime" - "startTime" < make_interval(secs => ${minimumStateSeconds})`
+      )
+      .execute();
 
     await trx
       .updateTable("workCenterDevice")

@@ -16,8 +16,9 @@ const base = (
   currentState: "Idle",
   currentStateAt: t("08:00:00"),
   lastManualChangeAt: null,
-  loadedJobOperationId: "A",
-  loadedAt: t("07:00:00"),
+  loads: [
+    { jobOperationId: "A", from: t("07:00:00"), to: null, assignable: true }
+  ],
   blockedSince: null,
   openMachineEvent: null,
   openUnattributed: null,
@@ -85,8 +86,7 @@ describe("planMachineTime", () => {
   it("records unattributed time when nothing is loaded", () => {
     const result = planMachineTime(
       base({
-        loadedJobOperationId: null,
-        loadedAt: null,
+        loads: [],
         changes: [{ state: "Running", changedAt: t("10:00:00") }]
       })
     );
@@ -183,7 +183,14 @@ describe("planMachineTime", () => {
   it("does not charge an operation for a run that started before it was loaded", () => {
     const result = planMachineTime(
       base({
-        loadedAt: t("10:05:00"),
+        loads: [
+          {
+            jobOperationId: "A",
+            from: t("10:05:00"),
+            to: null,
+            assignable: true
+          }
+        ],
         changes: [{ state: "Running", changedAt: t("10:00:00") }]
       })
     );
@@ -192,9 +199,9 @@ describe("planMachineTime", () => {
     ]);
   });
 
-  it("keeps an operator's Stop: the next run opens a new event on the same operation", () => {
+  it("after an operator's Stop on a running machine, queues the time until it stops; the next run goes to the operation", () => {
     // The event was open since 10:00; the operator pressed Stop at 10:03,
-    // which closed it. The sensor later reports Idle, then Running again.
+    // which closed it. The machine ran on until 11:00, then started again.
     const result = planMachineTime(
       base({
         currentState: "Running",
@@ -207,6 +214,11 @@ describe("planMachineTime", () => {
       })
     );
     expect(result.writes).toEqual([
+      {
+        kind: "insertUnattributed",
+        startTime: t("10:03:00"),
+        endTime: t("11:00:00")
+      },
       {
         kind: "insertMachineEvent",
         jobOperationId: "A",
@@ -232,12 +244,14 @@ describe("planMachineTime", () => {
   describe("a run reported only after the operator's press", () => {
     // The machine started at 10:00. The operator pressed Start at 10:03,
     // which opened the operator's event; the provider reported 10:00 later.
+    // Nothing was loaded before the press.
     const pressed = {
       lastManualChangeAt: t("10:03:00"),
+      loads: [],
       recordedIntervals: [{ startTime: t("10:03:00"), endTime: null }]
     };
 
-    it("records the time before the press as unattributed", () => {
+    it("records the time before the press as unattributed when nothing was loaded", () => {
       const result = planMachineTime(
         base({
           ...pressed,
@@ -258,10 +272,15 @@ describe("planMachineTime", () => {
       const result = planMachineTime(
         base({
           lastManualChangeAt: t("10:03:00"),
+          loads: [],
           recordedIntervals: [
             { startTime: t("09:30:00"), endTime: t("10:03:00") }
           ],
-          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+          // The machine stops 30 seconds after the press: no time after it.
+          changes: [
+            { state: "Running", changedAt: t("10:00:00") },
+            { state: "Idle", changedAt: t("10:03:30") }
+          ]
         })
       );
       expect(result.writes).toEqual([]);
@@ -271,6 +290,7 @@ describe("planMachineTime", () => {
       const result = planMachineTime(
         base({
           lastManualChangeAt: t("10:05:00"),
+          loads: [],
           recordedIntervals: [
             { startTime: t("10:02:00"), endTime: t("10:05:00") },
             { startTime: t("10:05:00"), endTime: null }
@@ -340,6 +360,7 @@ describe("planMachineTime", () => {
         base({
           now: t("10:03:00"),
           lastManualChangeAt: t("10:02:45"),
+          loads: [],
           recordedIntervals: [{ startTime: t("10:02:45"), endTime: null }],
           changes: [
             { state: "Running", changedAt: t("10:00:00") },
@@ -399,7 +420,14 @@ describe("planMachineTime", () => {
         currentState: null,
         currentStateAt: null,
         mappedAt: t("10:00:00"),
-        loadedAt: t("08:00:00"),
+        loads: [
+          {
+            jobOperationId: "A",
+            from: t("08:00:00"),
+            to: null,
+            assignable: true
+          }
+        ],
         changes: [{ state: "Running", changedAt: t("09:00:00") }]
       })
     );
@@ -420,8 +448,7 @@ describe("planMachineTime", () => {
       base({
         currentState: "Running",
         currentStateAt: t("09:00:00"),
-        loadedJobOperationId: null,
-        loadedAt: null,
+        loads: [],
         lastMachineEventEndTime: t("10:00:00")
       })
     );
@@ -430,16 +457,188 @@ describe("planMachineTime", () => {
     ]);
   });
 
-  it("does not reopen time after the operator stopped the run", () => {
+  it("queues the time a machine keeps running after the operator stopped the run", () => {
     const result = planMachineTime(
       base({
         currentState: "Running",
         currentStateAt: t("09:00:00"),
         lastManualChangeAt: t("10:03:00"),
-        lastMachineEventEndTime: t("10:03:00")
+        lastMachineEventEndTime: t("10:03:00"),
+        recordedIntervals: [
+          { startTime: t("09:00:00"), endTime: t("10:03:00") }
+        ]
       })
     );
-    expect(result.writes).toEqual([]);
+    expect(result.writes).toEqual([
+      { kind: "insertUnattributed", startTime: t("10:03:00"), endTime: null }
+    ]);
+  });
+
+  describe("the same facts in either order of arrival", () => {
+    // The machine starts at 10:00 while X is loaded. The operator presses
+    // Start on Y at 10:03, which loads Y.
+    const loads = [
+      {
+        jobOperationId: "X",
+        from: t("09:00:00"),
+        to: t("10:03:00"),
+        assignable: true
+      },
+      { jobOperationId: "Y", from: t("10:03:00"), to: null, assignable: true }
+    ];
+
+    it("gives a start reported before the press to the operation loaded then", () => {
+      const result = planMachineTime(
+        base({
+          loads: [loads[0]!].map((load) => ({ ...load, to: null })),
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      // The press then ends this event at 10:03.
+      expect(result.writes).toEqual([
+        {
+          kind: "insertMachineEvent",
+          jobOperationId: "X",
+          startTime: t("10:00:00"),
+          endTime: null
+        }
+      ]);
+    });
+
+    it("gives a start reported after the press to the operation loaded then", () => {
+      const result = planMachineTime(
+        base({
+          lastManualChangeAt: t("10:03:00"),
+          loads,
+          recordedIntervals: [{ startTime: t("10:03:00"), endTime: null }],
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertMachineEvent",
+          jobOperationId: "X",
+          startTime: t("10:00:00"),
+          endTime: t("10:03:00")
+        }
+      ]);
+    });
+
+    it("queues the part of a late run after its load ended", () => {
+      const result = planMachineTime(
+        base({
+          lastManualChangeAt: t("10:03:00"),
+          loads: [{ ...loads[0]!, to: t("10:01:30") }],
+          recordedIntervals: [{ startTime: t("10:03:00"), endTime: null }],
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertMachineEvent",
+          jobOperationId: "X",
+          startTime: t("10:00:00"),
+          endTime: t("10:01:30")
+        },
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:01:30"),
+          endTime: t("10:03:00")
+        }
+      ]);
+    });
+
+    it("queues a late run whose operation can no longer take time", () => {
+      const result = planMachineTime(
+        base({
+          lastManualChangeAt: t("10:03:00"),
+          loads: [{ ...loads[0]!, assignable: false }],
+          recordedIntervals: [{ startTime: t("10:03:00"), endTime: null }],
+          changes: [{ state: "Running", changedAt: t("10:00:00") }]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:00:00"),
+          endTime: t("10:03:00")
+        }
+      ]);
+    });
+
+    // The operator's event ran 10:10-10:20 and a Pause ended it; the machine
+    // ran on until 10:30.
+    const paused = {
+      currentState: "Running" as const,
+      currentStateAt: t("10:00:00"),
+      lastManualChangeAt: t("10:20:00")
+    };
+
+    it("after a Pause, a sync while the machine still runs opens the time, and the stop closes it", () => {
+      const running = planMachineTime(
+        base({
+          ...paused,
+          now: t("10:21:30"),
+          recordedIntervals: [
+            { startTime: t("10:10:00"), endTime: t("10:20:00") }
+          ]
+        })
+      );
+      expect(running.writes).toEqual([
+        { kind: "insertUnattributed", startTime: t("10:20:00"), endTime: null }
+      ]);
+
+      const stopped = planMachineTime(
+        base({
+          ...paused,
+          openUnattributed: { id: "u1", startTime: t("10:20:00") },
+          recordedIntervals: [
+            { startTime: t("10:10:00"), endTime: t("10:20:00") },
+            { startTime: t("10:20:00"), endTime: null }
+          ],
+          changes: [{ state: "Idle", changedAt: t("10:30:00") }]
+        })
+      );
+      expect(stopped.writes).toEqual([
+        {
+          kind: "closeUnattributed",
+          unattributedId: "u1",
+          endTime: t("10:30:00")
+        }
+      ]);
+    });
+
+    it("after a Pause, a stop reported with no sync between records the same time", () => {
+      const result = planMachineTime(
+        base({
+          ...paused,
+          recordedIntervals: [
+            { startTime: t("10:10:00"), endTime: t("10:20:00") }
+          ],
+          changes: [{ state: "Idle", changedAt: t("10:30:00") }]
+        })
+      );
+      expect(result.writes).toEqual([
+        {
+          kind: "insertUnattributed",
+          startTime: t("10:20:00"),
+          endTime: t("10:30:00")
+        }
+      ]);
+    });
+
+    it("records nothing when the machine stops soon after a Pause", () => {
+      const waiting = planMachineTime(base({ ...paused, now: t("10:20:30") }));
+      expect(waiting.writes).toEqual([]);
+
+      const stopped = planMachineTime(
+        base({
+          ...paused,
+          changes: [{ state: "Idle", changedAt: t("10:20:40") }]
+        })
+      );
+      expect(stopped.writes).toEqual([]);
+    });
   });
 
   it("closes the open event when the machine goes down or offline", () => {

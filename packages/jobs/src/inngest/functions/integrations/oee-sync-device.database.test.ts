@@ -132,6 +132,20 @@ describe.skipIf(!hasLocalDatabase)(
         status: "In Progress",
         ...operation
       });
+      // Triggers are off here, so the load history the interceptor would
+      // write is seeded with the pointer.
+      if (workCenter.loadedJobOperationId && workCenter.loadedAt) {
+        await client.query(
+          `INSERT INTO "workCenterLoad" ("companyId", "workCenterId", "jobOperationId", "loadedAt")
+           VALUES ($1, $2, $3, $4)`,
+          [
+            companyId,
+            workCenterId,
+            workCenter.loadedJobOperationId,
+            workCenter.loadedAt
+          ]
+        );
+      }
       await insert("workCenterDevice", {
         id: deviceId,
         workCenterId,
@@ -503,6 +517,69 @@ describe.skipIf(!hasLocalDatabase)(
         endTime: "2026-10-13T11:03:00.000Z",
         createdBy: "operator"
       });
+      // The machine stops 30 seconds after the Pause: no time after it.
+      const { provider } = fakeProvider([
+        {
+          externalEventId: "run",
+          state: "Running",
+          changedAt: "2026-10-13T11:00:00.000Z"
+        },
+        {
+          externalEventId: "stop",
+          state: "Idle",
+          changedAt: "2026-10-13T11:03:30.000Z"
+        }
+      ]);
+
+      await sync(provider);
+
+      expect(await unattributedTime()).toEqual([]);
+    });
+
+    it("gives a run reported after a press to the operation loaded when it started", async () => {
+      // X was loaded from 10:00. The machine started at 11:00; at 11:03 the
+      // operator pressed Start on Y, which loaded Y, before the provider
+      // reported the run.
+      await seed({
+        workCenter: {
+          loadedJobOperationId: operationId,
+          loadedAt: "2026-10-13T11:03:00.000Z"
+        },
+        device: {
+          currentState: "Idle",
+          currentStateAt: "2026-10-13T09:00:00.000Z",
+          appliedThrough: "2026-10-13T09:00:00.000Z",
+          lastEventAt: "2026-10-13T09:00:00.000Z",
+          lastManualChangeAt: "2026-10-13T11:03:00.000Z",
+          lastSyncedAt: "2026-10-13T11:02:00.000Z"
+        }
+      });
+      const earlier = id("op-x");
+      await insert("jobOperation", {
+        id: earlier,
+        jobId: id("job"),
+        processId: id("process"),
+        status: "In Progress"
+      });
+      await client.query(
+        `INSERT INTO "workCenterLoad" ("companyId", "workCenterId", "jobOperationId", "loadedAt", "unloadedAt")
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          companyId,
+          workCenterId,
+          earlier,
+          "2026-10-13T10:00:00.000Z",
+          "2026-10-13T11:03:00.000Z"
+        ]
+      );
+      await insert("productionEvent", {
+        id: id("operator"),
+        jobOperationId: operationId,
+        workCenterId,
+        type: "Machine",
+        startTime: "2026-10-13T11:03:00.000Z",
+        createdBy: "operator"
+      });
       const { provider } = fakeProvider([
         {
           externalEventId: "run",
@@ -513,7 +590,98 @@ describe.skipIf(!hasLocalDatabase)(
 
       await sync(provider);
 
+      expect(await machineEvents()).toEqual([
+        {
+          jobOperationId: earlier,
+          createdBy: "system",
+          employeeId: null,
+          startTime: "2026-10-13T11:00:00.000Z",
+          endTime: "2026-10-13T11:03:00.000Z"
+        },
+        {
+          jobOperationId: operationId,
+          createdBy: "operator",
+          employeeId: null,
+          startTime: "2026-10-13T11:03:00.000Z",
+          endTime: null
+        }
+      ]);
       expect(await unattributedTime()).toEqual([]);
+    });
+
+    it("queues the time a machine runs on after a Pause, up to its stop", async () => {
+      // The operator ran Machine time from 10:30 and pressed Pause at 11:03;
+      // the machine, running since 10:00, stopped at 11:30.
+      await seed({
+        workCenter: {
+          loadedJobOperationId: operationId,
+          loadedAt: "2026-10-13T10:30:00.000Z"
+        },
+        device: {
+          currentState: "Running",
+          currentStateAt: "2026-10-13T10:00:00.000Z",
+          appliedThrough: "2026-10-13T10:00:00.000Z",
+          lastEventAt: "2026-10-13T10:00:00.000Z",
+          lastManualChangeAt: "2026-10-13T11:03:00.000Z",
+          lastSyncedAt: "2026-10-13T11:02:00.000Z"
+        }
+      });
+      await insert("productionEvent", {
+        id: id("operator"),
+        jobOperationId: operationId,
+        workCenterId,
+        type: "Machine",
+        startTime: "2026-10-13T10:30:00.000Z",
+        endTime: "2026-10-13T11:03:00.000Z",
+        createdBy: "operator"
+      });
+      const { provider } = fakeProvider([
+        {
+          externalEventId: "stop",
+          state: "Idle",
+          changedAt: "2026-10-13T11:30:00.000Z"
+        }
+      ]);
+
+      await sync(provider);
+
+      expect(await unattributedTime()).toEqual([
+        {
+          startTime: "2026-10-13T11:03:00.000Z",
+          endTime: "2026-10-13T11:30:00.000Z"
+        }
+      ]);
+    });
+
+    it("deletes closed unattributed time shorter than the minimum", async () => {
+      await seed({
+        device: {
+          currentState: "Idle",
+          currentStateAt: "2026-10-13T09:00:00.000Z",
+          appliedThrough: "2026-10-13T09:00:00.000Z",
+          lastEventAt: "2026-10-13T09:00:00.000Z",
+          lastSyncedAt: "2026-10-13T11:58:00.000Z"
+        }
+      });
+      await insert("unattributedMachineTime", {
+        workCenterId,
+        startTime: "2026-10-13T10:00:00.000Z",
+        endTime: "2026-10-13T10:00:20.000Z"
+      });
+      await insert("unattributedMachineTime", {
+        workCenterId,
+        startTime: "2026-10-13T10:30:00.000Z",
+        endTime: "2026-10-13T10:35:00.000Z"
+      });
+
+      await sync(fakeProvider([]).provider);
+
+      expect(await unattributedTime()).toEqual([
+        {
+          startTime: "2026-10-13T10:30:00.000Z",
+          endTime: "2026-10-13T10:35:00.000Z"
+        }
+      ]);
     });
   }
 );
