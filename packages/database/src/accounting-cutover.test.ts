@@ -382,39 +382,48 @@ describe("isIgnorableOpenItem", () => {
 });
 
 describe("applyCarbonToTrialBalance", () => {
-  it("sets each control account to Carbon's total and keeps every other row", () => {
+  const RETAINED = "acct-retained";
+  const classed = (
+    lines: { accountId: string; debit: number; credit: number }[]
+  ) =>
+    lines.map((line) => ({
+      ...line,
+      accountClass:
+        line.accountId === RETAINED
+          ? ("Equity" as const)
+          : (classOf[line.accountId] ?? "Asset")
+    }));
+
+  it("sets each control account to Carbon's total and balances on retained earnings", () => {
     const items = [receivable("inv-1", 100), receivable("inv-2", 20)];
     const trialBalance: TrialBalanceLine[] = [
       { accountId: AR, accountClass: "Asset", debit: 105, credit: 0 },
       { accountId: CASH, accountClass: "Asset", debit: 50, credit: 0 },
       { accountId: EQUITY, accountClass: "Equity", debit: 0, credit: 155 }
     ];
-    const { rows } = migrationClearingByAccount(items, trialBalance, controls);
+    const before = migrationClearingByAccount(items, trialBalance, controls);
+    expect(before.total).toBe(-15);
 
-    const applied = applyCarbonToTrialBalance(trialBalance, rows, controls);
+    const applied = applyCarbonToTrialBalance(
+      trialBalance,
+      before.rows,
+      controls,
+      RETAINED
+    );
 
     expect(applied).toEqual([
       { accountId: CASH, debit: 50, credit: 0 },
       { accountId: EQUITY, debit: 0, credit: 155 },
-      { accountId: AR, debit: 120, credit: 0 }
+      { accountId: AR, debit: 120, credit: 0 },
+      { accountId: RETAINED, debit: 0, credit: 15 }
     ]);
-    const after = migrationClearingByAccount(
-      items,
-      applied.map((line) => ({
-        ...line,
-        accountClass: classOf[line.accountId] ?? "Asset"
-      })),
-      controls
-    );
+    const after = migrationClearingByAccount(items, classed(applied), controls);
     expect(after.rows.every((row) => row.difference === 0)).toBe(true);
-    // The total only moves when the non-control rows change.
-    expect(after.total).toBe(
-      migrationClearingByAccount(items, trialBalance, controls).total
-    );
+    expect(after.total).toBe(0);
   });
 
-  it("writes a credit-natured control account as a credit, and drops one Carbon has nothing on", () => {
-    const payables = new Set([AP, AR]);
+  it("adds to a retained earnings row already there, and drops a control account Carbon has nothing on", () => {
+    const both = new Set([AP, AR]);
     const payable: OpenItem = {
       ...receivable("pinv-1", 300),
       openItemType: "Payable",
@@ -422,17 +431,31 @@ describe("applyCarbonToTrialBalance", () => {
       accountClass: "Liability"
     };
     const trialBalance: TrialBalanceLine[] = [
-      { accountId: AR, accountClass: "Asset", debit: 40, credit: 0 }
+      { accountId: AR, accountClass: "Asset", debit: 40, credit: 0 },
+      { accountId: RETAINED, accountClass: "Equity", debit: 0, credit: 40 }
     ];
-    const { rows } = migrationClearingByAccount(
-      [payable],
+    const { rows } = migrationClearingByAccount([payable], trialBalance, both);
+
+    const applied = applyCarbonToTrialBalance(
       trialBalance,
-      payables
+      rows,
+      both,
+      RETAINED
     );
 
-    expect(applyCarbonToTrialBalance(trialBalance, rows, payables)).toEqual([
+    expect(applied).toEqual([
+      { accountId: RETAINED, debit: 300, credit: 0 },
       { accountId: AP, debit: 0, credit: 300 }
     ]);
+    expect(
+      migrationClearingByAccount([payable], classed(applied), both).total
+    ).toBe(0);
+  });
+
+  it("refuses to balance on a control account", () => {
+    expect(() => applyCarbonToTrialBalance([], [], controls, AR)).toThrow(
+      /control account/
+    );
   });
 });
 

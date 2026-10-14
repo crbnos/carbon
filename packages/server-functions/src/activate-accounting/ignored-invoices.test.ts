@@ -110,17 +110,26 @@ databaseTest(
       await applyCarbonToOpeningTrialBalance(f.db, { ...args, userId: USER });
 
       const { lines } = await getOpeningTrialBalance(f.db, args);
-      expect(lines).toEqual([
-        expect.objectContaining({
-          accountId: f.account("receivables"),
-          debit: 100,
-          credit: 0
-        })
-      ]);
+      expect(lines).toHaveLength(2);
+      expect(lines).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountId: f.account("receivables"),
+            debit: 100,
+            credit: 0
+          }),
+          // Nothing in the trial balance offset the receivable: the
+          // difference lands on retained earnings.
+          expect.objectContaining({
+            accountId: f.account("retained-earnings"),
+            debit: 0,
+            credit: 100
+          })
+        ])
+      );
       const clearing = await getMigrationClearing(f.db, args);
       expect(clearing.rows.every((row) => row.difference === 0)).toBe(true);
-      // The receivable is still not offset anywhere in the trial balance.
-      expect(clearing.total).toBe(-100);
+      expect(clearing.total).toBe(0);
     } finally {
       await f.cleanup();
     }

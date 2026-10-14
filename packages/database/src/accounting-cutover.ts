@@ -364,27 +364,48 @@ export function isIgnorableOpenItem(
 
 /**
  * The trial balance with every control account set to Carbon's opening total
- * for it, debit-signed as `migrationClearingByAccount` reports it. Every other
- * row is kept. Each control account's difference becomes zero; the Migration
- * Clearing total does not move, and shows up instead as the trial balance
- * being out of balance, to be put on a non-control account.
+ * for it, debit-signed as `migrationClearingByAccount` reports it, and every
+ * other row kept. Each control account's difference becomes zero. What is
+ * left — the Migration Clearing total — is the amount the trial balance is
+ * now out of balance by; it goes to `balancingAccountId` (retained
+ * earnings), added to any row already there, so Migration Clearing totals
+ * zero and the plug is a trial balance line the user can see and change.
  */
 export function applyCarbonToTrialBalance(
   trialBalance: TrialBalanceLine[],
   rows: MigrationClearingRow[],
-  controlAccountIds: ReadonlySet<string>
+  controlAccountIds: ReadonlySet<string>,
+  balancingAccountId: string
 ): { accountId: string; debit: number; credit: number }[] {
-  const kept = trialBalance
-    .filter((line) => !controlAccountIds.has(line.accountId))
-    .map(({ accountId, debit, credit }) => ({ accountId, debit, credit }));
-  const control = rows
-    .filter((row) => Math.abs(row.carbon) > EPSILON)
-    .map((row) => ({
-      accountId: row.accountId,
-      debit: row.carbon > 0 ? row.carbon : 0,
-      credit: row.carbon < 0 ? -row.carbon : 0
-    }));
-  return [...kept, ...control];
+  if (controlAccountIds.has(balancingAccountId)) {
+    throw new Error("The balancing account cannot be a control account");
+  }
+  const debitByAccount = new Map<string, number>();
+  const add = (accountId: string, value: number) =>
+    debitByAccount.set(accountId, (debitByAccount.get(accountId) ?? 0) + value);
+  for (const line of trialBalance) {
+    if (!controlAccountIds.has(line.accountId)) {
+      add(line.accountId, netDebit(line));
+    }
+  }
+  for (const row of rows) add(row.accountId, row.carbon);
+  const outOfBalance = [...debitByAccount.values()].reduce(
+    (sum, value) => sum + value,
+    0
+  );
+  add(balancingAccountId, -outOfBalance);
+
+  return [...debitByAccount].flatMap(([accountId, value]) => {
+    const amount = round(value);
+    if (Math.abs(amount) <= EPSILON) return [];
+    return [
+      {
+        accountId,
+        debit: amount > 0 ? amount : 0,
+        credit: amount < 0 ? -amount : 0
+      }
+    ];
+  });
 }
 
 /** The layer that opens an item's stock at the cutover. */

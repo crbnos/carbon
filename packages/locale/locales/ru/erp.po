@@ -15138,8 +15138,8 @@ msgstr "Включено"
 msgid "On {sentDate}"
 msgstr "На {sentDate}"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "Для контрольного счета Carbon получает остаток из своих открытых документов, запасов и основных средств. Пробный баланс должен совпадать: каждое различие остается на счете миграции, сумма которого должна быть равна нулю. Откройте счет, чтобы увидеть его документы, и игнорируйте счет-фактуру, которую предыдущая система уже обработала."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "На счёте управления Carbon открывает остаток со своих собственных открытых номенклатур, запасов и основных средств. Пробный баланс должен совпадать: каждое расхождение остаётся на Миграционном клиринге, который должен в итоге равняться нулю. Откройте счёт, чтобы увидеть его номенклатуру, и проигнорируйте счёт-фактуру, которую предыдущая система уже оплатила. Применение к Пробному балансу устанавливает каждый счёт управления на итого Carbon и помещает остаток на Нераспределенную прибыль."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "На канбане перемещения минимальное количество для целевой единицы хранения. Когда наличие плюс открытые входящие перемещения упадут ниже этого значения, Carbon создает перемещение запаса в объеме канбана."

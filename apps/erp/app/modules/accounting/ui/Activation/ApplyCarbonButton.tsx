@@ -10,9 +10,9 @@ import { usePermissions } from "~/hooks";
 import { activationStepPath } from "./ActivationSteps";
 
 /**
- * Sets every control account on the trial balance to Carbon's opening total.
- * What is left on Migration Clearing then shows as the trial balance being
- * out of balance, to put on a non-control account.
+ * Sets every control account on the trial balance to Carbon's opening total
+ * and puts what that leaves out of balance on Retained Earnings, so Migration
+ * Clearing totals zero. Enabled while it does not.
  */
 export default function ApplyCarbonButton({
   cutoverDate,

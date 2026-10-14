@@ -15138,8 +15138,8 @@ msgstr "Włączone"
 msgid "On {sentDate}"
 msgstr "W dniu {sentDate}"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "Na koncie kontrolnym Carbon otwiera saldo ze swoich otwartych artykułów, zapasów i środków trwałych. Bilans otwarcia musi się zgadzać: każda różnica pozostaje na Migration Clearing, które musi wynosić zero. Otwórz konto, aby zobaczyć jego artykuły, i zignoruj fakturę rozliczoną przez poprzedni system."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "Na koncie kontrolnym Carbon otwiera saldo ze swoich otwartych artykułów, zapasów i środków trwałych. Bilans próbny musi się zgadzać: każda różnica pozostaje w Rozliczeniu migracji, które musi w sumie wyniesć zero. Otwórz konto, aby zobaczyć jego artykuły, i zignoruj fakturę, którą poprzedni system już opłacił. Zastosowanie do Bilansu próbnego ustawia każde konto kontrolne na sumę Carbona i umieszcza pozostałość na Zyski zatrzymane."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "W kanban transferu minimalna ilość dla jednostki magazynowej docelowej. Gdy zapas dostępny plus otwarte przychodzące przesunięcia spadną poniżej tej wartości, Carbon tworzy zwolnione przesunięcie zapasu dla ilości kanban."

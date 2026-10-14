@@ -7,6 +7,7 @@ import {
   mapRemoteTrialBalance,
   parseQboTrialBalance,
   parseReportAmount,
+  parseRilletTrialBalance,
   parseXeroTrialBalance,
   type QboTrialBalanceResponse,
   type RemoteTrialBalanceRow,
@@ -401,6 +402,94 @@ describe("parseQboTrialBalance", () => {
     expect(() =>
       parseQboTrialBalance({ Columns: { Column: [{ ColTitle: "Amount" }] } })
     ).toThrow(/Debit and Credit/);
+  });
+});
+
+describe("parseRilletTrialBalance", () => {
+  const money = (amount: string) => ({ amount, currency: "USD" });
+  const account = (
+    id: string,
+    beginning: string,
+    debit: string,
+    credit: string,
+    ending: string
+  ) => ({
+    id,
+    code: id.toUpperCase(),
+    name: id,
+    beginning_balance: money(beginning),
+    debit_total: money(debit),
+    credit_total: money(credit),
+    ending_balance: money(ending)
+  });
+  const types = new Map([
+    ["cash", "ASSET"],
+    ["ap", "LIABILITY"],
+    ["equity", "EQUITY"]
+  ]);
+  const balances = (
+    rows: { externalId: string | null; debitSigned: number }[]
+  ) => Object.fromEntries(rows.map((row) => [row.externalId, row.debitSigned]));
+
+  it("reads debit-signed balances as they are", () => {
+    const rows = parseRilletTrialBalance(
+      {
+        accounts: [
+          account("cash", "100.00", "50.00", "0.00", "150.00"),
+          account("ap", "-40.00", "0.00", "50.00", "-90.00"),
+          account("equity", "-60.00", "0.00", "0.00", "-60.00")
+        ]
+      },
+      types
+    );
+    expect(balances(rows)).toEqual({ cash: 150, ap: -90, equity: -60 });
+  });
+
+  it("flips natural-signed balances on credit-natured accounts", () => {
+    const rows = parseRilletTrialBalance(
+      {
+        accounts: [
+          account("cash", "100.00", "50.00", "0.00", "150.00"),
+          account("ap", "40.00", "0.00", "50.00", "90.00"),
+          account("equity", "60.00", "0.00", "0.00", "60.00")
+        ]
+      },
+      types
+    );
+    expect(balances(rows)).toEqual({ cash: 150, ap: -90, equity: -60 });
+  });
+
+  it("refuses a report that agrees with neither reading", () => {
+    expect(() =>
+      parseRilletTrialBalance(
+        {
+          accounts: [
+            account("cash", "100.00", "50.00", "0.00", "150.00"),
+            account("ap", "-40.00", "0.00", "50.00", "-40.00")
+          ]
+        },
+        types
+      )
+    ).toThrow(/does not balance/);
+  });
+
+  it("reads the FX totals as movement", () => {
+    const rows = parseRilletTrialBalance(
+      {
+        accounts: [
+          {
+            ...account("cash", "0.00", "10.00", "0.00", "12.00"),
+            debit_fx_total: money("2.00")
+          },
+          {
+            ...account("ap", "0.00", "0.00", "10.00", "-12.00"),
+            credit_fx_total: money("2.00")
+          }
+        ]
+      },
+      types
+    );
+    expect(balances(rows)).toEqual({ cash: 12, ap: -12 });
   });
 });
 

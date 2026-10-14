@@ -15138,8 +15138,8 @@ msgstr "オン"
 msgid "On {sentDate}"
 msgstr "{sentDate}に送信"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "管理勘定では、Carbonはその独自のオープン品目、在庫管理、および固定資産から残高を開きます。試算表は一致する必要があります。すべての差異は移行クリアリングに留まり、合計がゼロになる必要があります。勘定を開いてその品目を確認し、前のシステムで既に決済された請求書を無視してください。"
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "制御勘定では、Carbonは独自のオープン品目、在庫管理および固定資産から残高を開きます。試算表は一致する必要があります。すべての差異は移行クリアリングに留まり、ゼロに合計する必要があります。勘定をオープンして品目を確認し、前のシステムで既に決済した請求書は無視してください。試算表に適用することで、各制御勘定をCarbonの合計に設定し、残りを利益剰余金に配置します。"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "転送かんばんでは、宛先保管ユニットの最小数量です。手持ちプラス未処理の受信転送がそれ以下に落ちると、Carbon はかんばん数量のためにリリース済の在庫転送を作成します。"

@@ -12961,7 +12961,7 @@ msgid "Map Lines Now"
 msgstr "Mapper les lignes maintenant"
 
 msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
-msgstr "Mettez en correspondance ces comptes dans les paramètres {providerName} et récupérez à nouveau, ou entrez leurs soldes ci-dessous."
+msgstr "Mettez en correspondance ces comptes dans les paramètres de l'intégration {providerName} et récupérez à nouveau, ou entrez leurs soldes ci-dessous."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Mappez votre plan comptable au plan comptable du fournisseur. Les comptes de comptabilisation par défaut et les comptes de charge sont marqués Requis ; les écritures comptabilisées utilisent le code de compte du fournisseur mappé."
@@ -15138,8 +15138,8 @@ msgstr "Activé"
 msgid "On {sentDate}"
 msgstr "Le {sentDate}"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "Sur un compte de contrôle, Carbon récupère le solde à partir de ses articles non fermés, des stocks et des immobilisations. La balance de vérification doit correspondre : toute différence reste sur Migration Clearing, qui doit totaliser zéro. Ouvrez un compte pour voir ses articles, et ignorez une facture que le système précédent a déjà apurée."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "Sur un compte de contrôle, Carbon ouvre le solde de ses propres articles ouverts, ses stocks et ses immobilisations. La balance de vérification doit correspondre : chaque différence reste sur Rapprochement de migration, qui doit totaliser zéro. Ouvrez un compte pour voir ses articles, et ignorez une facture que le système antérieur a déjà réglée. Appliquer à la Balance de vérification définit chaque compte de contrôle au total de Carbon et place ce qui reste sur Report à nouveau."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "Sur un kanban de transfert, la quantité minimale pour l'unité de stockage de destination. Lorsque le stock disponible plus les transferts entrants ouverts descend au-dessous, Carbon crée un transfert de stock lancé pour la quantité du kanban."
