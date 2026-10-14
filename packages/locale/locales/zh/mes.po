@@ -545,6 +545,9 @@ msgstr "描述"
 msgid "Details"
 msgstr "详情"
 
+msgid "Dismiss"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
 

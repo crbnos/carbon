@@ -545,6 +545,9 @@ msgstr "Descripción"
 msgid "Details"
 msgstr "Detalles"
 
+msgid "Dismiss"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Orden de mantenimiento no encontrada"
 

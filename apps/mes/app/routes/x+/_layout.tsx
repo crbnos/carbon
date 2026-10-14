@@ -28,9 +28,10 @@ import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
-import { RouteRealtime } from "@carbon/query";
+import { RouteRealtime, useLoaderQuery } from "@carbon/query";
 import { setClientCompanyId } from "@carbon/query/cache";
 import {
+  AnnouncementBar,
   Button,
   cn,
   Heading,
@@ -50,7 +51,7 @@ import {
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect, useState } from "react";
@@ -79,6 +80,7 @@ import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
+import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
@@ -403,6 +405,10 @@ export default function AuthenticatedRoute() {
   });
 
   const userId = user?.id;
+  const { t } = useLingui();
+  const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
+    path.to.api.systemStatus
+  );
   const userEmail = user?.email;
   const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
   const companyId = company?.companyId;
@@ -546,6 +552,12 @@ export default function AuthenticatedRoute() {
                     {/* A company switch stays on the same page. Without the key the page
                         keeps its state, so a form still held the previous company's
                         values and saving wrote them to the new one. */}
+                    <AnnouncementBar
+                      announcement={systemStatus.data?.announcement}
+                      userId={user?.id ?? ""}
+                      dismissLabel={t`Dismiss`}
+                      defaultLinkLabel={t`Learn more`}
+                    />
                     <Outlet key={companyId} />
                   </div>
                   <MesTabBar

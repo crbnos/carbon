@@ -545,6 +545,9 @@ msgstr "Описание"
 msgid "Details"
 msgstr "Детали"
 
+msgid "Dismiss"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Заявка на техобслуживание не найдена"
 

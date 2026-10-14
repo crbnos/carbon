@@ -374,6 +374,7 @@ export const path = {
       supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
+      systemStatus: `${api}/system-status`,
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,

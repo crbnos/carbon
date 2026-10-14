@@ -545,6 +545,9 @@ msgstr "Açıklama"
 msgid "Details"
 msgstr "Detaylar"
 
+msgid "Dismiss"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Bakım emri bulunamadı"
 

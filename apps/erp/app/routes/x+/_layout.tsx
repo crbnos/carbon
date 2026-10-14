@@ -28,9 +28,10 @@ import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
-import { RouteRealtime } from "@carbon/query";
+import { RouteRealtime, useLoaderQuery } from "@carbon/query";
 import { setClientCompanyId } from "@carbon/query/cache";
 import {
+  AnnouncementBar,
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
@@ -48,6 +49,7 @@ import {
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -88,6 +90,7 @@ import {
 } from "~/modules/shared/shared.server";
 import { getItarCertificationStatus } from "~/modules/users";
 import { getUserClaims } from "~/modules/users/users.server";
+import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -389,6 +392,10 @@ export default function AuthenticatedRoute() {
   } = loaderData;
   // During render, not in an effect: clientLoaders and the first child read it.
   setClientCompanyId(company?.id ?? null, user?.id ?? null);
+  const { t } = useLingui();
+  const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
+    path.to.api.systemStatus
+  );
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
@@ -543,6 +550,12 @@ export default function AuthenticatedRoute() {
                         (notifications, sheets) never run on desktop. */}
                     {isPhone && <MobileAppBar />}
                     <Topbar />
+                    <AnnouncementBar
+                      announcement={systemStatus.data?.announcement}
+                      userId={user?.id ?? ""}
+                      dismissLabel={t`Dismiss`}
+                      defaultLinkLabel={t`Learn more`}
+                    />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <ModuleSidebarLayout>
                         {/* A company switch stays on the same page. Without the key the page

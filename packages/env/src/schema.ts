@@ -116,6 +116,16 @@ export const schema = define({
     description: "true for an ITAR / controlled deployment",
     browser: true
   },
+  MAINTENANCE_MODE: {
+    group: "core",
+    description: "true answers every request except /health with a 503"
+  },
+  SYSTEM_STATUS_URL: {
+    group: "core",
+    description:
+      "URL of a JSON document with the latest version and an announcement",
+    type: url
+  },
   DEFAULT_LANGUAGE: {
     group: "core",
     description: "Default UI language (en)",

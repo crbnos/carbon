@@ -545,6 +545,9 @@ msgstr "Opis"
 msgid "Details"
 msgstr "Szczegóły"
 
+msgid "Dismiss"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Nie znaleziono zlecenia utrzymania ruchu"
 

@@ -545,6 +545,9 @@ msgstr "Beschreibung"
 msgid "Details"
 msgstr "Details"
 
+msgid "Dismiss"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Instandhaltungsauftrag nicht gefunden"
 
