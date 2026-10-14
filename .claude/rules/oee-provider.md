@@ -415,7 +415,10 @@ still moves. Two catch-ups post what a failure left: operation finish (MES
 (`complete_job_to_inventory`). Two callers can post one event at once (the
 sync and an operation finish): `post-production-event` locks the event row in
 its transaction and refuses with 409 (`PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR`)
-when `postedToGL` changed since it read the event. `complete_job_to_inventory`
+when `postedToGL` changed since it read the event, or, for a repost, when the
+net already posted for the event (`readPostedNet`, re-read under the lock)
+changed: the flag stays true across reposts, so it alone cannot tell two
+concurrent edit reposts apart. `complete_job_to_inventory`
 selects its unposted events `FOR UPDATE OF pe` (migration `20261014135003`),
 so it waits for a concurrent post and skips an event that one posted. An edit on the job's
 Events tab reposts the difference (reversal, then the new amount).
