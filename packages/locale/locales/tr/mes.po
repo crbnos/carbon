@@ -546,7 +546,7 @@ msgid "Details"
 msgstr "Detaylar"
 
 msgid "Dismiss"
-msgstr ""
+msgstr "Kapat"
 
 msgid "Dispatch not found"
 msgstr "Bakım emri bulunamadı"

@@ -546,7 +546,7 @@ msgid "Details"
 msgstr "상세 정보"
 
 msgid "Dismiss"
-msgstr ""
+msgstr "닫기"
 
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"

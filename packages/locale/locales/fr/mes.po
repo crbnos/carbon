@@ -546,7 +546,7 @@ msgid "Details"
 msgstr "Détails"
 
 msgid "Dismiss"
-msgstr ""
+msgstr "Fermer"
 
 msgid "Dispatch not found"
 msgstr "Intervention de maintenance non trouvée"

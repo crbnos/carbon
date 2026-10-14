@@ -546,7 +546,7 @@ msgid "Details"
 msgstr "詳細"
 
 msgid "Dismiss"
-msgstr ""
+msgstr "閉じる"
 
 msgid "Dispatch not found"
 msgstr "保全指示が見つかりません"

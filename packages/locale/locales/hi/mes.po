@@ -546,7 +546,7 @@ msgid "Details"
 msgstr "विवरण"
 
 msgid "Dismiss"
-msgstr ""
+msgstr "खारिज करें"
 
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
