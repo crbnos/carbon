@@ -12,15 +12,10 @@ import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { datetime, getClientIp } from "@carbon/utils";
+import { datetime, getClientIp, redirect } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   BulkInviteEmployeesModal,
   type BulkInviteResult,
@@ -32,7 +27,6 @@ import {
   getSsoInviteDomainError
 } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 const logger = getLogger("erp", "employees-bulk-invite");
 
@@ -234,14 +228,6 @@ export async function action({ request }: ActionFunctionArgs) {
     message,
     results
   };
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  try {
-    return await serverAction();
-  } finally {
-    invalidateUserSelectQueries(getCompanyId());
-  }
 }
 
 export default function () {

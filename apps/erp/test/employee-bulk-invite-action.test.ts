@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   getSsoInviteDomainError: vi.fn(),
   getSsoAwareInviteLink: vi.fn(),
   sendEmail: vi.fn(),
-  invalidate: vi.fn(),
   from: vi.fn(),
   adminSelect: vi.fn(),
   adminEq: vi.fn(),
@@ -61,10 +60,6 @@ vi.mock("~/modules/users/users.server", () => ({
   createEmployeeAccount: mocks.createEmployeeAccount,
   getSsoInviteDomainError: mocks.getSsoInviteDomainError
 }));
-vi.mock("~/utils/react-query", () => ({
-  getCompanyId: () => "company-a",
-  invalidateUserSelectQueries: mocks.invalidate
-}));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
@@ -74,7 +69,7 @@ vi.mock("~/utils/path", () => ({
   }
 }));
 
-import { action, clientAction, loader } from "../app/routes/x+/users+/employees.bulk-invite";
+import { action, loader } from "../app/routes/x+/users+/employees.bulk-invite";
 import { loader as redirectLoader } from "../app/routes/x+/users+/employees.new";
 
 const employee = (rowId: string, employeeType: string) => ({
@@ -250,10 +245,5 @@ describe("bulk invite upstream role policy", () => {
     expect(redirect).toBeInstanceOf(Response);
     expect((redirect as Response).headers.get("Location")).toBe("/x/users/employees/bulk-invite?sort=name");
     expect(mocks.requirePermissions).toHaveBeenCalledWith(args.request, { create: "users" });
-  });
-
-  it("invalidates company-scoped cached users even when serverAction throws", async () => {
-    await expect(clientAction({ ...requestArgs(), serverAction: async () => { throw new Error("failed"); } })).rejects.toThrow("failed");
-    expect(mocks.invalidate).toHaveBeenCalledWith("company-a");
   });
 });

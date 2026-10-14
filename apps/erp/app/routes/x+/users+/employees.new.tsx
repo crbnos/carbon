@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 // Single invite flow: the multi-row bulk invite modal covers one or many.
