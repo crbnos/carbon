@@ -196,8 +196,13 @@ export const getSalesOrderJobStatus = (
   const hasAnyQuantityReleased = totalReleased > 0;
   const isCompleted =
     hasEnoughJobsToCoverQuantity && hasEnoughCompletedToCoverQuantity;
+  // A Service line never ships: completing its jobs fulfills it, and the
+  // database fills quantitySent / sentComplete from those jobs. Reading that as
+  // "Shipped" told people a shipment had gone out when none can.
+  const isService = line.salesOrderLineType === "Service";
   const quantitySent = line.quantitySent ?? 0;
-  const isPartiallyShipped = quantitySent > 0 && quantitySent < saleQuantity;
+  const isPartiallyShipped =
+    !isService && quantitySent > 0 && quantitySent < saleQuantity;
 
   let jobVariant: "green" | "red" | "orange";
   let jobLabel:
@@ -208,7 +213,7 @@ export const getSalesOrderJobStatus = (
     | "Shipped"
     | "Partially Shipped";
 
-  if (isCompleted && line.sentComplete) {
+  if (isCompleted && line.sentComplete && !isService) {
     jobLabel = "Shipped";
     jobVariant = "green";
   } else if (isCompleted) {
