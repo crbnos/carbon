@@ -340,6 +340,9 @@ export type RilletAccountType =
 
 const RILLET_CREDIT_NATURED = new Set(["LIABILITY", "EQUITY", "INCOME"]);
 
+/** Never closed at year end, so the balance moves only by the report's totals. */
+const RILLET_NEVER_CLOSED = new Set(["ASSET", "LIABILITY"]);
+
 /** Half a cent: report amounts are rounded to the currency's decimals. */
 const REPORT_TOLERANCE = 0.005;
 
@@ -350,11 +353,16 @@ const REPORT_TOLERANCE = 0.005;
  * Rillet's docs do not say how `ending_balance` is signed, so the parser
  * reads it both ways — debit-signed, and positive on each account's natural
  * side (credit for LIABILITY, EQUITY and INCOME, by `accountTypes`) — and
- * keeps the reading that agrees with the report itself: every account's
- * `ending − beginning` must equal its period movement signed the same way,
- * and the debit-signed balances must total zero. When neither reading
- * agrees, or both do and give different balances, it throws rather than
- * guess.
+ * keeps the reading that agrees with the report itself: every ASSET and
+ * LIABILITY account's `ending − beginning` must equal its period movement
+ * signed the same way, and the debit-signed balances must total zero. When
+ * neither reading agrees, or both do and give different balances, it throws
+ * rather than guess.
+ *
+ * The movement test skips INCOME, EXPENSE and EQUITY accounts. The report
+ * covers the year to the date, which crosses the fiscal year end, where
+ * Rillet closes income and expense into retained earnings with no journal:
+ * for those accounts `ending − beginning` is not their movement.
  */
 export function parseRilletTrialBalance(
   response: RilletTrialBalanceResponse,
@@ -367,12 +375,11 @@ export function parseRilletTrialBalance(
     const credits =
       parseReportAmount(account.credit_total?.amount) +
       parseReportAmount(account.credit_fx_total?.amount);
-    const creditNatured = RILLET_CREDIT_NATURED.has(
-      accountTypes.get(account.id ?? "") ?? ""
-    );
+    const type = accountTypes.get(account.id ?? "") ?? "";
     return {
       account,
-      creditNatured,
+      creditNatured: RILLET_CREDIT_NATURED.has(type),
+      neverClosed: RILLET_NEVER_CLOSED.has(type),
       beginning: parseReportAmount(account.beginning_balance?.amount),
       ending: parseReportAmount(account.ending_balance?.amount),
       movement: debits - credits
@@ -391,7 +398,12 @@ export function parseRilletTrialBalance(
       const change =
         read(row.ending, row.creditNatured) -
         read(row.beginning, row.creditNatured);
-      if (Math.abs(change - row.movement) > REPORT_TOLERANCE) return false;
+      if (
+        row.neverClosed &&
+        Math.abs(change - row.movement) > REPORT_TOLERANCE
+      ) {
+        return false;
+      }
       total += read(row.ending, row.creditNatured);
     }
     return Math.abs(total) <= REPORT_TOLERANCE * Math.max(accounts.length, 1);

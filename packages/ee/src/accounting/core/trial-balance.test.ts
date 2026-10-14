@@ -473,6 +473,35 @@ describe("parseRilletTrialBalance", () => {
     ).toThrow(/does not balance/);
   });
 
+  it("reads a report that crosses a fiscal year end", () => {
+    // The year to the date crosses the year end, where Rillet closes income
+    // and expense into retained earnings with no journal: those accounts'
+    // ending − beginning is not their movement in the report.
+    const closingTypes = new Map([
+      ...types,
+      ["revenue", "INCOME"],
+      ["retained", "EQUITY"]
+    ]);
+    const report = (sign: 1 | -1) => {
+      const credit = (amount: number) => (sign * amount).toFixed(2);
+      return {
+        accounts: [
+          account("cash", "1500.00", "300.00", "0.00", "1800.00"),
+          account("revenue", credit(-500), "0.00", "300.00", credit(-200)),
+          account("retained", credit(-1000), "0.00", "0.00", credit(-1600))
+        ]
+      };
+    };
+    const expected = { cash: 1800, revenue: -200, retained: -1600 };
+
+    expect(balances(parseRilletTrialBalance(report(1), closingTypes))).toEqual(
+      expected
+    );
+    expect(balances(parseRilletTrialBalance(report(-1), closingTypes))).toEqual(
+      expected
+    );
+  });
+
   it("reads the FX totals as movement", () => {
     const rows = parseRilletTrialBalance(
       {
