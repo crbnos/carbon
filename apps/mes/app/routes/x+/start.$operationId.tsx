@@ -8,7 +8,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
-import { recordManualMachinePress } from "@carbon/database/machine-time";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
@@ -19,6 +18,7 @@ import {
   getNextIncompleteSerialEntity,
   getOperationEligibility,
   getTrackedEntitiesByMakeMethodId,
+  insertMachineEventWithPress,
   startProductionEvent
 } from "~/services/operations.service";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
@@ -244,30 +244,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // If type is Machine, cancel all setup and labor production events for this operation
   const pressedAt = datetime.timestamp();
   if (type === "Machine") {
-    // A machine has one machine time: end every open Machine event on the work
-    // center at the press, from any operator or the sensor. With a device, also
-    // end the open unattributed time and record the press.
-    const workCenterId = jobOperation.data.workCenterId;
-    if (workCenterId) {
-      try {
-        await getDatabaseClient()
-          .transaction()
-          .execute((trx) =>
-            recordManualMachinePress(trx, {
-              workCenterId,
-              companyId,
-              userId,
-              pressedAt
-            })
-          );
-      } catch (err) {
-        throw redirect(
-          path.to.operations,
-          await flash(request, error(err, "Failed to start event"))
-        );
-      }
-    }
-
     await serviceRole
       .from("productionEvent")
       .update({
@@ -293,7 +269,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     },
     trackedEntityId || undefined,
     undefined,
-    "mes_qr"
+    "mes_qr",
+    // A machine has one machine time: the press ends every open Machine
+    // event on the work center (from any operator or the sensor) and, with a
+    // device, the open unattributed time, in one transaction with this event.
+    type === "Machine" && jobOperation.data.workCenterId
+      ? insertMachineEventWithPress(getDatabaseClient(), {
+          workCenterId: jobOperation.data.workCenterId,
+          companyId,
+          userId,
+          pressedAt
+        })
+      : undefined
   );
 
   if (startEvent.error) {

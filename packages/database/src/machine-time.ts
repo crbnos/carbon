@@ -82,6 +82,11 @@ export async function recordManualMachinePress(
     pressedAt: string;
   }
 ): Promise<{ mapped: boolean; endedEventIds: string[] }> {
+  // The device lock comes first, as in the sync and the mapping writes: the
+  // sync locks the device and then ends events, so ending events first and
+  // then waiting for the device could deadlock with it.
+  const device = await lockWorkCenterDevice(trx, args);
+
   const ended = await trx
     .updateTable("productionEvent")
     .set({
@@ -98,7 +103,6 @@ export async function recordManualMachinePress(
     .execute();
   const endedEventIds = ended.map((row) => row.id);
 
-  const device = await lockWorkCenterDevice(trx, args);
   if (!device) return { mapped: false, endedEventIds };
 
   await endOpenUnattributedTime(trx, {

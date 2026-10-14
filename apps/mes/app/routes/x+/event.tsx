@@ -6,7 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { recordManualMachinePress } from "@carbon/database/machine-time";
+import {
+  lockWorkCenterDevice,
+  recordManualMachinePress
+} from "@carbon/database/machine-time";
 import { validationError, validator } from "@carbon/form";
 import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
@@ -17,6 +20,7 @@ import { productionEventValidator } from "~/services/models";
 import {
   endProductionEvent,
   getOperationEligibility,
+  insertMachineEventWithPress,
   startProductionEvent
 } from "~/services/operations.service";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
@@ -49,26 +53,15 @@ export async function action({ request }: ActionFunctionArgs) {
   // A machine has one machine time. A Machine press ends every open Machine
   // event on the work center at the press, from any operator or the sensor.
   // On a work center with a device it also ends the open unattributed time and
-  // records the press, so an older sensor change cannot undo it.
-  const recordMachinePress = async ({
-    type,
-    workCenterId
-  }: {
-    type: string | null;
-    workCenterId: string | null | undefined;
-  }) => {
-    if (type !== "Machine" || !workCenterId) return;
-    await getDatabaseClient()
-      .transaction()
-      .execute((trx) =>
-        recordManualMachinePress(trx, {
-          workCenterId,
-          companyId,
-          userId,
-          pressedAt
-        })
-      );
-  };
+  // records the press, so an older sensor change cannot undo it. The press
+  // commits with the write it belongs to: the new event on a Start, the check
+  // that the event is still open on an End.
+  const press = (workCenterId: string) => ({
+    workCenterId,
+    companyId,
+    userId,
+    pressedAt
+  });
 
   if (productionAction === "Start") {
     // Ability gate: the shop-floor Start button posts here, so the
@@ -140,16 +133,12 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    try {
-      await recordMachinePress({
-        type: d.type,
-        workCenterId: d.workCenterId
-      });
-    } catch (err) {
-      return data(
-        {},
-        await flash(request, error(err, "Failed to start event"))
-      );
+    const machineWorkCenterId =
+      d.type === "Machine" ? d.workCenterId : undefined;
+    // The Machine insert skips RLS (it shares the press's transaction), so
+    // the permission RLS would check is checked here.
+    if (machineWorkCenterId) {
+      await requirePermissions(request, { create: "production" });
     }
 
     const startEvent = await startProductionEvent(
@@ -162,7 +151,14 @@ export async function action({ request }: ActionFunctionArgs) {
         createdBy: userId
       },
       trackedEntityId,
-      unitIndex
+      unitIndex,
+      "mes",
+      machineWorkCenterId
+        ? insertMachineEventWithPress(
+            getDatabaseClient(),
+            press(machineWorkCenterId)
+          )
+        : undefined
     );
 
     if (startEvent.error) {
@@ -183,7 +179,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // End on the event's own work center and type, not the form's.
     const event = await client
       .from("productionEvent")
-      .select("workCenterId, type")
+      .select("workCenterId, type, endTime")
       .eq("id", id)
       .eq("companyId", companyId)
       .maybeSingle();
@@ -193,21 +189,69 @@ export async function action({ request }: ActionFunctionArgs) {
         await flash(request, error(event.error, "Failed to end event"))
       );
     }
+    // A repeated End must not end it again, nor end a newer event through
+    // the press.
+    const alreadyEnded = async () =>
+      data(
+        {},
+        await flash(request, error(null, "This event has already ended"))
+      );
+    if (event.data.endTime) return alreadyEnded();
 
-    try {
-      await recordMachinePress({
-        type: event.data.type,
-        workCenterId: event.data.workCenterId
+    const machineWorkCenterId =
+      event.data.type === "Machine" ? event.data.workCenterId : null;
+
+    let endEvent: Awaited<ReturnType<typeof endProductionEvent>>;
+    if (machineWorkCenterId) {
+      await requirePermissions(request, { update: "production" });
+      // The press ends this event with every other open Machine event on the
+      // work center. It runs only while this event is still open, under the
+      // device lock first, as the sync takes it.
+      let ended = true;
+      try {
+        await getDatabaseClient()
+          .transaction()
+          .execute(async (trx) => {
+            await lockWorkCenterDevice(trx, {
+              workCenterId: machineWorkCenterId,
+              companyId
+            });
+            const open = await trx
+              .selectFrom("productionEvent")
+              .select("id")
+              .where("id", "=", id)
+              .where("companyId", "=", companyId)
+              .where("endTime", "is", null)
+              .forUpdate()
+              .executeTakeFirst();
+            if (!open) {
+              ended = false;
+              return;
+            }
+            await recordManualMachinePress(trx, press(machineWorkCenterId));
+          });
+      } catch (err) {
+        return data(
+          {},
+          await flash(request, error(err, "Failed to end event"))
+        );
+      }
+      if (!ended) return alreadyEnded();
+      endEvent = await client
+        .from("productionEvent")
+        .select("*")
+        .eq("id", id)
+        .eq("companyId", companyId);
+    } else {
+      endEvent = await endProductionEvent(client, {
+        id,
+        endTime: pressedAt,
+        employeeId: userId
       });
-    } catch (err) {
-      return data({}, await flash(request, error(err, "Failed to end event")));
+      if (!endEvent.error && endEvent.data?.length === 0) {
+        return alreadyEnded();
+      }
     }
-
-    const endEvent = await endProductionEvent(client, {
-      id,
-      endTime: pressedAt,
-      employeeId: userId
-    });
     if (endEvent.error) {
       return data(
         {},

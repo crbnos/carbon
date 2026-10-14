@@ -5,6 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { recordManualMachinePress } from "@carbon/database/machine-time";
 import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -2469,10 +2470,12 @@ export async function endProductionEvent(
     employeeId: string;
   }
 ) {
+  // Only an open event ends: a repeated End must not move its end time.
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .is("endTime", null)
     .select("*");
 }
 
@@ -2636,6 +2639,48 @@ async function verifyProductionEventRefs(
   return { ok: true };
 }
 
+/** Writes the new event row. The default writes it through `client`. */
+type InsertProductionEvent = (
+  event: Database["public"]["Tables"]["productionEvent"]["Insert"]
+) => Promise<{ data: { id: string } | null; error: unknown }>;
+
+/**
+ * The insert for a Machine start: the press, which ends the work center's
+ * open machine time, and the new event commit in one transaction. If the
+ * event cannot be written, nothing was ended. The caller has already checked
+ * that the user may create production events: this write skips RLS.
+ */
+export function insertMachineEventWithPress(
+  db: Kysely<KyselyDatabase>,
+  press: {
+    workCenterId: string;
+    companyId: string;
+    userId: string;
+    pressedAt: string;
+  }
+): InsertProductionEvent {
+  return async (event) => {
+    try {
+      const inserted = await db.transaction().execute(async (trx) => {
+        await recordManualMachinePress(trx, press);
+        return trx
+          .insertInto("productionEvent")
+          .values({ ...event, companyId: press.companyId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+      });
+      return { data: inserted, error: null };
+    } catch (error) {
+      log.error("Failed to start the Machine event", {
+        companyId: press.companyId,
+        workCenterId: press.workCenterId,
+        error
+      });
+      return { data: null, error };
+    }
+  };
+}
+
 export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2652,7 +2697,9 @@ export async function startProductionEvent(
   trackedEntityId: string | undefined,
   unitIndex?: number,
   /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
-  source: WorkSource = "mes"
+  source: WorkSource = "mes",
+  insertEvent: InsertProductionEvent = async (event) =>
+    client.from("productionEvent").insert(event).select("id").single()
 ) {
   const refs = await verifyProductionEventRefs(client, {
     companyId: data.companyId,
@@ -2670,7 +2717,7 @@ export async function startProductionEvent(
     const activityId = nanoid();
 
     const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(event).select("id").single(),
+      insertEvent(event),
       client
         .from("jobOperation")
         .select("*")
@@ -2679,7 +2726,7 @@ export async function startProductionEvent(
         .single()
     ]);
 
-    if (eventInsert.error) return eventInsert;
+    if (eventInsert.error || !eventInsert.data) return eventInsert;
     if (operation.error) return operation;
 
     const trackedActivityInsert = await client
@@ -2747,10 +2794,7 @@ export async function startProductionEvent(
     return eventInsert;
   }
 
-  const eventInsert = await client
-    .from("productionEvent")
-    .insert(event)
-    .select("*");
+  const eventInsert = await insertEvent(event);
 
   if (!eventInsert.error) {
     await autoStartJobAndOperation(client, {
@@ -2759,7 +2803,7 @@ export async function startProductionEvent(
       companyId: data.companyId
     });
 
-    const inserted = eventInsert.data?.[0];
+    const inserted = eventInsert.data;
     if (inserted) {
       trackWorkEvent("job_operation_started", {
         companyId: data.companyId,
