@@ -53,9 +53,13 @@ UI:
   rendered by `x+/settings+/integrations.$id.tsx` only for an active `oee`
   integration. Its loader and action live in
   `modules/settings/oee-devices.server.ts` (`getOeeDevicesTabData`,
-  `saveWorkCenterDeviceMapping`). The provider's device list is cached in
-  Redis for 60 s (`oee-devices:<companyId>:<integrationId>`, never an error),
-  and a mapped work center shows even when inactive.
+  `saveWorkCenterDeviceMapping`). The provider's device list
+  (`listOeeDevices`) is cached in Redis for 60 s
+  (`oee-devices:<companyId>:<integrationId>`, never an error);
+  `clearCompanyIntegrationCache` deletes it on every integration save, so a
+  new API key or environment never shows the old stations. A mapping save
+  refuses a station that is not in the current list. A mapped work center
+  shows even when inactive.
 - **Production → "Unattributed Time"** — `x+/production+/machine-time*.tsx`
   and `modules/production/ui/MachineTime/`. The nav item appears only while an
   `oee` integration is active (`useProductionSubmodules`, through
@@ -159,7 +163,8 @@ next `Running` change goes to the new one.
 
 A machine has one machine time: operators share it. A "Start" or "Pause"
 press with "Machine" selected calls `recordManualMachinePress` inside a Kysely
-transaction:
+transaction. It takes the device lock first, as the sync and the mapping
+writes do; the reverse order deadlocked with a running sync:
 
 1. On every work center, with or without a device, it ends each open Machine
    event at the press time, from any operator or the sensor. It skips an event
@@ -171,9 +176,17 @@ transaction:
 3. On a mapped work center, it sets `workCenterDevice.lastManualChangeAt` to
    the press time.
 
-A Start then inserts the operator's Machine event, which loads the operation.
-An End reads the event's own work center and type (`event.tsx`), not the
-form's. After a Pause on a running machine, no sensor time opens until the
+A Start inserts the operator's Machine event, which loads the operation, in
+the SAME transaction as the press (`insertMachineEventWithPress`, the insert
+hook of `startProductionEvent` in the MES `operations.service.ts`, used by
+`event.tsx` and the QR start `start.$operationId.tsx`). If the event cannot be
+written, nothing was ended. That insert skips RLS, so `event.tsx` checks
+`create: "production"` first. An End reads the event's own work center and
+type (`event.tsx`), not the form's, and refuses an event that has already
+ended ("This event has already ended"): for a Machine event it locks the
+device, then the event row while it is still open, and the press ends it; any
+other event's update matches only while `endTime` is null. A repeated End
+therefore never moves an end time or ends a newer event. After a Pause on a running machine, no sensor time opens until the
 device reports its next change to `Running`.
 
 ## The sync

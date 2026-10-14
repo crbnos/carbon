@@ -6815,6 +6815,20 @@ export async function getUnattributedMachineTimeNeighbors(
   };
 }
 
+// The operation a supervisor assigns machine time to, with its job. The id
+// comes from the form, so the read is scoped to the company.
+export async function getMachineTimeAssignTarget(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; companyId: string }
+) {
+  return client
+    .from("jobOperation")
+    .select("id, job!inner(jobId, status)")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+}
+
 // Every production event on the work center that overlaps the day, with its
 // operation and job: what ran there, for the suggestion cards.
 export async function getWorkCenterDayEvents(

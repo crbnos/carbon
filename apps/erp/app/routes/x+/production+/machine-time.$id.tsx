@@ -24,8 +24,7 @@ import { data, useLoaderData } from "react-router";
 import {
   assignMachineTimeValidator,
   dismissMachineTimeValidator,
-  getJob,
-  getJobOperation,
+  getMachineTimeAssignTarget,
   getMachineTimeOperationCandidates,
   getUnattributedMachineTime,
   getUnattributedMachineTimeNeighbors,
@@ -189,26 +188,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const { jobOperationId } = validation.data;
-    const operation = await getJobOperation(client, jobOperationId);
-    if (operation.error || !operation.data) {
+    const target = await getMachineTimeAssignTarget(client, {
+      jobOperationId,
+      companyId
+    });
+    if (target.error || !target.data) {
       return data(
         {},
-        await flash(request, error(operation.error, "Failed to get operation"))
+        await flash(request, error(target.error, "Failed to get operation"))
       );
     }
+    const job = target.data.job;
 
-    const job = await getJob(client, operation.data.jobId);
-    if (job.error || !job.data) {
-      return data(
-        {},
-        await flash(request, error(job.error, "Failed to get job"))
-      );
-    }
     // A friendly redirect only: the service re-checks the lock under a row
     // lock inside its transaction.
     await requireUnlocked({
       request,
-      isLocked: isJobLocked(job.data?.status),
+      isLocked: isJobLocked(job.status),
       redirectTo: detailPath,
       message: "Cannot modify a locked job. Reopen it first."
     });
@@ -240,10 +236,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     throw redirect(
       nextPath,
-      await flash(
-        request,
-        success(`Assigned to ${job.data?.jobId ?? "the job"}`)
-      )
+      await flash(request, success(`Assigned to ${job.jobId ?? "the job"}`))
     );
   }
 
