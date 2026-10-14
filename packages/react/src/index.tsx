@@ -273,11 +273,11 @@ import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
 import {
   NavRail,
-  NavRailBrand,
   NavRailDivider,
   NavRailGroup,
   NavRailItem,
   NavRailLink,
+  NavRailSwitcher,
   navRailItemClasses
 } from "./NavRail";
 import type { NumberFieldProps } from "./Number";
@@ -621,11 +621,11 @@ export {
   NumberField,
   NumberIncrementStepper,
   NavRail,
-  NavRailBrand,
   NavRailDivider,
   NavRailGroup,
   NavRailItem,
   NavRailLink,
+  NavRailSwitcher,
   navRailItemClasses,
   NumberInput,
   NumberInputGroup,

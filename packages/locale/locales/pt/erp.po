@@ -5056,6 +5056,9 @@ msgstr "Recolher linha"
 msgid "Collapse Machine"
 msgstr "Recolher Máquina"
 
+msgid "Collapse navigation"
+msgstr "Recolher navegação"
+
 msgid "Collapse row"
 msgstr "Recolher linha"
 
@@ -12061,6 +12064,9 @@ msgstr "Manter precificação existente, apenas adicionar itens novos"
 
 msgid "Keep Line"
 msgstr "Manter linha"
+
+msgid "Keep navigation open"
+msgstr "Manter navegação aberta"
 
 msgid "Keep only items where…"
 msgstr "Manter apenas itens onde…"
