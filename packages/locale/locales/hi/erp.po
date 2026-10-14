@@ -15138,8 +15138,8 @@ msgstr "चालू"
 msgid "On {sentDate}"
 msgstr "{sentDate} को"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "एक नियंत्रण खाते पर, Carbon अपने खुले आइटम्स, इन्वेंटरी और अचल संपत्ति से शेष राशि निकालता है। Trial balance सहमत होना चाहिए: हर अंतर Migration Clearing पर रहता है, जो शून्य होना चाहिए। एक खाता खोलें इसके आइटम्स को देखने के लिए, और एक चालान को अनदेखा करें जो पूर्व प्रणाली पहले ही निपटा चुकी है।"
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "एक नियंत्रण खाते पर, Carbon अपने स्वयं के खुले आइटम, इन्वेंटरी और अचल संपत्ति से शेष राशि खोलता है। परीक्षण संतुलन सहमत होना चाहिए: प्रत्येक अंतर माइग्रेशन क्लीयरिंग पर रहता है, जो कुल शून्य होना चाहिए। एक खाता खोलें इसके आइटम को देखने के लिए, और एक चालान को अनदेखा करें जो पूर्व प्रणाली ने पहले से ही निपटा दिया है। परीक्षण संतुलन पर लागू करें प्रत्येक नियंत्रण खाते को Carbon के कुल में सेट करता है और जो शेष है उसे प्रतिधारित आय पर रखता है।"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "एक स्थानांतरण कानबान पर, To भंडारण इकाई के लिए न्यूनतम मात्रा। जब हाथ पर प्लस खुली आने वाली स्थानांतरण इससे नीचे चली जाती है, तो Carbon कानबान मात्रा के लिए एक जारी स्टॉक स्थानांतरण बनाता है।"

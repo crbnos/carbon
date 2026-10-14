@@ -15138,8 +15138,8 @@ msgstr "Ativado"
 msgid "On {sentDate}"
 msgstr "Ligado"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "Em uma conta de controle, o Carbon exibe o saldo de seus próprios itens em aberto, inventário e ativos fixos. O saldo de verificação deve concordar: cada diferença fica em Limpeza de Migração, que deve somar zero. Abra uma conta para ver seus itens, e ignore uma fatura que o sistema anterior já liquidou."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "Em uma conta de controle, Carbon abre o saldo de seus próprios itens abertos, inventário e ativos fixos. O saldo de verificação deve concordar: cada diferença permanece em Compensação de migração, que deve totalizar zero. Abra uma conta para ver seus itens e ignore uma fatura que o sistema anterior já liquidou. Aplicar ao Saldo de verificação define cada conta de controle ao total de Carbon e coloca o que sobra em Lucros acumulados."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "Em um kanban de transferência, a quantidade mínima para a unidade de armazenamento de destino. Quando o estoque em mão mais as transferências de entrada abertas caem abaixo disso, Carbon cria uma transferência de estoque confirmada para a quantidade do kanban."

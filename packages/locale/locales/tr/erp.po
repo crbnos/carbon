@@ -15138,8 +15138,8 @@ msgstr "Açık"
 msgid "On {sentDate}"
 msgstr "{sentDate} tarihinde"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "Kontrol hesabında, Carbon bakiyeyi kendi açık kalemlerinden, envanterden ve sabit kıymetlerden açar. Deneme dengesi uyuşmalıdır: her fark Göç Temizlemesi'nde kalır, bunun toplamı sıfır olmalıdır. Öğelerini görmek için bir hesabı açın ve önceki sistem tarafından zaten kapatılmış bir faturayı yoksayın."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "Bir kontrol hesabında, Carbon kendi açık stok kartlarından, envanterinden ve sabit kıymetlerinden bakiye açar. Deneme mizanı uyumlu olmalıdır: her fark Geçiş Takas hesabında kalır ve toplamı sıfır olmalıdır. Stok kartlarını görmek için bir hesabı açın ve önceki sistem tarafından zaten kapatılan bir faturayı yoksayın. Deneme Mizanı'na Uygula işlemi her kontrol hesabını Carbon'un toplamına ayarlar ve kalanı Dağıtılmamış kârlar hesabına koyar."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "Transfer kanban'ında To depolama birimi için minimum miktar. Eldeki + açık gelen transferler bunun altına düştüğünde, Carbon kanban miktarı için Serbest bırakıldı stok transferi oluşturur."

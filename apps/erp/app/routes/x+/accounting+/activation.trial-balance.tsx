@@ -491,15 +491,15 @@ export default function AccountingActivationTrialBalanceRoute() {
               items, inventory and fixed assets. The trial balance must agree:
               every difference stays on Migration Clearing, which must total
               zero. Open an account to see its items, and ignore an invoice the
-              prior system already settled.
+              prior system already settled. Apply to Trial Balance sets each
+              control account to Carbon's total and puts what is left on
+              Retained Earnings.
             </Trans>
           }
           actions={
             <ApplyCarbonButton
               cutoverDate={cutoverDate}
-              hasDifference={clearing.rows.some(
-                (row) => !isMigrationClearingZero(row.difference)
-              )}
+              hasDifference={!isMigrationClearingZero(clearing.total)}
             />
           }
         >

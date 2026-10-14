@@ -15138,8 +15138,8 @@ msgstr "开"
 msgid "On {sentDate}"
 msgstr "打开"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "对于控制账户，Carbon 从其自己的未结项目、库存和固定资产中获取期初余额。试算表必须一致：每个差异都保留在迁移清除账户上，必须合计为零。打开一个账户来查看其项目明细，并忽略先前系统已经结清的发票。"
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "在控制账户上，Carbon从其自有的未结物料、库存管理和固定资产中开账户余额。试算表必须相符：每个差异都留在迁移清算上，必须总计为零。打开一个账户以查看其物料，并忽略前一个系统已经结清的发票。应用至试算表将每个控制账户设置为Carbon的总计，并将剩余部分放在未分配利润上。"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "在转移看板上，指目标存储单元的最小数量。当现有库存加上未完成的入库调拨降至此水位以下时，Carbon 会创建一个已下达的库存调拨，调拨数量为看板数量。"

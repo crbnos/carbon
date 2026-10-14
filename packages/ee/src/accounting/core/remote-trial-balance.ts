@@ -8,6 +8,7 @@ import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AccountingProvider } from "../providers";
 import { QboProvider } from "../providers/quickbooks-online";
+import { RilletProvider } from "../providers/rillet";
 import { XeroProvider } from "../providers/xero";
 import { getAccountMappings, getCompanyGroupId } from "./account-mapping";
 import type { ProviderID } from "./models";
@@ -29,13 +30,8 @@ import {
  * debit-signed per remote account. Dispatches on the concrete provider class,
  * the same discrimination `fetchRemoteJournalTotals` uses.
  *
- * Rillet resolves `supported: false`. Its API has
- * `GET /reports/trial-balance?from_date&to_date` returning per-account
- * `beginning_balance` / `debit_total` / `credit_total` / `ending_balance`,
- * but the docs state neither the sign of `ending_balance` nor whether profit
- * and loss accounts are closed into retained earnings at year end — and the
- * opening balance depends on both. Wire it once those are confirmed against a
- * real Rillet ledger.
+ * Rillet's `ending_balance` sign is not documented; `parseRilletTrialBalance`
+ * reads it the way the report itself agrees with.
  *
  * Provider errors propagate (AccountingApiError, AccountingAuthError,
  * RatelimitError); `pullTrialBalanceFromProvider` turns them into a
@@ -50,6 +46,10 @@ export async function fetchRemoteTrialBalance(
   }
 
   if (provider instanceof QboProvider) {
+    return { supported: true, rows: await provider.getTrialBalance(asOfDate) };
+  }
+
+  if (provider instanceof RilletProvider) {
     return { supported: true, rows: await provider.getTrialBalance(asOfDate) };
   }
 

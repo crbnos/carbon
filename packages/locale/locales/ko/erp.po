@@ -15138,8 +15138,8 @@ msgstr "켜짐"
 msgid "On {sentDate}"
 msgstr "켬"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "통제 계정에서 Carbon은 자신의 미결 항목, 재고 관리 및 고정자산에서 잔액을 가져옵니다. 시산표는 일치해야 합니다. 모든 차이는 Migration Clearing에 남으며, 이는 총계가 0이어야 합니다. 계정을 열어 항목을 확인하고, 이전 시스템에서 이미 정산된 송장은 무시하세요."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "제어 계정에서 Carbon은 자신의 미결 품목, 재고 관리 및 고정자산에서 잔액을 엽니다. 시산표는 일치해야 합니다: 모든 차이는 마이그레이션 클리어링에 남으며, 총합이 0이어야 합니다. 계정을 열어 품목을 확인하고 이전 시스템에서 이미 결제한 송장을 무시하십시오. 시산표에 적용하면 각 제어 계정을 Carbon의 총계로 설정하고 나머지를 이익잉여금에 배치합니다."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "이송 칸반에서 도착 보관 단위의 최소 수량입니다. 현재 재고와 미결 인바운드 이송의 합이 이 수준 아래로 내려가면, Carbon은 칸반 수량만큼의 릴리스됨 재고 이송을 생성합니다."

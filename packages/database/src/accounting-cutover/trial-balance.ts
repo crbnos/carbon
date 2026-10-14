@@ -556,20 +556,36 @@ export async function setCutoverInvoiceIgnored(
 
 /**
  * Sets every control account on the trial balance to Carbon's opening total
- * for it, keeping every other row (`applyCarbonToTrialBalance`).
+ * for it, keeping every other row and putting what that leaves out of balance
+ * on retained earnings (`applyCarbonToTrialBalance`), so Migration Clearing
+ * totals zero.
  */
 export async function applyCarbonToOpeningTrialBalance(
   db: CutoverDb,
   args: CutoverArgs & { userId: string }
 ): Promise<{ journalId: string }> {
   return withTransaction(db, async (trx) => {
-    const clearing = await getMigrationClearing(trx, args);
+    const [clearing, defaults] = await Promise.all([
+      getMigrationClearing(trx, args),
+      trx
+        .selectFrom("accountDefault")
+        .select("retainedEarningsAccount")
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
+    ]);
+    const retainedEarnings = defaults?.retainedEarningsAccount;
+    if (!retainedEarnings) {
+      throw new Error(
+        "Set the Retained Earnings default account before applying Carbon's totals"
+      );
+    }
     return saveOpeningTrialBalance(trx, {
       ...args,
       lines: applyCarbonToTrialBalance(
         clearing.trialBalance,
         clearing.rows,
-        clearing.controlAccountIds
+        clearing.controlAccountIds,
+        retainedEarnings
       )
     });
   });

@@ -15138,8 +15138,8 @@ msgstr "Activado"
 msgid "On {sentDate}"
 msgstr "El {sentDate}"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "En una cuenta de control, Carbon calcula el saldo de sus propias partidas abiertas, inventario y activos fijos. El saldo de prueba debe coincidir: cada diferencia se mantiene en Liquidación de Migración, que debe sumar cero. Abra una cuenta para ver sus partidas e ignore una factura que el sistema anterior ya liquidó."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "En una cuenta de control, Carbon abre el saldo de sus propios artículos abiertos, inventario y activos fijos. La balanza de comprobación debe coincidir: cada diferencia se mantiene en Compensación de migración, que debe totalizar cero. Abra una cuenta para ver sus artículos e ignore una factura que el sistema anterior ya pagó. Aplicar a Balanza de comprobación establece cada cuenta de control al total de Carbon y coloca lo que queda en Resultados acumulados."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "En un kanban de transferencia, la cantidad mínima para la unidad de almacenamiento de destino. Cuando las existencias disponibles más las transferencias entrantes abiertas caen por debajo de esto, Carbon crea una transferencia de existencias Liberada por la cantidad del kanban."

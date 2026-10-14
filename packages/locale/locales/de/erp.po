@@ -15138,8 +15138,8 @@ msgstr "Ein"
 msgid "On {sentDate}"
 msgstr "An"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
-msgstr "Auf einem Kontrolkonto eröffnet Carbon den Saldo aus seinen offenen Positionen, Beständen und Anlagegut. Die Probebilanz muss sich decken: jede Differenz bleibt auf Migration Clearing, welche insgesamt null betragen muss. Öffnen Sie ein Konto, um seine Artikel anzuzeigen, und ignorieren Sie eine Rechnung, die das Vorsystem bereits abgewickelt hat."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "Auf einem Steuerkonto öffnet Carbon den Saldo aus seinen eigenen offenen Artikeln, Beständen und Anlagegütern. Die Rohbilanz muss übereinstimmen: jede Differenz verbleibt auf Migration Clearing, das insgesamt Null sein muss. Öffnen Sie ein Konto, um seine Artikel anzuzeigen, und ignorieren Sie eine Rechnung, die das vorherige System bereits beglichen hat. Auf Rohbilanz anwenden setzt jedes Steuerkonto auf Carbons Gesamtbetrag und legt den Rest auf Gewinnvortrag ab."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "Bei einer Umlagerungs-Kanban ist die Mindestmenge für die Ziel-Lagereinheit der Schwellwert. Wenn der verfügbare Bestand plus offene eingehende Umlagerungen darunter fällt, erstellt Carbon eine ausgelöste Umlagerung für die Kanban-Menge."

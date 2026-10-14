@@ -38,7 +38,8 @@ export type RemoteTrialBalanceRow = {
  */
 const TRIAL_BALANCE_PROVIDERS: ReadonlySet<string> = new Set<ProviderID>([
   ProviderID.XERO,
-  ProviderID.QUICKBOOKS
+  ProviderID.QUICKBOOKS,
+  ProviderID.RILLET
 ]);
 
 export function isTrialBalanceProvider(id: string): id is ProviderID {
@@ -305,6 +306,123 @@ export function parseQboTrialBalance(
   for (const row of response.Rows?.Row ?? []) visit(row);
 
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Rillet — GET /reports/trial-balance?from_date&to_date[&subsidiary_id]
+// ---------------------------------------------------------------------------
+
+type RilletAmount = { amount?: string | null } | null | undefined;
+
+export type RilletTrialBalanceAccount = {
+  id?: string | null;
+  code?: string | null;
+  name?: string | null;
+  beginning_balance?: RilletAmount;
+  debit_total?: RilletAmount;
+  credit_total?: RilletAmount;
+  debit_fx_total?: RilletAmount;
+  credit_fx_total?: RilletAmount;
+  ending_balance?: RilletAmount;
+};
+
+export type RilletTrialBalanceResponse = {
+  accounts?: RilletTrialBalanceAccount[] | null;
+};
+
+/** Rillet's account types; the natural side of each decides its sign. */
+export type RilletAccountType =
+  | "ASSET"
+  | "LIABILITY"
+  | "EQUITY"
+  | "EXPENSE"
+  | "INCOME";
+
+const RILLET_CREDIT_NATURED = new Set(["LIABILITY", "EQUITY", "INCOME"]);
+
+/** Half a cent: report amounts are rounded to the currency's decimals. */
+const REPORT_TOLERANCE = 0.005;
+
+/**
+ * Reduce Rillet's trial balance to one row per account, the balance at the
+ * report's `to_date`.
+ *
+ * Rillet's docs do not say how `ending_balance` is signed, so the parser
+ * reads it both ways — debit-signed, and positive on each account's natural
+ * side (credit for LIABILITY, EQUITY and INCOME, by `accountTypes`) — and
+ * keeps the reading that agrees with the report itself: every account's
+ * `ending − beginning` must equal its period movement signed the same way,
+ * and the debit-signed balances must total zero. When neither reading
+ * agrees, or both do and give different balances, it throws rather than
+ * guess.
+ */
+export function parseRilletTrialBalance(
+  response: RilletTrialBalanceResponse,
+  accountTypes: ReadonlyMap<string, string>
+): RemoteTrialBalanceRow[] {
+  const accounts = (response.accounts ?? []).map((account) => {
+    const debits =
+      parseReportAmount(account.debit_total?.amount) +
+      parseReportAmount(account.debit_fx_total?.amount);
+    const credits =
+      parseReportAmount(account.credit_total?.amount) +
+      parseReportAmount(account.credit_fx_total?.amount);
+    const creditNatured = RILLET_CREDIT_NATURED.has(
+      accountTypes.get(account.id ?? "") ?? ""
+    );
+    return {
+      account,
+      creditNatured,
+      beginning: parseReportAmount(account.beginning_balance?.amount),
+      ending: parseReportAmount(account.ending_balance?.amount),
+      movement: debits - credits
+    };
+  });
+
+  // A reading turns a reported amount into a debit-signed one.
+  const readings = {
+    debitSigned: (amount: number) => amount,
+    natural: (amount: number, creditNatured: boolean) =>
+      creditNatured ? -amount : amount
+  };
+  const agrees = (read: (amount: number, creditNatured: boolean) => number) => {
+    let total = 0;
+    for (const row of accounts) {
+      const change =
+        read(row.ending, row.creditNatured) -
+        read(row.beginning, row.creditNatured);
+      if (Math.abs(change - row.movement) > REPORT_TOLERANCE) return false;
+      total += read(row.ending, row.creditNatured);
+    }
+    return Math.abs(total) <= REPORT_TOLERANCE * Math.max(accounts.length, 1);
+  };
+
+  const debitSignedAgrees = agrees(readings.debitSigned);
+  const naturalAgrees = agrees(readings.natural);
+  const toRows = (read: (amount: number, creditNatured: boolean) => number) =>
+    accounts.map(({ account, creditNatured, ending }) => ({
+      externalId: account.id ? account.id : null,
+      code: account.code ? account.code : null,
+      name: account.name?.trim() || account.code || "",
+      debitSigned: round(read(ending, creditNatured))
+    }));
+
+  if (debitSignedAgrees && naturalAgrees) {
+    const a = toRows(readings.debitSigned);
+    const b = toRows(readings.natural);
+    // Equal when no credit-natured account carries a balance.
+    if (a.every((row, index) => row.debitSigned === b[index]!.debitSigned)) {
+      return a;
+    }
+    throw new Error(
+      "Rillet's trial balance can be read with either sign; enter the balances by hand"
+    );
+  }
+  if (debitSignedAgrees) return toRows(readings.debitSigned);
+  if (naturalAgrees) return toRows(readings.natural);
+  throw new Error(
+    "Rillet's trial balance does not balance as read; enter the balances by hand"
+  );
 }
 
 // ---------------------------------------------------------------------------

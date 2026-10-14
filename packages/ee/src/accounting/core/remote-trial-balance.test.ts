@@ -160,22 +160,78 @@ describe("fetchRemoteTrialBalance", () => {
     expect(url.searchParams.has("minorversion")).toBe(true);
   });
 
-  it("reports Rillet as unsupported without calling it", async () => {
+  it("reads Rillet's trial balance for the year to the date, in its subsidiary", async () => {
     const rillet = new RilletProvider({
       companyId: "company-1",
-      credentials: { type: "apiKey", apiKey: "key", environment: "production" },
+      credentials: {
+        type: "apiKey",
+        apiKey: "key",
+        environment: "production",
+        providerMetadata: { subsidiaryId: "sub-1" }
+      },
       syncConfig: DEFAULT_SYNC_CONFIG
     });
-
-    expect(await fetchRemoteTrialBalance(rillet, "2026-09-30")).toEqual({
-      supported: false
+    const money = (amount: string) => ({ amount, currency: "USD" });
+    fetchMock.mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/accounts")) {
+        return jsonResponse({
+          accounts: [
+            { id: "a-cash", code: "1000", name: "Cash", type: "ASSET" },
+            { id: "a-ap", code: "2000", name: "Payables", type: "LIABILITY" }
+          ]
+        });
+      }
+      return jsonResponse({
+        accounts: [
+          {
+            id: "a-cash",
+            code: "1000",
+            name: "Cash",
+            beginning_balance: money("0.00"),
+            debit_total: money("500.00"),
+            credit_total: money("0.00"),
+            ending_balance: money("500.00")
+          },
+          {
+            id: "a-ap",
+            code: "2000",
+            name: "Payables",
+            beginning_balance: money("0.00"),
+            debit_total: money("0.00"),
+            credit_total: money("500.00"),
+            ending_balance: money("500.00")
+          }
+        ]
+      });
     });
-    expect(fetchMock).not.toHaveBeenCalled();
+
+    const result = await fetchRemoteTrialBalance(rillet, "2026-09-30");
+
+    // `ending_balance` was natural-signed here: the payable is a credit.
+    expect(result).toEqual({
+      supported: true,
+      rows: [
+        { externalId: "a-cash", code: "1000", name: "Cash", debitSigned: 500 },
+        {
+          externalId: "a-ap",
+          code: "2000",
+          name: "Payables",
+          debitSigned: -500
+        }
+      ]
+    });
+    const report = fetchMock.mock.calls
+      .map((call) => new URL(String(call[0])))
+      .find((url) => url.pathname.endsWith("/reports/trial-balance"))!;
+    expect(report.searchParams.get("from_date")).toBe("2025-10-01");
+    expect(report.searchParams.get("to_date")).toBe("2026-09-30");
+    expect(report.searchParams.get("subsidiary_id")).toBe("sub-1");
   });
 
-  it("offers the pull for exactly the providers it reads", () => {
+  it("offers the pull for every provider it reads", () => {
     // The wizard shows the button by `isTrialBalanceProvider`; the tests
-    // above show which providers `fetchRemoteTrialBalance` reads.
+    // above show that `fetchRemoteTrialBalance` reads each of these.
     const rillet = new RilletProvider({
       companyId: "company-1",
       credentials: { type: "apiKey", apiKey: "key", environment: "production" },
@@ -183,6 +239,6 @@ describe("fetchRemoteTrialBalance", () => {
     });
     expect(isTrialBalanceProvider(makeXero().id)).toBe(true);
     expect(isTrialBalanceProvider(makeQbo().id)).toBe(true);
-    expect(isTrialBalanceProvider(rillet.id)).toBe(false);
+    expect(isTrialBalanceProvider(rillet.id)).toBe(true);
   });
 });

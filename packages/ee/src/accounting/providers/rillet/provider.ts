@@ -3,12 +3,18 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { createHash } from "node:crypto";
+import { parseDate } from "@internationalized/date";
 import type {
   CounterpartSearchKeys,
   ExternalIdentityKind,
   RemoteCandidate
 } from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
+import {
+  parseRilletTrialBalance,
+  type RemoteTrialBalanceRow,
+  type RilletTrialBalanceResponse
+} from "../../core/trial-balance";
 import type {
   AccountingEntityType,
   AuthProvider,
@@ -589,6 +595,48 @@ export class RilletProvider extends BaseProvider {
       console.error("Failed to fetch Rillet accounts:", error);
       return [];
     }
+  }
+
+  /**
+   * The trial balance as at `date` (YYYY-MM-DD), one row per account
+   * (GET /reports/trial-balance), scoped to the configured subsidiary. The
+   * report covers the year to `date`, so most accounts move in it: that
+   * movement is how `parseRilletTrialBalance` tells which sign
+   * `ending_balance` uses. Account types come from GET /accounts, inactive
+   * accounts included, since a closed account can still carry a balance.
+   */
+  async getTrialBalance(date: string): Promise<RemoteTrialBalanceRow[]> {
+    const params = new URLSearchParams({
+      from_date: parseDate(date)
+        .subtract({ years: 1 })
+        .add({ days: 1 })
+        .toString(),
+      to_date: date
+    });
+    if (this.subsidiaryId) params.set("subsidiary_id", this.subsidiaryId);
+
+    const [report, accounts] = await Promise.all([
+      this.request<RilletTrialBalanceResponse>(
+        "GET",
+        `/reports/trial-balance?${params.toString()}`
+      ),
+      this.request<{ accounts?: Rillet.Account[] }>("GET", "/accounts")
+    ]);
+    if (report.error || !report.data) {
+      throwRilletApiError("read trial balance", report);
+    }
+    if (accounts.error) {
+      throwRilletApiError("list accounts", accounts);
+    }
+
+    return parseRilletTrialBalance(
+      report.data,
+      new Map(
+        (accounts.data?.accounts ?? []).flatMap((account) =>
+          account.type ? [[account.id, account.type] as const] : []
+        )
+      )
+    );
   }
 
   /**
