@@ -54,6 +54,9 @@ msgstr "(pasif hesap)"
 msgid "(Inactive)"
 msgstr "(Pasif)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "(birden fazla Carbon hesabına eşleştirildi)"
+
 msgid "(not an Equity posting account)"
 msgstr "(Özkaynak muhasebeleştirme hesabı değildir)"
 
@@ -2814,6 +2817,9 @@ msgstr "Faturaları uygula"
 msgid "Apply to reimbursements"
 msgstr "Gider Talebilerine Uygula"
 
+msgid "Apply to Trial Balance"
+msgstr "Deneme Dengesine Uygula"
+
 msgid "Applying"
 msgstr "Uygulanıyor"
 
@@ -3824,6 +3830,10 @@ msgstr "Yedeklemeler"
 
 msgid "Balance"
 msgstr "Bakiye"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "{0} için Bakiye"
 
 msgid "Balance Sheet"
 msgstr "Bilanço"
@@ -6421,10 +6431,6 @@ msgstr "Alacak ve Borç Notları"
 msgid "Credit applied"
 msgstr "Alacak uygulandı"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "{0} için alacak"
-
 msgid "Credit Memo"
 msgstr "Alacak dekontu"
 
@@ -6905,10 +6911,6 @@ msgstr "Borç ({0})"
 
 msgid "Debit Account"
 msgstr "Borç Hesabı"
-
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "{0} için borç"
 
 msgid "Debit Memo"
 msgstr "Borç Notu"
@@ -8940,6 +8942,12 @@ msgstr "Bir satın alma siparişine (PO) karşı satıcı faturalarını girin v
 msgid "Enter at least one debit and credit"
 msgstr "En az bir borç ve alacak girin"
 
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "Borçları pozitif, alacakları negatif tutarlar olarak girin. CSV için accountNumber, debit ve credit sütunları gereklidir. {providerName} adresinden bir içe aktarma veya çekme tüm deneme dengesini değiştirir."
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "Borçları pozitif, alacakları negatif tutarlar olarak girin. CSV için accountNumber, debit ve credit sütunları gereklidir. Bir içe aktarma tüm deneme dengesini değiştirir."
+
 msgid "Enter number…"
 msgstr "Sayı girin…"
 
@@ -10754,6 +10762,9 @@ msgstr "Seçilenleri bu adımda gizle"
 msgid "Hide system quantities until the review step"
 msgstr "Sistem miktarlarını inceleme adımına kadar gizle"
 
+msgid "Hide the items on {label}"
+msgstr "{label} üzerindeki öğeleri gizle"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Sütunları gizle, sabitle ve yeniden sırala"
 
@@ -11089,6 +11100,9 @@ msgstr "IFSC Kodu"
 
 msgid "Ignore"
 msgstr "Yoksay"
+
+msgid "Ignored"
+msgstr "Yoksayıldı"
 
 msgid "II (normal default)"
 msgstr "II (normal varsayılan)"
@@ -12979,6 +12993,9 @@ msgstr "Çıkarılan Satırları Eşle"
 
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
+
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Bu hesapları {providerName} entegrasyon ayarlarında eşleyin ve tekrar çekin, ya da aşağıda bakiyelerini girin."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Hesap planınızı sağlayıcının hesap planına eşleyin. Muhasebeleştirme varsayılanı ve Gider hesapları Gerekli olarak işaretlenmiştir; Muhasebeleştirildi Muhasebe fişleri eşlenen sağlayıcı hesap kodunu kullanarak gönderilir."
@@ -15188,8 +15205,8 @@ msgstr "Açık"
 msgid "On {sentDate}"
 msgstr "{sentDate} tarihinde"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "Bir kontrol hesabında, Carbon, açık kalemlerinin, envanterinin ve sabit kıymetlerinin bakiyesini açar. Deneme bakiyesi eşleşmelidir: her fark Geçiş Temizliğinde kalır, bu toplam sıfır olmalıdır."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
+msgstr "Kontrol hesabında, Carbon bakiyeyi kendi açık kalemlerinden, envanterden ve sabit kıymetlerden açar. Deneme dengesi uyuşmalıdır: her fark Göç Temizlemesi'nde kalır, bunun toplamı sıfır olmalıdır. Öğelerini görmek için bir hesabı açın ve önceki sistem tarafından zaten kapatılmış bir faturayı yoksayın."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "Transfer kanban'ında To depolama birimi için minimum miktar. Eldeki + açık gelen transferler bunun altına düştüğünde, Carbon kanban miktarı için Serbest bırakıldı stok transferi oluşturur."
@@ -17157,6 +17174,9 @@ msgstr "Çek"
 
 msgid "Pull From"
 msgstr "Çekme Kaynağından"
+
+msgid "Pull from {providerName}"
+msgstr "{providerName} adresinden çek"
 
 msgid "Pull from accounting"
 msgstr "Muhasebeden çek"
@@ -20258,6 +20278,9 @@ msgstr "Bu öğenin envanterde muhasebeleştirildiği değeri ayarlar. Fark, env
 msgid "Settings"
 msgstr "Ayarlar"
 
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "Kesme tarihinden önceki muhasebe sisteminde çözümlendi. Carbon onları toplam tutarlarından dışarıda bırakır ve muhasebeleştirmeyi ayarladığınızda kesme tarihinin bir gün öncesinde Ödendi olarak işaretler."
+
 msgid "Setup"
 msgstr "Kurulum"
 
@@ -20598,6 +20621,9 @@ msgstr "Tedarikçi Kimliklerini Göster"
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
 
+msgid "Show the items on {label}"
+msgstr "{label} üzerindeki öğeleri göster"
+
 msgid "Show Trailing Zeros"
 msgstr "Sondaki Sıfırları Göster"
 
@@ -20756,6 +20782,9 @@ msgstr "Satıldı"
 
 msgid "Solutions Engineer"
 msgstr "Çözüm Mühendisi"
+
+msgid "Some balances have no Carbon account"
+msgstr "Bazı bakiyeler Carbon hesabına sahip değil"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Bazı satırlar, toplamından daha fazla veya daha az fatura kesilmiş. Onaylamadan önce tutarları düzeltin."
@@ -22130,9 +22159,6 @@ msgstr "CSV dosyası boştur."
 
 msgid "The CSV has no {columns} column."
 msgstr "CSV dosyasında {columns} sütunu yoktur."
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "CSV, accountNumber, borç ve alacak sütunlarına ihtiyaç duyuyor. Bir içe aktarma tüm deneme bakiyesini değiştirir."
 
 msgid "The CSV was not imported"
 msgstr "CSV içe aktarılmadı"
@@ -23772,9 +23798,8 @@ msgstr "Konular"
 msgid "Total"
 msgstr "Toplam"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "Toplam ({0} kadar dengesiz)"
+msgid "Total (out of balance)"
+msgstr "Toplam (dengesiz)"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"

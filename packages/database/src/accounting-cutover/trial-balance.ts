@@ -10,7 +10,9 @@
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import {
+  applyCarbonToTrialBalance,
   dayBeforeCutover,
+  isIgnorableOpenItem,
   type MigrationClearingAccount,
   type MigrationClearingRow,
   migrationClearingByAccount,
@@ -104,6 +106,14 @@ async function openingTrialBalanceFor(
 export type CutoverOpeningInputs = {
   /** Open items, inventory per account and fixed assets per class account. */
   items: OpenItem[];
+  /**
+   * Invoices open in Carbon that the user ignored on Migration Clearing. They
+   * are not in `items`; the enable marks them Paid as of the day before the
+   * cutover.
+   */
+  ignoredItems: OpenItem[];
+  /** Open invoices Carbon settles on or after the cutover; never ignorable. */
+  settledFromCutoverIds: Set<string>;
   trialBalance: TrialBalanceLine[];
   /** Accounts whose opening balance comes from Carbon, not the trial balance. */
   controlAccountIds: Set<string>;
@@ -128,7 +138,7 @@ export async function getCutoverOpeningInputs(
 ): Promise<CutoverOpeningInputs> {
   const context = await loadCutoverContext(db, args);
   const { companyId, company, defaults } = context;
-  const [openItems, inventory, fixedAssets, classes, trialBalance] =
+  const [openItems, inventory, fixedAssets, classes, trialBalance, ignored] =
     await Promise.all([
       openItemsFor(db, context),
       inventoryFor(db, context),
@@ -138,8 +148,22 @@ export async function getCutoverOpeningInputs(
         .select(["assetAccountId", "accumulatedDepreciationAccountId"])
         .where("companyId", "=", companyId)
         .execute(),
-      openingTrialBalanceFor(db, company)
+      openingTrialBalanceFor(db, company),
+      getIgnoredInvoiceIds(db, companyId)
     ]);
+  const settledFromCutoverIds = await getInvoicesSettledFromCutover(
+    db,
+    args,
+    openItems.flatMap((item) =>
+      item.documentType === "Invoice" && item.documentId
+        ? [item.documentId]
+        : []
+    )
+  );
+  const isIgnored = (item: OpenItem) =>
+    isIgnorableOpenItem(item, settledFromCutoverIds) &&
+    ignored.has(item.documentId ?? "");
+  const ignoredItems = openItems.filter(isIgnored);
 
   const costByAccount = new Map<string, number>();
   const depreciationByAccount = new Map<string, number>();
@@ -195,7 +219,7 @@ export async function getCutoverOpeningInputs(
     )
   ];
   const items = [
-    ...openItems,
+    ...openItems.filter((item) => !isIgnored(item)),
     ...(await finishItems(db, company.companyGroupId, drafts))
   ];
 
@@ -245,6 +269,8 @@ export async function getCutoverOpeningInputs(
 
   return {
     items,
+    ignoredItems,
+    settledFromCutoverIds,
     trialBalance: trialBalance.lines,
     controlAccountIds,
     migrationClearingAccountId,
@@ -384,5 +410,167 @@ export async function saveOpeningTrialBalance(
       await trx.insertInto("journalLine").values(inserts).execute();
     }
     return { journalId };
+  });
+}
+
+/**
+ * Of `invoiceIds`, the invoices Carbon settles on or after the cutover: a
+ * payment or memo application that is not in effect the day before it (the
+ * complement of `getSettlementsBeforeCutover`, Voided documents aside), or a
+ * Paid status dated on or after it. Such an invoice was open at the cutover
+ * by Carbon's own record, so it cannot be ignored.
+ */
+async function getInvoicesSettledFromCutover(
+  db: CutoverDb,
+  { companyId, cutoverDate }: CutoverArgs,
+  invoiceIds: string[]
+): Promise<Set<string>> {
+  if (invoiceIds.length === 0) return new Set();
+  const [settlements, paidSales, paidPurchases] = await Promise.all([
+    db
+      .selectFrom("invoiceSettlement as s")
+      .leftJoin("payment as p", (join) =>
+        join
+          .onRef("p.id", "=", "s.paymentId")
+          .onRef("p.companyId", "=", "s.companyId")
+      )
+      .leftJoin("memo as m", (join) =>
+        join
+          .onRef("m.id", "=", "s.memoId")
+          .onRef("m.companyId", "=", "s.companyId")
+      )
+      .leftJoin("payment as vp", (join) =>
+        join
+          .onRef("vp.id", "=", "s.appliedViaPaymentId")
+          .onRef("vp.companyId", "=", "s.companyId")
+      )
+      .select(["s.targetSalesInvoiceId", "s.targetPurchaseInvoiceId"])
+      .where("s.companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([
+          eb("s.targetSalesInvoiceId", "in", invoiceIds),
+          eb("s.targetPurchaseInvoiceId", "in", invoiceIds)
+        ])
+      )
+      .where((eb) => {
+        // Draft, or Posted on or after the cutover.
+        const fromCutover = (table: "p" | "m" | "vp") =>
+          eb.or([
+            eb(`${table}.status`, "=", "Draft"),
+            eb.and([
+              eb(`${table}.status`, "=", "Posted"),
+              eb(`${table}.postingDate`, ">=", cutoverDate)
+            ])
+          ]);
+        return eb.or([
+          eb.and([eb("s.paymentId", "is not", null), fromCutover("p")]),
+          eb.and([
+            eb("s.memoId", "is not", null),
+            eb("m.status", "!=", "Voided"),
+            eb.or([
+              fromCutover("m"),
+              eb.and([
+                eb("s.appliedViaPaymentId", "is", null),
+                eb("s.appliedDate", ">=", cutoverDate)
+              ]),
+              eb.and([
+                eb("s.appliedViaPaymentId", "is not", null),
+                fromCutover("vp")
+              ])
+            ])
+          ])
+        ]);
+      })
+      .execute(),
+    db
+      .selectFrom("salesInvoice")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "in", invoiceIds)
+      .where("status", "=", "Paid")
+      .where("datePaid", ">=", cutoverDate)
+      .execute(),
+    db
+      .selectFrom("purchaseInvoice")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "in", invoiceIds)
+      .where("status", "=", "Paid")
+      .where("datePaid", ">=", cutoverDate)
+      .execute()
+  ]);
+  return new Set([
+    ...settlements.flatMap((row) =>
+      [row.targetSalesInvoiceId, row.targetPurchaseInvoiceId].filter(
+        (id): id is string => id !== null
+      )
+    ),
+    ...paidSales.map((row) => row.id),
+    ...paidPurchases.map((row) => row.id)
+  ]);
+}
+
+/** The invoices the user ignored on Migration Clearing. */
+async function getIgnoredInvoiceIds(
+  db: CutoverDb,
+  companyId: string
+): Promise<Set<string>> {
+  const rows = await db
+    .selectFrom("accountingCutoverIgnoredInvoice")
+    .select("invoiceId")
+    .where("companyId", "=", companyId)
+    .execute();
+  return new Set(rows.map((row) => row.invoiceId));
+}
+
+/**
+ * Ignores an invoice on Migration Clearing, or stops ignoring it. Refused
+ * after the cutover: the enable has already applied the list.
+ */
+export async function setCutoverInvoiceIgnored(
+  db: CutoverDb,
+  {
+    companyId,
+    userId,
+    invoiceId,
+    ignored
+  }: { companyId: string; userId: string; invoiceId: string; ignored: boolean }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    await refuseAfterCutover(trx, companyId);
+    if (ignored) {
+      await trx
+        .insertInto("accountingCutoverIgnoredInvoice")
+        .values({ companyId, invoiceId, createdBy: userId })
+        .onConflict((oc) => oc.columns(["companyId", "invoiceId"]).doNothing())
+        .execute();
+    } else {
+      await trx
+        .deleteFrom("accountingCutoverIgnoredInvoice")
+        .where("companyId", "=", companyId)
+        .where("invoiceId", "=", invoiceId)
+        .execute();
+    }
+  });
+}
+
+/**
+ * Sets every control account on the trial balance to Carbon's opening total
+ * for it, keeping every other row (`applyCarbonToTrialBalance`).
+ */
+export async function applyCarbonToOpeningTrialBalance(
+  db: CutoverDb,
+  args: CutoverArgs & { userId: string }
+): Promise<{ journalId: string }> {
+  return withTransaction(db, async (trx) => {
+    const clearing = await getMigrationClearing(trx, args);
+    return saveOpeningTrialBalance(trx, {
+      ...args,
+      lines: applyCarbonToTrialBalance(
+        clearing.trialBalance,
+        clearing.rows,
+        clearing.controlAccountIds
+      )
+    });
   });
 }

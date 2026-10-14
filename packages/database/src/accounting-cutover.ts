@@ -91,6 +91,12 @@ export type OpenItem = {
   documentId: string | null;
   documentLineReference: string | null;
   description: string;
+  /**
+   * What the wizard shows for the item: the document's readable number and
+   * its customer or supplier. Never written to the opening journal.
+   */
+  reference?: string | null;
+  partyName?: string | null;
   /** The original line's quantity, for a reader that costs by quantity. */
   quantity?: number | null;
   /**
@@ -330,6 +336,55 @@ export function migrationClearingByAccount(
   // row, so the clearing account ends at minus their debit total.
   const total = round(-(itemsDebit + nonControlDebit));
   return { rows, total: total === 0 ? 0 : total };
+}
+
+/**
+ * An open item the user may ignore on Migration Clearing: a sales or purchase
+ * invoice. Before the cutover another system kept the books, so an invoice
+ * open in Carbon may already be settled there. The enable marks an ignored
+ * invoice Paid as of the day before the cutover, which every receivables and
+ * payables reader already treats as closed. Any other item has no such state:
+ * leaving it out of the opening journal would misstate what reads it later.
+ *
+ * Not an invoice Carbon itself settles on or after the cutover
+ * (`settledFromCutoverIds`): that payment's journal credits the control
+ * account, which with no opening line would leave it short by the payment.
+ */
+export function isIgnorableOpenItem(
+  item: OpenItem,
+  settledFromCutoverIds: ReadonlySet<string>
+): boolean {
+  return (
+    (item.openItemType === "Receivable" || item.openItemType === "Payable") &&
+    item.documentType === "Invoice" &&
+    item.documentId !== null &&
+    !settledFromCutoverIds.has(item.documentId)
+  );
+}
+
+/**
+ * The trial balance with every control account set to Carbon's opening total
+ * for it, debit-signed as `migrationClearingByAccount` reports it. Every other
+ * row is kept. Each control account's difference becomes zero; the Migration
+ * Clearing total does not move, and shows up instead as the trial balance
+ * being out of balance, to be put on a non-control account.
+ */
+export function applyCarbonToTrialBalance(
+  trialBalance: TrialBalanceLine[],
+  rows: MigrationClearingRow[],
+  controlAccountIds: ReadonlySet<string>
+): { accountId: string; debit: number; credit: number }[] {
+  const kept = trialBalance
+    .filter((line) => !controlAccountIds.has(line.accountId))
+    .map(({ accountId, debit, credit }) => ({ accountId, debit, credit }));
+  const control = rows
+    .filter((row) => Math.abs(row.carbon) > EPSILON)
+    .map((row) => ({
+      accountId: row.accountId,
+      debit: row.carbon > 0 ? row.carbon : 0,
+      credit: row.carbon < 0 ? -row.carbon : 0
+    }));
+  return [...kept, ...control];
 }
 
 /** The layer that opens an item's stock at the cutover. */

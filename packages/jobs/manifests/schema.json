@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261013233811",
+  "schemaVersion": "20261014010232",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-14T00:06:08.871Z",
+  "exportedAt": "2026-10-14T01:39:29.910Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -108,6 +108,19 @@
         "variableLeaseExpenseAccount",
         "rightOfUseAmortizationExpenseAccount",
         "leaseInterestExpenseAccount"
+      ]
+    },
+    {
+      "name": "accountingCutoverIgnoredInvoice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "invoiceId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3877,6 +3890,19 @@
         "createdAt",
         "updatedBy",
         "updatedAt"
+      ]
+    },
+    {
+      "name": "workCenterLoad",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "jobOperationId",
+        "loadedAt",
+        "unloadedAt",
+        "createdAt"
       ]
     },
     {

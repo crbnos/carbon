@@ -3650,6 +3650,26 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `SidebarProvider` and any other write-only client state (`document.cookie`, `localStorage`) that a loader or component begins to read.
 
+## The manifest-digest hook checks the working tree, not the staged copy
+
+**Context:** The trial balance PR (2026-10-13) left `tool-manifest.digest.json` out of a commit, thinking its diff was unrelated drift.
+
+**Problem:** `check:manifest` regenerates the digest and compares it with the file on disk. The disk copy was the regenerated one, so the hook passed while the commit carried the stale digest. Only running the check against the committed version showed "2 changed".
+
+**Rule:** Never leave a regenerated `tool-manifest.digest.json` unstaged on the assumption that it is drift. Run `pnpm --silent check:manifest` with the committed copy restored; when it fails, the regenerated digest belongs in the commit.
+
+**Applies to:** `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`, `scripts/git-hooks/pre-commit`.
+
+## An item left out at the accounting cutover must close in its own sub-ledger
+
+**Context:** Migration Clearing's Ignore (2026-10-13): an invoice another system already settled is left out of the opening journal.
+
+**Problem:** Dropping an item from the opening journal alone leaves its document open. The AR/AP readers fall back to the invoice total when no control line exists, so the invoice stays in aging, the tie-out shows a permanent variance, and a later payment is refused ("Target is missing its original control account"). And an invoice Carbon itself settles on or after the cutover posts a payment journal that credits the control account, which then has no opening line to credit.
+
+**Rule:** Leave an item out only when the sub-ledger can say it is closed: an invoice is marked Paid the day before the cutover by the enable. Refuse it when Carbon settles it on or after the cutover (`settledFromCutoverIds`). Any other item type (memo, payment, WIP, lease, inventory, fixed asset) has no such state and stays in the opening journal.
+
+**Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `packages/server-functions/src/activate-accounting/`.
+
 ## A second foreign key between two tables breaks every PostgREST embed between them
 
 **Context:** The OEE provider work (2026-10-13) added `workCenter."loadedJobOperationId"` with a foreign key to `jobOperation`, which already had `"workCenterId"` → `workCenter`.

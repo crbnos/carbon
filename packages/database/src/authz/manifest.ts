@@ -99,6 +99,9 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  accountingCutoverIgnoredInvoice: company("accounting", {
+    read: "accounting_view"
+  }),
   accountingPeriod: company("accounting", { read: "accounting_view" }),
   accountingPeriodBalance: company("accounting", {
     read: "accounting_view",
