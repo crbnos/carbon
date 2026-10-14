@@ -15757,14 +15757,14 @@ msgstr "Order date"
 msgid "Order Date"
 msgstr "Order Date"
 
+msgid "Order Items"
+msgstr "Order Items"
+
 msgid "Order Multiple"
 msgstr "Order Multiple"
 
 msgid "Order Multiple:"
 msgstr "Order Multiple:"
-
-msgid "Order Parts"
-msgstr "Order Parts"
 
 msgid "Order Qty"
 msgstr "Order Qty"

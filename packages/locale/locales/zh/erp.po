@@ -15757,14 +15757,14 @@ msgstr "订单日期"
 msgid "Order Date"
 msgstr "订单日期"
 
+msgid "Order Items"
+msgstr "订购物料"
+
 msgid "Order Multiple"
 msgstr "订购倍数"
 
 msgid "Order Multiple:"
 msgstr "订购倍数："
-
-msgid "Order Parts"
-msgstr "订购零件"
 
 msgid "Order Qty"
 msgstr "订单数量"

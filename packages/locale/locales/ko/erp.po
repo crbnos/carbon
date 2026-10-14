@@ -15757,14 +15757,14 @@ msgstr "주문 날짜"
 msgid "Order Date"
 msgstr "주문일"
 
+msgid "Order Items"
+msgstr "품목 발주"
+
 msgid "Order Multiple"
 msgstr "주문 배수"
 
 msgid "Order Multiple:"
 msgstr "주문 배수:"
-
-msgid "Order Parts"
-msgstr "부품 발주"
 
 msgid "Order Qty"
 msgstr "주문 수량"
