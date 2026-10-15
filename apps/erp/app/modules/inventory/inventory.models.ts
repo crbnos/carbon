@@ -185,6 +185,19 @@ export const serialUnitRecostValidator = z.object({
   postingDate: z.string().min(1, { message: "Posting date is required" })
 });
 
+// Exactly the types the post-inventory-adjustment server function accepts —
+// NOT itemLedgerTypes. That wider ledger enum leaked into the published API
+// schema here, so API/MCP callers were offered "Purchase" etc. and every such
+// call failed with the generic fallback message. Keep in sync with the server
+// function's payloadValidator.
+export const inventoryAdjustmentTypes = [
+  "Positive Adjmt.",
+  "Negative Adjmt.",
+  "Set Quantity",
+  "Scrap",
+  "Unscrap"
+] as const;
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
@@ -194,18 +207,7 @@ export const inventoryAdjustmentValidator = z
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    // Exactly the types the post-inventory-adjustment server function accepts —
-    // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
-    // schema here, so API/MCP callers were offered "Purchase" etc. and every
-    // such call failed with the generic fallback message. Keep in sync with
-    // the server function's payloadValidator.
-    adjustmentType: z.enum([
-      "Positive Adjmt.",
-      "Negative Adjmt.",
-      "Set Quantity",
-      "Scrap",
-      "Unscrap"
-    ]),
+    adjustmentType: z.enum(inventoryAdjustmentTypes),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),

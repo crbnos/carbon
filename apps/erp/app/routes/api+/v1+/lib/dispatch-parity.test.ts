@@ -15,6 +15,12 @@ import { ORPCError } from "@orpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// The router's operations reach UI barrels (sales.server imports the settings
+// barrel), and through them the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
+
 const spies = vi.hoisted(() => ({
   getAccountLedger: vi.fn(),
   getTrialBalance: vi.fn(),

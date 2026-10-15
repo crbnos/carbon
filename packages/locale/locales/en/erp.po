@@ -237,6 +237,10 @@ msgstr "{0} invoices were billed in your previous system and are not drafted aga
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} is {1}, not Draft or Planned"
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr "{0} items marked as picked"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} jobs created"
@@ -778,6 +782,9 @@ msgstr "1 entry to recognize · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 invoice was billed in your previous system and is not drafted again."
+
+msgid "1 item marked as picked"
+msgstr "1 item marked as picked"
 
 msgid "1 job created"
 msgstr "1 job created"
@@ -12559,6 +12566,9 @@ msgstr "Line Status"
 msgid "Line Type"
 msgstr "Line Type"
 
+msgid "Line unpicked"
+msgstr "Line unpicked"
+
 msgid "Linear Team"
 msgstr "Linear Team"
 
@@ -17851,6 +17861,9 @@ msgstr "Receipt Promised Date"
 msgid "Receipt Requested Date"
 msgstr "Receipt Requested Date"
 
+msgid "Receipt voided"
+msgstr "Receipt voided"
+
 msgid "Receipts"
 msgstr "Receipts"
 
@@ -20487,6 +20500,9 @@ msgstr "Shipment Lines"
 
 msgid "Shipment Location"
 msgstr "Shipment Location"
+
+msgid "Shipment voided"
+msgstr "Shipment voided"
 
 msgid "Shipments"
 msgstr "Shipments"

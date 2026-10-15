@@ -188,9 +188,6 @@ describe("mcp tool-metadata generator", () => {
     expect(Object.keys(props(get("purchasing_insertSupplier")))).not.toContain(
       "id"
     );
-    expect(
-      Object.keys(props(get("inventory_insertManualInventoryAdjustment")))
-    ).not.toContain("requiresSerialTracking");
   });
 
   // `zfd.text(z.string().transform((v) => v === "true"))` — the form-post

@@ -237,6 +237,10 @@ msgstr "{0} facturas se facturaron en su sistema anterior y no se vuelven a gene
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} órdenes de trabajo creadas"
@@ -778,6 +782,9 @@ msgstr "1 asiento a reconocer · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 factura se facturó en su sistema anterior y no se vuelve a generar."
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 trabajo creado"
@@ -12559,6 +12566,9 @@ msgstr "Estado de la Línea"
 msgid "Line Type"
 msgstr "Tipo de Línea"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "Equipo de Linear"
 
@@ -17851,6 +17861,9 @@ msgstr "Fecha de Entrega Prometida"
 msgid "Receipt Requested Date"
 msgstr "Fecha de Recepción Solicitada"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "Recibos"
 
@@ -20487,6 +20500,9 @@ msgstr "Líneas de envío"
 
 msgid "Shipment Location"
 msgstr "Ubicación de envío"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "Envíos"

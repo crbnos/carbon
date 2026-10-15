@@ -237,6 +237,10 @@ msgstr "{0}件の請求書は前のシステムで請求済みであり、再度
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} 件の製造指図が作成されました"
@@ -778,6 +782,9 @@ msgstr "1件の認識対象明細 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1件の請求書は前のシステムで請求済みであり、再度作成されません。"
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1件のジョブが作成されました"
@@ -12559,6 +12566,9 @@ msgstr "ラインステータス"
 msgid "Line Type"
 msgstr "明細タイプ"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "Linear Team"
 
@@ -17851,6 +17861,9 @@ msgstr "入荷回答納期"
 msgid "Receipt Requested Date"
 msgstr "入荷希望納期"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "領収書"
 
@@ -20487,6 +20500,9 @@ msgstr "出荷明細"
 
 msgid "Shipment Location"
 msgstr "出荷拠点"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "出荷"

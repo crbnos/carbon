@@ -237,6 +237,10 @@ msgstr "{0} चालान आपकी पिछली प्रणाली �
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} जॉब बनाए गए"
@@ -778,6 +782,9 @@ msgstr "1 प्रविष्टि को पहचानने के लि
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 चालान आपकी पिछली प्रणाली में बिल किया गया था और फिर से ड्राफ्ट नहीं किया गया है।"
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 नौकरी बनाई गई"
@@ -12559,6 +12566,9 @@ msgstr "लाइन स्थिति"
 msgid "Line Type"
 msgstr "पंक्ति प्रकार"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "Linear Team"
 
@@ -17851,6 +17861,9 @@ msgstr "प्राप्ति वादा की गई तिथि"
 msgid "Receipt Requested Date"
 msgstr "प्राप्ति अनुरोधित तिथि"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "रसीदें"
 
@@ -20487,6 +20500,9 @@ msgstr "शिपमेंट पंक्ति"
 
 msgid "Shipment Location"
 msgstr "शिपमेंट स्थान"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "शिपमेंट"
