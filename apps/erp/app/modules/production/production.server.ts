@@ -26,6 +26,7 @@ import {
   getDefaultStorageUnitForJob,
   mergeTrackedEntities
 } from "~/modules/inventory/inventory.service";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import {
   CarbonError,
@@ -2276,6 +2277,24 @@ function spreadDueDates(
 }
 
 /**
+ * A job's configuration: an object, or the JSON a form posts. Anything else
+ * (invalid JSON) is no configuration.
+ */
+function parseConfiguration(
+  value: unknown
+): Record<string, unknown> | undefined {
+  if (value && typeof value === "object") {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value !== "string" || !value) return undefined;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Create several jobs for one item, splitting a total quantity.
  *
  * @remarks
@@ -2305,14 +2324,7 @@ export const createJobs = defineServiceFn({
       ...job
     } = input;
 
-    let configuration: Record<string, unknown> | undefined;
-    if (configStr) {
-      try {
-        configuration = JSON.parse(configStr);
-      } catch {
-        // invalid JSON: no configuration
-      }
-    }
+    const configuration = parseConfiguration(configStr);
 
     const owned = await requireOwnRecords(ctx, [
       ["item", job.itemId, "item"],
@@ -2361,6 +2373,87 @@ export const createJobs = defineServiceFn({
       }))
     );
     return { jobIds };
+  }
+});
+
+/**
+ * Create a job.
+ *
+ * @remarks
+ * The item, location, customer, model, and fixed-asset class or asset must be
+ * this company's. Refused for an item an unreleased change notice holds (the
+ * job would take its draft method) and for a Make to Asset job whose item
+ * cannot complete to an asset. The job takes the item's method and its
+ * requirements are calculated.
+ *
+ * @mcp
+ */
+export const createJob = defineServiceFn({
+  input: jobValidator.safeExtend({ customFields: customFieldsInput }),
+  permission: { create: "production" },
+
+  async run(ctx, { id: _id, configuration: configStr, ...job }) {
+    const companyId = ctx.company.id;
+
+    const configuration = parseConfiguration(configStr);
+
+    // insertJob runs as the system: every id the caller sent must be this
+    // company's before it is written.
+    const owned = await requireOwnRecords(ctx, [
+      ["item", job.itemId, "item"],
+      ["location", job.locationId, "location"],
+      ["customer", job.customerId, "customer"],
+      ["modelUpload", job.modelUploadId, "model"],
+      ["fixedAssetClass", job.fixedAssetClassId, "fixed asset class"],
+      ["fixedAsset", job.fixedAssetId, "fixed asset"]
+    ]);
+    if (owned) return owned;
+
+    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
+      ctx.asSystem.supabase,
+      { itemId: job.itemId, companyId }
+    );
+    if (unreleasedIssue) {
+      return ctx.error(
+        "rule",
+        `${unreleasedIssue} A job cannot be made for it.`
+      );
+    }
+
+    // Refused here, not only at release, so the form says why while the item
+    // is still being chosen.
+    if (job.fixedAssetClassId || job.fixedAssetId) {
+      const item = await ctx.asSystem.supabase
+        .from("item")
+        .select("itemTrackingType")
+        .eq("id", job.itemId)
+        .eq("companyId", companyId)
+        .single();
+      const itemError = makeToAssetItemError({
+        ...job,
+        itemTrackingType: item.data?.itemTrackingType
+      });
+      if (itemError) return ctx.error("rule", itemError);
+    }
+
+    const created = await insertJob(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        ...job,
+        jobId: job.jobId || undefined,
+        fixedAssetClassId: job.fixedAssetClassId || null,
+        fixedAssetId: job.fixedAssetId || null,
+        configuration,
+        companyId,
+        createdBy: ctx.auditUserId
+      },
+      { source: "erp" }
+    );
+    if (created.error || !created.data) {
+      return ctx.error("internal", "Failed to insert job", created.error);
+    }
+    return { jobId: created.data.id };
   }
 });
 
