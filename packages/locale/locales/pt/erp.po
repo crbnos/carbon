@@ -5689,6 +5689,10 @@ msgstr "Convertendo…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte a unidade de compra de um fornecedor para sua unidade de inventário em uma linha de pedido, recebimento ou fatura — compre em caixas de 12, estoque em unidades."
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
+
 msgid "Copied ID to clipboard"
 msgstr "ID copiado para a área de transferência"
 
@@ -12810,6 +12814,12 @@ msgstr "Tamanho do Lote:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "Inspeção de bens recebidos baseada em lote em relação a um plano de amostragem; as unidades são contabilizadas em Suspenso no recebimento e só são liberadas para Disponível quando o lote é disposicionado como Aceito."
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "Baixo"
 
@@ -13094,6 +13104,10 @@ msgstr "Marcar como Falta"
 
 msgid "Mark to delete"
 msgstr "Marcar para exclusão"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "Taxa de mercado"
@@ -15985,6 +15999,10 @@ msgstr "Sobrescrita da expiração em {label}."
 
 msgid "Overtime"
 msgstr "Horas Extras"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
 
 msgid "Overview"
 msgstr "Visão geral"
@@ -22130,6 +22148,10 @@ msgstr "A data calculada retroativamente que uma operação deve terminar para m
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "O lote de produção vai para o chão de fábrica. Suas ordens de produção já foram liberadas."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "O lote é executado no prazo do membro mais urgente — os demais são adiantados"

@@ -5689,6 +5689,10 @@ msgstr "Conversione in corso…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte l'unità di acquisto di un fornitore nella tua unità di inventario su una linea di ordine, ricevuta o fattura — acquista in scatole di 12, stoccaggio in unità singole."
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
+
 msgid "Copied ID to clipboard"
 msgstr "ID copiato negli appunti"
 
@@ -12810,6 +12814,12 @@ msgstr "Dimensione del lotto:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "Controllo basato su lotto delle merci ricevute in base a un piano di campionamento; le unità vengono registrate come Sospese al ricevimento e si rilasciano a Disponibile solo una volta che il lotto è stato disposizionato come Accettato."
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "Basso"
 
@@ -13094,6 +13104,10 @@ msgstr "Segna come incompleto"
 
 msgid "Mark to delete"
 msgstr "Segna per eliminare"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "Tasso di mercato"
@@ -15985,6 +15999,10 @@ msgstr "Forza la scadenza su {label}."
 
 msgid "Overtime"
 msgstr "Straordinario"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
 
 msgid "Overview"
 msgstr "Panoramica"
@@ -22130,6 +22148,10 @@ msgstr "La data calcolata a ritroso che un'operazione deve terminare entro per m
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Il lotto di produzione va all'officina. I suoi ordini di produzione sono già rilasciati."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Il lotto segue il membro più urgente — gli altri vengono anticipati"

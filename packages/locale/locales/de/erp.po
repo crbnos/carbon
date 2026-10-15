@@ -5689,6 +5689,10 @@ msgstr "Wird konvertiert …"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Wandelt die Einkaufseinheit eines Lieferanten in Ihre Bestandseinheit auf einer Bestellung, einem Wareneingang oder einer Rechnungsposition um – Einkauf in Kartons à 12, Bestand in Einzelstücken."
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
+
 msgid "Copied ID to clipboard"
 msgstr "ID in die Zwischenablage kopiert"
 
@@ -12810,6 +12814,12 @@ msgstr "Losgröße:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "Chargenbasierte Überprüfung empfangener Waren gegen einen Stichprobenplan; die Einheiten erhalten beim Wareneingang den Status Angehalten und werden nur freigegeben zu Verfügbar, nachdem die Charge mit dem Verwendungsentscheid Angenommen versehen wurde."
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "Niedrig"
 
@@ -13094,6 +13104,10 @@ msgstr "Als kurz markieren"
 
 msgid "Mark to delete"
 msgstr "Zum Löschen markieren"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "Marktkurs"
@@ -15985,6 +15999,10 @@ msgstr "Verfallsdatum auf {label} übersteuern."
 
 msgid "Overtime"
 msgstr "Überstunden"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
 
 msgid "Overview"
 msgstr "Übersicht"
@@ -22130,6 +22148,10 @@ msgstr "Das rückwärts berechnete Datum, bis zu dem ein Arbeitsgang beendet sei
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Das Los geht in die Werkstatt. Seine Fertigungsaufträge sind bereits freigegeben."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Der Batch läuft zum Termin seines dringendsten Auftrags — die übrigen werden vorgezogen"

@@ -5655,7 +5655,7 @@ async function requirePeopleBoardRefs(
 /**
  * Move-semantics upsert: one magnet per person per date/shift — any existing
  * assignment for the person on that date/shift is replaced.
- * @mcp upsert destructive
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function upsertPeopleAssignment(
   db: Kysely<KyselyDatabase>,
@@ -5773,7 +5773,7 @@ export async function upsertPeopleAssignment(
   });
 }
 
-/** @mcp delete */
+/** The write only; `production.people.*` also checks the board's ids and reschedules. */
 export async function deletePeopleAssignment(
   client: SupabaseClient<Database>,
   id: string,
@@ -5788,7 +5788,7 @@ export async function deletePeopleAssignment(
     .single();
 }
 
-/** @mcp update */
+/** The write only; `production.people.*` also checks the board's ids and reschedules. */
 export async function setPeopleAbsence(
   client: SupabaseClient<Database>,
   absence: {
@@ -5803,7 +5803,7 @@ export async function setPeopleAbsence(
   return client.from("peopleAbsence").insert([absence]).select("id").single();
 }
 
-/** @mcp action destructive */
+/** The write only; `production.people.*` also checks the board's ids and reschedules. */
 export async function clearPeopleAbsence(
   client: SupabaseClient<Database>,
   id: string,
@@ -5826,7 +5826,7 @@ export async function clearPeopleAbsence(
  * Move one assignment row to another station (drag = move). If the person
  * already has a row at the target station for the same shift/date, the rows
  * merge (hours add; a whole-shift row absorbs the other).
- * @mcp update destructive
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleAssignment(
   db: Kysely<KyselyDatabase>,
@@ -5907,7 +5907,7 @@ export async function movePeopleAssignment(
  * stations are updated (hours/overtime), new stations inserted, stations
  * not in `rows` deleted. Scoped to the shift when one is given. One
  * transaction — the Working-hours popover's Save.
- * @mcp update destructive
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function setPeopleDay(
   db: Kysely<KyselyDatabase>,
@@ -6016,7 +6016,7 @@ export async function setPeopleDay(
  * shift). Lowering hours releases the remainder back to the board's
  * free-hours pool; splitting across stations = lower here, then drag the
  * remainder card to the next station.
- * @mcp update
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function setPeopleAssignmentHours(
   client: SupabaseClient<Database>,
@@ -6041,7 +6041,7 @@ export async function setPeopleAssignmentHours(
  * department (via the location's work centers) and/or a shift. One UPDATE so
  * partial application can't happen; department resolves server-side (never a
  * client-supplied work-center list).
- * @mcp update
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function setPeopleOvertimeBulk(
   db: Kysely<KyselyDatabase>,
@@ -6087,7 +6087,7 @@ export async function setPeopleOvertimeBulk(
   });
 }
 
-/** @mcp create */
+/** The write only; `production.people.*` also checks the board's ids and reschedules. */
 export async function copyPeopleBoard(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -6192,7 +6192,7 @@ const toIsoDate = (value: unknown) => {
  * Assign a person to a station for a whole Monday-start week: one row per
  * working day (the shift's weekdays when a shift is given, Mon–Fri
  * otherwise), skipping days where they're absent or already assigned.
- * @mcp action
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function assignPeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -6316,7 +6316,7 @@ export async function assignPeopleWeek(
 /**
  * Remove a person from a station for the whole week (their other stations
  * and other weeks are untouched).
- * @mcp action destructive
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function unassignPeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -6345,7 +6345,7 @@ export async function unassignPeopleWeek(
  * Move a person's whole week from one station to another. Days where they
  * already have a row at the target station keep the target row (the source
  * row is dropped); other days simply change station.
- * @mcp update destructive
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function movePeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -6417,7 +6417,7 @@ export async function movePeopleWeek(
  * Copy a whole Monday-start week of people assignments onto another week,
  * day by day, with the same skip rules as the day copy (people already
  * assigned or absent on the target date are left alone). One transaction.
- * @mcp create
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function copyPeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -6454,7 +6454,7 @@ export async function copyPeopleWeek(
 /**
  * Mark a person absent for every date in [fromDate, toDate] (vacation as one
  * action). Dates that already carry an absence for the person are skipped.
- * @mcp update
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
  */
 export async function setPeopleAbsenceRange(
   db: Kysely<KyselyDatabase>,
@@ -7151,7 +7151,7 @@ export async function getBatchableProcesses(
     .order("name");
 }
 
-/** @mcp create */
+/** The batch only; `production.batch.create` also releases its jobs and tells the scheduler. */
 export async function createJobOperationBatch(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7179,7 +7179,11 @@ export async function createJobOperationBatch(
     });
 }
 
-/** @mcp update */
+/**
+ * Any `batch-operations` change, release included. Not published: a release
+ * here skips the member jobs; `production.batch.update` / `.release` /
+ * `.unrelease` are the operations.
+ */
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7217,7 +7221,7 @@ export async function releaseJobOperationBatch(
     });
 }
 
-/** @mcp action */
+/** The flip only; `production.batch.unrelease` also tells the scheduler. */
 export async function unreleaseJobOperationBatch(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

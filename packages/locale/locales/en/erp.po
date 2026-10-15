@@ -5689,6 +5689,10 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr "Copied {0} assignments"
+
 msgid "Copied ID to clipboard"
 msgstr "Copied ID to clipboard"
 
@@ -12810,6 +12814,12 @@ msgstr "Lot Size:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 
+msgid "Lots merged"
+msgstr "Lots merged"
+
+msgid "Lots merged into {readableId}"
+msgstr "Lots merged into {readableId}"
+
 msgid "Low"
 msgstr "Low"
 
@@ -13094,6 +13104,10 @@ msgstr "Mark Short"
 
 msgid "Mark to delete"
 msgstr "Mark to delete"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr "Marked absent for {0} day(s)"
 
 msgid "Market rate"
 msgstr "Market rate"
@@ -15985,6 +15999,10 @@ msgstr "Override the expiration on {label}."
 
 msgid "Overtime"
 msgstr "Overtime"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr "Overtime set for {0} assignments"
 
 msgid "Overview"
 msgstr "Overview"
@@ -22130,6 +22148,10 @@ msgstr "The backward-computed date an operation must finish by to keep its job o
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "The batch goes to the shop floor. Its jobs are already released."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr "The batch is {0}, not Planned"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"

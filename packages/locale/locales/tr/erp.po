@@ -5689,6 +5689,10 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
+
 msgid "Copied ID to clipboard"
 msgstr "ID panoya kopyalandı"
 
@@ -12810,6 +12814,12 @@ msgstr "Parti büyüklüğü:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "Lot tabanlı alınan malların örnekleme planına karşı muayenesi; birimler mal kabulde Askıda durumunda kaydedilir ve Lot kabul edildi olarak sınıflandırıldıktan sonra Kullanılabilir durumuna serbest bırakılır."
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "Düşük"
 
@@ -13094,6 +13104,10 @@ msgstr "Az eksik olarak işaretle"
 
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "Piyasa kuru"
@@ -15985,6 +15999,10 @@ msgstr "{label} üzerindeki son kullanmayı geçersiz kıl."
 
 msgid "Overtime"
 msgstr "Fazla Mesai"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
 
 msgid "Overview"
 msgstr "Genel bakış"
@@ -22130,6 +22148,10 @@ msgstr "Bir operasyon'un iş emri'sini zamanında tutmak için bitirmesi gereken
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Parti atölyeye gider. İş emirleri zaten serbest bırakıldı."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çekilir"

@@ -41,6 +41,7 @@ import type { action as releaseBatchesAction } from "~/routes/x+/production+/bat
 import { path } from "~/utils/path";
 import type { JobOperationBatch } from "../../types";
 import { BatchReleaseModal } from "./BatchReleaseModal";
+import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {
   data: JobOperationBatch[];
@@ -104,47 +105,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const canUpdate = permissions.can("update", "production");
 
   // Release (Planned → Active) / Unrelease (Active → Planned) post to the
-  // batching action; the server's refusal (no work center, production already
-  // recorded) comes back as { success: false, message } and lands in the toast.
-  const releaseFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-  }>();
-  const wasReleasing = useRef(false);
-  useEffect(() => {
-    if (releaseFetcher.state !== "idle") {
-      wasReleasing.current = true;
-      return;
-    }
-    if (!wasReleasing.current) return;
-    wasReleasing.current = false;
-    const d = releaseFetcher.data;
-    if (d?.success === false && d.message) {
-      toast.error(d.message);
-    }
-  }, [releaseFetcher.state, releaseFetcher.data]);
-
-  const submitBatchIntent = useCallback(
-    (
-      intent: "release" | "unrelease",
-      batchId: string,
-      purchaseOrdersBySupplierId?: Record<string, string>
-    ) => {
-      releaseFetcher.submit(
-        {
-          intent,
-          batchId,
-          ...(purchaseOrdersBySupplierId && {
-            purchaseOrdersBySupplierId: JSON.stringify(
-              purchaseOrdersBySupplierId
-            )
-          })
-        },
-        { method: "post", action: path.to.priorityBatchingUpdate }
-      );
-    },
-    [releaseFetcher]
-  );
+  // batching action; a refusal lands in the toast.
+  const { submit: submitBatchIntent } = useBatchRelease();
   // The row action opens the Release dialog (member-job checks + PO choice)
   // instead of releasing straight away.
   const [releaseTarget, setReleaseTarget] = useState<{

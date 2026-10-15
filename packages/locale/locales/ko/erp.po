@@ -5689,6 +5689,10 @@ msgstr "변환 중…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
+
 msgid "Copied ID to clipboard"
 msgstr "ID를 클립보드에 복사했습니다"
 
@@ -12810,6 +12814,12 @@ msgstr "로트 크기:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "로트 기반의 샘플링 계획에 따른 입고 물품 검사입니다. 유닛은 입고 시 보류 상태로 전기되며, 로트가 수락됨으로 처분 결정된 후에만 가용 상태로 릴리스됩니다."
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "낮음"
 
@@ -13094,6 +13104,10 @@ msgstr "부족으로 표시"
 
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "시장 환율"
@@ -15985,6 +15999,10 @@ msgstr "{label}의 유효기한을 재정의합니다."
 
 msgid "Overtime"
 msgstr "초과근무"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
 
 msgid "Overview"
 msgstr "개요"
@@ -22130,6 +22148,10 @@ msgstr "공정이 작업 지시를 제때 완료하기 위해 마감일까지 �
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "배치가 현장으로 이동합니다. 포함된 작업 지시들은 이미 릴리스되었습니다."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"

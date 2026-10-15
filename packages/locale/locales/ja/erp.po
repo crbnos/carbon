@@ -5689,6 +5689,10 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
+
 msgid "Copied ID to clipboard"
 msgstr "IDをクリップボードにコピーしました"
 
@@ -12810,6 +12814,12 @@ msgstr "ロットサイズ:"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "入荷商品をロット単位で抜取検査方式に従って検査します。受取時に単位が保留中に設定され、ロットが承諾済として処分されたら利用可能にリリースされます。"
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "低"
 
@@ -13094,6 +13104,10 @@ msgstr "短い数量をマーク"
 
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "市場レート"
@@ -15985,6 +15999,10 @@ msgstr "有効期限を {label} で上書きします。"
 
 msgid "Overtime"
 msgstr "残業"
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
 
 msgid "Overview"
 msgstr "概要"
@@ -22130,6 +22148,10 @@ msgstr "その製造指図を時間通りに保つために、工程が終了す
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "バッチが製造現場に移動します。その製造指図は既にリリース済です。"
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"

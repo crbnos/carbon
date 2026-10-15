@@ -22,7 +22,8 @@ import { sql } from "kysely";
 import { z } from "zod";
 import {
   cancelOpenPickingListsForJob,
-  getDefaultStorageUnitForJob
+  getDefaultStorageUnitForJob,
+  mergeTrackedEntities
 } from "~/modules/inventory/inventory.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import {
@@ -31,22 +32,47 @@ import {
   type ServiceContext
 } from "~/modules/service-fn.server";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import {
   bulkJobValidator,
+  copyPeopleBoardValidator,
+  copyPeopleWeekValidator,
   deadlineTypes,
+  getDueDateForColumn,
   isJobLocked,
+  JOB_LOCKED_STATUSES,
   jobOperationStatus,
   jobOperationValidator,
   jobStatus,
   jobValidator,
   makeToAssetItemError,
+  peopleAbsenceRangeValidator,
+  peopleAbsenceValidator,
+  peopleAssignmentValidator,
+  peopleDayValidator,
+  peopleHoursValidator,
+  peopleMoveValidator,
+  peopleOvertimeBulkValidator,
+  peopleWeekAssignValidator,
+  peopleWeekMoveValidator,
+  peopleWeekUnassignValidator,
   productionEventValidator,
+  scheduleJobUpdateValidator,
   scheduleOperationReorderValidator
 } from "./production.models";
 import {
+  assignPeopleWeek,
   calculateJobPriority,
+  clearPeopleAbsence,
+  copyPeopleBoard,
+  copyPeopleWeek,
+  createJobOperationBatch,
+  deletePeopleAssignment,
+  getBatchOutputLots,
   getJobReleaseReadiness,
   insertJob,
+  movePeopleAssignment,
+  movePeopleWeek,
   notifyScheduleInputsChanged,
   pullJobMaterialMakeMethod,
   recalculateJobMakeMethodRequirements,
@@ -56,12 +82,21 @@ import {
   returnPickedRemaindersForJob,
   returnPickedRemaindersForOperation,
   runMRP,
+  setPeopleAbsence,
+  setPeopleAbsenceRange,
+  setPeopleAssignmentHours,
+  setPeopleDay,
+  setPeopleOvertimeBulk,
+  unassignPeopleWeek,
+  unreleaseJobOperationBatch,
   updateJob,
+  updateJobOperationBatch,
   updateJobStatus,
   upsertJobMaterial,
   upsertJobMaterialMakeMethod,
   upsertJobMethod,
   upsertJobOperation,
+  upsertPeopleAssignment,
   upsertProductionEvent
 } from "./production.service";
 import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
@@ -1273,14 +1308,18 @@ export const releaseBatches = defineServiceFn({
 });
 
 /**
- * Reorder several operations of one schedule column.
+ * Move operations on the schedule board: into a work center's column, in a
+ * dispatch order.
  *
  * @remarks
- * Writes the priorities (and work center) a drop on the schedule board gives
- * them, as one all-or-nothing statement. The checks are the single-operation
- * update's, made once for the set: every operation exists and is open, its job
- * is unlocked and at the work center's location, and the work center runs its
- * process.
+ * Writes the priorities (and work center) a drop on the operations board gives
+ * one card or several, as one all-or-nothing statement. Every operation must
+ * exist and be open, its job unlocked and at the work center's location, and
+ * the work center active and running its process; anything else is "Invalid
+ * scheduling request". A job or operation that changed between the checks and
+ * the write is a `conflict`. When any operation changed work center, the
+ * scheduler is told, so the forecast follows; a reorder within one work center
+ * only re-sequences the dispatch order.
  *
  * @mcp
  */
@@ -1398,11 +1437,77 @@ export const reorderScheduleOperations = defineServiceFn({
     });
     if (written.error) return written.error;
 
-    return {
-      workCenterChanged: operations.data.some(
-        (o) => o.workCenterId !== destination.id
-      )
-    };
+    const workCenterChanged = operations.data.some(
+      (o) => o.workCenterId !== destination.id
+    );
+    if (workCenterChanged) {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "work-center",
+        "Operation reassigned to a different work center",
+        destination.id
+      );
+    }
+    return { workCenterChanged };
+  }
+});
+
+/**
+ * Move a job on the dates board: to a due date column, in a dispatch order.
+ *
+ * @remarks
+ * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
+ * which clears the due date. Writes the due date and priority of a job at
+ * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
+ * Then the scheduler is told; the debounced wave regenerates the location in
+ * due date, then priority, order. A failed notice is logged and not returned.
+ *
+ * @mcp
+ */
+export const moveScheduleJob = defineServiceFn({
+  input: scheduleJobUpdateValidator,
+  permission: { update: "production" },
+
+  async run(ctx, { id, locationId, columnId, priority }) {
+    const companyId = ctx.company.id;
+    const dueDate = getDueDateForColumn(columnId);
+    if (dueDate === undefined) {
+      return ctx.error("validation", "Invalid form data");
+    }
+
+    const { data, error } = await ctx.asCaller.supabase
+      .from("job")
+      .update({
+        dueDate,
+        priority,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+      .select("id")
+      .maybeSingle();
+    if (error) return ctx.error("internal", error.message, error);
+    if (data === null) {
+      return ctx.error("conflict", "Job unavailable or locked");
+    }
+
+    try {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "reorder",
+        "Schedule reordered"
+      );
+    } catch (notifyError) {
+      // The wave can retry; the move stands.
+      logger.error("Failed to notify schedule inputs changed", {
+        companyId,
+        error: notifyError
+      });
+    }
+    return { id };
   }
 });
 
@@ -2994,5 +3099,911 @@ export const syncJobOperationProcedure = defineServiceFn({
       return ctx.error("internal", "Failed to sync procedure", sync.error);
     }
     return { operationId };
+  }
+});
+
+/**
+ * Move a batch card on the operations board: its place in the dispatch order.
+ *
+ * @remarks
+ * A batch card sits at its earliest member's priority, so every open member
+ * takes `priority`. Only the dispatch order changes; nothing is rescheduled.
+ * A Completing or Completed batch is read-only ("Batch unavailable").
+ *
+ * @mcp
+ */
+export const reprioritizeBatch = defineServiceFn({
+  input: z.object({
+    batchId: z.string().min(1),
+    priority: z.number().refine(Number.isFinite, "Priority must be finite")
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { batchId, priority }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("status")
+      .eq("id", batchId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (
+      batch.error ||
+      batch.data === null ||
+      batch.data.status === "Completing" ||
+      batch.data.status === "Completed"
+    ) {
+      return ctx.error("rule", "Batch unavailable", batch.error);
+    }
+
+    const { error } = await client
+      .from("jobOperation")
+      .update({
+        priority,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("jobOperationBatchId", batchId)
+      .eq("companyId", companyId)
+      .not("status", "in", "(Done,Canceled)");
+    if (error) return ctx.error("internal", error.message, error);
+    return { batchId };
+  }
+});
+
+/**
+ * Merge a completed batch's output lots of one item into one lot.
+ *
+ * @remarks
+ * The ERP catch-up for a batch whose completion prompt was skipped. Only a
+ * Completed batch qualifies. Its members' Available output lots of `itemId`
+ * are read here, never taken from the caller; fewer than two is refused. The
+ * merged lot's genealogy keeps every source job (`issue`
+ * `mergeTrackedEntities`).
+ *
+ * @mcp
+ */
+export const mergeBatchOutputs = defineServiceFn({
+  input: z.object({ batchId: z.string().min(1), itemId: z.string() }),
+  permission: { update: "production" },
+
+  async run(ctx, { batchId, itemId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("status")
+      .eq("id", batchId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (batch.error || batch.data?.status !== "Completed") {
+      return ctx.error(
+        "rule",
+        "Only a completed batch's output lots can be merged",
+        batch.error
+      );
+    }
+
+    const outputs = await getBatchOutputLots(client, batchId, companyId);
+    if (outputs.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the output lots",
+        outputs.error
+      );
+    }
+    const lots = (outputs.data ?? []).filter((lot) => lot.itemId === itemId);
+    if (lots.length < 2) return ctx.error("rule", "No mergeable output lots");
+
+    const merge = await mergeTrackedEntities(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        trackedEntityIds: lots.map((lot) => lot.id),
+        companyId,
+        userId: ctx.auditUserId
+      }
+    );
+    if (merge.error) {
+      return ctx.error(
+        "internal",
+        getErrorMessage(merge.error, "Failed to merge lots"),
+        merge.error
+      );
+    }
+    return { readableId: merge.data?.readableId ?? null };
+  }
+});
+
+/**
+ * Create an operation batch, optionally released at once.
+ *
+ * @remarks
+ * Groups open operations of one batchable process at `locationId` into a
+ * batch (`batch-operations` `create`: eligibility, the process's material
+ * rules and the planned output lots are checked there). With `release`, the
+ * operations' Draft / Planned jobs are released first through the job page's
+ * checks (any problem refuses the batch untouched; `purchaseOrdersBySupplierId`
+ * is the release dialog's choice), the batch is created already on the floor,
+ * and the scheduler is told.
+ *
+ * @mcp
+ */
+export const createBatch = defineServiceFn({
+  input: z.object({
+    locationId: z.string().min(1),
+    workCenterId: z.string().optional(),
+    notes: z.string().optional(),
+    release: z.boolean().default(false),
+    jobOperationIds: z.array(z.string().min(1)).min(1),
+    mergeOutput: z.boolean().default(false),
+    outputLotNumber: z.string().optional(),
+    lotNumbers: z
+      .array(
+        z.object({
+          jobOperationId: z.string().min(1),
+          lotNumber: z.string().trim().min(1)
+        })
+      )
+      .optional(),
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { purchaseOrdersBySupplierId, ...batch }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    if (batch.release) {
+      const ops = await client
+        .from("jobOperation")
+        .select("jobId")
+        .in("id", batch.jobOperationIds)
+        .eq("companyId", companyId);
+      if (ops.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the operations",
+          ops.error
+        );
+      }
+      const released = await releaseBatchMemberJobs(ctx, {
+        jobIds: ops.data.map((op) => op.jobId),
+        purchaseOrdersBySupplierId
+      });
+      if (released.error) return released.error;
+    }
+
+    const result = await createJobOperationBatch(client, ctx.asSystem.pg, {
+      ...batch,
+      companyId,
+      userId: ctx.auditUserId
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to create batch"),
+        result.error
+      );
+    }
+
+    if (batch.release) {
+      // The batch was inserted Active: the wave places it as one unit.
+      await notifyScheduleInputsChanged(
+        companyId,
+        "work-center",
+        "batch released at creation",
+        batch.workCenterId
+      );
+    }
+    const created = result.data as { id?: string; readableId?: string } | null;
+    return {
+      batchId: created?.id ?? null,
+      readableId: created?.readableId ?? null
+    };
+  }
+});
+
+/**
+ * Take a released batch back off the floor.
+ *
+ * @remarks
+ * Allowed only before its first production event (`batch-operations`
+ * `unrelease`); the batch goes back to Planned. Then the scheduler is told.
+ *
+ * @mcp
+ */
+export const unreleaseBatch = defineServiceFn({
+  input: z.object({ batchId: z.string().min(1) }),
+  permission: { update: "production" },
+
+  async run(ctx, { batchId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("workCenterId")
+      .eq("id", batchId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    const unreleased = await unreleaseJobOperationBatch(
+      client,
+      ctx.asSystem.pg,
+      { batchId, companyId, userId: ctx.auditUserId }
+    );
+    if (unreleased.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(unreleased.error, "Failed to unrelease batch"),
+        unreleased.error
+      );
+    }
+
+    // After the status flip is persisted: the wave must see the new state.
+    await notifyScheduleInputsChanged(
+      companyId,
+      "work-center",
+      "batch unreleased",
+      batch.data?.workCenterId ?? undefined
+    );
+    return { batchId };
+  }
+});
+
+/**
+ * Change a batch's members or work center, or dissolve it.
+ *
+ * @remarks
+ * `add` and `remove` take `jobOperationIds`; `update` sets the work center
+ * (none clears it); `dissolve` deletes a batch that has not started. The
+ * `batch-operations` server function checks each (eligibility, the material
+ * rules, the batch's status) and its refusal is returned as a `rule` error.
+ * Release and unrelease are their own operations.
+ *
+ * @mcp
+ */
+export const updateBatch = defineServiceFn({
+  input: z.object({
+    batchId: z.string().min(1),
+    type: z.enum(["add", "remove", "update", "dissolve"]),
+    jobOperationIds: z.array(z.string().min(1)).optional(),
+    workCenterId: z.string().optional()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { type, workCenterId, ...batch }) {
+    const result = await updateJobOperationBatch(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        ...batch,
+        type,
+        // "update" clears the work center when none is sent.
+        workCenterId: type === "update" ? (workCenterId ?? null) : workCenterId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, `Failed to ${type} batch`),
+        result.error
+      );
+    }
+    return { batchId: batch.batchId };
+  }
+});
+
+// --- People board ---------------------------------------------------------
+
+type BoardReferenceTable =
+  | "department"
+  | "employee"
+  | "location"
+  | "shift"
+  | "workCenter";
+
+/**
+ * `notFound` unless every id given is this company's. Every board write puts
+ * these ids into this company's rows through Kysely (no RLS), and their
+ * single-column foreign keys accept another company's row. Empty values are
+ * skipped, so optional fields stay optional.
+ */
+async function requireBoardReferences(
+  ctx: ServiceContext,
+  refs: Partial<Record<BoardReferenceTable, (string | null | undefined)[]>>
+): Promise<CarbonError | null> {
+  const checks = await Promise.all(
+    (Object.entries(refs) as [BoardReferenceTable, unknown[]][]).map(
+      async ([table, values]) => {
+        const ids = [
+          ...new Set(
+            values.filter(
+              (value): value is string =>
+                typeof value === "string" && value.length > 0
+            )
+          )
+        ];
+        if (ids.length === 0) return true;
+        // Every table in the union has `id` + `companyId`; the cast only
+        // narrows the union so Kysely can type the builder.
+        const rows = await ctx.asSystem.pg
+          .selectFrom(table as "location")
+          .select("id")
+          .where("id", "in", ids)
+          .where("companyId", "=", ctx.company.id)
+          .execute();
+        return rows.length === ids.length;
+      }
+    )
+  );
+  if (checks.every(Boolean)) return null;
+  logger.error("People board reference is not in the caller's company", {
+    companyId: ctx.company.id,
+    refs
+  });
+  return ctx.error("notFound", "Not found");
+}
+
+/** Tell the scheduler once per work center; with none, once, unscoped. */
+async function notifyPeopleChange(
+  ctx: ServiceContext,
+  reason: string,
+  workCenterIds: (string | null | undefined)[] = []
+) {
+  const ids = [...new Set(workCenterIds.filter(Boolean))] as string[];
+  if (ids.length === 0) {
+    await notifyScheduleInputsChanged(ctx.company.id, "people", reason);
+    return;
+  }
+  for (const workCenterId of ids) {
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "people",
+      reason,
+      workCenterId
+    );
+  }
+}
+
+/** The work centers a person is assigned at on a date, for the notice. */
+async function notifyForEmployeeDate(
+  ctx: ServiceContext,
+  employeeId: string,
+  date: string,
+  reason: string
+) {
+  const assignments = await ctx.asCaller.supabase
+    .from("peopleAssignment")
+    .select("workCenterId")
+    .eq("companyId", ctx.company.id)
+    .eq("employeeId", employeeId)
+    .eq("date", date);
+  await notifyPeopleChange(
+    ctx,
+    reason,
+    (assignments.data ?? []).map((row) => row.workCenterId)
+  );
+}
+
+/** A board write that throws on failure, as a `CarbonError` with `message`. */
+async function boardWrite<T>(
+  ctx: ServiceContext,
+  message: string,
+  write: () => Promise<T>
+): Promise<T | CarbonError<"internal">> {
+  try {
+    return await write();
+  } catch (err) {
+    return ctx.error("internal", message, err);
+  }
+}
+
+/**
+ * Put a person at a work center for a date.
+ *
+ * @remarks
+ * Without `hours` the person works the whole shift there and their other
+ * stations that day are replaced; with `hours` this station gets that part of
+ * the day. The employee, location, work center and shift must be this
+ * company's. Then the work center is rescheduled.
+ *
+ * @mcp
+ */
+export const assignPerson = defineServiceFn({
+  input: peopleAssignmentValidator.omit({ id: true }),
+  permission: { update: "production" },
+
+  async run(ctx, assignment) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [assignment.employeeId],
+      location: [assignment.locationId],
+      shift: [assignment.shiftId],
+      workCenter: [assignment.workCenterId]
+    });
+    if (refused) return refused;
+
+    const written = await boardWrite(
+      ctx,
+      "Failed to assign people member",
+      () =>
+        upsertPeopleAssignment(ctx.asSystem.pg, {
+          ...assignment,
+          companyId: ctx.company.id,
+          shiftId: assignment.shiftId || null,
+          createdBy: ctx.auditUserId
+        })
+    );
+    if (written instanceof CarbonError) return written;
+    await notifyPeopleChange(ctx, "People assignment changed", [
+      assignment.workCenterId
+    ]);
+    return { employeeId: assignment.employeeId };
+  }
+});
+
+/**
+ * Remove a person's assignment.
+ *
+ * @remarks
+ * Then the work center it was at is rescheduled.
+ *
+ * @mcp destructive
+ */
+export const unassignPerson = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "production" },
+
+  async run(ctx, { id }) {
+    const removed = await deletePeopleAssignment(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (removed.error) {
+      return ctx.error(
+        "internal",
+        "Failed to remove people member",
+        removed.error
+      );
+    }
+    await notifyPeopleChange(ctx, "People assignment removed", [
+      removed.data.workCenterId
+    ]);
+    return { id };
+  }
+});
+
+/**
+ * Mark a person absent on a date.
+ *
+ * @remarks
+ * The scheduler stops counting them that day; every work center they are
+ * assigned at is rescheduled.
+ *
+ * @mcp
+ */
+export const markPersonAbsent = defineServiceFn({
+  input: peopleAbsenceValidator.omit({ id: true }),
+  permission: { update: "production" },
+
+  async run(ctx, absence) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [absence.employeeId],
+      shift: [absence.shiftId]
+    });
+    if (refused) return refused;
+
+    const written = await setPeopleAbsence(ctx.asCaller.supabase, {
+      ...absence,
+      companyId: ctx.company.id,
+      shiftId: absence.shiftId || null,
+      createdBy: ctx.auditUserId
+    });
+    if (written.error) {
+      return ctx.error("internal", "Failed to mark absent", written.error);
+    }
+    await notifyForEmployeeDate(
+      ctx,
+      absence.employeeId,
+      absence.date,
+      "People member marked absent"
+    );
+    return { id: written.data.id };
+  }
+});
+
+/**
+ * Clear a person's absence.
+ *
+ * @remarks
+ * Every work center they are assigned at on `date` (the company's today when
+ * not given) is rescheduled.
+ *
+ * @mcp destructive
+ */
+export const clearPersonAbsence = defineServiceFn({
+  input: z.object({ id: z.string().min(1), date: z.string().optional() }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, date }) {
+    const cleared = await clearPeopleAbsence(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (cleared.error) {
+      return ctx.error("internal", "Failed to clear absence", cleared.error);
+    }
+    const day =
+      date ||
+      datetime
+        .today(await getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id))
+        .toString();
+    await notifyForEmployeeDate(
+      ctx,
+      cleared.data.employeeId,
+      day,
+      "People absence cleared"
+    );
+    return { id };
+  }
+});
+
+/**
+ * Move a person's assignment to another work center.
+ *
+ * @remarks
+ * A move onto a station the person already works that day merges the two.
+ * Both the station they left and the one they joined are rescheduled.
+ *
+ * @mcp
+ */
+export const movePerson = defineServiceFn({
+  input: peopleMoveValidator,
+  permission: { update: "production" },
+
+  async run(ctx, { id, workCenterId }) {
+    const refused = await requireBoardReferences(ctx, {
+      workCenter: [workCenterId]
+    });
+    if (refused) return refused;
+
+    const moved = await boardWrite(ctx, "Failed to move assignment", () =>
+      movePeopleAssignment(ctx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id,
+        workCenterId
+      })
+    );
+    if (moved instanceof CarbonError) return moved;
+    await notifyPeopleChange(ctx, "People assignment moved", [
+      moved.workCenterId,
+      moved.previousWorkCenterId
+    ]);
+    return { id };
+  }
+});
+
+/**
+ * Set a person's whole day: the stations they work, their hours at each, the
+ * day's note and overtime.
+ *
+ * @remarks
+ * The given rows become the day's assignments in one transaction (updated,
+ * inserted or deleted to match). Every station they are at afterwards is
+ * rescheduled.
+ *
+ * @mcp
+ */
+export const setPersonDay = defineServiceFn({
+  input: peopleDayValidator,
+  permission: { update: "production" },
+
+  async run(ctx, day) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [day.employeeId],
+      location: [day.locationId],
+      shift: [day.shiftId],
+      workCenter: day.rows.map((row) => row.workCenterId)
+    });
+    if (refused) return refused;
+
+    const written = await boardWrite(ctx, "Failed to save working hours", () =>
+      setPeopleDay(ctx.asSystem.pg, ctx.auditUserId, {
+        ...day,
+        companyId: ctx.company.id,
+        shiftId: day.shiftId || null,
+        note: day.note || null
+      })
+    );
+    if (written instanceof CarbonError) return written;
+    await notifyForEmployeeDate(
+      ctx,
+      day.employeeId,
+      day.date,
+      "People day hours changed"
+    );
+    return { employeeId: day.employeeId };
+  }
+});
+
+/**
+ * Set the hours of one assignment; none means the whole shift.
+ *
+ * @remarks
+ * Lowering them frees the rest of the day for another station. Then the work
+ * center is rescheduled.
+ *
+ * @mcp
+ */
+export const setPersonHours = defineServiceFn({
+  input: peopleHoursValidator,
+  permission: { update: "production" },
+
+  async run(ctx, { id, hours }) {
+    const result = await setPeopleAssignmentHours(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { id, hours: hours ?? null, updatedBy: ctx.auditUserId }
+    );
+    if (result.error) {
+      return ctx.error("internal", "Failed to set hours", result.error);
+    }
+    await notifyPeopleChange(ctx, "People assignment hours changed", [
+      result.data.workCenterId
+    ]);
+    return { id };
+  }
+});
+
+/**
+ * Authorize overtime for every assignment at a location on a date, or a range
+ * of dates.
+ *
+ * @remarks
+ * Optionally only a department's work centers or one shift. One UPDATE, so it
+ * applies to all or none. Every work center touched is rescheduled. Returns
+ * how many assignments were updated.
+ *
+ * @mcp
+ */
+export const setPeopleOvertime = defineServiceFn({
+  input: peopleOvertimeBulkValidator,
+  permission: { update: "production" },
+
+  async run(ctx, overtime) {
+    const refused = await requireBoardReferences(ctx, {
+      department: [overtime.departmentId],
+      location: [overtime.locationId],
+      shift: [overtime.shiftId]
+    });
+    if (refused) return refused;
+
+    const rows = await boardWrite(ctx, "Failed to set overtime", () =>
+      setPeopleOvertimeBulk(ctx.asSystem.pg, {
+        ...overtime,
+        companyId: ctx.company.id,
+        toDate: overtime.toDate || null,
+        shiftId: overtime.shiftId || null,
+        departmentId: overtime.departmentId || null,
+        updatedBy: ctx.auditUserId
+      })
+    );
+    if (rows instanceof CarbonError) return rows;
+    await notifyPeopleChange(
+      ctx,
+      "People overtime changed",
+      rows.map((row) => row.workCenterId)
+    );
+    return { updated: rows.length };
+  }
+});
+
+/**
+ * Copy one day's people board at a location to another date.
+ *
+ * @remarks
+ * People already assigned on the target date, or absent there, are skipped;
+ * overtime is not copied. Then the location is rescheduled.
+ *
+ * @mcp
+ */
+export const copyPeopleDay = defineServiceFn({
+  input: copyPeopleBoardValidator,
+  permission: { update: "production" },
+
+  async run(ctx, copy) {
+    const refused = await requireBoardReferences(ctx, {
+      location: [copy.locationId],
+      shift: [copy.shiftId]
+    });
+    if (refused) return refused;
+
+    const result = await boardWrite(ctx, "Failed to copy people board", () =>
+      copyPeopleBoard(ctx.asSystem.pg, {
+        ...copy,
+        companyId: ctx.company.id,
+        shiftId: copy.shiftId || null,
+        createdBy: ctx.auditUserId
+      })
+    );
+    if (result instanceof CarbonError) return result;
+    await notifyPeopleChange(ctx, "People board copied from previous day");
+    return result;
+  }
+});
+
+/**
+ * Put a person at a work center for a whole week.
+ *
+ * @remarks
+ * One assignment per working day of their shift (Monday to Friday when it has
+ * none) from `weekStart`. Then the work center is rescheduled.
+ *
+ * @mcp
+ */
+export const assignPersonWeek = defineServiceFn({
+  input: peopleWeekAssignValidator,
+  permission: { update: "production" },
+
+  async run(ctx, week) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [week.employeeId],
+      location: [week.locationId],
+      shift: [week.shiftId],
+      workCenter: [week.workCenterId]
+    });
+    if (refused) return refused;
+
+    const written = await boardWrite(ctx, "Failed to assign week", () =>
+      assignPeopleWeek(ctx.asSystem.pg, ctx.auditUserId, {
+        ...week,
+        companyId: ctx.company.id,
+        shiftId: week.shiftId || null
+      })
+    );
+    if (written instanceof CarbonError) return written;
+    await notifyPeopleChange(ctx, "People week assignment", [
+      week.workCenterId
+    ]);
+    return { employeeId: week.employeeId };
+  }
+});
+
+/**
+ * Remove a person from a work center for the week from `weekStart`.
+ *
+ * @remarks
+ * Then the work center is rescheduled.
+ *
+ * @mcp destructive
+ */
+export const unassignPersonWeek = defineServiceFn({
+  input: peopleWeekUnassignValidator,
+  permission: { update: "production" },
+
+  async run(ctx, week) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [week.employeeId],
+      shift: [week.shiftId],
+      workCenter: [week.workCenterId]
+    });
+    if (refused) return refused;
+
+    const written = await boardWrite(ctx, "Failed to unassign week", () =>
+      unassignPeopleWeek(ctx.asSystem.pg, {
+        ...week,
+        companyId: ctx.company.id,
+        shiftId: week.shiftId || null
+      })
+    );
+    if (written instanceof CarbonError) return written;
+    await notifyPeopleChange(ctx, "People week unassignment", [
+      week.workCenterId
+    ]);
+    return { employeeId: week.employeeId };
+  }
+});
+
+/**
+ * Move a person's week from one work center to another.
+ *
+ * @remarks
+ * Then the work center they joined is rescheduled.
+ *
+ * @mcp
+ */
+export const movePersonWeek = defineServiceFn({
+  input: peopleWeekMoveValidator,
+  permission: { update: "production" },
+
+  async run(ctx, week) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [week.employeeId],
+      shift: [week.shiftId],
+      workCenter: [week.workCenterId, week.fromWorkCenterId]
+    });
+    if (refused) return refused;
+
+    const written = await boardWrite(ctx, "Failed to move week", () =>
+      movePeopleWeek(ctx.asSystem.pg, {
+        ...week,
+        companyId: ctx.company.id,
+        shiftId: week.shiftId || null
+      })
+    );
+    if (written instanceof CarbonError) return written;
+    await notifyPeopleChange(ctx, "People week move", [week.workCenterId]);
+    return { employeeId: week.employeeId };
+  }
+});
+
+/**
+ * Copy a whole week's people board at a location to another week.
+ *
+ * @remarks
+ * The same skip rules as a day copy, day by day. Then the location is
+ * rescheduled.
+ *
+ * @mcp
+ */
+export const copyPeopleWeekBoard = defineServiceFn({
+  input: copyPeopleWeekValidator,
+  permission: { update: "production" },
+
+  async run(ctx, copy) {
+    const refused = await requireBoardReferences(ctx, {
+      location: [copy.locationId],
+      shift: [copy.shiftId]
+    });
+    if (refused) return refused;
+
+    const result = await boardWrite(ctx, "Failed to copy people week", () =>
+      copyPeopleWeek(ctx.asSystem.pg, {
+        ...copy,
+        companyId: ctx.company.id,
+        shiftId: copy.shiftId || null,
+        createdBy: ctx.auditUserId
+      })
+    );
+    if (result instanceof CarbonError) return result;
+    await notifyPeopleChange(ctx, "People week copied from previous week");
+    return result;
+  }
+});
+
+/**
+ * Mark a person absent for a range of dates (at most 62 days).
+ *
+ * @remarks
+ * One absence per date; a date already marked is skipped. Then the scheduler
+ * is told. Returns how many days were marked.
+ *
+ * @mcp
+ */
+export const markPersonAbsentRange = defineServiceFn({
+  input: peopleAbsenceRangeValidator,
+  permission: { update: "production" },
+
+  async run(ctx, range) {
+    const refused = await requireBoardReferences(ctx, {
+      employee: [range.employeeId],
+      shift: [range.shiftId]
+    });
+    if (refused) return refused;
+
+    const result = await boardWrite(ctx, "Failed to set absence range", () =>
+      setPeopleAbsenceRange(ctx.asSystem.pg, ctx.auditUserId, {
+        ...range,
+        companyId: ctx.company.id,
+        shiftId: range.shiftId || null
+      })
+    );
+    if (result instanceof CarbonError) return result;
+    await notifyPeopleChange(ctx, "People absence range set");
+    return result;
   }
 });
