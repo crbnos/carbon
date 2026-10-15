@@ -3108,3 +3108,18 @@ export function columnMappingsFromHeaders(
   }
   return { columnMappings, unknownHeaders };
 }
+
+/**
+ * An enum field's default, unless it is not one of the field's own options:
+ * the importer rejects such a value, so it is never offered or sent.
+ */
+export function enumDefault(enumData?: {
+  options?: readonly string[];
+  default?: string;
+}) {
+  const fallback = enumData?.default;
+  const options = enumData?.options;
+  return fallback && (!options || options.includes(fallback))
+    ? fallback
+    : undefined;
+}

@@ -15,6 +15,7 @@ import {
   imageTransformErrorMessage,
   storage
 } from "@carbon/files";
+import { parseCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type {
@@ -26,7 +27,12 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { ruleError } from "~/utils/supabase";
 import {
+  enumMappingsForCsv,
+  fetchedImportOption
+} from "./import-enum-mappings";
+import {
   columnMappingsFromHeaders,
+  enumDefault,
   fieldMappings,
   importSchemas,
   parseCsvHeader
@@ -149,6 +155,11 @@ const METHOD_IMPORT_NOTES = [
   "`process` and `workCenter` are matched by name and must already exist. In-house operations (anything but Outside Processing) need setup, labor and machine units."
 ];
 
+type OptionFetcher = (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => Promise<{ data: { id: string; name: string }[] | null }>;
+
 type ImportFieldDefinition = {
   label: string;
   required: boolean;
@@ -158,10 +169,7 @@ type ImportFieldDefinition = {
     description?: string;
     options?: readonly string[];
     default?: string;
-    fetcher?: (
-      client: SupabaseClient<Database>,
-      companyId: string
-    ) => Promise<{ data: { id: string; name: string }[] | null }>;
+    fetcher?: OptionFetcher;
   };
 };
 
@@ -216,7 +224,7 @@ export async function getCsvImportFields(
           label: field.label,
           required: field.required,
           type: field.type,
-          default: field.default ?? enumData?.default,
+          default: field.default ?? enumDefault(enumData),
           description: enumData?.description,
           options: fetchedValues
             ? fetchedValues.map((option) => option.id)
@@ -360,7 +368,12 @@ export async function importCsv(
  * import schema, as the app's import route does. Returns the importer's
  * report: rows inserted and updated, and each failed or skipped row with its
  * reason. Rows are matched on their Unique ID, so sending a row again updates
- * it rather than duplicating it.
+ * it rather than duplicating it. Like the app's import wizard, an empty or
+ * missing enum cell takes the field's default, and a value is matched to an
+ * option by its label or id in any case; a value that matches no option is
+ * refused unless `enumMappings` maps it. As in the wizard, an enum column left
+ * out takes its default on every row, existing rows included: when updating
+ * records, send their enum columns too.
  * @mcp action
  */
 export async function importCsvText(
@@ -405,6 +418,54 @@ export async function importCsvText(
     };
   }
 
+  const validMappings = mapping.data as Record<string, string>;
+
+  // The wizard sends enum mappings for every enum field; the importer needs
+  // them for defaults such as a process's standard factor.
+  const fields = Object.entries(
+    fieldMappings[args.table] as Record<string, ImportFieldDefinition>
+  );
+  const fetches = new Map<OptionFetcher, ReturnType<OptionFetcher>>();
+  for (const [key, field] of fields) {
+    const fetcher = field.enumData?.fetcher;
+    if (fetcher && validMappings[key] && !fetches.has(fetcher)) {
+      fetches.set(fetcher, fetcher(client, args.companyId));
+    }
+  }
+  const optionsByField = Object.fromEntries(
+    await Promise.all(
+      fields.flatMap(([key, field]) => {
+        const fetch = field.enumData?.fetcher
+          ? fetches.get(field.enumData.fetcher)
+          : undefined;
+        return fetch
+          ? [
+              fetch.then(
+                ({ data }) =>
+                  [key, (data ?? []).map(fetchedImportOption)] as const
+              )
+            ]
+          : [];
+      })
+    )
+  );
+  const { enumMappings, unmatched } = enumMappingsForCsv(
+    args.table,
+    parseCsv<Record<string, string>>(args.csv).rows,
+    validMappings,
+    optionsByField,
+    args.enumMappings
+  );
+  const unmatchedFields = Object.entries(unmatched);
+  if (unmatchedFields.length > 0) {
+    return {
+      data: null,
+      error: ruleError(
+        `Values not recognized: ${unmatchedFields.map(([key, values]) => `${key} (${values.join(", ")})`).join("; ")}. Use the options shared_getCsvImportFields lists, or map each value with enumMappings.`
+      )
+    };
+  }
+
   // Send the validated mapping, as the app's import route does: the schema
   // drops keys it does not declare.
   return serverFns
@@ -412,8 +473,8 @@ export async function importCsvText(
     .invoke("import-csv", {
       table: args.table,
       csv: args.csv,
-      columnMappings: mapping.data as Record<string, string>,
-      enumMappings: args.enumMappings
+      columnMappings: validMappings,
+      enumMappings
     });
 }
 
