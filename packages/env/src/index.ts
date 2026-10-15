@@ -115,10 +115,9 @@ export const GOOGLE_PLACES_API_KEY = getEnv("GOOGLE_PLACES_API_KEY");
 
 // Google OAuth app backing workflow integration connections (Google Calendar,
 // Gmail). Optional: an unconfigured server lists the piece as unavailable rather
-// than failing to boot.
+// than failing to boot. The secret and redirect URL are read by name through
+// `resolveOAuthApp`, so only the browser-visible client id is exported here.
 export const GOOGLE_OAUTH_CLIENT_ID = getEnv("GOOGLE_OAUTH_CLIENT_ID");
-export const GOOGLE_OAUTH_CLIENT_SECRET = getEnv("GOOGLE_OAUTH_CLIENT_SECRET");
-export const GOOGLE_OAUTH_REDIRECT_URL = getEnv("GOOGLE_OAUTH_REDIRECT_URL");
 
 const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT");
 

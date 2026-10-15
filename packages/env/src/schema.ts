@@ -10,6 +10,7 @@ export type Group =
   | "email"
   | "stripe"
   | "slack"
+  | "google"
   | "xero"
   | "quickbooks"
   | "jira"
@@ -26,6 +27,7 @@ export const FEATURES = {
   email: "Email",
   stripe: "Stripe",
   slack: "Slack",
+  google: "Google",
   xero: "Xero",
   quickbooks: "QuickBooks",
   jira: "Jira",
@@ -200,19 +202,22 @@ export const schema = define({
     browser: true
   },
   GOOGLE_OAUTH_CLIENT_ID: {
-    group: "core",
+    group: "google",
     description: "Google OAuth app client id for workflow integrations",
-    browser: true
+    browser: true,
+    needed: true
   },
   GOOGLE_OAUTH_CLIENT_SECRET: {
-    group: "core",
+    group: "google",
     description: "Google OAuth app client secret for workflow integrations",
-    secret: true
+    secret: true,
+    needed: true
   },
   GOOGLE_OAUTH_REDIRECT_URL: {
-    group: "core",
+    group: "google",
     description: "Google OAuth callback URL for workflow integrations",
-    type: url
+    type: url,
+    needed: true
   },
   BINDERY_PRESS_API_KEY: {
     group: "core",

@@ -48,6 +48,9 @@ export type Workspace = {
   cloudflare_turnstile_site_key: string | null;
   controlled_environment: string | null;
   exchange_rates_api_key: string | null;
+  google_oauth_client_id: string | null;
+  google_oauth_client_secret: string | null;
+  google_oauth_redirect_url: string | null;
   google_places_api_key: string | null;
   inngest_base_url: string | null;
   inngest_event_key: string | null;
@@ -133,6 +136,9 @@ async function deploy(): Promise<void> {
         database_url,
         domain_name,
         exchange_rates_api_key,
+        google_oauth_client_id,
+        google_oauth_client_secret,
+        google_oauth_redirect_url,
         google_places_api_key,
         inngest_base_url,
         inngest_event_key,
@@ -297,6 +303,9 @@ async function deploy(): Promise<void> {
           CONTROLLED_ENVIRONMENT: controlled_environment ?? undefined,
           DOMAIN: domain_name,
           EXCHANGE_RATES_API_KEY: exchange_rates_api_key ?? undefined,
+          GOOGLE_OAUTH_CLIENT_ID: google_oauth_client_id ?? undefined,
+          GOOGLE_OAUTH_CLIENT_SECRET: google_oauth_client_secret ?? undefined,
+          GOOGLE_OAUTH_REDIRECT_URL: google_oauth_redirect_url ?? undefined,
           GOOGLE_PLACES_API_KEY: google_places_api_key ?? undefined,
           INNGEST_BASE_URL: inngest_base_url ?? undefined,
           INNGEST_EVENT_KEY: inngest_event_key,
