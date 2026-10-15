@@ -154,9 +154,37 @@ export type AllMatchingRequest = { listKey: string; search: string };
  * background job started, or why it did not. Every route answers the same
  * shape, so one client helper (`useBulkActionResult`) reads them all.
  */
+/**
+ * Why a table job (an export or a bulk action) did not start. The browser
+ * words it in the user's language (`useTableJobRefusalMessage`); `message`
+ * next to it is the English text for logs and older callers.
+ */
+export type TableJobRefusal =
+  | { code: "busy"; kind: "export" | "bulk"; minutes: number }
+  | { code: "row-limit"; maxRows: number }
+  | { code: "not-supported" }
+  | { code: "no-permission" }
+  | { code: "not-started" };
+
+/** The busy refusal: minutes until the lock expires at the latest, 0 when
+ *  Redis does not know. */
+export function tableJobBusyRefusal(
+  kind: "export" | "bulk",
+  retryAfterSeconds: number
+): TableJobRefusal {
+  return {
+    code: "busy",
+    kind,
+    minutes:
+      retryAfterSeconds > 0
+        ? round(retryAfterSeconds / 60, 0, RoundingMode.Up)
+        : 0
+  };
+}
+
 export type BulkActionStart =
   | { success: true; background: true }
-  | { success: false; message: string };
+  | { success: false; message: string; refusal: TableJobRefusal };
 
 /**
  * A form-posted route's answer for a bulk start: the `BulkActionStart` fields

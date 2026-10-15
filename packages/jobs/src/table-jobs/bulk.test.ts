@@ -5,9 +5,11 @@
 import { describe, expect, it } from "vitest";
 import {
   addBulkActionCounts,
+  bulkActionProblemsBody,
   bulkActionTitle,
   bulkActionTruncatedBody,
   collectRowIds,
+  MAX_BULK_PROBLEMS,
   NO_BULK_COUNTS,
   planIdSlices
 } from "./bulk";
@@ -26,6 +28,49 @@ describe("addBulkActionCounts", () => {
     expect(
       addBulkActionCounts(NO_BULK_COUNTS, { done: 4, skipped: 0, failed: 1 })
     ).toEqual({ done: 4, skipped: 0, failed: 1 });
+  });
+});
+
+describe("addBulkActionCounts problems", () => {
+  it("keeps every slice's problem lines in order", () => {
+    expect(
+      addBulkActionCounts(
+        { done: 1, skipped: 0, failed: 1, problems: ["J1: no operations"] },
+        {
+          done: 2,
+          skipped: 0,
+          failed: 0,
+          problems: ["J2 (done): PO failed"],
+          problemCount: 1
+        }
+      )
+    ).toEqual({
+      done: 3,
+      skipped: 0,
+      failed: 1,
+      problems: ["J1: no operations", "J2 (done): PO failed"],
+      problemCount: 2
+    });
+  });
+
+  it("keeps the first lines and counts the rest", () => {
+    const many = Array.from(
+      { length: MAX_BULK_PROBLEMS },
+      (_, i) => `J${i}: failed`
+    );
+    const sum = addBulkActionCounts(
+      { done: 0, skipped: 0, failed: MAX_BULK_PROBLEMS, problems: many },
+      { done: 0, skipped: 0, failed: 5, problems: ["late"], problemCount: 5 }
+    );
+    expect(sum.problems).toEqual(many);
+    expect(sum.problemCount).toBe(MAX_BULK_PROBLEMS + 5);
+    expect(bulkActionProblemsBody(sum)).toMatch(/\nand 5 more$/);
+  });
+
+  it("has no body without problems", () => {
+    expect(
+      bulkActionProblemsBody({ done: 3, skipped: 0, failed: 0 })
+    ).toBeUndefined();
   });
 });
 

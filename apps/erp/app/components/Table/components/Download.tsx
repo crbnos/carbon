@@ -19,6 +19,7 @@ import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { BROWSER_ROW_LIMIT } from "../infiniteRowsStore";
 import { selectExportColumns } from "../utils";
+import { useTableJobRefusalMessage } from "./SelectAllMatching";
 
 /** An infinite list's export: the rows the browser has not loaded yet. */
 export type InfiniteExport = {
@@ -66,6 +67,7 @@ export function useCsvDownload({
   infinite
 }: DownloadProps) {
   const { t } = useLingui();
+  const refusalMessage = useTableJobRefusalMessage();
   const numberFormatter = useNumberFormatter();
   const { search } = useLocation();
   const [items] = useItems();
@@ -148,13 +150,15 @@ export function useCsvDownload({
             t`Your export is being prepared. We'll notify you when it's ready.`
           );
         } else {
-          toast.error(errorMessage(result) ?? failed);
+          toast.error(
+            refusalMessage(refusalOf(result)) ?? errorMessage(result) ?? failed
+          );
         }
       } catch {
         toast.error(failed);
       }
     },
-    [t, search, exportColumns, columnAccessors]
+    [t, refusalMessage, search, exportColumns, columnAccessors]
   );
 
   const onClick = useCallback(async () => {
@@ -207,6 +211,11 @@ function isSuccess(result: unknown): boolean {
     result !== null &&
     (result as { success?: unknown }).success === true
   );
+}
+
+function refusalOf(result: unknown): unknown {
+  if (typeof result !== "object" || result === null) return null;
+  return (result as { refusal?: unknown }).refusal ?? null;
 }
 
 function errorMessage(result: unknown): string | null {

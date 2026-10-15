@@ -9,6 +9,7 @@ import { Edition } from "@carbon/utils";
 
 // Re-export the inngest client and helpers
 
+export { MAX_BULK_PROBLEMS } from "../table-jobs/bulk.ts";
 export type {
   TableBulkAction,
   TableBulkActionCarry,

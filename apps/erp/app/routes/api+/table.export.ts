@@ -11,7 +11,12 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { getListDefinition } from "~/utils/list-registry/index.server";
-import { newTableExportId, tableJobBusyMessage } from "~/utils/table-jobs";
+import {
+  newTableExportId,
+  type TableJobRefusal,
+  tableJobBusyMessage,
+  tableJobBusyRefusal
+} from "~/utils/table-jobs";
 
 const logger = getLogger("erp", "table-export");
 
@@ -43,14 +48,26 @@ export async function action({ request }: ActionFunctionArgs) {
     await request.json().catch(() => null)
   );
   if (!body.success) {
-    return data({ error: "The export request is not valid" }, { status: 400 });
+    return data(
+      {
+        error: "The export request is not valid",
+        refusal: { code: "not-started" } satisfies TableJobRefusal
+      },
+      { status: 400 }
+    );
   }
   const { listKey, search, columns } = body.data;
 
   const definition = getListDefinition(listKey);
   if (!definition) {
     logger.error("Export requested for an unknown list", { listKey });
-    return data({ error: "This list cannot be exported" }, { status: 400 });
+    return data(
+      {
+        error: "This list cannot be exported",
+        refusal: { code: "not-supported" } satisfies TableJobRefusal
+      },
+      { status: 400 }
+    );
   }
 
   const { companyId, userId } = await requirePermissions(request, {
@@ -62,7 +79,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const lock = await takeTableJobLock("export", companyId, exportId);
   if (lock.status === "busy") {
     return data(
-      { error: tableJobBusyMessage("export", lock.retryAfterSeconds) },
+      {
+        error: tableJobBusyMessage("export", lock.retryAfterSeconds),
+        refusal: tableJobBusyRefusal("export", lock.retryAfterSeconds)
+      },
       { status: 409 }
     );
   }
@@ -90,7 +110,13 @@ export async function action({ request }: ActionFunctionArgs) {
       error
     });
     await releaseTableJobLock("export", companyId, exportId);
-    return data({ error: "The export could not start" }, { status: 500 });
+    return data(
+      {
+        error: "The export could not start",
+        refusal: { code: "not-started" } satisfies TableJobRefusal
+      },
+      { status: 500 }
+    );
   }
 
   return data({ success: true });

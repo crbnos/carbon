@@ -7,7 +7,8 @@ import Table from "./Table";
 export {
   allMatchingRequest,
   useAllMatchingUnsupportedLabel,
-  useBackgroundBulkActionMessage
+  useBackgroundBulkActionMessage,
+  useTableJobRefusalMessage
 } from "./components/SelectAllMatching";
 export type {
   AllMatchingSelection,

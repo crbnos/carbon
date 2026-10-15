@@ -19,6 +19,7 @@ import {
   splitIdsByStatus,
   type TableJobClaims,
   tableJobBusyMessage,
+  tableJobBusyRefusal,
   USER_CLIENT_MAX_AGE_MS
 } from "./table-jobs";
 
@@ -209,11 +210,30 @@ describe("the bulk actions' background path", () => {
       data: null,
       error: null
     });
-    expect(bulkStartFormResponse({ success: false, message: "Busy" })).toEqual({
+    const refusal = { code: "busy", kind: "bulk", minutes: 3 } as const;
+    expect(
+      bulkStartFormResponse({ success: false, message: "Busy", refusal })
+    ).toEqual({
       success: false,
       message: "Busy",
+      refusal,
       data: null,
       error: { message: "Busy" }
+    });
+  });
+});
+
+describe("tableJobBusyRefusal", () => {
+  it("rounds the lock's time left up to whole minutes", () => {
+    expect(tableJobBusyRefusal("export", 1741)).toEqual({
+      code: "busy",
+      kind: "export",
+      minutes: 30
+    });
+    expect(tableJobBusyRefusal("bulk", 0)).toEqual({
+      code: "busy",
+      kind: "bulk",
+      minutes: 0
     });
   });
 });

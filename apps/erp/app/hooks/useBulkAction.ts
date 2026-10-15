@@ -6,7 +6,10 @@ import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useRef } from "react";
-import { useBackgroundBulkActionMessage } from "~/components/Table";
+import {
+  useBackgroundBulkActionMessage,
+  useTableJobRefusalMessage
+} from "~/components/Table";
 import {
   appendBulkSelection,
   type BulkSelection
@@ -27,6 +30,7 @@ import {
  */
 export function useBulkStartToast() {
   const backgroundMessage = useBackgroundBulkActionMessage();
+  const refusalMessage = useTableJobRefusalMessage();
   return useCallback(
     (data: unknown): boolean => {
       if (data === null || typeof data !== "object") return false;
@@ -34,18 +38,19 @@ export function useBulkStartToast() {
         success?: unknown;
         background?: unknown;
         message?: unknown;
+        refusal?: unknown;
       };
       if (result.background === true) {
         toast.success(backgroundMessage);
         return true;
       }
       if (result.success === false && typeof result.message === "string") {
-        toast.error(result.message);
+        toast.error(refusalMessage(result.refusal) ?? result.message);
         return true;
       }
       return false;
     },
-    [backgroundMessage]
+    [backgroundMessage, refusalMessage]
   );
 }
 

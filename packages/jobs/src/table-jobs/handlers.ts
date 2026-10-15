@@ -83,6 +83,10 @@ export type TableBulkActionCounts = {
   done: number;
   skipped: number;
   failed: number;
+  /** A line per row that failed, or that is done with something left to fix
+   *  ("J000123: …"). At most `MAX_BULK_PROBLEMS`; `problemCount` counts all. */
+  problems?: string[];
+  problemCount?: number;
 };
 
 /** JSON an action hands from one chunk of a run to the next. It goes through

@@ -6,8 +6,9 @@ import { Button, cn } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
+import type { TableJobRefusal } from "~/utils/table-jobs";
 import { BROWSER_ROW_LIMIT, EXACT_COUNT_LIMIT } from "../infiniteRowsStore";
 import type { AllMatchingSelection, InfiniteRows } from "../types";
 
@@ -121,6 +122,52 @@ export function useAllMatchingUnsupportedLabel() {
 export function useBackgroundBulkActionMessage() {
   const { t } = useLingui();
   return t`Running in the background. We'll notify you when it's done.`;
+}
+
+/**
+ * Words why an export or a bulk action did not start, from the route's
+ * `refusal` (`TableJobRefusal`, `~/utils/table-jobs`), or null when the
+ * answer has none.
+ */
+export function useTableJobRefusalMessage() {
+  const { t, i18n } = useLingui();
+  return useCallback(
+    (refusal: unknown): string | null => {
+      if (!isTableJobRefusal(refusal)) return null;
+      switch (refusal.code) {
+        case "busy": {
+          const minutes = i18n.number(refusal.minutes);
+          if (refusal.kind === "export") {
+            return refusal.minutes > 0
+              ? t`An export is already running for your company. Try again when it ends, at the latest in ${minutes} min.`
+              : t`An export is already running for your company. Try again when it ends.`;
+          }
+          return refusal.minutes > 0
+            ? t`A bulk action is already running for your company. Try again when it ends, at the latest in ${minutes} min.`
+            : t`A bulk action is already running for your company. Try again when it ends.`;
+        }
+        case "row-limit": {
+          const rows = i18n.number(refusal.maxRows);
+          return t`This action runs on at most ${rows} rows. Filter the list to ${rows} rows or fewer.`;
+        }
+        case "not-supported":
+          return t`This action cannot run on this list.`;
+        case "no-permission":
+          return t`You do not have permission to do this on every matching row.`;
+        case "not-started":
+          return t`It could not start. Try again.`;
+      }
+    },
+    [t, i18n]
+  );
+}
+
+function isTableJobRefusal(value: unknown): value is TableJobRefusal {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { code?: unknown }).code === "string"
+  );
 }
 
 /** What a bulk action posts in place of ids for an "all matching" selection:

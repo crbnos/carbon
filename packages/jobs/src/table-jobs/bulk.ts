@@ -27,15 +27,33 @@ export const NO_BULK_COUNTS: TableBulkActionCounts = {
   failed: 0
 };
 
+/** Problem lines a run keeps for its notification. They ride in the step
+ *  results, so the list stays short; the rest are only counted. */
+export const MAX_BULK_PROBLEMS = 20;
+
 export function addBulkActionCounts(
   a: TableBulkActionCounts,
   b: TableBulkActionCounts
 ): TableBulkActionCounts {
-  return {
+  const counts = {
     done: a.done + b.done,
     skipped: a.skipped + b.skipped,
     failed: a.failed + b.failed
   };
+  const problemCount = countProblems(a) + countProblems(b);
+  if (problemCount === 0) return counts;
+  return {
+    ...counts,
+    problems: [...(a.problems ?? []), ...(b.problems ?? [])].slice(
+      0,
+      MAX_BULK_PROBLEMS
+    ),
+    problemCount
+  };
+}
+
+function countProblems(counts: TableBulkActionCounts): number {
+  return counts.problemCount ?? counts.problems?.length ?? 0;
 }
 
 /**
@@ -65,6 +83,18 @@ export function bulkActionTitle(
   return `${actionLabel} finished: ${count.format(counts.done)} done, ${count.format(
     counts.skipped
   )} skipped, ${count.format(counts.failed)} failed`;
+}
+
+/** The notification body's lines for the rows that failed or need a fix. */
+export function bulkActionProblemsBody(
+  counts: TableBulkActionCounts
+): string | undefined {
+  const problems = counts.problems ?? [];
+  if (problems.length === 0) return undefined;
+  const more = countProblems(counts) - problems.length;
+  return more > 0
+    ? [...problems, `and ${count.format(more)} more`].join("\n")
+    : problems.join("\n");
 }
 
 /** The notification body when the run stopped at its row limit. */

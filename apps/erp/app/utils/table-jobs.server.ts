@@ -11,6 +11,7 @@ import type { Json } from "@carbon/database";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { trigger } from "@carbon/jobs";
 import {
+  MAX_BULK_PROBLEMS,
   releaseTableJobLock,
   type TableBulkAction,
   type TableBulkActionCarry,
@@ -51,7 +52,8 @@ import {
   rowLimitRefusal,
   type TableBulkActionKey,
   type TableJobClaims,
-  tableJobBusyMessage
+  tableJobBusyMessage,
+  tableJobBusyRefusal
 } from "./table-jobs";
 
 const logger = getLogger("erp", "table-jobs");
@@ -78,21 +80,24 @@ async function canReadList(
 }
 
 /** The user's claims for the company, read fresh as the user (not through
- *  the permission cache, which can hold a revoked permission for an hour). */
+ *  the permission cache, which can hold a revoked permission for an hour).
+ *  Null when the user has none. Throws when the read fails, so a job step
+ *  retries or fails instead of telling the user they lost access. */
 async function readClaims({
   companyId,
   userId
 }: TableJobContext): Promise<TableJobClaims | null> {
   const client = await getUserScopedClient(userId);
   const claims = await getClaims(client, userId, companyId);
-  if (claims.error || claims.data === null) {
+  if (claims.error) {
     logger.error("Failed to read the claims of a table job's user", {
       companyId,
       userId,
       error: claims.error
     });
-    return null;
+    throw new Error("Failed to read the claims of a table job's user");
   }
+  if (claims.data === null) return null;
   return makePermissionsFromClaims(claims.data as Json[]) ?? null;
 }
 
@@ -170,6 +175,24 @@ function carriedPurchaseOrders(
   );
 }
 
+type RowProblem = { readableId: string; message: string };
+
+/** The notification's line per failed row, then per row done with a warning. */
+function problemLines(
+  failed: RowProblem[],
+  warnings: RowProblem[] = []
+): Pick<TableBulkActionResult, "problems" | "problemCount"> {
+  const lines = [
+    ...failed.map((p) => `${p.readableId}: ${p.message}`),
+    ...warnings.map((p) => `${p.readableId} (done): ${p.message}`)
+  ];
+  if (lines.length === 0) return {};
+  return {
+    problems: lines.slice(0, MAX_BULK_PROBLEMS),
+    problemCount: lines.length
+  };
+}
+
 function userClientFactory(userId: string) {
   return refreshingClientFactory(() => getUserScopedClient(userId));
 }
@@ -216,6 +239,9 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
       done: result.released,
       skipped: result.skipped,
       failed: result.failed.length,
+      // Released jobs with something left to fix (a PO that failed) are named
+      // too: the in-request release shows them, and so must the notification.
+      ...problemLines(result.failed, result.warnings),
       carry: { purchaseOrdersBySupplierId: result.purchaseOrdersBySupplierId }
     };
   },
@@ -254,7 +280,8 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
     return {
       done: result.done,
       skipped: result.skipped,
-      failed: result.failed.length
+      failed: result.failed.length,
+      ...problemLines(result.failed)
     };
   },
   "batches.dissolve": async (ids, _params, context) => {
@@ -269,7 +296,8 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
     return {
       done: result.done,
       skipped: result.skipped,
-      failed: result.failed.length
+      failed: result.failed.length,
+      ...problemLines(result.failed)
     };
   },
   "users.deactivate": async (ids, { ip }, { companyId, userId }) => {
@@ -504,14 +532,34 @@ async function startBulkRun({
       actionKey,
       listKey
     });
-    return { success: false, message: "This action cannot run on this list" };
+    return {
+      success: false,
+      message: "This action cannot run on this list",
+      refusal: { code: "not-supported" }
+    };
   }
 
   const context = { companyId, userId };
-  if (!(await canRunBulkAction(listKey, { key: actionKey, params }, context))) {
+  let allowed: boolean;
+  try {
+    allowed = await canRunBulkAction(
+      listKey,
+      { key: actionKey, params },
+      context
+    );
+  } catch {
+    // `readClaims` logged it.
     return {
       success: false,
-      message: "You do not have permission to do this on every matching row"
+      message: "The bulk action could not start",
+      refusal: { code: "not-started" }
+    };
+  }
+  if (!allowed) {
+    return {
+      success: false,
+      message: "You do not have permission to do this on every matching row",
+      refusal: { code: "no-permission" }
     };
   }
 
@@ -520,10 +568,20 @@ async function startBulkRun({
       ? ids.length
       : await countMatchingRows(listKey, context, search);
     if (matching === null) {
-      return { success: false, message: "The bulk action could not start" };
+      return {
+        success: false,
+        message: "The bulk action could not start",
+        refusal: { code: "not-started" }
+      };
     }
     const refusal = rowLimitRefusal(bulkAction, matching);
-    if (refusal) return { success: false, message: refusal };
+    if (refusal) {
+      return {
+        success: false,
+        message: refusal,
+        refusal: { code: "row-limit", maxRows: bulkAction.maxRows }
+      };
+    }
   }
 
   const bulkActionId = nanoid();
@@ -531,7 +589,8 @@ async function startBulkRun({
   if (lock.status === "busy") {
     return {
       success: false,
-      message: tableJobBusyMessage("bulk", lock.retryAfterSeconds)
+      message: tableJobBusyMessage("bulk", lock.retryAfterSeconds),
+      refusal: tableJobBusyRefusal("bulk", lock.retryAfterSeconds)
     };
   }
   if (lock.status === "unavailable") {
@@ -567,7 +626,11 @@ async function startBulkRun({
       error
     });
     await releaseTableJobLock("bulk", companyId, bulkActionId);
-    return { success: false, message: "The bulk action could not start" };
+    return {
+      success: false,
+      message: "The bulk action could not start",
+      refusal: { code: "not-started" }
+    };
   }
   return { success: true, background: true };
 }

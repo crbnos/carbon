@@ -7,6 +7,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import {
   addBulkActionCounts,
   BULK_CHUNK_SIZE,
+  bulkActionProblemsBody,
   bulkActionTitle,
   bulkActionTruncatedBody,
   DEFAULT_BULK_IDS_PER_STEP,
@@ -234,7 +235,13 @@ export const tableBulkActionFunction = inngest.createFunction(
         userId,
         documentId: bulkActionId,
         title: bulkActionTitle(actionLabel, counts),
-        body: truncated ? bulkActionTruncatedBody(maxRows) : undefined,
+        body:
+          [
+            truncated ? bulkActionTruncatedBody(maxRows) : undefined,
+            bulkActionProblemsBody(counts)
+          ]
+            .filter(Boolean)
+            .join("\n\n") || undefined,
         dedupeId: `table-bulk-action:${bulkActionId}:done`
       })
     );
