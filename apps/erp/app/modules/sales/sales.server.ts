@@ -28,7 +28,6 @@ import {
 import { supportedModelTypes } from "@carbon/files/cad";
 import { validator } from "@carbon/form";
 import { batchTrigger, trigger } from "@carbon/jobs";
-import { redis } from "@carbon/kv";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -39,10 +38,6 @@ import type {
   DraftedRentalCreditMemo,
   DraftedRentalInvoice
 } from "@carbon/server-functions/create-rental-invoices";
-import {
-  hasPermissions,
-  type RequiredPermissions
-} from "@carbon/server-functions/permissions";
 import type {
   ContractAmendmentPreview,
   ContractCancellationPreview,
@@ -79,9 +74,9 @@ import {
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { runMRP } from "~/modules/production/production.service";
 import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
+import { systemContext } from "~/modules/service-context.server";
 import {
   type CarbonError,
-  createServiceContext,
   defineServiceFn,
   type ServiceContext
 } from "~/modules/service-fn.server";
@@ -93,7 +88,7 @@ import {
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { resolveBuyUnitCost, upsertExternalLink } from "~/modules/shared";
 import {
-  requireCompanyRecord,
+  refuseUnlessOwned,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
 import {
@@ -1454,33 +1449,6 @@ function fieldUpdate<const F extends readonly [string, ...string[]]>(
   });
 }
 
-/**
- * `requireCompanyRecord` as a refusal instead of a thrown `Response`: the
- * record must be this company's. Checked with the service role, so it holds
- * for an RLS-bypassing write that follows.
- */
-async function refuseUnlessOwned(
-  ctx: ServiceContext,
-  table: Parameters<typeof requireCompanyRecord>[1],
-  match: { id: string } & Record<string, string>
-): Promise<CarbonError | null> {
-  try {
-    await requireCompanyRecord(
-      ctx.asSystem.supabase,
-      table,
-      ctx.company.id,
-      match
-    );
-    return null;
-  } catch (thrown) {
-    if (!(thrown instanceof Response)) throw thrown;
-    return ctx.error(
-      thrown.status === 404 ? "notFound" : "internal",
-      await thrown.text()
-    );
-  }
-}
-
 /** What a sales-rule check found: the violation modal's payload. */
 export type SalesRuleCheck = {
   violations: Violation[];
@@ -1609,14 +1577,13 @@ export const createSalesRfq = defineServiceFn({
     const userId = ctx.auditUserId;
 
     // insertSalesRFQ writes through Kysely, which bypasses RLS.
-    const references: [Parameters<typeof requireCompanyRecord>[1], string?][] =
-      [
-        ["customer", rfq.customerId],
-        ["customerContact", rfq.customerContactId],
-        ["customerContact", rfq.customerEngineeringContactId],
-        ["customerLocation", rfq.customerLocationId],
-        ["location", rfq.locationId]
-      ];
+    const references: [Parameters<typeof refuseUnlessOwned>[1], string?][] = [
+      ["customer", rfq.customerId],
+      ["customerContact", rfq.customerContactId],
+      ["customerContact", rfq.customerEngineeringContactId],
+      ["customerLocation", rfq.customerLocationId],
+      ["location", rfq.locationId]
+    ];
     const refusals = await Promise.all(
       references.map(([table, id]) =>
         id ? refuseUnlessOwned(ctx, table, { id }) : null
@@ -3410,13 +3377,10 @@ export async function shareLinkContext(quote: {
     .eq("id", quote.companyId)
     .single();
   if (!company.data?.companyGroupId) return null;
-  return createServiceContext({
-    actor: { type: "system", onBehalfOf: quote.createdBy },
-    company: { id: quote.companyId, groupId: company.data.companyGroupId },
-    caller: getCarbonServiceRole(),
-    system: getCarbonServiceRole,
-    pg: getDatabaseClient,
-    kv: () => redis
+  return systemContext({
+    companyId: quote.companyId,
+    companyGroupId: company.data.companyGroupId,
+    onBehalfOf: quote.createdBy
   });
 }
 
@@ -5374,21 +5338,6 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
 
 // --- Contracts --------------------------------------------------------------
 
-/**
- * Whether the caller also holds `required`, for a permission that depends on
- * the data (a posting invoicing mode, a credit memo). The function's own
- * permission was checked at entry; this is the extra the data asks for.
- */
-function callerHolds(ctx: ServiceContext, required: RequiredPermissions) {
-  const { actor } = ctx;
-  if (actor.type === "system") return true;
-  return hasPermissions(
-    actor.type === "user" ? actor.permissions : actor.scopes,
-    ctx.company.id,
-    required
-  );
-}
-
 const forbidden = (ctx: ServiceContext) =>
   ctx.error("forbidden", "You do not have permission to do this");
 
@@ -5869,7 +5818,7 @@ export const setContractInvoiceAutomation = defineServiceFn({
           (await getCompanySettings(client, companyId)).data?.invoiceAutomation;
         if (
           effective !== "Draft Only" &&
-          !callerHolds(ctx, { update: "sales", create: "invoicing" })
+          !ctx.can({ update: "sales", create: "invoicing" })
         ) {
           return forbidden(ctx);
         }
@@ -5928,7 +5877,7 @@ export const confirmContract = defineServiceFn({
     const mode = contract.data.effectiveInvoiceAutomation;
     if (
       mode !== "Draft Only" &&
-      !callerHolds(ctx, { update: "sales", create: "invoicing" })
+      !ctx.can({ update: "sales", create: "invoicing" })
     ) {
       return forbidden(ctx);
     }
@@ -6120,7 +6069,7 @@ export const cancelContract = defineServiceFn({
   async run(ctx, input) {
     if (
       input.creditUnusedTime &&
-      !callerHolds(ctx, { update: "sales", create: "invoicing" })
+      !ctx.can({ update: "sales", create: "invoicing" })
     ) {
       return forbidden(ctx);
     }
@@ -6168,7 +6117,7 @@ export const revertContractCancellation = defineServiceFn({
       .limit(1);
     if (
       (memoRows.error || memoRows.data.length > 0) &&
-      !callerHolds(ctx, { update: "sales", delete: "invoicing" })
+      !ctx.can({ update: "sales", delete: "invoicing" })
     ) {
       return forbidden(ctx);
     }

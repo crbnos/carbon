@@ -28,6 +28,7 @@ import {
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales";
+import type { CarbonError, ServiceContext } from "~/modules/service-fn.server";
 import { getCompany, withLogoUrls } from "~/modules/settings";
 import { getTimezoneNames } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.server";
@@ -587,6 +588,33 @@ export async function requireCompanyRecord(
     throw new Response(
       `The ${recordName(table)} could not be found. It may have been deleted, or it belongs to another company.`,
       { status: 404 }
+    );
+  }
+}
+
+/**
+ * `requireCompanyRecord` for a service function: a refusal instead of a thrown
+ * `Response`. Checked with the service role, so it holds for an RLS-bypassing
+ * write that follows.
+ */
+export async function refuseUnlessOwned(
+  ctx: ServiceContext,
+  table: CompanyScopedTable,
+  match: { id: string } & Record<string, string>
+): Promise<CarbonError | null> {
+  try {
+    await requireCompanyRecord(
+      ctx.asSystem.supabase,
+      table,
+      ctx.company.id,
+      match
+    );
+    return null;
+  } catch (thrown) {
+    if (!(thrown instanceof Response)) throw thrown;
+    return ctx.error(
+      thrown.status === 404 ? "notFound" : "internal",
+      await thrown.text()
     );
   }
 }

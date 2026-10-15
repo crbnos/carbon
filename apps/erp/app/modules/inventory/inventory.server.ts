@@ -19,10 +19,6 @@ import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { ServerFnError } from "@carbon/server-functions/errors";
 import {
-  hasPermissions,
-  type RequiredPermissions
-} from "@carbon/server-functions/permissions";
-import {
   datetime,
   getErrorMessage,
   getOverReceiptViolations,
@@ -115,20 +111,6 @@ async function storageRuleViolations(
     Object.assign(ruleNames, result.ruleNames);
   }
   return { violations, ruleNames };
-}
-
-/**
- * Whether the caller also holds `required`: for a rule that depends on what
- * the record is, beyond the permission the call was checked against.
- */
-function holds(ctx: ServiceContext, required: RequiredPermissions) {
-  const { actor } = ctx;
-  if (actor.type === "system") return true;
-  return hasPermissions(
-    actor.type === "user" ? actor.permissions : actor.scopes,
-    ctx.company.id,
-    required
-  );
 }
 
 /** The server functions, run as the system for this call's company and user. */
@@ -2413,7 +2395,7 @@ export const setStockTransferStatus = defineServiceFn({
     if (
       status !== "Completed" &&
       current.data.status === "Completed" &&
-      !holds(ctx, { delete: "inventory" })
+      !ctx.can({ delete: "inventory" })
     ) {
       return ctx.error(
         "forbidden",

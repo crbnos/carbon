@@ -92,6 +92,11 @@ export type ServiceContext = {
   kv: Kv;
   /** The user id audit columns record: the user, a key's creator, or the user a job acts for. */
   auditUserId: string;
+  /**
+   * Whether the actor also holds `required`: for a permission that depends on
+   * the data, which the entry gate cannot know. The system actor holds all.
+   */
+  can(required: Permissions): boolean;
   error<C extends ErrorCategory>(
     category: C,
     message: string,
@@ -201,6 +206,10 @@ class Context implements ServiceContext {
 
   get kv() {
     return this.handles.kv();
+  }
+
+  can(required: Permissions): boolean {
+    return allows(this.actor, this.company.id, required);
   }
 
   inside(): Context {
@@ -370,10 +379,9 @@ export type SerializedError<E> =
     : never;
 
 /** A service function's result as a route sends it. */
-export type RouteResult<R> =
-  R extends Result<infer T, infer E>
-    ? { data: T; error: null } | { data: null; error: SerializedError<E> }
-    : never;
+export type RouteResult<R> = [R] extends [Result<infer T, infer E>]
+  ? { data: T; error: null } | { data: null; error: SerializedError<E> }
+  : never;
 
 /**
  * The result as a route returns it. React Router replaces an `Error` instance

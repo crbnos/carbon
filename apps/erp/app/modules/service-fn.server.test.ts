@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
 
 vi.mock("@carbon/logger", () => ({
@@ -14,6 +14,8 @@ import {
   CarbonError,
   createServiceContext,
   defineServiceFn,
+  type Result,
+  type RouteResult,
   toResult
 } from "./service-fn.server";
 
@@ -185,7 +187,24 @@ describe("the gate", () => {
   });
 });
 
+describe("ctx.can", () => {
+  it("answers for the actor's own permissions, and yes for the system", () => {
+    expect(ctx.can({ view: "production" })).toBe(true);
+    expect(ctx.can({ update: "production" })).toBe(false);
+    expect(ctx.can("system")).toBe(false);
+    const system = contextWith({}, { type: "system", onBehalfOf: "user-1" });
+    expect(system.can({ delete: "accounting" })).toBe(true);
+  });
+});
+
 describe("toResult", () => {
+  it("types the error by the categories the function returns", () => {
+    type Sent = RouteResult<Result<number, CarbonError<"notFound" | "rule">>>;
+    expectTypeOf<
+      Extract<Sent, { data: null }>["error"]["category"]
+    >().toEqualTypeOf<"notFound" | "rule">();
+  });
+
   it("sends an error as its category, message and status only", () => {
     const cause = new Error("duplicate key");
     const error = new CarbonError("conflict", "Job unavailable", cause);

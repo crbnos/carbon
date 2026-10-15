@@ -37,7 +37,7 @@ vi.mock("@carbon/server-functions", () => ({
 }));
 vi.mock("../app/modules/shared/shared.server", () => ({
   // The records the tests name are the company's.
-  requireCompanyRecord: vi.fn(async () => {}),
+  refuseUnlessOwned: vi.fn(async () => null),
   sendSalesOrderEmail: vi.fn()
 }));
 vi.mock("../app/modules/shared/timezone.server", () => ({

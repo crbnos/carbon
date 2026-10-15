@@ -54,13 +54,11 @@ export async function carbon(request: Request): Promise<Api<Router>> {
 export async function redirectWithResult(
   request: Request,
   result: { error: { message: string } | null },
-  { to, message }: { to: string; message: string }
+  { to, message }: { to: string; message?: string }
 ): Promise<never> {
-  throw redirect(
-    to,
-    await flash(
-      request,
-      result.error ? error(null, result.error.message) : success(message)
-    )
-  );
+  if (result.error) {
+    throw redirect(to, await flash(request, error(null, result.error.message)));
+  }
+  if (message) throw redirect(to, await flash(request, success(message)));
+  throw redirect(to);
 }

@@ -43,10 +43,6 @@ import {
 } from "@carbon/server-functions/create-lease-invoices";
 import { isDataLayerError } from "@carbon/server-functions/errors";
 import {
-  hasPermissions,
-  type RequiredPermissions
-} from "@carbon/server-functions/permissions";
-import {
   applyRate,
   async,
   datetime,
@@ -89,7 +85,7 @@ import {
 } from "~/modules/settings/settings.service";
 import {
   isActiveCompanyEmployee,
-  requireCompanyRecord
+  refuseUnlessOwned
 } from "~/modules/shared/shared.server";
 import { upsertExternalLink } from "~/modules/shared/shared.service";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
@@ -693,43 +689,6 @@ const customFieldsInput = z.record(
   z.union([z.string(), z.number(), z.boolean()])
 );
 
-/** Whether the caller also holds `required`: for a permission that depends on
- *  the record's state, which the gate cannot know. */
-function callerHolds(ctx: ServiceContext, required: RequiredPermissions) {
-  const { actor } = ctx;
-  if (actor.type === "system") return true;
-  return hasPermissions(
-    actor.type === "user" ? actor.permissions : actor.scopes,
-    ctx.company.id,
-    required
-  );
-}
-
-/** A refusal unless a row of `table` matching `match` is the caller's
- *  company's. Every RLS-bypassing read or write keyed on an id the caller sent
- *  checks it first. */
-async function recordInCompany(
-  ctx: ServiceContext,
-  table: Parameters<typeof requireCompanyRecord>[1],
-  match: { id: string } & Record<string, string>
-): Promise<CarbonError | null> {
-  try {
-    await requireCompanyRecord(
-      ctx.asSystem.supabase,
-      table,
-      ctx.company.id,
-      match
-    );
-    return null;
-  } catch (err) {
-    if (!(err instanceof Response)) throw err;
-    return ctx.error(
-      err.status === 404 ? "notFound" : "internal",
-      await err.text()
-    );
-  }
-}
-
 /** A server function's refusal as this function's error: its status picks
  *  the category, and an empty message (a data-layer failure) is `fallback`. */
 function fromServerFn(
@@ -1022,7 +981,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const owned = await recordInCompany(ctx, "purchasingRfq", { id: rfqId });
+    const owned = await refuseUnlessOwned(ctx, "purchasingRfq", { id: rfqId });
     if (owned) return owned;
 
     const [rfq, lines] = await Promise.all([
@@ -1291,7 +1250,7 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
 
-    const owned = await recordInCompany(ctx, "supplierQuote", {
+    const owned = await refuseUnlessOwned(ctx, "supplierQuote", {
       id: supplierQuoteId
     });
     if (owned) return owned;
@@ -1352,7 +1311,7 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const owned = await recordInCompany(ctx, "supplierQuote", {
+    const owned = await refuseUnlessOwned(ctx, "supplierQuote", {
       id: supplierQuoteId
     });
     if (owned) return owned;
@@ -1448,7 +1407,7 @@ export const requestSupplierApproval = defineServiceFn({
   async run(ctx, { supplierId }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const owned = await recordInCompany(ctx, "supplier", { id: supplierId });
+    const owned = await refuseUnlessOwned(ctx, "supplier", { id: supplierId });
     if (owned) return owned;
 
     const opened = await openApprovalRequests(ctx.asSystem.supabase, {
@@ -1518,7 +1477,7 @@ export const deactivateSupplier = defineServiceFn({
 
   async run(ctx, { supplierId }) {
     const companyId = ctx.company.id;
-    const owned = await recordInCompany(ctx, "supplier", { id: supplierId });
+    const owned = await refuseUnlessOwned(ctx, "supplier", { id: supplierId });
     if (owned) return owned;
 
     const canApprove = await canApproveRequest(
@@ -1570,7 +1529,7 @@ export const decideSupplierApproval = defineServiceFn({
   async run(ctx, { supplierId, approvalRequestId, decision, notes }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const owned = await recordInCompany(ctx, "supplier", { id: supplierId });
+    const owned = await refuseUnlessOwned(ctx, "supplier", { id: supplierId });
     if (owned) return owned;
 
     const result = await decideApprovalRequest(
@@ -2641,7 +2600,7 @@ export const reopenPurchaseOrder = defineServiceFn({
     }
     if (
       isPurchaseOrderLocked(currentStatus) &&
-      !callerHolds(ctx, { delete: "purchasing" })
+      !ctx.can({ delete: "purchasing" })
     ) {
       return ctx.error(
         "forbidden",
@@ -2747,7 +2706,7 @@ export const closePurchaseOrderAndApprovals = defineServiceFn({
   permission: { delete: "purchasing" },
 
   async run(ctx, { purchaseOrderId }) {
-    const owned = await recordInCompany(ctx, "purchaseOrder", {
+    const owned = await refuseUnlessOwned(ctx, "purchaseOrder", {
       id: purchaseOrderId
     });
     if (owned) return owned;
@@ -3624,7 +3583,9 @@ export const orderPlannedPurchases = defineServiceFn({
     // Every id comes from the caller and the writes bypass RLS: the location
     // and items must be this company's (supplyForecast upserts on
     // (itemId, locationId, periodId) alone).
-    const location = await recordInCompany(ctx, "location", { id: locationId });
+    const location = await refuseUnlessOwned(ctx, "location", {
+      id: locationId
+    });
     if (location) return location;
     const ownedItems = await client
       .from("item")
@@ -4330,7 +4291,7 @@ export const applyPlanningActions = defineServiceFn({
       );
     }
 
-    const mayDeleteLines = callerHolds(ctx, { delete: "purchasing" });
+    const mayDeleteLines = ctx.can({ delete: "purchasing" });
     const toClaim: {
       planningActionId: string;
       row: (typeof eligible)[number]["row"];

@@ -46,6 +46,30 @@ export function contextFor(caller: Caller): ServiceContext {
   });
 }
 
+/**
+ * The context for work no signed-in caller makes: a public share link, a job.
+ * It runs as the system, so every query scopes by `companyId` itself, and
+ * audit columns record `onBehalfOf`.
+ */
+export function systemContext({
+  companyId,
+  companyGroupId,
+  onBehalfOf
+}: {
+  companyId: string;
+  companyGroupId: string;
+  onBehalfOf: string;
+}): ServiceContext {
+  return createServiceContext({
+    actor: { type: "system", onBehalfOf },
+    company: { id: companyId, groupId: companyGroupId },
+    caller: getCarbonServiceRole(),
+    system: getCarbonServiceRole,
+    pg: getDatabaseClient,
+    kv: () => redis
+  });
+}
+
 type Auth = Pick<
   Awaited<ReturnType<typeof requirePermissions>>,
   | "client"
