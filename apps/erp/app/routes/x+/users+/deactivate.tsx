@@ -4,6 +4,7 @@
 
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
@@ -13,7 +14,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     delete: "users"
   });
 
@@ -38,9 +39,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (users.length === 1) {
     const [targetUserId] = users;
-    // deactivateUser() handles Stripe subscription quantity update internally
+    // deactivateUser() handles Stripe subscription quantity update internally.
+    // It needs the service role: "userPermission" has no UPDATE policy, so under
+    // the caller's client the permission strip matched no rows and the user
+    // kept every grant for this company.
     const result = await deactivateUser(
-      client,
+      getCarbonServiceRole(),
       targetUserId,
       companyId,
       userId,

@@ -62,7 +62,7 @@ describe("buildArchivedEmail", () => {
 });
 
 describe("mergeInvitePermissions", () => {
-  it("takes new keys as-is and concatenates existing keys (setUserPermissions semantics)", () => {
+  it("takes new keys as-is and unions existing keys", () => {
     const merged = mergeInvitePermissions(
       { sales_view: ["c1"] },
       { sales_view: ["c2"], parts_view: ["c2"] }
@@ -79,10 +79,10 @@ describe("mergeInvitePermissions", () => {
     expect(current).toEqual({ sales_view: ["c1"] });
   });
 
-  it("concatenates duplicates when the same grant is merged twice (matches setUserPermissions, which does not dedupe)", () => {
+  it("does not repeat a company id when the same grant is merged twice", () => {
     const once = mergeInvitePermissions({}, { sales_view: ["c2"] });
     const twice = mergeInvitePermissions(once, { sales_view: ["c2"] });
-    expect(twice).toEqual({ sales_view: ["c2", "c2"] });
+    expect(twice).toEqual({ sales_view: ["c2"] });
   });
 
   it('keeps "0" wildcard entries untouched when merging', () => {
