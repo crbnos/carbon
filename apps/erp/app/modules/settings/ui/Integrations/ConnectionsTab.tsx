@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ConnectRouteResponse } from "@carbon/ee/integrations/connect";
-import { openConsentPopup } from "@carbon/ee/integrations/connect";
+import { startIntegrationConnect } from "@carbon/ee/integrations/connect";
 import {
   connectionUsable,
   type IntegrationConnection,
@@ -20,7 +19,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuPlug, LuUnplug } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
@@ -71,7 +70,7 @@ export function ConnectionsTab({
 }) {
   const { t } = useLingui();
   const [name, setName] = useState("");
-  const connect = useFetcher<ConnectRouteResponse>();
+  const [connecting, setConnecting] = useState(false);
 
   // The default is the app's own name, so the SECOND account always collided with
   // the first — leaving the button disabled and the field showing a name the user
@@ -92,21 +91,26 @@ export function ConnectionsTab({
   // The consent screen opens from the URL the connect loader builds, so the signed
   // `state` never has to round-trip through the browser's own code.
   // One entry point for Add account (`?name=`) and Reconnect (`?connection=`).
-  const startConnect = (query: { name: string } | { connection: string }) =>
-    connect.load(
-      `${path.to.api.integrationConnect(pieceName)}?${new URLSearchParams(
-        query
-      )}`
-    );
-
-  useEffect(() => {
-    if (connect.state !== "idle" || connect.data === undefined) return;
-    if (connect.data.error) {
-      toast.error(connect.data.error);
-      return;
+  const startConnect = async (
+    query: { name: string } | { connection: string }
+  ) => {
+    setConnecting(true);
+    try {
+      await startIntegrationConnect(
+        `${path.to.api.integrationConnect(pieceName)}?${new URLSearchParams(
+          query
+        )}`
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t`Couldn't start the authorization.`
+      );
+    } finally {
+      setConnecting(false);
     }
-    if (connect.data.url) openConsentPopup(connect.data.url);
-  }, [connect.state, connect.data]);
+  };
 
   return (
     <DrawerBody className="gap-4">
@@ -130,7 +134,7 @@ export function ConnectionsTab({
                 key={connection.id}
                 connection={connection}
                 requiredScopes={requiredScopes}
-                reconnecting={connect.state !== "idle"}
+                reconnecting={connecting}
                 onReconnect={() => startConnect({ connection: connection.id })}
               />
             ))}
@@ -150,7 +154,7 @@ export function ConnectionsTab({
             size="sm"
             leftIcon={<LuPlug />}
             isDisabled={duplicate}
-            isLoading={connect.state !== "idle"}
+            isLoading={connecting}
             onClick={() => startConnect({ name: proposed })}
           >
             <Trans>Add account</Trans>
