@@ -12,9 +12,9 @@ import { zfd } from "zod-form-data";
 import { getQuoteByExternalId, selectedLinesValidator } from "~/modules/sales";
 import {
   acceptDigitalQuote,
-  rejectDigitalQuote,
-  shareLinkContext
+  rejectDigitalQuote
 } from "~/modules/sales/sales.server";
+import { shareLinkContext } from "~/modules/service-context.server";
 
 const logger = getLogger("erp", "sales", "digital-quote");
 

@@ -46,6 +46,7 @@ import {
   applyRate,
   async,
   datetime,
+  deriveRate,
   openEndedLeaseHorizon,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
@@ -118,6 +119,7 @@ import {
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
+  selectedLineSchema,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
@@ -1385,6 +1387,324 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
       return ctx.error("internal", "Failed to send email", err);
     }
     return { supplierQuoteId };
+  }
+});
+
+// ── Supplier quote share link ────────────────────────────────────────────────
+// The supplier answers through the quote's share link, which is the only
+// credential: these run as the system, in the quote's company, on behalf of
+// the quote's creator (`shareLinkContext`).
+
+/** The supplier quote a share link answers, read with the service role. */
+async function sharedSupplierQuote(
+  ctx: ServiceContext,
+  supplierQuoteId: string
+) {
+  const quote = await ctx.asSystem.supabase
+    .from("supplierQuote")
+    .select("id, createdBy, exchangeRate, externalLinkId, externalNotes")
+    .eq("id", supplierQuoteId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (quote.error) {
+    return ctx.error("internal", "Failed to read the quote", quote.error);
+  }
+  if (!quote.data) return ctx.error("notFound", "Quote not found");
+  return quote.data;
+}
+
+const supplierResponder = {
+  submittedBy: z.string().min(1),
+  submittedByEmail: z.string().email()
+};
+
+/**
+ * Record that the supplier opened a quote's share link.
+ *
+ * @remarks
+ * Stamps the link's `lastAccessedAt`.
+ */
+export const recordSupplierQuoteLinkVisit = defineServiceFn({
+  input: z.object({ externalLinkId: z.string() }),
+  permission: "system",
+
+  async run(ctx, { externalLinkId }) {
+    const visited = await ctx.asSystem.supabase
+      .from("externalLink")
+      .update({ lastAccessedAt: datetime.timestamp() } as never)
+      .eq("id", externalLinkId)
+      .eq("companyId", ctx.company.id);
+    if (visited.error) {
+      return ctx.error("internal", "Failed to record the visit", visited.error);
+    }
+    return { externalLinkId };
+  }
+});
+
+/**
+ * The supplier submits prices from a quote's share link.
+ *
+ * @remarks
+ * Every line must be the quote's. Writes the price of each selected quantity
+ * (the tax rate derived from the amounts), sets the quote Active with who
+ * submitted it, stamps the link, and notifies the company's supplier-quote
+ * group. A failed notification is logged; the submission stands.
+ */
+export const submitDigitalSupplierQuote = defineServiceFn({
+  input: z.object({
+    supplierQuoteId: z.string(),
+    ...supplierResponder,
+    selectedLines: z.record(
+      z.string(),
+      z.record(z.string(), selectedLineSchema)
+    )
+  }),
+  permission: "system",
+
+  async run(
+    ctx,
+    { supplierQuoteId, submittedBy, submittedByEmail, selectedLines }
+  ) {
+    const client = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const quote = await sharedSupplierQuote(ctx, supplierQuoteId);
+    if (quote instanceof CarbonError) return quote;
+
+    const prices = Object.entries(selectedLines).flatMap(
+      ([lineId, byQuantity]) =>
+        Object.entries(byQuantity).flatMap(([quantity, line]) =>
+          Number(quantity) > 0 && line.quantity > 0
+            ? [{ lineId, quantity: Number(quantity), line }]
+            : []
+        )
+    );
+
+    // The line ids come from the link's visitor and every write below runs as
+    // the service role: each line must be this quote's.
+    const lineIds = [...new Set(prices.map(({ lineId }) => lineId))];
+    if (lineIds.length > 0) {
+      const owned = await client
+        .from("supplierQuoteLine")
+        .select("id")
+        .eq("supplierQuoteId", supplierQuoteId)
+        .eq("companyId", companyId)
+        .in("id", lineIds);
+      if (owned.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the quote lines",
+          owned.error
+        );
+      }
+      if (owned.data.length !== lineIds.length) {
+        return ctx.error("validation", "Invalid selected lines data");
+      }
+    }
+
+    const existing =
+      lineIds.length > 0
+        ? await client
+            .from("supplierQuoteLinePrice")
+            .select("supplierQuoteLineId, quantity")
+            .eq("supplierQuoteId", supplierQuoteId)
+            .in("supplierQuoteLineId", lineIds)
+        : { data: [], error: null };
+    if (existing.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save quote prices",
+        existing.error
+      );
+    }
+    const stored = new Set(
+      existing.data.map((row) => `${row.supplierQuoteLineId}:${row.quantity}`)
+    );
+
+    const now = datetime.timestamp();
+    const userId = quote.createdBy;
+    const writes = prices.map(({ lineId, quantity, line }) => {
+      const fields = {
+        supplierUnitPrice: line.supplierUnitPrice ?? 0,
+        leadTime: line.leadTime ?? 0,
+        supplierShippingCost: line.supplierShippingCost ?? 0,
+        supplierTaxAmount: line.supplierTaxAmount ?? 0,
+        // The share page collects amounts only: the rate is derived from the
+        // canonical denominator (unit price × quantity + shipping).
+        taxPercent: deriveRate(
+          line.supplierTaxAmount ?? 0,
+          taxableBase(
+            line.supplierUnitPrice ?? 0,
+            quantity,
+            line.supplierShippingCost ?? 0
+          )
+        )
+      };
+      return stored.has(`${lineId}:${quantity}`)
+        ? client
+            .from("supplierQuoteLinePrice")
+            .update({ ...fields, updatedAt: now, updatedBy: userId })
+            .eq("supplierQuoteId", supplierQuoteId)
+            .eq("supplierQuoteLineId", lineId)
+            .eq("quantity", quantity)
+        : client.from("supplierQuoteLinePrice").insert({
+            ...fields,
+            supplierQuoteId,
+            supplierQuoteLineId: lineId,
+            companyId,
+            quantity,
+            exchangeRate: quote.exchangeRate ?? 1,
+            createdBy: userId
+          });
+    });
+    // ponytail: one write per price, as the page always did; batch if quotes grow large.
+    const failed = (await Promise.all(writes)).find((write) => write.error);
+    if (failed?.error) {
+      return ctx.error("internal", "Failed to save quote prices", failed.error);
+    }
+
+    const submitted = await client
+      .from("supplierQuote")
+      .update({
+        status: "Active",
+        updatedAt: now,
+        externalNotes: {
+          ...((quote.externalNotes as Record<string, unknown>) || {}),
+          lastSubmittedBy: submittedBy,
+          lastSubmittedByEmail: submittedByEmail,
+          lastSubmittedAt: now
+        }
+      })
+      .eq("id", supplierQuoteId)
+      .eq("companyId", companyId);
+    if (submitted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to submit the quote",
+        submitted.error
+      );
+    }
+
+    if (quote.externalLinkId) {
+      await client
+        .from("externalLink")
+        .update({ submittedAt: now, submittedBy, submittedByEmail } as never)
+        .eq("id", quote.externalLinkId)
+        .eq("companyId", companyId);
+    }
+
+    const settings = await getCompanySettings(client, companyId);
+    if (settings.error) {
+      logger.error("Failed to get company settings", { error: settings.error });
+    }
+    const groupIds = settings.data?.supplierQuoteNotificationGroup ?? [];
+    if (groupIds.length > 0) {
+      try {
+        await trigger("notify", {
+          companyId,
+          documentId: supplierQuoteId,
+          event: NotificationEvent.SupplierQuoteResponse,
+          recipient: { type: "group", groupIds }
+        });
+      } catch (err) {
+        logger.error("Failed to trigger supplier quote notification", {
+          error: err
+        });
+      }
+    }
+
+    return { supplierQuoteId };
+  }
+});
+
+/**
+ * The supplier declines a quote from its share link.
+ *
+ * @remarks
+ * Sets the quote Declined with who declined it and their note, and stamps the
+ * link.
+ */
+export const declineDigitalSupplierQuote = defineServiceFn({
+  input: z.object({
+    supplierQuoteId: z.string(),
+    ...supplierResponder,
+    note: z.string().optional()
+  }),
+  permission: "system",
+
+  async run(ctx, { supplierQuoteId, submittedBy, submittedByEmail, note }) {
+    const client = ctx.asSystem.supabase;
+    const quote = await sharedSupplierQuote(ctx, supplierQuoteId);
+    if (quote instanceof CarbonError) return quote;
+
+    const now = datetime.timestamp();
+    const declined = await client
+      .from("supplierQuote")
+      .update({
+        status: "Declined",
+        updatedAt: now,
+        externalNotes: {
+          ...((quote.externalNotes as Record<string, unknown>) || {}),
+          declineNote: note ?? null,
+          declinedBy: submittedBy,
+          declinedByEmail: submittedByEmail,
+          declinedAt: now
+        }
+      })
+      .eq("id", supplierQuoteId)
+      .eq("companyId", ctx.company.id);
+    if (declined.error) {
+      return ctx.error(
+        "internal",
+        "Failed to decline the quote",
+        declined.error
+      );
+    }
+
+    if (quote.externalLinkId) {
+      await client
+        .from("externalLink")
+        .update({
+          declinedAt: now,
+          declinedBy: submittedBy,
+          declinedByEmail: submittedByEmail,
+          declineNote: note ?? null
+        } as never)
+        .eq("id", quote.externalLinkId)
+        .eq("companyId", ctx.company.id);
+    }
+    return { supplierQuoteId };
+  }
+});
+
+/**
+ * The supplier writes notes on a quote line from the quote's share link.
+ *
+ * @remarks
+ * `notes` is a TipTap document, or null to clear them. The line must be the
+ * quote's.
+ */
+export const updateDigitalSupplierQuoteLineNotes = defineServiceFn({
+  input: z.object({
+    supplierQuoteId: z.string(),
+    lineId: z.string(),
+    notes: z.unknown()
+  }),
+  permission: "system",
+
+  async run(ctx, { supplierQuoteId, lineId, notes }) {
+    const updated = await ctx.asSystem.supabase
+      .from("supplierQuoteLine")
+      .update({
+        externalNotes: (notes ?? null) as Json,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", lineId)
+      .eq("supplierQuoteId", supplierQuoteId)
+      .eq("companyId", ctx.company.id);
+    if (updated.error) {
+      return ctx.error("internal", "Failed to update notes", updated.error);
+    }
+    return { lineId };
   }
 });
 

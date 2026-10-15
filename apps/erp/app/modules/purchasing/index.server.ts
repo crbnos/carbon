@@ -16,6 +16,7 @@ import {
   deactivateSupplier,
   decidePurchaseOrderApproval,
   decideSupplierApproval,
+  declineDigitalSupplierQuote,
   deletePurchaseOrders,
   dismissPurchasingPlanningActions,
   finalizePurchaseOrderAndNotify,
@@ -25,13 +26,16 @@ import {
   orderPlannedPurchases,
   overrideLeaseLineClassification,
   purchaseLeaseLine,
+  recordSupplierQuoteLinkVisit,
   removeLeaseLineClassificationOverride,
   reopenPurchaseOrder,
   reopenPurchasingPlanningActions,
   reopenReturnOrder,
   requestSupplierApproval,
   sendSupplierQuoteToSupplier,
+  submitDigitalSupplierQuote,
   terminateLeaseLine,
+  updateDigitalSupplierQuoteLineNotes,
   updatePlanningPurchaseOrderLine,
   updatePurchaseOrders,
   updatePurchasingRfqs,
@@ -67,7 +71,13 @@ export const purchasing = {
   supplierQuote: {
     update: updateSupplierQuotes,
     finalize: finalizeSupplierQuoteWithLink,
-    send: sendSupplierQuoteToSupplier
+    send: sendSupplierQuoteToSupplier,
+    digital: {
+      submit: submitDigitalSupplierQuote,
+      decline: declineDigitalSupplierQuote,
+      updateLineNotes: updateDigitalSupplierQuoteLineNotes,
+      recordVisit: recordSupplierQuoteLinkVisit
+    }
   },
   supplier: {
     requestApproval: requestSupplierApproval,

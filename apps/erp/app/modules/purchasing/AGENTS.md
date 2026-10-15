@@ -86,7 +86,7 @@ Each is a `defineServiceFn` listed in `index.server.ts`; the route, the API and 
 - `purchaseOrder` — `update` (one field of the properties panel, refused on a released order except `deliveryDate`), `delete` (Draft / Planned, or Needs Approval by its requester — `purchaseOrderDeleteRefusal` in `purchasing.models.ts`; cancels the pending approvals), `finalize` (party contact and supplier approval rules, the approval rule or the planning bypass, then prices, the PDF document and the email), `decideApproval`, `reopen` (Draft / Planned, optionally as a revision; `delete` permission from a released status), `close`. The status route takes only Draft, Planned and Closed.
 - `purchaseReturnOrder` — `update`, `confirm` (stores the PDF; a failed PDF is a `warning`), `cancel`, `reopen`, `addLine` (Draft only), `updateLine` (post-confirm locks: `lockedReturnLineField`).
 - `rfq` — `create`, `update`, `cancel` (cancels the linked supplier quotes), `finalize` (`finalize-purchasing-rfq`, then the emails).
-- `supplierQuote` — `update`, `finalize`, `send`.
+- `supplierQuote` — `update`, `finalize`, `send`; `digital.submit` / `decline` / `updateLineNotes` / `recordVisit` (system only: the supplier's share link runs them through `shareLinkContext`, `~/modules/service-context.server`; submit refuses a line that is not the quote's).
 - `supplier` — `requestApproval`, `deactivate`, `decideApproval`.
 - `planning` — `order` (suggestions to Planned POs, one per supplier per week), `updateLine`, `apply`, `dismiss`, `reopen`, `assign`. The route answers `{ success, message }`, the shape `usePlanningActions` (production module, shared with production planning) reads.
 - `lease` / `leaseLine` — see Leases.

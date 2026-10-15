@@ -70,6 +70,28 @@ export function systemContext({
   });
 }
 
+/**
+ * The context a public share link acts in. The link is the only credential,
+ * so it runs as the system, in the record's company, on behalf of the
+ * record's creator. Null when the company cannot be read.
+ */
+export async function shareLinkContext(record: {
+  companyId: string;
+  createdBy: string;
+}): Promise<ServiceContext | null> {
+  const company = await getCarbonServiceRole()
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", record.companyId)
+    .single();
+  if (!company.data?.companyGroupId) return null;
+  return systemContext({
+    companyId: record.companyId,
+    companyGroupId: company.data.companyGroupId,
+    onBehalfOf: record.createdBy
+  });
+}
+
 type Auth = Pick<
   Awaited<ReturnType<typeof requirePermissions>>,
   | "client"

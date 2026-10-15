@@ -94,7 +94,7 @@ listed by entity in `index.server.ts` (tool name `sales_<entity>_<verb>`):
   `update` / `configure` / `copyItemMethod` / `copyLineMethod`;
   `material.create` / `update` / `delete` / `copyItemMethod`;
   `operation.create` / `update` / `delete`; `digital.accept` / `reject`
-  (system only: the public share link runs them through `shareLinkContext`)
+  (system only: the public share link runs them through `shareLinkContext`, `~/modules/service-context.server`)
 - `order`: `updateField`, `confirm`; `line.create` / `update` / `ship`
 - `returnOrder`: `updateField`, `confirm`; `line.create` / `update` / `escalate`
 - `contract`: `create`, `updateTerms`, `setTerm`, `setType`,

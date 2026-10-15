@@ -4,7 +4,6 @@
 
 import { openai } from "@ai-sdk/openai";
 import { hasPermission } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
@@ -78,7 +77,6 @@ import {
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality/quality.service";
-import { systemContext } from "~/modules/service-context.server";
 import {
   type CarbonError,
   defineServiceFn,
@@ -3368,28 +3366,6 @@ async function createQuoteLineForFile(
 }
 
 // --- Digital quotes (the customer's share link) ------------------------------
-
-/**
- * The context a quote's share link acts in. The link is the only credential,
- * so it runs as the system, in the quote's company, on behalf of the quote's
- * creator. Null when the company cannot be read.
- */
-export async function shareLinkContext(quote: {
-  companyId: string;
-  createdBy: string;
-}): Promise<ServiceContext | null> {
-  const company = await getCarbonServiceRole()
-    .from("company")
-    .select("companyGroupId")
-    .eq("id", quote.companyId)
-    .single();
-  if (!company.data?.companyGroupId) return null;
-  return systemContext({
-    companyId: quote.companyId,
-    companyGroupId: company.data.companyGroupId,
-    onBehalfOf: quote.createdBy
-  });
-}
 
 const digitalQuoteClosed = "This quote is no longer available for a response.";
 

@@ -11,7 +11,8 @@ vi.mock("@lingui/core/macro", () => ({
 
 import {
   orderPlannedPurchases,
-  reopenPurchaseOrder
+  reopenPurchaseOrder,
+  submitDigitalSupplierQuote
 } from "../app/modules/purchasing/purchasing.server";
 import { createServiceContext } from "../app/modules/service-fn.server";
 
@@ -115,5 +116,55 @@ describe("orderPlannedPurchases", () => {
       category: "validation",
       message: "Existing orders are changed from the Open Orders list"
     });
+  });
+});
+
+describe("submitDigitalSupplierQuote", () => {
+  it("refuses a line that is not on the quote, before any price is written", async () => {
+    // The service role: the quote reads back, its lines are only "line-1".
+    const system = {
+      from: (table: string) => {
+        if (table === "supplierQuoteLinePrice") return unreachable();
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          in: async () => ({ data: [{ id: "line-1" }], error: null }),
+          maybeSingle: async () => ({
+            data: { id: "sq-1", createdBy: "user-1", externalNotes: null },
+            error: null
+          })
+        };
+        return chain;
+      }
+    } as any;
+    const ctx = createServiceContext({
+      actor: { type: "system", onBehalfOf: "user-1" },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: system,
+      system: () => system,
+      pg: unreachable,
+      kv: unreachable
+    });
+    const price = {
+      quantity: 1,
+      leadTime: 5,
+      shippingCost: 0,
+      supplierShippingCost: 0,
+      supplierUnitPrice: 10,
+      supplierTaxAmount: 0,
+      unitPrice: 10
+    };
+
+    const result = await submitDigitalSupplierQuote(ctx, {
+      supplierQuoteId: "sq-1",
+      submittedBy: "Pat",
+      submittedByEmail: "pat@example.com",
+      selectedLines: {
+        "line-1": { "1": price },
+        "another-quote-line": { "1": price }
+      }
+    });
+
+    expect(result.error).toMatchObject({ category: "validation" });
   });
 });
