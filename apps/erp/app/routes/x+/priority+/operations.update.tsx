@@ -12,7 +12,7 @@ import {
 } from "~/modules/production/production.models";
 import { reorderScheduleOperations } from "~/modules/production/production.server";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
-import { serviceContext } from "~/services/service-context.server";
+import { serviceContext } from "~/modules/service-context.server";
 
 const invalidSchedulingRequest = () => ({
   success: false,
@@ -20,16 +20,11 @@ const invalidSchedulingRequest = () => ({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "production"
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    update: "production"
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
   const formData = await request.formData();
 
   // A drop that renumbers several cards of a column sends them all at once.

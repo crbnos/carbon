@@ -1,6 +1,8 @@
 ---
 paths:
   - "apps/erp/app/modules/**/*.service.ts"
+  - "apps/erp/app/modules/**/*.server.ts"
+  - "apps/erp/app/modules/*.server.ts"
   - "apps/mes/app/services/**"
 ---
 
@@ -33,6 +35,56 @@ apps/erp/app/modules/{module}/
 ├── index.ts              # barrel re-export
 └── ui/                   # components
 ```
+
+## Operations: `defineServiceFn` (migration in progress)
+
+The ERP is moving every operation a route, the API or MCP can run into one
+`defineServiceFn` const (`apps/erp/app/modules/service-fn.server.ts`), so a
+tool does exactly what the button does. Plan:
+`.ai/plans/2026-10-15-service-function-migration.md`. Migrated so far:
+`production.server.ts`. The functions below this section are the building
+blocks an operation calls.
+
+```ts
+/**
+ * Cancel a job.                      ← the title (API, MCP)
+ *
+ * @remarks
+ * What it does, in order.            ← the description
+ */
+export const cancelJob = defineServiceFn({
+  input: z.object({ jobId: z.string() }),
+  permission: { update: "production" },
+  async run(ctx, { jobId }) {
+    // ...
+    if (!update.updated) return ctx.error("conflict", "The job's status changed");
+    return { jobId };
+  }
+});
+```
+
+- **Result**: callers get `{ data, error }`, never a throw. `run` returns its
+  value or `ctx.error(category, message, cause)`; a throw becomes `internal`
+  with the cause logged and withheld. The error union is inferred.
+- **Gate**: every ENTRY call is checked against `permission` for its actor
+  (`user` claims, `apiKey` scopes; `system` passes). `{}` means company
+  membership, `"system"` admits only the system actor, `{ by, rules }` keys
+  the rule on an input field. A call made from inside another function's
+  `run` is not checked again.
+- **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
+  `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
+  `ctx.auditUserId` for `createdBy` / `updatedBy`.
+- **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
+  returned `CarbonError` rolls back; a nested call joins the open
+  transaction; `tx.asCaller` throws, because that client is outside it.
+- **Routes**: build the context with `serviceContext(auth)`
+  (`service-context.server.ts`) from what `requirePermissions` returned, or
+  call through `carbon(request)` (`carbon.server.ts`):
+  `api.production.job.cancel(input)` returns the result with the error as a
+  plain `{ category, message, status }`. Each module lists its operations in
+  `{module}/index.server.ts`; `router.server.ts` combines them.
+- **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
+  Kysely or `serverFns` write in an ERP route.
 
 ## The function shape
 

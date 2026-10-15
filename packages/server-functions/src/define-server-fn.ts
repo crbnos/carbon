@@ -5,11 +5,8 @@
 import { failSpan, inSpan } from "@carbon/logger/span";
 import type { z } from "zod";
 import { type ServerFnError, toServerFnError } from "./errors";
-import {
-  authorize,
-  type Permissions,
-  type ServerFnContext
-} from "./server-fn-context";
+import { type PermissionRule, resolvePermissions } from "./permissions";
+import { authorize, type ServerFnContext } from "./server-fn-context";
 
 export type ServerFnResult<R> =
   | { data: R; error: null }
@@ -20,25 +17,6 @@ export type ServerFn<S extends z.ZodType, R> = {
   readonly serverFnName: string;
   readonly permissions: PermissionRule<z.output<S>>;
 };
-
-/** One permission per value of a string field. Data, so the API manifest can read it. */
-type KeyedRule<I> = {
-  [K in keyof I & string]: I[K] extends string
-    ? { by: K; rules: Record<I[K], Permissions> }
-    : never;
-}[keyof I & string];
-
-export type PermissionRule<I> = Permissions | KeyedRule<I>;
-
-function resolvePermissions<I>(rule: PermissionRule<I>, input: I): Permissions {
-  if (typeof rule === "object" && "by" in rule) {
-    const value = (input as Record<string, unknown>)[rule.by];
-    const rules = rule.rules as Record<string, Permissions | undefined>;
-    // Fail closed: a value with no rule is never allowed through.
-    return (typeof value === "string" && rules[value]) || "system";
-  }
-  return rule as Permissions;
-}
 
 type ServerFnDefinition<S extends z.ZodType, R> = {
   name: string;

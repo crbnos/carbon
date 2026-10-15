@@ -20,23 +20,18 @@ import {
   updateJobOperationBatchValidator
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
+import { serviceContext } from "~/modules/service-context.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { serviceContext } from "~/services/service-context.server";
 
 // Fetcher-driven board action (mirrors operations.update.tsx): return
 // { success, message } so BatchingBoard can toast the specific failure reason.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "production"
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    update: "production"
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
 
   const formData = await request.formData();
   const intent = formData.get("intent");

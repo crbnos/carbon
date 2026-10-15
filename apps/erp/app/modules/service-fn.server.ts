@@ -6,7 +6,13 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import type { Permissions } from "@carbon/server-functions";
+import {
+  hasPermissions,
+  type ModulePermissions,
+  type PermissionRule,
+  type Permissions,
+  resolvePermissions
+} from "@carbon/server-functions/permissions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
@@ -59,10 +65,13 @@ export type Result<T, E extends CarbonError = CarbonError> =
   | { data: T; error: null }
   | { data: null; error: E };
 
-/** Who made the call. Stated by the entry point that authenticated it. */
+/**
+ * Who made the call, and what they hold. Stated by the entry point that
+ * authenticated it; the gate checks every entry call against it.
+ */
 export type Actor =
-  | { type: "user"; userId: string }
-  | { type: "apiKey"; createdBy: string }
+  | { type: "user"; userId: string; permissions: ModulePermissions }
+  | { type: "apiKey"; createdBy: string; scopes: ModulePermissions }
   | { type: "system"; onBehalfOf: string };
 
 type Kv = typeof redis;
@@ -70,7 +79,10 @@ type Kv = typeof redis;
 export type ServiceContext = {
   actor: Actor;
   company: { id: string; groupId: string };
-  /** Runs as the caller: row-level security applies. */
+  /**
+   * Runs as the caller: row-level security applies. Not part of a
+   * transaction: inside `ctx.transaction` reading it throws.
+   */
   asCaller: { supabase: SupabaseClient<Database> };
   /** Bypasses row-level security: every query scopes by `company.id` itself. */
   asSystem: {
@@ -90,12 +102,9 @@ export type ServiceContext = {
    * rolls back, as a throw does. Called inside a transaction, it joins it.
    */
   transaction<R>(
-    fn: (tx: TransactionContext) => Promise<R>
+    fn: (tx: ServiceContext) => Promise<R>
   ): Promise<Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>>;
 };
-
-/** The caller's client is its own connection and takes no part in a transaction. */
-export type TransactionContext = Omit<ServiceContext, "asCaller">;
 
 type Handles = {
   actor: Actor;
@@ -130,6 +139,25 @@ function settle<R>(out: R) {
 // Classes, not object literals with getters: a context is built for every
 // request, and this way it costs a few field writes, with the accessors and
 // methods shared on the prototype instead of allocated per context.
+class CallerHandles {
+  private readonly client: SupabaseClient<Database>;
+  private readonly inTransaction: boolean;
+
+  constructor(client: SupabaseClient<Database>, inTransaction: boolean) {
+    this.client = client;
+    this.inTransaction = inTransaction;
+  }
+
+  get supabase() {
+    if (this.inTransaction) {
+      throw new Error(
+        "The caller's client is not part of the transaction: use asSystem.pg"
+      );
+    }
+    return this.client;
+  }
+}
+
 class SystemHandles {
   private readonly handles: Handles;
 
@@ -149,22 +177,36 @@ class SystemHandles {
 class Context implements ServiceContext {
   readonly actor: Actor;
   readonly company: { id: string; groupId: string };
-  readonly asCaller: { supabase: SupabaseClient<Database> };
+  readonly asCaller: CallerHandles;
   readonly asSystem: SystemHandles;
   readonly auditUserId: string;
+  /**
+   * Set on the context a service function's `run` receives. A call made from
+   * inside a service function was authorized by that function's gate.
+   */
+  readonly nested: boolean;
   private readonly handles: Handles;
+  private readonly inTransaction: boolean;
 
-  constructor(handles: Handles) {
+  constructor(handles: Handles, nested: boolean, inTransaction: boolean) {
     this.actor = handles.actor;
     this.company = handles.company;
-    this.asCaller = { supabase: handles.caller };
+    this.asCaller = new CallerHandles(handles.caller, inTransaction);
     this.asSystem = new SystemHandles(handles);
     this.auditUserId = auditUserIdOf(handles.actor);
+    this.nested = nested;
     this.handles = handles;
+    this.inTransaction = inTransaction;
   }
 
   get kv() {
     return this.handles.kv();
+  }
+
+  inside(): Context {
+    return this.nested
+      ? this
+      : new Context(this.handles, true, this.inTransaction);
   }
 
   error<C extends ErrorCategory>(
@@ -176,15 +218,28 @@ class Context implements ServiceContext {
   }
 
   async transaction<R>(
-    fn: (tx: TransactionContext) => Promise<R>
+    fn: (tx: ServiceContext) => Promise<R>
   ): Promise<Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>> {
     const pg = this.handles.pg();
-    if (pg.isTransaction) return settle(await fn(this));
+    if (pg.isTransaction) {
+      return settle(
+        await fn(
+          this.inTransaction
+            ? this
+            : new Context(this.handles, this.nested, true)
+        )
+      );
+    }
 
     try {
       return settle(
         await pg.transaction().execute(async (trx) => {
-          const out = await fn(new Context({ ...this.handles, pg: () => trx }));
+          const tx = new Context(
+            { ...this.handles, pg: () => trx },
+            this.nested,
+            true
+          );
+          const out = await fn(tx);
           if (out instanceof CarbonError) throw new Rollback(out);
           return out;
         })
@@ -197,7 +252,21 @@ class Context implements ServiceContext {
 }
 
 export function createServiceContext(handles: Handles): ServiceContext {
-  return new Context(handles);
+  return new Context(handles, false, false);
+}
+
+function allows(
+  actor: Actor,
+  companyId: string,
+  required: Permissions
+): boolean {
+  if (actor.type === "system") return true;
+  if (required === "system") return false;
+  return hasPermissions(
+    actor.type === "user" ? actor.permissions : actor.scopes,
+    companyId,
+    required
+  );
 }
 
 function failed<R>(error: CarbonError) {
@@ -206,13 +275,13 @@ function failed<R>(error: CarbonError) {
 
 type Outcome<R> = Result<
   Exclude<R, CarbonError>,
-  Extract<R, CarbonError> | CarbonError<"internal" | "validation">
+  Extract<R, CarbonError> | CarbonError<"internal" | "validation" | "forbidden">
 >;
 
 export type ServiceFn<I extends z.ZodType, R> = {
   (ctx: ServiceContext, input: z.input<I>): Promise<Outcome<R>>;
   input: I;
-  permission: Permissions;
+  permission: PermissionRule<z.output<I>>;
 };
 
 /**
@@ -221,10 +290,13 @@ export type ServiceFn<I extends z.ZodType, R> = {
  * `run` returns its value, or `ctx.error(...)` to refuse. Callers always get
  * `{ data, error }` and never an exception: anything `run` throws comes back
  * as an `internal` error with the detail logged and withheld.
+ *
+ * Every entry call is checked against `permission` for its actor. A call made
+ * from inside another service function's `run` is not checked again.
  */
 export function defineServiceFn<I extends z.ZodType, R>(definition: {
   input: I;
-  permission: Permissions;
+  permission: PermissionRule<z.output<I>>;
   run(ctx: ServiceContext, input: z.output<I>): Promise<R>;
 }): ServiceFn<I, R> {
   // Compiled on the first call, not at import: a module of service functions
@@ -243,8 +315,26 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
       );
     }
 
+    const nested = ctx instanceof Context && ctx.nested;
+    if (!nested) {
+      const required = resolvePermissions(definition.permission, parsed.data);
+      if (!allows(ctx.actor, ctx.company.id, required)) {
+        logger.warn("Service function refused: {actor}", {
+          actor: ctx.actor.type,
+          companyId: ctx.company.id,
+          required
+        });
+        return failed(
+          new CarbonError("forbidden", "You do not have permission to do this")
+        );
+      }
+    }
+
     try {
-      const out = await definition.run(ctx, parsed.data);
+      const out = await definition.run(
+        ctx instanceof Context ? ctx.inside() : ctx,
+        parsed.data
+      );
       if (!(out instanceof CarbonError)) {
         return { data: out, error: null } as Outcome<R>;
       }
@@ -271,4 +361,32 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
     input: definition.input,
     permission: definition.permission
   });
+}
+
+/** A `CarbonError` as it crosses to the client: its fields, never its cause. */
+export type SerializedError<E> =
+  E extends CarbonError<infer C>
+    ? { category: C; message: string; status: (typeof ERROR_STATUS)[C] }
+    : never;
+
+/** A service function's result as a route sends it. */
+export type RouteResult<R> =
+  R extends Result<infer T, infer E>
+    ? { data: T; error: null } | { data: null; error: SerializedError<E> }
+    : never;
+
+/**
+ * The result as a route returns it. React Router replaces an `Error` instance
+ * with a bare `Error` (a generic message in production), so the error goes out
+ * as a plain object.
+ */
+export function toResult<T, E extends CarbonError>(
+  result: Result<T, E>
+): RouteResult<Result<T, E>> {
+  if (result.error === null) return result as RouteResult<Result<T, E>>;
+  const { category, message, status } = result.error;
+  return {
+    data: null,
+    error: { category, message, status }
+  } as RouteResult<Result<T, E>>;
 }

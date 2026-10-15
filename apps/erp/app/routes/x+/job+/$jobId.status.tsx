@@ -20,25 +20,20 @@ import {
   updateJobStatus
 } from "~/modules/production";
 import { cancelJob, releaseJobs } from "~/modules/production/production.server";
+import { serviceContext } from "~/modules/service-context.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { serviceContext } from "~/services/service-context.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "jobid-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "production"
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    update: "production"
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
 
   const { jobId: id } = params;
   if (!id) throw new Error("Could not find id");

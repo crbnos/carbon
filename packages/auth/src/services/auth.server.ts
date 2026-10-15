@@ -31,7 +31,7 @@ import {
   getCarbonServiceRole,
   requestFetch
 } from "../lib/supabase/client.server";
-import type { AuthSession } from "../types";
+import type { AuthSession, Permission } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
 import { type ApiKeyRecord, getApiKeyRecord } from "./api-key.server";
@@ -43,7 +43,7 @@ import {
   flash,
   requireAuthSession
 } from "./session.server";
-import { getCompaniesForUser } from "./users";
+import { getCompaniesForUser, makePermissionsFromClaims } from "./users";
 import { getUserClaims } from "./users.server";
 
 const log = getLogger("auth");
@@ -217,6 +217,10 @@ export async function requirePermissions(
   userId: string;
   sessionUserId: string;
   consoleMode: boolean;
+  /** How the caller authenticated: a session, or an API key. */
+  caller: "session" | "apiKey";
+  /** The session user's claims, or the API key's scopes, per module. */
+  permissions: Record<string, Permission>;
 }> {
   const apiKey = request.headers.get("carbon-key");
 
@@ -336,7 +340,9 @@ export async function requirePermissions(
         userId,
         sessionUserId: userId,
         email: "",
-        consoleMode: false
+        consoleMode: false,
+        caller: "apiKey",
+        permissions: makePermissionsFromClaims(scopes)?.permissions ?? {}
       };
     }
   }
@@ -380,7 +386,9 @@ export async function requirePermissions(
       email,
       userId: await getEffectiveUser(request, companyId, userId, consoleMode),
       sessionUserId: userId,
-      consoleMode
+      consoleMode,
+      caller: "session",
+      permissions: myClaims.permissions
     };
   }
 
@@ -442,7 +450,9 @@ export async function requirePermissions(
     email,
     userId: await getEffectiveUser(request, companyId, userId, consoleMode),
     sessionUserId: userId,
-    consoleMode
+    consoleMode,
+    caller: "session",
+    permissions: myClaims.permissions
   };
 }
 

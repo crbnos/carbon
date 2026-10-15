@@ -32,7 +32,7 @@ vi.mock("./production.service", () => ({
 }));
 
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
-import { createServiceContext } from "~/services/service-fn.server";
+import { createServiceContext } from "~/modules/service-fn.server";
 import { cancelJob } from "./production.server";
 import {
   returnPickedRemaindersForJob,
@@ -47,7 +47,18 @@ describe("cancelJob", () => {
   const db = {} as never;
   const contextFor = (client: never) =>
     createServiceContext({
-      actor: { type: "user", userId: "user-1" },
+      actor: {
+        type: "user",
+        userId: "user-1",
+        permissions: {
+          production: {
+            view: [],
+            create: [],
+            update: ["company-1"],
+            delete: []
+          }
+        }
+      },
       company: { id: "company-1", groupId: "group-1" },
       caller: client,
       system: () => ({}) as never,

@@ -9,6 +9,7 @@ Form system — `ValidatedForm`, field components, validation helpers, and serve
 - **Import fields from `~/components/Form`** in apps (barrel re-exports all `@carbon/form` fields + domain selectors). Never import deep paths from `@carbon/form/src/components/...`.
 - **Include `<Hidden name="id" />` and `<CustomFormFields table="..." />`** in edit forms. Type form props with `z.infer<typeof validator>`.
 - **Route action pattern**: `assertIsPost` → `requirePermissions` → `validator(schema).validate(formData)` → service call → `flash`/`redirect`. Return `validationError(validation.error)` on failure.
+- **Migrated actions** check the request first with `validator(schema?).request(args, { method?, params? })`: the method (default POST, else a 405), the named route params (a 400), then the body (form data or JSON). It returns `{ data, params, formData }` or `{ invalid }` (the `validationError` to return). Without a schema it reads no body.
 
 ## Ask First
 

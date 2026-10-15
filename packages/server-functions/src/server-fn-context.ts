@@ -9,6 +9,7 @@ import { type Kysely, sql } from "kysely";
 import { ForbiddenError } from "./errors";
 import {
   hasPermissions,
+  type Permissions,
   permissionsFromClaims,
   type RequiredPermissions
 } from "./permissions";
@@ -122,8 +123,6 @@ export class ServerFnContext {
     return serviceRoleClient();
   }
 }
-
-export type Permissions = RequiredPermissions | "system";
 
 export async function authorize(
   ctx: ServerFnContext,

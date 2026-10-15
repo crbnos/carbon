@@ -30,9 +30,9 @@ import {
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import { getLocationsList } from "~/modules/resources";
+import { serviceContext } from "~/modules/service-context.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
-import { serviceContext } from "~/services/service-context.server";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -108,16 +108,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "parts"
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    update: "parts"
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

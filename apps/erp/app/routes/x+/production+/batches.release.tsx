@@ -12,8 +12,8 @@ import {
   releaseJobOperationBatch
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
+import { serviceContext } from "~/modules/service-context.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { serviceContext } from "~/services/service-context.server";
 
 // Bulk release — one release per selected Planned batch. Each is independent:
 // a batch the server fn refuses (no members, already recorded production) is
@@ -25,16 +25,11 @@ const bodySchema = z.object({ batchIds: z.array(z.string()) });
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "production"
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    update: "production"
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
 
   // A body that is not JSON, or not the shape the table sends, is a plain
   // refusal rather than a 500.

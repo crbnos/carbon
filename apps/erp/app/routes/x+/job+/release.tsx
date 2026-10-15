@@ -13,8 +13,8 @@ import { z } from "zod";
 import { getJobReleaseReadiness } from "~/modules/production";
 import { releaseJobs } from "~/modules/production/production.server";
 import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
+import { serviceContext } from "~/modules/service-context.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { serviceContext } from "~/services/service-context.server";
 
 const logger = getLogger("erp", "job-release");
 
@@ -29,16 +29,11 @@ const bodySchema = z.object({ jobIds: z.array(z.string()) });
 // Fetcher-driven; the table toasts the summary and the loader revalidates.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      update: "production"
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    update: "production"
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
 
   // A body that is not JSON, or not the shape the table sends, is a plain
   // refusal rather than a 500.

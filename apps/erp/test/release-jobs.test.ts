@@ -41,11 +41,17 @@ import {
   planDraftJob,
   releaseJobs
 } from "../app/modules/production/production.server";
-import { createServiceContext } from "../app/services/service-fn.server";
+import { createServiceContext } from "../app/modules/service-fn.server";
 
 const contextFor = (client: any) =>
   createServiceContext({
-    actor: { type: "user", userId: "user-1" },
+    actor: {
+      type: "user",
+      userId: "user-1",
+      permissions: {
+        production: { view: [], create: [], update: ["company-1"], delete: [] }
+      }
+    },
     company: { id: "company-1", groupId: "group-1" },
     caller: client,
     system: () => ({}) as any,

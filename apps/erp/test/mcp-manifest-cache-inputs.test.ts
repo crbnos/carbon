@@ -54,7 +54,9 @@ function resolveImport(from: string, specifier: string): string | null {
   return dir ? join(dir, "src/index.ts") : null;
 }
 
-const modelsFiles = readdirSync(MODULES).flatMap((module) =>
+const modelsFiles = readdirSync(MODULES, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .flatMap(({ name: module }) =>
   readdirSync(join(MODULES, module))
     .filter((file) => file.endsWith(".models.ts"))
     .map((file) => join(MODULES, module, file))

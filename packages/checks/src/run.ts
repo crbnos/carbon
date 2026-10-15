@@ -55,6 +55,7 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { routeActionShape } from "./conformance/route-action-shape";
 import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 import { spdxLicenseHeader } from "./conformance/spdx-license-header";
 import { loadDbTableColumns } from "./sources/db-columns";
@@ -85,7 +86,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
 /** Checks that run over server-side TS, not SQL migrations. */
 export const SERVER_CHECKS: ConformanceCheck[] = [
   noLocalTimezone,
-  noZeroConcurrency
+  noZeroConcurrency,
+  routeActionShape
 ];
 
 /** Checks that run over ALL app + shared-package TS (client and server). */

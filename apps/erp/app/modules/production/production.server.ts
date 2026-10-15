@@ -9,10 +9,7 @@ import { datetime, getErrorMessage } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
-import {
-  type CarbonError,
-  defineServiceFn
-} from "~/services/service-fn.server";
+import { type CarbonError, defineServiceFn } from "~/modules/service-fn.server";
 import {
   isJobLocked,
   jobStatus,
@@ -90,7 +87,8 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
  */
 export const replanAfterItemChange = defineServiceFn({
   input: z.object({ itemId: z.string() }),
-  permission: "system",
+  // Whoever may save the item's planning may have it re-planned.
+  permission: { update: "parts" },
 
   async run(ctx, { itemId }) {
     const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {

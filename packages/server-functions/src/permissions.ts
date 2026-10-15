@@ -7,6 +7,31 @@ type Action = "view" | "create" | "update" | "delete";
 /** `{ update: "inventory" }`: each action names the module(s) it needs. */
 export type RequiredPermissions = Partial<Record<Action, string | string[]>>;
 
+/** What an operation requires. `"system"` admits only the system actor. */
+export type Permissions = RequiredPermissions | "system";
+
+/** One permission per value of a string field. Data, so the API manifest can read it. */
+type KeyedRule<I> = {
+  [K in keyof I & string]: I[K] extends string
+    ? { by: K; rules: Record<I[K], Permissions> }
+    : never;
+}[keyof I & string];
+
+export type PermissionRule<I> = Permissions | KeyedRule<I>;
+
+export function resolvePermissions<I>(
+  rule: PermissionRule<I>,
+  input: I
+): Permissions {
+  if (typeof rule === "object" && "by" in rule) {
+    const value = (input as Record<string, unknown>)[rule.by];
+    const rules = rule.rules as Record<string, Permissions | undefined>;
+    // Fail closed: a value with no rule is never allowed through.
+    return (typeof value === "string" && rules[value]) || "system";
+  }
+  return rule as Permissions;
+}
+
 /** A user's claims per module: the company ids holding each action. */
 export type ModulePermissions = Record<string, Record<Action, string[]>>;
 

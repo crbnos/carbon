@@ -6,13 +6,15 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn() })
+  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
 }));
 
 import {
+  type Actor,
   CarbonError,
   createServiceContext,
-  defineServiceFn
+  defineServiceFn,
+  toResult
 } from "./service-fn.server";
 
 // Stands in for Kysely's transaction: it commits when the body resolves and
@@ -38,9 +40,20 @@ function database() {
   return { pg, trx, outcomes };
 }
 
-const contextWith = (pg: unknown) =>
+const productionView = {
+  production: { view: ["company-1"], create: [], update: [], delete: [] }
+};
+
+const contextWith = (
+  pg: unknown,
+  actor: Actor = {
+    type: "apiKey",
+    createdBy: "user-1",
+    scopes: productionView
+  }
+) =>
   createServiceContext({
-    actor: { type: "apiKey", createdBy: "user-1" },
+    actor,
     company: { id: "company-1", groupId: "group-1" },
     caller: {} as never,
     system: () => ({}) as never,
@@ -96,6 +109,100 @@ describe("defineServiceFn", () => {
   });
 });
 
+describe("the gate", () => {
+  const inner = defineServiceFn({
+    input: z.object({}),
+    permission: "system",
+    async run() {
+      return "inner";
+    }
+  });
+  const outer = defineServiceFn({
+    input: z.object({}),
+    permission: { view: "production" },
+    async run(ctx) {
+      return inner(ctx, {});
+    }
+  });
+  const user = (permissions = {}): Actor => ({
+    type: "user",
+    userId: "user-1",
+    permissions
+  });
+
+  it("refuses a caller without the permission, before running", async () => {
+    const { error } = await outer(contextWith({}, user()), {});
+    expect(error).toMatchObject({ category: "forbidden", status: 403 });
+  });
+
+  it("refuses a system-only function to every caller but the system", async () => {
+    const asUser = await inner(contextWith({}, user(productionView)), {});
+    expect(asUser.error?.category).toBe("forbidden");
+    const asSystem = await inner(
+      contextWith({}, { type: "system", onBehalfOf: "user-1" }),
+      {}
+    );
+    expect(asSystem.data).toBe("inner");
+  });
+
+  it("does not check a call made from inside another service function", async () => {
+    const { data } = await outer(contextWith({}, user(productionView)), {});
+    expect(data).toEqual({ data: "inner", error: null });
+  });
+
+  it("requires company membership when nothing is named", async () => {
+    const open = defineServiceFn({
+      input: z.object({}),
+      permission: {},
+      async run() {
+        return "ok";
+      }
+    });
+    expect((await open(contextWith({}, user()), {})).error?.category).toBe(
+      "forbidden"
+    );
+    expect((await open(contextWith({}, user(productionView)), {})).data).toBe(
+      "ok"
+    );
+  });
+
+  it("checks a keyed permission against the value sent", async () => {
+    const post = defineServiceFn({
+      input: z.object({ kind: z.enum(["read", "write"]) }),
+      permission: {
+        by: "kind",
+        rules: { read: { view: "production" }, write: { update: "production" } }
+      },
+      async run({ actor }) {
+        return actor.type;
+      }
+    });
+    const ctx = contextWith({}, user(productionView));
+    expect((await post(ctx, { kind: "read" })).data).toBe("user");
+    expect((await post(ctx, { kind: "write" })).error?.category).toBe(
+      "forbidden"
+    );
+  });
+});
+
+describe("toResult", () => {
+  it("sends an error as its category, message and status only", () => {
+    const cause = new Error("duplicate key");
+    const error = new CarbonError("conflict", "Job unavailable", cause);
+    expect(toResult({ data: null, error })).toEqual({
+      data: null,
+      error: { category: "conflict", message: "Job unavailable", status: 409 }
+    });
+  });
+
+  it("passes a value through", () => {
+    expect(toResult({ data: 1, error: null })).toEqual({
+      data: 1,
+      error: null
+    });
+  });
+});
+
 describe("ctx.transaction", () => {
   it("commits a value and hands the body the transaction", async () => {
     const { pg, trx, outcomes } = database();
@@ -123,6 +230,27 @@ describe("ctx.transaction", () => {
       })
     ).rejects.toThrow("connection lost");
     expect(outcomes).toEqual(["rollback"]);
+  });
+
+  it("lets a service function run inside the transaction", async () => {
+    const { pg, outcomes } = database();
+    const write = defineServiceFn({
+      input: z.object({}),
+      permission: { view: "production" },
+      async run(ctx) {
+        return ctx.asSystem.pg;
+      }
+    });
+    const result = await contextWith(pg).transaction((tx) => write(tx, {}));
+    expect(result.data?.data).toEqual({ isTransaction: true });
+    expect(outcomes).toEqual(["commit"]);
+  });
+
+  it("refuses the caller's client inside the transaction", async () => {
+    const { pg } = database();
+    await expect(
+      contextWith(pg).transaction(async (tx) => tx.asCaller.supabase)
+    ).rejects.toThrow("not part of the transaction");
   });
 
   it("joins a transaction that is already open", async () => {

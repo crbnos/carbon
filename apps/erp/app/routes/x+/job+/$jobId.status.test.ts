@@ -42,13 +42,11 @@ vi.mock("@carbon/server-functions", () => {
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
-vi.mock("~/services/service-context.server", () => ({
-  serviceContext: vi.fn(
-    (_request: Request, auth: { companyId: string; userId: string }) => ({
-      company: { id: auth.companyId },
-      auditUserId: auth.userId
-    })
-  )
+vi.mock("~/modules/service-context.server", () => ({
+  serviceContext: vi.fn((auth: { companyId: string; userId: string }) => ({
+    company: { id: auth.companyId },
+    auditUserId: auth.userId
+  }))
 }));
 vi.mock("~/utils/path", () => ({
   path: {

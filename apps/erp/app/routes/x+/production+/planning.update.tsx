@@ -31,9 +31,9 @@ import {
   cancelJob,
   planDraftJob
 } from "~/modules/production/production.server";
+import { serviceContext } from "~/modules/service-context.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { serviceContext } from "~/services/service-context.server";
 
 const logger = getLogger("erp", "production", "planning");
 
@@ -78,20 +78,15 @@ export async function action({ request }: ActionFunctionArgs) {
   // actions that already exist (apply, inline edits, dismiss, reopen, assign),
   // which the job screens gate on `update`. The client is the service role, so
   // this check is the only one.
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      ...(action === "order"
-        ? { create: "production" }
-        : { update: "production" }),
-      role: "employee",
-      bypassRls: true
-    });
-  const ctx = serviceContext(request, {
-    client,
-    companyId,
-    companyGroupId,
-    userId
+  const auth = await requirePermissions(request, {
+    ...(action === "order"
+      ? { create: "production" }
+      : { update: "production" }),
+    role: "employee",
+    bypassRls: true
   });
+  const { client, companyId, userId } = auth;
+  const ctx = serviceContext(auth);
 
   if (typeof locationId !== "string") {
     return data(

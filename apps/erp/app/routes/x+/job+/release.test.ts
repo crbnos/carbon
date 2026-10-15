@@ -24,7 +24,7 @@ vi.mock("@carbon/logger", () => ({
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
-vi.mock("~/services/service-context.server", () => ({
+vi.mock("~/modules/service-context.server", () => ({
   serviceContext: vi.fn(() => ({}))
 }));
 vi.mock("~/modules/production", () => ({
@@ -36,7 +36,7 @@ vi.mock("~/modules/production/production.server", () => ({
 
 import { getJobReleaseReadiness } from "~/modules/production";
 import { releaseJobs } from "~/modules/production/production.server";
-import { CarbonError } from "~/services/service-fn.server";
+import { CarbonError } from "~/modules/service-fn.server";
 import { action } from "./release";
 
 // What releaseJobs reports for one call: the jobs that are Ready, the purchase

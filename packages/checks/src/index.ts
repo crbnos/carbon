@@ -30,6 +30,7 @@ export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+export { routeActionShape } from "./conformance/route-action-shape";
 export { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
 export {
