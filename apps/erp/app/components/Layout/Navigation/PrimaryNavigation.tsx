@@ -61,12 +61,11 @@ const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 // accent hover instead of the active-tinted one module links use.
 const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
 
-// Expanded, Search reads as a field: a beige fill (the card colour in dark
-// themes, where beige would glare) and an inset hairline rather than a border,
-// which would push its icon a pixel off the rail's icon column. Collapsed, it
-// is an icon like the rest.
+// Expanded, Search reads as a field: a red fill with white text and an inset
+// hairline rather than a border, which would push its icon a pixel off the
+// rail's icon column. Collapsed, it is an icon like the rest.
 const SEARCH_FIELD =
-  "group-data-[state=expanded]:bg-[#F5F5DC] dark:group-data-[state=expanded]:bg-card group-data-[state=expanded]:shadow-[inset_0_0_0_1px_hsl(var(--border))]";
+  "group-data-[state=expanded]:bg-red-600 group-data-[state=expanded]:text-white group-data-[state=expanded]:shadow-[inset_0_0_0_1px_hsl(var(--border))]";
 
 // Only modules have a g-then-letter key; pass it for those.
 const renderLink = (
