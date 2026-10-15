@@ -19,6 +19,7 @@ import {
   removeReceiptReturnEntity,
   removeStorageUnit,
   removeWarehouseTransferLine,
+  scanKanban,
   setReceiptLineBatch,
   setReceiptLineSerial,
   setStockTransferStatus,
@@ -41,6 +42,7 @@ import {
 /** The inventory module's operations, by entity. */
 export const inventory = {
   item: { adjust: adjustInventory },
+  kanban: { scan: scanKanban },
   inventoryCount: { create: createInventoryCount, post: postInventoryCount },
   storageUnit: { delete: removeStorageUnit },
   receipt: {

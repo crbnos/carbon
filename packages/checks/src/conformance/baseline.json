@@ -686,8 +686,6 @@
   "route-action-shape::apps/erp/app/routes/api+/integrations.slack.interactive.ts::serverFns.system(",
   "route-action-shape::apps/erp/app/routes/api+/integrations.stripe-connect.connect.ts::.from(\"companyIntegration\").upsert(",
   "route-action-shape::apps/erp/app/routes/api+/items.$itemId.recalculate-cost.ts::.from(\"itemCost\").update(",
-  "route-action-shape::apps/erp/app/routes/api+/kanban.$id.tsx::.from(\"job\").update(",
-  "route-action-shape::apps/erp/app/routes/api+/kanban.$id.tsx::serverFns.as(",
   "route-action-shape::apps/erp/app/routes/api+/model.optimize-cancel.ts::.from(\"modelUpload\").update(",
   "route-action-shape::apps/erp/app/routes/api+/model.reoptimize.ts::.from(\"modelUpload\").update(",
   "route-action-shape::apps/erp/app/routes/api+/model.thumbnail.ts::.from(\"item\").update(",

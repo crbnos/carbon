@@ -78,6 +78,7 @@ Each operation is one `defineServiceFn` const in `inventory.server.ts`, listed i
 | `inventoryCount.create` / `.post` | `inventory+/inventory-count.new.tsx`, `inventory-count+/$id.post.tsx` | A failed snapshot deletes the count; lines that cannot post come back as `invalidLineIds` |
 | `item.adjust` | `inventory+/quantities+/$itemId.adjustment.tsx` | Storage rules on `inventoryAdjustment`, plus `pick` or `place` at a bin |
 | `storageUnit.delete` | `inventory+/storage-units.delete.$storageUnitId.tsx` | `cascade` deletes the subtree |
+| `kanban.scan` | `api+/kanban.$id.tsx` (the card's QR code; a GET, employees only) | Make: a job (auto-release: recalculated, planned, scheduled, Ready); Buy: a line on the supplier's open Draft / Planned PO or a new one; Transfer: `kanban-replenish` as the scanner. Returns what it made; the route picks the page |
 
 A blocking rule is data, not an error: `post`, `create`, `setStatus` and `adjust` return `{ violations, ruleNames }` and change nothing; the route returns it to `useRuleViolations`, which re-sends with `acknowledged: true`. The primitives they replaced are no longer published (`insertManualInventoryAdjustment`, `insertInventoryCount`, `upsertReceipt`, `upsertShipment`, `insertStockTransfer`, `updateStockTransferStatus`, `updateWarehouseTransferStatus`, `upsertWarehouseTransferLine`, `deleteWarehouseTransferLine`, `deleteStorageUnit`, `deleteStorageUnitCascade`).
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Json } from "@carbon/database";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
   evaluateLinesForSurface,
@@ -15,6 +16,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { runLocationSchedule } from "@carbon/planning";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { ServerFnError } from "@carbon/server-functions/errors";
@@ -29,6 +31,21 @@ import {
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
+import {
+  getItemReplenishment,
+  getSupplierPartPricing
+} from "~/modules/items/items.service";
+import {
+  getActiveJobOperationByJobId,
+  insertJob,
+  runMRP,
+  updateKanbanJob,
+  upsertJobMethod
+} from "~/modules/production/production.service";
+import {
+  insertPurchaseOrder,
+  upsertPurchaseOrderLine
+} from "~/modules/purchasing/purchasing.service";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   type CarbonError,
@@ -38,6 +55,7 @@ import {
   type ServiceContext
 } from "~/modules/service-fn.server";
 import { getNextSequence } from "~/modules/settings/settings.service";
+import { resolveSupplierPrice } from "~/modules/shared/shared.service";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
@@ -62,7 +80,9 @@ import {
   deleteStorageUnitCascade,
   deleteWarehouseTransferLine,
   generateInventoryCountLines,
+  getDefaultStorageUnitForJob,
   getInventoryCount,
+  getKanban,
   insertInventoryCount,
   insertManualInventoryAdjustment,
   insertStockTransfer,
@@ -3281,5 +3301,347 @@ export const removeStorageUnit = defineServiceFn({
       );
     }
     return { storageUnitId, cascade };
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Kanbans
+// ---------------------------------------------------------------------------
+
+/** What a kanban scan did, for the caller to open. */
+export type KanbanScan =
+  /** A Make kanban that already has a job: the collision page. */
+  | { type: "collision" }
+  /**
+   * The job it made. `operationId` is its first operation when the kanban
+   * releases the job; `startAs` how to start it when the kanban starts it.
+   */
+  | {
+      type: "job";
+      jobId: string;
+      operationId: string | null;
+      startAs: "Setup" | "Labor" | "Machine" | null;
+    }
+  | { type: "purchaseOrder"; purchaseOrderId: string }
+  | { type: "stockTransfer"; stockTransferId: string };
+
+/**
+ * Replenish a kanban: what scanning its card does.
+ *
+ * @remarks
+ * Make: creates a Hard Deadline job for the kanban's item and quantity, due
+ * after the item's lead time, copies the item's method and links the job to
+ * the kanban; with auto-release it recalculates, runs MRP and the location's
+ * schedule, and sets the job Ready. A kanban that already has a job is a
+ * collision. Buy: adds a line to the supplier's open Draft or Planned purchase
+ * order, or a new Draft one, priced from the supplier part in the order's
+ * currency. Transfer: releases a stock transfer to the kanban's storage unit
+ * (`kanban-replenish`, as the scanner).
+ */
+export const scanKanban = defineServiceFn({
+  input: z.object({ kanbanId: z.string() }),
+  permission: {},
+
+  async run(ctx, { kanbanId }): Promise<KanbanScan | CarbonError> {
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const kanban = await getKanban(client, kanbanId, companyId);
+    if (kanban.error || !kanban.data) {
+      return ctx.error("notFound", "Kanban is not active", kanban.error);
+    }
+    const card = kanban.data;
+
+    if (card.replenishmentSystem === "Make") {
+      if (card.jobReadableId) return { type: "collision" };
+      if (!card.itemId) return ctx.error("rule", "Failed to create job");
+
+      const [manufacturing, defaultStorageUnit] = await Promise.all([
+        getItemReplenishment(client, card.itemId, companyId),
+        getDefaultStorageUnitForJob(
+          client,
+          card.itemId,
+          card.locationId!,
+          companyId
+        )
+      ]);
+
+      // No location on the kanban → the company calendar.
+      const startDate = datetime.today(
+        card.locationId
+          ? await getLocationTimeZone(client, card.locationId, companyId)
+          : await getCompanyTimeZone(client, companyId)
+      );
+      const dueDate = startDate
+        .add({ days: manufacturing.data?.leadTime ?? 7 })
+        .toString();
+
+      const createdJob = await insertJob(
+        serviceRole,
+        ctx.asSystem.pg,
+        {
+          itemId: card.itemId,
+          quantity: card.quantity!,
+          locationId: card.locationId!,
+          storageUnitId: card.storageUnitId || defaultStorageUnit || undefined,
+          unitOfMeasureCode: card.purchaseUnitOfMeasureCode!,
+          deadlineType: "Hard Deadline",
+          startDate: startDate.toString(),
+          dueDate,
+          companyId,
+          createdBy: userId
+        },
+        { skipMethod: true, skipRecalculate: true, source: "kanban" }
+      );
+      const jobId = createdJob.data?.id;
+      if (createdJob.error || !jobId) {
+        return ctx.error("internal", "Failed to create job", createdJob.error);
+      }
+
+      const [method, associated] = await Promise.all([
+        upsertJobMethod(serviceRole, ctx.asSystem.pg, "itemToJob", {
+          sourceId: card.itemId,
+          targetId: jobId,
+          companyId,
+          userId,
+          configuration: undefined
+        }),
+        updateKanbanJob(serviceRole, {
+          id: card.id!,
+          jobId,
+          companyId,
+          userId
+        })
+      ]);
+      if (associated.error) {
+        return ctx.error(
+          "internal",
+          "Failed to associate kanban with job",
+          associated.error
+        );
+      }
+
+      if (method.error) {
+        logger.error("Kanban operation failed", { error: method.error });
+      } else if (card.autoRelease) {
+        await Promise.all([
+          trigger("recalculate", {
+            type: "jobRequirements",
+            id: jobId,
+            companyId,
+            userId
+          }),
+          runMRP(serviceRole, ctx.asSystem.pg, {
+            type: "job",
+            id: jobId,
+            companyId,
+            userId
+          }),
+          runLocationSchedule({
+            db: ctx.asSystem.pg,
+            client: serviceRole,
+            locationId: card.locationId!,
+            companyId,
+            userId
+          }),
+          serviceRole
+            .from("job")
+            .update({ status: "Ready" as const })
+            .eq("id", jobId)
+            .eq("companyId", companyId)
+        ]);
+
+        // This path writes job.status directly, so it never reaches
+        // updateJobStatus and its raiseMoment. The job was just created, so
+        // the prior status is always Draft.
+        trackWorkEvent("job_released", {
+          companyId,
+          userId,
+          jobId,
+          priorStatus: "Draft",
+          source: "kanban"
+        });
+      }
+
+      const operation = card.autoRelease
+        ? await getActiveJobOperationByJobId(client, jobId, companyId)
+        : null;
+      if (!operation) {
+        return { type: "job", jobId, operationId: null, startAs: null };
+      }
+      const startAs = !card.autoStartJob
+        ? null
+        : operation.setupTime
+          ? "Setup"
+          : operation.machineTime && !operation.laborTime
+            ? "Machine"
+            : "Labor";
+      return { type: "job", jobId, operationId: operation.id, startAs };
+    }
+
+    if (card.replenishmentSystem === "Buy") {
+      const existing = await client
+        .from("purchaseOrder")
+        .select("id, currencyCode, exchangeRate")
+        .eq("supplierId", card.supplierId!)
+        .in("status", ["Planned", "Draft"])
+        .eq("companyId", companyId)
+        .maybeSingle();
+
+      let purchaseOrderId = existing.data?.id;
+      let orderCurrencyCode = existing.data?.currencyCode ?? null;
+      let orderExchangeRate = existing.data?.exchangeRate ?? 1;
+
+      if (!purchaseOrderId) {
+        const created = await insertPurchaseOrder(client, {
+          supplierId: card.supplierId!,
+          status: "Draft",
+          purchaseOrderType: "Purchase",
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          createdBy: userId
+        });
+        if (created.error || !created.data) {
+          return ctx.error(
+            "internal",
+            "Failed to create purchase order",
+            created.error
+          );
+        }
+        purchaseOrderId = created.data.id;
+        orderCurrencyCode = null;
+        orderExchangeRate = created.data.exchangeRate;
+      }
+
+      const [item, supplierPart, pickMethod, company] = await Promise.all([
+        client
+          .from("item")
+          .select(
+            "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, leadTime)"
+          )
+          .eq("id", card.itemId!)
+          .eq("companyId", companyId)
+          .single(),
+        client
+          .from("supplierPart")
+          .select("*")
+          .eq("itemId", card.itemId!)
+          .eq("companyId", companyId)
+          .eq("supplierId", card.supplierId!)
+          .maybeSingle(),
+        client
+          .from("pickMethod")
+          .select("defaultStorageUnitId")
+          .eq("itemId", card.itemId!)
+          .eq("companyId", companyId)
+          .eq("locationId", card.locationId!)
+          .maybeSingle(),
+        client
+          .from("company")
+          .select("baseCurrencyCode")
+          .eq("id", companyId)
+          .single()
+      ]);
+
+      // The line is in the ORDER's currency: the supplier part's price
+      // converts from its own currency at today's rate, the item cost from
+      // base.
+      const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+      const order = {
+        currencyCode: orderCurrencyCode ?? baseCurrencyCode,
+        exchangeRate: orderExchangeRate
+      };
+      const pricing = supplierPart.data
+        ? await getSupplierPartPricing(
+            client,
+            supplierPart.data,
+            baseCurrencyCode,
+            order.currencyCode
+          )
+        : null;
+      if (pricing?.error) {
+        return ctx.error("internal", pricing.error.message, pricing.error);
+      }
+      if (item.error) {
+        return ctx.error("internal", "Failed to get item", item.error);
+      }
+      const supplierUnitPrice = resolveSupplierPrice(
+        pricing?.data ?? null,
+        card.quantity!,
+        order,
+        convertUnitPrice(
+          item.data.itemCost?.[0]?.unitCost ?? 0,
+          { currencyCode: baseCurrencyCode, exchangeRate: 1 },
+          order
+        )
+      );
+
+      const line = await upsertPurchaseOrderLine(client, {
+        purchaseOrderId,
+        purchaseOrderLineType: item.data.type as never,
+        itemId: card.itemId!,
+        purchaseQuantity: card.quantity!,
+        supplierUnitPrice,
+        supplierShippingCost: 0,
+        supplierTaxAmount: 0,
+        taxPercent: 0,
+        exchangeRate: order.exchangeRate,
+        purchaseUnitOfMeasureCode: card.purchaseUnitOfMeasureCode!,
+        inventoryUnitOfMeasureCode:
+          item.data.unitOfMeasureCode || card.purchaseUnitOfMeasureCode!,
+        conversionFactor:
+          card.conversionFactor ||
+          item.data.itemReplenishment?.conversionFactor ||
+          1,
+        locationId: card.locationId!,
+        storageUnitId:
+          card.storageUnitId ||
+          pickMethod.data?.defaultStorageUnitId ||
+          undefined,
+        companyId,
+        createdBy: userId
+      });
+      if (line.error) {
+        return ctx.error(
+          "internal",
+          "Failed to create purchase order line",
+          line.error
+        );
+      }
+      return { type: "purchaseOrder", purchaseOrderId };
+    }
+
+    if (card.replenishmentSystem === "Transfer") {
+      if (!card.itemId) {
+        return ctx.error("rule", "Failed to create stock transfer");
+      }
+      // kanban-replenish re-reads the kanban under companyId, checks both
+      // storage units belong to the kanban's location, and writes the
+      // Released transfer with its kanbanId. It runs as the scanner: a scan
+      // needs the inventory create permission the stock transfer's RLS
+      // rule checks.
+      const replenish = await serverFns
+        .as({ client, db: ctx.asSystem.pg, companyId, userId })
+        .invoke("kanban-replenish", { mode: "scan", kanbanId });
+      if (replenish.error) {
+        return ctx.error(
+          "internal",
+          "Failed to create stock transfer",
+          replenish.error
+        );
+      }
+      const outcome = replenish.data.results[0];
+      if (outcome?.outcome === "invalid") {
+        return ctx.error("rule", outcome.reason);
+      }
+      if (outcome?.outcome === "created") {
+        return { type: "stockTransfer", stockTransferId: outcome.id };
+      }
+      return ctx.error("internal", "Failed to create stock transfer");
+    }
+
+    return ctx.error("rule", `${card.replenishmentSystem} is not supported`);
   }
 });
