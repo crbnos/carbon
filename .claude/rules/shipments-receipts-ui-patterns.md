@@ -15,7 +15,12 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 
 ## Routes (per document, e.g. `shipment+/`)
 
-- `new.tsx` — **action only**. Creates the doc by calling the **`create` server function**
+Every action below makes ONE call to an operation in
+`apps/erp/app/modules/inventory/inventory.server.ts` (`api.inventory.shipment.*` /
+`api.inventory.receipt.*` through `carbon(request)`); the logic described here lives in that
+operation, so the API and MCP run the same checks. The route only parses the form.
+
+- `new.tsx` — **action only** (`shipment.create` / `receipt.create`). Creates the doc by calling the **`create` server function**
   (`create(ServerFnContext.system({ db, companyId, userId }), { type, locationId, ...sourceIds })`),
   then `throw redirect(path.to.shipmentDetails(id))`. There is **no `upsert` on create** — the
   server function allocates the human ID and copies source-document lines. For the
@@ -27,16 +32,17 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
 - `$id._index.tsx` — redirects to `…/details`.
-- `$id.details.tsx` — renders Form + Lines + Notes. **Action**: validate, then if `sourceDocument`
+- `$id.details.tsx` — renders Form + Lines + Notes. **Action** (`.update`): validate, then if `sourceDocument`
   changed re-invoke `create`, else `upsertShipment` / `upsertReceipt` (Supabase upsert, sets `updatedBy`).
   A rental document refuses a change of source ("A rental shipment keeps its rental agreement.
   Create it from the agreement.").
 - `$id.post.tsx` — see posting flow below.
-- `$id.void.tsx` — guards status, invokes post fn with `type: "void"`.
+- `$id.void.tsx` (`.void`) — guards status, invokes post fn with `type: "void"`.
 - `$id.delete.tsx` — `deleteShipment` / `deleteReceipt` service fn; **guard: blocked once `postingDate` is set**.
 - `lines.update.tsx` — Supabase upsert on `shipmentLine`; only `storageUnitId` + `shippedQuantity`
   (receipt: `receivedQuantity`). Item/storage rules are NOT evaluated here, only at post.
-- `lines.tracking.tsx` — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
+- `lines.tracking.tsx` (`shipment.line.assignEntity`; receipt: `receipt.line.setBatch` /
+  `setSerial` / `assignReturnEntity` / `removeReturnEntity`, one per `trackingType`) — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
   `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
   shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
@@ -113,17 +119,21 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   expect `On Hold` rather than `Available` when the shipment's source is a
   `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
-## Posting flow (`$id.post.tsx` → server function)
+## Posting flow (`$id.post.tsx` → `postShipment` / `postReceipt` → server function)
 
-The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
-relevant surfaces, optimistically sets `status: "Pending"`, then
-`serverFns.system({ db: getDatabaseClient(), companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
-On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing
-slip PDF; receipt may call `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
+The operation (`inventory.shipment.post` / `inventory.receipt.post`): evaluates storage/sales
+rules (`@carbon/ee/rules.server`) over the relevant surfaces — a blocking rule returns
+`{ violations, ruleNames }`, which the route hands to `useRuleViolations` — optimistically sets
+`status: "Pending"`, then
+`serverFns.system({ db: ctx.asSystem.pg, companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
+On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
+save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.server.tsx`, the
+same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
+`update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
 
 `post-receipt` and `post-shipment` (`packages/server-functions/src/`) take
 `{ type: "post" | "void", {receipt,shipment}Id, postingDate? }` (the context carries `companyId` / `userId`;
-`postingDate` is read only by the rental source, and `$id.post.tsx` passes it from the modal), run
+`postingDate` is read only by the rental source, and `$id.post.tsx` passes it from the modal to the operation), run
 the service-role client + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, `Rental Agreement` (returns each
@@ -189,5 +199,6 @@ applies.
   Consumption/Output for receipts), but the post fns only implement the handful above — other source
   documents fall through with no posting effect.
 - Lines persist directly through `lines.update` on edit; the form's submit only saves the header.
-- `create`, post-shipment, and post-receipt run service-role + Kysely (RLS bypassed) — the **route**
-  `requirePermissions({ update: "inventory" })` is the auth gate.
+- `create`, post-shipment, and post-receipt run service-role + Kysely (RLS bypassed) — the
+  **operation's** `permission` (`update: "inventory"`, `create` for `.create`) is the auth gate, for
+  every caller.

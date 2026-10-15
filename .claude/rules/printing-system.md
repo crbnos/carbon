@@ -121,9 +121,9 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 
 After a business event, code checks `getCachedPrinterConfig(...).autoPrint` (default `true` when null),
 wrapped in try/catch that never blocks the parent op, then `trigger("print-job", ...)`:
-- Receipt post `x+/receipt+/$receiptId.post.tsx` (receiving); Shipment post `$shipmentId.post.tsx`
-  (shipping; also prints `Split` entities); Stock-transfer split `x+/stock-transfer+/$id.line.quantity.tsx`
-  (Split + Entity reprint); MES first-operation completion `apps/mes/app/routes/x+/complete.tsx` (workCenter).
+- Receipt post `postReceipt` (receiving); Shipment post `postShipment` (shipping; also prints
+  `Split` entities); Stock-transfer split, from the line pick operations (Split + Entity reprint) —
+  all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion `apps/mes/app/routes/x+/complete.tsx` (workCenter).
 
 ## Gotchas
 
