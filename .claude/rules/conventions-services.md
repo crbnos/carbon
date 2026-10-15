@@ -88,7 +88,10 @@ export const cancelJob = defineServiceFn({
   (`carbon.server.ts`):
   `api.production.job.cancel(input)` returns the result with the error as a
   plain `{ category, message, status }`. Each module lists its operations in
-  `{module}/index.server.ts`; `router.server.ts` combines them.
+  `{module}/index.server.ts`; `router.server.ts` combines them. A
+  `{module}.server.ts` imports other modules' `*.service.ts` files, never their
+  barrels: a barrel re-exports UI that imports other barrels, a cycle the
+  router (which loads every module) walks into.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `serverFns` write in an ERP route.
 

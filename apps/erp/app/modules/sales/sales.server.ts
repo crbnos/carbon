@@ -62,35 +62,42 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getExchangeRate } from "~/modules/accounting";
-import { upsertDocument } from "~/modules/documents";
+import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import { upsertDocument } from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
 import { linkStripeCustomerForBilling } from "~/modules/invoicing/stripe-customer.server";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import {
   getSupplierPriceBreaksForItems,
   resolveItemIdFromExtractedText,
   upsertPart
-} from "~/modules/items";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 import { runMRP } from "~/modules/production/production.service";
-import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
+import {
+  deleteIssue,
+  getIssueTypesList,
+  insertIssue
+} from "~/modules/quality/quality.service";
 import { systemContext } from "~/modules/service-context.server";
 import {
   type CarbonError,
   defineServiceFn,
   type ServiceContext
 } from "~/modules/service-fn.server";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import {
   getCompany,
   getCompanySettings,
   getNextSequence as getNextSequenceNumber
-} from "~/modules/settings";
-import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
-import { resolveBuyUnitCost, upsertExternalLink } from "~/modules/shared";
+} from "~/modules/settings/settings.service";
 import {
   refuseUnlessOwned,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
+import {
+  resolveBuyUnitCost,
+  upsertExternalLink
+} from "~/modules/shared/shared.service";
 import {
   getCompanyTimeZone,
   getLocationTimeZone

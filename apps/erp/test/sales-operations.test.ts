@@ -47,10 +47,6 @@ vi.mock("../app/modules/shared/timezone.server", () => ({
 
 import { createServiceContext } from "../app/modules/service-fn.server";
 
-// vite-node fills a barrel's `export *` only once the barrel has finished,
-// and the accounting barrel reaches the sales models through settings' UI:
-// entered from the sales models, every constant they read is defined.
-await import("../app/modules/sales/sales.models");
 const { cancelContract, convertQuote, convertSalesRfq } = await import(
   "../app/modules/sales/sales.server"
 );
