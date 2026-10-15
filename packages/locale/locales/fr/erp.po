@@ -13158,6 +13158,9 @@ msgstr "Matériau"
 msgid "Material Cost"
 msgstr "Coût de matière"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "Axe analytique de matière"
 
@@ -13238,6 +13241,9 @@ msgstr "Types de Matériau"
 
 msgid "Material Types"
 msgstr "Types de matériaux"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "Écart d'utilisation de matériel"
@@ -15646,6 +15652,9 @@ msgstr "Opération"
 msgid "Operation batch"
 msgstr "Lot de production d'opération"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "Délai d'approvisionnement de l'opération"
 
@@ -15672,6 +15681,9 @@ msgstr "Type d'opération"
 
 msgid "Operation unit cost"
 msgstr "Coût unitaire de l'opération"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "Opérations"

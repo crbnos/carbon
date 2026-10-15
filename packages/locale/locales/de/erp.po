@@ -13158,6 +13158,9 @@ msgstr "Material"
 msgid "Material Cost"
 msgstr "Werkstoffkosten"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "Materialdimension"
 
@@ -13238,6 +13241,9 @@ msgstr "Materialtypen"
 
 msgid "Material Types"
 msgstr "Materialtypen"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "Materialverbrauchsabweichung"
@@ -15646,6 +15652,9 @@ msgstr "Betrieb"
 msgid "Operation batch"
 msgstr "Arbeitsgang-Los"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "Beschaffungszeit des Arbeitsgangs"
 
@@ -15672,6 +15681,9 @@ msgstr "Operationstyp"
 
 msgid "Operation unit cost"
 msgstr "Einheitskosten der Operation"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "Arbeitsgänge"

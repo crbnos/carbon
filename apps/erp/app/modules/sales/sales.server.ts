@@ -99,6 +99,8 @@ import {
   isSalesReturnOrderLocked,
   isSalesRfqLocked,
   quoteLineValidator,
+  quoteMaterialValidator,
+  quoteOperationValidator,
   salesOrderLineValidator,
   salesReturnOrderLineValidator,
   salesRFQStatusType,
@@ -114,6 +116,8 @@ import {
   confirmSalesReturnOrder,
   convertQuoteToOrder,
   convertSalesRfqToQuote,
+  copyQuoteLine,
+  deleteQuoteMaterial,
   finalizeQuote,
   getCustomer,
   getCustomerContact,
@@ -134,6 +138,9 @@ import {
   updateSalesRFQStatus,
   upsertQuoteLine,
   upsertQuoteLineMethod,
+  upsertQuoteMaterial,
+  upsertQuoteMaterialMakeMethod,
+  upsertQuoteOperation,
   upsertSalesOrderLine,
   upsertSalesReturnOrderLine,
   upsertSalesRFQLine
@@ -4823,5 +4830,504 @@ export const updateReturnOrderLine = defineServiceFn({
       );
     }
     return { salesReturnOrderLineId: lineId };
+  }
+});
+
+// --- Quote methods: materials and operations ---------------------------------
+
+/** Which parts of a method a copy brings. */
+const methodParts = z.object({
+  billOfMaterial: z.boolean().default(true),
+  billOfProcess: z.boolean().default(true),
+  parameters: z.boolean().default(true),
+  tools: z.boolean().default(true),
+  steps: z.boolean().default(true),
+  workInstructions: z.boolean().default(true)
+});
+
+/** Reprice a quote line after its method changed; a failure is logged. */
+async function repriceQuoteLine(
+  ctx: ServiceContext,
+  { quoteId, quoteLineId }: { quoteId: string; quoteLineId: string }
+) {
+  const priced = await recalculateQuoteLinePrices(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    quoteId,
+    quoteLineId,
+    ctx.auditUserId
+  );
+  if (priced?.error) {
+    logger.error("Failed to recalculate quote line prices", {
+      companyId: ctx.company.id,
+      quoteLineId,
+      error: priced.error
+    });
+  }
+  return priced;
+}
+
+/**
+ * Copy an item's method onto a quote line.
+ *
+ * @remarks
+ * The parts chosen in `parts` replace the line's method (with a
+ * configuration, the item's configured method), then the line's quantities
+ * are repriced from it.
+ *
+ * @mcp
+ */
+export const copyItemMethodToQuoteLine = defineServiceFn({
+  input: z.object({
+    quoteId: z.string().min(1),
+    quoteLineId: z.string().min(1),
+    itemId: z.string(),
+    parts: methodParts.default(methodParts.parse({})),
+    configuration: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { quoteId, quoteLineId, itemId, parts, configuration }) {
+    // The method is written with the service role.
+    const refused = await refuseUnlessOwned(ctx, "quoteLine", {
+      id: quoteLineId,
+      quoteId
+    });
+    if (refused) return refused;
+
+    const method = await upsertQuoteLineMethod(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        itemId,
+        quoteId,
+        quoteLineId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        parts,
+        ...(configuration !== undefined ? { configuration } : {})
+      }
+    );
+    if (method.error) {
+      return ctx.error(
+        "internal",
+        "Failed to get quote line method",
+        method.error
+      );
+    }
+    const priced = await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    if (priced?.error) {
+      return ctx.error("internal", "Failed to recalculate quote line prices");
+    }
+    return { quoteLineId };
+  }
+});
+
+/**
+ * Copy another quote line's method onto a quote line.
+ *
+ * @remarks
+ * `sourceId` and `targetId` are both `quoteId:quoteLineId`. The parts chosen
+ * in `parts` are copied, then the target line is repriced with its pricing
+ * rules and configuration prices on top of the copied cost.
+ *
+ * @mcp
+ */
+export const copyQuoteLineMethod = defineServiceFn({
+  input: z.object({
+    sourceId: z.string(),
+    targetId: z.string(),
+    parts: methodParts.default(methodParts.parse({}))
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { sourceId, targetId, parts }) {
+    const [quoteId, quoteLineId] = targetId.split(":");
+    if (!quoteId || !quoteLineId) {
+      return ctx.error("validation", "targetId must be quoteId:quoteLineId");
+    }
+    const refused = await refuseUnlessOwned(ctx, "quoteLine", {
+      id: quoteLineId,
+      quoteId
+    });
+    if (refused) return refused;
+
+    const copied = await copyQuoteLine(ctx.asSystem.supabase, ctx.asSystem.pg, {
+      type: "quoteLine",
+      sourceId,
+      targetId,
+      ...parts,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (copied.error) {
+      return ctx.error("internal", "Failed to copy quote line", copied.error);
+    }
+    const priced = await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    if (priced?.error) {
+      return ctx.error("internal", "Failed to recalculate quote line prices");
+    }
+    return { quoteLineId };
+  }
+});
+
+/**
+ * Copy an item's method onto a quote material's make method.
+ *
+ * @remarks
+ * `targetId` is the material's make method. The parts chosen in `parts`
+ * replace it (with a configuration, the item's configured method).
+ *
+ * @mcp
+ */
+export const copyItemMethodToQuoteMaterial = defineServiceFn({
+  input: z.object({
+    sourceId: z.string(),
+    targetId: z.string(),
+    parts: methodParts.default(methodParts.parse({})),
+    configuration: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { sourceId, targetId, parts, configuration }) {
+    const method = await upsertQuoteMaterialMakeMethod(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        sourceId,
+        targetId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        parts,
+        ...(configuration !== undefined ? { configuration } : {})
+      }
+    );
+    if (method.error) {
+      return ctx.error(
+        "internal",
+        "Failed to insert quote material make method",
+        method.error
+      );
+    }
+    return { quoteMaterialMakeMethodId: targetId };
+  }
+});
+
+const quoteMaterialInput = z.object({
+  ...quoteMaterialValidator.shape,
+  kit: z.boolean().default(false),
+  quoteId: z.string(),
+  quoteLineId: z.string(),
+  customFields: customFieldValues.optional()
+});
+
+/**
+ * Add a material to a quote line's method.
+ *
+ * @remarks
+ * The line, its make method and the operation it is issued to must be this
+ * company's and the line's. A Make to Order material gets the item's method
+ * (when that fails the material is kept and `warning` says so). Then the
+ * line is repriced.
+ *
+ * @mcp
+ */
+export const createQuoteMaterial = defineServiceFn({
+  input: quoteMaterialInput,
+  permission: { create: "sales" },
+
+  async run(ctx, { customFields, ...material }) {
+    const serviceRole = ctx.asSystem.supabase;
+    const { quoteId, quoteLineId } = material;
+    const refused = await refuseUnlessQuoteMethodRows(ctx, {
+      quoteId,
+      quoteLineId,
+      quoteMakeMethodId: material.quoteMakeMethodId,
+      quoteOperationId: material.quoteOperationId
+    });
+    if (refused) return refused;
+
+    const inserted = await upsertQuoteMaterial(serviceRole, {
+      ...material,
+      companyId: ctx.company.id,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (inserted.error || !inserted.data?.id) {
+      return ctx.error(
+        "internal",
+        "Failed to insert quote material",
+        inserted.error
+      );
+    }
+    const id = inserted.data.id;
+
+    let warning: string | null = null;
+    if (material.methodType === "Make to Order") {
+      const withMethod = await serviceRole
+        .from("quoteMaterialWithMakeMethodId")
+        .select("*")
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .single();
+      if (withMethod.error) {
+        return ctx.error(
+          "internal",
+          "Failed to get material make method",
+          withMethod.error
+        );
+      }
+      const method = await upsertQuoteMaterialMakeMethod(
+        serviceRole,
+        ctx.asSystem.pg,
+        {
+          sourceId: material.itemId,
+          targetId: withMethod.data.quoteMaterialMakeMethodId!,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }
+      );
+      if (method.error) {
+        warning = "Failed to insert quote material make method";
+      }
+    }
+
+    // A failed method skipped the reprice, as it always has.
+    if (!warning) await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { id, warning };
+  }
+});
+
+/**
+ * Change a material on a quote line's method.
+ *
+ * @remarks
+ * The material, its line and the operation it is issued to must be this
+ * company's and the line's. A material never moves to another line. Then the
+ * line is repriced.
+ *
+ * @mcp
+ */
+export const updateQuoteMaterial = defineServiceFn({
+  input: quoteMaterialInput,
+  permission: { create: "sales" },
+
+  async run(ctx, { customFields, ...material }) {
+    const { quoteId, quoteLineId } = material;
+    const refused =
+      (await refuseUnlessOwned(ctx, "quoteMaterial", {
+        id: material.id,
+        quoteLineId
+      })) ??
+      (await refuseUnlessQuoteMethodRows(ctx, {
+        quoteId,
+        quoteLineId,
+        quoteOperationId: material.quoteOperationId
+      }));
+    if (refused) return refused;
+
+    const updated = await upsertQuoteMaterial(ctx.asSystem.supabase, {
+      ...material,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId,
+      customFields
+    });
+    if (updated.error || !updated.data?.id) {
+      return ctx.error(
+        "internal",
+        "Failed to update quote material",
+        updated.error
+      );
+    }
+    await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { id: updated.data.id, methodType: updated.data.methodType };
+  }
+});
+
+/**
+ * Remove a material from a quote line's method, then reprice the line.
+ *
+ * @mcp destructive
+ */
+export const deleteQuoteMaterialAndReprice = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    quoteLineId: z.string(),
+    id: z.string()
+  }),
+  permission: { delete: "sales" },
+
+  async run(ctx, { quoteId, quoteLineId, id }) {
+    const refused =
+      (await refuseUnlessOwned(ctx, "quoteLine", {
+        id: quoteLineId,
+        quoteId
+      })) ??
+      (await refuseUnlessOwned(ctx, "quoteMaterial", { id, quoteLineId }));
+    if (refused) return refused;
+
+    const deleted = await deleteQuoteMaterial(ctx.asCaller.supabase, id);
+    if (deleted.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete quote material",
+        deleted.error
+      );
+    }
+    await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { id };
+  }
+});
+
+/**
+ * The quote line, and the make method and operation a method row names,
+ * must be this company's and that line's: method rows are written with the
+ * service role.
+ */
+async function refuseUnlessQuoteMethodRows(
+  ctx: ServiceContext,
+  args: {
+    quoteId: string;
+    quoteLineId: string;
+    quoteMakeMethodId?: string;
+    quoteOperationId?: string;
+  }
+): Promise<CarbonError | null> {
+  const { quoteLineId } = args;
+  const refusals = await Promise.all([
+    refuseUnlessOwned(ctx, "quoteLine", {
+      id: quoteLineId,
+      quoteId: args.quoteId
+    }),
+    args.quoteMakeMethodId
+      ? refuseUnlessOwned(ctx, "quoteMakeMethod", {
+          id: args.quoteMakeMethodId,
+          quoteLineId
+        })
+      : null,
+    args.quoteOperationId
+      ? refuseUnlessOwned(ctx, "quoteOperation", {
+          id: args.quoteOperationId,
+          quoteLineId
+        })
+      : null
+  ]);
+  return refusals.find((refusal) => refusal !== null) ?? null;
+}
+
+const quoteOperationInput = quoteOperationValidator.safeExtend({
+  quoteId: z.string(),
+  quoteLineId: z.string(),
+  customFields: customFieldValues.optional()
+});
+
+/**
+ * Add an operation to a quote line's method, then reprice the line.
+ *
+ * @remarks
+ * The line and its make method must be this company's and the line's.
+ *
+ * @mcp
+ */
+export const createQuoteOperation = defineServiceFn({
+  input: quoteOperationInput,
+  permission: { create: "sales" },
+
+  async run(ctx, { customFields, ...operation }) {
+    const { quoteId, quoteLineId } = operation;
+    const refused = await refuseUnlessQuoteMethodRows(ctx, {
+      quoteId,
+      quoteLineId,
+      quoteMakeMethodId: operation.quoteMakeMethodId
+    });
+    if (refused) return refused;
+
+    const inserted = await upsertQuoteOperation(ctx.asCaller.supabase, {
+      ...operation,
+      companyId: ctx.company.id,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (inserted.error || !inserted.data?.id) {
+      return ctx.error(
+        "internal",
+        "Failed to insert quote operation",
+        inserted.error
+      );
+    }
+    await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { id: inserted.data.id };
+  }
+});
+
+/**
+ * Change an operation on a quote line's method, then reprice the line.
+ *
+ * @mcp
+ */
+export const updateQuoteOperation = defineServiceFn({
+  input: quoteOperationInput,
+  permission: { create: "sales" },
+
+  async run(ctx, { customFields, ...operation }) {
+    const { quoteId, quoteLineId } = operation;
+    const refused =
+      (await refuseUnlessOwned(ctx, "quoteLine", {
+        id: quoteLineId,
+        quoteId
+      })) ??
+      (await refuseUnlessOwned(ctx, "quoteOperation", {
+        id: operation.id,
+        quoteLineId
+      }));
+    if (refused) return refused;
+
+    const updated = await upsertQuoteOperation(ctx.asCaller.supabase, {
+      ...operation,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId,
+      customFields
+    });
+    if (updated.error || !updated.data?.id) {
+      return ctx.error(
+        "internal",
+        "Failed to update quote operation",
+        updated.error
+      );
+    }
+    await repriceQuoteLine(ctx, { quoteId, quoteLineId });
+    return { id: updated.data.id };
+  }
+});
+
+/**
+ * Remove an operation from a quote line's method, then reprice its line.
+ *
+ * @mcp destructive
+ */
+export const deleteQuoteOperationAndReprice = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { delete: "sales" },
+
+  async run(ctx, { id }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const operation = await client
+      .from("quoteOperation")
+      .select("quoteId, quoteLineId")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .single();
+
+    const deleted = await client
+      .from("quoteOperation")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId);
+    if (deleted.error) {
+      return ctx.error("internal", deleted.error.message, deleted.error);
+    }
+    if (operation.data) await repriceQuoteLine(ctx, operation.data);
+    return { id };
   }
 });

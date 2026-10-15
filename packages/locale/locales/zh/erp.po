@@ -13158,6 +13158,9 @@ msgstr "原材料"
 msgid "Material Cost"
 msgstr "材料成本"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "原材料维度"
 
@@ -13238,6 +13241,9 @@ msgstr "原材料类型"
 
 msgid "Material Types"
 msgstr "原材料类型"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "原材料使用差异"
@@ -15646,6 +15652,9 @@ msgstr "操作"
 msgid "Operation batch"
 msgstr "工序生产批次"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "操作提前期"
 
@@ -15672,6 +15681,9 @@ msgstr "操作类型"
 
 msgid "Operation unit cost"
 msgstr "操作单位成本"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "工序"

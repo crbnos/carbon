@@ -11,10 +11,17 @@ import {
   confirmSalesOrder,
   convertQuote,
   convertSalesRfq,
+  copyItemMethodToQuoteLine,
+  copyItemMethodToQuoteMaterial,
+  copyQuoteLineMethod,
   createQuoteLine,
+  createQuoteMaterial,
+  createQuoteOperation,
   createReturnOrderLine,
   createSalesOrderLine,
   createSalesRfq,
+  deleteQuoteMaterialAndReprice,
+  deleteQuoteOperationAndReprice,
   escalateReturnOrderLine,
   finalizeAndSendQuote,
   mapSalesRfqLines,
@@ -23,6 +30,8 @@ import {
   shipSalesOrderLine,
   updateQuoteField,
   updateQuoteLine,
+  updateQuoteMaterial,
+  updateQuoteOperation,
   updateReturnOrderLine,
   updateSalesOrderField,
   updateSalesOrderLine,
@@ -48,7 +57,20 @@ export const sales = {
     line: {
       create: createQuoteLine,
       update: updateQuoteLine,
-      configure: configureQuoteLine
+      configure: configureQuoteLine,
+      copyItemMethod: copyItemMethodToQuoteLine,
+      copyLineMethod: copyQuoteLineMethod
+    },
+    material: {
+      create: createQuoteMaterial,
+      update: updateQuoteMaterial,
+      delete: deleteQuoteMaterialAndReprice,
+      copyItemMethod: copyItemMethodToQuoteMaterial
+    },
+    operation: {
+      create: createQuoteOperation,
+      update: updateQuoteOperation,
+      delete: deleteQuoteOperationAndReprice
     },
     digital: { accept: acceptDigitalQuote, reject: rejectDigitalQuote }
   },

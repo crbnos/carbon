@@ -834,7 +834,6 @@
   "route-action-shape::apps/erp/app/routes/x+/purchasing+/planning.update.tsx::.from(\"supplyForecast\").upsert(",
   "route-action-shape::apps/erp/app/routes/x+/purchasing-rfq+/update.tsx::.from(\"purchasingRfq\").update(",
   "route-action-shape::apps/erp/app/routes/x+/quality-document+/update.tsx::.from(\"qualityDocument\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/quote+/methods+/operation.delete.tsx::.from(\"quoteOperation\").delete(",
   "route-action-shape::apps/erp/app/routes/x+/receipt+/$receiptId.details.tsx::serverFns.system(",
   "route-action-shape::apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx::.from(\"receipt\").update(",
   "route-action-shape::apps/erp/app/routes/x+/receipt+/$receiptId.post.tsx::serverFns.system(",
