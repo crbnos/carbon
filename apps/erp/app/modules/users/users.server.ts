@@ -25,6 +25,7 @@ import {
   getSsoConnection,
   getSsoConnectionByDomain,
   isSsoEnabled,
+  mergeInvitePermissions,
   seedSsoIdentityForUser,
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
@@ -1357,15 +1358,10 @@ async function setUserPermissions(
     string,
     string[]
   >;
-  const newPermissions = { ...currentPermissions };
-
-  Object.entries(permissions).forEach(([key, value]) => {
-    if (key in newPermissions) {
-      newPermissions[key] = [...newPermissions[key], ...value];
-    } else {
-      newPermissions[key] = value;
-    }
-  });
+  const newPermissions = mergeInvitePermissions(
+    currentPermissions,
+    permissions
+  );
 
   const result = await client
     .from("userPermission")
