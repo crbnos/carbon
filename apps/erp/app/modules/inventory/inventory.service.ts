@@ -94,7 +94,7 @@ export async function deleteReceiptLine(
   return client.from("receiptLine").delete().eq("id", receiptLineId);
 }
 
-/** @mcp delete */
+/** Not published: `inventory.storageUnit.delete` deletes a unit, or with `cascade` its subtree. */
 export async function deleteStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -113,7 +113,8 @@ export async function deleteStorageUnit(
  *
  * We fetch the subtree via `storageUnits_recursive` (which already returns
  * self + descendants thanks to `ancestorPath @> ARRAY[id]`).
- * @mcp delete
+ *
+ * Not published: `inventory.storageUnit.delete` with `cascade` does this.
  */
 export async function deleteStorageUnitCascade(
   client: SupabaseClient<Database>,
@@ -191,7 +192,7 @@ export async function deleteWarehouseTransfer(
   return client.from("warehouseTransfer").delete().eq("id", transferId);
 }
 
-/** @mcp delete */
+/** Not published: it skips the lock check `inventory.warehouseTransfer.line.delete` makes. */
 export async function deleteWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferLineId: string
@@ -1945,8 +1946,8 @@ export async function getWarehouseTransferLines(
 // resolution, tracked-entity updates, cost layers, and GL posting (Provisional
 // before the accounting cutover) in one transaction.
 /**
- * @mcp create
- * @mcp audit createdBy
+ * Not published: it runs no storage rules; `inventory.item.adjust` runs them
+ * and then this.
  */
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
@@ -2196,7 +2197,7 @@ export async function getInventoryCountMovements(
 
 // Counts are created once and never edited as a header (only their lines and
 // status change), so this is insert-only — no upsert/update branch.
-/** @mcp create */
+/** Not published: a count with no lines; `inventory.inventoryCount.create` creates and snapshots it. */
 export async function insertInventoryCount(
   client: SupabaseClient<Database>,
   inventoryCount: {
@@ -2455,7 +2456,11 @@ export async function updateBatchPropertyOrder(
   return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
 }
 
-/** @mcp update */
+/**
+ * Set a stock transfer's status, and nothing else. Not published:
+ * `inventory.stockTransfer.setStatus` also runs storage rules and the reopen
+ * permission check.
+ */
 export async function updateStockTransferStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -2562,7 +2567,10 @@ export async function upsertKanban(
     .single();
 }
 
-/** @mcp upsert */
+/**
+ * Not published: a changed source document does not rebuild the lines;
+ * `inventory.receipt.create` and `inventory.receipt.update` do.
+ */
 export async function upsertReceipt(
   client: SupabaseClient<Database>,
   receipt:
@@ -2659,7 +2667,10 @@ export async function upsertShippingMethod(
     .single();
 }
 
-/** @mcp upsert */
+/**
+ * Not published: a changed source document does not rebuild the lines;
+ * `inventory.shipment.create` and `inventory.shipment.update` do.
+ */
 export async function upsertShipment(
   client: SupabaseClient<Database>,
   shipment:
@@ -2809,7 +2820,10 @@ export async function upsertWarehouseTransfer(
     .single();
 }
 
-/** @mcp update */
+/**
+ * Set a warehouse transfer's status, and nothing else. Not published:
+ * `inventory.warehouseTransfer.setStatus` also runs storage rules.
+ */
 export async function updateWarehouseTransferStatus(
   client: SupabaseClient<Database>,
   transferId: string,
@@ -2826,7 +2840,10 @@ export async function updateWarehouseTransferStatus(
     .eq("id", transferId);
 }
 
-/** @mcp upsert */
+/**
+ * Not published: it skips the lock check `inventory.warehouseTransfer.line.create`
+ * and `.update` make.
+ */
 export async function upsertWarehouseTransferLine(
   client: SupabaseClient<Database>,
   line:
@@ -4542,7 +4559,7 @@ export async function pickPickingListLine(
   return { data: { id: line.id }, error: null };
 }
 
-/** @mcp create destructive */
+/** Not published: it runs no storage rules; `inventory.stockTransfer.create` does. */
 export async function insertStockTransfer(
   client: SupabaseClient<Database>,
   input: {

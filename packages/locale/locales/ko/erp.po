@@ -241,6 +241,10 @@ msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
@@ -801,6 +805,9 @@ msgstr "1개의 인식할 항목 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1개 작업이 생성됨"
@@ -12617,6 +12624,9 @@ msgstr "라인 상태"
 msgid "Line Type"
 msgstr "라인 유형"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "Linear 팀"
 
@@ -17958,6 +17968,9 @@ msgstr "입고 약속일"
 msgid "Receipt Requested Date"
 msgstr "입고 요청일"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "입고"
 
@@ -20603,6 +20616,9 @@ msgstr "출하 라인"
 
 msgid "Shipment Location"
 msgstr "출하 위치"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "출하"

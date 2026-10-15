@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -44,6 +45,8 @@ export function UnscrapModal({
   onClose
 }: UnscrapModalProps) {
   const { t } = useLingui();
+  // A refused unscrap is toasted; the modal has already closed.
+  const unscrap = useAction();
 
   return (
     <Modal open={open} onOpenChange={(v) => !v && onClose()}>
@@ -51,6 +54,7 @@ export function UnscrapModal({
         <ValidatedForm
           method="post"
           action={path.to.inventoryItemAdjustment(itemId)}
+          fetcher={unscrap}
           validator={inventoryAdjustmentValidator}
           defaultValues={{
             itemId,

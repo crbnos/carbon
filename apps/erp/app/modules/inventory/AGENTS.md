@@ -18,7 +18,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 ## Safety
 
 ### Always
-- MUST use `insertManualInventoryAdjustment` for quantity changes — it creates proper ledger entries and handles tracked entity updates.
+- MUST use `inventory.item.adjust` (`adjustInventory`) for quantity changes — it runs the storage rules, then `insertManualInventoryAdjustment`, which creates proper ledger entries and handles tracked entity updates.
 - MUST scope by `companyId` and `locationId` — inventory is location-scoped.
 - MUST use `getInventoryItems` (calls `get_inventory_quantities` RPC) for current quantities — never sum ledger entries manually.
 - MUST use `generatePickingList` for pick operations — it handles FEFO/FIFO ordering and tracked entity allocation.
@@ -49,9 +49,9 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 | `storageType` | Storage unit type definitions (capacity, constraints) |
 | `trackedEntity` | Serial/batch/lot instances with readableId, status, quantity, expirationDate |
 | `receipt` / `receiptLine` | Inbound documents from POs or production |
-| `receiptFixedAssetLine` | One fixed asset per row on a receipt: `purchaseOrderLineId` (a PO receipt) XOR `rentalAgreementLineId` (a rental receipt; CHECK `receiptFixedAssetLine_source_check`), `received`, `serialNumber`. The rental return fields: `meter`, `notes`, `takeOutOfService` + `outOfServiceReason` (CHECK: a tick needs a reason; the UI saves both as one `outOfService` field), `residualDestination` (`Fleet` / `Inventory`, a `Sale` line only). Edited through `receipt+/fixed-asset-lines.update.tsx` (`receiptFixedAssetLineUpdateValidator`), which refuses a line on a non-Draft receipt |
+| `receiptFixedAssetLine` | One fixed asset per row on a receipt: `purchaseOrderLineId` (a PO receipt) XOR `rentalAgreementLineId` (a rental receipt; CHECK `receiptFixedAssetLine_source_check`), `received`, `serialNumber`. The rental return fields: `meter`, `notes`, `takeOutOfService` + `outOfServiceReason` (CHECK: a tick needs a reason; the UI saves both as one `outOfService` field), `residualDestination` (`Fleet` / `Inventory`, a `Sale` line only). Edited through `inventory.receipt.fixedAssetLine.update` (`receiptFixedAssetLineUpdateValidator`), which refuses a line on a non-Draft receipt |
 | `shipment` / `shipmentLine` | Outbound documents to customers |
-| `shipmentFixedAssetLine` | One fixed asset per row on a shipment: `salesOrderLineId` (a sales order shipment) XOR `rentalAgreementLineId` (a rental shipment; CHECK `shipmentFixedAssetLine_source_check`), `shipped`, `serialNumber`, and `meter` (a rental unit's meter out). Edited through `shipment+/fixed-asset-lines.update.tsx` (`shipmentFixedAssetLineUpdateValidator`), which refuses a line on a non-Draft shipment. A reader that means a sales order line filters `salesOrderLineId IS NOT NULL` |
+| `shipmentFixedAssetLine` | One fixed asset per row on a shipment: `salesOrderLineId` (a sales order shipment) XOR `rentalAgreementLineId` (a rental shipment; CHECK `shipmentFixedAssetLine_source_check`), `shipped`, `serialNumber`, and `meter` (a rental unit's meter out). Edited through `inventory.shipment.fixedAssetLine.update` (`shipmentFixedAssetLineUpdateValidator`), which refuses a line on a non-Draft shipment. A reader that means a sales order line filters `salesOrderLineId IS NOT NULL` |
 | `stockTransfer` / `stockTransferLine` | Intra-location moves between storage units; `stockTransfer.kanbanId` marks a kanban replenishment |
 | `warehouseTransfer` / `warehouseTransferLine` | Inter-location moves |
 | `kanban` | Pull-based replenishment signals; `replenishmentLevel` arms a Transfer kanban |
@@ -59,12 +59,34 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 | `pickingList` / `pickingListLine` | Pick instructions with tracked entity allocation |
 | `pickMethod` | Default storage unit and pick strategy per item at a location |
 
+## Operations (`inventory.server.ts`)
+
+Each operation is one `defineServiceFn` const in `inventory.server.ts`, listed in `index.server.ts`. A route calls it through `carbon(request)` as `api.inventory.<entity>.<verb>(input)` and makes no other write; the API and MCP publish it as `inventory_<entity>_<verb>`. Every check the route used to make is in the function.
+
+| Operation | Route | What it holds |
+|---|---|---|
+| `receipt.create` / `shipment.create` | `receipt+/new.tsx`, `shipment+/new.tsx` | The `create` server function for the source document; a return order or rental agreement with a Draft document returns that one. A sales or purchase order shipment needs the caller's default location |
+| `receipt.update` / `shipment.update` | `$receiptId.details.tsx`, `$shipmentId.details.tsx` | A changed source or location rebuilds the lines; a rental document keeps its agreement |
+| `receipt.post` / `shipment.post` | `$receiptId.post.tsx`, `$shipmentId.post.tsx` | Storage rules (and over-receipt, and the order's sales rules), Pending, the post server function, back to Draft on failure, labels, lead times, the workflow moment. A shipment also applies the expired-batch policy and saves the packing slip (`packing-slip.server.tsx`, shared with `file+/shipment+/$id[.]pdf.tsx`) |
+| `receipt.void` / `shipment.void` | `$receiptId.void.tsx`, `$shipmentId.void.tsx` | Posted only; not a receipt a purchase invoice created |
+| `receipt.line.split`, `.lines.update`, `.fixedAssetLine.update` (and the shipment twins) | `lines.split.tsx`, `lines.update.tsx`, `fixed-asset-lines.update.tsx` | A fixed-asset line changes only on a Draft document |
+| `receipt.line.setBatch` / `.setSerial` / `.assignReturnEntity` / `.removeReturnEntity` | `receipt+/lines.tracking.tsx` (one per `trackingType` / `intent`) | Batch and serial numbers; a sales return re-tags the Consumed entity the customer sent back |
+| `shipment.line.assignEntity` | `shipment+/lines.tracking.tsx` | The line's item, Available (On Hold, received on this return order, for a return-to-customer shipment) |
+| `stockTransfer.create` / `.setStatus` | `stock-transfer+/new.tsx`, `$id.status.tsx` | Storage rules on `stockTransfer`; reopening a Completed transfer needs `delete: inventory` |
+| `stockTransfer.line.pick` / `.unpick` / `.pickEntity`, `.lines.update` | `$id.line.quantity.tsx` (0 unpicks), `$id.scan.$lineId.tsx`, `lines.update.tsx` | `post-stock-transfer`; a Completed transfer is refused; a scanned pick never exceeds what is left |
+| `warehouseTransfer.setStatus`, `.line.create` / `.update` / `.delete` | `$transferId.status.tsx`, `$transferId.details.new.tsx`, `$transferId.details.$id.tsx` | Storage rules on `warehouseTransfer`; lines change only on a Draft transfer |
+| `inventoryCount.create` / `.post` | `inventory+/inventory-count.new.tsx`, `inventory-count+/$id.post.tsx` | A failed snapshot deletes the count; lines that cannot post come back as `invalidLineIds` |
+| `item.adjust` | `inventory+/quantities+/$itemId.adjustment.tsx` | Storage rules on `inventoryAdjustment`, plus `pick` or `place` at a bin |
+| `storageUnit.delete` | `inventory+/storage-units.delete.$storageUnitId.tsx` | `cascade` deletes the subtree |
+
+A blocking rule is data, not an error: `post`, `create`, `setStatus` and `adjust` return `{ violations, ruleNames }` and change nothing; the route returns it to `useRuleViolations`, which re-sends with `acknowledged: true`. The primitives they replaced are no longer published (`insertManualInventoryAdjustment`, `insertInventoryCount`, `upsertReceipt`, `upsertShipment`, `insertStockTransfer`, `updateStockTransferStatus`, `updateWarehouseTransferStatus`, `upsertWarehouseTransferLine`, `deleteWarehouseTransferLine`, `deleteStorageUnit`, `deleteStorageUnitCascade`).
+
 ## Key Service Functions
 
 - `getInventoryItems` / `getInventoryItemsCount` — calls `get_inventory_quantities` RPC for on-hand quantities
 - `getItemLedgerPage` / `getItemLedgerActivity` — paginated ledger history
 - `getItemLedgerBalance` — `get_item_ledger_balance` RPC: on-hand right after one ledger entry, on the `quantityOnHand` definition (Rejected tracked stock counts zero). The item Activity feed fetches it ONCE for its newest loaded row; `withRunningBalance` (`ui/Inventory/ledgerFeed.ts`) derives every row's before → after from it as pages load, so paging adds no queries. Run it on raw rows, before `collapseTransferPairs`
-- `insertManualInventoryAdjustment` — adjustments with tracked entity handling; wraps the `post-inventory-adjustment` server function, which maintains cost layers and posts the journal (`inventoryAdjustmentVarianceAccount`, seeded 5310, against the raw materials or finished goods account) in one transaction for every company. The journal is Provisional before the accounting cutover and Posted after it (`journalPostingStatus`). An increase with no value posts no journal; a decrease always writes its pair, at zero too, so the enable's re-cost can find it. Storage-unit transfers post no journal
+- `insertManualInventoryAdjustment` — adjustments with tracked entity handling (called by `inventory.item.adjust` after the storage rules); wraps the `post-inventory-adjustment` server function, which maintains cost layers and posts the journal (`inventoryAdjustmentVarianceAccount`, seeded 5310, against the raw materials or finished goods account) in one transaction for every company. The journal is Provisional before the accounting cutover and Posted after it (`journalPostingStatus`). An increase with no value posts no journal; a decrease always writes its pair, at zero too, so the enable's re-cost can find it. Storage-unit transfers post no journal
 - `getSerialUnitCosts` / `recostSerialUnit` — wrap `preview-serial-unit-costs` (each on-hand serial's carrying cost, `view: accounting`; read by the Storage Units card through `api+/items.$itemId.serial-costs.ts`) and `recost-serial-unit` (re-book ONE serial's FIFO / LIFO layer at a new cost, journal vs an offset account, `update: accounting`; route `x+/inventory+/quantities+/$itemId.recost.tsx`). See `.claude/rules/inventory-system.md` → Serial unit cost and Recost
 - `correctStockMovement` — wraps the `correct-stock-movement` server function: fixes a posted `itemLedger` row by booking ONE opposite (delta) movement linked via `correctionOfItemLedgerId`, dated with the original's `postingDate` and posted into the original's accounting period (fails if Locked/Closed). The delta is derived against the movement's current effective quantity (original + prior corrections), so repeat corrections converge
 - `getStorageUnit(s)` / `getStorageUnitTree` / `getStorageUnitsTreeForLocation` — storage hierarchy

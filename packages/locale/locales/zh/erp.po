@@ -241,6 +241,10 @@ msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
@@ -801,6 +805,9 @@ msgstr "1 项待确认分录 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 张发票已在您的上一个系统中开票，不会再次起草"
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 个作业已创建"
@@ -12617,6 +12624,9 @@ msgstr "行状态"
 msgid "Line Type"
 msgstr "行类型"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "线性班组"
 
@@ -17958,6 +17968,9 @@ msgstr "收货承诺日期"
 msgid "Receipt Requested Date"
 msgstr "收货要求日期"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "收据"
 
@@ -20603,6 +20616,9 @@ msgstr "发货行"
 
 msgid "Shipment Location"
 msgstr "发货地点"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "发货单"

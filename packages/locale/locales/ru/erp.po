@@ -241,6 +241,10 @@ msgstr "{0} счета-фактур были выставлены в вашей 
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} производственных заказов создано"
@@ -801,6 +805,9 @@ msgstr "1 запись к признанию · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 счет-фактура была выставлена в вашей предыдущей системе и не создается снова."
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 задание создано"
@@ -12617,6 +12624,9 @@ msgstr "Статус строки"
 msgid "Line Type"
 msgstr "Тип Строки"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "Команда Linear"
 
@@ -17958,6 +17968,9 @@ msgstr "Подтвержденная дата поступления"
 msgid "Receipt Requested Date"
 msgstr "Запрошенная дата получения"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "Квитанции"
 
@@ -20603,6 +20616,9 @@ msgstr "Строки отгрузки"
 
 msgid "Shipment Location"
 msgstr "Площадка отгрузки"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "Отгрузки"

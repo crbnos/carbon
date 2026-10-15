@@ -241,6 +241,10 @@ msgstr "{0} fatura önceki sisteminizde faturalandırıldı ve tekrar taslak ola
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
 
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} İş emirleri oluşturuldu"
@@ -801,6 +805,9 @@ msgstr "1 muhasebeleştirilecek kayıt · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 fatura önceki sisteminizde faturalandırıldı ve tekrar taslak olarak oluşturulmadı."
+
+msgid "1 item marked as picked"
+msgstr ""
 
 msgid "1 job created"
 msgstr "1 iş oluşturuldu"
@@ -12617,6 +12624,9 @@ msgstr "Satır Durumu"
 msgid "Line Type"
 msgstr "Satır Türü"
 
+msgid "Line unpicked"
+msgstr ""
+
 msgid "Linear Team"
 msgstr "Lineer Takım"
 
@@ -17958,6 +17968,9 @@ msgstr "Mal kabul taahhüt tarihi"
 msgid "Receipt Requested Date"
 msgstr "Talep Edilen Teslim Tarihi"
 
+msgid "Receipt voided"
+msgstr ""
+
 msgid "Receipts"
 msgstr "Makbuzlar"
 
@@ -20603,6 +20616,9 @@ msgstr "Sevkiyat satırları"
 
 msgid "Shipment Location"
 msgstr "Sevkiyat lokasyonu"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "Sevkiyatlar"
