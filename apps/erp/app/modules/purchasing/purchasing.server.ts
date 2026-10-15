@@ -6,24 +6,136 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { serverFns } from "@carbon/server-functions";
+import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import { approvalDecisionValidator } from "@carbon/ee/approvals";
+import {
+  decideApprovalRequest,
+  openApprovalRequests
+} from "@carbon/ee/approvals/document.server";
+import {
+  approveRequest,
+  canApproveRequest,
+  createApprovalRequest,
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  getLatestApprovalRequestForDocument,
+  getLowerTierApproverUserIds,
+  hasPendingApproval,
+  isApprovalRequired,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { storage } from "@carbon/files";
+import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
+import type { JSONContent } from "@carbon/react";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
   cutLeasePaymentRows,
   type DraftedLeaseInvoice
 } from "@carbon/server-functions/create-lease-invoices";
-import { datetime, openEndedLeaseHorizon } from "@carbon/utils";
+import { isDataLayerError } from "@carbon/server-functions/errors";
+import {
+  hasPermissions,
+  type RequiredPermissions
+} from "@carbon/server-functions/permissions";
+import {
+  async,
+  datetime,
+  openEndedLeaseHorizon,
+  PO_EMAIL_ATTACHMENT_LIMIT_MB,
+  tiptapToHTML,
+  unchecked
+} from "@carbon/utils";
+import { type CalendarDate, parseDate } from "@internationalized/date";
+import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
-import type { z } from "zod";
-import { path } from "~/utils/path";
+import { z } from "zod";
 import {
+  getCurrencyByCode,
+  getExchangeRate,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service";
+import { upsertDocument } from "~/modules/documents/documents.service";
+import { runMRP } from "~/modules/production/production.service";
+import {
+  CarbonError,
+  defineServiceFn,
+  type ErrorCategory,
+  type ServiceContext
+} from "~/modules/service-fn.server";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { upsertExternalLink } from "~/modules/shared/shared.service";
+import { getUser } from "~/modules/users/users.server";
+import { ERP_URL, path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
+import {
+  canCreatePurchaseOrderRevision,
+  isPurchaseOrderLocked,
+  isPurchaseReturnOrderLocked,
+  isRfqLocked,
+  isSupplierQuoteLocked,
+  leaseClassificationValidator,
   leaseLineColumns,
   leaseLinePaymentFields,
   type leaseLineValidator,
+  leaseModifyValidator,
   leasePaymentTermFields,
+  leasePurchaseValidator,
   leaseTermColumns,
-  type leaseValidator
+  leaseTerminateValidator,
+  type leaseValidator,
+  lockedReturnLineField,
+  PURCHASE_ORDER_REOPEN_STATUSES,
+  purchaseOrderDeleteRefusal,
+  purchaseReturnOrderLineValidator,
+  purchasingRfqFinalizeValidator,
+  purchasingRfqValidator,
+  supplierQuoteFinalizeValidator
 } from "./purchasing.models";
+import {
+  renderPurchaseOrderPdf,
+  renderPurchaseReturnOrderPdf
+} from "./purchasing.pdf.server";
+import {
+  cancelPurchaseReturnOrder,
+  confirmPurchaseReturnOrder,
+  finalizePurchaseOrder,
+  getDefaultAttachmentsForPO,
+  getLease,
+  getLinkedSupplierQuotes,
+  getPurchaseOrder,
+  getPurchaseOrderLines,
+  getPurchaseOrderLocations,
+  getPurchaseReturnOrder,
+  getPurchasingRFQ,
+  getPurchasingRFQLines,
+  getReturnableEntitiesForReceiptLine,
+  getSupplier,
+  getSupplierContact,
+  getSupplierInteractionDocuments,
+  getSupplierInteractionLineAttachments,
+  getSupplierQuote,
+  getSupplierQuoteLines,
+  insertPurchasingRFQ,
+  reopenPurchaseOrderAsRevision,
+  reopenPurchaseReturnOrder,
+  sendSupplierQuote,
+  setPurchaseReturnOrderLineTrackedEntities,
+  updatePurchaseOrderStatus,
+  updatePurchasingRFQStatus,
+  upsertPurchaseReturnOrderLine,
+  upsertPurchasingRFQSuppliers
+} from "./purchasing.service";
 
 /**
  * Server-only purchasing helpers: the lease writes that need a Kysely
@@ -541,3 +653,2806 @@ export async function draftLeaseSetupPath(
   }
   return path.to.leaseSetup(id, "assets");
 }
+
+// ── Operations ──────────────────────────────────────────────────────────────
+// `defineServiceFn` operations: what the routes, the API and MCP call, so each
+// holds every check its button made. Listed by entity in `index.server.ts`.
+
+const logger = getLogger("erp", "purchasing");
+
+/** Custom field values, as `setCustomFields` reads them from a form. */
+const customFieldsInput = z.record(
+  z.string(),
+  z.union([z.string(), z.number(), z.boolean()])
+);
+
+/** Whether the caller also holds `required`: for a permission that depends on
+ *  the record's state, which the gate cannot know. */
+function callerHolds(ctx: ServiceContext, required: RequiredPermissions) {
+  const { actor } = ctx;
+  if (actor.type === "system") return true;
+  return hasPermissions(
+    actor.type === "user" ? actor.permissions : actor.scopes,
+    ctx.company.id,
+    required
+  );
+}
+
+/** A refusal unless a row of `table` matching `match` is the caller's
+ *  company's. Every RLS-bypassing read or write keyed on an id the caller sent
+ *  checks it first. */
+async function recordInCompany(
+  ctx: ServiceContext,
+  table: Parameters<typeof requireCompanyRecord>[1],
+  match: { id: string } & Record<string, string>
+): Promise<CarbonError | null> {
+  try {
+    await requireCompanyRecord(
+      ctx.asSystem.supabase,
+      table,
+      ctx.company.id,
+      match
+    );
+    return null;
+  } catch (err) {
+    if (!(err instanceof Response)) throw err;
+    return ctx.error(
+      err.status === 404 ? "notFound" : "internal",
+      await err.text()
+    );
+  }
+}
+
+/** A server function's refusal as this function's error: its status picks
+ *  the category, and an empty message (a data-layer failure) is `fallback`. */
+function fromServerFn(
+  ctx: ServiceContext,
+  error: { status: number; message: string },
+  fallback: string
+): CarbonError {
+  const category: ErrorCategory =
+    error.status === 400
+      ? "validation"
+      : error.status === 403
+        ? "forbidden"
+        : error.status === 404
+          ? "notFound"
+          : error.status === 409
+            ? "conflict"
+            : error.status < 500
+              ? "rule"
+              : "internal";
+  return ctx.error(category, error.message || fallback, error);
+}
+
+/** Signed links to a supplier interaction's documents, for an email. A file
+ *  that cannot be signed is logged and left out. */
+async function interactionAttachments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string
+): Promise<{ filename: string; path: string }[]> {
+  const docs = await getSupplierInteractionDocuments(
+    client,
+    companyId,
+    interactionId
+  );
+  return signedAttachments(
+    client,
+    companyId,
+    docs.map((doc) => ({
+      filename: doc.name,
+      path: `${companyId}/supplier-interaction/${interactionId}/${doc.name}`
+    }))
+  );
+}
+
+async function signedAttachments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  files: { filename: string; path: string }[]
+): Promise<{ filename: string; path: string }[]> {
+  const signed = await async.map(files, async (file) => {
+    const { data, error } = await storage(client)
+      .company(companyId)
+      .createSignedUrl(file.path, 3600);
+    if (!data) {
+      logger.error("Failed to create signed URL for attachment", {
+        storagePath: file.path,
+        error
+      });
+      return null;
+    }
+    return { filename: file.filename, path: data.signedUrl };
+  });
+  return signed.flatMap((file) => (file ? [file] : []));
+}
+
+/** The statuses of records an edit is about to touch, for a lock check. */
+async function statusesOf(
+  ctx: ServiceContext,
+  table:
+    | "purchaseOrder"
+    | "purchaseReturnOrder"
+    | "purchasingRfq"
+    | "supplierQuote",
+  ids: string[]
+): Promise<(string | null)[] | CarbonError> {
+  const rows = await ctx.asCaller.supabase
+    .from(table as "purchaseOrder")
+    .select("status")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id);
+  if (rows.error) {
+    return ctx.error("internal", "Failed to read the records", rows.error);
+  }
+  return rows.data.map((row) => row.status);
+}
+
+// ── RFQs ────────────────────────────────────────────────────────────────────
+
+/**
+ * Create a request for quotation.
+ *
+ * @remarks
+ * Creates the RFQ, numbered from the `purchasingRfq` sequence unless `rfqId`
+ * is given, then invites `supplierIds`. The two writes are separate: when the
+ * suppliers cannot be saved, the RFQ exists without them and the error says
+ * so.
+ *
+ * @mcp
+ */
+export const createPurchasingRfq = defineServiceFn({
+  input: purchasingRfqValidator
+    .omit({ id: true })
+    .extend({ customFields: customFieldsInput.optional() }),
+  permission: { create: "purchasing" },
+
+  async run(ctx, { supplierIds, ...rfq }) {
+    const companyId = ctx.company.id;
+    const created = await insertPurchasingRFQ(ctx.asCaller.supabase, {
+      ...rfq,
+      rfqId: rfq.rfqId || undefined,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (created.error || !created.data) {
+      return ctx.error("internal", "Failed to insert RFQ", created.error);
+    }
+
+    const suppliers = await upsertPurchasingRFQSuppliers(
+      ctx.asCaller.supabase,
+      created.data.id,
+      supplierIds,
+      companyId,
+      ctx.auditUserId
+    );
+    if (suppliers.error) {
+      return ctx.error(
+        "internal",
+        "Failed to assign suppliers",
+        suppliers.error
+      );
+    }
+    return { id: created.data.id, rfqId: created.data.rfqId };
+  }
+});
+
+const rfqDateFields = [
+  "employeeId",
+  "expirationDate",
+  "locationId",
+  "rfqDate"
+] as const;
+
+/**
+ * Change one field of RFQs.
+ *
+ * @remarks
+ * The RFQ properties panel's edit. `employeeId`, `expirationDate`,
+ * `locationId` and `rfqDate` take one value (null clears it); `supplierIds`
+ * replaces the invited suppliers of every RFQ. Refused when any of the RFQs is
+ * locked (Requested or Closed).
+ *
+ * @mcp
+ */
+export const updatePurchasingRfqs = defineServiceFn({
+  input: z.discriminatedUnion("field", [
+    z.object({
+      ids: z.array(z.string()).min(1),
+      field: z.enum(rfqDateFields),
+      value: z.string().nullable()
+    }),
+    z.object({
+      ids: z.array(z.string()).min(1),
+      field: z.literal("supplierIds"),
+      value: z.array(z.string())
+    })
+  ]),
+  permission: { update: "purchasing" },
+
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const statuses = await statusesOf(ctx, "purchasingRfq", input.ids);
+    if (statuses instanceof CarbonError) return statuses;
+    if (statuses.some(isRfqLocked)) {
+      return ctx.error("rule", "Cannot modify a locked RFQ.");
+    }
+
+    if (input.field === "supplierIds") {
+      const removed = await client
+        .from("purchasingRfqSupplier")
+        .delete()
+        .in("purchasingRfqId", input.ids)
+        .eq("companyId", companyId);
+      if (removed.error) {
+        return ctx.error(
+          "internal",
+          "Failed to update suppliers",
+          removed.error
+        );
+      }
+      if (input.value.length === 0) return { ids: input.ids };
+      const added = await client.from("purchasingRfqSupplier").insert(
+        input.ids.flatMap((purchasingRfqId) =>
+          input.value.map((supplierId) => ({
+            purchasingRfqId,
+            supplierId,
+            companyId,
+            createdBy: ctx.auditUserId
+          }))
+        )
+      );
+      if (added.error) {
+        return ctx.error("internal", "Failed to update suppliers", added.error);
+      }
+      return { ids: input.ids };
+    }
+
+    const update = await client
+      .from("purchasingRfq")
+      .update(
+        unchecked({
+          [input.field]: input.value || null,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .in("id", input.ids)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error("internal", "Failed to update the RFQ", update.error);
+    }
+    return { ids: input.ids };
+  }
+});
+
+/**
+ * Cancel an RFQ.
+ *
+ * @remarks
+ * Closes the RFQ, clears its assignee, and cancels every supplier quote it
+ * raised. A failure to cancel the quotes is logged; the RFQ stays Closed.
+ *
+ * @mcp destructive
+ */
+export const cancelPurchasingRfq = defineServiceFn({
+  input: z.object({ rfqId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { rfqId }) {
+    const client = ctx.asCaller.supabase;
+    const update = await updatePurchasingRFQStatus(client, {
+      id: rfqId,
+      status: "Closed",
+      assignee: null,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error("internal", "Failed to cancel RFQ", update.error);
+    }
+
+    const linked = await getLinkedSupplierQuotes(client, rfqId);
+    const quoteIds = (linked.data ?? []).map((link) => link.supplierQuoteId);
+    if (quoteIds.length > 0) {
+      const quotes = await client
+        .from("supplierQuote")
+        .update({ status: "Cancelled", updatedBy: ctx.auditUserId })
+        .in("id", quoteIds)
+        .eq("companyId", ctx.company.id);
+      if (quotes.error) {
+        logger.error("Failed to cancel the RFQ's supplier quotes", {
+          companyId: ctx.company.id,
+          rfqId,
+          error: quotes.error
+        });
+      }
+    }
+    return { rfqId };
+  }
+});
+
+/**
+ * Send an RFQ to its suppliers.
+ *
+ * @remarks
+ * Creates one supplier quote per invited supplier, with the RFQ's lines and a
+ * share link, and marks the RFQ Requested, in one transaction
+ * (`finalize-purchasing-rfq`, which refuses an RFQ that is not Draft). Then,
+ * for each supplier with a `contactId`, emails the contact the quote's link
+ * with the RFQ's documents and internal notes attached; a failed email is
+ * logged and the rest still go. Refused when the RFQ has no lines.
+ *
+ * @mcp
+ */
+export const finalizePurchasingRfqAndNotify = defineServiceFn({
+  input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
+  permission: { create: "purchasing" },
+
+  async run(ctx, { rfqId, suppliers }) {
+    const client = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const owned = await recordInCompany(ctx, "purchasingRfq", { id: rfqId });
+    if (owned) return owned;
+
+    const [rfq, lines] = await Promise.all([
+      getPurchasingRFQ(client, rfqId),
+      getPurchasingRFQLines(client, rfqId)
+    ]);
+    if (rfq.error)
+      return ctx.error("internal", "Failed to load RFQ", rfq.error);
+    if (lines.error) {
+      return ctx.error("internal", "Failed to load RFQ lines", lines.error);
+    }
+    if ((lines.data ?? []).length === 0) {
+      return ctx.error("rule", "No line items found for this RFQ");
+    }
+
+    const [company, user] = await Promise.all([
+      getCompany(client, companyId),
+      getUser(client, userId)
+    ]);
+
+    const finalize = await serverFns
+      .system({ db: ctx.asSystem.pg, companyId, userId })
+      .invoke("finalize-purchasing-rfq", { rfqId });
+    if (finalize.error) {
+      return fromServerFn(
+        ctx,
+        finalize.error,
+        "Failed to create supplier quotes"
+      );
+    }
+    const quotes = finalize.data.quotes;
+
+    const contactIdBySupplier = new Map(
+      suppliers.flatMap((s) =>
+        s.contactId ? [[s.supplierId, s.contactId] as const] : []
+      )
+    );
+    const contacts = contactIdBySupplier.size
+      ? await client
+          .from("supplierContact")
+          .select("id, contact(email, firstName)")
+          .in("id", [...contactIdBySupplier.values()])
+          .eq("companyId", companyId)
+      : null;
+    const contactById = new Map(
+      (contacts?.data ?? []).map((row) => [row.id, row.contact])
+    );
+    const emails = quotes.flatMap((quote) => {
+      const contactId = contactIdBySupplier.get(quote.supplierId);
+      const contact = contactId ? contactById.get(contactId) : undefined;
+      return contact?.email
+        ? [
+            {
+              to: contact.email,
+              firstName: contact.firstName ?? "there",
+              quoteReadableId: quote.supplierQuoteId,
+              externalLinkId: quote.externalLinkId
+            }
+          ]
+        : [];
+    });
+
+    if (emails.length > 0 && company.data && user.data) {
+      const attachments = [
+        ...(await interactionAttachments(client, companyId, rfqId)),
+        ...(await getSupplierInteractionLineAttachments(
+          client,
+          companyId,
+          (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
+        ))
+      ];
+      const notesHtml = tiptapToHTML(
+        (rfq.data?.internalNotes ?? {}) as JSONContent
+      );
+
+      for (const email of emails) {
+        try {
+          const link = `${ERP_URL}${path.to.externalSupplierQuote(email.externalLinkId)}`;
+          const body = `Hey ${email.firstName},\n\nPlease provide pricing and lead time(s) for the linked quote:`;
+          const signature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
+          await trigger("send-email", {
+            to: [user.data.email, email.to],
+            from: user.data.email,
+            subject: `Supplier Quote ${email.quoteReadableId} from ${company.data.name}`,
+            html: [
+              body.replace(/\n/g, "<br>"),
+              `<br><a href="${link}">${link}</a>`,
+              notesHtml ? `<br><br>${notesHtml}` : "",
+              `<br><br>${signature.replace(/\n/g, "<br>")}`
+            ].join(""),
+            text: `${body}\n\n${link}\n\n${signature}`,
+            attachments,
+            companyId
+          });
+        } catch (err) {
+          logger.error("Failed to send email", { error: err });
+        }
+      }
+    }
+
+    return { quotesCreated: quotes.length, emailsSent: emails.length };
+  }
+});
+
+// ── Supplier quotes ─────────────────────────────────────────────────────────
+
+const supplierQuoteTextFields = [
+  "supplierContactId",
+  "supplierLocationId",
+  "supplierReference",
+  "quotedDate"
+] as const;
+
+/**
+ * Change one field of supplier quotes.
+ *
+ * @remarks
+ * The supplier quote properties panel's edit; `value` null clears the field.
+ * A new `supplierId` on one quote takes the supplier's currency. A new
+ * `currencyCode` takes today's exchange rate (refused when there is none).
+ * A new `expirationDate` (`YYYY-MM-DD`) sets the quote Expired when it is
+ * before today on the company's calendar, else Active. Refused when any of
+ * the quotes is locked.
+ *
+ * @mcp
+ */
+export const updateSupplierQuotes = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()).min(1),
+    field: z.enum([
+      "supplierId",
+      "currencyCode",
+      "expirationDate",
+      ...supplierQuoteTextFields
+    ]),
+    value: z.string().nullable()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const statuses = await statusesOf(ctx, "supplierQuote", ids);
+    if (statuses instanceof CarbonError) return statuses;
+    if (statuses.some(isSupplierQuoteLocked)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a locked supplier quote. Reopen it first."
+      );
+    }
+
+    const write = (
+      patch: Database["public"]["Tables"]["supplierQuote"]["Update"]
+    ) =>
+      client
+        .from("supplierQuote")
+        .update({
+          ...patch,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .in("id", ids)
+        .eq("companyId", companyId);
+
+    let patch: Database["public"]["Tables"]["supplierQuote"]["Update"];
+    if (field === "supplierId") {
+      patch = { supplierId: value ?? undefined };
+      if (value && ids.length === 1) {
+        const supplier = await client
+          .from("supplier")
+          .select("currencyCode")
+          .eq("id", value)
+          .single();
+        if (supplier.data?.currencyCode) {
+          patch.currencyCode = supplier.data.currencyCode;
+        }
+      }
+    } else if (field === "currencyCode" && value) {
+      const rate = await getExchangeRate(client, companyId, value);
+      if (rate.error) {
+        return ctx.error("rule", rate.error.message, rate.error);
+      }
+      patch = { currencyCode: value, exchangeRate: rate.data };
+    } else if (field === "expirationDate") {
+      let expirationDate: CalendarDate | null = null;
+      if (value) {
+        try {
+          expirationDate = parseDate(value);
+        } catch {
+          return ctx.error("validation", "Invalid expiration date");
+        }
+      }
+      // Expiry is judged on the company's calendar — one set of books, one
+      // "today" — not the server's or the editing user's.
+      const today = datetime.today(await getCompanyTimeZone(client, companyId));
+      patch = {
+        status:
+          expirationDate && today.compare(expirationDate) > 0
+            ? "Expired"
+            : "Active",
+        expirationDate: expirationDate ? expirationDate.toString() : null
+      };
+    } else {
+      patch = unchecked({ [field]: value ? value : null });
+    }
+
+    const update = await write(patch);
+    if (update.error) {
+      return ctx.error("internal", "Failed to update the quote", update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
+ * The quote's share link: the existing one, or a new one, saved on the quote.
+ * The link expires with the quote.
+ */
+async function supplierQuoteLink(
+  ctx: ServiceContext,
+  quote: {
+    id: string;
+    externalLinkId: string | null;
+    supplierId: string | null;
+    expirationDate: string | null;
+  }
+): Promise<string | CarbonError> {
+  const client = ctx.asSystem.supabase;
+  const link = await upsertExternalLink(client, {
+    id: quote.externalLinkId ?? undefined,
+    documentType: "SupplierQuote",
+    documentId: quote.id,
+    supplierId: quote.supplierId,
+    expiresAt: quote.expirationDate,
+    companyId: ctx.company.id
+  });
+  if (link.error || !link.data) {
+    return ctx.error("internal", "Failed to create the share link", link.error);
+  }
+  if (quote.externalLinkId !== link.data.id) {
+    await client
+      .from("supplierQuote")
+      .update({ externalLinkId: link.data.id })
+      .eq("id", quote.id)
+      .eq("companyId", ctx.company.id);
+  }
+  return link.data.id;
+}
+
+/**
+ * Finalize a supplier quote.
+ *
+ * @remarks
+ * Refused when the company requires a reachable supplier contact and the
+ * supplier has none. Makes sure the quote has a share link, then
+ * (`finalize-supplier-quote`, one transaction) checks every line is priced,
+ * marks the quote Active and writes the supplier's price list.
+ *
+ * @mcp
+ */
+export const finalizeSupplierQuoteWithLink = defineServiceFn({
+  input: z.object({ supplierQuoteId: z.string() }),
+  permission: { create: "purchasing" },
+
+  async run(ctx, { supplierQuoteId }) {
+    const client = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+
+    const owned = await recordInCompany(ctx, "supplierQuote", {
+      id: supplierQuoteId
+    });
+    if (owned) return owned;
+
+    const quote = await getSupplierQuote(client, supplierQuoteId);
+    if (quote.error) {
+      return ctx.error("internal", "Failed to get supplier quote", quote.error);
+    }
+
+    // A supplier with no reachable contact cannot be created as a vendor at
+    // a connected platform, so its documents are rejected there long after
+    // anyone is watching. No-op unless the company has turned it on.
+    const contactRule = await checkPartyContactRequirement(client, companyId, {
+      kind: "supplier",
+      id: quote.data.supplierId
+    });
+    if (contactRule) return ctx.error("rule", contactRule);
+
+    const link = await supplierQuoteLink(ctx, {
+      ...quote.data,
+      id: supplierQuoteId
+    });
+    if (link instanceof CarbonError) return link;
+
+    const finalize = await serverFns
+      .system({ db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId })
+      .invoke("finalize-supplier-quote", { supplierQuoteId });
+    if (finalize.error) {
+      return fromServerFn(
+        ctx,
+        finalize.error,
+        "Failed to finalize supplier quote"
+      );
+    }
+    return { supplierQuoteId };
+  }
+});
+
+/**
+ * Send a supplier quote to the supplier.
+ *
+ * @remarks
+ * Makes sure the quote has a share link and stamps it sent; the status stays
+ * as it is. With `notification` Email, emails `supplierContact` (required
+ * then) the link, copying `cc`, with the interaction's and the lines'
+ * documents attached. Share sends nothing: the link is shared by hand.
+ *
+ * @mcp
+ */
+export const sendSupplierQuoteToSupplier = defineServiceFn({
+  input: supplierQuoteFinalizeValidator.safeExtend({
+    supplierQuoteId: z.string()
+  }),
+  permission: { create: "purchasing" },
+
+  async run(ctx, { supplierQuoteId, notification, supplierContact, cc }) {
+    const client = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const owned = await recordInCompany(ctx, "supplierQuote", {
+      id: supplierQuoteId
+    });
+    if (owned) return owned;
+
+    const quote = await getSupplierQuote(client, supplierQuoteId);
+    if (quote.error) {
+      return ctx.error("internal", "Failed to get supplier quote", quote.error);
+    }
+
+    const link = await supplierQuoteLink(ctx, {
+      ...quote.data,
+      id: supplierQuoteId
+    });
+    if (link instanceof CarbonError) return link;
+
+    const send = await sendSupplierQuote(client, supplierQuoteId, userId);
+    if (send.error) {
+      return ctx.error("internal", "Failed to send supplier quote", send.error);
+    }
+
+    if (notification !== "Email") return { supplierQuoteId };
+    if (!supplierContact) {
+      return ctx.error("validation", "Supplier contact is required for email");
+    }
+
+    const [company, contact, user, lines] = await Promise.all([
+      getCompany(client, companyId),
+      getSupplierContact(client, supplierContact, companyId),
+      getUser(client, userId),
+      getSupplierQuoteLines(client, supplierQuoteId)
+    ]);
+    if (!company.data || !contact.data?.contact || !user.data) {
+      return ctx.error(
+        "internal",
+        "Failed to send email",
+        company.error ?? contact.error ?? user.error
+      );
+    }
+
+    const interactionId = quote.data.supplierInteractionId;
+    const attachments = [
+      ...(interactionId
+        ? await interactionAttachments(client, companyId, interactionId)
+        : []),
+      ...(await getSupplierInteractionLineAttachments(
+        client,
+        companyId,
+        (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
+      ))
+    ];
+
+    const url = `${ERP_URL}${path.to.externalSupplierQuote(link)}`;
+    const body = `Hey ${
+      contact.data.contact.firstName || "there"
+    },\n\nPlease provide pricing and lead time(s) for the linked quote:`;
+    const signature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
+    try {
+      await trigger("send-email", {
+        to: [user.data.email, contact.data.contact.email].filter(
+          Boolean
+        ) as string[],
+        cc: cc?.length ? cc : undefined,
+        from: user.data.email,
+        subject: `Supplier Quote ${quote.data.supplierQuoteId} from ${company.data.name}`,
+        html: `${body.replace(/\n/g, "<br>")}<br><a href="${url}">${url}</a><br><br>${signature.replace(/\n/g, "<br>")}`,
+        text: `${body}\n\n${url}\n\n${signature}`,
+        attachments,
+        companyId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to send email", err);
+    }
+    return { supplierQuoteId };
+  }
+});
+
+// ── Suppliers ───────────────────────────────────────────────────────────────
+
+/**
+ * Submit a supplier for approval.
+ *
+ * @remarks
+ * Opens an approval request under the company's supplier approval rule, sets
+ * the supplier Pending, and notifies the rule's approvers. Refused when
+ * suppliers need no approval, or a request is already pending.
+ *
+ * @mcp
+ */
+export const requestSupplierApproval = defineServiceFn({
+  input: z.object({ supplierId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { supplierId }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const owned = await recordInCompany(ctx, "supplier", { id: supplierId });
+    if (owned) return owned;
+
+    const opened = await openApprovalRequests(ctx.asSystem.supabase, {
+      documentType: "supplier",
+      documentIds: [supplierId],
+      companyId,
+      userId
+    });
+    if (opened.status === "not-required") {
+      return ctx.error("rule", "Suppliers do not require approval");
+    }
+    if (opened.status !== "opened") {
+      return ctx.error("internal", "Failed to submit for approval");
+    }
+    if (opened.requested.length === 0) {
+      return ctx.error(
+        "conflict",
+        "An approval request already exists for this supplier"
+      );
+    }
+
+    const update = await ctx.asCaller.supabase
+      .from("supplier")
+      .update({
+        supplierStatus: "Pending",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", supplierId)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "The approval request is open, but the supplier could not be set Pending",
+        update.error
+      );
+    }
+
+    if (opened.approverIds.length > 0) {
+      await trigger("notify", {
+        event: NotificationEvent.ApprovalRequested,
+        companyId,
+        documentId: supplierId,
+        documentType: "supplier",
+        recipient: { type: "users", userIds: opened.approverIds },
+        from: userId
+      }).catch((e) =>
+        logger.error("Failed to trigger approval notification", { error: e })
+      );
+    }
+    return { supplierId };
+  }
+});
+
+/**
+ * Deactivate a supplier.
+ *
+ * @remarks
+ * Sets the supplier Inactive. Only someone who may approve suppliers may do
+ * it.
+ *
+ * @mcp destructive
+ */
+export const deactivateSupplier = defineServiceFn({
+  input: z.object({ supplierId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { supplierId }) {
+    const companyId = ctx.company.id;
+    const owned = await recordInCompany(ctx, "supplier", { id: supplierId });
+    if (owned) return owned;
+
+    const canApprove = await canApproveRequest(
+      ctx.asSystem.supabase,
+      { amount: null, documentType: "supplier", companyId },
+      ctx.auditUserId
+    );
+    if (!canApprove) {
+      return ctx.error(
+        "forbidden",
+        "You do not have permission to deactivate this supplier"
+      );
+    }
+
+    const update = await ctx.asCaller.supabase
+      .from("supplier")
+      .update({
+        supplierStatus: "Inactive",
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", supplierId)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to deactivate the supplier",
+        update.error
+      );
+    }
+    return { supplierId };
+  }
+});
+
+/**
+ * Approve or reject a supplier's pending approval request.
+ *
+ * @remarks
+ * Only an approver under the supplier rule may decide. Approving sets the
+ * supplier Active; rejecting sets it Rejected. The requester is notified when
+ * someone else decided.
+ *
+ * @mcp
+ */
+export const decideSupplierApproval = defineServiceFn({
+  input: approvalDecisionValidator.extend({ supplierId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { supplierId, approvalRequestId, decision, notes }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const owned = await recordInCompany(ctx, "supplier", { id: supplierId });
+    if (owned) return owned;
+
+    const result = await decideApprovalRequest(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        documentType: "supplier",
+        documentId: supplierId,
+        companyId,
+        userId,
+        approvalRequestId,
+        decision,
+        notes
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        result.error.code === "not-found"
+          ? "notFound"
+          : result.error.code === "forbidden"
+            ? "forbidden"
+            : "internal",
+        result.error.message
+      );
+    }
+
+    if (result.requestedBy !== userId) {
+      await trigger("notify", {
+        event:
+          decision === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+        companyId,
+        documentId: supplierId,
+        documentType: "supplier",
+        recipient: { type: "user", userId: result.requestedBy },
+        from: userId
+      }).catch((e) =>
+        logger.error("Failed to trigger approval decision notification", {
+          error: e
+        })
+      );
+    }
+    return { supplierId, decision };
+  }
+});
+
+/** A refusal thrown by a Kysely write that guards its own rule ("Cannot
+ *  cancel a return order in Completed status"): its message is for the
+ *  person, unless it came from the data layer. */
+function refusedBy(
+  ctx: ServiceContext,
+  err: unknown,
+  fallback: string
+): CarbonError {
+  return err instanceof Error && !isDataLayerError(err)
+    ? ctx.error("rule", err.message, err)
+    : ctx.error("internal", fallback, err);
+}
+
+// ── Purchase return orders ──────────────────────────────────────────────────
+
+const returnOrderTextFields = [
+  "purchaseOrderId",
+  "supplierContactId",
+  "supplierLocationId",
+  "supplierReference",
+  "expirationDate",
+  "locationId",
+  "orderDate"
+] as const;
+
+/**
+ * Change one field of purchase return orders.
+ *
+ * @remarks
+ * The return order properties panel's edit; `value` null clears the field. A
+ * new `supplierId` on one return takes the supplier's currency and today's
+ * rate. A new `currencyCode` takes today's rate (refused when there is
+ * none). Refused when any of the returns is Completed or Cancelled.
+ *
+ * @mcp
+ */
+export const updateReturnOrders = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()).min(1),
+    field: z.enum(["supplierId", "currencyCode", ...returnOrderTextFields]),
+    value: z.string().nullable()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const statuses = await statusesOf(ctx, "purchaseReturnOrder", ids);
+    if (statuses instanceof CarbonError) return statuses;
+    if (statuses.some(isPurchaseReturnOrderLocked)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a completed or cancelled return order."
+      );
+    }
+
+    let patch: Database["public"]["Tables"]["purchaseReturnOrder"]["Update"];
+    if (field === "supplierId") {
+      patch = { supplierId: value ?? undefined };
+      if (value && ids.length === 1) {
+        const supplier = await client
+          .from("supplier")
+          .select("currencyCode")
+          .eq("id", value)
+          .single();
+        const currencyCode = supplier.data?.currencyCode;
+        if (currencyCode) {
+          const rate = await getExchangeRate(client, companyId, currencyCode);
+          if (rate.error)
+            return ctx.error("rule", rate.error.message, rate.error);
+          patch = { ...patch, currencyCode, exchangeRate: rate.data };
+        }
+      }
+    } else if (field === "currencyCode" && value) {
+      // Missing rate = refusal, never a stale rate or 1.
+      const rate = await getExchangeRate(client, companyId, value);
+      if (rate.error) return ctx.error("rule", rate.error.message, rate.error);
+      patch = { currencyCode: value, exchangeRate: rate.data };
+    } else {
+      patch = unchecked({ [field]: value ? value : null });
+    }
+
+    const update = await client
+      .from("purchaseReturnOrder")
+      .update({
+        ...patch,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the return order",
+        update.error
+      );
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Cancel a purchase return order.
+ *
+ * @remarks
+ * Refused when the return is Completed or Cancelled, or has a shipment or
+ * shipped quantity. Locks the return first, so a shipment posting at the
+ * same time either wins or sees it Cancelled.
+ *
+ * @mcp destructive
+ */
+export const cancelReturnOrder = defineServiceFn({
+  input: z.object({ purchaseReturnOrderId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { purchaseReturnOrderId }) {
+    try {
+      await cancelPurchaseReturnOrder(ctx.asSystem.pg, {
+        id: purchaseReturnOrderId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return refusedBy(ctx, err, "Failed to update status");
+    }
+    return { purchaseReturnOrderId };
+  }
+});
+
+/**
+ * Reopen a purchase return order.
+ *
+ * @remarks
+ * Sets a To Ship or Cancelled return back to Draft, so its lines can be
+ * edited and it can be confirmed again. Refused when anything has shipped.
+ *
+ * @mcp
+ */
+export const reopenReturnOrder = defineServiceFn({
+  input: z.object({ purchaseReturnOrderId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { purchaseReturnOrderId }) {
+    try {
+      await reopenPurchaseReturnOrder(ctx.asSystem.pg, {
+        id: purchaseReturnOrderId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return refusedBy(ctx, err, "Failed to update status");
+    }
+    return { purchaseReturnOrderId };
+  }
+});
+
+const returnOrderLineInput = purchaseReturnOrderLineValidator
+  .omit({ id: true, purchaseReturnOrderId: true })
+  .extend({
+    purchaseReturnOrderId: z.string(),
+    customFields: customFieldsInput.optional()
+  });
+
+/**
+ * Add a line to a purchase return order.
+ *
+ * @remarks
+ * Only while the return is Draft: quantities are checked against their
+ * source lines at Confirm. A line added from a purchase order or receipt
+ * line links the return to that purchase order when it has none yet (best
+ * effort). The batch or serial to send back is `trackedEntityIds`; with none
+ * given and a receipt line holding exactly one Available entity, that one is
+ * chosen.
+ *
+ * @mcp
+ */
+export const addReturnOrderLine = defineServiceFn({
+  input: returnOrderLineInput,
+  permission: { create: "purchasing" },
+
+  async run(ctx, { trackedEntityIds, ...line }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const orderId = line.purchaseReturnOrderId;
+
+    const order = await getPurchaseReturnOrder(client, orderId);
+    if (isPurchaseReturnOrderLocked(order.data?.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot add lines to a completed or cancelled return order."
+      );
+    }
+    if (order.data?.status !== "Draft") {
+      return ctx.error(
+        "rule",
+        "Lines can only be added while the return order is Draft"
+      );
+    }
+
+    const created = await upsertPurchaseReturnOrderLine(client, {
+      ...line,
+      companyId,
+      createdBy: userId
+    });
+    if (created.error || !created.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create return order line",
+        created.error
+      );
+    }
+    const id = created.data.id;
+
+    // The first line's order wins and a manually linked header is never
+    // overwritten, so a return across several orders still works.
+    if (!order.data.purchaseOrderId) {
+      let purchaseOrderLineId = line.purchaseOrderLineId ?? null;
+      if (!purchaseOrderLineId && line.receiptLineId) {
+        const receiptLine = await client
+          .from("receiptLine")
+          .select("lineId")
+          .eq("id", line.receiptLineId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        purchaseOrderLineId = receiptLine.data?.lineId ?? null;
+      }
+      if (purchaseOrderLineId) {
+        const purchaseOrderLine = await client
+          .from("purchaseOrderLine")
+          .select("purchaseOrderId")
+          .eq("id", purchaseOrderLineId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        if (purchaseOrderLine.data?.purchaseOrderId) {
+          await client
+            .from("purchaseReturnOrder")
+            .update({
+              purchaseOrderId: purchaseOrderLine.data.purchaseOrderId,
+              updatedBy: userId
+            })
+            .eq("id", orderId)
+            .eq("companyId", companyId);
+        }
+      }
+    }
+
+    let entityIds = trackedEntityIds ?? [];
+    if (entityIds.length === 0 && line.receiptLineId) {
+      const returnable = await getReturnableEntitiesForReceiptLine(
+        client,
+        companyId,
+        line.itemId,
+        line.receiptLineId
+      );
+      if (!returnable.error && returnable.data?.length === 1) {
+        entityIds = [returnable.data[0].id];
+      }
+    }
+    if (entityIds.length > 0) {
+      const set = await setPurchaseReturnOrderLineTrackedEntities(
+        client,
+        id,
+        companyId,
+        entityIds,
+        userId
+      );
+      if (set.error) {
+        return ctx.error(
+          "internal",
+          "The line was added, but its tracked entities could not be set",
+          set.error
+        );
+      }
+    }
+    return { id };
+  }
+});
+
+/**
+ * Change a line of a purchase return order.
+ *
+ * @remarks
+ * Refused when the return is Completed or Cancelled, or the line is not on
+ * it. Once the return is confirmed, the quantity, item, unit price,
+ * restocking fee, unit of measure and source links are locked: they were
+ * checked against their source lines at Confirm. `trackedEntityIds`
+ * replaces the line's batches and serials.
+ *
+ * @mcp
+ */
+export const updateReturnOrderLine = defineServiceFn({
+  input: returnOrderLineInput.extend({ lineId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { lineId, trackedEntityIds, ...line }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const orderId = line.purchaseReturnOrderId;
+
+    const order = await getPurchaseReturnOrder(client, orderId);
+    if (isPurchaseReturnOrderLocked(order.data?.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a completed or cancelled return order."
+      );
+    }
+
+    const existing = await client
+      .from("purchaseReturnOrderLine")
+      .select(
+        "purchaseReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, purchaseOrderLineId, receiptLineId, purchaseInvoiceLineId"
+      )
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error || existing.data.purchaseReturnOrderId !== orderId) {
+      return ctx.error(
+        "notFound",
+        "This line does not belong to this return order"
+      );
+    }
+
+    if (order.data?.status !== "Draft") {
+      const locked = lockedReturnLineField(line, existing.data);
+      if (locked) {
+        return ctx.error("rule", `${locked} is locked after confirmation`);
+      }
+    }
+
+    const update = await upsertPurchaseReturnOrderLine(client, {
+      ...line,
+      id: lineId,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update return order line",
+        update.error
+      );
+    }
+
+    const set = await setPurchaseReturnOrderLineTrackedEntities(
+      client,
+      lineId,
+      companyId,
+      trackedEntityIds ?? [],
+      ctx.auditUserId
+    );
+    if (set.error) {
+      return ctx.error("internal", "Failed to set tracked entities", set.error);
+    }
+    return { id: lineId };
+  }
+});
+
+// ── Leases (lessee) ─────────────────────────────────────────────────────────
+
+/** A refusal unless the lease is the caller's company's (readable as the
+ *  caller). */
+async function leaseNotFound(
+  ctx: ServiceContext,
+  leaseId: string
+): Promise<CarbonError | null> {
+  const lease = await getLease(ctx.asCaller.supabase, leaseId, ctx.company.id);
+  return lease.error || lease.data?.companyId !== ctx.company.id
+    ? ctx.error("notFound", "Lease not found", lease.error)
+    : null;
+}
+
+/** Runs one `post-lease` lifecycle action, which locks the lease and checks
+ *  its own rules in one transaction. */
+async function postLease(
+  ctx: ServiceContext,
+  input: ServerFnInput<"post-lease">,
+  fallback: string
+): Promise<CarbonError | null> {
+  const missing = await leaseNotFound(ctx, input.leaseId);
+  if (missing) return missing;
+  const result = await serverFns
+    .system({
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    })
+    .invoke("post-lease", input);
+  return result.error ? fromServerFn(ctx, result.error, fallback) : null;
+}
+
+/**
+ * Activate a Draft lease.
+ *
+ * @remarks
+ * Classifies and measures each leased asset, posts the commencement journal
+ * (or the opening balance, for a lease that commenced before the accounting
+ * cutover) and writes the monthly schedule, in one transaction. Refused for a
+ * lease that is not Draft, has no asset, an asset with no payment row, a
+ * currency other than the base currency, or a Skipped payment no opening
+ * balance holds.
+ *
+ * @mcp
+ */
+export const activateLease = defineServiceFn({
+  input: z.object({ leaseId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { leaseId }) {
+    const refused = await postLease(
+      ctx,
+      { type: "activate", leaseId },
+      "Failed to activate lease"
+    );
+    return refused ?? { leaseId };
+  }
+});
+
+/**
+ * Cancel an Active lease.
+ *
+ * @remarks
+ * Undoes an activation: voids its commencement or opening journal and deletes
+ * the schedule. Refused for a Draft (delete it instead), and for a lease with
+ * a Modify, Terminate or Purchase, an invoiced payment, or a posted or held
+ * lease run month.
+ *
+ * @mcp destructive
+ */
+export const cancelLease = defineServiceFn({
+  input: z.object({ leaseId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { leaseId }) {
+    const refused = await postLease(
+      ctx,
+      { type: "cancel", leaseId },
+      "Failed to cancel lease"
+    );
+    return refused ?? { leaseId };
+  }
+});
+
+/**
+ * Modify an Active lease from an effective date.
+ *
+ * @remarks
+ * Updates the term, rate, frequency and escalation, cuts each active asset's
+ * remaining payments again at the payment in `lines`, remeasures each
+ * capitalized asset, posts the adjustment and rewrites the unposted schedule,
+ * in one transaction. The effective date must start a lease month and a
+ * payment period, after every posted lease run month.
+ *
+ * @mcp
+ */
+export const modifyLease = defineServiceFn({
+  input: leaseModifyValidator.safeExtend({ leaseId: z.string() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { leaseId, notes, ...terms }) {
+    const refused = await postLease(
+      ctx,
+      { type: "modify", leaseId, ...terms, notes: notes ?? null },
+      "Failed to modify lease"
+    );
+    return refused ?? { leaseId };
+  }
+});
+
+/**
+ * Terminate one leased asset early.
+ *
+ * @remarks
+ * Deletes its Pending payments after the date, adds a Termination Penalty
+ * payment of `penaltyAmount`, posts the derecognition with its gain or loss,
+ * and sets the asset Terminated; the lease ends with its last asset. The
+ * date must end a payment period, on or after the commencement.
+ *
+ * @mcp destructive
+ */
+export const terminateLeaseLine = defineServiceFn({
+  input: leaseTerminateValidator.extend({
+    leaseId: z.string(),
+    leaseLineId: z.string()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { leaseId, leaseLineId, notes, ...terms }) {
+    const refused = await postLease(
+      ctx,
+      {
+        type: "terminate",
+        leaseId,
+        leaseLineId,
+        ...terms,
+        notes: notes ?? null
+      },
+      "Failed to terminate lease"
+    );
+    return refused ?? { leaseId, leaseLineId };
+  }
+});
+
+/**
+ * Exercise a leased asset's purchase option.
+ *
+ * @remarks
+ * Posts the purchase, adds an Active fixed asset of `fixedAssetClassId` at
+ * the asset's location, and sets the leased asset Purchased. Refused for a
+ * Short-Term asset, and one with neither a purchase option nor ownership
+ * transfer.
+ *
+ * @mcp
+ */
+export const purchaseLeaseLine = defineServiceFn({
+  input: leasePurchaseValidator.extend({
+    leaseId: z.string(),
+    leaseLineId: z.string()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { leaseId, leaseLineId, notes, ...terms }) {
+    const refused = await postLease(
+      ctx,
+      {
+        type: "purchase",
+        leaseId,
+        leaseLineId,
+        ...terms,
+        notes: notes ?? null
+      },
+      "Failed to purchase the leased asset"
+    );
+    return refused ?? { leaseId, leaseLineId };
+  }
+});
+
+/**
+ * Write (or clear) a Draft lease asset's classification override, audit
+ * logged. An accounting decision, so it runs as the system on the caller's
+ * `update: accounting`: an accountant need not hold the purchasing write the
+ * lease's own policies ask for.
+ */
+async function writeClassificationOverride(
+  ctx: ServiceContext,
+  {
+    leaseId,
+    leaseLineId,
+    override
+  }: {
+    leaseId: string;
+    leaseLineId: string;
+    override: {
+      classification: "Operating" | "Finance";
+      reason: string;
+    } | null;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [lease, line] = await Promise.all([
+    client
+      .from("lease")
+      .select("id, status")
+      .eq("id", leaseId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("leaseLine")
+      .select("id, classificationOverride, classificationOverrideReason")
+      .eq("id", leaseLineId)
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (lease.error || line.error) {
+    return ctx.error(
+      "internal",
+      "Leased asset not found",
+      lease.error ?? line.error
+    );
+  }
+  if (!lease.data || !line.data) {
+    return ctx.error("notFound", "Leased asset not found");
+  }
+  const fixed = () =>
+    ctx.error(
+      "rule",
+      "The classification is fixed once the lease is activated"
+    );
+  if (lease.data.status !== "Draft") return fixed();
+
+  // Activation stamps `lesseeClassification`, so an unstamped asset is one
+  // still to be classified: an asset activated since the read above matches
+  // no row, and its commenced treatment is never overwritten.
+  const update = await client
+    .from("leaseLine")
+    .update({
+      classificationOverride: override?.classification ?? null,
+      classificationOverrideReason: override?.reason ?? null,
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", leaseLineId)
+    .eq("leaseId", leaseId)
+    .eq("companyId", companyId)
+    .is("lesseeClassification", null)
+    .select("id")
+    .maybeSingle();
+  if (update.error) {
+    return ctx.error(
+      "internal",
+      override
+        ? "Failed to override the classification"
+        : "Failed to remove the classification override",
+      update.error
+    );
+  }
+  if (!update.data) return fixed();
+
+  // Best-effort: a failed audit write never undoes the change.
+  try {
+    await insertAuditLogEntries(client, companyId, [
+      {
+        tableName: "leaseLine",
+        entityType: "lease",
+        entityId: leaseId,
+        recordId: leaseLineId,
+        operation: "UPDATE",
+        actorId: ctx.auditUserId,
+        diff: {
+          classificationOverride: {
+            old: line.data.classificationOverride,
+            new: override?.classification ?? null
+          },
+          classificationOverrideReason: {
+            old: line.data.classificationOverrideReason,
+            new: override?.reason ?? null
+          }
+        },
+        metadata: { origin: "web" }
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a lease classification override", {
+      error: err
+    });
+  }
+  return null;
+}
+
+/**
+ * Override a Draft lease asset's classification.
+ *
+ * @remarks
+ * Sets the asset Operating or Finance whatever the five tests say, with the
+ * reason; activation keeps it. Only while the lease is Draft. Audit logged.
+ *
+ * @mcp
+ */
+export const overrideLeaseLineClassification = defineServiceFn({
+  input: leaseClassificationValidator.extend({
+    leaseId: z.string(),
+    leaseLineId: z.string()
+  }),
+  permission: { update: "accounting" },
+
+  async run(ctx, { leaseId, leaseLineId, classification, reason }) {
+    const refused = await writeClassificationOverride(ctx, {
+      leaseId,
+      leaseLineId,
+      override: { classification, reason }
+    });
+    return refused ?? { leaseLineId, classification };
+  }
+});
+
+/**
+ * Remove a Draft lease asset's classification override.
+ *
+ * @remarks
+ * The five tests decide the classification again. Only while the lease is
+ * Draft. Audit logged.
+ *
+ * @mcp
+ */
+export const removeLeaseLineClassificationOverride = defineServiceFn({
+  input: z.object({ leaseId: z.string(), leaseLineId: z.string() }),
+  permission: { update: "accounting" },
+
+  async run(ctx, { leaseId, leaseLineId }) {
+    const refused = await writeClassificationOverride(ctx, {
+      leaseId,
+      leaseLineId,
+      override: null
+    });
+    return refused ?? { leaseLineId };
+  }
+});
+
+// ── Purchase orders ─────────────────────────────────────────────────────────
+
+const purchaseOrderHeaderFields = [
+  "supplierContactId",
+  "supplierLocationId",
+  "supplierReference",
+  "exchangeRate",
+  "orderDate"
+] as const;
+
+const purchaseOrderDeliveryFields = [
+  "receiptRequestedDate",
+  "locationId",
+  "deliveryDate"
+] as const;
+
+/**
+ * Change one field of purchase orders.
+ *
+ * @remarks
+ * The purchase order properties panel's edit; `value` null clears the field
+ * (an empty `supplierId` changes nothing). A new `supplierId` on one order
+ * takes the supplier's currency and today's rate; a new `currencyCode` takes
+ * today's rate (refused when there is none). `receiptRequestedDate`,
+ * `locationId` and `deliveryDate` are the delivery's. `receiptPromisedDate`
+ * also fills every line that has no promised date of its own. Refused when
+ * any order is released, except for `deliveryDate`.
+ *
+ * @mcp
+ */
+export const updatePurchaseOrders = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()).min(1),
+    field: z.enum([
+      "supplierId",
+      "currencyCode",
+      "receiptPromisedDate",
+      ...purchaseOrderHeaderFields,
+      ...purchaseOrderDeliveryFields
+    ]),
+    value: z.string().nullable()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const stamp = () => ({
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    });
+
+    if (field !== "deliveryDate") {
+      const statuses = await statusesOf(ctx, "purchaseOrder", ids);
+      if (statuses instanceof CarbonError) return statuses;
+      if (statuses.some(isPurchaseOrderLocked)) {
+        return ctx.error("rule", "Cannot modify a confirmed purchase order.");
+      }
+    }
+
+    const failed = (error: unknown) =>
+      ctx.error("internal", "Failed to update the purchase order", error);
+
+    if (field === "receiptPromisedDate") {
+      const lines = await client
+        .from("purchaseOrderLine")
+        .update({ promisedDate: value ?? undefined, ...stamp() })
+        .in("purchaseOrderId", ids)
+        .eq("companyId", companyId)
+        .is("promisedDate", null);
+      if (lines.error) return failed(lines.error);
+    }
+
+    if (
+      field === "receiptPromisedDate" ||
+      (purchaseOrderDeliveryFields as readonly string[]).includes(field)
+    ) {
+      const delivery = await client
+        .from("purchaseOrderDelivery")
+        .update(unchecked({ [field]: value, ...stamp() }))
+        .in("id", ids)
+        .eq("companyId", companyId);
+      return delivery.error ? failed(delivery.error) : { ids };
+    }
+
+    let patch: Database["public"]["Tables"]["purchaseOrder"]["Update"];
+    if (field === "supplierId") {
+      patch = { supplierId: value ?? undefined };
+      if (value && ids.length === 1) {
+        const supplier = await client
+          .from("supplier")
+          .select("currencyCode")
+          .eq("id", value)
+          .single();
+        const currencyCode = supplier.data?.currencyCode;
+        if (currencyCode) {
+          const rate = await getExchangeRate(client, companyId, currencyCode);
+          if (rate.error)
+            return ctx.error("rule", rate.error.message, rate.error);
+          patch = { ...patch, currencyCode, exchangeRate: rate.data };
+        }
+      }
+    } else if (field === "currencyCode" && value) {
+      const rate = await getExchangeRate(client, companyId, value);
+      if (rate.error) return ctx.error("rule", rate.error.message, rate.error);
+      patch = { currencyCode: value, exchangeRate: rate.data };
+    } else {
+      patch = unchecked({ [field]: value ? value : null });
+    }
+
+    const update = await client
+      .from("purchaseOrder")
+      .update({ ...patch, ...stamp() })
+      .in("id", ids)
+      .eq("companyId", companyId);
+    return update.error ? failed(update.error) : { ids };
+  }
+});
+
+/**
+ * Delete purchase orders.
+ *
+ * @remarks
+ * Only Draft, Planned or Needs Approval orders. An order that needs approval
+ * can be deleted only by the person who requested it (an approver rejects
+ * instead), and its pending approval requests are cancelled first. Every
+ * order is checked before anything is deleted.
+ *
+ * @mcp destructive
+ */
+export const deletePurchaseOrders = defineServiceFn({
+  input: z.object({ purchaseOrderIds: z.array(z.string()).min(1) }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { purchaseOrderIds }) {
+    const system = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const ids = [...new Set(purchaseOrderIds)];
+
+    const orders = await system
+      .from("purchaseOrder")
+      .select("id, status")
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (orders.error) {
+      return ctx.error("internal", "Purchase order not found", orders.error);
+    }
+    if (orders.data.length !== ids.length) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+
+    const needsApproval = orders.data
+      .filter((order) => order.status === "Needs Approval")
+      .map((order) => order.id);
+    const pending =
+      needsApproval.length > 0
+        ? await system
+            .from("approvalRequest")
+            .select("documentId, requestedBy, amount, requestedAt")
+            .eq("documentType", "purchaseOrder")
+            .in("documentId", needsApproval)
+            .eq("companyId", companyId)
+            .eq("status", "Pending")
+            .order("requestedAt", { ascending: false })
+        : null;
+    if (pending?.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the approval requests",
+        pending.error
+      );
+    }
+
+    for (const order of orders.data) {
+      const latest = pending?.data.find((r) => r.documentId === order.id);
+      const refusal = purchaseOrderDeleteRefusal({
+        status: order.status,
+        requestedBy: latest?.requestedBy,
+        userId
+      });
+      if (refusal === "status") {
+        return ctx.error(
+          "rule",
+          `Cannot delete purchase order with status "${order.status ?? "unknown"}". Only Draft, Planned, or Needs Approval (if you're the requester) purchase orders can be deleted.`
+        );
+      }
+      if (refusal === "notRequester") {
+        const isApprover = await canApproveRequest(
+          system,
+          {
+            amount: latest?.amount ?? null,
+            documentType: "purchaseOrder",
+            companyId
+          },
+          userId
+        );
+        return ctx.error(
+          "forbidden",
+          isApprover
+            ? "Please reject the approval request instead of deleting"
+            : "You do not have permission to delete this purchase order"
+        );
+      }
+    }
+
+    if (needsApproval.length > 0) {
+      const cancelled = await system
+        .from("approvalRequest")
+        .update({
+          status: "Cancelled",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("documentType", "purchaseOrder")
+        .in("documentId", needsApproval)
+        .eq("companyId", companyId)
+        .eq("status", "Pending");
+      if (cancelled.error) {
+        return ctx.error(
+          "internal",
+          "Failed to cancel the approval requests",
+          cancelled.error
+        );
+      }
+    }
+
+    const removed = await ctx.asCaller.supabase
+      .from("purchaseOrder")
+      .delete()
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (removed.error) {
+      return ctx.error("internal", removed.error.message, removed.error);
+    }
+    return { purchaseOrderIds: ids };
+  }
+});
+
+/** The PO statuses whose open lines MRP counts as supply
+ *  (`openPurchaseOrderLines`). */
+const MRP_SUPPLY_STATUSES = new Set<string>([
+  "Planned",
+  "To Receive",
+  "To Receive and Invoice"
+]);
+
+/** Cancels the order's pending approval requests. Approved and Rejected ones
+ *  stay: they are the audit trail. */
+async function cancelPendingApprovals(
+  ctx: ServiceContext,
+  purchaseOrderId: string
+) {
+  return ctx.asSystem.supabase
+    .from("approvalRequest")
+    .update({
+      status: "Cancelled",
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("documentType", "purchaseOrder")
+    .eq("documentId", purchaseOrderId)
+    .eq("companyId", ctx.company.id)
+    .eq("status", "Pending")
+    .select("id");
+}
+
+/**
+ * Reopen a purchase order.
+ *
+ * @remarks
+ * Moves the order back to Draft (from the order page) or Planned (from the
+ * planning pages: Draft is not MRP supply). Reopening a released order needs
+ * `delete: purchasing`. Pending approval requests are cancelled; an order
+ * that needs approval can be reopened only by its requester or an approver.
+ * With `createRevision`, a released order is reopened as its next revision
+ * (refused for an order never released). Reopening to Planned runs MRP for
+ * the order unless it already was supply.
+ *
+ * @mcp
+ */
+export const reopenPurchaseOrder = defineServiceFn({
+  input: z.object({
+    purchaseOrderId: z.string(),
+    status: z.enum(PURCHASE_ORDER_REOPEN_STATUSES),
+    createRevision: z.boolean().default(false)
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { purchaseOrderId, status, createRevision }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const current = await ctx.asCaller.supabase
+      .from("purchaseOrder")
+      .select("status, orderDate")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order",
+        current.error
+      );
+    }
+    if (!current.data) return ctx.error("notFound", "Purchase order not found");
+    const currentStatus = current.data.status;
+
+    // Checked BEFORE the approvals are cancelled below: a request about to
+    // fail must not have side effects. The revision write re-checks in SQL.
+    if (
+      createRevision &&
+      !canCreatePurchaseOrderRevision({
+        newStatus: status,
+        currentStatus,
+        orderDate: current.data.orderDate
+      })
+    ) {
+      return ctx.error("rule", "Only a released purchase order can be revised");
+    }
+    if (
+      isPurchaseOrderLocked(currentStatus) &&
+      !callerHolds(ctx, { delete: "purchasing" })
+    ) {
+      return ctx.error(
+        "forbidden",
+        "Reopening a released purchase order needs permission to delete purchase orders"
+      );
+    }
+
+    if (currentStatus === "Needs Approval") {
+      const latest = await ctx.asSystem.supabase
+        .from("approvalRequest")
+        .select("requestedBy, amount")
+        .eq("documentType", "purchaseOrder")
+        .eq("documentId", purchaseOrderId)
+        .eq("companyId", companyId)
+        .eq("status", "Pending")
+        .limit(1)
+        .maybeSingle();
+      // Only the requester or an approver: anyone else would bypass the
+      // approval by reopening.
+      if (
+        latest.data &&
+        latest.data.requestedBy !== userId &&
+        !(await canApproveRequest(
+          ctx.asSystem.supabase,
+          {
+            amount: latest.data.amount,
+            documentType: "purchaseOrder",
+            companyId
+          },
+          userId
+        ))
+      ) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to reopen this purchase order"
+        );
+      }
+    }
+    if (currentStatus === "Needs Approval" || currentStatus === "Closed") {
+      await cancelPendingApprovals(ctx, purchaseOrderId);
+    }
+
+    if (createRevision) {
+      let rows: number;
+      try {
+        rows = await reopenPurchaseOrderAsRevision(ctx.asSystem.pg, {
+          id: purchaseOrderId,
+          companyId,
+          updatedBy: userId,
+          status
+        });
+      } catch (err) {
+        return ctx.error("internal", "Failed to create revision", err);
+      }
+      if (rows === 0) {
+        return ctx.error(
+          "conflict",
+          "Only a released purchase order can be revised"
+        );
+      }
+      return { purchaseOrderId, status, revision: true };
+    }
+
+    const update = await updatePurchaseOrderStatus(ctx.asCaller.supabase, {
+      id: purchaseOrderId,
+      status,
+      assignee: undefined,
+      updatedBy: userId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update purchasing order status",
+        update.error
+      );
+    }
+
+    // Planned makes the lines MRP supply. An order that already was supply
+    // changes nothing MRP reads, so the reopen does not wait on a run.
+    if (status === "Planned" && !MRP_SUPPLY_STATUSES.has(currentStatus ?? "")) {
+      await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+        type: "purchaseOrder",
+        id: purchaseOrderId,
+        companyId,
+        userId
+      });
+    }
+    return { purchaseOrderId, status, revision: false };
+  }
+});
+
+/**
+ * Close a purchase order.
+ *
+ * @remarks
+ * Sets the order Closed and clears its assignee; nothing more is received or
+ * invoiced against it. Its pending approval requests are cancelled.
+ *
+ * @mcp destructive
+ */
+export const closePurchaseOrderAndApprovals = defineServiceFn({
+  input: z.object({ purchaseOrderId: z.string() }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { purchaseOrderId }) {
+    const owned = await recordInCompany(ctx, "purchaseOrder", {
+      id: purchaseOrderId
+    });
+    if (owned) return owned;
+
+    const cancelled = await cancelPendingApprovals(ctx, purchaseOrderId);
+    if (cancelled.data && cancelled.data.length > 0) {
+      logger.info("Cancelled pending approval requests when closing", {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        count: cancelled.data.length
+      });
+    }
+
+    const update = await updatePurchaseOrderStatus(ctx.asCaller.supabase, {
+      id: purchaseOrderId,
+      status: "Closed",
+      assignee: null,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update purchasing order status",
+        update.error
+      );
+    }
+    return { purchaseOrderId };
+  }
+});
+
+/** A file's size as the documents table stores it: whole kilobytes. */
+function kilobytes(file: Buffer): number {
+  return Math.round(file.byteLength / 1024);
+}
+
+type PurchaseOrderRow = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseOrder>>["data"]
+>;
+
+/**
+ * Renders the order's PDF, stores it with the supplier interaction's files
+ * and adds it as a document. The step that fails is the message.
+ */
+async function attachPurchaseOrderPdf(
+  ctx: ServiceContext,
+  { purchaseOrder, locale }: { purchaseOrder: PurchaseOrderRow; locale: string }
+): Promise<{ fileName: string; path: string; size: number } | CarbonError> {
+  const companyId = ctx.company.id;
+  const purchaseOrderId = purchaseOrder.id!;
+  let pdf: Awaited<ReturnType<typeof renderPurchaseOrderPdf>>;
+  try {
+    pdf = await renderPurchaseOrderPdf(ctx.asCaller.supabase, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      purchaseOrderId,
+      locale
+    });
+  } catch (err) {
+    return ctx.error("internal", "Failed to generate PDF", err);
+  }
+
+  const fileName = stripSpecialCharacters(
+    `${getPurchaseOrderDisplayId(purchaseOrder)} - ${datetime
+      .timestamp()
+      .slice(0, -5)}.pdf`
+  );
+  const path = `${companyId}/supplier-interaction/${purchaseOrder.supplierInteractionId}/${fileName}`;
+  const upload = await storage(ctx.asSystem.supabase)
+    .company(companyId)
+    .upload(path, pdf.body, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+  if (upload.error) {
+    return ctx.error("internal", "Failed to upload file", upload.error);
+  }
+
+  const size = kilobytes(pdf.body);
+  const document = await upsertDocument(ctx.asSystem.supabase, {
+    path,
+    name: fileName,
+    size,
+    sourceDocument: "Purchase Order",
+    sourceDocumentId: purchaseOrderId,
+    readGroups: [ctx.auditUserId],
+    writeGroups: [ctx.auditUserId],
+    createdBy: ctx.auditUserId,
+    companyId
+  });
+  if (document.error) {
+    return ctx.error("internal", "Failed to create document", document.error);
+  }
+  return { fileName, path, size };
+}
+
+/**
+ * The purchase order email to the supplier contact, copied to the buyer:
+ * null when the contact has no email address.
+ */
+async function purchaseOrderEmail(
+  ctx: ServiceContext,
+  {
+    purchaseOrderId,
+    supplierContactId,
+    locale
+  }: { purchaseOrderId: string; supplierContactId: string; locale: string }
+) {
+  const client = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [
+    company,
+    contact,
+    purchaseOrder,
+    lines,
+    locations,
+    paymentTerms,
+    buyer
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getSupplierContact(client, supplierContactId, companyId),
+    getPurchaseOrder(client, purchaseOrderId),
+    getPurchaseOrderLines(client, purchaseOrderId),
+    getPurchaseOrderLocations(client, purchaseOrderId),
+    getPaymentTermsList(client, companyId),
+    getUser(client, ctx.auditUserId)
+  ]);
+  if (!contact.data?.contact) throw new Error("Failed to get supplier contact");
+  if (!company.data) throw new Error("Failed to get company");
+  if (!buyer.data) throw new Error("Failed to get user");
+  if (!purchaseOrder.data) throw new Error("Failed to get purchase order");
+  if (!locations.data)
+    throw new Error("Failed to get purchase order locations");
+  if (!paymentTerms.data) throw new Error("Failed to get payment terms");
+  const supplierEmail = contact.data.contact.email;
+  if (!supplierEmail) return null;
+
+  // Same decimals the PDF of this order uses.
+  const currency = purchaseOrder.data.currencyCode
+    ? await getCurrencyByCode(
+        client,
+        ctx.company.groupId,
+        purchaseOrder.data.currencyCode
+      )
+    : null;
+  const template = PurchaseOrderEmail({
+    // @ts-expect-error TS2739 - TODO: fix type
+    company: company.data,
+    currencyDecimals: currency?.data?.decimalPlaces ?? null,
+    locale,
+    purchaseOrder: purchaseOrder.data,
+    purchaseOrderLines: lines.data ?? [],
+    purchaseOrderLocations: locations.data,
+    recipient: {
+      email: supplierEmail,
+      firstName: contact.data.contact.firstName ?? undefined,
+      lastName: contact.data.contact.lastName ?? undefined
+    },
+    sender: {
+      email: buyer.data.email,
+      firstName: buyer.data.firstName,
+      lastName: buyer.data.lastName
+    },
+    paymentTerms: paymentTerms.data
+  });
+  return {
+    to: [buyer.data.email, supplierEmail],
+    from: buyer.data.email,
+    subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
+    html: await renderAsync(template),
+    text: await renderAsync(template, { plainText: true }),
+    purchaseOrder: purchaseOrder.data,
+    lines: lines.data ?? []
+  };
+}
+
+/** Updates the supplier prices from the order when the company updates them
+ *  on finalize. A failure is logged: the order stands. */
+async function updatePricesOnFinalize(
+  ctx: ServiceContext,
+  purchaseOrderId: string
+) {
+  const settings = await getCompanySettings(
+    ctx.asSystem.supabase,
+    ctx.company.id
+  );
+  if (settings.data?.purchasePriceUpdateTiming !== "Purchase Order Finalize") {
+    return;
+  }
+  const update = await serverFns
+    .system({
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    })
+    .invoke("update-purchased-prices", {
+      purchaseOrderId,
+      source: "purchaseOrder",
+      updatePrices: true,
+      updateLeadTimes: false
+    });
+  if (update.error) {
+    logger.error("Failed to update purchased prices", { error: update.error });
+  }
+}
+
+const purchaseOrderNotification = {
+  notification: z.enum(["Email", "None"]).optional(),
+  supplierContact: z.string().optional(),
+  cc: z.array(z.string()).optional(),
+  /** The PDF's and email's locale (BCP 47); en-US when absent. */
+  locale: z.string().optional()
+};
+
+/**
+ * Finalize a purchase order.
+ *
+ * @remarks
+ * Refused when the company requires a reachable supplier contact and the
+ * supplier has none, or requires approved suppliers and this one is not
+ * Active. The order gets its status from its lines and today's order date.
+ * When the company's approval rule covers its total (a planning order skips
+ * it if the company allows), it goes to Needs Approval instead: an approval
+ * request is opened and the approvers notified, and nothing else happens
+ * until it is approved. Otherwise the supplier prices are updated (when the
+ * company does that on finalize), the PDF is stored as a document, and with
+ * `notification` Email the supplier contact gets it with the interaction's
+ * files and the default attachments (refused over the attachment limit).
+ *
+ * @mcp
+ */
+export const finalizePurchaseOrderAndNotify = defineServiceFn({
+  input: z
+    .object({ purchaseOrderId: z.string(), ...purchaseOrderNotification })
+    .refine((d) => (d.notification === "Email" ? !!d.supplierContact : true), {
+      message: "Supplier contact is required for email",
+      path: ["supplierContact"]
+    }),
+  permission: { create: "purchasing" },
+
+  async run(
+    ctx,
+    { purchaseOrderId, notification, supplierContact, cc, locale }
+  ) {
+    const system = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const purchaseOrder = await getPurchaseOrder(system, purchaseOrderId);
+    if (purchaseOrder.error) {
+      return ctx.error(
+        "internal",
+        "Failed to get purchase order",
+        purchaseOrder.error
+      );
+    }
+    if (purchaseOrder.data.companyId !== companyId) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+
+    const contactRule = await checkPartyContactRequirement(
+      ctx.asCaller.supabase,
+      companyId,
+      { kind: "supplier", id: purchaseOrder.data.supplierId }
+    );
+    if (contactRule) return ctx.error("rule", contactRule);
+
+    if (
+      purchaseOrder.data.supplierId &&
+      (await isApprovalRequired(system, "supplier", companyId))
+    ) {
+      const supplier = await getSupplier(system, purchaseOrder.data.supplierId);
+      if (supplier.data?.status !== "Active") {
+        return ctx.error(
+          "rule",
+          "Cannot finalize: supplier is not approved (Active)"
+        );
+      }
+    }
+
+    // A planning order, untouched by hand since, skips the approval rule when
+    // the company allows it. Fail closed: a failed read is an ordinary check.
+    const [planningOrigin, planningSettings] = await Promise.all([
+      system
+        .from("purchaseOrder")
+        .select("createdFromPlanning")
+        .eq("id", purchaseOrderId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      system
+        .from("companySettings")
+        .select("skipApprovalForPlanningPurchaseOrders")
+        .eq("id", companyId)
+        .maybeSingle()
+    ]);
+    if (planningOrigin.error || planningSettings.error) {
+      logger.error("Failed to read the planning approval bypass", {
+        companyId,
+        purchaseOrderId,
+        error: planningOrigin.error ?? planningSettings.error
+      });
+    }
+    const skipsApproval =
+      planningOrigin.data?.createdFromPlanning === true &&
+      planningSettings.data?.skipApprovalForPlanningPurchaseOrders === true;
+    const amount = purchaseOrder.data.orderTotal ?? 0;
+    const approvalRequired =
+      !skipsApproval &&
+      (await isApprovalRequired(system, "purchaseOrder", companyId, amount));
+
+    const finalize = await finalizePurchaseOrder(
+      ctx.asCaller.supabase,
+      purchaseOrderId,
+      userId
+    );
+    if (finalize.error) {
+      return ctx.error(
+        "internal",
+        "Failed to finalize purchase order",
+        finalize.error
+      );
+    }
+    trackWorkEvent(
+      "purchase_order_finalized",
+      {
+        companyId,
+        userId,
+        purchaseOrderId,
+        stage: approvalRequired ? "gated" : "committed"
+      },
+      { discriminator: approvalRequired ? "gated" : "committed" }
+    );
+
+    // The PDF, the email and the prices wait for the approval.
+    if (approvalRequired) {
+      if (
+        !(await hasPendingApproval(system, "purchaseOrder", purchaseOrderId))
+      ) {
+        await createApprovalRequest(system, {
+          documentType: "purchaseOrder",
+          documentId: purchaseOrderId,
+          companyId,
+          requestedBy: userId,
+          createdBy: userId,
+          amount
+        });
+        const rule = await getApprovalRuleByAmount(
+          system,
+          "purchaseOrder",
+          companyId,
+          amount
+        );
+        const approverIds = rule.data
+          ? await getApproverUserIdsForRule(system, rule.data)
+          : [];
+        if (approverIds.length > 0) {
+          await trigger("notify", {
+            event: NotificationEvent.ApprovalRequested,
+            companyId,
+            documentId: purchaseOrderId,
+            documentType: "purchaseOrder",
+            recipient: { type: "users", userIds: approverIds },
+            from: userId
+          }).catch((e) =>
+            logger.error("Failed to trigger approval notification", {
+              error: e
+            })
+          );
+        }
+      }
+      const status = await updatePurchaseOrderStatus(ctx.asCaller.supabase, {
+        id: purchaseOrderId,
+        status: "Needs Approval",
+        assignee: undefined,
+        updatedBy: userId
+      });
+      if (status.error) {
+        return ctx.error(
+          "internal",
+          "Failed to submit the purchase order for approval",
+          status.error
+        );
+      }
+      return { purchaseOrderId, needsApproval: true };
+    }
+
+    await updatePricesOnFinalize(ctx, purchaseOrderId);
+
+    const pdf = await attachPurchaseOrderPdf(ctx, {
+      purchaseOrder: purchaseOrder.data,
+      locale: locale ?? "en-US"
+    });
+    if (pdf instanceof CarbonError) return pdf;
+
+    if (notification === "Email" && supplierContact) {
+      try {
+        const email = await purchaseOrderEmail(ctx, {
+          purchaseOrderId,
+          supplierContactId: supplierContact,
+          locale: locale ?? "en-US"
+        });
+        if (email) {
+          const interactionId = email.purchaseOrder.supplierInteractionId;
+          const defaults = await getDefaultAttachmentsForPO(system, {
+            companyId,
+            supplierId: email.purchaseOrder.supplierId ?? null,
+            itemIds: [
+              ...new Set(
+                email.lines.flatMap((line) =>
+                  line.itemId ? [line.itemId] : []
+                )
+              )
+            ]
+          });
+          const attachments = [
+            ...(interactionId
+              ? await interactionAttachments(system, companyId, interactionId)
+              : []),
+            ...(await signedAttachments(
+              system,
+              companyId,
+              defaults.map((file) => ({ filename: file.name, path: file.path }))
+            ))
+          ];
+          const totalKb = attachments.length
+            ? pdf.size + defaults.reduce((sum, r) => sum + (r.size ?? 0), 0)
+            : 0;
+          if (totalKb > PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024) {
+            return ctx.error(
+              "rule",
+              `Total attachments exceed ${PO_EMAIL_ATTACHMENT_LIMIT_MB} MB limit`
+            );
+          }
+          await trigger("send-email", {
+            to: email.to,
+            cc: cc?.length ? cc : undefined,
+            from: email.from,
+            subject: email.subject,
+            html: email.html,
+            text: email.text,
+            attachments: attachments.length ? attachments : undefined,
+            companyId
+          });
+        }
+      } catch (err) {
+        return ctx.error("internal", "Failed to send email", err);
+      }
+    }
+    return { purchaseOrderId, needsApproval: false };
+  }
+});
+
+/**
+ * Approve or reject a purchase order's pending approval request.
+ *
+ * @remarks
+ * Only an approver whose tier covers the order's amount may decide. The
+ * requester is notified, and so are the approvers of every lower tier. An
+ * approved order is released: the supplier prices are updated (when the
+ * company does that on finalize), the PDF is stored as a document, and with
+ * `notification` Email the supplier contact gets it. Those follow-ups are
+ * logged when they fail; the decision stands.
+ *
+ * @mcp
+ */
+export const decidePurchaseOrderApproval = defineServiceFn({
+  input: z
+    .object({
+      purchaseOrderId: z.string(),
+      approvalRequestId: z.string().min(1),
+      decision: z.enum(["Approved", "Rejected"]),
+      ...purchaseOrderNotification
+    })
+    .refine((d) => (d.notification === "Email" ? !!d.supplierContact : true), {
+      message: "Supplier contact is required for email",
+      path: ["supplierContact"]
+    }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, input) {
+    const { purchaseOrderId, approvalRequestId, decision } = input;
+    const system = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const request = await getLatestApprovalRequestForDocument(
+      system,
+      "purchaseOrder",
+      purchaseOrderId
+    );
+    // The request must be this order's pending one AND this company's.
+    if (
+      !request.data ||
+      request.data.id !== approvalRequestId ||
+      request.data.companyId !== companyId
+    ) {
+      return ctx.error("notFound", "Approval request not found");
+    }
+    const canApprove = await canApproveRequest(
+      system,
+      {
+        amount: request.data.amount,
+        documentType: request.data.documentType,
+        companyId
+      },
+      userId
+    );
+    if (!canApprove) {
+      return ctx.error(
+        "forbidden",
+        "You do not have permission to approve this request"
+      );
+    }
+
+    const decided =
+      decision === "Approved"
+        ? await approveRequest(ctx.asSystem.pg, approvalRequestId, userId)
+        : await rejectRequest(ctx.asSystem.pg, approvalRequestId, userId);
+    if (decided.error) {
+      return ctx.error(
+        "internal",
+        decided.error.message ?? "Failed to process approval decision",
+        decided.error
+      );
+    }
+
+    const event =
+      decision === "Approved"
+        ? NotificationEvent.ApprovalApproved
+        : NotificationEvent.ApprovalRejected;
+    const requestedBy = request.data.requestedBy;
+    if (requestedBy && requestedBy !== userId) {
+      await trigger("notify", {
+        event,
+        companyId,
+        documentId: purchaseOrderId,
+        documentType: "purchaseOrder",
+        recipient: { type: "user", userId: requestedBy },
+        from: userId
+      }).catch((e) =>
+        logger.error("Failed to trigger approval decision notification", {
+          error: e
+        })
+      );
+    }
+    // The approvers of every lower tier see spend that bypassed their tier.
+    try {
+      const lowerTier = await getLowerTierApproverUserIds(
+        system,
+        "purchaseOrder",
+        companyId,
+        request.data.amount ?? undefined
+      );
+      const recipients = lowerTier.filter(
+        (id) => id !== requestedBy && id !== userId
+      );
+      if (recipients.length > 0) {
+        await trigger("notify", {
+          event,
+          companyId,
+          documentId: purchaseOrderId,
+          documentType: "purchaseOrder",
+          recipient: { type: "users", userIds: recipients },
+          from: userId
+        });
+      }
+    } catch (e) {
+      logger.error(
+        "Failed to trigger lower-tier spend notification for purchase order",
+        { error: e }
+      );
+    }
+
+    if (decision === "Approved") {
+      await releaseApprovedPurchaseOrder(ctx, input);
+    }
+    return { purchaseOrderId, decision };
+  }
+});
+
+/** After an approval: the PDF, the email and the prices, each logged when it
+ *  fails. */
+async function releaseApprovedPurchaseOrder(
+  ctx: ServiceContext,
+  {
+    purchaseOrderId,
+    notification,
+    supplierContact,
+    cc,
+    locale
+  }: {
+    purchaseOrderId: string;
+    notification?: "Email" | "None";
+    supplierContact?: string;
+    cc?: string[];
+    locale?: string;
+  }
+) {
+  const purchaseOrder = await getPurchaseOrder(
+    ctx.asSystem.supabase,
+    purchaseOrderId
+  );
+  if (!purchaseOrder.data) return;
+
+  const pdf = await attachPurchaseOrderPdf(ctx, {
+    purchaseOrder: purchaseOrder.data,
+    locale: locale ?? "en-US"
+  });
+  if (pdf instanceof CarbonError) {
+    logger.error("Failed to generate PDF after approval", { error: pdf.cause });
+  } else if (notification === "Email" && supplierContact) {
+    try {
+      const email = await purchaseOrderEmail(ctx, {
+        purchaseOrderId,
+        supplierContactId: supplierContact,
+        locale: locale ?? "en-US"
+      });
+      if (email) {
+        const [attachment] = await signedAttachments(
+          ctx.asSystem.supabase,
+          ctx.company.id,
+          [{ filename: pdf.fileName, path: pdf.path }]
+        );
+        await trigger("send-email", {
+          to: email.to,
+          cc: cc?.length ? cc : undefined,
+          from: email.from,
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+          attachments: attachment ? [attachment] : undefined,
+          companyId: ctx.company.id
+        });
+      }
+    } catch (err) {
+      logger.error("Failed to send email after approval", { error: err });
+    }
+  }
+
+  await updatePricesOnFinalize(ctx, purchaseOrderId);
+}
+
+/**
+ * Confirm a purchase return order.
+ *
+ * @remarks
+ * Moves a Draft return to To Ship after checking, under row locks, that no
+ * line returns more than its source received, ordered or was invoiced. Then
+ * stores the return's PDF as a document; when that fails the return stays
+ * confirmed and `warning` says so.
+ *
+ * @mcp
+ */
+export const confirmReturnOrder = defineServiceFn({
+  input: z.object({
+    purchaseReturnOrderId: z.string(),
+    /** The PDF's locale (BCP 47); en-US when absent. */
+    locale: z.string().optional()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { purchaseReturnOrderId, locale }) {
+    const system = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const order = await getPurchaseReturnOrder(system, purchaseReturnOrderId);
+    if (order.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load purchase return order",
+        order.error
+      );
+    }
+    if (order.data.companyId !== companyId) {
+      return ctx.error("notFound", "Purchase return order not found");
+    }
+
+    try {
+      await confirmPurchaseReturnOrder(
+        ctx.asSystem.pg,
+        { id: purchaseReturnOrderId, companyId },
+        userId
+      );
+    } catch (err) {
+      return refusedBy(ctx, err, "Failed to confirm return order");
+    }
+
+    try {
+      const pdf = await renderPurchaseReturnOrderPdf(ctx.asCaller.supabase, {
+        companyId,
+        companyGroupId: ctx.company.groupId,
+        purchaseReturnOrderId,
+        locale: locale ?? "en-US"
+      });
+      const fileName = stripSpecialCharacters(
+        `${order.data.purchaseReturnOrderId ?? ""} - ${datetime
+          .timestamp()
+          .slice(0, -5)}.pdf`
+      );
+      const path = `${companyId}/purchase-return-order/${purchaseReturnOrderId}/${fileName}`;
+      const upload = await storage(system)
+        .company(companyId)
+        .upload(path, pdf.body, {
+          cacheControl: `${12 * 60 * 60}`,
+          contentType: "application/pdf",
+          upsert: true
+        });
+      if (upload.error) throw upload.error;
+      const document = await upsertDocument(system, {
+        path,
+        name: fileName,
+        size: kilobytes(pdf.body),
+        sourceDocument: "Purchase Return Order",
+        sourceDocumentId: purchaseReturnOrderId,
+        readGroups: [userId],
+        writeGroups: [userId],
+        createdBy: userId,
+        companyId
+      });
+      if (document.error) throw document.error;
+    } catch (err) {
+      logger.error("Failed to attach the return order PDF", {
+        companyId,
+        purchaseReturnOrderId,
+        error: err
+      });
+      return {
+        purchaseReturnOrderId,
+        warning: "Return order confirmed, but the PDF could not be generated"
+      };
+    }
+    return { purchaseReturnOrderId, warning: null };
+  }
+});

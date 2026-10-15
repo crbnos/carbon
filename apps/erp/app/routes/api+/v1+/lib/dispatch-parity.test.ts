@@ -98,6 +98,11 @@ vi.mock("~/modules/sales/sales.service", () => ({
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
+// The ERP router's operations (`~/modules/router.server`) reach packages whose
+// `msg` macros only run compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 // The sales-rule gate imports `~/modules/sales/sales.server` and
 // `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
 // validation at import). Dispatch behavior under a gate block is not what

@@ -2,21 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
+import { carbon, redirectWithResult } from "~/modules/carbon.server";
 import type { PurchasingRFQStatusType } from "~/modules/purchasing";
-import {
-  insertPurchasingRFQ,
-  purchasingRfqValidator,
-  upsertPurchasingRFQSuppliers
-} from "~/modules/purchasing";
+import { purchasingRfqValidator } from "~/modules/purchasing";
 import { PurchasingRFQForm } from "~/modules/purchasing/ui/PurchasingRfq";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -27,59 +20,21 @@ export const handle: Handle = {
   to: path.to.purchasingRfqs
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(purchasingRfqValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...rfq } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.purchasing.rfq.create({
+    ...rfq,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const validation = await validator(purchasingRfqValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { supplierIds, ...rfqData } = validation.data;
-
-  const result = await insertPurchasingRFQ(client, {
-    ...rfqData,
-    rfqId: rfqData.rfqId || undefined,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  return redirectWithResult(args.request, result, {
+    to: result.data
+      ? path.to.purchasingRfqDetails(result.data.id)
+      : path.to.purchasingRfqs,
+    message: "RFQ created"
   });
-
-  if (result.error || !result.data) {
-    throw redirect(
-      path.to.purchasingRfqs,
-      await flash(request, error(result.error, "Failed to insert RFQ"))
-    );
-  }
-
-  const rfq = result.data;
-
-  // Create supplier associations
-  if (supplierIds && supplierIds.length > 0) {
-    const suppliersResult = await upsertPurchasingRFQSuppliers(
-      client,
-      rfq.id,
-      supplierIds,
-      companyId,
-      userId
-    );
-    if (suppliersResult.error) {
-      throw redirect(
-        path.to.purchasingRfqs,
-        await flash(
-          request,
-          error(suppliersResult.error, "Failed to assign suppliers")
-        )
-      );
-    }
-  }
-
-  throw redirect(path.to.purchasingRfqDetails(rfq.id));
 }
 
 export default function PurchasingRFQNewRoute() {
