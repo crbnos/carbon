@@ -53,7 +53,10 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.id
   });
   return redirectWithResult(args.request, result, {
-    to: `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+    // A failure keeps the drawer open.
+    to: result.error
+      ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
+      : `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
     message: "Updated production quantity"
   });
 }

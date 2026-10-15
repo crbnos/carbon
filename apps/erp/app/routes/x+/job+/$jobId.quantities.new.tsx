@@ -42,7 +42,10 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.production.quantity.create(input.data);
   return redirectWithResult(args.request, result, {
-    to: `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+    // A failure keeps the drawer open.
+    to: result.error
+      ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
+      : `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
     message: "Production quantity created"
   });
 }
