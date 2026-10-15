@@ -79,7 +79,7 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 - Jobs that post or recalculate (`tasks/post-transaction.ts`, `tasks/recalculate.ts`, the Ramp families, the invoice automation in `src/invoicing/automate-invoice.ts`) call `@carbon/server-functions` directly, in-process — not over HTTP.
 - `src/inngest/functions/events/sync-tables.ts` is the import-light table→accounting-entity map. `subscriptions-mapping.test.ts` pins it to provider subscriptions/syncers.
 - `src/inngest/functions/integrations/ramp-sync.ts` owns step ids, ordering, result aggregation, and notification only; changing a family module must preserve that durable public shape.
-- `src/workflows/actions/integration.ts` (`runIntegrationAction`) verifies the connection is this company's through the OWNER's client, then reads its token through the vault with a service-role client (the vault RPCs are service_role only).
+- `src/workflows/actions/integration.ts` (`runIntegrationAction`) reads the connection and its token with a service-role client scoped by the run's `companyId`: the vault RPCs are service_role only, and the row's RLS asks for `settings_view`, which a workflow author need not have.
 - `src/workflows/actions/dispatcher.ts` is filled by `apps/erp/app/routes/api+/inngest.ts` with the canonical `callOperation` seam. Missing registration fails cleanly.
 - `src/workflows/engine/log.ts` redacts secret/token/password/header values before persisting step input.
 - Bare `tsx` scripts cannot rely on Vite's CJS/ESM interop. Keep runtime imports from packages without `"type":"module"` out of script dependency chains; type-only imports are safe.

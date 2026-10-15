@@ -17883,6 +17883,9 @@ msgstr "重新连接它"
 msgid "Reconnect needed"
 msgstr "需要重新连接"
 
+msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
+msgstr ""
+
 msgid "Record"
 msgstr "录音"
 
@@ -21951,6 +21954,9 @@ msgstr "该字段包含多个值，因此它们被合并为一个列表。"
 
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
+
+msgid "That's a different account"
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."

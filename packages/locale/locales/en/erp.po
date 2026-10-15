@@ -17883,6 +17883,9 @@ msgstr "Reconnect it"
 msgid "Reconnect needed"
 msgstr "Reconnect needed"
 
+msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
+msgstr "Reconnect with the account this connection already uses, or use Add account to connect the other one."
+
 msgid "Record"
 msgstr "Record"
 
@@ -21951,6 +21954,9 @@ msgstr "That field holds several values, so they are combined into one list."
 
 msgid "That name is already used by another step."
 msgstr "That name is already used by another step."
+
+msgid "That's a different account"
+msgstr "That's a different account"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."

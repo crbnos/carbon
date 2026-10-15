@@ -19,8 +19,11 @@ class FakeRevoked extends Error {}
 class FakeSecretUnavailable extends Error {}
 class FakeRefreshTimeout extends Error {}
 
+const SERVICE_ROLE = vi.hoisted(() => ({ role: "service" }));
+
 vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({}) as SupabaseClient<Database>
+  getCarbonServiceRole: () =>
+    SERVICE_ROLE as unknown as SupabaseClient<Database>
 }));
 
 // The OAuth app is looked up by the env var NAMES on the allowlist row, so the
@@ -63,8 +66,6 @@ vi.mock("../integrations/registry", () => ({
 
 const { runIntegrationAction } = await import("./integration");
 
-const client = {} as SupabaseClient<Database>;
-
 const inputs = (extra: Record<string, RuntimeValue> = {}) => ({
   connectionId: {
     kind: "primitive" as const,
@@ -83,7 +84,6 @@ const run = (
   overrides: Partial<Parameters<typeof runIntegrationAction>[0]> = {}
 ) =>
   runIntegrationAction({
-    client,
     companyId: COMPANY,
     pieceName: "google-calendar",
     actionName: "create_google_calendar_event",
@@ -109,6 +109,16 @@ describe("runIntegrationAction", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("checks the connection with the service role, scoped to the run's company", async () => {
+    const outcome = await run();
+    expect(outcome.ok).toBe(true);
+    expect(readConnection).toHaveBeenCalledWith(
+      SERVICE_ROLE,
+      COMPANY,
+      CONNECTION
+    );
   });
 
   it("runs the piece with the fresh token and reports what it made", async () => {

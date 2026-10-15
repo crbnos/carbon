@@ -17883,6 +17883,9 @@ msgstr "Yeniden bağlan"
 msgid "Reconnect needed"
 msgstr "Yeniden bağlantı gerekli"
 
+msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
+msgstr ""
+
 msgid "Record"
 msgstr "Kayıt"
 
@@ -21951,6 +21954,9 @@ msgstr "Bu alan birden fazla değer içerir, bu nedenle tek bir listede birleşt
 
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
+
+msgid "That's a different account"
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."

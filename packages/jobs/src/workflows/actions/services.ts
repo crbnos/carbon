@@ -54,7 +54,6 @@ export function createWorkflowServices(params: {
     inputs: Record<string, RuntimeValue>
   ): Promise<ActionOutcome> {
     return runIntegrationAction({
-      client,
       companyId,
       pieceName: piece.name,
       actionName: piece.action,

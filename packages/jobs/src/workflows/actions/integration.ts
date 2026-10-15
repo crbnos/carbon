@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
 // The deep subpath, not the `@carbon/ee` root: that barrel pulls in integration
 // config files whose `msg` macro is untransformed outside a Vite build.
 import {
@@ -15,7 +14,6 @@ import {
   resolveConnectionAuth
 } from "@carbon/ee/integrations/connections";
 import type { ActionOutcome, RuntimeValue } from "@carbon/ee/workflows";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { allowlistEntry } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";
 import { buildRefreshConfig, requiredScopesFor } from "../integrations/oauth";
@@ -51,21 +49,25 @@ function connectionIdFrom(
 }
 
 export async function runIntegrationAction(args: {
-  client: SupabaseClient<Database>;
   companyId: string;
   pieceName: string;
   actionName: string;
   inputs: Record<string, RuntimeValue>;
 }): Promise<ActionOutcome> {
-  const { client, companyId, pieceName, actionName, inputs } = args;
+  const { companyId, pieceName, actionName, inputs } = args;
   const label = allowlistEntry(pieceName)?.label ?? pieceName;
 
   const connectionId = connectionIdFrom(inputs);
   if (connectionId === undefined) return { ok: false, error: NO_CONNECTION };
 
-  // The connection must belong to THIS company and be one the piece owns.
-  // Read through the owner's client, so RLS still applies to the lookup.
-  const owned = await readConnection(client, companyId, connectionId);
+  // Service role, scoped by the run's `companyId`: RLS on the row asks for
+  // `settings_view`, but the builder offers connections to anyone who can edit
+  // workflows, so an owner-client read refused an account the author could pick.
+  const owned = await readConnection(
+    getCarbonServiceRole(),
+    companyId,
+    connectionId
+  );
   if (owned === null || owned.pieceName !== pieceName) {
     return { ok: false, error: NO_CONNECTION };
   }

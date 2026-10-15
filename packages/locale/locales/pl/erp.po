@@ -17883,6 +17883,9 @@ msgstr "Ponownie je połącz"
 msgid "Reconnect needed"
 msgstr "Wymagane ponowne połączenie"
 
+msgid "Reconnect with the account this connection already uses, or use Add account to connect the other one."
+msgstr ""
+
 msgid "Record"
 msgstr "Nagrywaj"
 
@@ -21951,6 +21954,9 @@ msgstr "To pole zawiera wiele wartości, dlatego są łączone w jedną listę."
 
 msgid "That name is already used by another step."
 msgstr "Ta nazwa jest już używana przez inny krok."
+
+msgid "That's a different account"
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
