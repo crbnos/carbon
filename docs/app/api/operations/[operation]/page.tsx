@@ -157,8 +157,8 @@ export default async function OperationPage(props: Params) {
   if (!found) notFound();
   const { module: mod, tool: t } = found;
 
-  const samples = buildOperationSamples(t.name, mod.slug, t.schema);
-  const httpPath = operationPath(t.name, mod.slug);
+  const samples = buildOperationSamples(t.name, mod.slug, t.schema, t.path);
+  const httpPath = operationPath(t.name, mod.slug, t.path);
   const schemaJson = JSON.stringify(t.schema, null, 2);
 
   const responseJson = responseBody(t.responseSchema);

@@ -23,7 +23,12 @@ import {
   formatDigestDiff,
   type ManifestDigest,
 } from "./lib/manifest-digest";
-import { buildAllToolMetadataWithValidators } from "./lib/service-metadata";
+import { buildServiceAst } from "./lib/service-ast";
+import { withServiceFnTools } from "./lib/service-fn-metadata";
+import {
+  buildAllToolMetadataWithValidators,
+  MODULE_LIST
+} from "./lib/service-metadata";
 
 const ROOT = path.resolve(__dirname, "..");
 const DIGEST_FILE = path.join(
@@ -43,8 +48,10 @@ async function main(): Promise<void> {
     fs.readFileSync(DIGEST_FILE, "utf-8")
   ) as ManifestDigest;
 
-  const { tools, registryStats } = await buildAllToolMetadataWithValidators();
-  const fresh = buildManifestDigest(tools);
+  const ast = buildServiceAst(MODULE_LIST);
+  const { tools: legacy, registryStats } =
+    await buildAllToolMetadataWithValidators({ ast });
+  const fresh = buildManifestDigest(withServiceFnTools(legacy, ast.project));
 
   const diff = diffDigests(committed, fresh);
   const drifted =

@@ -335,6 +335,8 @@ export const releaseJobs = defineServiceFn({
  *
  * Returns `conflict`, with nothing changed, when `fromStatuses` is sent and
  * the job has left them.
+ *
+ * @mcp
  */
 export const cancelJob = defineServiceFn({
   input: z.object({

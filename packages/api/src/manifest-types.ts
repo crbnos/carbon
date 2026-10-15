@@ -85,6 +85,13 @@ export interface ManifestEntry {
   defaults?: "always" | "create";
   /** The JSON Schema for the operation's input. */
   schema: Record<string, unknown>;
+  /** A service function's title: its TSDoc summary line. */
+  title?: string;
+  /** Present for a `defineServiceFn` operation: its path in the ERP router
+   *  (`["production", "job", "cancel"]`). Dispatch calls it with a service
+   *  context instead of assembling positional arguments, and its HTTP path is
+   *  the path joined by `/`. */
+  serviceFn?: { path: string[] };
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
    *  service function's TypeScript return type — absent when nothing useful could
    *  be derived (an `any`, a void, or an opaque shape). Describes the payload the

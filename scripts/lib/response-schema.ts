@@ -105,7 +105,10 @@ export function typeToJsonSchema(
   type: Type,
   at: Node,
   depth = 0,
-  seen: ReadonlySet<string> = new Set()
+  seen: ReadonlySet<string> = new Set(),
+  /** For an INPUT: `undefined` means "may be left out", which `required`
+   *  already says, so it is dropped instead of read as `null`. */
+  undefinedIsAbsent = false
 ): JsonSchema {
   if (depth > MAX_DEPTH) return {};
 
@@ -126,7 +129,9 @@ export function typeToJsonSchema(
     const element = type.getArrayElementType();
     return {
       type: "array",
-      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+      items: element
+        ? typeToJsonSchema(element, at, depth + 1, seen, undefinedIsAbsent)
+        : {}
     };
   }
   // A tuple or a readonly array is a list on the wire too. Neither is
@@ -136,11 +141,15 @@ export function typeToJsonSchema(
     const element = type.getNumberIndexType();
     return {
       type: "array",
-      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+      items: element
+        ? typeToJsonSchema(element, at, depth + 1, seen, undefinedIsAbsent)
+        : {}
     };
   }
 
-  if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen);
+  if (type.isUnion()) {
+    return unionToJsonSchema(type, at, depth, seen, undefinedIsAbsent);
+  }
 
   if (type.isObject()) {
     const symbolName = type.getSymbol()?.getName();
@@ -179,7 +188,8 @@ export function typeToJsonSchema(
           indexValue,
           at,
           depth + 1,
-          nextSeen
+          nextSeen,
+          undefinedIsAbsent
         )
       };
     }
@@ -200,7 +210,8 @@ export function typeToJsonSchema(
         propertyType,
         at,
         depth + 1,
-        nextSeen
+        nextSeen,
+        undefinedIsAbsent
       );
       if (!property.isOptional()) required.push(property.getName());
     }
@@ -217,11 +228,14 @@ function unionToJsonSchema(
   type: Type,
   at: Node,
   depth: number,
-  seen: ReadonlySet<string>
+  seen: ReadonlySet<string>,
+  undefinedIsAbsent: boolean
 ): JsonSchema {
   const members = type.getUnionTypes();
   const concrete = members.filter((t) => !t.isNull() && !t.isUndefined());
-  const nullable = concrete.length !== members.length;
+  const nullable = members.some(
+    (t) => t.isNull() || (!undefinedIsAbsent && t.isUndefined())
+  );
 
   // A union of string literals is an enum — the single most useful thing this
   // reflection recovers, and invisible in a hand-written response example.
@@ -238,7 +252,13 @@ function unionToJsonSchema(
   }
 
   if (concrete.length === 1) {
-    const inner = typeToJsonSchema(concrete[0], at, depth, seen);
+    const inner = typeToJsonSchema(
+      concrete[0],
+      at,
+      depth,
+      seen,
+      undefinedIsAbsent
+    );
     if (nullable && typeof inner.type === "string") {
       return { ...inner, type: [inner.type, "null"] };
     }
@@ -250,7 +270,9 @@ function unionToJsonSchema(
   // identical `{type:"boolean"}` members. The all-boolean shortcut above only fires
   // when every member is a boolean literal, so mixed unions need this.
   const anyOf = dedupe(
-    concrete.map((t) => typeToJsonSchema(t, at, depth + 1, seen))
+    concrete.map((t) =>
+      typeToJsonSchema(t, at, depth + 1, seen, undefinedIsAbsent)
+    )
   );
   if (anyOf.length === 1 && !nullable) return anyOf[0];
   return nullable ? { anyOf: [...anyOf, { type: "null" }] } : { anyOf };

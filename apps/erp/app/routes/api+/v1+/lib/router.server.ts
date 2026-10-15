@@ -15,9 +15,11 @@ import {
   liveOperationAliases,
   OPERATIONS,
   operationId,
+  operationPath,
   outputSchema,
   shapeHttpBody
 } from "./operations.server";
+import { runServiceFn } from "./service-fn.server";
 
 // Property names oRPC reserves on a router object — an operation id must not collide
 // (`then` is the load-bearing one: routers are thenable-detected).
@@ -50,6 +52,11 @@ function buildProcedure(
   id: string,
   deprecated = false
 ) {
+  // An alias keeps its old path; everything else is served at its own.
+  const path: `/${string}` = deprecated
+    ? `/${module}/${id}`
+    : operationPath(meta);
+  const summary = meta.title ?? meta.description;
   return (
     base
       .use(traced(meta))
@@ -59,11 +66,12 @@ function buildProcedure(
       .use(gate(meta))
       .route({
         method: "POST",
-        path: `/${module}/${id}`,
+        path,
         tags: [module],
         summary: deprecated
-          ? `${meta.description} (deprecated: use /${meta.module}/${operationId(meta)})`
-          : meta.description,
+          ? `${summary} (deprecated: use ${operationPath(meta)})`
+          : summary,
+        ...(meta.title ? { description: meta.description } : {}),
         // Only when set — `deprecated: false` would land on every operation.
         ...(deprecated ? { deprecated: true } : {})
       })
@@ -74,7 +82,12 @@ function buildProcedure(
       // callOperation reverses this shaping with the same static bit, so
       // MCP/agent/workflow callers still see DispatchResult semantics.
       .handler(async ({ input, context }) =>
-        shapeHttpBody(meta, await dispatchOperation(meta, context, input))
+        shapeHttpBody(
+          meta,
+          meta.serviceFn
+            ? await runServiceFn(meta, context, input)
+            : await dispatchOperation(meta, context, input)
+        )
       )
   );
 }

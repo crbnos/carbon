@@ -82,6 +82,14 @@ export function operationId(op: ManifestEntry): string {
   return op.name.slice(op.module.length + 1);
 }
 
+/** The operation's HTTP path: a service function's router path
+ *  (`/production/job/cancel`), else `/{module}/{operationId}`. */
+export function operationPath(op: ManifestEntry): `/${string}` {
+  return op.serviceFn
+    ? `/${op.serviceFn.path.join("/")}`
+    : `/${op.module}/${operationId(op)}`;
+}
+
 /**
  * Whether an operation's HTTP response is the LIST envelope `{ results, count }`
  * or the bare payload.

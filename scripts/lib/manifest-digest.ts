@@ -46,6 +46,8 @@ export interface DigestEntry {
   upsert?: string;
   /** When published defaults are filled: `always`, or `create` for an upsert. */
   defaults?: string;
+  /** A service function's router path, joined by `.`. */
+  serviceFn?: string;
 }
 
 export interface ManifestDigest {
@@ -144,7 +146,8 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
           : {}),
         ...(describeContext(t) ? { context: describeContext(t) } : {}),
         ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {}),
-        ...(t.defaults ? { defaults: t.defaults } : {})
+        ...(t.defaults ? { defaults: t.defaults } : {}),
+        ...(t.serviceFn ? { serviceFn: t.serviceFn.path.join(".") } : {})
       }))
   };
 }

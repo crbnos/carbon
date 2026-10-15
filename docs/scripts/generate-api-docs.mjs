@@ -394,6 +394,8 @@ for (const t of allTools) {
     description: t.description || "",
     schema: t.schema || {},
     responseSchema: t.responseSchema,
+    // A service function is served at its router path, not /{module}/{id}.
+    ...(t.serviceFn ? { path: `/${t.serviceFn.path.join("/")}` } : {}),
   });
 }
 const toolModules = [...toolsByModule.entries()]

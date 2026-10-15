@@ -23,8 +23,9 @@ if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     fi
 fi
 
-# Regenerate MCP tools if any .service.ts file was modified
-if git diff --cached --name-only | grep -q '\.service\.ts$'; then
+# Regenerate MCP tools if a service file, or a module's .server.ts (where the
+# defineServiceFn operations and the router live), was modified
+if git diff --cached --name-only | grep -qE '\.service\.ts$|^apps/erp/app/modules/.*\.server\.ts$'; then
     if ! npx tsx scripts/generate-mcp.ts; then
         echo "✗ MCP tool metadata could not be regenerated. Nothing was staged."
         exit 1

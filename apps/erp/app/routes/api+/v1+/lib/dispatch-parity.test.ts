@@ -138,7 +138,7 @@ import {
   liveOperationAliases,
   OPERATION_ALIASES,
   OPERATIONS,
-  operationId,
+  operationPath,
   operationsByName
 } from "./operations.server";
 import { router } from "./router.server";
@@ -1656,7 +1656,7 @@ describe("the HTTP spec and the MCP tools are one contract", () => {
     const differing: string[] = [];
     let withBody = 0;
     for (const op of OPERATIONS) {
-      const post = paths[`/${op.module}/${operationId(op)}`]?.post;
+      const post = paths[operationPath(op)]?.post;
       const published =
         post?.requestBody?.content?.["application/json"]?.schema;
       if (published !== undefined) withBody++;

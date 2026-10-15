@@ -19,6 +19,8 @@ import {
   buildManifestDigest,
   serializeManifestDigest
 } from "./lib/manifest-digest";
+import { buildServiceAst } from "./lib/service-ast";
+import { withServiceFnTools } from "./lib/service-fn-metadata";
 import {
   buildAllToolMetadataWithValidators,
   MODULE_LIST
@@ -46,8 +48,14 @@ export async function generateToolMetadata(): Promise<void> {
   const untagged: string[] = [];
   const skippedModules: { module: string; functionCount: number }[] = [];
 
-  const { tools: allTools, registryStats, responseStats, resolutions } =
-    await buildAllToolMetadataWithValidators({
+  const ast = buildServiceAst(MODULE_LIST);
+  const {
+    tools: legacyTools,
+    registryStats,
+    responseStats,
+    resolutions
+  } = await buildAllToolMetadataWithValidators({
+      ast,
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
       onAuditColumnsDropped: (toolName, table, dropped) =>
         auditDrops.push({ toolName, table, dropped }),
@@ -55,6 +63,13 @@ export async function generateToolMetadata(): Promise<void> {
       onModuleSkipped: (module, functionCount) =>
         skippedModules.push({ module, functionCount }),
     });
+
+  // The service functions the ERP router publishes (`@mcp` on a
+  // `defineServiceFn`), read from the same ts-morph project.
+  const allTools = withServiceFnTools(legacyTools, ast.project);
+  console.log(
+    `  ✓ service functions: ${allTools.length - legacyTools.length} tools`
+  );
 
   // Refuse BEFORE writing. Every `z.infer` param must resolve NATIVELY — the
   // real validator, converted by zod itself. There is no longer a source-text
