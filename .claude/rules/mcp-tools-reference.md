@@ -710,6 +710,16 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 
+## Bulk loading (CSV text import)
+
+`shared_importCsvText` loads many records in one call: the CSV travels as text in
+`call_tool.arguments` (at most 1 MB) and runs through the `import-csv` server function
+the import wizard uses, on the caller's credential. `dryRun: true` runs the import in a
+rolled-back transaction and returns the same report. `shared_getCsvImportFields` lists a
+table's columns, defaults and allowed values. Both live in `shared.service.ts`; the
+mapping, enum and Unique ID rules are in `csv-import-system.md`. `shared_importCsv` (by
+storage `filePath`) predates them and has none of the header mapping or enum defaults.
+
 ## File uploads (two-step, signed-URL)
 
 MCP `call_tool.arguments` is JSON only — there is **no binary channel** — so file
