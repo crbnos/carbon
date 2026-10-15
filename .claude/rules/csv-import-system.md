@@ -422,7 +422,9 @@ it lazily imports `@carbon/server-functions/import-csv` and calls
 text instead of a storage path, for callers with no upload step, such as an agent over
 MCP. Without `columnMappings` it builds them from the headers with
 `columnMappingsFromHeaders` (field key or label, any case) and refuses a header that
-matches no field rather than dropping the column. It validates the mapping with
+matches no field rather than dropping the column, and a label two fields share
+(`partWithMethod`'s item `unitCost` and `operationUnitCost`, both "Unit Cost"), naming
+the keys to use instead. It validates the mapping with
 `importSchemas[table]` and sends the validated (stripped) mapping, as the route does.
 It invokes the server function with `serverFns.as` on the caller's own client, so the
 function's permission check runs against the caller's credential (user or API key).
@@ -441,7 +443,14 @@ wizard does not do this.
 report, with `dryRun: true`.
 `getCsvImportFields` (`shared_getCsvImportFields`) lists a table's columns from
 `fieldMappings`, reading fetcher-backed enum values live (one read per distinct
-fetcher), plus notes on how method-file rows link.
+fetcher), plus notes on how method-file rows link. A fetched option is listed by the
+label the matcher tries first (`fetchedImportOption`: a name, or an employee's email),
+not its id, and a fetched default likewise; ids are still accepted. A field without an
+`enumData.description` takes its `importSchemas` description, which is where
+instructions such as the Processes separator live. The Unique ID notes appear only on
+tables with an `id` field. One of them states the update rule the server function
+applies: an enum column missing or blank takes its `Default` on every row, updates
+included.
 
 ## Server function (`packages/server-functions/src/import-csv/index.ts`)
 

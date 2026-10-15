@@ -208,28 +208,43 @@ export async function getCsvImportFields(
     )
   );
 
+  const schemaFields = importSchemas[table].shape as Record<
+    string,
+    { description?: string }
+  >;
+
   return {
     data: {
       table,
       notes: [
-        "Unique ID (`id`) is the key rows are matched on: use a stable value such as the part number, so sending a row again updates it.",
+        ...(fields.some(([key]) => key === "id")
+          ? [
+              "Unique ID (`id`) is the key rows are matched on: use a stable value such as the part number, so sending a row again updates it.",
+              "An update writes every enum field: one whose column is missing or blank is set to its default, so send the current value to keep it."
+            ]
+          : []),
         "Headers may be field keys or labels. Leave optional cells blank to take the default.",
         ...(METHOD_IMPORT_TABLES.has(table) ? METHOD_IMPORT_NOTES : [])
       ],
       fields: fields.map(([key, field]) => {
         const enumData = field.enumData;
-        const fetchedValues = enumData?.fetcher
-          ? fetched.get(enumData.fetcher)?.data
+        // Company data is listed by the label the import matches first (a
+        // name, or an employee's email); its id is accepted too.
+        const fetchedOptions = enumData?.fetcher
+          ? (fetched.get(enumData.fetcher)?.data ?? []).map(fetchedImportOption)
           : undefined;
+        const fallback = field.default ?? enumDefault(enumData);
         return {
           key,
           label: field.label,
           required: field.required,
           type: field.type,
-          default: field.default ?? enumDefault(enumData),
-          description: enumData?.description,
-          options: fetchedValues
-            ? fetchedValues.map((option) => option.id)
+          default:
+            fetchedOptions?.find((option) => option.value === fallback)
+              ?.label ?? fallback,
+          description: enumData?.description ?? schemaFields[key]?.description,
+          options: fetchedOptions
+            ? fetchedOptions.map((option) => option.label)
             : enumData?.options
         };
       })
@@ -406,6 +421,15 @@ export async function importCsvText(
         data: null,
         error: ruleError(
           `Columns not recognized for ${args.table}: ${fromHeaders.unknownHeaders.join(", ")}. Rename them to field keys listed by shared_getCsvImportFields, remove them, or pass columnMappings.`
+        )
+      };
+    }
+    const ambiguous = Object.entries(fromHeaders.ambiguousHeaders);
+    if (ambiguous.length > 0) {
+      return {
+        data: null,
+        error: ruleError(
+          `Columns that name more than one field of ${args.table}: ${ambiguous.map(([header, keys]) => `${header} (${keys.join(" or ")})`).join("; ")}. Use the field key as the header.`
         )
       };
     }

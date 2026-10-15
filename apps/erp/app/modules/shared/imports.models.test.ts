@@ -119,7 +119,25 @@ describe("CSV text import", () => {
         readableId: "part number",
         name: "Description"
       },
-      unknownHeaders: ["Colour"]
+      unknownHeaders: ["Colour"],
+      ambiguousHeaders: {}
+    });
+  });
+
+  it("refuses a label two fields share and names their keys", () => {
+    expect(
+      columnMappingsFromHeaders("partWithMethod", [
+        "Unit Cost",
+        "operationUnitCost",
+        "Lead Time (Days)"
+      ])
+    ).toEqual({
+      columnMappings: {
+        operationUnitCost: "operationUnitCost",
+        leadTime: "Lead Time (Days)"
+      },
+      unknownHeaders: [],
+      ambiguousHeaders: { "Unit Cost": ["unitCost", "operationUnitCost"] }
     });
   });
 });

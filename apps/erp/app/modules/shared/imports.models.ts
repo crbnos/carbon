@@ -3448,30 +3448,34 @@ export function parseCsvHeader(csv: string): string[] {
  * Column mappings for a CSV whose headers name the table's fields, by key
  * (`readableId`) or by label (`Part Number`, any case). Headers that match no
  * field are returned rather than dropped, so the caller can refuse them
- * instead of silently losing a column.
+ * instead of silently losing a column. So are labels two fields share (the
+ * method file's item and operation Unit Cost), with the keys they could mean.
  */
 export function columnMappingsFromHeaders(
   table: CsvImportTable,
   headers: string[]
 ) {
   const fields = fieldMappings[table] as Record<string, { label: string }>;
-  const byLabel = new Map(
-    Object.entries(fields).map(([key, field]) => [
-      field.label.toLowerCase(),
-      key
-    ])
-  );
+  const byLabel = new Map<string, string[]>();
+  for (const [key, field] of Object.entries(fields)) {
+    const label = field.label.toLowerCase();
+    byLabel.set(label, [...(byLabel.get(label) ?? []), key]);
+  }
   const columnMappings: Record<string, string> = {};
   const unknownHeaders: string[] = [];
+  const ambiguousHeaders: Record<string, string[]> = {};
   for (const header of headers) {
-    const key = header in fields ? header : byLabel.get(header.toLowerCase());
-    if (key) {
-      columnMappings[key] = header;
-    } else {
+    const keys =
+      header in fields ? [header] : byLabel.get(header.toLowerCase());
+    if (!keys) {
       unknownHeaders.push(header);
+    } else if (keys.length > 1) {
+      ambiguousHeaders[header] = keys;
+    } else {
+      columnMappings[keys[0]!] = header;
     }
   }
-  return { columnMappings, unknownHeaders };
+  return { columnMappings, unknownHeaders, ambiguousHeaders };
 }
 
 /**
