@@ -878,6 +878,12 @@ msgstr "A 4-digit PIN is generated when the operator is created."
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 
+msgid "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+
+msgid "A bulk action is already running for your company. Try again when it ends."
+msgstr "A bulk action is already running for your company. Try again when it ends."
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "A Carbon-run data migration — you load your own data"
 
@@ -2497,6 +2503,12 @@ msgstr "An engineering change: the affected items whose methods are revised on a
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+
+msgid "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+
+msgid "An export is already running for your company. Try again when it ends."
+msgstr "An export is already running for your company. Try again when it ends."
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
@@ -11735,6 +11747,9 @@ msgstr "Issued Date"
 
 msgid "Issues"
 msgstr "Issues"
+
+msgid "It could not start. Try again."
+msgstr "It could not start. Try again."
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "It will stop running until you publish a version again. Nothing is deleted."
@@ -22895,6 +22910,12 @@ msgstr "These units are treated as sales. Activating derecognizes each one and p
 msgid "this ability"
 msgstr "this ability"
 
+msgid "This action cannot run on this list."
+msgstr "This action cannot run on this list."
+
+msgid "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+msgstr "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+
 #. placeholder {0}: jobIds.length
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
@@ -25600,6 +25621,9 @@ msgstr "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
+
+msgid "You do not have permission to do this on every matching row."
+msgstr "You do not have permission to do this on every matching row."
 
 msgid "You do not have permission to edit workflows"
 msgstr "You do not have permission to edit workflows"

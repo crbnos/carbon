@@ -878,6 +878,12 @@ msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분할하려면 대신 Dissolve를 사용하세요."
 
+msgid "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "A bulk action is already running for your company. Try again when it ends."
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
 
@@ -2497,6 +2503,12 @@ msgstr "설계 변경: 초안에서 방법이 수정되고 함께 릴리스되�
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "회사의 등록된 이메일 도메인의 모든 사용자가 마법 링크 대신 회사 자체의 SAML ID 제공자를 통해 인증하는 엔터프라이즈 로그인 방식이므로 IT가 중앙에서 액세스를 부여하고 해제합니다."
+
+msgid "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "An export is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "워크플로우가 해당 단계에 도달할 때 Carbon이 귀사의 시스템으로 보내는 https 요청으로, 구성한 헤더 및 본문을 전달합니다."
@@ -11735,6 +11747,9 @@ msgstr "출고일"
 
 msgid "Issues"
 msgstr "이슈"
+
+msgid "It could not start. Try again."
+msgstr ""
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 내용은 없습니다."
@@ -22895,6 +22910,12 @@ msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자�
 msgid "this ability"
 msgstr "이 역량"
 
+msgid "This action cannot run on this list."
+msgstr ""
+
+msgid "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+msgstr ""
+
 #. placeholder {0}: jobIds.length
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
@@ -25597,6 +25618,9 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
 msgstr "발주 수량 {1}보다 {0} {leftoverQuantity}개를 더 완료했습니다. 초과 부품을 어떻게 하시겠습니까?"
+
+msgid "You do not have permission to do this on every matching row."
+msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "워크플로우를 편집할 권한이 없습니다."

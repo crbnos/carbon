@@ -50,7 +50,8 @@ export async function bulkDeleteByStatus(args: {
   for (const chunk of chunkArray(ids, IN_CHUNK)) {
     const deleted = await args.deleteChunk(chunk);
     if (deleted.error) {
-      logger.error(`Failed to delete ${args.label}`, {
+      logger.error("Failed to delete {label}", {
+        label: args.label,
         companyId: args.companyId,
         error: deleted.error
       });

@@ -81,7 +81,7 @@ import {
   getExpandColumn,
   getRowSelectionColumn
 } from "./components/SyntheticColumns";
-import { TableSkeleton } from "./components/TableSkeleton";
+import { TableLoadingSkeleton } from "./components/TableLoadingSkeleton";
 import { readRowId } from "./infiniteRowsStore";
 import { applyRowEdits, pruneRowEdits, type RowEdits, tick } from "./rowEdits";
 import type {
@@ -1409,7 +1409,7 @@ const Table = <T extends object>({
         <div className="flex max-w-full h-full">
           {rows.length === 0 ? (
             isLoading ? (
-              <TableSkeleton />
+              <TableLoadingSkeleton />
             ) : emptyState ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
                 {emptyState}

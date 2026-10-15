@@ -878,6 +878,12 @@ msgstr "ऑपरेटर बनाए जाने पर एक 4-अंक�
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "बैच को कम से कम एक ऑपरेशन की आवश्यकता है। पूरे बैच को विभाजित करने के लिए, इसके बजाय विघटन का उपयोग करें।"
 
+msgid "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "A bulk action is already running for your company. Try again when it ends."
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
 
@@ -2497,6 +2503,12 @@ msgstr "एक इंजीनियरिंग परिवर्तन: प�
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "एक एंटरप्राइज साइन-इन विधि जिसमें कंपनी के पंजीकृत ईमेल डोमेन के सभी उपयोगकर्ता मैजिक लिंक के बजाय कंपनी के अपने SAML आइडेंटिटी प्रदाता के माध्यम से प्रमाणीकरण करते हैं, ताकि IT केंद्रीय रूप से एक्सेस दे और रद्द कर सके।"
+
+msgid "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "An export is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
@@ -11735,6 +11747,9 @@ msgstr "जारी तारीख"
 
 msgid "Issues"
 msgstr "समस्याएं"
+
+msgid "It could not start. Try again."
+msgstr ""
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं गया है।"
@@ -22895,6 +22910,12 @@ msgstr "इन इकाइयों को बिक्री के रूप 
 msgid "this ability"
 msgstr "यह कौशल"
 
+msgid "This action cannot run on this list."
+msgstr ""
+
+msgid "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+msgstr ""
+
 #. placeholder {0}: jobIds.length
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
@@ -25600,6 +25621,9 @@ msgstr "आप {leftoverQuantity} अधिक \n"
 "                        {0} को {1} की ऑर्डर की गई \n"
 "                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n"
 "                        क्या करना चाहेंगे?"
+
+msgid "You do not have permission to do this on every matching row."
+msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "आपके पास वर्कफ़्लो संपादित करने की अनुमति नहीं है"

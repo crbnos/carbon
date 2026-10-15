@@ -13,7 +13,7 @@ import {
 } from "@carbon/react";
 
 /** The Table's placeholder while its first rows load. */
-export function TableSkeleton() {
+export function TableLoadingSkeleton() {
   return (
     <div className="flex h-full w-full items-start justify-center">
       <TableBase full className="w-full">
