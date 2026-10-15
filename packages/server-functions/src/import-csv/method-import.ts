@@ -20,6 +20,7 @@ import {
   emptyItemExtras,
   writeItemExtras
 } from "./item-extras";
+import { inTransaction } from "./transaction";
 
 type Rec = Record<string, string>;
 type Summary = {
@@ -649,7 +650,7 @@ async function writeGroup(
   const { companyId, userId } = ctx;
   const now = () => datetime.timestamp();
 
-  return await db.transaction().execute(async (trx) => {
+  return await inTransaction(db, async (trx) => {
     let partCreated: boolean | null = null;
     let rowsInserted = 0;
     const skippedRows: Array<{ index: number; version: string }> = [];

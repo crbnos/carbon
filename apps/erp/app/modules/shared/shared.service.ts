@@ -27,8 +27,10 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { ruleError } from "~/utils/supabase";
 import {
+  CSV_ID_ENTITY_TYPES,
   enumMappingsForCsv,
-  fetchedImportOption
+  fetchedImportOption,
+  withCsvIdMatches
 } from "./import-enum-mappings";
 import {
   columnMappingsFromHeaders,
@@ -371,9 +373,12 @@ export async function importCsv(
  * it rather than duplicating it. Like the app's import wizard, an empty or
  * missing enum cell takes the field's default, and a value is matched to an
  * option by its label or id in any case; a value that matches no option is
- * refused unless `enumMappings` maps it. As in the wizard, an enum column left
+ * refused unless `enumMappings` maps it. A supplier may also be named by the
+ * Unique ID it was imported with. As in the wizard, an enum column left
  * out takes its default on every row, existing rows included: when updating
- * records, send their enum columns too.
+ * records, send their enum columns too. With `dryRun`, the import runs and
+ * rolls back: the report shows what it would insert, update, skip and refuse,
+ * and nothing is written.
  * @mcp action
  */
 export async function importCsvText(
@@ -384,6 +389,8 @@ export async function importCsvText(
     csv: string;
     columnMappings?: Record<string, string>;
     enumMappings?: Record<string, Record<string, string>>;
+    /** Report what the import would do, row by row, without writing anything. */
+    dryRun?: boolean;
     companyId: string;
     userId: string;
   }
@@ -449,12 +456,18 @@ export async function importCsvText(
       })
     )
   );
-  const { enumMappings, unmatched } = enumMappingsForCsv(
+  const byOption = enumMappingsForCsv(
     args.table,
     parseCsv<Record<string, string>>(args.csv).rows,
     validMappings,
     optionsByField,
     args.enumMappings
+  );
+  const { enumMappings, unmatched } = withCsvIdMatches(
+    byOption.enumMappings,
+    byOption.unmatched,
+    await csvIdMatches(client, args.companyId, byOption.unmatched),
+    optionsByField
   );
   const unmatchedFields = Object.entries(unmatched);
   if (unmatchedFields.length > 0) {
@@ -474,8 +487,57 @@ export async function importCsvText(
       table: args.table,
       csv: args.csv,
       columnMappings: validMappings,
-      enumMappings
+      enumMappings,
+      dryRun: args.dryRun
     });
+}
+
+// The records an earlier import gave a CSV Unique ID, for the unmatched values
+// of fields that can name one (CSV_ID_ENTITY_TYPES): per field, Unique ID →
+// record id. One read per entity type; today that is suppliers only.
+async function csvIdMatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  unmatched: Record<string, string[]>
+): Promise<Record<string, Map<string, string>>> {
+  const fields = Object.entries(unmatched).flatMap(([key, values]) => {
+    const entityType = CSV_ID_ENTITY_TYPES[key];
+    return entityType ? [{ key, entityType, values }] : [];
+  });
+  const entityTypes = [...new Set(fields.map((field) => field.entityType))];
+  const found = await Promise.all(
+    entityTypes.map(async (entityType) => {
+      const values = [
+        ...new Set(
+          fields
+            .filter((field) => field.entityType === entityType)
+            .flatMap((field) => field.values)
+        )
+      ];
+      const { data } = await client
+        .from("externalIntegrationMapping")
+        .select("externalId, entityId")
+        .eq("companyId", companyId)
+        .eq("integration", "csv")
+        .eq("entityType", entityType)
+        .in("externalId", values);
+      return [
+        entityType,
+        new Map(
+          (data ?? []).flatMap((row) =>
+            row.externalId ? [[row.externalId, row.entityId] as const] : []
+          )
+        )
+      ] as const;
+    })
+  );
+  const byEntityType = new Map(found);
+  return Object.fromEntries(
+    fields.map((field) => [
+      field.key,
+      byEntityType.get(field.entityType) ?? new Map<string, string>()
+    ])
+  );
 }
 
 /** @mcp create */

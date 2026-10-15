@@ -7,6 +7,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { Kysely, Transaction } from "kysely";
 import { inChunks } from "./chunks";
+import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
 
@@ -414,7 +415,7 @@ export async function importMaterialProperties(
 ) {
   const config = CONFIGS[table];
 
-  await db.transaction().execute(async (trx) => {
+  await inTransaction(db, async (trx) => {
     const existingKeys = await config.loadExistingKeys(trx, companyId);
 
     const parentSpecs = config.parents ?? [];

@@ -311,6 +311,17 @@ It invokes the server function with `serverFns.as` on the caller's own client, s
 function's permission check runs against the caller's credential (user or API key).
 Tables are limited to `csvImportTables` (`shared.models.ts`), which
 `imports.models.test.ts` pins to the server function's `table` enum.
+
+An enum value that matches no option by label, readable id or id gets one more
+try for fields in `CSV_ID_ENTITY_TYPES` (`import-enum-mappings.ts`; today the
+Supplier column): the Unique ID an earlier import gave the record, read from
+`externalIntegrationMapping` (integration "csv"). It runs only after the
+option match, so a Unique ID that equals another record's name changes
+nothing, and an id whose record is gone is not used (`withCsvIdMatches`). The
+wizard does not do this.
+
+`dryRun: true` runs the import and rolls it back (below); the reply is the same
+report, with `dryRun: true`.
 `getCsvImportFields` (`shared_getCsvImportFields`) lists a table's columns from
 `fieldMappings`, reading fetcher-backed enum values live (one read per distinct
 fetcher), plus notes on how method-file rows link.
@@ -318,7 +329,19 @@ fetcher), plus notes on how method-file rows link.
 ## Server function (`packages/server-functions/src/import-csv/index.ts`)
 
 Built with `defineServerFn`; input validated by `importCsvInput` (table enum, exactly one
-of `filePath` or `csv`, `columnMappings`, optional `enumMappings`).
+of `filePath` or `csv`, `columnMappings`, optional `enumMappings`, optional `dryRun`).
+
+- **Dry run.** The body is `importer.run(ctx, db, input)`. With `dryRun` the server
+  function opens one `ControlledTransaction`, runs the import on it and always rolls
+  it back, so the counts and row errors are a real run's and nothing is written.
+  Every write goes through `inTransaction` (`import-csv/transaction.ts`): a
+  transaction on the database, a savepoint inside the dry run, so a step that fails
+  rolls back only its own writes either way. The storage-unit and department parent
+  passes give each row its own `inTransaction` for the same reason: a caught error
+  would otherwise abort the dry run's transaction for every later row. A caller
+  already inside a transaction cannot dry-run (Postgres has no nested transactions).
+  New import code must write only through `inTransaction`. Locks taken during a dry
+  run (the journal sequence row, an accounting period) are held until the rollback.
 
 - Checks the caller via `permissions: { by: "table", rules }`: `update` on
   `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the

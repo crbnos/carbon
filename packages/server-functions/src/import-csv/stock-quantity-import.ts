@@ -62,6 +62,7 @@ import {
   storageUnitKey,
   trackedKey
 } from "./classify-stock-row";
+import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
 
@@ -332,7 +333,7 @@ export async function importStockQuantities(
   // `../lib/plan-adjustment.ts` that `bookAdjustment` itself calls, and the
   // cost layers are valued by replaying the per-row read (see
   // `planIncreaseUnitCosts`). Nothing here re-derives a field.
-  await db.transaction().execute(async (trx) => {
+  await inTransaction(db, async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
     // A tracked entity's id is ours to choose, so the ledger rows can name it

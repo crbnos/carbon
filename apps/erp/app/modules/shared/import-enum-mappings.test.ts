@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { enumMappingsForCsv } from "./import-enum-mappings";
+import { enumMappingsForCsv, withCsvIdMatches } from "./import-enum-mappings";
 
 describe("enumMappingsForCsv", () => {
   it("fills each enum field's default when the column is absent", () => {
@@ -73,5 +73,48 @@ describe("enumMappingsForCsv", () => {
       Box: "EA"
     });
     expect(unmatched).toEqual({});
+  });
+});
+
+describe("withCsvIdMatches", () => {
+  const options = {
+    supplierId: [
+      { label: "Northwind Metals", value: "sup_1" },
+      { label: "Harbor Fasteners", value: "sup_2" }
+    ]
+  };
+
+  it("resolves an unmatched value by the Unique ID an earlier import stored", () => {
+    const result = withCsvIdMatches(
+      { supplierId: { "Northwind Metals": "sup_1" } },
+      { supplierId: ["S-002", "S-404"] },
+      { supplierId: new Map([["S-002", "sup_2"]]) },
+      options
+    );
+    expect(result.enumMappings.supplierId).toEqual({
+      "Northwind Metals": "sup_1",
+      "S-002": "sup_2"
+    });
+    expect(result.unmatched).toEqual({ supplierId: ["S-404"] });
+  });
+
+  it("ignores a stored id whose record is no longer an option", () => {
+    const result = withCsvIdMatches(
+      { supplierId: {} },
+      { supplierId: ["S-009"] },
+      { supplierId: new Map([["S-009", "sup_deleted"]]) },
+      options
+    );
+    expect(result.unmatched).toEqual({ supplierId: ["S-009"] });
+  });
+
+  it("leaves fields without Unique ID matches unmatched", () => {
+    const result = withCsvIdMatches(
+      {},
+      { unitOfMeasureCode: ["Crate"] },
+      {},
+      options
+    );
+    expect(result.unmatched).toEqual({ unitOfMeasureCode: ["Crate"] });
   });
 });

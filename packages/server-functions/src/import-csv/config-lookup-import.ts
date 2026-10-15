@@ -7,6 +7,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { Kysely, Transaction } from "kysely";
 import { inChunks } from "./chunks";
+import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
 
@@ -169,13 +170,17 @@ const applyParents = async (
       continue;
     }
 
+    // One transaction per row: a refused parent fails only its row, in a
+    // dry run too (inTransaction).
     try {
-      await db
-        .updateTable(table)
-        .set({ [parentField]: parentId } as never)
-        .where("id", "=", id)
-        .where("companyId", "=", companyId)
-        .execute();
+      await inTransaction(db, (trx) =>
+        trx
+          .updateTable(table)
+          .set({ [parentField]: parentId } as never)
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .execute()
+      );
     } catch (err) {
       summary.errors.push({ row, reason: (err as Error).message });
     }
@@ -205,7 +210,7 @@ export async function importConfigLookups(
     parentName: string;
   }> = [];
 
-  await db.transaction().execute(async (trx) => {
+  await inTransaction(db, async (trx) => {
     const existingKeys = new Set(
       (await loadExisting(trx, table, companyId)).flatMap(config.keysOfExisting)
     );

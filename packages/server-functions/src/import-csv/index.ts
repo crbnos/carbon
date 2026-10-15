@@ -12,6 +12,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import type { RequiredPermissions } from "../permissions";
+import type { ServerFnContext } from "../server-fn-context";
 import { inChunks } from "./chunks";
 import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";
@@ -23,6 +24,7 @@ import {
 import { importMaterialProperties } from "./material-property-import";
 import { importMethods } from "./method-import";
 import { importStockQuantities } from "./stock-quantity-import";
+import { inTransaction } from "./transaction";
 import { processIdsByName, resolveProcessNames } from "./work-center-processes";
 
 const logger = getLogger("server-functions", "import-csv");
@@ -73,7 +75,9 @@ export const importCsvInput = z
     columnMappings: z.record(z.string(), z.string()),
     enumMappings: z
       .record(z.string(), z.record(z.string(), z.string()))
-      .optional()
+      .optional(),
+    // Run the import and report what it would do without writing anything.
+    dryRun: z.boolean().optional()
   })
   .refine(
     (payload) =>
@@ -1050,12 +1054,21 @@ async function upsertTaxIdentifiers(
  * Imports a CSV into `table`, per the caller's column and enum mappings. The CSV
  * is an uploaded file (`filePath`) or inline text (`csv`).
  */
-const importCsv = defineServerFn({
-  name: "import-csv",
-  input: importCsvInput,
-  permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
-  async run(ctx, { table, filePath, csv, columnMappings, enumMappings = {} }) {
-    const { db, companyId, userId } = ctx;
+// The import itself. `db` is the context's database, or the transaction a dry
+// run rolls back.
+const importer = {
+  async run(
+    ctx: ServerFnContext,
+    db: Kysely<KyselyDatabase>,
+    {
+      table,
+      filePath,
+      csv,
+      columnMappings,
+      enumMappings = {}
+    }: z.infer<typeof importCsvInput>
+  ) {
+    const { companyId, userId } = ctx;
 
     logger.info({
       table,
@@ -1177,7 +1190,7 @@ const importCsv = defineServerFn({
         // per name per company, so duplicates within the CSV collapse.
         const namesQueuedForInsert = new Set<string>();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const customerInserts: Database["public"]["Tables"]["customer"]["Insert"][] =
             [];
           const customerTaxForInserts: Array<{
@@ -1388,7 +1401,7 @@ const importCsv = defineServerFn({
         const supplierIds = new Set<string>();
         const namesQueuedForInsert = new Set<string>();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const supplierInserts: Database["public"]["Tables"]["supplier"]["Insert"][] =
             [];
           const supplierTaxForInserts: Array<{
@@ -1621,7 +1634,7 @@ const importCsv = defineServerFn({
         const externalIdMap = await getCsvExternalIdMap(db, "item", companyId);
         const readableIds = new Set();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const itemInserts: Database["public"]["Tables"]["item"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -2197,7 +2210,7 @@ const importCsv = defineServerFn({
           companyId
         );
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
             [];
           const csvIdsForContactInserts: string[] = [];
@@ -2324,7 +2337,7 @@ const importCsv = defineServerFn({
           companyId
         );
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
             [];
           const csvIdsForContactInserts: string[] = [];
@@ -2453,7 +2466,7 @@ const importCsv = defineServerFn({
           .execute();
         const processesByName = processIdsByName(activeProcesses);
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const workCenterInserts: Database["public"]["Tables"]["workCenter"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -2617,7 +2630,7 @@ const importCsv = defineServerFn({
         );
         const processIds = new Set();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const processInserts: Database["public"]["Tables"]["process"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -2825,7 +2838,7 @@ const importCsv = defineServerFn({
           rowIndex: number;
         }> = [];
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const inserts: Database["public"]["Tables"]["storageUnit"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -3070,17 +3083,21 @@ const importCsv = defineServerFn({
             });
             continue;
           }
+          // One transaction per row: a refused parent fails only its row,
+          // in a dry run too (inTransaction).
           try {
-            await db
-              .updateTable("storageUnit")
-              .set({
-                parentId,
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
-              .where("id", "=", childId)
-              .where("companyId", "=", companyId)
-              .execute();
+            await inTransaction(db, (trx) =>
+              trx
+                .updateTable("storageUnit")
+                .set({
+                  parentId,
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                })
+                .where("id", "=", childId)
+                .where("companyId", "=", companyId)
+                .execute()
+            );
           } catch (parentErr) {
             summary.errors.push({
               row: intent.rowIndex,
@@ -3166,6 +3183,31 @@ const importCsv = defineServerFn({
       errors: withValues(summary.errors),
       skipped: withValues(summary.skipped)
     };
+  }
+};
+
+const importCsv = defineServerFn({
+  name: "import-csv",
+  input: importCsvInput,
+  permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
+  async run(ctx, input) {
+    if (!input.dryRun) return importer.run(ctx, ctx.db, input);
+
+    // A dry run imports inside one transaction and always rolls it back: the
+    // counts and row errors are the ones a real run would report, and nothing
+    // is written. Each step's own transaction becomes a savepoint
+    // (inTransaction). Postgres cannot nest a transaction, so a caller that is
+    // already inside one cannot dry-run.
+    if (ctx.db.isTransaction) {
+      throw new Error("A dry run cannot start inside a transaction");
+    }
+    const trx = await ctx.db.startTransaction().execute();
+    try {
+      const result = await importer.run(ctx, trx, input);
+      return { ...result, dryRun: true };
+    } finally {
+      await trx.rollback().execute();
+    }
   }
 });
 
