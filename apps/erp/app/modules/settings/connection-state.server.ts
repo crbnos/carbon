@@ -17,6 +17,8 @@ export interface ConnectionState {
   companyId: string;
   pieceName: string;
   name: string;
+  /** Set by Reconnect, so the callback revives exactly this row. */
+  connectionId?: string;
   userId: string;
   nonce: string;
   issuedAt: number;

@@ -5,6 +5,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  ConnectionAccountMismatchError,
+  ConnectionNameTakenError,
   createConnection,
   exchangeAuthorizationCode
 } from "@carbon/ee/integrations/connections";
@@ -99,15 +101,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   let app: ReturnType<typeof resolveOAuthApp>;
+  let auth: Awaited<ReturnType<typeof getPieceOAuth2Auth>>;
   try {
     app = resolveOAuthApp(state.pieceName);
+    auth = await getPieceOAuth2Auth(state.pieceName);
   } catch {
     return connectionFailed(request, "not-configured");
   }
 
+  // Each stage has its own try, so the error code is decided by WHERE it failed,
+  // never by reading the text of whatever was thrown.
+  let tokens: Awaited<ReturnType<typeof exchangeAuthorizationCode>>;
   try {
-    const auth = await getPieceOAuth2Auth(state.pieceName);
-    const tokens = await exchangeAuthorizationCode(
+    tokens = await exchangeAuthorizationCode(
       {
         tokenUrl: auth.tokenUrl,
         clientId: app.clientId,
@@ -116,11 +122,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
       parsed.data.code
     );
+  } catch (err) {
+    logger.error("Integration token exchange failed: {detail}", {
+      detail: describeError(err)
+    });
+    return connectionFailed(request, "token-exchange");
+  }
 
+  try {
     await createConnection(getCarbonServiceRole(), {
       companyId,
       pieceName: state.pieceName,
       name: state.name,
+      connectionId: state.connectionId,
       authType: "OAUTH2",
       accountLabel:
         accountLabelFromBody(entry, tokens.body) ??
@@ -134,44 +148,52 @@ export async function loader({ request }: LoaderFunctionArgs) {
       expiresAt: tokens.expiresAt,
       createdBy: state.userId
     });
-
-    // The piece is an ordinary integration card, so a connected account is what
-    // "installed" means for it. Without this row the grid would keep offering
-    // Install for an account that is already connected. Never overwrite an
-    // existing row — it may hold settings that are not this callback's to touch.
-    const installed = await markIntegrationInstalled(client, {
-      id: state.pieceName,
-      companyId,
-      updatedBy: userId
-    });
-    if (installed.error) throw installed.error;
-    await invalidateIntegrationHealthCache(state.pieceName, companyId);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "";
-    if (message.includes("integrationConnection_name_unique")) {
+    if (err instanceof ConnectionAccountMismatchError) {
+      return connectionFailed(request, "account-mismatch");
+    }
+    if (err instanceof ConnectionNameTakenError) {
       return connectionFailed(request, "duplicate-name");
     }
-    if (message.includes("rejected") || message.includes("access token")) {
-      logger.error("Integration token exchange failed: {message}", { message });
-      return connectionFailed(request, "token-exchange");
-    }
-    // A PostgREST failure is a plain object, not an Error: its `message`, `code`
-    // and `details` are the only clue to a constraint the write hit.
-    let serialized: string;
-    try {
-      serialized = JSON.stringify(err) ?? String(err);
-    } catch {
-      serialized = String(err);
-    }
-    const detail =
-      err instanceof Error
-        ? `name=${err.name} detail=${message.slice(0, 400)}`
-        : `name=${typeof err} detail=${serialized.slice(0, 400)}`;
-    logger.error("Integration connection save failed: {detail}", { detail });
+    logger.error("Integration connection save failed: {detail}", {
+      detail: describeError(err)
+    });
     return connectionFailed(request, "save-failed");
   }
 
+  // The piece is an ordinary integration card, so a connected account is what
+  // "installed" means for it. Without this row the grid would keep offering
+  // Install for an account that is already connected. Never overwrite an
+  // existing row — it may hold settings that are not this callback's to touch.
+  const installed = await markIntegrationInstalled(client, {
+    id: state.pieceName,
+    companyId,
+    updatedBy: userId
+  });
+  if (installed.error) {
+    logger.error("Integration install mark failed: {detail}", {
+      detail: describeError(installed.error)
+    });
+    return connectionFailed(request, "save-failed");
+  }
+  await invalidateIntegrationHealthCache(state.pieceName, companyId);
+
   return redirect(integrationsUrl());
+}
+
+/** A PostgREST failure is a plain object, not an Error: its `message`, `code` and
+ * `details` are the only clue to a constraint the write hit. */
+function describeError(err: unknown): string {
+  if (err instanceof Error) {
+    return `name=${err.name} detail=${err.message.slice(0, 400)}`;
+  }
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(err) ?? String(err);
+  } catch {
+    serialized = String(err);
+  }
+  return `name=${typeof err} detail=${serialized.slice(0, 400)}`;
 }
 
 /** Which account was connected, so two connections are tellable apart in the UI.

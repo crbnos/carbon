@@ -172,6 +172,10 @@ export const integrationErrors = {
       title: msg`That connection name is already used`,
       description: msg`Another connection to this integration already has that name. Choose a different one.`
     },
+    "account-mismatch": {
+      title: msg`That's a different account`,
+      description: msg`Reconnect with the account this connection already uses, or use Add account to connect the other one.`
+    },
     "save-failed": {
       title: msg`Couldn't save the connection`,
       description: msg`The integration authorized the connection but saving it failed. Try connecting again.`

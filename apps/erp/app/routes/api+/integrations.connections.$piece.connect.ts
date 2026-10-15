@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { readConnection } from "@carbon/ee/integrations/connections";
 import {
   allowlistEntry,
   buildConsentUrl,
@@ -19,8 +21,10 @@ export const config = {
 /**
  * Builds the vendor's consent URL: the piece supplies `authUrl` and `scope` (an
  * allowlist row may override either), the allowlist row supplies which env vars hold
- * our OAuth app. Returns `{ url }` like
- * the Slack install route, so the client opens it in a popup.
+ * our OAuth app. Returns `{ url }`, so the client opens it in a popup.
+ *
+ * `?connection=<id>` is Reconnect: the id is signed into the state, and the callback
+ * revives that row only if the same account authorizes. `?name=` is Add account.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
@@ -43,8 +47,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const requested = new URL(request.url).searchParams.get("name")?.trim();
-  const name = requested || entry.label;
+  const searchParams = new URL(request.url).searchParams;
+  const connectionId = searchParams.get("connection") ?? undefined;
+  let name = searchParams.get("name")?.trim() || entry.label;
+  if (connectionId !== undefined) {
+    const existing = await readConnection(
+      getCarbonServiceRole(),
+      companyId,
+      connectionId
+    );
+    if (existing === null || existing.pieceName !== pieceName) {
+      return { error: "That account no longer exists." };
+    }
+    name = existing.name;
+  }
 
   const auth = await getPieceOAuth2Auth(pieceName);
 
@@ -53,7 +69,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       entry,
       auth,
       app,
-      state: signConnectionState({ companyId, pieceName, name, userId })
+      state: signConnectionState({
+        companyId,
+        pieceName,
+        name,
+        connectionId,
+        userId
+      })
     })
   };
 }

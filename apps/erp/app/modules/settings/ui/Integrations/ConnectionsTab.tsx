@@ -91,13 +91,12 @@ export function ConnectionsTab({
 
   // The consent screen opens from the URL the connect loader builds, so the signed
   // `state` never has to round-trip through the browser's own code.
-  // One entry point for Add account AND Reconnect: reconnecting is the same
-  // consent under the same name, which revives the row with a fresh grant.
-  const startConnect = (connectionName: string) =>
+  // One entry point for Add account (`?name=`) and Reconnect (`?connection=`).
+  const startConnect = (query: { name: string } | { connection: string }) =>
     connect.load(
-      `${path.to.api.integrationConnect(
-        pieceName
-      )}?name=${encodeURIComponent(connectionName)}`
+      `${path.to.api.integrationConnect(pieceName)}?${new URLSearchParams(
+        query
+      )}`
     );
 
   useEffect(() => {
@@ -132,7 +131,7 @@ export function ConnectionsTab({
                 connection={connection}
                 requiredScopes={requiredScopes}
                 reconnecting={connect.state !== "idle"}
-                onReconnect={() => startConnect(connection.name)}
+                onReconnect={() => startConnect({ connection: connection.id })}
               />
             ))}
           </VStack>
@@ -152,7 +151,7 @@ export function ConnectionsTab({
             leftIcon={<LuPlug />}
             isDisabled={duplicate}
             isLoading={connect.state !== "idle"}
-            onClick={() => startConnect(proposed)}
+            onClick={() => startConnect({ name: proposed })}
           >
             <Trans>Add account</Trans>
           </Button>

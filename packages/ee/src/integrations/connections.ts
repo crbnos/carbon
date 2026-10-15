@@ -78,6 +78,20 @@ export class ConnectionRefreshTimeoutError extends Error {
   }
 }
 
+export class ConnectionAccountMismatchError extends Error {
+  constructor(connectionId: string) {
+    super(`The authorized account does not match connection ${connectionId}.`);
+    this.name = "ConnectionAccountMismatchError";
+  }
+}
+
+export class ConnectionNameTakenError extends Error {
+  constructor(name: string) {
+    super(`A connection called "${name}" already exists.`);
+    this.name = "ConnectionNameTakenError";
+  }
+}
+
 const SELECT_COLUMNS =
   "id, companyId, pieceName, name, authType, accountLabel, metadata, expiresAt, status, lastError";
 
@@ -210,12 +224,41 @@ export async function readConnection(
   return (data ?? null) as unknown as IntegrationConnection | null;
 }
 
+/** Which vendor account a connection acts as: the workspace for Slack, otherwise
+ * the account label read back after consent. `null` when nothing identifies it. */
+function accountIdentity(
+  accountLabel: string | null | undefined,
+  metadata: Record<string, unknown> | null | undefined
+): string | null {
+  const teamId = metadata?.team_id;
+  if (typeof teamId === "string" && teamId !== "") return `team:${teamId}`;
+  return accountLabel ? `label:${accountLabel}` : null;
+}
+
+/** Best-effort: when either side cannot be identified, the consent is accepted. */
+function sameAccount(
+  stored: { accountLabel: string | null; metadata: unknown },
+  incoming: {
+    accountLabel?: string | null;
+    metadata?: Record<string, unknown>;
+  }
+): boolean {
+  const before = accountIdentity(
+    stored.accountLabel,
+    stored.metadata as Record<string, unknown> | null
+  );
+  const after = accountIdentity(incoming.accountLabel, incoming.metadata);
+  return before === null || after === null || before === after;
+}
+
 export async function createConnection(
   serviceClient: SupabaseClient<Database>,
   args: {
     companyId: string;
     pieceName: string;
     name: string;
+    /** Set by Reconnect: the one row this consent is for. */
+    connectionId?: string;
     authType?: string;
     accountLabel?: string | null;
     metadata?: Record<string, unknown>;
@@ -224,21 +267,32 @@ export async function createConnection(
     createdBy: string;
   }
 ): Promise<{ id: string }> {
-  // Reconnecting a broken account REVIVES its row rather than inserting beside it.
-  // `disconnectConnection` deliberately keeps the row so a saved workflow node's
-  // reference stays valid — but the name is unique per piece, so a fresh insert
-  // under the same name always collided, and the only account the customer wanted
-  // to fix was the one they could never re-add.
-  const existing = await serviceClient
+  // A consent REVIVES an existing row (by id for Reconnect, by name otherwise) so
+  // saved workflow nodes keep their reference — but only for the SAME account, or
+  // every workflow on the row would silently start acting as someone else.
+  const lookup = serviceClient
     .from("integrationConnection")
-    .select("id")
+    .select("id, accountLabel, metadata")
     .eq("companyId", args.companyId)
-    .eq("pieceName", args.pieceName)
-    .eq("name", args.name)
-    .maybeSingle();
+    .eq("pieceName", args.pieceName);
+  const existing = await (args.connectionId === undefined
+    ? lookup.eq("name", args.name)
+    : lookup.eq("id", args.connectionId)
+  ).maybeSingle();
+  if (existing.error) throw existing.error;
 
-  if (existing.data?.id) {
+  if (args.connectionId !== undefined && existing.data === null) {
+    throw new Error(`Connection ${args.connectionId} was not found.`);
+  }
+
+  if (existing.data !== null) {
     const id = existing.data.id;
+    if (!sameAccount(existing.data, args)) {
+      if (args.connectionId !== undefined) {
+        throw new ConnectionAccountMismatchError(id);
+      }
+      throw new ConnectionNameTakenError(args.name);
+    }
     await writeTokens(serviceClient, args.companyId, id, args.tokens);
     const { error: reviveError } = await serviceClient
       .from("integrationConnection")
@@ -258,7 +312,7 @@ export async function createConnection(
       })
       .eq("companyId", args.companyId)
       .eq("id", id);
-    if (reviveError) throw new Error(reviveError.message);
+    if (reviveError) throw reviveError;
     return { id };
   }
 
@@ -279,6 +333,8 @@ export async function createConnection(
     .select("id")
     .single();
 
+  // Two people adding the same name at once: the unique index decides.
+  if (error?.code === "23505") throw new ConnectionNameTakenError(args.name);
   if (error || data === null) throw error ?? new Error("Connection not saved.");
 
   try {

@@ -6,6 +6,8 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  ConnectionAccountMismatchError,
+  ConnectionNameTakenError,
   ConnectionRevokedError,
   connectionsHealthy,
   connectionUsable,
@@ -222,6 +224,69 @@ describe("createConnection", () => {
     expect(stored).not.toContain("rt-1");
     expect(stored).not.toContain("accessToken");
     expect(stored).not.toContain("refreshToken");
+  });
+
+  it("refuses a reconnect that signs in as a different account", async () => {
+    const { client, rows, vault } = makeClient({
+      accountLabel: "ops@example.com",
+      status: "Revoked"
+    });
+
+    await expect(
+      createConnection(client, {
+        companyId: COMPANY,
+        pieceName: "google-calendar",
+        name: "Ops calendar",
+        connectionId: CONNECTION,
+        accountLabel: "someone-else@example.com",
+        tokens: { accessToken: "at-other" },
+        createdBy: "u1"
+      })
+    ).rejects.toBeInstanceOf(ConnectionAccountMismatchError);
+
+    expect(rows.get(CONNECTION)!.accountLabel).toBe("ops@example.com");
+    expect(rows.get(CONNECTION)!.status).toBe("Revoked");
+    expect(vault.has(CONNECTION)).toBe(false);
+  });
+
+  it("refuses another account under a name that is already taken", async () => {
+    const { client, rows } = makeClient({ accountLabel: "ops@example.com" });
+
+    await expect(
+      createConnection(client, {
+        companyId: COMPANY,
+        pieceName: "google-calendar",
+        name: "Ops calendar",
+        accountLabel: "someone-else@example.com",
+        tokens: { accessToken: "at-other" },
+        createdBy: "u1"
+      })
+    ).rejects.toBeInstanceOf(ConnectionNameTakenError);
+    expect(rows.get(CONNECTION)!.accountLabel).toBe("ops@example.com");
+  });
+
+  it("revives a reconnect whose workspace was renamed but is the same team", async () => {
+    const { client, rows } = makeClient({
+      pieceName: "slack",
+      accountLabel: "Old name",
+      metadata: { team_id: "T1" },
+      status: "Revoked"
+    });
+
+    const { id } = await createConnection(client, {
+      companyId: COMPANY,
+      pieceName: "slack",
+      name: "Ops calendar",
+      connectionId: CONNECTION,
+      accountLabel: "New name",
+      metadata: { team_id: "T1" },
+      tokens: { accessToken: "xoxb-new" },
+      createdBy: "u1"
+    });
+
+    expect(id).toBe(CONNECTION);
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
+    expect(rows.get(CONNECTION)!.accountLabel).toBe("New name");
   });
 });
 
