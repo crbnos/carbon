@@ -41,19 +41,6 @@ import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "quote", "finalize");
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof (error as { message?: unknown }).message === "string"
-  ) {
-    return (error as { message: string }).message;
-  }
-  return fallback;
-}
-
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
@@ -247,15 +234,10 @@ export async function action(args: ActionFunctionArgs) {
     // Re-throw redirects — don't swallow them
     if (thrown instanceof Response) throw thrown;
 
+    // `error()` logs the cause; the toast never shows database or provider text.
     throw redirect(
       path.to.quote(quoteId),
-      await flash(
-        request,
-        error(
-          thrown,
-          `Failed to finalize quote: ${getErrorMessage(thrown, "Unknown error")}`
-        )
-      )
+      await flash(request, error(thrown, "Failed to finalize quote"))
     );
   }
 
