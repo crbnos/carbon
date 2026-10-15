@@ -533,7 +533,6 @@ export default function AuthenticatedRoute() {
               <TooltipProvider>
                 <SidebarProvider
                   defaultOpen={false}
-                  keyboardShortcut={false}
                   className="h-screen min-h-0"
                 >
                   <PrimaryNavigation />

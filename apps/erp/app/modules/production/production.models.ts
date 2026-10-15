@@ -107,17 +107,8 @@ export function isJobEditableFromPlanning(
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
 
-export const JOB_LOCKED_STATUSES = [
-  "Completed",
-  "Closed",
-  "Cancelled"
-] as const;
-
-export function isJobLocked(status: string | null | undefined): boolean {
-  return JOB_LOCKED_STATUSES.includes(
-    status as (typeof JOB_LOCKED_STATUSES)[number]
-  );
-}
+// The one definition lives in @carbon/utils, shared with the OEE sync.
+export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
 /** The statuses the jobs table's bulk Delete acts on. "Due Today" and
  *  "Overdue" are deprecated statuses that old jobs can still hold. */
@@ -1080,6 +1071,15 @@ export const productionEventValidator = z
     }
   );
 
+export const assignMachineTimeValidator = z.object({
+  intent: z.literal("assign"),
+  jobOperationId: z.string().min(1, { message: "Operation is required" })
+});
+
+export const dismissMachineTimeValidator = z.object({
+  intent: z.literal("dismiss")
+});
+
 export const productionOrderValidator = z.object({
   startDate: zfd.text(z.string().nullable()),
   dueDate: zfd.text(z.string().nullable()),
@@ -1337,11 +1337,21 @@ export const assemblyStepStatuses = ["Todo", "Review", "Done"] as const;
 
 const vector3 = z.tuple([z.number(), z.number(), z.number()]);
 const quaternion = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+const unitQuaternion = quaternion.refine(
+  ([x, y, z, w]) => Math.abs(Math.hypot(x, y, z, w) - 1) < 1e-3,
+  { message: "Rotation must be a unit quaternion" }
+);
 
-/**
- * Insertion motion of a step's parts. See
- * docs/specs/animated-work-instructions-contracts.md §4.
- */
+function isSeatWaypoint(
+  waypoint: { offset: number[]; rotation: number[] } | undefined
+): boolean {
+  if (!waypoint) return false;
+  const [ox = 0, oy = 0, oz = 0] = waypoint.offset;
+  const w = waypoint.rotation[3] ?? 0;
+  return Math.hypot(ox, oy, oz) < 1e-3 && Math.abs(Math.abs(w) - 1) < 1e-6;
+}
+
+/** Mirrors `Motion` in `packages/viewer/src/types.ts` — keep them in sync. */
 export const motionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("linear"),
@@ -1381,6 +1391,16 @@ export const motionSchema = z.discriminatedUnion("type", [
       )
       .min(2)
   }),
+  // Editor-drawn path; poses are relative to the seated pose.
+  z.object({
+    type: z.literal("waypoints"),
+    waypoints: z
+      .array(z.object({ offset: vector3, rotation: unitQuaternion }))
+      .min(2)
+      .refine((waypoints) => isSeatWaypoint(waypoints[waypoints.length - 1]), {
+        message: "The last waypoint must be the seated pose"
+      })
+  }),
   z.object({ type: z.literal("none") })
 ]);
 
@@ -1398,6 +1418,12 @@ export const cameraSchema = z.union([
     direction: vector3
   })
 ]);
+
+/**
+ * A step's build orientation: a unit quaternion turning the model frame into
+ * the bench frame. Mirrors `AssemblyStep.orientation` in `@carbon/viewer`.
+ */
+export const orientationSchema = unitQuaternion;
 
 export const fastenerSchema = z.object({
   spec: z.string().optional(),
@@ -1421,7 +1447,15 @@ export const stepPlanWarningsSchema = z.object({
    * the support polygon of the parts below it) — likely needs a fixture or a
    * second hand. Diagnostic only; never blocks generation or playback.
    */
-  needsSupport: z.boolean().optional()
+  needsSupport: z.boolean().optional(),
+  /**
+   * The motion the step had before the author first drew a path (the
+   * planner's, or `none`). Present = the path is hand-drawn, which also
+   * overrides `flagged` (`hasCustomMotion` / `isPlanFlagged` in
+   * `@carbon/viewer/steps`); Reset puts it back. A re-plan rewrites `warnings`,
+   * so it clears this together with the drawn path it replaces.
+   */
+  plannedMotion: z.unknown().optional()
 });
 
 const jsonField = <T extends z.ZodTypeAny>(schema: T) =>
@@ -1596,7 +1630,11 @@ export const assemblyInstructionStepNewValidator = assemblyInstructionStepFields
  */
 export const assemblyInstructionStepMotionValidator = z.object({
   motion: jsonField(motionSchema.optional()),
-  camera: jsonField(cameraSchema.nullable().optional())
+  // Put back the motion the step had before the author first drew a path.
+  reset: zfd.checkbox(),
+  camera: jsonField(cameraSchema.nullable().optional()),
+  // The build's orientation from this step on; `null` = same as the step before.
+  orientation: jsonField(orientationSchema.nullable().optional())
 });
 
 /**

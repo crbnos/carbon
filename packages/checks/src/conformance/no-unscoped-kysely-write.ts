@@ -73,7 +73,7 @@ const EXEMPT_TABLES = new Set(["userPermission"]);
  * genuinely lacks `companyId` — on any other table a group predicate is wider
  * than the tenant.
  */
-const GROUP_SCOPED_TABLES = new Set(["currency"]);
+const GROUP_SCOPED_TABLES = new Set(["account", "currency"]);
 
 const WRITE = /\.(updateTable|deleteFrom)\s*\(/g;
 const COMPANY_PREDICATE =

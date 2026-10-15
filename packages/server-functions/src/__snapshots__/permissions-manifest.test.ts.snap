@@ -5,6 +5,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "activate-accounting": {
     "update": "accounting",
   },
+  "apply-account-import": {
+    "update": "accounting",
+  },
   "assign-serial-numbers": {
     "update": "production",
   },
@@ -289,6 +292,15 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   },
   "journal-legacy-documents": {
     "update": "accounting",
+  },
+  "kanban-replenish": {
+    "by": "mode",
+    "rules": {
+      "level": "system",
+      "scan": {
+        "create": "inventory",
+      },
+    },
   },
   "post-asset-transfer": {
     "by": "type",

@@ -10,6 +10,11 @@ import type {
   RemoteCandidate
 } from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
+import {
+  parseQboTrialBalance,
+  type QboTrialBalanceResponse,
+  type RemoteTrialBalanceRow
+} from "../../core/trial-balance";
 import type {
   AccountingEntityType,
   DimensionTarget,
@@ -1186,6 +1191,31 @@ export class QboProvider extends BaseProvider {
       "JournalEntry",
       id
     );
+  }
+
+  /**
+   * The trial balance as at `date` (YYYY-MM-DD), accrual basis, one row per
+   * account (GET /reports/TrialBalance). Only `end_date` is sent: balance
+   * sheet accounts are cumulative to it and profit and loss accounts run
+   * from the start of its fiscal year, prior years sitting in Retained
+   * Earnings. A refused token is thrown as an AccountingApiError carrying
+   * the 401/403.
+   */
+  async getTrialBalance(date: string): Promise<RemoteTrialBalanceRow[]> {
+    const params = new URLSearchParams({
+      end_date: date,
+      accounting_method: "Accrual"
+    });
+    const response = await this.request<QboTrialBalanceResponse>(
+      "GET",
+      `/reports/TrialBalance?${params.toString()}`
+    );
+
+    if (response.error || !response.data) {
+      throwQboApiError("read trial balance", response);
+    }
+
+    return parseQboTrialBalance(response.data);
   }
 
   /**

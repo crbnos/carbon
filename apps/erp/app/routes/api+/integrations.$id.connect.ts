@@ -53,9 +53,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // database enforces this too (`companyIntegration_single_active_role`), but
   // reaching that refusal AFTER the customer has authorized at the provider
   // leaves them with a live grant and no install.
-  const role = (integration as { providerRole?: "accounting" | "spend" })
-    .providerRole;
-  if (role) {
+  const role = (
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
+  ).providerRole;
+  // Several OEE providers may be active at once, so the role has no incumbent.
+  if (role && role !== "oee") {
     const roleIds = new Set<string>(getIntegrationIdsByRole(role));
     const existing = await client
       .from("companyIntegration")

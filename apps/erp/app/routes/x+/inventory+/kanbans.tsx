@@ -11,7 +11,11 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getKanbans, KANBANS_PAGING } from "~/modules/inventory";
+import {
+  getKanbanProjectedQuantities,
+  getKanbans,
+  KANBANS_PAGING
+} from "~/modules/inventory";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
 import { getLocationsList } from "~/modules/resources";
 import { getKanbanOutputSetting } from "~/modules/settings";
@@ -101,9 +105,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const page = toPage(kanbans.data ?? [], { limit, sorts }, KANBANS_PAGING);
 
+  // One query for every armed Transfer kanban on the page. Each row carries
+  // its own value, so every loaded page has it. A failure only hides the
+  // Projected (To) column; the list still loads.
+  const armedKanbanIds = page.rows
+    .filter(
+      (kanban) =>
+        kanban.replenishmentSystem === "Transfer" &&
+        kanban.replenishmentLevel !== null &&
+        kanban.id
+    )
+    .map((kanban) => kanban.id!);
+
+  const projectedQuantities: Record<string, number> = {};
+  if (armedKanbanIds.length > 0) {
+    const projected = await getKanbanProjectedQuantities(
+      client,
+      companyId,
+      armedKanbanIds
+    );
+    if (projected.error) {
+      logger.error("Failed to load kanban projected quantities", {
+        companyId,
+        error: projected.error
+      });
+    } else {
+      for (const row of projected.data ?? []) {
+        projectedQuantities[row.kanbanId] = row.projectedQuantity;
+      }
+    }
+  }
+
   return {
     count: kanbans.count ?? 0,
-    kanbans: page.rows,
+    kanbans: page.rows.map((kanban) => ({
+      ...kanban,
+      projectedQuantity: kanban.id
+        ? (projectedQuantities[kanban.id] ?? null)
+        : null
+    })),
     nextCursor: page.nextCursor,
     kanbanOutput: kanbanOutput.data?.kanbanOutput ?? "qrcode",
     locationId

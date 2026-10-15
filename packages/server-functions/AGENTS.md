@@ -239,7 +239,12 @@ spec's section 5 numbering, as the code comments do:
    Posted with no journal.
 6. Fixed assets: no write. The register already holds the values at the cutover.
 7. Deletes the Draft trial balance journal and posts the opening journal
-   (`buildOpeningJournalLines`), Posted, dated the day before the cutover.
+   (`buildOpeningJournalLines`), Posted, dated the day before the cutover. Before
+   that, `markIgnoredInvoicesPaid` sets every invoice ignored on Migration Clearing
+   (`clearing.ignoredItems`, rows of `accountingCutoverIgnoredInvoice` still open at
+   the cutover) to `Paid` with `datePaid` the day before the cutover, with
+   `app.sync_in_progress` on so no workflow, webhook or provider push fires. They are
+   not in the opening journal, and the AR/AP readers treat a Paid invoice as closed.
 8. `assignPeriods` gives each Provisional journal dated on or after the cutover the
    period of its date.
 9. `repointStandInLines` moves each stand-in line to the default it names (or that
@@ -338,8 +343,29 @@ each company (`journalLegacyDocumentsForAllCompanies`,
   (`ci/src/one-off-scripts.ts`): the runner records nothing and runs it again on the
   next deploy.
 
-`seed-company` sets a new company's cutover to the first day of the current month, so
-a new company posts `Posted` journals from its first document.
+`seed-company` leaves a new company without a cutover, so it posts `Provisional`
+journals until the activation wizard sets one. A subsidiary copies its `accountDefault`
+ids and fixed asset class accounts from a company already in the group; the seeded
+account numbers are only the fallback for a group with none.
+
+### `apply-account-import`
+
+Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ chart,
+defaults, resolutions }`, trimmed and size-capped, permission `update: accounting`) in one
+transaction. It locks every company's `companySettings` FOR SHARE, then the group's
+accounts FOR UPDATE, re-plans with `planAccountImport`, and refuses a plan with errors or
+an open replacement — including any company of the group with an accounting cutover. It
+sets `app.account_import` (`set_config(…, true)`), which lets the charge and reimbursement
+guards accept an account-only change on a posted row (`20261013035046`). It frees the
+number and name of every updated, merged and deleted account (temporary values, so a swap
+works), creates groups and accounts, sets every company's defaults in one statement and
+every fixed asset class in one, re-points each merge source by `REFERENCE_POLICY` plus
+the references with no foreign key (`intercompanyEliminationLine`,
+`companyIntegration.metadata.paymentFeeAccount`) — posted documents included, since their
+journals are still Provisional — deletes the removed accounts and their
+`externalIntegrationMapping` rows, deletes empty groups, and checks a postcondition (every
+chart row written with its class, type and group; every required default and class
+account set). A failed postcondition is a 500: the plan and the apply disagree.
 
 ## Validation Commands
 

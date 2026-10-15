@@ -11,7 +11,7 @@ Every company posts journals for its receipts, shipments, invoices, payments, ad
 
 Cost layers, inventory valuation, fixed-asset cost, deferred revenue schedules and intercompany records do not wait for the cutover. Every company writes them from the first document.
 
-A new company starts with accounting set up: its cutover date is the first day of its current month, so it posts Posted journals from its first document and never sees the setup wizard.
+A new company starts without a cutover date. It posts Provisional journals on Carbon's default chart of accounts until you set up accounting, so you can [import your own chart](#importing-your-chart-of-accounts) before anything is Posted.
 
 ## The journal
 
@@ -83,6 +83,9 @@ Setting up accounting opens your books in Carbon at a **cutover date**. Carbon t
 
 <Steps>
 <Step>
+**Chart of Accounts.** Import your own chart of accounts, or continue to keep Carbon's. Do this first: the trial balance step matches accounts by number.
+</Step>
+<Step>
 **Readiness.** Choose the cutover date: the first day of the current month, or of one of the 3 months before it. The opening balances are as of the end of the day before. All 6 checks must pass:
 - **Every account default is set**: each default account is set to an active account. A default that falls back to another one, such as Employee Reimbursements Payable, can stay empty. **Migration Clearing** must be an active Equity account that is not a group. Each failing default links to **Accounting → Default Accounts**.
 - **Fiscal year and base currency are set.**
@@ -124,6 +127,44 @@ Labor and machine absorption of a job is not written again. Carbon does not send
 <Callout type="warn" title="Setting up accounting cannot be undone">
 The cutover date never changes after you enable. The base currency and the fiscal year start month lock too.
 </Callout>
+
+## Importing your chart of accounts
+
+Every company starts on Carbon's default chart of accounts. To use your own, open **Accounting → Chart of Accounts** and press **Import**. The button shows until accounting is set up in every company of the group, and needs permission to update accounting.
+
+The import needs two CSV files:
+
+| File | What it says |
+|---|---|
+| Chart of accounts | Which accounts exist. One row per account, with its number, name, class, type and group. |
+| Default accounts | Which of your accounts each default account is. Carbon posts to default accounts, such as Receivables or Inventory, and to the accounts of each fixed asset class. |
+
+<Steps>
+<Step>
+**Upload your chart.** Export it from your current system. Carbon reads the column names most systems use: `Account Number`, `Code` or `GL Account` for the number; `Account Name` or `Name` for the name; `Class`, `Account Type` or `Category` for the class; `Subtype` or `Detail Type` for the type; and `Group` or `Parent Grouping` for the group. A class column that holds a type, such as `Bank`, is read as that type and its class. A row whose `Status` is `Inactive` is left out. To start from Carbon's chart instead, press **Download template**: it lists the current accounts in the columns the import reads.
+</Step>
+<Step>
+**Download the default accounts template and fill it in.** It has one row per default account, with the account it uses now in `Current Account`. In `Account Number`, enter the number of the account in your chart that takes it. A row marked `Required` needs a number.
+</Step>
+<Step>
+**Upload the default accounts.** The review lists what the import does, and every error with its file and line number. Fix errors in the files and upload them again.
+</Step>
+<Step>
+**Apply.** Carbon applies both files in one step, or nothing. Afterwards the chart's accounts are exactly the rows of your chart.
+</Step>
+</Steps>
+
+What the import does with each Carbon account:
+
+- A Carbon account behind a default account becomes the account the template names for it. It keeps its documents and its default accounts, and takes your number, name, class, type and group.
+- When one of your accounts takes several default accounts, the Carbon account of the first one in the template becomes it, and the others merge into it.
+- A Carbon account whose number matches a row that no default account took becomes that row.
+- Every other Carbon account is deleted. If documents or journals still use it, posted documents included, it appears under **These accounts need a replacement**: pick the account in your chart that takes them over. A pick stays on the list until you upload a file again, so you can change it.
+- A row of your chart that no Carbon account becomes is created. A group that does not exist yet is created, and a group left with no accounts is deleted.
+
+The chart is shared by every company in the group, so the import changes it for all of them. The review lists each company whose documents or journals move to another account.
+
+An account that documents, journals or default accounts use cannot be deleted. **Delete** says so and stays disabled.
 
 Until accounting is set up, Carbon refuses manual journal entries, depreciation runs, revenue recognition and lease runs, intercompany eliminations and period close.
 

@@ -399,6 +399,9 @@ msgstr "Zamknij"
 msgid "Collapse characteristics table"
 msgstr "Zwiń tabelę cech"
 
+msgid "Collapse navigation"
+msgstr "Zwiń nawigację"
+
 msgid "Collapse panel"
 msgstr "Zwiń panel"
 
@@ -421,6 +424,9 @@ msgstr "Kolumna: {0}"
 
 msgid "Columns"
 msgstr "Kolumny"
+
+msgid "Companies"
+msgstr "Firmy"
 
 msgid "Company"
 msgstr "Firma"
@@ -814,6 +820,9 @@ msgstr "Nadal pracuję"
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysły, propozycje czy problemy?"
 
+msgid "Idle"
+msgstr "Bezczynny"
+
 msgid "Idle for"
 msgstr "Bezczynny przez"
 
@@ -905,6 +914,9 @@ msgstr "Przewodnik zlecenia"
 msgid "Jobs"
 msgstr "Zlecenia produkcyjne"
 
+msgid "Keep navigation open"
+msgstr "Pozostaw nawigację otwartą"
+
 msgid "Keep picking"
 msgstr "Kontynuuj kompletację"
 
@@ -955,6 +967,9 @@ msgstr "Widok listy"
 
 msgid "Load list"
 msgstr "Załaduj listę"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Załadowany: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ładowanie szczegółów pozycji..."
@@ -1277,6 +1292,9 @@ msgstr "Wymagany OEM"
 msgid "of {0}"
 msgstr "z {0}"
 
+msgid "Offline"
+msgstr "Offline"
+
 msgid "Oldest first"
 msgstr "Najstarsze pierwsze"
 
@@ -1307,6 +1325,9 @@ msgstr "Otwórz zlecenie produkcyjne w tej partii produkcyjnej"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Otwórz NCR dla dyspozycji MRB"
+
+msgid "Open ERP"
+msgstr "Otwórz ERP"
 
 msgid "Open Jobs"
 msgstr "Otwarte Zlecenia produkcyjne"

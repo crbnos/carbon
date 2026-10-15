@@ -43,6 +43,14 @@ A work center is a **finite resource**: the [scheduler](/docs/reference/scheduli
 
 An open maintenance task that takes the work center offline subtracts its downtime from those hours (lights-out machines included), so the scheduler routes work around a machine that's down rather than booking it.
 
+## Loaded operation
+
+Each work center has a **loaded operation**: the operation of the latest <Term>production event</Term> started there. A Setup, Labor or Machine start loads it. An event that you enter with an end time does not, and neither does an event that starts before the work center's latest load or unload. The operation stays loaded until it is **"Done"** or **"Canceled"**, is deleted, or moves to another work center. A **"Pause"** in the MES does not unload it.
+
+Carbon keeps the history of the loads on each work center for at least 7 days after each unload.
+
+The MES work center display shows the loaded operation as **"Loaded:"** with the job and the operation. When a [machine monitoring](/docs/integrations/oee) device is mapped to the work center, Carbon records the machine's run time on the operation that was loaded when the machine ran.
+
 ## Related
 
 <Cards>
@@ -51,5 +59,8 @@ An open maintenance task that takes the work center offline subtracts its downti
   </Card>
   <Card title="Manufacturing accounting" href="/guides/job-costing">
     How a work center's rates become a job's labor and machine cost.
+  </Card>
+  <Card title="Machine monitoring" href="/docs/integrations/oee">
+    Machine time from Sense sensors, recorded on the loaded operation.
   </Card>
 </Cards>

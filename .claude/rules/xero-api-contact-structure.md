@@ -113,7 +113,10 @@ token once and retries. OAuth scopes (`packages/ee/src/xero/config.tsx`) — **g
 (Xero retired the broad `accounting.transactions` scope for apps created after
 2026-03-02; granular also works on older apps): `offline_access`,
 `accounting.contacts`, `accounting.settings`, `accounting.invoices`,
-`accounting.payments`, `accounting.banktransactions`, `accounting.manualjournals`.
+`accounting.payments`, `accounting.banktransactions`, `accounting.manualjournals`,
+`accounting.reports.trialbalance.read` (the accounting wizard's trial balance pull,
+`XeroProvider.getTrialBalance`; a tenant connected before it answers 401/403 and is
+told to reconnect).
 
 Contact endpoints used:
 - `GET /Contacts/{id}`, `GET /Contacts?IDs=a,b,c` — fetch.

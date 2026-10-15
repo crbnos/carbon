@@ -399,6 +399,9 @@ msgstr "Закрыть"
 msgid "Collapse characteristics table"
 msgstr "Свернуть таблицу характеристик"
 
+msgid "Collapse navigation"
+msgstr "Свернуть навигацию"
+
 msgid "Collapse panel"
 msgstr "Свернуть панель"
 
@@ -421,6 +424,9 @@ msgstr "Столбец: {0}"
 
 msgid "Columns"
 msgstr "Столбцы"
+
+msgid "Companies"
+msgstr "Организации"
 
 msgid "Company"
 msgstr "Организация"
@@ -814,6 +820,9 @@ msgstr "Я ещё работаю"
 msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
+msgid "Idle"
+msgstr "Ожидание"
+
 msgid "Idle for"
 msgstr "Простой в течение"
 
@@ -905,6 +914,9 @@ msgstr "Маршрутный лист"
 msgid "Jobs"
 msgstr "Производственные заказы"
 
+msgid "Keep navigation open"
+msgstr "Не сворачивать навигацию"
+
 msgid "Keep picking"
 msgstr "Продолжить отбор"
 
@@ -955,6 +967,9 @@ msgstr "Вид списка"
 
 msgid "Load list"
 msgstr "Загрузить список"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Загружена: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
@@ -1277,6 +1292,9 @@ msgstr "Требуется OEM"
 msgid "of {0}"
 msgstr "из {0}"
 
+msgid "Offline"
+msgstr "Отключено"
+
 msgid "Oldest first"
 msgstr "Самые старые первыми"
 
@@ -1307,6 +1325,9 @@ msgstr "Открыть производственный заказ в этой �
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
+
+msgid "Open ERP"
+msgstr "Открыть ERP"
 
 msgid "Open Jobs"
 msgstr "Открытые производственные заказы"
