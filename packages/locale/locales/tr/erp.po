@@ -15757,14 +15757,14 @@ msgstr "Sipariş tarihi"
 msgid "Order Date"
 msgstr "Sipariş Tarihi"
 
+msgid "Order Items"
+msgstr "Ürün Sipariş Et"
+
 msgid "Order Multiple"
 msgstr "Sipariş katı"
 
 msgid "Order Multiple:"
 msgstr "Sipariş katı:"
-
-msgid "Order Parts"
-msgstr "Parça Sipariş Et"
 
 msgid "Order Qty"
 msgstr "Sipariş Miktarı"

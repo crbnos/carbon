@@ -787,7 +787,7 @@ const PlanningTable = memo(
               disabled={bulkUpdateFetcher.state !== "idle"}
             >
               <DropdownMenuIcon icon={<LuSquareChartGantt />} />
-              <Trans>Order Parts</Trans>
+              <Trans>Order Items</Trans>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={

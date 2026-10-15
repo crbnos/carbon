@@ -45,9 +45,14 @@ async function endOpenUnattributedTime(trx: KyselyTx, args: CloseArgs) {
  * sensor opened there — Machine events created by `system` and running
  * unattributed time — because no later sync of that device will close it. An operator's
  * own Machine event stays open. Call it under `lockWorkCenterDevice`.
+ * Returns the ended event ids: the caller posts them once its transaction
+ * commits.
  */
-export async function endSensorMachineTime(trx: KyselyTx, args: CloseArgs) {
-  await trx
+export async function endSensorMachineTime(
+  trx: KyselyTx,
+  args: CloseArgs
+): Promise<{ endedEventIds: string[] }> {
+  const ended = await trx
     .updateTable("productionEvent")
     .set({ endTime: args.at, updatedBy: args.userId, updatedAt: args.at })
     .where("workCenterId", "=", args.workCenterId)
@@ -56,8 +61,10 @@ export async function endSensorMachineTime(trx: KyselyTx, args: CloseArgs) {
     .where("createdBy", "=", "system")
     .where("endTime", "is", null)
     .where("startTime", "<=", args.at)
+    .returning("id")
     .execute();
   await endOpenUnattributedTime(trx, args);
+  return { endedEventIds: ended.map((row) => row.id) };
 }
 
 /**

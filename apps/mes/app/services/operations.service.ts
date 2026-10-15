@@ -2599,6 +2599,7 @@ export async function endProductionEvents(
     .eq("companyId", args.companyId);
 }
 
+/** Ends every open event on the work center; returns the ended ids to post. */
 export async function endProductionEventsByWorkCenter(
   client: SupabaseClient<Database>,
   args: { workCenterId: string; companyId: string; endTime: string }
@@ -2610,7 +2611,8 @@ export async function endProductionEventsByWorkCenter(
     })
     .is("endTime", null)
     .eq("workCenterId", args.workCenterId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
 }
 
 // Phase 3 (auto-start): when an operator starts a production event, flip a not-yet-started

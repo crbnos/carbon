@@ -15757,14 +15757,14 @@ msgstr "Дата заказа"
 msgid "Order Date"
 msgstr "Дата заказа"
 
+msgid "Order Items"
+msgstr "Заказать товары"
+
 msgid "Order Multiple"
 msgstr "Кратность заказа"
 
 msgid "Order Multiple:"
 msgstr "Кратность заказа:"
-
-msgid "Order Parts"
-msgstr "Заказать детали"
 
 msgid "Order Qty"
 msgstr "Кол-во заказа"

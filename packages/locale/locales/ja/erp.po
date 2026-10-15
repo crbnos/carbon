@@ -15757,14 +15757,14 @@ msgstr "発注日"
 msgid "Order Date"
 msgstr "注文日"
 
+msgid "Order Items"
+msgstr "アイテムを注文"
+
 msgid "Order Multiple"
 msgstr "発注倍数"
 
 msgid "Order Multiple:"
 msgstr "発注倍数:"
-
-msgid "Order Parts"
-msgstr "部品を注文"
 
 msgid "Order Qty"
 msgstr "注文数量"

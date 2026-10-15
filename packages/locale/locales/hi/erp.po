@@ -15757,14 +15757,14 @@ msgstr "ऑर्डर तारीख"
 msgid "Order Date"
 msgstr "ऑर्डर तारीख"
 
+msgid "Order Items"
+msgstr "वस्तुएं ऑर्डर करें"
+
 msgid "Order Multiple"
 msgstr "ऑर्डर गुणज"
 
 msgid "Order Multiple:"
 msgstr "ऑर्डर गुणज:"
-
-msgid "Order Parts"
-msgstr "पार्ट्स ऑर्डर करें"
 
 msgid "Order Qty"
 msgstr "ऑर्डर मात्रा"
