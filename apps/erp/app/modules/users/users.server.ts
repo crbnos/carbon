@@ -2,14 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, hasPermission } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
 import {
   deactivateCustomer,
   deactivateEmployee,
-  deactivateSupplier
+  deactivateSupplier,
+  getUserClaims
 } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -152,70 +153,83 @@ export async function acceptInvite(
 
   try {
     const acceptedInvite = await db.transaction().execute(async (trx) => {
-      if (role === "employee") {
-        // Deactivation dropped this membership and the trigger that seeds it
-        // only fires on INSERT, so reactivation has to restore it. Done before
-        // the active flip and inside the transaction: an employee is never
-        // visible as active while outside their employee type's group.
-        const employee = await trx
-          .selectFrom("employee")
-          .select(["id", "employeeTypeId"])
-          .where("id", "=", userId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
+      switch (role) {
+        case "employee": {
+          // Deactivation dropped this membership and the trigger that seeds it
+          // only fires on INSERT, so reactivation has to restore it. Done before
+          // the active flip and inside the transaction: an employee is never
+          // visible as active while outside their employee type's group.
+          const employee = await trx
+            .selectFrom("employee")
+            .select(["id", "employeeTypeId"])
+            .where("id", "=", userId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
 
-        if (!employee) {
-          throw new Error(
-            `Employee record not found for user ${userId} in company ${companyId}. The record may have been deleted during deactivation.`
-          );
-        }
+          if (!employee) {
+            throw new Error(
+              `Employee record not found for user ${userId} in company ${companyId}. The record may have been deleted during deactivation.`
+            );
+          }
 
-        if (employee.employeeTypeId) {
+          if (employee.employeeTypeId) {
+            await trx
+              .insertInto("membership")
+              .values({
+                groupId: employee.employeeTypeId,
+                memberUserId: userId
+              })
+              .onConflict((oc) =>
+                oc.columns(["groupId", "memberUserId"]).doNothing()
+              )
+              .execute();
+          }
+
           await trx
-            .insertInto("membership")
-            .values({
-              groupId: employee.employeeTypeId,
-              memberUserId: userId
-            })
-            .onConflict((oc) =>
-              oc.columns(["groupId", "memberUserId"]).doNothing()
-            )
+            .updateTable("employee")
+            .set({ active: true })
+            .where("id", "=", userId)
+            .where("companyId", "=", companyId)
             .execute();
+          break;
         }
+        case "customer": {
+          const customerAccount = await trx
+            .updateTable("customerAccount")
+            .set({ active: true })
+            .where("id", "=", userId)
+            .where("companyId", "=", companyId)
+            .returning("id")
+            .executeTakeFirst();
 
-        await trx
-          .updateTable("employee")
-          .set({ active: true })
-          .where("id", "=", userId)
-          .where("companyId", "=", companyId)
-          .execute();
-      } else if (role === "customer") {
-        const customerAccount = await trx
-          .updateTable("customerAccount")
-          .set({ active: true })
-          .where("id", "=", userId)
-          .where("companyId", "=", companyId)
-          .returning("id")
-          .executeTakeFirst();
-
-        if (!customerAccount) {
-          throw new Error(
-            `Customer account not found for user ${userId} in company ${companyId}. The account may have been deleted during deactivation.`
-          );
+          if (!customerAccount) {
+            throw new Error(
+              `Customer account not found for user ${userId} in company ${companyId}. The account may have been deleted during deactivation.`
+            );
+          }
+          break;
         }
-      } else {
-        const supplierAccount = await trx
-          .updateTable("supplierAccount")
-          .set({ active: true })
-          .where("id", "=", userId)
-          .where("companyId", "=", companyId)
-          .returning("id")
-          .executeTakeFirst();
+        case "supplier": {
+          const supplierAccount = await trx
+            .updateTable("supplierAccount")
+            .set({ active: true })
+            .where("id", "=", userId)
+            .where("companyId", "=", companyId)
+            .returning("id")
+            .executeTakeFirst();
 
-        if (!supplierAccount) {
-          throw new Error(
-            `Supplier account not found for user ${userId} in company ${companyId}. The account may have been deleted during deactivation.`
-          );
+          if (!supplierAccount) {
+            throw new Error(
+              `Supplier account not found for user ${userId} in company ${companyId}. The account may have been deleted during deactivation.`
+            );
+          }
+          break;
+        }
+        default: {
+          // A new "role" enum value fails typecheck here until it is handled,
+          // instead of being activated as a supplier.
+          const unhandled: never = role;
+          throw new Error(`Invalid invite role: ${unhandled}`);
         }
       }
 
@@ -639,16 +653,42 @@ export async function createEmployeeAccount(
   } satisfies InviteInsert;
 
   if (isReactivation) {
-    // Reusing surviving rows is an UPDATE, and the RLS policies on "employee"
-    // and "employeeJob" gate updates behind users_update / people_update while
-    // this route is gated on users_create. Re-adding someone is the same
-    // authorization decision as adding them the first time — the UPDATE is an
-    // artifact of keeping the rows on deactivation, not a wider grant — so this
-    // path writes outside RLS, scoped by id + companyId. It is one transaction
-    // because the three writes are only correct together (see the helper), and
-    // it needs no compensation: the auth user already existed, so a rollback
-    // leaves nothing behind. A first-time create still writes under the
-    // caller's RLS client below.
+    // Reusing surviving rows is an UPDATE, which RLS would gate behind
+    // users_update / people_update, so this path writes outside RLS, scoped by
+    // id + companyId. It is one transaction because the three writes are only
+    // correct together (see the helper), and it needs no compensation: the
+    // auth user already existed, so a rollback leaves nothing behind.
+    //
+    // Writing outside RLS must not grant more than a first-time add, which
+    // inserts under the caller's client: the INSERT policies on "employee" and
+    // "employeeJob" require users_update and people_create. The route only
+    // requires users_create, so the same two are checked here.
+    const claims = await getUserClaims(createdBy, companyId).catch(
+      (err: unknown) => {
+        logger.error("Failed to read the inviter's permissions", {
+          companyId,
+          createdBy,
+          error: err
+        });
+        return null;
+      }
+    );
+    if (
+      !hasPermission(claims?.permissions, "users", "update", companyId) ||
+      !hasPermission(claims?.permissions, "people", "create", companyId)
+    ) {
+      logger.error("Re-adding a deactivated employee was refused", {
+        companyId,
+        userId,
+        createdBy
+      });
+      return {
+        success: false,
+        message:
+          "Re-adding a deactivated employee requires the Users update and People create permissions"
+      };
+    }
+
     try {
       await reinviteDeactivatedEmployee(getDatabaseClient(), {
         userId,
@@ -1041,7 +1081,8 @@ export async function insertEmployee(
  * is also published as an MCP tool.
  *
  * The invite write mirrors insertInvite: upsert on (email, companyId), clearing
- * acceptedAt and revokedAt so a spent invite row becomes redeemable again.
+ * acceptedAt and revokedAt so a spent invite row becomes redeemable again, and
+ * restarting createdAt so the controlled-environment expiry counts from now.
  */
 async function reinviteDeactivatedEmployee(
   db: Kysely<KyselyDatabase>,
@@ -1087,11 +1128,17 @@ async function reinviteDeactivatedEmployee(
       .where("companyId", "=", companyId)
       .execute();
 
+    // updatedBy names the inviter: this connection has no auth.uid(), and the
+    // audit log falls back to the row's own audit columns for the actor.
     await trx
       .insertInto("employeeJob")
       .values({ id: userId, companyId, locationId })
       .onConflict((oc) =>
-        oc.columns(["id", "companyId"]).doUpdateSet({ locationId })
+        oc.columns(["id", "companyId"]).doUpdateSet({
+          locationId,
+          updatedBy: invite.createdBy,
+          updatedAt: datetime.timestamp()
+        })
       )
       .execute();
 
@@ -1116,6 +1163,11 @@ async function reinviteDeactivatedEmployee(
           role: invite.role,
           permissions,
           createdBy: invite.createdBy,
+          updatedBy: invite.createdBy,
+          // The controlled-environment expiry counts from createdAt. The
+          // reused row is the original invite, usually long since accepted,
+          // so keeping its createdAt expired the new invite on arrival.
+          createdAt: datetime.timestamp(),
           code: invite.code,
           attestedBy: invite.attestedBy ?? null,
           attestedAt: invite.attestedAt ?? null,
@@ -1138,10 +1190,22 @@ export async function insertInvite(
       // onConflict upsert. Clear both terminal states so a previously revoked or
       // accepted invite becomes redeemable again — otherwise the acceptance
       // loader (invite.$code.tsx) rejects the row and it can never be accepted.
-      .upsert([{ ...invite, acceptedAt: null, revokedAt: null }], {
-        onConflict: "email, companyId",
-        ignoreDuplicates: false
-      })
+      // createdAt restarts too: the controlled-environment expiry counts from
+      // it, and the reused row's is the original invite's.
+      .upsert(
+        [
+          {
+            ...invite,
+            createdAt: datetime.timestamp(),
+            acceptedAt: null,
+            revokedAt: null
+          }
+        ],
+        {
+          onConflict: "email, companyId",
+          ignoreDuplicates: false
+        }
+      )
       .select("*")
       .single()
   );

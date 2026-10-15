@@ -20,15 +20,24 @@ const mocks = vi.hoisted(() => ({
   deleteAuthAccount: vi.fn(),
   getDatabaseClient: vi.fn(),
   getPermissionsByEmployeeType: vi.fn(),
+  getUserClaims: vi.fn(),
   insertEmployeeJob: vi.fn(),
   mergeInvitePermissions: vi.fn(() => ({})),
   serviceRoleWrites: [] as { table: string; op: string; payload: unknown }[]
 }));
 
-vi.mock("@carbon/auth", () => ({
+// hasPermission stays real: the re-add path's permission check is under test.
+// It is read from its source file because the package root pulls in Lingui
+// macros that only run inside the app build.
+vi.mock("@carbon/auth", async () => ({
   CONTROLLED_ENVIRONMENT: false,
   error: vi.fn(),
-  success: vi.fn()
+  success: vi.fn(),
+  hasPermission: (
+    await vi.importActual<
+      typeof import("../../../../../packages/auth/src/services/users")
+    >("../../../../../packages/auth/src/services/users")
+  ).hasPermission
 }));
 
 vi.mock("@carbon/auth/auth.server", () => ({
@@ -81,7 +90,7 @@ vi.mock("@carbon/auth/users.server", () => ({
   deactivateCustomer: vi.fn(),
   deactivateEmployee: mocks.deactivateEmployee,
   deactivateSupplier: vi.fn(),
-  getUserClaims: vi.fn()
+  getUserClaims: mocks.getUserClaims
 }));
 
 vi.mock("@carbon/kv", () => ({
@@ -239,6 +248,14 @@ beforeEach(() => {
     error: null
   });
   mocks.insertEmployeeJob.mockResolvedValue({ data: {}, error: null });
+  // The inviter may do everything a first-time add needs.
+  mocks.getUserClaims.mockResolvedValue({
+    role: "employee",
+    permissions: {
+      users: { view: [], create: [COMPANY], update: [COMPANY], delete: [] },
+      people: { view: [], create: [COMPANY], update: [], delete: [] }
+    }
+  });
 });
 
 describe("createEmployeeAccount — re-adding a deactivated employee", () => {
@@ -364,6 +381,55 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
     // the caller's RLS client.
     expect(statements).toHaveLength(1);
     expect(transactions.rollback).toBe(1);
+  });
+});
+
+describe("createEmployeeAccount — re-add guards", () => {
+  it("restarts the reused invite's createdAt, which the controlled-environment expiry counts from", async () => {
+    const { db, statements } = makeDb(answer(deactivated));
+    mocks.getDatabaseClient.mockReturnValue(db);
+    const { client } = makeClient(deactivated);
+
+    const result = await createEmployeeAccount(client, ACCOUNT);
+
+    expect(result.success).toBe(true);
+    const invite = statements.find((s) =>
+      s.sql.startsWith('insert into "invite"')
+    );
+    const onConflict = invite?.sql.split(" do update set ")[1] ?? "";
+    // The reused row is the original invite, usually long since accepted.
+    expect(onConflict).toMatch(/"createdAt" = \$\d+/);
+    expect(onConflict).toMatch(/"updatedBy" = \$\d+/);
+  });
+
+  it("refuses an inviter who could not add the person the first time", async () => {
+    // users_create only: a first-time add's RLS inserts need users_update and
+    // people_create, so the RLS-bypassing re-add must not succeed either.
+    mocks.getUserClaims.mockResolvedValue({
+      role: "employee",
+      permissions: {
+        users: { view: [], create: [COMPANY], update: [], delete: [] },
+        people: { view: [], create: [COMPANY], update: [], delete: [] }
+      }
+    });
+    const { db, transactions } = makeDb(answer(deactivated));
+    mocks.getDatabaseClient.mockReturnValue(db);
+    const { client, writes } = makeClient(deactivated);
+
+    const result = await createEmployeeAccount(client, ACCOUNT);
+
+    expect(result).toEqual({
+      success: false,
+      message:
+        "Re-adding a deactivated employee requires the Users update and People create permissions"
+    });
+    expect(mocks.getUserClaims).toHaveBeenCalledWith(
+      ACCOUNT.createdBy,
+      COMPANY
+    );
+    expect(transactions.begin).toBe(0);
+    expect(writes).toEqual([]);
+    expect(mocks.serviceRoleWrites).toEqual([]);
   });
 });
 

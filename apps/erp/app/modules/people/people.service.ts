@@ -955,15 +955,25 @@ export async function getScheduledEmployeesToday(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  const { data } = await client
-    .from("employeeJob")
-    .select(
-      "id, shiftId, shift:shift(id, name, startTime, endTime, sunday, monday, tuesday, wednesday, thursday, friday, saturday)"
-    )
-    .eq("companyId", companyId)
-    .not("shiftId", "is", null);
+  // Deactivation keeps the employeeJob row (and its shift), so the roster is
+  // narrowed to active employees. employeeJob has no FK to employee to embed.
+  const [{ data }, { data: activeEmployees }] = await Promise.all([
+    client
+      .from("employeeJob")
+      .select(
+        "id, shiftId, shift:shift(id, name, startTime, endTime, sunday, monday, tuesday, wednesday, thursday, friday, saturday)"
+      )
+      .eq("companyId", companyId)
+      .not("shiftId", "is", null),
+    client
+      .from("employee")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("active", true)
+  ]);
 
-  if (!data) return [];
+  if (!data || !activeEmployees) return [];
+  const activeIds = new Set(activeEmployees.map((e) => e.id));
 
   const dayNames = [
     "sunday",
@@ -981,7 +991,7 @@ export async function getScheduledEmployeesToday(
 
   return data.filter((ej) => {
     const shift = ej.shift as Record<string, unknown> | null;
-    return shift && shift[dayName] === true;
+    return activeIds.has(ej.id) && shift && shift[dayName] === true;
   });
 }
 

@@ -591,7 +591,7 @@
     {"name":"people_getOpenClockEntry","classification":"READ","paramCount":1,"schema":"3d90cb5d0437","response":"48d1ac3381b4","injectAuth":"companyId","permission":"people:view","paginates":false},
     {"name":"people_getPeople","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"5483e69d7515","injectAuth":"companyId","permission":"people:view","paginates":false,"defaults":"always"},
     {"name":"people_getRecentTimecards","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"579660621675","injectAuth":"companyId","permission":"people:view","paginates":false},
-    {"name":"people_getScheduledEmployeesToday","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"c429622c953e","injectAuth":"companyId","permission":"people:view","paginates":false},
+    {"name":"people_getScheduledEmployeesToday","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"c93c10ff0dbe","injectAuth":"companyId","permission":"people:view","paginates":false},
     {"name":"people_getShift","classification":"READ","paramCount":1,"schema":"fbdb1fa56a88","response":"86e4039d95bd","injectAuth":"companyId","permission":"people:view","paginates":false},
     {"name":"people_getShifts","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"92fec9db1b7e","injectAuth":"companyId","permission":"people:view","paginates":true,"defaults":"always"},
     {"name":"people_getShiftsList","classification":"READ","paramCount":1,"schema":"b76e1039273f","response":"ce08332e0ce6","injectAuth":"companyId","permission":"people:view","paginates":false},
