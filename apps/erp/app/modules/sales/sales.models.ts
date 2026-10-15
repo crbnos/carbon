@@ -1191,6 +1191,14 @@ export function isSalesOrderLocked(status: string | null | undefined): boolean {
   );
 }
 
+/**
+ * The sales-rule acknowledgement a gated form re-submits with: the violation
+ * modal's "proceed" sets `acknowledged=true`, which lets warnings through.
+ */
+export const salesRuleAcknowledgementValidator = z.object({
+  acknowledged: zfd.checkbox({ trueValue: "true" })
+});
+
 // Sales RFQ Locked Status
 export function isSalesRfqLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";

@@ -162,7 +162,7 @@ export async function closeSalesOrder(
     .single();
 }
 
-/** @mcp update */
+/** Not published: `sales.rfq.convert` gates and prices the quote too. */
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -179,7 +179,7 @@ export async function convertSalesRfqToQuote(
   });
 }
 
-/** @mcp update */
+/** Not published: `sales.quote.convert` also gates and files the PDF. */
 export async function convertQuoteToOrder(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -2234,7 +2234,7 @@ export async function insertSalesOrderLines(
   return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
 }
 
-/** @mcp update */
+/** Not published: `sales.quote.finalize` also gates, links and files the PDF. */
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -3587,7 +3587,7 @@ export async function updateQuoteFavorite(
   }
 }
 
-/** @mcp update */
+/** Not published: `sales.rfq.setStatus` also sends the Ready for Quote notification. */
 export async function updateSalesRFQStatus(
   client: SupabaseClient<Database>,
   update: {

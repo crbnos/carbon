@@ -2,11 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { openai } from "@ai-sdk/openai";
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
+import { QuoteEmail } from "@carbon/documents/email";
+import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
+import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -18,17 +29,81 @@ import type {
   DraftedRentalInvoice
 } from "@carbon/server-functions/create-rental-invoices";
 import type { Violation } from "@carbon/utils";
-import { round, suggestContractType } from "@carbon/utils";
+import {
+  breakQuantities,
+  datetime,
+  getErrorMessage,
+  round,
+  suggestContractType,
+  unchecked
+} from "@carbon/utils";
+import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { generateText, Output } from "ai";
 import { sql } from "kysely";
-import type { z } from "zod";
-import { getCompanySettings } from "~/modules/settings";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { getExchangeRate } from "~/modules/accounting";
+import { upsertDocument } from "~/modules/documents";
+import {
+  getSupplierPriceBreaksForItems,
+  resolveItemIdFromExtractedText,
+  upsertPart
+} from "~/modules/items";
+import {
+  type CarbonError,
+  defineServiceFn,
+  type ServiceContext
+} from "~/modules/service-fn.server";
+import { getCompany, getCompanySettings } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
+import { resolveBuyUnitCost, upsertExternalLink } from "~/modules/shared";
+import {
+  requireCompanyRecord,
+  sendSalesOrderEmail
+} from "~/modules/shared/shared.server";
+import { getUser } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
+import { sanitize } from "~/utils/supabase";
+import { renderQuotePdf, renderSalesOrderPdf } from "./sales.documents.server";
 import {
   contractEndDate,
-  type createContractFromSalesOrderValidator
+  type createContractFromSalesOrderValidator,
+  isQuoteLocked,
+  isSalesRfqLocked,
+  quoteLineValidator,
+  salesRFQStatusType,
+  salesRfqDragValidator,
+  salesRfqValidator,
+  selectedLinesValidator
 } from "./sales.models";
+import {
+  buildMakeToOrderPriceRows,
+  buildPullFromInventoryPriceRows,
+  buildPurchaseToOrderPriceRows,
+  calculatePricesForQuantities,
+  convertQuoteToOrder,
+  convertSalesRfqToQuote,
+  finalizeQuote,
+  getCustomer,
+  getCustomerContact,
+  getQuote,
+  getSalesOrder,
+  getSalesRFQ,
+  insertSalesRFQ,
+  type QuoteLinePriceRow,
+  recalculateQuoteLinePrices,
+  resolvePurchaseToOrderPrices,
+  resolveQuoteLinePrices,
+  updateSalesRFQStatus,
+  upsertQuoteLine,
+  upsertQuoteLineMethod,
+  upsertSalesRFQLine
+} from "./sales.service";
+import { reconcileQuantityBreaks } from "./sales.utils";
 
 const logger = getLogger("erp", "sales-server");
 
@@ -1271,4 +1346,1967 @@ export async function draftRentalAgreementSetupPath(
     return null;
   }
   return path.to.rentalAgreementSetup(id, "units");
+}
+
+// ---------------------------------------------------------------------------
+// Operations (`defineServiceFn`): what the routes, the API and MCP all run
+// ---------------------------------------------------------------------------
+
+/** Custom field values, as `setCustomFields` reads them off a form. */
+const customFieldValues = z.record(
+  z.string(),
+  z.union([z.string(), z.number(), z.boolean()])
+);
+
+/**
+ * One field set on several records, as a Properties panel posts it: `ids`
+ * repeats in a form, and an empty `value` clears the field.
+ */
+function fieldUpdate<const F extends readonly [string, ...string[]]>(
+  fields: F
+) {
+  return z.object({
+    ids: zfd.repeatableOfType(z.string().min(1)),
+    field: z.enum(fields),
+    value: z.string().nullish()
+  });
+}
+
+/**
+ * `requireCompanyRecord` as a refusal instead of a thrown `Response`: the
+ * record must be this company's. Checked with the service role, so it holds
+ * for an RLS-bypassing write that follows.
+ */
+async function refuseUnlessOwned(
+  ctx: ServiceContext,
+  table: Parameters<typeof requireCompanyRecord>[1],
+  match: { id: string } & Record<string, string>
+): Promise<CarbonError | null> {
+  try {
+    await requireCompanyRecord(
+      ctx.asSystem.supabase,
+      table,
+      ctx.company.id,
+      match
+    );
+    return null;
+  } catch (thrown) {
+    if (!(thrown instanceof Response)) throw thrown;
+    return ctx.error(
+      thrown.status === 404 ? "notFound" : "internal",
+      await thrown.text()
+    );
+  }
+}
+
+/** What a sales-rule check found: the violation modal's payload. */
+export type SalesRuleCheck = {
+  violations: Violation[];
+  ruleNames: Record<string, string>;
+};
+
+/**
+ * The sales-rule gate a whole document passes before it moves on (quote
+ * finalize and convert, RFQ convert, order confirm). Every line is
+ * re-evaluated with the service role: lines arrive from paths the per-line
+ * check never saw, and a rule may have been authored since.
+ *
+ * `blocked` is set when an error fired, or a warning that was not
+ * acknowledged; that attempt is recorded (except for an RFQ, which the
+ * acknowledgment table cannot name). A failed evaluation blocks too, with
+ * its message as the one violation. Otherwise `check` holds the warnings the
+ * caller records as acknowledged once the transition commits.
+ */
+async function salesDocumentGate(
+  ctx: ServiceContext,
+  args: {
+    documentType: "quote" | "salesOrder" | "salesRfq";
+    documentId: string;
+    acknowledged: boolean;
+    /** Only these lines are checked (a violation naming no line always is). */
+    lineIds?: Set<string>;
+  }
+): Promise<{ blocked: SalesRuleCheck | null; check: SalesRuleCheck }> {
+  const { documentType, documentId, acknowledged, lineIds } = args;
+  let found: SalesRuleCheck;
+  try {
+    found = await evaluateSalesRulesForSalesDocument({
+      client: ctx.asSystem.supabase,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      documentType,
+      documentId
+    });
+  } catch (err) {
+    // Fail closed, but as the modal's message rather than a raw error.
+    const blocked = {
+      violations: [
+        {
+          ruleId: "__evaluation-error__",
+          severity: "error" as const,
+          message:
+            err instanceof Error ? err.message : "Sales rule evaluation failed"
+        }
+      ],
+      ruleNames: {}
+    };
+    return { blocked, check: blocked };
+  }
+
+  const check = {
+    violations: dedupeViolations(found.violations).filter(
+      (v) => !lineIds || !v.lineId || lineIds.has(v.lineId)
+    ),
+    ruleNames: found.ruleNames
+  };
+  if (
+    check.violations.length === 0 ||
+    !isBlocked(check.violations, acknowledged)
+  ) {
+    return { blocked: null, check };
+  }
+  if (documentType !== "salesRfq") {
+    await recordSalesRuleOutcome(ctx.asSystem.supabase, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      documentType,
+      documentId,
+      outcome: "blocked",
+      ...check
+    });
+  }
+  return { blocked: check, check };
+}
+
+// --- Sales RFQs -------------------------------------------------------------
+
+const salesRfqFields = [
+  "customerContactId",
+  "customerEngineeringContactId",
+  "customerId",
+  "customerLocationId",
+  "customerReference",
+  "expirationDate",
+  "locationId",
+  "rfqDate",
+  "salesPersonId"
+] as const;
+
+/**
+ * Create a sales RFQ.
+ *
+ * @remarks
+ * Every customer, contact and location id must belong to this company. The
+ * RFQ is created with its opportunity. Then, optionally: one line per
+ * extracted `lines` entry that has a part number or description (each mapped
+ * to an existing item when its text matches one directly), and the file at
+ * `documentPath` (an extraction upload) copied onto the opportunity as a
+ * document. A failed line or copy does not fail the RFQ.
+ *
+ * @mcp
+ */
+export const createSalesRfq = defineServiceFn({
+  input: salesRfqValidator.extend({
+    customFields: customFieldValues.optional(),
+    lines: z
+      .array(
+        z.object({
+          partNumber: z.coerce.string().nullish(),
+          description: z.coerce.string().nullish(),
+          quantity: z.coerce.number().nullish()
+        })
+      )
+      .default([]),
+    documentPath: z.string().optional()
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, { lines, documentPath, customFields, ...rfq }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    // insertSalesRFQ writes through Kysely, which bypasses RLS.
+    const references: [Parameters<typeof requireCompanyRecord>[1], string?][] =
+      [
+        ["customer", rfq.customerId],
+        ["customerContact", rfq.customerContactId],
+        ["customerContact", rfq.customerEngineeringContactId],
+        ["customerLocation", rfq.customerLocationId],
+        ["location", rfq.locationId]
+      ];
+    const refusals = await Promise.all(
+      references.map(([table, id]) =>
+        id ? refuseUnlessOwned(ctx, table, { id }) : null
+      )
+    );
+    const refused = refusals.find((r) => r !== null);
+    if (refused) return refused;
+
+    const result = await insertSalesRFQ(client, ctx.asSystem.pg, {
+      ...rfq,
+      rfqId: rfq.rfqId || undefined,
+      companyId,
+      createdBy: userId,
+      customFields
+    });
+    if (result.error || !result.data) {
+      return ctx.error("internal", "Failed to insert RFQ", result.error);
+    }
+    const id = result.data.id;
+
+    const work: Promise<unknown>[] = [];
+    let order = 10;
+    for (const line of lines) {
+      if (!line.partNumber && !line.description) continue;
+      // Map the line up front when the extracted text directly matches an
+      // existing record — only lines with no direct match are left unmapped
+      // for the review modal.
+      const itemId = await resolveItemIdFromExtractedText(
+        client,
+        companyId,
+        { type: "customer", id: rfq.customerId },
+        [line.partNumber, line.description]
+      );
+      work.push(
+        upsertSalesRFQLine(client, {
+          salesRfqId: id,
+          customerPartId: line.partNumber || "Unknown",
+          itemId: itemId ?? undefined,
+          description: line.description || line.partNumber || "Line Item",
+          quantity: [line.quantity || 1],
+          unitOfMeasureCode: "EA",
+          order,
+          companyId,
+          createdBy: userId,
+          customFields: {}
+        })
+      );
+      order += 10;
+    }
+
+    if (documentPath) {
+      work.push(
+        (async () => {
+          const created = await getSalesRFQ(client, id);
+          const opportunityId = created.data?.opportunityId;
+          if (!opportunityId) return;
+          const basename = documentPath.split("/").pop() || "Extracted_RFQ.pdf";
+          const originalFilename = basename.includes("_")
+            ? basename.split("_").slice(1).join("_")
+            : basename;
+          const newStoragePath = `${companyId}/opportunity/${opportunityId}/${stripSpecialCharacters(originalFilename)}`;
+          const copied = await storage(client)
+            .company(companyId)
+            .copy(documentPath, newStoragePath);
+          if (copied.error) return;
+          await upsertDocument(client, {
+            path: newStoragePath,
+            name: originalFilename,
+            size: 0,
+            sourceDocument: "Request for Quote",
+            sourceDocumentId: id,
+            readGroups: [userId],
+            writeGroups: [userId],
+            createdBy: userId,
+            companyId
+          });
+        })()
+      );
+    }
+    await Promise.all(work);
+
+    return { id, rfqId: result.data.rfqId };
+  }
+});
+
+/**
+ * Set one field on one or more sales RFQs.
+ *
+ * @remarks
+ * Refused when any of the RFQs is locked. An empty value clears the field.
+ */
+export const updateSalesRfqField = defineServiceFn({
+  input: fieldUpdate(salesRfqFields),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const rfqs = await client
+      .from("salesRfq")
+      .select("status")
+      .in("id", ids)
+      .eq("companyId", ctx.company.id);
+    if (rfqs.error) {
+      return ctx.error("internal", "Failed to load the RFQs", rfqs.error);
+    }
+    if (rfqs.data.some((rfq) => isSalesRfqLocked(rfq.status))) {
+      return ctx.error("rule", "Cannot modify a locked RFQ.");
+    }
+
+    const update = await client
+      .from("salesRfq")
+      .update(
+        unchecked({
+          [field]: value || null,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .in("id", ids)
+      .eq("companyId", ctx.company.id);
+    if (update.error) {
+      return ctx.error("internal", "Failed to update the RFQs", update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Set a sales RFQ's status.
+ *
+ * @remarks
+ * Ready for Quote first notifies the company's RFQ-ready group (a failed
+ * notification leaves the status unchanged). Closed clears the assignee.
+ * `noQuoteReasonId` records why it was not quoted.
+ *
+ * @mcp
+ */
+export const setSalesRfqStatus = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    status: z.enum(salesRFQStatusType),
+    noQuoteReasonId: z.string().nullish()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, status, noQuoteReasonId }) {
+    const client = ctx.asCaller.supabase;
+    const refused = await refuseUnlessOwned(ctx, "salesRfq", { id });
+    if (refused) return refused;
+
+    if (status === "Ready for Quote") {
+      const settings = await getCompanySettings(client, ctx.company.id);
+      const groupIds = settings.data?.rfqReadyNotificationGroup;
+      if (Array.isArray(groupIds) && groupIds.length > 0) {
+        try {
+          await trigger("notify", {
+            companyId: ctx.company.id,
+            documentId: id,
+            event: NotificationEvent.SalesRfqReady,
+            recipient: { type: "group", groupIds }
+          });
+        } catch (err) {
+          return ctx.error("internal", "Failed to send notification", err);
+        }
+      }
+    }
+
+    const update = await updateSalesRFQStatus(client, {
+      id,
+      status,
+      noQuoteReasonId: noQuoteReasonId ?? null,
+      assignee: status === "Closed" ? null : undefined,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error("internal", "Failed to update RFQ status", update.error);
+    }
+    return { id, status };
+  }
+});
+
+/**
+ * Convert a sales RFQ to a quote.
+ *
+ * @remarks
+ * First the sales-rule gate: every RFQ line that names an item is checked as
+ * a quote line. An error, or a warning not `acknowledged`, returns
+ * `violations` and converts nothing. Then the `convert` server function mints
+ * the quote, and every new line that has no prices yet is priced for each of
+ * its quantities by its method (Make to Order from its cost rollup, Pull from
+ * Inventory from the item's price, Purchase to Order from the supplier's).
+ *
+ * @mcp
+ */
+export const convertSalesRfq = defineServiceFn({
+  input: z.object({ id: z.string(), acknowledged: z.boolean().default(false) }),
+  permission: { create: "sales" },
+
+  async run(ctx, { id, acknowledged }) {
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    // No acknowledgment evidence here: the minted quote's own line checks
+    // and finalize/convert gates re-evaluate (and record) everything.
+    const gate = await salesDocumentGate(ctx, {
+      documentType: "salesRfq",
+      documentId: id,
+      acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const convert = await convertSalesRfqToQuote(serviceRole, ctx.asSystem.pg, {
+      id,
+      companyId,
+      userId
+    });
+    if (convert.error || !convert.data?.convertedId) {
+      return ctx.error("internal", "Failed to convert RFQ", convert.error);
+    }
+    const quoteId = convert.data.convertedId;
+
+    // A Make to Order line whose method was copied is priced already;
+    // seeding it again was a duplicate insert the database refused.
+    const [newLines, priced] = await Promise.all([
+      serviceRole
+        .from("quoteLine")
+        .select("id, methodType, quantity")
+        .eq("quoteId", quoteId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("quoteLinePrice")
+        .select("quoteLineId")
+        .eq("quoteId", quoteId)
+        .eq("companyId", companyId)
+    ]);
+    const pricedLineIds = new Set(priced.data?.map((p) => p.quoteLineId));
+    await Promise.all(
+      (newLines.data ?? [])
+        .filter((line) => !pricedLineIds.has(line.id))
+        .map((line) => {
+          const quantities = line.quantity ?? [1];
+          if (quantities.length === 0) return null;
+          switch (line.methodType) {
+            case "Make to Order":
+              return calculatePricesForQuantities(
+                serviceRole,
+                quoteId,
+                line.id,
+                quantities,
+                userId
+              );
+            case "Pull from Inventory":
+              return resolveQuoteLinePrices(
+                serviceRole,
+                companyId,
+                quoteId,
+                line.id,
+                quantities,
+                userId
+              );
+            case "Purchase to Order":
+              return resolvePurchaseToOrderPrices(
+                serviceRole,
+                companyId,
+                quoteId,
+                line.id,
+                quantities,
+                userId
+              );
+            default:
+              return null;
+          }
+        })
+    );
+
+    return { quoteId };
+  }
+});
+
+/**
+ * Attach a dropped file to a sales RFQ line.
+ *
+ * @remarks
+ * With no `lineId`, a new line is created for `customerPartId` first. A 3D
+ * model is recorded as a model upload on the line, moved to staging and
+ * queued for optimisation; any other file moves to the line's documents.
+ */
+export const attachSalesRfqFile = defineServiceFn({
+  input: salesRfqDragValidator,
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    let lineId = input.lineId;
+    if (!lineId) {
+      const inserted = await upsertSalesRFQLine(client, {
+        salesRfqId: input.salesRfqId,
+        customerPartId: input.customerPartId,
+        quantity: [1],
+        unitOfMeasureCode: "EA",
+        order: 1,
+        description: "",
+        companyId,
+        createdBy: userId,
+        customFields: {}
+      });
+      if (inserted.error || !inserted.data?.id) {
+        return ctx.error(
+          "internal",
+          "Failed to insert RFQ line",
+          inserted.error
+        );
+      }
+      lineId = inserted.data.id;
+    }
+
+    const moved = await placeDroppedFile(ctx, {
+      documentPath: input.path,
+      is3DModel: input.is3DModel,
+      size: input.size,
+      documentFolder: `opportunity-line/${lineId}`,
+      setModel: (modelUploadId) =>
+        client
+          .from("salesRfqLine")
+          .update({ modelUploadId })
+          .eq("id", lineId)
+          .eq("companyId", companyId),
+      lineName: "RFQ line"
+    });
+    if (moved) return moved;
+    return { lineId };
+  }
+});
+
+/**
+ * Move a file dropped on a quote or RFQ line into place. A 3D model gets a
+ * `modelUpload` row (linked to the line through `setModel`), its raw file in
+ * the staging bucket the optimise job reads, and that job queued. Any other
+ * file moves under `documentFolder`.
+ */
+async function placeDroppedFile(
+  ctx: ServiceContext,
+  args: {
+    documentPath: string;
+    is3DModel?: boolean;
+    size?: number;
+    documentFolder: string;
+    setModel: (
+      modelUploadId: string
+    ) => PromiseLike<{ error: { message: string } | null }>;
+    lineName: string;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const fileName = args.documentPath.split("/").pop();
+
+  if (!args.is3DModel) {
+    const move = await storage(client)
+      .company(companyId)
+      .move(
+        args.documentPath,
+        `${companyId}/${args.documentFolder}/${fileName}`
+      );
+    return move.error
+      ? ctx.error("internal", "Failed to move file", move.error)
+      : null;
+  }
+
+  const modelId = nanoid();
+  const newPath = `${companyId}/models/${modelId}.${fileName?.split(".").pop()}`;
+  const recordCreate = await client.from("modelUpload").insert({
+    id: modelId,
+    modelPath: newPath,
+    name: fileName!,
+    size: args.size ?? 0,
+    companyId,
+    createdBy: ctx.auditUserId
+  });
+  if (recordCreate.error) {
+    return ctx.error(
+      "internal",
+      "Failed to insert model record",
+      recordCreate.error
+    );
+  }
+  const recordUpdate = await args.setModel(modelId);
+  if (recordUpdate.error) {
+    return ctx.error(
+      "internal",
+      `Failed to update ${args.lineName} with model`,
+      recordUpdate.error
+    );
+  }
+
+  // Attachments live in the company bucket, raw models in `temp-staging`
+  // (2.5 GB) for the optimise and assembly jobs; storage has no
+  // cross-bucket move.
+  const raw = await storage(client)
+    .company(companyId)
+    .download(args.documentPath);
+  if (!raw.data) {
+    return ctx.error("internal", "Failed to read model file", raw.error);
+  }
+  const staged = await client.storage
+    .from(TEMP_STAGING_BUCKET)
+    .upload(newPath, raw.data, { upsert: true });
+  if (staged.error) {
+    return ctx.error("internal", "Failed to stage model file", staged.error);
+  }
+  await storage(client).company(companyId).remove([args.documentPath]);
+
+  // The thumbnail is rendered by model-optimize on success.
+  await trigger("model-optimize", {
+    modelUploadId: modelId,
+    companyId,
+    userId: ctx.auditUserId
+  });
+  return null;
+}
+
+/**
+ * Map a sales RFQ's extracted lines to items.
+ *
+ * @remarks
+ * Each mapping maps its line to `itemId`, creates a Make to Order part named
+ * `createName` (or reuses the item with that part number), or is ignored.
+ * Every line must be on this RFQ and every item and the customer this
+ * company's. A mapped line with a customer part number also records it as
+ * the customer's part for the item. A line that cannot be mapped does not
+ * stop the others; `failed` counts them.
+ *
+ * @mcp
+ */
+export const mapSalesRfqLines = defineServiceFn({
+  input: z.object({
+    rfqId: z.string(),
+    customerId: z.string().optional(),
+    mappings: z.array(
+      z.object({
+        lineId: z.string(),
+        action: z.enum(["map", "create", "ignore"]),
+        itemId: z.string().nullish(),
+        createName: z.string().nullish(),
+        customerPartId: z.string().nullish(),
+        description: z.string().nullish()
+      })
+    )
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { rfqId, customerId, mappings }) {
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    // The customerPartToItem upsert runs as the service role keyed on
+    // (customerId, itemId): a foreign pair would overwrite another
+    // company's mapping.
+    const active = mappings.filter((map) => map.action !== "ignore");
+    const lineIds = [...new Set(active.map((map) => map.lineId))];
+    const itemIds = [
+      ...new Set(active.flatMap((map) => (map.itemId ? [map.itemId] : [])))
+    ];
+    if (lineIds.length > 0) {
+      const lines = await serviceRole
+        .from("salesRfqLine")
+        .select("id")
+        .eq("salesRfqId", rfqId)
+        .eq("companyId", companyId)
+        .in("id", lineIds);
+      if (lines.error || lines.data.length !== lineIds.length) {
+        logger.error("RFQ lines not found for mapping", {
+          companyId,
+          rfqId,
+          lineIds,
+          error: lines.error
+        });
+        return ctx.error("notFound", "RFQ line not found");
+      }
+    }
+    if (itemIds.length > 0) {
+      const items = await serviceRole
+        .from("item")
+        .select("id")
+        .eq("companyId", companyId)
+        .in("id", itemIds);
+      if (items.error || items.data.length !== itemIds.length) {
+        logger.error("Items not found for RFQ line mapping", {
+          companyId,
+          rfqId,
+          itemIds,
+          error: items.error
+        });
+        return ctx.error("notFound", "Item not found");
+      }
+    }
+    if (customerId) {
+      const refused = await refuseUnlessOwned(ctx, "customer", {
+        id: customerId
+      });
+      if (refused) return refused;
+    }
+
+    let failed = 0;
+    for (const map of active) {
+      let itemId = map.itemId;
+
+      if (map.action === "create") {
+        const name = (
+          map.createName ||
+          map.customerPartId ||
+          map.description ||
+          ""
+        ).trim();
+        if (!name) continue;
+
+        // Reuse an item with that part number rather than fail on the unique
+        // constraint or create a duplicate.
+        const existing = await serviceRole
+          .from("item")
+          .select("id")
+          .eq("companyId", companyId)
+          .eq("readableId", name)
+          .maybeSingle();
+        if (existing.data) {
+          itemId = existing.data.id;
+        } else {
+          // The service role: the sales-scoped client cannot insert items.
+          const created = await upsertPart(serviceRole, {
+            id: name,
+            name,
+            revision: "0",
+            description: map.description || undefined,
+            replenishmentSystem: "Make",
+            defaultMethodType: "Make to Order",
+            itemTrackingType: "Inventory",
+            unitOfMeasureCode: "EA",
+            shelfLifeCalculateFromBom: false,
+            companyId,
+            createdBy: userId
+          });
+          if (created.error || !created.data?.id) {
+            failed++;
+            logger.error("Failed to create part for RFQ line", {
+              companyId,
+              rfqId,
+              lineId: map.lineId,
+              readableId: name,
+              error: created.error
+            });
+          } else {
+            itemId = created.data.id;
+          }
+        }
+      }
+      if (!itemId) continue;
+
+      const mapped = await client
+        .from("salesRfqLine")
+        .update({ itemId, updatedBy: userId })
+        .eq("id", map.lineId)
+        .eq("companyId", companyId);
+      if (mapped.error) {
+        failed++;
+        logger.error("Failed to map RFQ line to item", {
+          companyId,
+          rfqId,
+          lineId: map.lineId,
+          itemId,
+          error: mapped.error
+        });
+        continue;
+      }
+
+      if (customerId && map.customerPartId) {
+        // customerPartToItem has no audit columns.
+        const customerPart = await serviceRole
+          .from("customerPartToItem")
+          .upsert(
+            {
+              customerId,
+              customerPartId: map.customerPartId,
+              itemId,
+              companyId
+            },
+            { onConflict: "customerId,itemId" }
+          );
+        if (customerPart.error) {
+          failed++;
+          logger.error("Failed to map customer part to item", {
+            companyId,
+            customerId,
+            itemId,
+            customerPartId: map.customerPartId,
+            error: customerPart.error
+          });
+        }
+      }
+    }
+
+    return { failed };
+  }
+});
+
+// --- Documents (PDF) --------------------------------------------------------
+
+/**
+ * Store a rendered sales document PDF in the company bucket under `folder`
+ * and record it as a document of its source, readable by the user who
+ * issued it.
+ */
+async function attachDocumentPdf(
+  ctx: ServiceContext,
+  args: {
+    pdf: Response;
+    identifier: string;
+    folder: string;
+    sourceDocument: "Quote" | "Sales Order" | "Sales Return Order";
+    sourceDocumentId: string;
+  }
+): Promise<
+  | { file: ArrayBuffer; fileName: string; documentFilePath: string }
+  | CarbonError
+> {
+  if (args.pdf.headers.get("content-type") !== "application/pdf") {
+    return ctx.error("internal", "Failed to generate PDF");
+  }
+  const companyId = ctx.company.id;
+  const file = await args.pdf.arrayBuffer();
+  const fileName = stripSpecialCharacters(
+    `${args.identifier} - ${datetime.timestamp().slice(0, -5)}.pdf`
+  );
+  const documentFilePath = `${companyId}/${args.folder}/${fileName}`;
+
+  const upload = await storage(ctx.asSystem.supabase)
+    .company(companyId)
+    .upload(documentFilePath, file, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+  if (upload.error) {
+    return ctx.error(
+      "internal",
+      "Failed to upload PDF to storage",
+      upload.error
+    );
+  }
+
+  const document = await upsertDocument(ctx.asSystem.supabase, {
+    path: documentFilePath,
+    name: fileName,
+    size: Math.round(file.byteLength / 1024),
+    sourceDocument: args.sourceDocument,
+    sourceDocumentId: args.sourceDocumentId,
+    readGroups: [ctx.auditUserId],
+    writeGroups: [ctx.auditUserId],
+    createdBy: ctx.auditUserId,
+    companyId
+  });
+  if (document.error) {
+    return ctx.error(
+      "internal",
+      "Failed to create document record",
+      document.error
+    );
+  }
+  return { file, fileName, documentFilePath };
+}
+
+/** Render a sales order's PDF and attach it to its opportunity. */
+async function attachSalesOrderPdf(
+  ctx: ServiceContext,
+  args: { salesOrderId: string; locale: string }
+) {
+  const order = await getSalesOrder(ctx.asSystem.supabase, args.salesOrderId);
+  if (!order.data?.salesOrderId || !order.data.opportunityId) {
+    return ctx.error("internal", "Failed to get sales order", order.error);
+  }
+  return attachDocumentPdf(ctx, {
+    pdf: await renderSalesOrderPdf(ctx.asCaller.supabase, {
+      id: args.salesOrderId,
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      locale: args.locale
+    }),
+    identifier: order.data.salesOrderId,
+    folder: `opportunity/${order.data.opportunityId}`,
+    sourceDocument: "Sales Order",
+    sourceDocumentId: args.salesOrderId
+  });
+}
+
+/** How a document is sent once it is issued. */
+const documentNotification = {
+  notification: z.enum(["Email", "None"]).optional(),
+  customerContact: z.string().optional(),
+  cc: z.array(z.string()).optional()
+};
+
+// --- Quotes -----------------------------------------------------------------
+
+const quoteFields = [
+  "customerId",
+  "currencyCode",
+  "customerContactId",
+  "customerEngineeringContactId",
+  "customerLocationId",
+  "customerReference",
+  "dueDate",
+  "estimatorId",
+  "expirationDate",
+  "locationId",
+  "salesPersonId"
+] as const;
+
+const quoteLocked = "Cannot modify a locked quote. Reopen it first.";
+
+/**
+ * Set one field on one or more quotes.
+ *
+ * @remarks
+ * Refused when any of the quotes is locked. A new customer on a single quote
+ * brings its currency. A new currency brings today's exchange rate. An empty
+ * value clears the field.
+ */
+export const updateQuoteField = defineServiceFn({
+  input: fieldUpdate(quoteFields),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const quotes = await client
+      .from("quote")
+      .select("status")
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (quotes.error) {
+      return ctx.error("internal", "Failed to load the quotes", quotes.error);
+    }
+    if (quotes.data.some((quote) => isQuoteLocked(quote.status))) {
+      return ctx.error("rule", quoteLocked);
+    }
+
+    let changes: Record<string, string | number | null> = {
+      [field]: value || null
+    };
+    if (field === "customerId") {
+      changes = { customerId: value ?? undefined } as typeof changes;
+      if (value && ids.length === 1) {
+        const customer = await client
+          .from("customer")
+          .select("currencyCode")
+          .eq("id", value)
+          .single();
+        if (customer.data?.currencyCode) {
+          changes.currencyCode = customer.data.currencyCode;
+        }
+      }
+    } else if (field === "currencyCode" && value) {
+      const exchangeRate = await getExchangeRate(client, companyId, value);
+      if (exchangeRate.error) {
+        return ctx.error(
+          "internal",
+          "Failed to get the exchange rate",
+          exchangeRate.error
+        );
+      }
+      changes.exchangeRate = exchangeRate.data;
+    }
+
+    const update = await client
+      .from("quote")
+      .update(
+        unchecked({
+          ...changes,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error("internal", "Failed to update the quotes", update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Check one quote or sales order line against the sales rules before it is
+ * written. Every quantity break is evaluated: a minimum fires on the smallest,
+ * a maximum on the largest. A blocked attempt is recorded; `lineId` is null
+ * for a line not created yet.
+ */
+async function salesLineGate(
+  ctx: ServiceContext,
+  args: {
+    surface: "quoteLine" | "salesOrderLine";
+    documentType: "quote" | "salesOrder";
+    documentId: string;
+    lineId: string | null;
+    itemId: string | null;
+    quantities: number[];
+    customerId: string | null;
+    customerLocationId: string | null;
+    acknowledged: boolean;
+  }
+): Promise<{ blocked: SalesRuleCheck | null; check: SalesRuleCheck }> {
+  const found = await evaluateSalesRuleLines({
+    client: ctx.asSystem.supabase,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    surface: args.surface,
+    lines: args.quantities.map((quantity) => ({
+      lineId: args.lineId ?? "new",
+      itemId: args.itemId,
+      quantity
+    })),
+    customerId: args.customerId,
+    customerLocationId: args.customerLocationId
+  });
+  const check = {
+    violations: dedupeViolations(found.violations),
+    ruleNames: found.ruleNames
+  };
+  if (
+    check.violations.length === 0 ||
+    !isBlocked(check.violations, args.acknowledged)
+  ) {
+    return { blocked: null, check };
+  }
+  await recordSalesLineOutcome(ctx, args, "blocked", check);
+  return { blocked: check, check };
+}
+
+/** Record a line check's outcome against the line it is about. */
+function recordSalesLineOutcome(
+  ctx: ServiceContext,
+  line: {
+    documentType: "quote" | "salesOrder";
+    documentId: string;
+    lineId: string | null;
+    itemId: string | null;
+  },
+  outcome: "blocked" | "acknowledged",
+  check: SalesRuleCheck
+) {
+  return recordSalesRuleOutcome(ctx.asSystem.supabase, {
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    documentType: line.documentType,
+    documentId: line.documentId,
+    documentLineId: line.lineId,
+    itemId: line.itemId,
+    outcome,
+    ...check
+  });
+}
+
+/** The configuration a line form posts as JSON text; unreadable means none. */
+function parseConfiguration(
+  value: unknown
+): Record<string, unknown> | undefined {
+  if (typeof value !== "string") {
+    return value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : undefined;
+  }
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    logger.error("Failed to parse quote line configuration", { error });
+    return undefined;
+  }
+}
+
+/** A Draft quote this company owns, or why it cannot be changed. */
+async function unlockedQuote(ctx: ServiceContext, quoteId: string) {
+  const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
+  if (refused) return refused;
+  const quote = await getQuote(ctx.asCaller.supabase, quoteId);
+  if (isQuoteLocked(quote.data?.status)) return ctx.error("rule", quoteLocked);
+  return quote.data;
+}
+
+/**
+ * Add a line to a quote.
+ *
+ * @remarks
+ * Refused while the quote is locked. The line is first checked against the
+ * sales rules at every quantity break: an error, or a warning not
+ * `acknowledged`, returns `violations` and adds nothing. Then the line is
+ * priced by its method: Purchase to Order from the supplier's prices, Pull
+ * from Inventory from the item's price, Make to Order by copying the item's
+ * method and rolling up its cost. When pricing fails the line is kept and
+ * `warning` says what failed.
+ *
+ * @mcp
+ */
+export const createQuoteLine = defineServiceFn({
+  input: quoteLineValidator.extend({
+    customFields: customFieldValues.optional(),
+    acknowledged: z.boolean().default(false)
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, { id: _id, acknowledged, customFields, ...line }) {
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const quoteId = line.quoteId;
+
+    const quote = await unlockedQuote(ctx, quoteId);
+    if (quote instanceof Error) return quote;
+
+    const configuration = parseConfiguration(line.configuration);
+    const target = {
+      documentType: "quote" as const,
+      documentId: quoteId,
+      itemId: line.itemId ?? null
+    };
+    const gate = await salesLineGate(ctx, {
+      ...target,
+      surface: "quoteLine",
+      lineId: null,
+      quantities: breakQuantities(line.quantity),
+      customerId: quote?.customerId ?? null,
+      customerLocationId: quote?.customerLocationId ?? null,
+      acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const created = await upsertQuoteLine(serviceRole, {
+      ...line,
+      companyId,
+      configuration,
+      createdBy: userId,
+      customFields
+    });
+    if (created.error) {
+      return ctx.error(
+        "internal",
+        "Failed to create quote line.",
+        created.error
+      );
+    }
+    const quoteLineId = created.data.id;
+
+    // Evidence once the line exists, so it names the line.
+    await recordSalesLineOutcome(
+      ctx,
+      { ...target, lineId: quoteLineId },
+      "acknowledged",
+      gate.check
+    );
+
+    const warning = await priceNewQuoteLine(ctx, {
+      quoteId,
+      quoteLineId,
+      itemId: line.itemId,
+      methodType: line.methodType,
+      quantities: line.quantity ?? [1],
+      configuration
+    });
+    return { quoteLineId, warning };
+  }
+});
+
+/** Price a just-created quote line by its method; a failure is the message. */
+async function priceNewQuoteLine(
+  ctx: ServiceContext,
+  args: {
+    quoteId: string;
+    quoteLineId: string;
+    itemId: string;
+    methodType: z.infer<typeof quoteLineValidator>["methodType"];
+    quantities: number[];
+    configuration?: Record<string, unknown>;
+  }
+): Promise<string | null> {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { quoteId, quoteLineId, quantities } = args;
+
+  if (args.methodType === "Purchase to Order") {
+    const priced = await resolvePurchaseToOrderPrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      quantities,
+      userId
+    );
+    return priced?.error ? "Failed to resolve Purchase to Order prices" : null;
+  }
+  if (args.methodType === "Pull from Inventory") {
+    const priced = await resolveQuoteLinePrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      quantities,
+      userId
+    );
+    return priced?.error
+      ? "Failed to resolve Pull from Inventory prices"
+      : null;
+  }
+  if (args.methodType === "Make to Order") {
+    const method = await upsertQuoteLineMethod(serviceRole, ctx.asSystem.pg, {
+      quoteId,
+      quoteLineId,
+      itemId: args.itemId,
+      configuration: args.configuration,
+      companyId,
+      userId
+    });
+    if (method.error) return "Failed to create quote line method.";
+    const priced = await recalculateQuoteLinePrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      userId
+    );
+    return priced?.error ? "Failed to recalculate quote line prices" : null;
+  }
+  return null;
+}
+
+/**
+ * Change a quote line.
+ *
+ * @remarks
+ * Refused while the quote is locked. The line is first checked against the
+ * sales rules at every quantity break (see `createQuoteLine`). Then its
+ * quantity breaks are reconciled: a break no longer offered loses its price,
+ * and a new break of a Make to Order, Pull from Inventory or Purchase to
+ * Order line is priced. The prices are computed before anything is written,
+ * and the line and its prices are saved in one transaction.
+ *
+ * @mcp
+ */
+export const updateQuoteLine = defineServiceFn({
+  input: quoteLineValidator.extend({
+    id: z.string(),
+    customFields: customFieldValues.optional(),
+    acknowledged: z.boolean().default(false)
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, { id: lineId, acknowledged, customFields, ...line }) {
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const quoteId = line.quoteId;
+
+    // The writes below bypass RLS and key on these ids.
+    const refused = await refuseUnlessOwned(ctx, "quoteLine", {
+      id: lineId,
+      quoteId
+    });
+    if (refused) return refused;
+    const quote = await unlockedQuote(ctx, quoteId);
+    if (quote instanceof Error) return quote;
+
+    const target = {
+      documentType: "quote" as const,
+      documentId: quoteId,
+      lineId,
+      itemId: line.itemId ?? null
+    };
+    const gate = await salesLineGate(ctx, {
+      ...target,
+      surface: "quoteLine",
+      quantities: breakQuantities(line.quantity),
+      customerId: quote?.customerId ?? null,
+      customerLocationId: quote?.customerLocationId ?? null,
+      acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const existing = await serviceRole
+      .from("quoteLinePrice")
+      .select("quantity")
+      .eq("quoteLineId", lineId)
+      .eq("companyId", companyId);
+    if (existing.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read existing quote line prices",
+        existing.error
+      );
+    }
+
+    // Pruning is unconditional: a break removed from any line would
+    // otherwise render as a selectable option on the customer share page.
+    const { added, removed } = reconcileQuantityBreaks(
+      existing.data.map((p) => p.quantity),
+      line.quantity ?? []
+    );
+
+    let priceRows: QuoteLinePriceRow[] = [];
+    if (added.length > 0) {
+      // The stored line still holds the old item: pass the new one.
+      const built =
+        line.methodType === "Make to Order"
+          ? await buildMakeToOrderPriceRows(
+              serviceRole,
+              quoteId,
+              lineId,
+              added,
+              userId,
+              line.itemId
+            )
+          : line.methodType === "Pull from Inventory"
+            ? await buildPullFromInventoryPriceRows(
+                serviceRole,
+                companyId,
+                quoteId,
+                lineId,
+                added,
+                userId,
+                line.itemId
+              )
+            : line.methodType === "Purchase to Order"
+              ? await buildPurchaseToOrderPriceRows(
+                  serviceRole,
+                  companyId,
+                  quoteId,
+                  lineId,
+                  added,
+                  userId,
+                  line.itemId
+                )
+              : null;
+      if (built?.error) {
+        return ctx.error(
+          "internal",
+          `Failed to calculate ${line.methodType} prices for new quantities`,
+          built.error
+        );
+      }
+      priceRows = built?.rows ?? [];
+    }
+
+    try {
+      await saveQuoteLineWithPrices({
+        companyId,
+        quoteId,
+        lineId,
+        line: {
+          ...sanitize({ ...line, updatedBy: userId }),
+          customFields
+        },
+        removedQuantities: removed,
+        priceRows
+      });
+    } catch (err) {
+      // A rollback: nothing was written.
+      return ctx.error("internal", "Failed to update quote line", err);
+    }
+
+    // Evidence only for a change that landed.
+    await recordSalesLineOutcome(ctx, target, "acknowledged", gate.check);
+    return { quoteLineId: lineId };
+  }
+});
+
+/**
+ * Finalize a quote and send it to the customer.
+ *
+ * @remarks
+ * In order: the customer must have a reachable contact when the company
+ * requires one; the sales-rule gate re-checks every line (an error, or a
+ * warning not `acknowledged`, returns `violations` and changes nothing); the
+ * quote gets its share link; its PDF is filed on the opportunity; the quote
+ * is set Sent and its lines Complete. With `notification` Email the PDF is
+ * then emailed to `customerContact` (and `cc`); when that fails the quote is
+ * still Sent and `warning` says so. `locale` formats the PDF.
+ *
+ * @mcp
+ */
+export const finalizeAndSendQuote = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    acknowledged: z.boolean().default(false),
+    ...documentNotification,
+    locale: z.string().default("en-US")
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    const { quoteId, notification, customerContact, cc, locale } = input;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
+    if (refused) return refused;
+    const quote = await getQuote(serviceRole, quoteId);
+    if (quote.error) {
+      return ctx.error("internal", "Failed to get quote", quote.error);
+    }
+
+    // A customer with no reachable contact cannot be created at a connected
+    // platform, so its documents are rejected there long after anyone is
+    // watching. Refuse at issue time, while the record can still be fixed.
+    const contactRequired = await checkPartyContactRequirement(
+      serviceRole,
+      companyId,
+      { kind: "customer", id: quote.data.customerId }
+    );
+    if (contactRequired) return ctx.error("rule", contactRequired);
+
+    // Before the share link and the PDF, so a blocked quote produces neither.
+    const gate = await salesDocumentGate(ctx, {
+      documentType: "quote",
+      documentId: quoteId,
+      acknowledged: input.acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const link = await upsertExternalLink(serviceRole, {
+      id: quote.data.externalLinkId ?? undefined,
+      documentType: "Quote",
+      documentId: quoteId,
+      customerId: quote.data.customerId,
+      expiresAt: quote.data.expirationDate,
+      companyId
+    });
+    if (link.data && quote.data.externalLinkId !== link.data.id) {
+      await serviceRole
+        .from("quote")
+        .update({
+          externalLinkId: link.data.id,
+          completedDate: datetime.timestamp()
+        })
+        .eq("id", quoteId)
+        .eq("companyId", companyId);
+    }
+
+    const pdf = await attachDocumentPdf(ctx, {
+      pdf: await renderQuotePdf(ctx.asCaller.supabase, {
+        id: quoteId,
+        companyId,
+        companyGroupId: ctx.company.groupId,
+        locale
+      }),
+      identifier: getQuoteDisplayId(quote.data),
+      folder: `opportunity/${quote.data.opportunityId}`,
+      sourceDocument: "Quote",
+      sourceDocumentId: quoteId
+    });
+    if (pdf instanceof Error) return pdf;
+
+    const finalized = await finalizeQuote(
+      serviceRole,
+      quoteId,
+      userId,
+      companyId
+    );
+    if (finalized.error) {
+      return ctx.error("internal", "Failed to finalize quote", finalized.error);
+    }
+
+    // Evidence only once the finalize has committed.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      outcome: "acknowledged",
+      ...gate.check
+    });
+
+    if (notification !== "Email" || !customerContact) {
+      return { quoteId, warning: null };
+    }
+    try {
+      await emailQuote(ctx, {
+        quote: quote.data,
+        customerContactId: customerContact,
+        cc,
+        ...pdf
+      });
+      return { quoteId, warning: null };
+    } catch (err) {
+      logger.error("Failed to email the finalized quote", {
+        companyId,
+        quoteId,
+        error: err
+      });
+      return { quoteId, warning: "Failed to send email" };
+    }
+  }
+});
+
+/** Email a finalized quote's PDF to its customer contact. Throws on failure. */
+async function emailQuote(
+  ctx: ServiceContext,
+  args: {
+    quote: NonNullable<Awaited<ReturnType<typeof getQuote>>["data"]>;
+    customerContactId: string;
+    cc?: string[];
+    fileName: string;
+    documentFilePath: string;
+  }
+) {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [company, companySettings, customer, customerContact, user] =
+    await Promise.all([
+      getCompany(serviceRole, companyId),
+      getCompanySettings(serviceRole, companyId),
+      getCustomer(serviceRole, args.quote.customerId!),
+      getCustomerContact(serviceRole, args.customerContactId, companyId),
+      getUser(serviceRole, ctx.auditUserId)
+    ]);
+  if (!company.data) throw new Error("Failed to get company");
+  if (!companySettings.data) throw new Error("Failed to get company settings");
+  if (!customer.data) throw new Error("Failed to get customer");
+  if (!customerContact.data) throw new Error("Failed to get customer contact");
+  if (!user.data) throw new Error("Failed to get user");
+
+  const emailTemplate = QuoteEmail({
+    // @ts-expect-error TS2739 - TODO: fix type
+    company: company.data,
+    companySettings: companySettings.data,
+    // @ts-expect-error
+    quote: args.quote,
+    recipient: {
+      email: customerContact.data.contact!.email!,
+      firstName: customerContact.data.contact!.firstName!,
+      lastName: customerContact.data.contact!.lastName!
+    },
+    sender: {
+      email: user.data.email,
+      firstName: user.data.firstName,
+      lastName: user.data.lastName
+    }
+  });
+  const html = await renderAsync(emailTemplate);
+  const text = await renderAsync(emailTemplate, { plainText: true });
+  const signed = await storage(serviceRole)
+    .company(companyId)
+    .createSignedUrl(args.documentFilePath, 3600);
+  if (signed.error) {
+    logger.error("Failed to create signed URL for attachment", {
+      storagePath: args.documentFilePath,
+      error: signed.error
+    });
+  }
+
+  await trigger("send-email", {
+    to: [user.data.email, customerContact.data.contact!.email!],
+    cc: args.cc?.length ? args.cc : undefined,
+    from: user.data.email,
+    subject: `Quote ${getQuoteDisplayId(args.quote)}`,
+    html,
+    text,
+    attachments: signed.data
+      ? [{ path: signed.data.signedUrl, filename: args.fileName }]
+      : undefined,
+    companyId
+  });
+}
+
+/**
+ * Convert a quote to a sales order.
+ *
+ * @remarks
+ * `selectedLines` maps each quote line to the quantity break and prices to
+ * order; a line with quantity 0 is not converted. First the sales-rule gate
+ * re-checks the lines that convert (an error, or a warning not
+ * `acknowledged`, returns `violations` and converts nothing). Then the
+ * `convert` server function creates the order with `purchaseOrderNumber`.
+ * Its PDF is filed on the opportunity and, with `notification` Email,
+ * emailed to `customerContact`; those two never fail the conversion.
+ *
+ * @mcp
+ */
+export const convertQuote = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    selectedLines: selectedLinesValidator,
+    purchaseOrderNumber: z.string().optional(),
+    acknowledged: z.boolean().default(false),
+    ...documentNotification,
+    locale: z.string().default("en-US")
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    const { quoteId, selectedLines, notification, customerContact } = input;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
+    if (refused) return refused;
+
+    // A deselected line never becomes an order line, so its violations
+    // neither block nor leave evidence.
+    const gate = await salesDocumentGate(ctx, {
+      documentType: "quote",
+      documentId: quoteId,
+      acknowledged: input.acknowledged,
+      lineIds: convertingLineIds(selectedLines)
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const convert = await convertQuoteToOrder(serviceRole, ctx.asSystem.pg, {
+      id: quoteId,
+      purchaseOrderNumber: input.purchaseOrderNumber ?? "",
+      companyId,
+      userId,
+      selectedLines
+    });
+    if (convert.error || !convert.data?.convertedId) {
+      return ctx.error(
+        "internal",
+        getErrorMessage(convert.error, "Failed to convert quote to order"),
+        convert.error
+      );
+    }
+    const salesOrderId = convert.data.convertedId;
+
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      outcome: "acknowledged",
+      ...gate.check
+    });
+
+    // Neither the PDF nor the email holds up the new order.
+    try {
+      const pdf = await attachSalesOrderPdf(ctx, {
+        salesOrderId,
+        locale: input.locale
+      });
+      if (pdf instanceof Error) throw pdf;
+      if (notification === "Email" && customerContact) {
+        await sendSalesOrderEmail({
+          salesOrderId,
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          userId,
+          customerContactId: customerContact,
+          cc: input.cc,
+          documentFilePath: pdf.documentFilePath,
+          fileName: pdf.fileName,
+          serviceRole,
+          locales: [input.locale]
+        });
+      }
+    } catch (err) {
+      logger.error("Failed to generate PDF or send email after conversion", {
+        companyId,
+        salesOrderId,
+        error: err
+      });
+    }
+
+    return { salesOrderId };
+  }
+});
+
+/** The quote lines `selectedLines` converts: those ordered in a quantity. */
+function convertingLineIds(
+  selectedLines: z.infer<typeof selectedLinesValidator>
+): Set<string> {
+  return new Set(
+    Object.entries(selectedLines)
+      .filter(([, line]) => (line.quantity ?? 0) > 0)
+      .map(([lineId]) => lineId)
+  );
+}
+
+/**
+ * Configure a Make to Order quote line.
+ *
+ * @remarks
+ * Saves the configuration on the line, clears its prices, copies the item's
+ * method for that configuration, then prices its Purchase to Order materials
+ * from supplier price breaks (a typed cost is left alone).
+ */
+export const configureQuoteLine = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    lineId: z.string(),
+    configuration: z.record(z.string(), z.unknown())
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { quoteId, lineId, configuration }) {
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const refused = await refuseUnlessOwned(ctx, "quoteLine", {
+      id: lineId,
+      quoteId
+    });
+    if (refused) return refused;
+
+    const [updated, quoteLine] = await Promise.all([
+      client
+        .from("quoteLine")
+        .update({
+          configuration: configuration as Json,
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .eq("id", lineId),
+      client.from("quoteLine").select("itemId").eq("id", lineId).single(),
+      client.from("quoteLinePrice").delete().eq("quoteLineId", lineId)
+    ]);
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update quote line",
+        updated.error
+      );
+    }
+    if (quoteLine.error) {
+      return ctx.error("internal", "Failed to get quote line", quoteLine.error);
+    }
+
+    const method = await upsertQuoteLineMethod(serviceRole, ctx.asSystem.pg, {
+      quoteId,
+      quoteLineId: lineId,
+      itemId: quoteLine.data.itemId,
+      configuration,
+      companyId,
+      userId
+    });
+    if (method.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update quote line method",
+        method.error
+      );
+    }
+
+    const buyMaterials = await serviceRole
+      .from("quoteMaterial")
+      .select("id, itemId, unitCost, unitCostSource")
+      .eq("quoteLineId", lineId)
+      .eq("companyId", companyId)
+      .eq("methodType", "Purchase to Order");
+    const priceMap = await getSupplierPriceBreaksForItems(serviceRole, [
+      ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
+    ]);
+    for (const material of buyMaterials.data ?? []) {
+      if (material.unitCostSource === "manual") continue;
+      const unitCost = resolveBuyUnitCost(material, 1, priceMap);
+      if (unitCost !== material.unitCost) {
+        await serviceRole
+          .from("quoteMaterial")
+          .update({ unitCost })
+          .eq("id", material.id)
+          .eq("companyId", companyId);
+      }
+    }
+    return { lineId };
+  }
+});
+
+/**
+ * Attach a dropped file to a quote line.
+ *
+ * @remarks
+ * With no `lineId`, a Make to Order part is created first, named after the
+ * file (its part number and revision read from the name, with a suffix when
+ * that revision exists), then a quote line for it with its method. A 3D model
+ * becomes the line's (and its item's) model and is queued for optimisation;
+ * any other file moves to the line's documents.
+ */
+export const attachQuoteFile = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    name: z.string(),
+    size: z.number(),
+    path: z.string(),
+    lineId: z.string().optional()
+  }),
+  permission: { create: "sales" },
+
+  async run(
+    ctx,
+    { quoteId, name: fileName, size, path: documentPath, ...input }
+  ) {
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+
+    // Lines and parts are created with the service role.
+    const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
+    if (refused) return refused;
+
+    let lineId = input.lineId;
+    let partId: string | undefined;
+    if (!lineId) {
+      const created = await createQuoteLineForFile(ctx, { quoteId, fileName });
+      if (created instanceof Error) return created;
+      ({ lineId, partId } = created);
+    } else {
+      const existing = await serviceRole
+        .from("quoteLine")
+        .select("itemId")
+        .eq("id", lineId)
+        .eq("quoteId", quoteId)
+        .eq("companyId", companyId)
+        .single();
+      if (existing.error || !existing.data) {
+        return ctx.error(
+          "notFound",
+          "Failed to find quote line",
+          existing.error
+        );
+      }
+      partId = existing.data.itemId;
+    }
+
+    const extension = fileName.split(".").pop();
+    const placed = await placeDroppedFile(ctx, {
+      documentPath,
+      is3DModel: !!extension && supportedModelTypes.includes(extension),
+      size,
+      documentFolder: `opportunity-line/${lineId}`,
+      setModel: async (modelUploadId) => {
+        // A failed link is logged; the model is still optimised.
+        const [lineUpdate] = await Promise.all([
+          client.from("quoteLine").update({ modelUploadId }).eq("id", lineId),
+          partId
+            ? client
+                .from("item")
+                .update({ modelUploadId })
+                .eq("id", partId)
+                .eq("companyId", companyId)
+            : null
+        ]);
+        if (lineUpdate.error) {
+          logger.error("Failed to link model to quote line", {
+            companyId,
+            error: lineUpdate.error
+          });
+        }
+        return { error: null };
+      },
+      lineName: "quote line"
+    });
+    if (placed) return placed;
+    return { quoteLineId: lineId };
+  }
+});
+
+/** A Make to Order part and a quote line for a file dropped on the quote. */
+async function createQuoteLineForFile(
+  ctx: ServiceContext,
+  { quoteId, fileName }: { quoteId: string; fileName: string }
+): Promise<{ lineId: string; partId: string } | CarbonError> {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const partName = fileName.replace(/\.[^/.]+$/, "");
+
+  let readableId = partName;
+  let revision = "0";
+  try {
+    const { output } = await generateText({
+      model: openai("gpt-4o-mini"),
+      output: Output.object({
+        schema: z.object({
+          partId: z
+            .string()
+            .describe("The part identifier extracted from the filename"),
+          revision: z
+            .string()
+            .nullable()
+            .describe("The revision number if present, null if not found")
+        })
+      }),
+      prompt: `Extract the part ID and revision from this filename: "${partName}". The part ID should be the main identifier, and revision should be any version/revision indicator if present.`
+    });
+    readableId = output.partId;
+    revision = output.revision || "0";
+  } catch (error) {
+    logger.error("Failed to parse part filename", { error });
+  }
+
+  // A revision that exists already gets a suffix.
+  let suffix = 1;
+  while (true) {
+    const existing = await serviceRole
+      .from("item")
+      .select("id")
+      .eq("readableId", readableId)
+      .eq("revision", revision)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error || !existing.data) break;
+    revision = `${revision} (${suffix})`;
+    suffix++;
+  }
+
+  const part = await upsertPart(serviceRole, {
+    id: readableId,
+    name: readableId,
+    defaultMethodType: "Make to Order",
+    itemTrackingType: "Inventory",
+    replenishmentSystem: "Make",
+    revision,
+    unitOfMeasureCode: "EA",
+    shelfLifeCalculateFromBom: false,
+    companyId,
+    createdBy: userId
+  });
+  if (part.error || !part.data?.id) {
+    return ctx.error("internal", "Failed to create part", part.error);
+  }
+  const partId = part.data.id;
+
+  const line = await upsertQuoteLine(serviceRole, {
+    quoteId,
+    itemId: partId,
+    status: "Not Started",
+    estimatorId: userId,
+    description: partName,
+    methodType: "Make to Order",
+    customerPartId: partName,
+    customerPartRevision: "",
+    unitOfMeasureCode: "EA",
+    taxPercent: 0,
+    quantity: [1],
+    companyId,
+    createdBy: userId
+  });
+  if (line.error || !line.data) {
+    return ctx.error("internal", "Failed to create quote line.", line.error);
+  }
+
+  const method = await upsertQuoteLineMethod(serviceRole, ctx.asSystem.pg, {
+    quoteId,
+    quoteLineId: line.data.id,
+    itemId: partId,
+    configuration: undefined,
+    companyId,
+    userId
+  });
+  if (method.error) {
+    return ctx.error(
+      "internal",
+      "Failed to create quote line method.",
+      method.error
+    );
+  }
+  return { lineId: line.data.id, partId };
 }
