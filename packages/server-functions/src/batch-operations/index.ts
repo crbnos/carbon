@@ -457,6 +457,23 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  // Strict backflush: phase 2 issues each member's materials after phase 1 has
+  // committed, so a short storage unit is refused here first, before anything
+  // is written. Each member is checked on its own; two members drawing the
+  // same bin can still fail in phase 2, which leaves the batch resumable.
+  // A no-op when strict backflush is off.
+  const checker = ServerFnContext.system({ db, companyId, userId });
+  for (const m of members) {
+    if (m.quantity <= 0) continue;
+    const check = await issue(checker, {
+      id: m.jobOperationId,
+      type: "jobOperation",
+      quantity: m.quantity,
+      dryRun: true
+    });
+    if (check.error) throw check.error;
+  }
+
   await db.transaction().execute(async (trx) => {
     const batch = await trx
       .selectFrom("jobOperationBatch")

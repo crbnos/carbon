@@ -102385,6 +102385,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102657,6 +102660,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102881,6 +102887,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
@@ -166663,6 +166672,7 @@ export default {
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
         "invoiceNotificationGroup",
+        "requireBackflushStorageUnit",
         "leaseIncrementalBorrowingRate",
         "leaseShortTermExpedient",
         "leaseReminderDays"
@@ -167038,6 +167048,11 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        requireBackflushStorageUnit: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         leaseIncrementalBorrowingRate: {
           default: 6,
@@ -222612,6 +222627,12 @@ export default {
     },
     "rowFilter.companySettings.accountingActivatedBy": {
       name: "accountingActivatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireBackflushStorageUnit": {
+      name: "requireBackflushStorageUnit",
       required: false,
       in: "query",
       type: "string"

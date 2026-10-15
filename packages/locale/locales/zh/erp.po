@@ -60,6 +60,10 @@ msgstr "（映射到多个 Carbon 账户）"
 msgid "(not an Equity posting account)"
 msgstr "（非所有者权益过账账户）"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {#个启用的方法包含没有取货存储单元的物料} other {#个启用的方法包含没有取货存储单元的物料}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 条阻止记录} other {# 条阻止记录}}"
@@ -1107,6 +1111,9 @@ msgstr "原材料是用于制造零件的物质物品，可跨多个工单使用
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "一个测量仪器（游标卡尺、千分尺、塞规、CMM）作为记录进行追踪，并按照周期性校准计划进行维护。"
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "方法版本需要在每个物料上设置取货存储单元，才能启用。"
+
 msgid "A name is required to save a view"
 msgstr "需要名称才能保存查看"
 
@@ -1427,6 +1434,9 @@ msgstr "发货单的状态已更改"
 
 msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "当存储单元库存不足时，将使用另一个有库存的存储单元。"
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "短期资产不能超过开始日期后的 12 个月。结束它并将延期作为新租赁输入。"
@@ -3821,6 +3831,9 @@ msgstr "返回可追溯性"
 
 msgid "Backflush"
 msgstr "倒冲"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "仅从物料行指定的存储单元倒冲每个物料，当该存储单元库存不足时，停止该工序或工单。"
 
 msgid "Background"
 msgstr "背景"
@@ -13447,6 +13460,9 @@ msgstr "缺失的工序"
 msgid "Missing Shipping Costs"
 msgstr "缺少运费"
 
+msgid "Missing Storage Units"
+msgstr "缺少存储单元"
+
 msgid "Missing Suppliers"
 msgstr "缺少供应商"
 
@@ -20239,6 +20255,10 @@ msgstr "会话已锁定"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "在此退货上设置客户以从发货中添加。"
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "为 {0} 设置取货存储单元"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "为此退货指定供应商以从其收货中添加"
 
@@ -21295,6 +21315,18 @@ msgstr "融资租赁使用权资产的直线摊销"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "经营租赁直线租赁成本和短期租赁付款"
+
+msgid "Strict Backflush"
+msgstr "严格倒冲"
+
+msgid "Strict backflush is off"
+msgstr "严格倒冲已关闭"
+
+msgid "Strict backflush is on"
+msgstr "严格倒冲已启用"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "严格倒冲已启用。释放前，请为这些物料设置取货存储单元："
 
 msgid "Stripe"
 msgstr "Stripe"

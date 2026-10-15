@@ -209,7 +209,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
           flash: "error"
         })
       );
@@ -273,7 +276,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
           flash: "error"
         })
       );
@@ -325,6 +331,32 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
     const { trackedEntityId, trackingType, ...d } = validation.data;
+
+    // Strict backflush: refuse before the production quantity is recorded, so
+    // a short storage unit never leaves units completed with no material
+    // consumed. A no-op when strict backflush is off.
+    const check = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        id: validation.data.jobOperationId,
+        type: "jobOperation",
+        quantity: validation.data.quantity,
+        dryRun: true
+      });
+
+    if (check.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(
+            check.error,
+            check.error.message || "Failed to issue materials"
+          ),
+          flash: "error"
+        })
+      );
+    }
+
     const insertProduction = await insertProductionQuantity(client, {
       ...d,
       companyId,
@@ -356,7 +388,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, {
-          ...error(issued.error, "Failed to issue materials"),
+          ...error(
+            issued.error,
+            issued.error.message || "Failed to issue materials"
+          ),
           flash: "error"
         })
       );

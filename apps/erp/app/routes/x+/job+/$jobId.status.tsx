@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { summarizeList } from "@carbon/database/strict-backflush";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
@@ -123,6 +124,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
               : `Assign an operation to each assembly before releasing: ${missing
                   .map((m) => m.description)
                   .join(", ")}`
+          )
+        )
+      );
+    }
+
+    const withoutStorageUnit =
+      readiness.data?.jobs[0]?.materialsWithoutStorageUnit ?? [];
+    if (withoutStorageUnit.length > 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            null,
+            `Set a Pull From storage unit before releasing: ${summarizeList(
+              withoutStorageUnit.map((m) => m.description)
+            )}`
           )
         )
       );

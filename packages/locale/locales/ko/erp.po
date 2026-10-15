@@ -60,6 +60,10 @@ msgstr "(하나 이상의 Carbon 계정에 매핑됨)"
 msgid "(not an Equity posting account)"
 msgstr "(자본 전기 계정이 아님)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# 활성 방법에 Pull From 보관 단위가 없는 자재가 있습니다} other {# 활성 방법에 Pull From 보관 단위가 없는 자재가 있습니다}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 차단 레코드} other {# 차단 레코드}}"
@@ -1107,6 +1111,9 @@ msgstr "자재는 부품을 만드는 데 사용되는 물리적 품목으로 �
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "계측기(캘리퍼, 마이크로미터, 핀 게이지, CMM)로 기록으로 추적되며 반복되는 교정 일정을 유지합니다."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "방법 버전을 활성화하려면 각 자재에 Pull From 보관 단위가 설정되어야 합니다."
+
 msgid "A name is required to save a view"
 msgstr "보기를 저장하려면 이름이 필요합니다"
 
@@ -1427,6 +1434,9 @@ msgstr "출하의 상태가 변경됨"
 
 msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "보관 단위의 재고가 부족하면 재고가 있는 다른 보관 단위로 전환됩니다."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "단기 자산은 개시일로부터 12개월을 초과하여 운영할 수 없습니다. 종료하고 연장을 새로운 리스로 입력합니다."
@@ -3821,6 +3831,9 @@ msgstr "추적성으로 돌아가기"
 
 msgid "Backflush"
 msgstr "백플러시"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "각 자재를 자재 라인의 보관 단위에서만 백플러시하고, 해당 보관 단위의 재고가 부족할 때 공정 또는 작업 지시를 중지합니다."
 
 msgid "Background"
 msgstr "배경"
@@ -13447,6 +13460,9 @@ msgstr "누락된 공정작업"
 msgid "Missing Shipping Costs"
 msgstr "누락된 운송비"
 
+msgid "Missing Storage Units"
+msgstr "보관 단위 누락"
+
 msgid "Missing Suppliers"
 msgstr "누락된 공급업체"
 
@@ -20239,6 +20255,10 @@ msgstr "세션 잠김"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "출하에서 추가할 고객을 이 반품에 설정하세요."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "{0}에 Pull From 보관 단위를 설정합니다"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "이 반품에 공급업체를 지정하여 입고에서 추가하세요."
 
@@ -21295,6 +21315,18 @@ msgstr "금융 리스 사용권 자산의 정액법 상각"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "운영 리스의 정액법 리스 원가 및 단기 리스의 지불"
+
+msgid "Strict Backflush"
+msgstr "엄격한 백플러시"
+
+msgid "Strict backflush is off"
+msgstr "엄격한 백플러시가 꺼져 있습니다"
+
+msgid "Strict backflush is on"
+msgstr "엄격한 백플러시가 켜져 있습니다"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "엄격한 백플러시가 켜져 있습니다. 릴리스 전에 이 자재들에 Pull From 보관 단위를 설정하세요:"
 
 msgid "Stripe"
 msgstr "Stripe"

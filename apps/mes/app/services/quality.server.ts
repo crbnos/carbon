@@ -572,9 +572,34 @@ export async function postBulkCompletion(
         ...args.eventIds
       });
     if (response.error) {
-      return { error: response.error, message: "Failed to complete units" };
+      return {
+        error: response.error,
+        message: response.error.message || "Failed to complete units"
+      };
     }
     return { error: null, message: null };
+  }
+
+  // Strict backflush: refuse before the production quantity is recorded, so a
+  // short storage unit never leaves units completed with no material
+  // consumed. A no-op when strict backflush is off.
+  const check = await serverFns
+    .system({
+      db: getDatabaseClient(),
+      companyId: args.companyId,
+      userId: args.userId
+    })
+    .invoke("issue", {
+      id: state.jobOperationId,
+      type: "jobOperation",
+      quantity: args.quantity,
+      dryRun: true
+    });
+  if (check.error) {
+    return {
+      error: check.error,
+      message: check.error.message || "Failed to issue materials"
+    };
   }
 
   const insertResult = await insertProductionQuantity(client, {
@@ -607,7 +632,8 @@ export async function postBulkCompletion(
   if (issued.error) {
     return {
       error: issued.error,
-      message: "Units completed, but failed to issue materials"
+      message:
+        issued.error.message || "Units completed, but failed to issue materials"
     };
   }
 

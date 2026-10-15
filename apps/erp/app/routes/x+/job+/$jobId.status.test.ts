@@ -167,7 +167,8 @@ function setup() {
           manufacturingBlocked: false,
           missingAssemblies: [],
           outsideOperationsWithoutSupplier: [],
-          supplierIds: []
+          supplierIds: [],
+          materialsWithoutStorageUnit: []
         }
       ],
       suppliers: []
@@ -258,7 +259,8 @@ describe("Job release status action", () => {
               { makeMethodId: "mm-2", description: "Bracket" }
             ],
             outsideOperationsWithoutSupplier: [],
-            supplierIds: []
+            supplierIds: [],
+            materialsWithoutStorageUnit: []
           }
         ],
         suppliers: []
@@ -271,6 +273,38 @@ describe("Job release status action", () => {
     expect(updateJobStatus).not.toHaveBeenCalled();
     expect(runLocationSchedule).not.toHaveBeenCalled();
     expect(success).not.toHaveBeenCalled();
+  });
+
+  it("refuses release under strict backflush when a line has no storage unit", async () => {
+    vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+      data: {
+        jobs: [
+          {
+            id: "job-1",
+            jobId: "J000001",
+            status: "Draft",
+            manufacturingBlocked: false,
+            missingAssemblies: [],
+            outsideOperationsWithoutSupplier: [],
+            supplierIds: [],
+            materialsWithoutStorageUnit: [
+              { id: "jm-1", description: "BOLT-10" }
+            ]
+          }
+        ],
+        suppliers: []
+      },
+      error: null
+    });
+
+    await expect(runRelease()).rejects.toBeInstanceOf(Response);
+
+    expect(error).toHaveBeenCalledWith(
+      null,
+      "Set a Pull From storage unit before releasing: BOLT-10"
+    );
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(runLocationSchedule).not.toHaveBeenCalled();
   });
 });
 

@@ -6,6 +6,11 @@
 // released as part of a batch is held to exactly the rules the job page applies.
 // Pure — no JSX/lingui — and unit-tested by apps/erp/test/job-release-logic.test.ts.
 
+import {
+  needsPullFrom,
+  summarizeList
+} from "@carbon/database/strict-backflush";
+
 export type ReleaseMaterial = {
   jobMaterialMakeMethodId: string | null;
   methodType: string | null;
@@ -97,6 +102,7 @@ export function jobReleaseProblems(job: {
     description: string;
     missing: "none" | "choose";
   }[];
+  materialsWithoutStorageUnit: { description: string }[];
 }): string[] {
   return [
     ...(job.manufacturingBlocked ? ["manufacturing is blocked"] : []),
@@ -113,6 +119,50 @@ export function jobReleaseProblems(job: {
       op.missing === "choose"
         ? `choose a supplier for ${op.description} on the job`
         : `${op.description} has no supplier`
-    )
+    ),
+    // Strict backflush: these lines' backflush would be refused.
+    ...(job.materialsWithoutStorageUnit.length > 0
+      ? [
+          `set a Pull From storage unit on ${summarizeList(
+            job.materialsWithoutStorageUnit.map((m) => m.description)
+          )}`
+        ]
+      : [])
   ];
+}
+
+export type StorageUnitLine = {
+  id: string;
+  description: string;
+  methodType: string | null;
+  itemType: string | null;
+  storageUnitId: string | null;
+  item: {
+    itemTrackingType: string | null;
+    readableIdWithRevision: string | null;
+  } | null;
+};
+
+// Strict backflush: the pulled, stocked lines with no storage unit to
+// backflush from, one entry per part — a part used on two lines needs the
+// same fix, so naming it twice only lengthens the message.
+export function materialsWithoutStorageUnit(
+  lines: StorageUnitLine[]
+): { id: string; description: string }[] {
+  const byDescription = new Map<string, { id: string; description: string }>();
+  for (const line of lines) {
+    if (line.storageUnitId) continue;
+    if (
+      !needsPullFrom({
+        methodType: line.methodType,
+        itemType: line.itemType,
+        itemTrackingType: line.item?.itemTrackingType ?? null
+      })
+    )
+      continue;
+    const description = line.item?.readableIdWithRevision || line.description;
+    if (!byDescription.has(description))
+      byDescription.set(description, { id: line.id, description });
+  }
+  return [...byDescription.values()];
 }

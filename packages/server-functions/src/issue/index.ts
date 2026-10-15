@@ -73,6 +73,12 @@ import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded
 } from "../lib/storage-units";
+import {
+  assertBinCovers,
+  binCoverProblem,
+  isStrictBackflush,
+  strictBackflushRefusal
+} from "../lib/strict-backflush";
 import reschedule from "../reschedule";
 import { ServerFnContext } from "../server-fn-context";
 import {
@@ -225,6 +231,9 @@ async function issueJobOperationMaterials(
     jobOperationId,
     companyId
   });
+  const strict = await isStrictBackflush(trx, companyId);
+  // Strict backflush: every material the bins cannot cover, refused together.
+  const strictProblems: string[] = [];
   const takenShared: SharedTakes = new Map();
   for await (const material of materialsToIssue) {
     // Cap the backflush at the material's remaining unissued requirement,
@@ -277,7 +286,33 @@ async function issueJobOperationMaterials(
       }
     }
 
-    if (remaining > 0) {
+    if (remaining > 0 && strict && itemIdIsTracked.get(material.itemId)) {
+      // Strict backflush: what no pick covered comes from the material's own
+      // storage unit only — no pick-method bin, no fullest bin — and a
+      // missing or short bin refuses the whole completion.
+      const problem = await binCoverProblem(trx, {
+        companyId,
+        itemId: material.itemId,
+        locationId: job.locationId,
+        storageUnitId: material.storageUnitId,
+        quantity: remaining,
+        plannedRows: itemLedgerInserts
+      });
+      if (problem) strictProblems.push(problem);
+      itemLedgerInserts.push({
+        entryType: "Consumption",
+        documentType: "Job Consumption",
+        documentId: jobId,
+        documentLineId: jobOperationId,
+        companyId,
+        itemId: material.itemId,
+        quantity: -remaining,
+        locationId: job.locationId,
+        storageUnitId: material.storageUnitId,
+        postingDate: today,
+        createdBy: userId
+      });
+    } else if (remaining > 0) {
       let proposedStorageUnitId = material.storageUnitId;
 
       if (!proposedStorageUnitId) {
@@ -366,6 +401,10 @@ async function issueJobOperationMaterials(
       .where("companyId", "=", companyId)
       .execute();
   }
+
+  // Nothing above is committed until the transaction ends, so throwing here
+  // rolls back every row this call wrote.
+  if (strictProblems.length > 0) throw strictBackflushRefusal(strictProblems);
 
   // Total material cost this call relieved from inventory into WIP — the
   // jobOperationScrap case posts its WIP→scrap journal from this figure so a
@@ -901,6 +940,9 @@ const logger = getLogger("server-functions", "issue");
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 
+// Thrown at the end of a dry-run transaction so Kysely rolls every write back.
+class DryRunRollback extends Error {}
+
 /** Each `type` adds its own fields (`newTrackedEntityId`, `readableId`, …). */
 export type IssueResult = { success: boolean; message?: string } & Record<
   string,
@@ -922,7 +964,11 @@ export const issueInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("jobOperation"),
     quantity: z.number(),
-    id: z.string()
+    id: z.string(),
+    // Strict backflush: run the issue and roll it back, so a caller that
+    // records the production quantity first can refuse before it writes
+    // anything. A no-op when strict backflush is off.
+    dryRun: z.boolean().optional()
   }),
   z.object({
     type: z.literal("jobOperationBatchComplete"),
@@ -2021,25 +2067,32 @@ const issue = defineServerFn({
 
     switch (validatedPayload.type) {
       case "jobOperation": {
-        const { id, companyId, quantity, userId } = validatedPayload;
+        const { id, companyId, quantity, userId, dryRun } = validatedPayload;
+
+        if (dryRun && !(await isStrictBackflush(db, companyId))) break;
 
         const { accountDefaults, dimensionMap } =
           await loadConsumeAccountingContext(db, companyId);
 
-        await db.transaction().execute(async (trx) => {
-          // Provisional before the company's accounting cutover, Posted after it.
-          const postingStatus = await journalPostingStatus(trx, companyId);
-          await issueJobOperationMaterials(trx, {
-            jobOperationId: id,
-            quantity,
-            companyId,
-            userId,
-            postingStatus,
-            accountDefaults,
-            dimensionMap,
-            db
+        try {
+          await db.transaction().execute(async (trx) => {
+            // Provisional before the company's accounting cutover, Posted after it.
+            const postingStatus = await journalPostingStatus(trx, companyId);
+            await issueJobOperationMaterials(trx, {
+              jobOperationId: id,
+              quantity,
+              companyId,
+              userId,
+              postingStatus,
+              accountDefaults,
+              dimensionMap,
+              db
+            });
+            if (dryRun) throw new DryRunRollback();
           });
-        });
+        } catch (err) {
+          if (!(err instanceof DryRunRollback)) throw err;
+        }
 
         break;
       }
@@ -3022,6 +3075,24 @@ const issue = defineServerFn({
                 }
               }
               if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
+                // Strict backflush: a consuming issue takes what no pick
+                // covered from the material's own storage unit only. A return
+                // keeps the bin chosen above.
+                if (
+                  adjustmentType !== "Positive Adjmt." &&
+                  remaining > 0 &&
+                  (await isStrictBackflush(trx, companyId))
+                ) {
+                  storageUnitId = material.storageUnitId;
+                  await assertBinCovers(trx, {
+                    companyId,
+                    itemId: material.itemId,
+                    locationId: job?.locationId!,
+                    storageUnitId,
+                    quantity: remaining,
+                    plannedRows: itemLedgerInserts
+                  });
+                }
                 itemLedgerInserts.push({
                   entryType: "Consumption",
                   documentType: "Job Consumption",

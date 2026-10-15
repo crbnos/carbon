@@ -60,6 +60,10 @@ msgstr "(mapeado para mais de uma conta Carbon)"
 msgid "(not an Equity posting account)"
 msgstr "(não é uma conta de contabilização de Patrimônio líquido)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# método ativo possui materiais sem unidade de armazenamento de origem} other {# métodos ativos possuem materiais sem unidade de armazenamento de origem}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# registro bloqueador} other {# registros bloqueadores}}"
@@ -1107,6 +1111,9 @@ msgstr "Um material é um item físico usado para fabricar uma peça que pode se
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Um instrumento de medição (paquímetro, micrômetro, medidor de pino, CMM) rastreado como um registro e mantido em um cronograma de calibração recorrente."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Uma versão do método precisa de uma unidade de armazenamento de origem em cada material obtido antes de poder ser ativada."
+
 msgid "A name is required to save a view"
 msgstr "Um nome é necessário para salvar uma visualização"
 
@@ -1427,6 +1434,9 @@ msgstr "O status da remessa muda"
 
 msgid "A shipment's tracking number changes"
 msgstr "O número de rastreamento de uma remessa muda"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Uma unidade de armazenamento com estoque insuficiente volta para outra unidade de armazenamento com estoque."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Um ativo de curto prazo não pode estender-se além de 12 meses a partir do início. Termine-o e insira a extensão como um novo arrendamento."
@@ -3821,6 +3831,9 @@ msgstr "Voltar para rastreabilidade"
 
 msgid "Backflush"
 msgstr "Baixa automática"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Realizar a baixa automática de cada material apenas da unidade de armazenamento na sua linha de material, e parar a operação ou ordem de produção quando essa unidade de armazenamento não tiver estoque suficiente."
 
 msgid "Background"
 msgstr "Fundo"
@@ -13447,6 +13460,9 @@ msgstr "Operações Ausentes"
 msgid "Missing Shipping Costs"
 msgstr "Fretes ausentes"
 
+msgid "Missing Storage Units"
+msgstr "Unidades de Armazenamento Ausentes"
+
 msgid "Missing Suppliers"
 msgstr "Fornecedores Ausentes"
 
@@ -20239,6 +20255,10 @@ msgstr "Sessão bloqueada"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Defina um cliente nesta devolução para adicionar de uma remessa."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "definir uma unidade de armazenamento de origem em {0}"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Defina um fornecedor nesta devolução para adicionar de um recebimento."
 
@@ -21295,6 +21315,18 @@ msgstr "Amortização linear de ativos de direito de uso de arrendamento finance
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Custo de aluguel linear de aluguéis operacionais e pagamentos de aluguéis de curto prazo"
+
+msgid "Strict Backflush"
+msgstr "Baixa Automática Rigorosa"
+
+msgid "Strict backflush is off"
+msgstr "A baixa automática rigorosa está desativada"
+
+msgid "Strict backflush is on"
+msgstr "A baixa automática rigorosa está ativada"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "A baixa automática rigorosa está ativada. Defina uma unidade de armazenamento de origem para esses materiais antes de liberar:"
 
 msgid "Stripe"
 msgstr "Stripe"

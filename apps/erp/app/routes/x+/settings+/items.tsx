@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Hidden, Select, Submit, ValidatedForm, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -21,24 +22,29 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { Link, useFetcher, useLoaderData } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { plmReleaseControl } from "~/modules/items";
 import {
+  getActiveMethodsMissingPullFrom,
   getCompanySettings,
   plmReleaseControlValidator,
   updateAllowLowercaseItemIdsSetting,
   updateBomExplorerReadableIdSetting,
   updateMaterialGeneratedIdsSetting,
   updateMetricSettings,
-  updatePlmReleaseControlSetting
+  updatePlmReleaseControlSetting,
+  updateRequireBackflushStorageUnitSetting
 } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-items");
 
 export const handle: Handle = {
   breadcrumb: msg`Items`,
@@ -59,7 +65,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return { companySettings: companySettings.data };
+
+  // Strict backflush leaves Active methods as they are; the card lists the
+  // ones with a gap so they can be fixed.
+  let methodsMissingPullFrom: Awaited<
+    ReturnType<typeof getActiveMethodsMissingPullFrom>
+  >["data"] = null;
+  if (companySettings.data.requireBackflushStorageUnit) {
+    const missing = await getActiveMethodsMissingPullFrom(
+      getDatabaseClient(),
+      companyId
+    );
+    if (missing.error) {
+      logger.error("Failed to read methods missing a Pull From", {
+        companyId,
+        error: missing.error
+      });
+    }
+    methodsMissingPullFrom = missing.data;
+  }
+
+  return { companySettings: companySettings.data, methodsMissingPullFrom };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -102,6 +128,17 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: true, message: "Item ID casing setting updated" };
     }
 
+    case "requireBackflushStorageUnit": {
+      const result = await updateRequireBackflushStorageUnitSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error)
+        return { success: false, message: result.error.message };
+      return { success: true, message: "Strict backflush setting updated" };
+    }
+
     case "bomExplorerReadableId": {
       const result = await updateBomExplorerReadableIdSetting(
         client,
@@ -137,7 +174,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function ItemsSettingsRoute() {
   const { t } = useLingui();
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, methodsMissingPullFrom } =
+    useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
 
   const releaseControlLabels: Record<
@@ -185,6 +223,16 @@ export default function ItemsSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "allowLowercaseItemIds", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleStrictBackflushToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "requireBackflushStorageUnit", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -342,6 +390,84 @@ export default function ItemsSettingsRoute() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Strict Backflush</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Backflush each material only from the storage unit on its
+                material line, and stop the operation or job when that storage
+                unit does not have enough stock.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VStack spacing={4}>
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {companySettings.requireBackflushStorageUnit ? (
+                      <Trans>Strict backflush is on</Trans>
+                    ) : (
+                      <Trans>Strict backflush is off</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {companySettings.requireBackflushStorageUnit ? (
+                      <Trans>
+                        A method version needs a Pull From storage unit on each
+                        pulled material before it can be made active.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        A short storage unit falls back to another storage unit
+                        with stock.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={companySettings.requireBackflushStorageUnit ?? false}
+                  onCheckedChange={handleStrictBackflushToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+              {methodsMissingPullFrom && methodsMissingPullFrom.count > 0 && (
+                <VStack className="items-start w-full" spacing={1}>
+                  <span className="text-sm font-medium">
+                    <Plural
+                      value={methodsMissingPullFrom.count}
+                      one="# active method has materials with no Pull From"
+                      other="# active methods have materials with no Pull From"
+                    />
+                  </span>
+                  <ul className="text-sm list-disc pl-4 space-y-1">
+                    {methodsMissingPullFrom.methods.map((method) => {
+                      const to = makeMethodPath(method);
+                      return (
+                        <li key={method.makeMethodId}>
+                          {to ? (
+                            <Link
+                              to={to}
+                              className="underline-offset-2 hover:underline"
+                            >
+                              {method.readableId}
+                            </Link>
+                          ) : (
+                            method.readableId
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </VStack>
+              )}
+            </VStack>
+          </CardContent>
+        </Card>
+
         <SettingsSectionHeader>
           <Trans>Units</Trans>
         </SettingsSectionHeader>
@@ -432,4 +558,21 @@ export default function ItemsSettingsRoute() {
       </SettingsPage>
     </ScrollArea>
   );
+}
+
+function makeMethodPath(method: {
+  itemId: string;
+  itemType: string;
+  makeMethodId: string;
+}): string | null {
+  switch (method.itemType) {
+    case "Part":
+      return path.to.partMake(method.itemId, method.makeMethodId);
+    case "Tool":
+      return path.to.toolMake(method.itemId, method.makeMethodId);
+    case "Service":
+      return path.to.serviceMake(method.itemId, method.makeMethodId);
+    default:
+      return null;
+  }
 }

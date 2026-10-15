@@ -6,6 +6,12 @@ import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  getPullFromLocations,
+  missingPullFromLocations,
+  needsPullFrom,
+  PULLED_ITEM_TYPES
+} from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
   DocumentSectionPlacement,
@@ -1216,6 +1222,112 @@ export async function updateBomExplorerReadableIdSetting(
     .from("companySettings")
     .update(sanitize({ showBomExplorerReadableId }))
     .eq("id", companyId);
+}
+
+/** @mcp update */
+export async function updateRequireBackflushStorageUnitSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireBackflushStorageUnit: boolean
+) {
+  return client
+    .from("companySettings")
+    .update({ requireBackflushStorageUnit })
+    .eq("id", companyId);
+}
+
+const MISSING_PULL_FROM_SHOWN = 10;
+
+// Strict backflush: the Active make methods with a pulled, stocked line that
+// has no Pull From at a location with an active work center. Turning the
+// setting on leaves these methods Active; the settings card lists them.
+// Kysely, not PostgREST: a company's Active BoM lines can pass the 1000-row cap.
+export async function getActiveMethodsMissingPullFrom(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{
+  data: {
+    count: number;
+    methods: {
+      makeMethodId: string;
+      itemId: string;
+      itemType: string;
+      readableId: string;
+    }[];
+  } | null;
+  error: Error | null;
+}> {
+  try {
+    const [lines, locations] = await Promise.all([
+      db
+        .selectFrom("methodMaterial")
+        .innerJoin("makeMethod", (join) =>
+          join
+            .onRef("makeMethod.id", "=", "methodMaterial.makeMethodId")
+            .on("makeMethod.companyId", "=", companyId)
+            .on("makeMethod.status", "=", "Active")
+        )
+        .innerJoin("item as component", "component.id", "methodMaterial.itemId")
+        .innerJoin("item as parent", "parent.id", "makeMethod.itemId")
+        .where("methodMaterial.companyId", "=", companyId)
+        .where("methodMaterial.methodType", "!=", "Make to Order")
+        .where("methodMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
+        .select([
+          "makeMethod.id as makeMethodId",
+          "parent.id as itemId",
+          "parent.type as itemType",
+          "parent.readableIdWithRevision as readableId",
+          "methodMaterial.methodType",
+          "methodMaterial.itemType as lineItemType",
+          "methodMaterial.storageUnitIds",
+          "component.itemTrackingType"
+        ])
+        .execute(),
+      getPullFromLocations(db, companyId)
+    ]);
+
+    const locationIds = locations.map((location) => location.id);
+    const methods = new Map<
+      string,
+      {
+        makeMethodId: string;
+        itemId: string;
+        itemType: string;
+        readableId: string;
+      }
+    >();
+    for (const line of lines) {
+      if (methods.has(line.makeMethodId)) continue;
+      if (
+        !needsPullFrom({
+          methodType: line.methodType,
+          itemType: line.lineItemType,
+          itemTrackingType: line.itemTrackingType
+        })
+      )
+        continue;
+      if (missingPullFromLocations(line.storageUnitIds, locationIds).length > 0)
+        methods.set(line.makeMethodId, {
+          makeMethodId: line.makeMethodId,
+          itemId: line.itemId,
+          itemType: line.itemType,
+          readableId: line.readableId ?? line.itemId
+        });
+    }
+
+    const sorted = [...methods.values()].sort((a, b) =>
+      a.readableId.localeCompare(b.readableId)
+    );
+    return {
+      data: {
+        count: sorted.length,
+        methods: sorted.slice(0, MISSING_PULL_FROM_SHOWN)
+      },
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
 }
 
 /** @mcp update */

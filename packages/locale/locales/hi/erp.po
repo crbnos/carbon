@@ -60,6 +60,10 @@ msgstr "(एक से अधिक Carbon खातों में मैप �
 msgid "(not an Equity posting account)"
 msgstr "(इक्विटी पोस्टिंग खाता नहीं है)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# सक्रिय विधि में खींचने की भंडारण इकाई के बिना सामग्री है} other {# सक्रिय विधियों में खींचने की भंडारण इकाई के बिना सामग्री है}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# अवरोधक रिकॉर्ड} other {# अवरोधक रिकॉर्डें}}"
@@ -1107,6 +1111,9 @@ msgstr "एक सामग्री एक भौतिक आइटम है 
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "एक माप उपकरण (कैलिपर, माइक्रोमीटर, पिन गेज, CMM) जिसे एक रिकॉर्ड के रूप में ट्रैक किया जाता है और एक आवर्ती अंशांकन शेड्यूल का पालन किया जाता है।"
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "एक विधि संस्करण को सक्रिय बनाने से पहले प्रत्येक खींची गई सामग्री पर एक खींचने की भंडारण इकाई की आवश्यकता होती है।"
+
 msgid "A name is required to save a view"
 msgstr "एक दृश्य को सहेजने के लिए एक नाम आवश्यक है"
 
@@ -1427,6 +1434,9 @@ msgstr "किसी शिपमेंट की स्थिति में �
 
 msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "एक अपर्याप्त भंडारण इकाई दूसरी भंडारण इकाई पर वापस आती है जिसमें स्टॉक है।"
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "एक अल्पकालिक संपत्ति शुरुआत से 12 महीने के बाद नहीं चल सकती। इसे समाप्त करें और विस्तार को एक नई पट्टा के रूप में दर्ज करें।"
@@ -3821,6 +3831,9 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
 msgid "Backflush"
 msgstr "बैकफ्लश"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "प्रत्येक सामग्री को केवल इसकी सामग्री पंक्ति पर भंडारण इकाई से बैकफ्लश करें, और जब वह भंडारण इकाई में पर्याप्त स्टॉक नहीं है तो ऑपरेशन या जॉब को रोकें।"
 
 msgid "Background"
 msgstr "पृष्ठभूमि"
@@ -13447,6 +13460,9 @@ msgstr "ऑपरेशन गायब हैं"
 msgid "Missing Shipping Costs"
 msgstr "शिपिंग लागत अनुपलब्ध"
 
+msgid "Missing Storage Units"
+msgstr "लापता भंडारण इकाइयाँ"
+
 msgid "Missing Suppliers"
 msgstr "आपूर्तिकर्ता गायब हैं"
 
@@ -20239,6 +20255,10 @@ msgstr "सत्र लॉक किया गया"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "शिपमेंट से जोड़ने के लिए इस वापसी पर एक ग्राहक सेट करें।"
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "खींचने की भंडारण इकाई को {0} पर सेट करें"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "प्राप्ति से जोड़ने के लिए इस रिटर्न पर एक आपूर्तिकर्ता सेट करें।"
 
@@ -21295,6 +21315,18 @@ msgstr "वित्त पट्टा उपयोग के अधिका�
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "परिचालन पट्टा की सरल-रेखा पट्टा लागत, और अल्पकालिक पट्टा का भुगतान"
+
+msgid "Strict Backflush"
+msgstr "सख्त बैकफ्लश"
+
+msgid "Strict backflush is off"
+msgstr "सख्त बैकफ्लश बंद है"
+
+msgid "Strict backflush is on"
+msgstr "सख्त बैकफ्लश चालू है"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "सख्त बैकफ्लश चालू है। इन सामग्रियों पर खींचने की भंडारण इकाई सेट करें रिलीज़ करने से पहले:"
 
 msgid "Stripe"
 msgstr "Stripe"

@@ -60,6 +60,10 @@ msgstr "(associato a più di un account Carbon)"
 msgid "(not an Equity posting account)"
 msgstr "(non un account di registrazione Patrimonio netto)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# Metodo Attivo ha Materiali senza Prelevamento da} other {# Metodi Attivi hanno Materiali senza Prelevamento da}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# record bloccante} other {# record bloccanti}}"
@@ -1107,6 +1111,9 @@ msgstr "Un materiale è un articolo fisico utilizzato per realizzare un componen
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Uno strumento di misura (calibro, micrometro, calibro di spessore, CMM) tracciato come un record e sottoposto a un programma di taratura ricorrente."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Una versione di Metodo richiede un'Unità di stoccaggio di Prelevamento da su ogni materiale prima che possa essere resa Attiva."
+
 msgid "A name is required to save a view"
 msgstr "Un nome è obbligatorio per salvare una vista"
 
@@ -1427,6 +1434,9 @@ msgstr "Lo stato della spedizione cambia"
 
 msgid "A shipment's tracking number changes"
 msgstr "Il numero di tracciamento di una spedizione cambia"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Un'Unità di stoccaggio insufficiente ricorre a un'altra Unità di stoccaggio con Giacenza."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Una locazione a breve termine non può durare più di 12 mesi dalla data di inizio. Terminarla e inserire l'estensione come una nuova locazione."
@@ -3821,6 +3831,9 @@ msgstr "Torna alla tracciabilità"
 
 msgid "Backflush"
 msgstr "Backflush"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Consuma con Backflush ogni materiale solo dall'Unità di stoccaggio sulla sua riga e arresta l'Operazione o l'Ordine di produzione quando quell'Unità di stoccaggio non ha Giacenza sufficiente."
 
 msgid "Background"
 msgstr "Sfondo"
@@ -13447,6 +13460,9 @@ msgstr "Operazioni Mancanti"
 msgid "Missing Shipping Costs"
 msgstr "Spese di spedizione mancanti"
 
+msgid "Missing Storage Units"
+msgstr "Unità di stoccaggio mancanti"
+
 msgid "Missing Suppliers"
 msgstr "Fornitori Mancanti"
 
@@ -20239,6 +20255,10 @@ msgstr "Sessione bloccata"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Imposta un cliente su questo reso per aggiungere da una spedizione."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "Imposta un'Unità di stoccaggio di Prelevamento da su {0}"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Imposta un fornitore su questo reso per aggiungere da un'entrata merci."
 
@@ -21295,6 +21315,18 @@ msgstr "Ammortamento a quote costanti dei cespiti di diritto d'uso del lease fin
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Costo del lease a quote costanti dei lease operativi e i pagamenti dei lease a breve termine"
+
+msgid "Strict Backflush"
+msgstr "Backflush rigoroso"
+
+msgid "Strict backflush is off"
+msgstr "Backflush rigoroso disattivato"
+
+msgid "Strict backflush is on"
+msgstr "Backflush rigoroso attivato"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Backflush rigoroso è attivato. Imposta un'Unità di stoccaggio di Prelevamento da su questi materiali prima di rilasciare:"
 
 msgid "Stripe"
 msgstr "Stripe"

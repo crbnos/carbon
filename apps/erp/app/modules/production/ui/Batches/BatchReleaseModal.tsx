@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { summarizeList } from "@carbon/database/strict-backflush";
 import {
   Alert,
   AlertDescription,
@@ -73,7 +74,8 @@ export function BatchReleaseModal({
     (job) =>
       job.manufacturingBlocked ||
       job.missingAssemblies.length > 0 ||
-      job.outsideOperationsWithoutSupplier.length > 0
+      job.outsideOperationsWithoutSupplier.length > 0 ||
+      job.materialsWithoutStorageUnit.length > 0
   );
   const jobIds = (readiness?.jobs ?? []).map((job) => job.jobId);
   const canRelease = !!readiness && blocked.length === 0 && !isSubmitting;
@@ -136,7 +138,13 @@ export function BatchReleaseModal({
                               op.missing === "choose"
                                 ? t`choose a supplier for ${op.description} on the job`
                                 : t`${op.description} has no supplier`
-                            )
+                            ),
+                            job.materialsWithoutStorageUnit.length > 0 &&
+                              t`set a Pull From storage unit on ${summarizeList(
+                                job.materialsWithoutStorageUnit.map(
+                                  (m) => m.description
+                                )
+                              )}`
                           ]
                             .filter(Boolean)
                             .join("; ")}

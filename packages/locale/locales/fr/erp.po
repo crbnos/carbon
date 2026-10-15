@@ -60,6 +60,10 @@ msgstr "(Associé à plusieurs comptes Carbon)"
 msgid "(not an Equity posting account)"
 msgstr "(pas un compte de comptabilisation de capitaux propres)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# méthode active a des matières sans unité de prélèvement} other {# méthodes actives ont des matières sans unité de prélèvement}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# enregistrement bloquant} other {# enregistrements bloquants}}"
@@ -1107,6 +1111,9 @@ msgstr "Une matière est un article physique utilisé pour fabriquer une pièce 
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Un instrument de mesure (pied à coulisse, micromètre, pige, MMT) suivi en tant qu'enregistrement et soumis à un calendrier d'étalonnage récurrent."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Une version de méthode a besoin d'une unité de stockage de prélèvement pour chaque matière prélevée avant de pouvoir être rendue active."
+
 msgid "A name is required to save a view"
 msgstr "Un nom est requis pour enregistrer une vue"
 
@@ -1427,6 +1434,9 @@ msgstr "Le statut d'une expédition change"
 
 msgid "A shipment's tracking number changes"
 msgstr "Le numéro de suivi d'une expédition change"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Une unité de stockage insuffisante bascule vers une autre unité de stockage ayant du stock."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Une location à court terme ne peut pas s'étendre au-delà de 12 mois à compter de sa date de début. Mettez-la fin et saisissez l'extension en tant que nouvelle location."
@@ -3821,6 +3831,9 @@ msgstr "Retour à la traçabilité"
 
 msgid "Backflush"
 msgstr "Post-consommation"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Post-consommer chaque matière uniquement depuis l'unité de stockage de sa ligne de matière, et arrêter l'opération ou l'ordre de fabrication quand cette unité de stockage n'a pas assez de stock."
 
 msgid "Background"
 msgstr "Arrière-plan"
@@ -13447,6 +13460,9 @@ msgstr "Opérations manquantes"
 msgid "Missing Shipping Costs"
 msgstr "Frais de port manquants"
 
+msgid "Missing Storage Units"
+msgstr "Unités de stockage manquantes"
+
 msgid "Missing Suppliers"
 msgstr "Fournisseurs manquants"
 
@@ -20239,6 +20255,10 @@ msgstr "Session verrouillée"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Définissez un client sur ce retour pour ajouter à partir d'une expédition."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "Définir une unité de stockage de prélèvement sur {0}"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Définir un fournisseur sur ce retour pour ajouter à partir d'une réception."
 
@@ -21295,6 +21315,18 @@ msgstr "Amortissement linéaire des droits d'utilisation pour baux de financemen
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Charge de bail linéaire des baux d'exploitation, et les paiements des baux à court terme"
+
+msgid "Strict Backflush"
+msgstr "Post-consommation stricte"
+
+msgid "Strict backflush is off"
+msgstr "Post-consommation stricte désactivée"
+
+msgid "Strict backflush is on"
+msgstr "Post-consommation stricte activée"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "La post-consommation stricte est activée. Définir une unité de stockage de prélèvement sur ces matières avant le lancement :"
 
 msgid "Stripe"
 msgstr "Stripe"

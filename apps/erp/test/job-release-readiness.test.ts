@@ -31,6 +31,7 @@ function cappedClient(tables: Record<string, Record<string, unknown>[]>) {
         rows = rows.filter((row) => values.includes(row[column] as string));
         return chain;
       };
+      chain.maybeSingle = async () => ({ data: rows[0] ?? null, error: null });
       chain.range = async (from: number, to: number) => ({
         data: rows.slice(from, Math.min(to + 1, from + ROW_CAP)),
         error: null
@@ -115,7 +116,8 @@ describe("getJobReleaseReadiness", () => {
           { makeMethodId: "sub-late", description: "Late Bracket" }
         ],
         outsideOperationsWithoutSupplier: [],
-        supplierIds: ["supplier-a"]
+        supplierIds: ["supplier-a"],
+        materialsWithoutStorageUnit: []
       }
     ]);
     expect(data?.suppliers).toEqual([
@@ -123,6 +125,71 @@ describe("getJobReleaseReadiness", () => {
         supplierId: "supplier-a",
         draftPurchaseOrders: [{ id: "po-1", purchaseOrderId: "PO000001" }]
       }
+    ]);
+  });
+
+  it("lists pulled, stocked lines with no storage unit under strict backflush", async () => {
+    const line = {
+      jobId: "job-1",
+      storageUnitId: null,
+      methodType: "Pull from Inventory",
+      itemType: "Part"
+    };
+    const { client } = cappedClient({
+      companySettings: [{ requireBackflushStorageUnit: true }],
+      job: [{ id: "job-1", jobId: "J000001", status: "Planned", item: null }],
+      jobMakeMethod: [{ id: "root", jobId: "job-1" }],
+      jobOperation: [
+        {
+          id: "op-1",
+          jobId: "job-1",
+          jobMakeMethodId: "root",
+          operationType: "Process",
+          operationSupplierProcessId: null,
+          processId: "machining",
+          description: "Machine"
+        }
+      ],
+      jobMaterial: [
+        {
+          ...line,
+          id: "jm-bolt",
+          description: "Bolt",
+          item: {
+            itemTrackingType: "Inventory",
+            readableIdWithRevision: "BOLT-10"
+          }
+        },
+        // Built in the job, not pulled.
+        {
+          ...line,
+          id: "jm-sub",
+          methodType: "Make to Order",
+          description: "Bracket",
+          item: { itemTrackingType: "Inventory", readableIdWithRevision: "B-1" }
+        },
+        // Holds no stock, so nothing is backflushed.
+        {
+          ...line,
+          id: "jm-labor",
+          description: "Paint",
+          item: {
+            itemTrackingType: "Non-Inventory",
+            readableIdWithRevision: "PAINT"
+          }
+        }
+      ]
+    });
+
+    const { data, error } = await getJobReleaseReadiness(
+      client,
+      ["job-1"],
+      "company-1"
+    );
+
+    expect(error).toBeNull();
+    expect(data?.jobs[0]?.materialsWithoutStorageUnit).toEqual([
+      { id: "jm-bolt", description: "BOLT-10" }
     ]);
   });
 

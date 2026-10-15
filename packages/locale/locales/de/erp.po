@@ -60,6 +60,10 @@ msgstr "(auf mehr als ein Carbon-Konto abgebildet)"
 msgid "(not an Equity posting account)"
 msgstr "(kein Eigenkapital-Buchungskonto)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# Aktive Methode hat Materialien ohne Entnahme-Lagereinheit} other {# Aktive Methoden haben Materialien ohne Entnahme-Lagereinheit}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# blockierter Datensatz} other {# blockierte Datensätze}}"
@@ -1107,6 +1111,9 @@ msgstr "Ein Werkstoff ist ein physischer Artikel, der zur Herstellung eines Teil
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Ein Prüfmittel (Schieblehre, Schraublehre, Rachenlehre, CMM), das als Datensatz erfasst und an einen wiederkehrenden Kalibrierplan gebunden ist."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Eine Methodenversion benötigt eine Entnahme-Lagereinheit bei jedem Material, bevor die Methode Aktiv werden kann."
+
 msgid "A name is required to save a view"
 msgstr "Ein Name ist erforderlich, um eine Ansicht zu speichern"
 
@@ -1427,6 +1434,9 @@ msgstr "Der Status einer Lieferung ändert sich"
 
 msgid "A shipment's tracking number changes"
 msgstr "Die Verfolgungsnummer einer Lieferung ändert sich"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Eine Lagereinheit mit unzureichendem Bestand weicht auf eine andere Lagereinheit mit Bestand aus."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Ein kurzfristiges Leasing kann 12 Monate ab Beginn nicht überschreiten. Beenden Sie es und geben Sie die Verlängerung als neues Leasing ein."
@@ -3821,6 +3831,9 @@ msgstr "Zurück zur Rückverfolgbarkeit"
 
 msgid "Backflush"
 msgstr "Retrograde Entnahme"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Retrograde Entnahme für jedes Material nur aus der Lagereinheit dieser Position durchführen und den Arbeitsgang oder Fertigungsauftrag stoppen, wenn die Lagereinheit nicht genug Bestand hat."
 
 msgid "Background"
 msgstr "Hintergrund"
@@ -13447,6 +13460,9 @@ msgstr "Fehlende Arbeitsgänge"
 msgid "Missing Shipping Costs"
 msgstr "Fehlende Versandkosten"
 
+msgid "Missing Storage Units"
+msgstr "Fehlende Lagereinheiten"
+
 msgid "Missing Suppliers"
 msgstr "Fehlende Lieferanten"
 
@@ -20239,6 +20255,10 @@ msgstr "Sitzung gesperrt"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Legen Sie einen Kunden für diese Rücksendung fest, um aus einer Lieferung hinzuzufügen."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "Entnahme-Lagereinheit für {0} festlegen"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Wählen Sie einen Lieferanten für diese Rückgabe aus, um Positionen von einem Wareneingang hinzuzufügen."
 
@@ -21295,6 +21315,18 @@ msgstr "Lineare Abschreibung von Finanzierungslease-Nutzungsrechts-Vermögenswer
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Lineare Leasingkosten von Betriebsleasings und Zahlungen von kurzfristigen Leasings"
+
+msgid "Strict Backflush"
+msgstr "Strikte Retrograde Entnahme"
+
+msgid "Strict backflush is off"
+msgstr "Strikte Retrograde Entnahme ist deaktiviert"
+
+msgid "Strict backflush is on"
+msgstr "Strikte Retrograde Entnahme ist aktiviert"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Strikte Retrograde Entnahme ist aktiviert. Legen Sie eine Entnahme-Lagereinheit für diese Materialien fest, bevor Sie freigeben:"
 
 msgid "Stripe"
 msgstr "Stripe"

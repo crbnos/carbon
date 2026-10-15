@@ -60,6 +60,10 @@ msgstr "(asignado a más de una cuenta de Carbon)"
 msgid "(not an Equity posting account)"
 msgstr "(no es una cuenta de Contabilización de Patrimonio)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# método activo tiene materiales sin Extraer de} other {# métodos activos tienen materiales sin Extraer de}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# registro bloqueante} other {# registros bloqueantes}}"
@@ -1107,6 +1111,9 @@ msgstr "Un material es un artículo físico utilizado para hacer una pieza que s
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Un instrumento de medición (calibrador, micrómetro, calibrador de pasadores, MMC) rastreado como un registro y sujeto a un cronograma de calibración recurrente."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Una versión del método necesita una unidad de almacenamiento de origen en cada material antes de que pueda activarse."
+
 msgid "A name is required to save a view"
 msgstr "Se requiere un nombre para guardar una vista"
 
@@ -1427,6 +1434,9 @@ msgstr "El estado de un envío cambia"
 
 msgid "A shipment's tracking number changes"
 msgstr "El número de seguimiento de un envío cambia"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Una unidad de almacenamiento con existencias insuficientes recurre a otra unidad de almacenamiento con existencias."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Un arrendamiento a corto plazo no puede extenderse más allá de 12 meses desde el comienzo. Finalícelo e ingrese la extensión como un nuevo arrendamiento."
@@ -3821,6 +3831,9 @@ msgstr "Volver a trazabilidad"
 
 msgid "Backflush"
 msgstr "Consumo retroactivo"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Realice el consumo retroactivo de cada material solo desde la unidad de almacenamiento en su línea de material y detenga la operación u orden de trabajo cuando esa unidad de almacenamiento no tenga suficientes existencias."
 
 msgid "Background"
 msgstr "Fondo"
@@ -13447,6 +13460,9 @@ msgstr "Operaciones Faltantes"
 msgid "Missing Shipping Costs"
 msgstr "Costos de envío faltantes"
 
+msgid "Missing Storage Units"
+msgstr "Unidades de almacenamiento faltantes"
+
 msgid "Missing Suppliers"
 msgstr "Proveedores Faltantes"
 
@@ -20239,6 +20255,10 @@ msgstr "Sesión bloqueada"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Establezca un cliente en esta devolución para agregar desde un envío."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "Configurar una unidad de almacenamiento de origen en {0}"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Establecer un proveedor en esta devolución para agregar desde una recepción."
 
@@ -21295,6 +21315,18 @@ msgstr "Amortización lineal de activos de derecho de uso de arrendamiento finan
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Costo de arrendamiento lineal de arrendamientos operativos y los pagos de arrendamientos a corto plazo"
+
+msgid "Strict Backflush"
+msgstr "Consumo retroactivo estricto"
+
+msgid "Strict backflush is off"
+msgstr "Consumo retroactivo estricto está desactivado"
+
+msgid "Strict backflush is on"
+msgstr "Consumo retroactivo estricto está activado"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Consumo retroactivo estricto está activado. Configure una unidad de almacenamiento de origen en estos materiales antes de liberar:"
 
 msgid "Stripe"
 msgstr "Stripe"

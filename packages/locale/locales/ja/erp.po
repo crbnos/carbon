@@ -60,6 +60,10 @@ msgstr "(複数のCarbonアカウントにマップされています)"
 msgid "(not an Equity posting account)"
 msgstr "(純資産転記勘定科目ではありません)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# 個の有効な製法に「抽出元」未設定の材料があります} other {# 個の有効な製法に「抽出元」未設定の材料があります}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# ブロック中のレコード} other {# ブロック中のレコード}}"
@@ -1107,6 +1111,9 @@ msgstr "材料は部品を製造するために使用される物理的品目で
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "キャリパー、マイクロメーター、ピンゲージ、CMM などの測定器で、レコードとして追跡され、定期的な校正スケジュールに従います。"
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "製法バージョンを有効にする前に、各抽出材料に抽出元保管ユニットを設定する必要があります。"
+
 msgid "A name is required to save a view"
 msgstr "ビューを保存するには名前が必要です"
 
@@ -1427,6 +1434,9 @@ msgstr "出荷のステータスが変更される"
 
 msgid "A shipment's tracking number changes"
 msgstr "出荷の追跡番号が変更される"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "在庫が不足している保管ユニットは、在庫がある別の保管ユニットにフォールバックします。"
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "短期資産はcommencement（開始日）から12ヶ月を超えて実行することはできません。終了してから、延長を新しいリースとして入力してください。"
@@ -3821,6 +3831,9 @@ msgstr "トレーサビリティに戻る"
 
 msgid "Backflush"
 msgstr "バックフラッシュ"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "各材料をその材料明細上の保管ユニットからのみバックフラッシュし、その保管ユニットに十分な在庫がない場合は工程または製造指図を停止します。"
 
 msgid "Background"
 msgstr "背景"
@@ -13447,6 +13460,9 @@ msgstr "工程が不足しています"
 msgid "Missing Shipping Costs"
 msgstr "送料が不足しています"
 
+msgid "Missing Storage Units"
+msgstr "保管ユニット未設定"
+
 msgid "Missing Suppliers"
 msgstr "仕入先が不足しています"
 
@@ -20239,6 +20255,10 @@ msgstr "セッションがロック中"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "出荷から追加するにはこのリターンに得意先を設定してください。"
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "{0} に抽出元保管ユニットを設定する"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "この返品に仕入先を設定して入荷から追加"
 
@@ -21295,6 +21315,18 @@ msgstr "ファイナンスリース使用権資産の定額償却"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "運用リースの定額リース費用および短期リースの支払"
+
+msgid "Strict Backflush"
+msgstr "厳密なバックフラッシュ"
+
+msgid "Strict backflush is off"
+msgstr "厳密なバックフラッシュは無効です"
+
+msgid "Strict backflush is on"
+msgstr "厳密なバックフラッシュは有効です"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "厳密なバックフラッシュが有効です。これらの材料をリリースする前に抽出元保管ユニットを設定してください："
 
 msgid "Stripe"
 msgstr "Stripe"

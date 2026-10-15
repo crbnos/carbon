@@ -60,6 +60,10 @@ msgstr "(zmapowane na więcej niż jedno konto Carbon)"
 msgid "(not an Equity posting account)"
 msgstr "(nie jest kontem Kapitału własnego do księgowania)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# aktywna metoda ma materiały bez magazynu pobrania} other {# aktywne metody mają materiały bez magazynu pobrania}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# rekord blokujący} other {# rekordy blokujące}}"
@@ -1107,6 +1111,9 @@ msgstr "Materiał to przedmiot fizyczny używany do wykonania części, który m
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Przyrząd pomiarowy (suwmiarka, mikrometr, czop wzorcujący, CMM) śledzony jako rekord i poddawany cyklicznym okresom wzorcowania."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Wersja metody wymaga ustawienia jednostki magazynowej do poboru dla każdego materiału do pobrania, zanim będzie można ją ustawić jako Aktywną."
+
 msgid "A name is required to save a view"
 msgstr "Nazwa jest wymagana, aby zapisać widok"
 
@@ -1427,6 +1434,9 @@ msgstr "Status wysyłki zmienia się"
 
 msgid "A shipment's tracking number changes"
 msgstr "Zmiana numeru śledzenia wysyłki"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Jednostka magazynowa z niewystarczającym zapasem przechodzi na inną jednostkę magazynową."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Zasób krótkoterminowy nie może trwać dłużej niż 12 miesięcy od daty rozpoczęcia. Zakończ go i wprowadź przedłużenie jako nową umowę najmu."
@@ -3821,6 +3831,9 @@ msgstr "Powrót do identyfikowalności"
 
 msgid "Backflush"
 msgstr "Pobranie wsteczne"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Pobieranie wsteczne każdego materiału wyłącznie z jednostki magazynowej na jego pozycji materiału oraz zatrzymanie operacji lub zlecenia produkcyjnego, gdy ta jednostka magazynowa nie ma wystarczającego zapasu."
 
 msgid "Background"
 msgstr "Tło"
@@ -13447,6 +13460,9 @@ msgstr "Brakujące operacje"
 msgid "Missing Shipping Costs"
 msgstr "Brakujące koszty wysyłki"
 
+msgid "Missing Storage Units"
+msgstr "Brakujące jednostki magazynowe"
+
 msgid "Missing Suppliers"
 msgstr "Brakujący dostawcy"
 
@@ -20239,6 +20255,10 @@ msgstr "Sesja zablokowana"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Ustaw klienta na tym zwrocie, aby dodać z wysyłki."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "ustaw jednostkę magazynową do poboru dla {0}"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Ustaw dostawcę w tym zwrocie, aby dodać z przyjęcia."
 
@@ -21295,6 +21315,18 @@ msgstr "Amortyzacja równomierna prawa do użytkowania środka trwałego w leasi
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Koszt leasingu równomierna leasingów operacyjnych i płatności leasingów krótkoterminowych"
+
+msgid "Strict Backflush"
+msgstr "Ścisłe pobranie wsteczne"
+
+msgid "Strict backflush is off"
+msgstr "Ścisłe pobranie wsteczne jest wyłączone"
+
+msgid "Strict backflush is on"
+msgstr "Ścisłe pobranie wsteczne jest włączone"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Pobranie wsteczne ze ścisłą kontrolą jest włączone. Ustaw jednostkę magazynową do poboru na tych materiałach przed wydaniem:"
 
 msgid "Stripe"
 msgstr "Stripe"

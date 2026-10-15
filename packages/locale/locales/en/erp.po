@@ -60,6 +60,10 @@ msgstr "(mapped to more than one Carbon account)"
 msgid "(not an Equity posting account)"
 msgstr "(not an Equity posting account)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# blocking record} other {# blocking records}}"
@@ -1107,6 +1111,9 @@ msgstr "A material is a physical item used to make a part that can be used acros
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+
 msgid "A name is required to save a view"
 msgstr "A name is required to save a view"
 
@@ -1427,6 +1434,9 @@ msgstr "A shipment's status changes"
 
 msgid "A shipment's tracking number changes"
 msgstr "A shipment's tracking number changes"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "A short storage unit falls back to another storage unit with stock."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
@@ -3821,6 +3831,9 @@ msgstr "Back to traceability"
 
 msgid "Backflush"
 msgstr "Backflush"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
 
 msgid "Background"
 msgstr "Background"
@@ -13447,6 +13460,9 @@ msgstr "Missing Operations"
 msgid "Missing Shipping Costs"
 msgstr "Missing Shipping Costs"
 
+msgid "Missing Storage Units"
+msgstr "Missing Storage Units"
+
 msgid "Missing Suppliers"
 msgstr "Missing Suppliers"
 
@@ -20239,6 +20255,10 @@ msgstr "Session locked"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Set a customer on this return to add from a shipment."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "set a Pull From storage unit on {0}"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Set a supplier on this return to add from a receipt."
 
@@ -21295,6 +21315,18 @@ msgstr "Straight-line amortization of finance lease right-of-use assets"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Straight-line lease cost of operating leases, and the payments of short-term leases"
+
+msgid "Strict Backflush"
+msgstr "Strict Backflush"
+
+msgid "Strict backflush is off"
+msgstr "Strict backflush is off"
+
+msgid "Strict backflush is on"
+msgstr "Strict backflush is on"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
 
 msgid "Stripe"
 msgstr "Stripe"

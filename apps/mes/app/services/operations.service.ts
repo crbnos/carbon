@@ -1551,13 +1551,15 @@ export async function backflushUntrackedMaterialsOnStepRecord(
         quantity: delta,
         adjustmentType: "Negative Adjmt."
       });
-    if (issued.error) failures.push(material.itemId);
+    // The server's refusal (strict backflush names the part and the storage
+    // unit) says more than the bare item id.
+    if (issued.error) failures.push(issued.error.message || material.itemId);
   }
 
   return {
     error: failures.length
       ? new Error(
-          `Backflush failed for ${failures.length} material(s): ${failures.join(", ")}`
+          `Backflush failed for ${failures.length} material(s): ${failures.join("; ")}`
         )
       : null
   };

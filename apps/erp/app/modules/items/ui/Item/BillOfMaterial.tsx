@@ -5,6 +5,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { needsPullFrom } from "@carbon/database/strict-backflush";
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -86,6 +87,7 @@ import {
 } from "~/components/SortableList";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import type {
   MethodItemType,
   MethodType,
@@ -256,13 +258,30 @@ const BillOfMaterial = ({
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
   );
 
+  // Strict backflush: mark collapsed rows with no Pull From at the user's
+  // location — the same test as the open line's "No storage unit" badge.
+  const companySettings = useCompanySettings();
+  const { defaults } = useUser();
+  const missingPullFrom = (material: Material) =>
+    companySettings?.requireBackflushStorageUnit === true &&
+    !!defaults.locationId &&
+    needsPullFrom({
+      methodType: material.methodType,
+      itemType: material.itemType,
+      itemTrackingType: material.item?.itemTrackingType ?? null
+    }) &&
+    !(material.storageUnitIds as Record<string, string> | null)?.[
+      defaults.locationId
+    ];
+
   const materials = makeItems(
     items,
     Array.from(materialsById.values()),
     orderState,
     checkedState,
     rulesByField,
-    replenishmentSystem
+    replenishmentSystem,
+    missingPullFrom
   ).sort((a, b) => a.data.order - b.data.order);
 
   const onToggleItem = (id: string) => {
@@ -697,6 +716,17 @@ function MaterialForm({
       item.data.item?.replenishmentSystem ?? replenishmentSystem ?? "Buy"
   });
 
+  // Strict backflush: a pulled, stocked line must name the storage unit it is
+  // backflushed from before its method version can be made active.
+  const companySettings = useCompanySettings();
+  const requiresPullFrom =
+    companySettings?.requireBackflushStorageUnit === true &&
+    needsPullFrom({
+      methodType: itemData.methodType,
+      itemType,
+      itemTrackingType: item.data.item?.itemTrackingType ?? null
+    });
+
   // methodType/sourcingType are read-only mirrors of the component item
   // (see method-material-sourcing rule). Re-sync them when the loader row
   // changes — e.g. after the properties panel updates the default method type —
@@ -980,15 +1010,22 @@ function MaterialForm({
                   : ""
               )}
             />
-            <Badge variant="secondary">
-              <LuGitPullRequest className="size-3 mr-1" />
-              {storageUnits.options?.find(
-                (s) => s.value === itemData.storageUnitIds[locationId ?? ""]
-              )?.label ??
-                (itemData.methodType === "Make to Order"
-                  ? "WIP"
-                  : "Default Storage Unit")}
-            </Badge>
+            {requiresPullFrom && !itemData.storageUnitIds[locationId ?? ""] ? (
+              <Badge variant="red">
+                <LuGitPullRequest className="size-3 mr-1" />
+                <Trans>No storage unit</Trans>
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <LuGitPullRequest className="size-3 mr-1" />
+                {storageUnits.options?.find(
+                  (s) => s.value === itemData.storageUnitIds[locationId ?? ""]
+                )?.label ??
+                  (itemData.methodType === "Make to Order"
+                    ? "WIP"
+                    : "Default Storage Unit")}
+              </Badge>
+            )}
             <IconButton
               icon={<LuChevronRight />}
               aria-label={
@@ -1058,7 +1095,7 @@ function MaterialForm({
                 }
               }));
             }}
-            isOptional
+            isOptional={!requiresPullFrom}
           />
         </div>
       </div>
@@ -1221,7 +1258,8 @@ function makeItems(
   orderState: OrderState,
   checkedState: CheckedState,
   rulesByField?: Map<string, ConfigurationRule>,
-  replenishmentSystem?: string
+  replenishmentSystem?: string,
+  missingPullFrom?: (material: Material) => boolean
 ): ItemWithData[] {
   return materials.map((material) => {
     const order = material.id
@@ -1234,7 +1272,8 @@ function makeItems(
       order,
       checked,
       rulesByField,
-      replenishmentSystem
+      replenishmentSystem,
+      missingPullFrom?.(material) ?? false
     );
   });
 }
@@ -1256,7 +1295,8 @@ function makeItem(
   order: number,
   checked: boolean,
   rulesByField?: Map<string, ConfigurationRule>,
-  replenishmentSystem?: string
+  replenishmentSystem?: string,
+  missingPullFrom = false
 ): ItemWithData {
   const hasRules = material.id
     ? materialHasRules(material.id, rulesByField)
@@ -1274,6 +1314,7 @@ function makeItem(
           items.find((i) => i.id === material.itemId)?.supersessionMode
         }
         hasRules={hasRules}
+        missingPullFrom={missingPullFrom}
       />
     ),
     checked,

@@ -125,6 +125,7 @@ import type {
 } from "./types";
 import {
   makeMethodsMissingOperations,
+  materialsWithoutStorageUnit,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
@@ -1939,7 +1940,7 @@ export async function getJobMaterialsByMethodId(
   const result = await client
     .from("jobMaterial")
     .select(
-      "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId, quantity)"
+      "*, item(replenishmentSystem, itemTrackingType), jobMaterialStep(jobOperationStepId, quantity)"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -1947,7 +1948,7 @@ export async function getJobMaterialsByMethodId(
     return (await client
       .from("jobMaterial")
       .select(
-        "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)"
+        "*, item(replenishmentSystem, itemTrackingType), jobMaterialStep(jobOperationStepId)"
       )
       .eq("jobMakeMethodId", jobMakeMethodId)
       .order("order", { ascending: true })) as unknown as typeof result;
@@ -2970,6 +2971,9 @@ export type JobReleaseReadiness = {
     }[];
     // The suppliers this job's outside operations go on a purchase order for.
     supplierIds: string[];
+    // Strict backflush: pulled, stocked lines with no storage unit to
+    // backflush from. Always empty while the setting is off.
+    materialsWithoutStorageUnit: { id: string; description: string }[];
   }[];
   // Suppliers whose outside operations release will put on a purchase order,
   // with the Draft POs the planner may add them to instead of a new one.
@@ -2978,6 +2982,49 @@ export type JobReleaseReadiness = {
     draftPurchaseOrders: { id: string; purchaseOrderId: string }[];
   }[];
 };
+
+// Strict backflush (companySettings.requireBackflushStorageUnit): a job may not
+// be released while a pulled, stocked line has no storage unit, because its
+// backflush would be refused. Keyed by job id; empty while the setting is off.
+async function getMaterialsWithoutStorageUnit(
+  client: SupabaseClient<Database>,
+  jobIds: string[],
+  companyId: string
+): Promise<{
+  data: Record<string, { id: string; description: string }[]>;
+  error: PostgrestError | null;
+}> {
+  const settings = await client
+    .from("companySettings")
+    .select("requireBackflushStorageUnit")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: {}, error: settings.error };
+  if (settings.data?.requireBackflushStorageUnit !== true)
+    return { data: {}, error: null };
+
+  const lines = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("jobMaterial")
+      .select(
+        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision)"
+      )
+      .in("jobId", batch)
+      .eq("companyId", companyId)
+      .is("storageUnitId", null)
+      .order("id")
+  );
+  if (lines.error) return { data: {}, error: lines.error };
+
+  const byJob: Record<string, { id: string; description: string }[]> = {};
+  for (const [jobId, jobLines] of Object.entries(
+    groupBy(lines.data ?? [], (line) => line.jobId)
+  )) {
+    const missing = materialsWithoutStorageUnit(jobLines);
+    if (missing.length > 0) byJob[jobId] = missing;
+  }
+  return { data: byJob, error: null };
+}
 
 // What stands between these jobs and release, read in one query per table for
 // any number of jobs. The job Release dialog and batch release both read it, so
@@ -3035,6 +3082,14 @@ export async function getJobReleaseReadiness(
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
   if (failed) return { data: null, error: failed };
+
+  const withoutStorageUnit = await getMaterialsWithoutStorageUnit(
+    client,
+    jobIds,
+    companyId
+  );
+  if (withoutStorageUnit.error)
+    return { data: null, error: withoutStorageUnit.error };
 
   const outsideOperationIds = (operations.data ?? [])
     .filter((op) => op.operationType === "Outside Processing")
@@ -3182,7 +3237,8 @@ export async function getJobReleaseReadiness(
                 : []
             )
           )
-        ]
+        ],
+        materialsWithoutStorageUnit: withoutStorageUnit.data[job.id] ?? []
       })),
       suppliers: supplierIds.map((supplierId) => ({
         supplierId,
@@ -10925,6 +10981,19 @@ export async function completeOperation(
       );
     }
   }
+
+  // Strict backflush: refuse before the production quantity is recorded, so a
+  // short storage unit never leaves units completed with no material
+  // consumed. A no-op when strict backflush is off.
+  const check = await serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("issue", {
+      id: args.operationId,
+      type: "jobOperation",
+      quantity: args.quantity,
+      dryRun: true
+    });
+  if (check.error) return { data: null, error: check.error };
 
   // 1. Record produced quantity.
   const insertProduction = await client

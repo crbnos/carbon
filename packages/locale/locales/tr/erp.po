@@ -60,6 +60,10 @@ msgstr "(birden fazla Carbon hesabına eşleştirildi)"
 msgid "(not an Equity posting account)"
 msgstr "(Özkaynak muhasebeleştirme hesabı değildir)"
 
+#. placeholder {0}: methodsMissingPullFrom.count
+msgid "{0, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{0, plural, one {# aktif yöntemde Çekilecek Depo olmayan malzeme vardır} other {# aktif yöntemde Çekilecek Depo olmayan malzemeler vardır}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# engelleme kaydı} other {# engelleme kaydı}}"
@@ -1107,6 +1111,9 @@ msgstr "Malzeme, bir Parça yapmak için kullanılan ve birden fazla İş emirle
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Ölçüm aleti (kumpas, mikrometre, pin ölçüm aleti, CMM) bir kayıt olarak izlenen ve yinelenen bir kalibrasyon çizelgesine tabi tutulan."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Bir yöntem sürümü, aktif hale gelmeden önce her çekilen malzeme için çekilecek bir depolama birimine ihtiyaç duyar."
+
 msgid "A name is required to save a view"
 msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
 
@@ -1427,6 +1434,9 @@ msgstr "Sevkiyatın durumu değişti"
 
 msgid "A shipment's tracking number changes"
 msgstr "Bir sevkiyatın takip numarası değişti"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Yetersiz stoklu bir depolama birimi stok içeren başka bir depolama birimine geri döner."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Kısa vadeli kıymet başlangıcından 12 aydan sonra devam edemez. Bunu bitirin ve uzantıyı yeni bir kiralama olarak girin."
@@ -3821,6 +3831,9 @@ msgstr "İzlenebilirliğe geri dön"
 
 msgid "Backflush"
 msgstr "Geriye dönük tüketim"
+
+msgid "Backflush each material only from the storage unit on its material line, and stop the operation or job when that storage unit does not have enough stock."
+msgstr "Her malzemeyi yalnızca malzeme satırındaki depolama biriminden geriye dönük tüket, ve bu depolama birimi yeterli stoka sahip olmadığında operasyonu veya iş emrini durdur."
 
 msgid "Background"
 msgstr "Arka plan"
@@ -13447,6 +13460,9 @@ msgstr "Eksik operasyonlar"
 msgid "Missing Shipping Costs"
 msgstr "Eksik nakliye bedelleri"
 
+msgid "Missing Storage Units"
+msgstr "Eksik Depolama Birimleri"
+
 msgid "Missing Suppliers"
 msgstr "Tedarikçi Eksikleri"
 
@@ -20239,6 +20255,10 @@ msgstr "Oturum Kilitli"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Sevkiyattan eklemek için bu iade işlemine bir müşteri belirleyin."
 
+#. placeholder {0}: summarizeList( job.materialsWithoutStorageUnit.map( (m) => m.description ) )
+msgid "set a Pull From storage unit on {0}"
+msgstr "{0} için çekilecek bir depolama birimi ayarla"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Mal kabulünden eklemek için bu iade kaydında bir tedarikçi belirleyin."
 
@@ -21295,6 +21315,18 @@ msgstr "Finansal kira kullanım hakkı varlıklarının doğrusal amortismanı"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "İşletme kiralarının doğrusal kira gideri ve kısa vadeli kiralar ödemeleri"
+
+msgid "Strict Backflush"
+msgstr "Sıkı Geriye Dönük Tüketim"
+
+msgid "Strict backflush is off"
+msgstr "Sıkı geriye dönük tüketim kapalı"
+
+msgid "Strict backflush is on"
+msgstr "Sıkı geriye dönük tüketim açık"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Kesin geriye dönük tüketim açık. Bu malzemeler için çekilecek bir depolama birimi serbest bırakmadan önce ayarla:"
 
 msgid "Stripe"
 msgstr "Stripe"
