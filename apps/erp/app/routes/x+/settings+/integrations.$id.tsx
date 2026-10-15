@@ -233,7 +233,7 @@ function unfoldRilletCredentials(
 function foldRampCredentials(
   metadata: Record<string, unknown>
 ): Record<string, unknown> {
-  const { clientId, clientSecret, environment, ...rest } = metadata;
+  const { clientId, clientSecret, ...rest } = metadata;
   if (typeof clientId !== "string" || clientId.length === 0) return metadata;
 
   return {
@@ -241,17 +241,16 @@ function foldRampCredentials(
     credentials: {
       type: "client_credentials",
       clientId,
-      clientSecret: typeof clientSecret === "string" ? clientSecret : "",
-      environment: environment === "sandbox" ? "sandbox" : "production"
+      clientSecret: typeof clientSecret === "string" ? clientSecret : ""
     }
   };
 }
 
 /**
  * Inverse of `foldRampCredentials`: unfold the stored
- * `metadata.credentials` back into the flat clientId/clientSecret/environment
- * fields the settings form binds to, so the drawer prefills instead of showing
- * blanks (which a re-save would then persist over the real stored connection).
+ * `metadata.credentials` back into the flat clientId/clientSecret fields the
+ * settings form binds to, so the drawer prefills instead of showing blanks
+ * (which a re-save would then persist over the real stored connection).
  * The clientSecret is vaulted and stripped from the plaintext metadata, so it
  * reads back empty — the masked field left blank means "keep the vaulted value".
  */
@@ -271,9 +270,7 @@ function unfoldRampCredentials(
     clientSecret:
       typeof credentials.clientSecret === "string"
         ? credentials.clientSecret
-        : "",
-    environment:
-      credentials.environment === "sandbox" ? "sandbox" : "production"
+        : ""
   };
 }
 

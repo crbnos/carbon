@@ -39,8 +39,7 @@ import { rampOnInstall, rampOnUpdate } from "./hooks.server";
 
 const credentials = {
   type: "oauth2" as const,
-  accessToken: "access-token",
-  environment: "production" as const
+  accessToken: "access-token"
 };
 
 function integration(metadata: Record<string, unknown>) {

@@ -150,8 +150,8 @@ providers, which own the data and mirror it out.
   `"true"`). Renders `SetupInstructions` with the webhook URL
   `${origin}/api/webhook/ramp/${companyId}` — **see "The webhook route" below.**
 - **Client** — `lib/client.ts`: `RampClient` over the Ramp Developer API v1. Host is
-  `https://api.ramp.com` (production) or `https://demo-api.ramp.com` (sandbox), chosen
-  from `credentials.environment`. `client_credentials` grant mints/caches a bearer token
+  `https://api.ramp.com` (`RAMP_HOST`) — production only; there is no sandbox switch.
+  `client_credentials` grant mints/caches a bearer token
   (`POST /developer/v1/token`, Basic auth, re-mint under 60s remaining). `oauth2` exchanges
   authorization codes and refreshes within the same margin; `buildRampClient` supplies the
   Carbon OAuth app plus an `onTokensRefreshed` callback that atomically persists the new
@@ -1039,9 +1039,10 @@ correctness guarantee**; the webhook is latency only.
 - **One active connection per company.** The metadata carries a single `connectionId` /
   `webhookId`; `ensureRampConnection` creates one connection (`remote_provider_name:
   "Carbon"`) and reuses it — there is no multi-connection support.
-- **Sandbox** = `demo-api.ramp.com` (`RAMP_SANDBOX_HOST`) for a stored legacy
-  `client_credentials` record. The current Connect UI creates production OAuth records and
-  exposes no environment selector.
+- **Production only.** The sandbox (`demo-api.ramp.com`) switch and the stored
+  `credentials.environment` field were removed; every client talks to `api.ramp.com`. An
+  install connected while the switch was on holds demo tokens that production rejects —
+  reconnect it (the OAuth patch also drops the stale `credentials.environment` key).
 - **API uncertainties remain source-marked**: the draft-bill payload/submit identity,
   repayment funding beyond documented `ach`, all-connections/accounts endpoints, and the
   webhook challenge/signing contract. Bill payment methods and reimbursement states use
