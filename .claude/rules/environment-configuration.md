@@ -127,7 +127,10 @@ account notifications loader and the app shell loader (`pushPublicKey`), not
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`,
 `SLACK_OAUTH_REDIRECT_URL` — one Slack app serves the Assistant and workflow steps; the value may still name the legacy `/api/integrations/slack/oauth` path, which forwards to the connections callback), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
-`ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
+`ONSHAPE_OAUTH_REDIRECT_URL`), Google (`GOOGLE_OAUTH_CLIENT_ID`, public and exposed by
+`getBrowserEnv()` so the Google Calendar and Gmail cards can show "Coming soon";
+`GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URL` — one Google app serves both
+workflow pieces; its own `google` feature group, so a half-set app is reported), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
 
@@ -144,7 +147,7 @@ The integrations page loader issues one for every integration with an `oauth` co
 save — its OAuth client is the customer's private app, not an env var — and each callback
 consumes it.
 Slack (like every workflow piece) binds its state separately: `signConnectionState`
-(`~/modules/settings/connection-state.server`) HMAC-signs `{companyId,pieceName,name,userId}`
+(`~/modules/settings/connection-state.server`) HMAC-signs `{companyId,pieceName,name,connectionId?,userId}`
 with `SESSION_SECRET` (10 min lifetime) and `api+/integrations.connections.callback.ts`
 verifies it against the caller's company and user. Managed deployment propagates both Ramp OAuth
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.

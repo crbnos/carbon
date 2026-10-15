@@ -151,6 +151,14 @@ never in `metadata`** — `connections.test.ts` asserts that directly.
 a saved workflow node references the id, and a dangling id produces a worse error than a
 clear "reconnect this".
 
+A consent that lands on an existing row must be the SAME account. Reconnect signs the
+row's id into the OAuth state; Add account and Install name the row by its unique name.
+`createConnection` compares the stored and the new identity (Slack's `team_id`, else the
+`accountLabel`) and refuses a different one — `ConnectionAccountMismatchError` for
+Reconnect, `ConnectionNameTakenError` for a name. Without that check, every saved
+workflow on the row silently started acting as whoever signed in. When either side has
+no identity (the label read failed), the consent is accepted.
+
 ### Scope drift — "Reconnect needed"
 
 A connection records what the vendor granted in `metadata.scopes` (from the token response's
@@ -159,8 +167,9 @@ backfill wrote spaces). `missingScopes(connection, required)` (ee, pure) compare
 `requiredScopesFor(piece)` (jobs — the row's `oauth.scope` override or the piece's own list,
 i.e. exactly what `buildConsentUrl` asks for). Unknown grants are never flagged. Four surfaces
 say the same thing: the Accounts row ("Reconnect needed" + a **Reconnect** button that re-runs
-the consent under the same name — `createConnection` revives the row and refreshes its
-metadata), the builder (the connection provider returns `errorCode: "reconnect"` instead of
+the consent for that row's id — `createConnection` revives the row and refreshes its
+metadata, and refuses with `ConnectionAccountMismatchError` when a different account
+signed in), the builder (the connection provider returns `errorCode: "reconnect"` instead of
 listing an under-scoped account, and `IntegrationNodeForm` shows a reconnect banner), the card
 (`getIntegrationHealth` marks a piece card unhealthy while any usable account is under-scoped —
 checked in erp because ee cannot see the allowlist), and the step runner (fails before the
@@ -196,15 +205,15 @@ so the stored one is carried forward rather than overwritten with `undefined`.
 ## Who reads the token
 
 The vault RPCs are `service_role` only, so a user client cannot decrypt a token at all.
-`runIntegrationAction` therefore does BOTH:
+`runIntegrationAction` reads BOTH the connection row and its token with
+`getCarbonServiceRole()`, scoped by the run's own `companyId`, and refuses a row whose
+`pieceName` differs from the step's piece.
 
-1. checks the connection exists in this company **through the owner's client** — RLS applies
-   to that lookup, and the piece name must match;
-2. reads the token with `getCarbonServiceRole()`, scoped by the run's own `companyId`.
-
-Same guarantee `resolveIntegrationSecrets` already gives the 12 existing integrations. Do
-not "simplify" this to one client: the owner's client cannot read the secret, and the
-service-role client alone would skip the tenancy check.
+Do not move the row read to the owner's client. The row's RLS asks for `settings_view`,
+but the builder lists connections with the service role to anyone who can edit workflows
+(`options-providers.server.ts`). An owner-client read refused a connection the author was
+allowed to pick, so every run failed with "This step needs a connection." The tenancy
+guarantee is the `companyId` filter: it comes from the run row, never from the definition.
 
 Outside a workflow step, a vendor whose tokens never expire (Slack bot tokens) is read with
 `readConnectionAccessToken(serviceRole, companyId, connectionId)`. It refuses a non-Active
