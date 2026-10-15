@@ -2336,9 +2336,6 @@ msgstr "Tous les clients"
 msgid "All departments"
 msgstr "Tous les départements"
 
-msgid "All Documents"
-msgstr "Tous les documents"
-
 msgid "All gauges"
 msgstr "Tous les instruments de mesure"
 
@@ -2366,6 +2363,9 @@ msgstr "Tous les modules"
 
 msgid "All open jobs"
 msgstr "Toutes les ordres de fabrication ouvertes"
+
+msgid "All Papers"
+msgstr "Tous les papiers"
 
 msgid "All returnable lines"
 msgstr "Toutes les lignes retournables"
@@ -7909,9 +7909,6 @@ msgstr "Document :"
 
 msgid "Documents"
 msgstr "Documents"
-
-msgid "Documents and activity"
-msgstr "Documents et activité"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Documents comptabilisés avant que Carbon n'ait conservé les écritures"
@@ -13658,8 +13655,8 @@ msgstr "Plusieurs ordres de fabrication peuvent s'exécuter sur ce procédé en 
 msgid "Must be in the same location"
 msgstr "Doit être au même endroit"
 
-msgid "My Documents"
-msgstr "Mes Documents"
+msgid "My Papers"
+msgstr "Mes papiers"
 
 msgid "My Saved View"
 msgstr "Ma vue enregistrée"
@@ -16006,6 +16003,12 @@ msgstr "Payé en dehors de Carbon"
 msgid "Paid up front; record it as a payment once received"
 msgstr "Payé d'avance ; enregistrez-le comme un paiement une fois reçu"
 
+msgid "Papers"
+msgstr "Papiers"
+
+msgid "Papers and activity"
+msgstr "Papiers et activité"
+
 msgid "Parameters"
 msgstr "Paramètres"
 
@@ -17442,8 +17445,8 @@ msgstr "Qualité"
 msgid "Quality Document"
 msgstr "Document de qualité"
 
-msgid "Quality Documents"
-msgstr "Documents de Qualité"
+msgid "Quality Papers"
+msgstr "Papiers qualité"
 
 msgid "Quality Type"
 msgstr "Type Qualité"
@@ -18540,8 +18543,8 @@ msgstr "Exiger une approbation avant que les fournisseurs puissent être défini
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Exiger une approbation pour les bons de commande en fonction des seuils de montant"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "Exiger une approbation pour les documents de qualité dans votre flux de travail"
+msgid "Require approval for quality papers in your workflow"
+msgstr "Exiger une approbation pour les papiers qualité dans votre flux de travail"
 
 msgid "Require Match"
 msgstr "Correspondance obligatoire"

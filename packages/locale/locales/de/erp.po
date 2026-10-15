@@ -2336,9 +2336,6 @@ msgstr "Alle Kunden"
 msgid "All departments"
 msgstr "Alle Abteilungen"
 
-msgid "All Documents"
-msgstr "Alle Dokumente"
-
 msgid "All gauges"
 msgstr "Alle Prüfmittel"
 
@@ -2366,6 +2363,9 @@ msgstr "Alle Module"
 
 msgid "All open jobs"
 msgstr "Alle offenen Fertigungsaufträge"
+
+msgid "All Papers"
+msgstr "Alle Papiere"
 
 msgid "All returnable lines"
 msgstr "Alle rückgabefähigen Positionen"
@@ -7909,9 +7909,6 @@ msgstr "Dokument:"
 
 msgid "Documents"
 msgstr "Dokumente"
-
-msgid "Documents and activity"
-msgstr "Dokumente und Aktivität"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Dokumente, die gebucht wurden, bevor Carbon Buchungssätze verwaltete"
@@ -13658,8 +13655,8 @@ msgstr "Mehrere Fertigungsaufträge können auf diesem Verfahren gleichzeitig la
 msgid "Must be in the same location"
 msgstr "Muss sich am selben Ort befinden"
 
-msgid "My Documents"
-msgstr "Meine Dokumente"
+msgid "My Papers"
+msgstr "Meine Papiere"
 
 msgid "My Saved View"
 msgstr "Meine gespeicherte Ansicht"
@@ -16006,6 +16003,12 @@ msgstr "Außerhalb von Carbon bezahlt"
 msgid "Paid up front; record it as a payment once received"
 msgstr "Im Voraus bezahlt; erfassen Sie es als Zahlung nach Erhalt"
 
+msgid "Papers"
+msgstr "Papiere"
+
+msgid "Papers and activity"
+msgstr "Papiere und Aktivität"
+
 msgid "Parameters"
 msgstr "Parameter"
 
@@ -17442,8 +17445,8 @@ msgstr "Qualität"
 msgid "Quality Document"
 msgstr "Qualitätsdokument"
 
-msgid "Quality Documents"
-msgstr "Qualitätsdokumente"
+msgid "Quality Papers"
+msgstr "Qualitätspapiere"
 
 msgid "Quality Type"
 msgstr "Qualitätstyp"
@@ -18540,8 +18543,8 @@ msgstr "Genehmigung erforderlich, bevor Lieferanten auf Aktiv gesetzt werden kö
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erforderlich"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
+msgid "Require approval for quality papers in your workflow"
+msgstr "Genehmigung für Qualitätspapiere in Ihrem Workflow erforderlich"
 
 msgid "Require Match"
 msgstr "Abgleich erforderlich"

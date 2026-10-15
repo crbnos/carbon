@@ -2336,9 +2336,6 @@ msgstr "所有客户"
 msgid "All departments"
 msgstr "所有部门"
 
-msgid "All Documents"
-msgstr "所有文档"
-
 msgid "All gauges"
 msgstr "所有量具"
 
@@ -2366,6 +2363,9 @@ msgstr "所有模块"
 
 msgid "All open jobs"
 msgstr "所有未结工单"
+
+msgid "All Papers"
+msgstr "所有资料"
 
 msgid "All returnable lines"
 msgstr "所有可退货的行"
@@ -7909,9 +7909,6 @@ msgstr "文件:"
 
 msgid "Documents"
 msgstr "文档"
-
-msgid "Documents and activity"
-msgstr "文档和活动"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Carbon 开始保留凭证前已过账的文档"
@@ -13658,8 +13655,8 @@ msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机�
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
 
-msgid "My Documents"
-msgstr "我的文档"
+msgid "My Papers"
+msgstr "我的资料"
 
 msgid "My Saved View"
 msgstr "我的保存视图"
@@ -16006,6 +16003,12 @@ msgstr "在 Carbon 外已支付"
 msgid "Paid up front; record it as a payment once received"
 msgstr "预付款；收到后将其记录为付款"
 
+msgid "Papers"
+msgstr "资料"
+
+msgid "Papers and activity"
+msgstr "资料和活动"
+
 msgid "Parameters"
 msgstr "参数"
 
@@ -17442,8 +17445,8 @@ msgstr "质量"
 msgid "Quality Document"
 msgstr "质量文件"
 
-msgid "Quality Documents"
-msgstr "质量文档"
+msgid "Quality Papers"
+msgstr "质量资料"
 
 msgid "Quality Type"
 msgstr "质量类型"
@@ -18540,8 +18543,8 @@ msgstr "供应商设置为启用前需要审批"
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "根据金额阈值对采购订单需要审批"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "工作流中的质量文档需要审批"
+msgid "Require approval for quality papers in your workflow"
+msgstr "工作流中的质量资料需要审批"
 
 msgid "Require Match"
 msgstr "必需匹配"

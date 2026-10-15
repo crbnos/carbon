@@ -2336,9 +2336,6 @@ msgstr "सभी ग्राहक"
 msgid "All departments"
 msgstr "सभी विभाग"
 
-msgid "All Documents"
-msgstr "सभी दस्तावेज़"
-
 msgid "All gauges"
 msgstr "सभी गेज"
 
@@ -2366,6 +2363,9 @@ msgstr "सभी मॉड्यूल"
 
 msgid "All open jobs"
 msgstr "सभी खुले जॉब"
+
+msgid "All Papers"
+msgstr "सभी कागज़ात"
 
 msgid "All returnable lines"
 msgstr "सभी रिटर्न योग्य पंक्तियाँ"
@@ -7909,9 +7909,6 @@ msgstr "दस्तावेज़:"
 
 msgid "Documents"
 msgstr "दस्तावेज़"
-
-msgid "Documents and activity"
-msgstr "दस्तावेज़ और गतिविधि"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Carbon द्वारा जर्नल रखे जाने से पहले पोस्ट किए गए दस्तावेज़"
@@ -13658,8 +13655,8 @@ msgstr "एक ही समय में इस प्रक्रिया प
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
 
-msgid "My Documents"
-msgstr "मेरे दस्तावेज़"
+msgid "My Papers"
+msgstr "मेरे कागज़ात"
 
 msgid "My Saved View"
 msgstr "मेरा सहेजा गया दृश्य"
@@ -16006,6 +16003,12 @@ msgstr "Carbon के बाहर भुगतान किया गया"
 msgid "Paid up front; record it as a payment once received"
 msgstr "अग्रिम भुगतान; इसे प्राप्त होने के बाद भुगतान के रूप में दर्ज करें"
 
+msgid "Papers"
+msgstr "कागज़ात"
+
+msgid "Papers and activity"
+msgstr "कागज़ात और गतिविधि"
+
 msgid "Parameters"
 msgstr "पैरामीटर"
 
@@ -17442,8 +17445,8 @@ msgstr "गुणवत्ता"
 msgid "Quality Document"
 msgstr "गुणवत्ता दस्तावेज़"
 
-msgid "Quality Documents"
-msgstr "गुणवत्ता दस्तावेज़"
+msgid "Quality Papers"
+msgstr "गुणवत्ता कागज़ात"
 
 msgid "Quality Type"
 msgstr "गुणवत्ता प्रकार"
@@ -18540,8 +18543,8 @@ msgstr "आपूर्तिकर्ताओं को सक्रिय प
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "राशि सीमा के आधार पर क्रय आदेशों के लिए अनुमोदन की आवश्यकता है"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
+msgid "Require approval for quality papers in your workflow"
+msgstr "आपके वर्कफ़्लो में गुणवत्ता कागज़ात के लिए अनुमोदन की आवश्यकता है"
 
 msgid "Require Match"
 msgstr "मिलान आवश्यक है"

@@ -2336,9 +2336,6 @@ msgstr "Все покупатели"
 msgid "All departments"
 msgstr "Все отделы"
 
-msgid "All Documents"
-msgstr "Все документы"
-
 msgid "All gauges"
 msgstr "Все средства измерения"
 
@@ -2366,6 +2363,9 @@ msgstr "Все модули"
 
 msgid "All open jobs"
 msgstr "Все открытые производственные заказы"
+
+msgid "All Papers"
+msgstr "Все бумаги"
 
 msgid "All returnable lines"
 msgstr "Все возвратные строки"
@@ -7909,9 +7909,6 @@ msgstr "Документ:"
 
 msgid "Documents"
 msgstr "Документы"
-
-msgid "Documents and activity"
-msgstr "Документы и деятельность"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Документы, проведенные до того, как Carbon вел операции"
@@ -13658,8 +13655,8 @@ msgstr "Несколько производственных заказов мо�
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
 
-msgid "My Documents"
-msgstr "Мои документы"
+msgid "My Papers"
+msgstr "Мои бумаги"
 
 msgid "My Saved View"
 msgstr "Мой сохраненный вид"
@@ -16006,6 +16003,12 @@ msgstr "Оплачено вне Carbon"
 msgid "Paid up front; record it as a payment once received"
 msgstr "Оплачено авансом; запишите это как платеж после получения"
 
+msgid "Papers"
+msgstr "Бумаги"
+
+msgid "Papers and activity"
+msgstr "Бумаги и деятельность"
+
 msgid "Parameters"
 msgstr "Параметры"
 
@@ -17442,8 +17445,8 @@ msgstr "Качество"
 msgid "Quality Document"
 msgstr "Документ качества"
 
-msgid "Quality Documents"
-msgstr "Документы качества"
+msgid "Quality Papers"
+msgstr "Бумаги качества"
 
 msgid "Quality Type"
 msgstr "Тип качества"
@@ -18540,8 +18543,8 @@ msgstr "Требовать утверждение перед установко�
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Требовать утверждение для заказов поставщику на основе пороговых значений суммы"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "Требовать утверждение для документов качества в вашем рабочем процессе"
+msgid "Require approval for quality papers in your workflow"
+msgstr "Требовать утверждение для бумаг качества в вашем рабочем процессе"
 
 msgid "Require Match"
 msgstr "Требовать совпадение"

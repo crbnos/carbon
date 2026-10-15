@@ -2336,9 +2336,6 @@ msgstr "All Customers"
 msgid "All departments"
 msgstr "All departments"
 
-msgid "All Documents"
-msgstr "All Documents"
-
 msgid "All gauges"
 msgstr "All gauges"
 
@@ -2366,6 +2363,9 @@ msgstr "All modules"
 
 msgid "All open jobs"
 msgstr "All open jobs"
+
+msgid "All Papers"
+msgstr "All Papers"
 
 msgid "All returnable lines"
 msgstr "All returnable lines"
@@ -7909,9 +7909,6 @@ msgstr "Document:"
 
 msgid "Documents"
 msgstr "Documents"
-
-msgid "Documents and activity"
-msgstr "Documents and activity"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Documents Posted Before Carbon Kept Journals"
@@ -13658,8 +13655,8 @@ msgstr "Multiple jobs can run on this process at the same time — e.g. a laser 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
-msgid "My Documents"
-msgstr "My Documents"
+msgid "My Papers"
+msgstr "My Papers"
 
 msgid "My Saved View"
 msgstr "My Saved View"
@@ -16006,6 +16003,12 @@ msgstr "Paid outside Carbon"
 msgid "Paid up front; record it as a payment once received"
 msgstr "Paid up front; record it as a payment once received"
 
+msgid "Papers"
+msgstr "Papers"
+
+msgid "Papers and activity"
+msgstr "Papers and activity"
+
 msgid "Parameters"
 msgstr "Parameters"
 
@@ -17442,8 +17445,8 @@ msgstr "Quality"
 msgid "Quality Document"
 msgstr "Quality Document"
 
-msgid "Quality Documents"
-msgstr "Quality Documents"
+msgid "Quality Papers"
+msgstr "Quality Papers"
 
 msgid "Quality Type"
 msgstr "Quality Type"
@@ -18540,8 +18543,8 @@ msgstr "Require approval before suppliers can be set to Active"
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "Require approval for purchase orders based on amount thresholds"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "Require approval for quality documents in your workflow"
+msgid "Require approval for quality papers in your workflow"
+msgstr "Require approval for quality papers in your workflow"
 
 msgid "Require Match"
 msgstr "Require Match"

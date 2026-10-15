@@ -2336,9 +2336,6 @@ msgstr "모든 고객"
 msgid "All departments"
 msgstr "모든 부서"
 
-msgid "All Documents"
-msgstr "모든 문서"
-
 msgid "All gauges"
 msgstr "모든 계측기"
 
@@ -2366,6 +2363,9 @@ msgstr "모든 모듈"
 
 msgid "All open jobs"
 msgstr "모든 미결 작업 지시"
+
+msgid "All Papers"
+msgstr "모든 서류"
 
 msgid "All returnable lines"
 msgstr "모든 반품 가능 라인"
@@ -7909,9 +7909,6 @@ msgstr "문서:"
 
 msgid "Documents"
 msgstr "문서"
-
-msgid "Documents and activity"
-msgstr "문서 및 활동"
 
 msgid "Documents Posted Before Carbon Kept Journals"
 msgstr "Carbon이 전표를 보유하기 전에 전기된 문서"
@@ -13658,8 +13655,8 @@ msgstr "여러 작업 지시가 이 공법에서 동시에 실행될 수 있습�
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
-msgid "My Documents"
-msgstr "내 문서"
+msgid "My Papers"
+msgstr "내 서류"
 
 msgid "My Saved View"
 msgstr "내 저장된 보기"
@@ -16006,6 +16003,12 @@ msgstr "Carbon 외부에서 지불됨"
 msgid "Paid up front; record it as a payment once received"
 msgstr "선금으로 지불되며, 받으면 지불로 기록하세요."
 
+msgid "Papers"
+msgstr "서류"
+
+msgid "Papers and activity"
+msgstr "서류 및 활동"
+
 msgid "Parameters"
 msgstr "파라미터"
 
@@ -17442,8 +17445,8 @@ msgstr "품질"
 msgid "Quality Document"
 msgstr "품질 문서"
 
-msgid "Quality Documents"
-msgstr "품질 문서"
+msgid "Quality Papers"
+msgstr "품질 서류"
 
 msgid "Quality Type"
 msgstr "품질 유형"
@@ -18540,8 +18543,8 @@ msgstr "공급업체를 활성 상태로 설정하기 전에 승인 필요"
 msgid "Require approval for purchase orders based on amount thresholds"
 msgstr "금액 임계값을 기준으로 발주서에 대한 승인 필요"
 
-msgid "Require approval for quality documents in your workflow"
-msgstr "워크플로 내 품질 문서에 승인 필요"
+msgid "Require approval for quality papers in your workflow"
+msgstr "워크플로 내 품질 서류에 승인 필요"
 
 msgid "Require Match"
 msgstr "필수 일치"
