@@ -60,8 +60,10 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  procedureStatus,
   productionEventValidator,
   productionOrderValidator,
+  productionQuantityValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator
 } from "./production.models";
@@ -111,7 +113,8 @@ import {
   upsertJobMethod,
   upsertJobOperation,
   upsertPeopleAssignment,
-  upsertProductionEvent
+  upsertProductionEvent,
+  upsertProductionQuantity
 } from "./production.service";
 import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
 
@@ -4913,5 +4916,146 @@ export const assignProductionPlanningActions = defineServiceFn({
       planningActionIds.length,
       "assign"
     );
+  }
+});
+
+// --- Production quantities and procedures ---------------------------------
+
+/**
+ * Record a production quantity (good, scrap or rework) on a job operation.
+ *
+ * @remarks
+ * Refused when the operation's job is locked (Completed, Closed or
+ * Cancelled). A scrap reason is kept only on Scrap. A back-office entry: the
+ * work event says it came from the ERP, not the shop floor.
+ *
+ * @mcp
+ */
+export const createProductionQuantity = defineServiceFn({
+  input: productionQuantityValidator,
+  permission: { create: "production" },
+
+  async run(ctx, { id: _id, ...quantity }) {
+    const companyId = ctx.company.id;
+    const operation = await ctx.asCaller.supabase
+      .from("jobOperation")
+      .select("job(status)")
+      .eq("id", quantity.jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (operation.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the operation",
+        operation.error
+      );
+    }
+    if (!operation.data) return ctx.error("notFound", "Operation not found");
+    if (isJobLocked(operation.data.job?.status)) {
+      return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
+    }
+
+    const scrapReasonId =
+      quantity.type === "Scrap" ? quantity.scrapReasonId : undefined;
+    const insert = await upsertProductionQuantity(ctx.asCaller.supabase, {
+      ...quantity,
+      scrapReasonId,
+      companyId
+    });
+    if (insert.error || !insert.data?.id) {
+      return ctx.error(
+        "internal",
+        "Failed to insert production quantity",
+        insert.error
+      );
+    }
+
+    // The source is what makes the MES-vs-ERP ratio readable: a clerk typing
+    // yesterday's paper traveller in is a different fact from an operator.
+    const common = {
+      companyId,
+      userId: ctx.auditUserId,
+      productionQuantityId: insert.data.id,
+      jobOperationId: quantity.jobOperationId,
+      quantity: quantity.quantity,
+      source: "erp" as const
+    };
+    if (quantity.type === "Scrap") {
+      trackWorkEvent("scrap_reported", {
+        ...common,
+        scrapReasonId: scrapReasonId ?? null
+      });
+    } else if (quantity.type === "Production") {
+      trackWorkEvent("production_quantity_reported", common);
+    }
+    return { id: insert.data.id };
+  }
+});
+
+/**
+ * Correct a recorded production quantity.
+ *
+ * @remarks
+ * Needs accounting update, since the quantity feeds the job's costing. A
+ * scrap reason is kept only on Scrap. Not published: a published operation
+ * gates on its own module's permission.
+ */
+export const updateProductionQuantity = defineServiceFn({
+  input: productionQuantityValidator.safeExtend({ id: z.string() }),
+  permission: { update: "accounting" },
+
+  async run(ctx, { id, ...quantity }) {
+    const update = await upsertProductionQuantity(ctx.asCaller.supabase, {
+      ...quantity,
+      id,
+      scrapReasonId:
+        quantity.type === "Scrap" ? quantity.scrapReasonId : undefined,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update production quantity",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Change procedures' name, content, status, process or tags.
+ *
+ * @remarks
+ * A field left out is unchanged. One UPDATE for every procedure given.
+ *
+ * @mcp
+ */
+export const setProcedureFields = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string()).min(1),
+    name: z.string().optional(),
+    content: z.string().optional(),
+    status: z.enum(procedureStatus).optional(),
+    processId: z.string().optional(),
+    tags: z.array(z.string()).optional()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { ids, ...fields }) {
+    const update = await ctx.asCaller.supabase
+      .from("procedure")
+      .update({
+        ...fields,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .in("id", ids)
+      .eq("companyId", ctx.company.id);
+    if (update.error) {
+      return ctx.error("internal", update.error.message, update.error);
+    }
+    return { ids };
   }
 });

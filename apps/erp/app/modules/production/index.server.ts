@@ -21,6 +21,7 @@ import {
   createJobOperation,
   createJobs,
   createProductionEvent,
+  createProductionQuantity,
   deleteJobMaterial,
   deleteJobOperation,
   deleteJobs,
@@ -54,6 +55,7 @@ import {
   setPeopleOvertime,
   setPersonDay,
   setPersonHours,
+  setProcedureFields,
   syncJobOperationProcedure,
   unassignPerson,
   unassignPersonWeek,
@@ -63,7 +65,8 @@ import {
   updateJobMaterial,
   updateJobOperation,
   updatePlannedJob,
-  updateProductionEvent
+  updateProductionEvent,
+  updateProductionQuantity
 } from "./production.server";
 
 /** The production module's operations, by entity. */
@@ -103,6 +106,11 @@ export const production = {
     syncProcedure: syncJobOperationProcedure
   },
   event: { create: createProductionEvent, update: updateProductionEvent },
+  quantity: {
+    create: createProductionQuantity,
+    update: updateProductionQuantity
+  },
+  procedure: { setFields: setProcedureFields },
   batch: {
     create: createBatch,
     release: releaseBatches,

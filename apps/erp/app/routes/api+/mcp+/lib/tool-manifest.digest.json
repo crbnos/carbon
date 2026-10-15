@@ -1,5 +1,5 @@
 {
-  "totalTools": 1585,
+  "totalTools": 1586,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -819,7 +819,9 @@
     {"name":"production_planning_planJob","classification":"WRITE","paramCount":1,"schema":"863c89f4ad8e","response":"8e58a21e4c94","injectAuth":"none","permission":"production:update","paginates":false,"serviceFn":"production.planning.planJob"},
     {"name":"production_planning_reopen","classification":"WRITE","paramCount":1,"schema":"8c0c1ffe0fab","response":"2a69a1e7d58b","injectAuth":"none","permission":"production:update","paginates":false,"serviceFn":"production.planning.reopen"},
     {"name":"production_planning_updateJob","classification":"WRITE","paramCount":1,"schema":"36a2dd1a51c5","response":"8e58a21e4c94","injectAuth":"none","permission":"production:update","paginates":false,"serviceFn":"production.planning.updateJob"},
+    {"name":"production_procedure_setFields","classification":"WRITE","paramCount":1,"schema":"e76f126b5b16","response":"0eb0c2be01ed","injectAuth":"none","permission":"production:update","paginates":false,"serviceFn":"production.procedure.setFields"},
     {"name":"production_pullJobMaterialMakeMethod","classification":"WRITE","paramCount":2,"schema":"e27f48bbab4c","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"production:update","paginates":false},
+    {"name":"production_quantity_create","classification":"WRITE","paramCount":1,"schema":"aeaea19fd65e","response":"3797626bd17e","injectAuth":"none","permission":"production:create","paginates":false,"serviceFn":"production.quantity.create"},
     {"name":"production_reassignAssemblyStepComponents","classification":"DESTRUCTIVE","paramCount":4,"schema":"99f3d689165d","response":"none","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_recalculateJobMakeMethodRequirements","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"9e056a59d695","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
     {"name":"production_recalculateJobOperationDependencies","classification":"WRITE","paramCount":1,"schema":"4999bd4be598","response":"a70079765330","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
@@ -871,7 +873,6 @@
     {"name":"production_upsertProcedure","classification":"WRITE","paramCount":6,"schema":"d4a8e99e0523","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"upsert":"id"},
     {"name":"production_upsertProcedureParameter","classification":"WRITE","paramCount":4,"schema":"3ec6c5dece78","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"upsert":"id"},
     {"name":"production_upsertProcedureStep","classification":"WRITE","paramCount":10,"schema":"af47a3cf4652","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"upsert":"id"},
-    {"name":"production_upsertProductionQuantity","classification":"WRITE","paramCount":6,"schema":"24b2fd6be216","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"upsert":"id"},
     {"name":"production_upsertScrapReason","classification":"WRITE","paramCount":3,"schema":"fbdc294966b9","response":"8394fbabd845","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"upsert":"id"},
     {"name":"purchasing_cancelPurchaseReturnOrder","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"3797626bd17e","injectAuth":"companyId+userId","permission":"purchasing:update","paginates":false},
     {"name":"purchasing_confirmPurchaseReturnOrder","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"none","injectAuth":"companyId","permission":"purchasing:update","paginates":false},

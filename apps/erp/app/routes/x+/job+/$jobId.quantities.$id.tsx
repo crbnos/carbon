@@ -2,18 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { carbon, redirectWithResult } from "~/modules/carbon.server";
 import {
   getJobOperations,
   getProductionQuantity,
-  productionQuantityValidator,
-  upsertProductionQuantity
+  productionQuantityValidator
 } from "~/modules/production";
 import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
@@ -44,53 +42,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(productionQuantityValidator).request(args, {
+    params: ["jobId", "id"]
   });
-
-  const { jobId } = params;
-  if (!jobId) throw notFound("jobId or id not found");
-
-  const formData = await request.formData();
-  const validation = await validator(productionQuantityValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-
-  // If the type is not Scrap, set the scrapReasonId and notes to null
-  if (d.type !== "Scrap") {
-    d.scrapReasonId = undefined;
-  }
-
-  const update = await upsertProductionQuantity(client, {
-    id,
-    ...d,
-    companyId,
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.production.quantity.update({
+    ...input.data,
+    id: input.params.id
   });
-
-  if (update.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(update.error, "Failed to update production quantity")
-      )
-    );
-  }
-
-  throw redirect(
-    `${path.to.jobProductionQuantities(jobId)}?${getParams(request)}`,
-    await flash(request, success("Updated production quantity"))
-  );
+  return redirectWithResult(args.request, result, {
+    to: `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+    message: "Updated production quantity"
+  });
 }
 
 export default function EditProductionQuantityRoute() {

@@ -29,16 +29,22 @@ vi.mock("../app/modules/production/production.service", () => ({
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(async () => ({ data: {}, error: null })),
-  updateJobStatus: vi.fn(async () => ({ error: null, updated: true }))
+  updateJobStatus: vi.fn(async () => ({ error: null, updated: true })),
+  upsertProductionQuantity: vi.fn(async () => ({
+    data: { id: "pq1" },
+    error: null
+  }))
 }));
 
 import {
   returnPickedRemaindersForJob,
-  updateJobStatus
+  updateJobStatus,
+  upsertProductionQuantity
 } from "../app/modules/production/production.service";
 import {
   closeJob,
   completeJob,
+  createProductionQuantity,
   pauseJob,
   reopenJob,
   resumeJob
@@ -62,7 +68,7 @@ const contextWith = (caller: unknown) =>
       type: "user",
       userId: "u1",
       permissions: {
-        production: { view: [], create: [], update: ["c1"], delete: [] }
+        production: { view: [], create: ["c1"], update: ["c1"], delete: [] }
       }
     },
     company: { id: "c1", groupId: "g1" },
@@ -236,5 +242,34 @@ describe("completeJob", () => {
     expect(result.data?.warning).toBe(
       "Job completed, but returning picked material failed"
     );
+  });
+});
+
+describe("createProductionQuantity", () => {
+  const record = (jobStatus: string, type: "Production" | "Scrap") =>
+    createProductionQuantity(
+      contextWith(callerWith({ job: { status: jobStatus } })),
+      {
+        jobOperationId: "op1",
+        type,
+        scrapReasonId: "sr1",
+        quantity: 3
+      }
+    );
+
+  it("refuses a locked job", async () => {
+    const result = await record("Completed", "Production");
+    expect(result.error?.category).toBe("rule");
+    expect(upsertProductionQuantity).not.toHaveBeenCalled();
+  });
+
+  it("keeps a scrap reason only on scrap", async () => {
+    await record("In Progress", "Production");
+    await record("In Progress", "Scrap");
+    expect(
+      vi
+        .mocked(upsertProductionQuantity)
+        .mock.calls.map(([, quantity]) => quantity.scrapReasonId)
+    ).toEqual([undefined, "sr1"]);
   });
 });

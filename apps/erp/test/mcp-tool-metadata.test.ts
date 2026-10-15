@@ -329,9 +329,6 @@ describe("mcp tool-metadata generator", () => {
   it("gives an upsert rule to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
     // Inverted (`"updatedBy" in`), id decides.
     expect(get("production_upsertJob").upsert).toEqual({ keys: ["id"] });
-    expect(get("production_upsertProductionQuantity").upsert).toEqual({
-      keys: ["id"]
-    });
     // Inverted, id required either way — looked up.
     expect(get("sales_upsertQuoteMaterial").upsert?.lookups).toEqual([
       { table: "quoteMaterial", match: { id: "id" } }

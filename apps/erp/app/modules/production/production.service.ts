@@ -3439,30 +3439,7 @@ export async function upsertProductionEvent(
   }
 }
 
-export async function updateProductionQuantity(
-  client: SupabaseClient<Database>,
-  productionQuantity: z.infer<typeof productionQuantityValidator> & {
-    id: string;
-    updatedBy: string;
-    companyId: string;
-  }
-) {
-  const { id, updatedBy, companyId, ...updateData } = productionQuantity;
-
-  return client
-    .from("productionQuantity")
-    .update({
-      ...sanitize(updateData),
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select()
-    .single();
-}
-
-/** @mcp upsert */
+/** The row write only; `production.quantity.create` also refuses a locked job. */
 export async function upsertProductionQuantity(
   client: SupabaseClient<Database>,
   productionQuantity:
