@@ -4,8 +4,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@carbon/env", () => ({
+vi.mock("@carbon/env", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/env")>()),
   ASSEMBLER_SERVICE_URL: ""
+}));
+// The models reach the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 vi.mock("@carbon/server-functions", () => ({
   serverFns: { system: () => ({}), as: () => ({}) }
@@ -13,16 +18,6 @@ vi.mock("@carbon/server-functions", () => ({
 vi.mock("~/modules/inventory/inventory.service", () => ({
   cancelOpenPickingListsForJob: vi.fn()
 }));
-// production.models reaches the module barrels (and through them a Supabase
-// client built at import); cancelJob needs nothing from it.
-vi.mock("./production.models", async () => {
-  const { z } = await import("zod");
-  return {
-    isJobLocked: vi.fn(() => false),
-    jobStatus: ["Draft", "Planned", "Ready", "Cancelled"],
-    scheduleOperationReorderValidator: z.object({})
-  };
-});
 vi.mock("./production.service", () => ({
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(),

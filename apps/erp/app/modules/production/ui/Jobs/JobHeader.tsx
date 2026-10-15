@@ -86,6 +86,8 @@ import {
   useUser
 } from "~/hooks";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
+import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
+import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
@@ -148,7 +150,16 @@ const JobHeader = () => {
     unbatchedBatchableOperations?: number;
   }>(path.to.job(jobId));
 
-  const statusFetcher = useFetcher<{}>();
+  const statusFetcher = useAction<typeof statusAction>({
+    onSuccess: () => toast.success(t`Updated job status`)
+  });
+  const complete = useAction<typeof completeAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(t`Job completed successfully`);
+      if (data.warning) toast.error(data.warning);
+    }
+  });
   const release = useJobRelease();
   const cancel = useAction<typeof cancelAction>({
     onSuccess: () => toast.success(t`Job cancelled`)
@@ -494,10 +505,7 @@ const JobHeader = () => {
             <RecordAction slot={isReleasable ? "overflow" : "primary"}>
               <Button
                 onClick={completeModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formAction === path.to.jobComplete(jobId)
-                }
+                isLoading={complete.isPending}
                 isDisabled={
                   ["Completed", "Cancelled"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
@@ -548,7 +556,7 @@ const JobHeader = () => {
         <JobCompleteModal
           job={routeData?.job}
           onClose={completeModal.onClose}
-          fetcher={statusFetcher}
+          fetcher={complete}
         />
       )}
       {expediteModal.isOpen && (
@@ -1309,7 +1317,7 @@ function JobCompleteModal({
   fetcher
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();

@@ -11985,6 +11985,9 @@ msgstr "Zlecenie produkcyjne · {itemReadableId}"
 msgid "Job cancelled"
 msgstr ""
 
+msgid "Job completed successfully"
+msgstr ""
+
 msgid "Job completions"
 msgstr "Ukończenia zleceń produkcyjnych"
 
@@ -13158,6 +13161,9 @@ msgstr "Materiał"
 msgid "Material Cost"
 msgstr "Koszt Materiału"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "Wymiar materiału"
 
@@ -13238,6 +13244,9 @@ msgstr "Typy Materiału"
 
 msgid "Material Types"
 msgstr "Typy materiałów"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "Odchylenie zużycia materiału"
@@ -15646,6 +15655,9 @@ msgstr "Operacja"
 msgid "Operation batch"
 msgstr "Partia operacji"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "Czas realizacji operacji"
 
@@ -15672,6 +15684,9 @@ msgstr "Typ operacji"
 
 msgid "Operation unit cost"
 msgstr "Koszt jednostkowy operacji"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "Operacje"
@@ -24576,6 +24591,9 @@ msgstr "Zaktualizowano"
 
 msgid "Updated By"
 msgstr "Zaktualizowano przez"
+
+msgid "Updated job status"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "Pomyślnie zaktualizowano"

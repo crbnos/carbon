@@ -144,22 +144,6 @@ describe("mcp tool-metadata generator", () => {
     expect(email?.format).toBe("email");
   });
 
-  // A `{mod}.mcp.server.ts` export that shares a service function's name
-  // SHADOWS it — one tool, the wrapper's implementation, the same published
-  // name/schema. Without the generator dedupe the tool appeared twice.
-  it("registers a shadowed mcp.server function exactly once", () => {
-    const entries = tools.filter(
-      (t) => t.name === "production_upsertJobMaterial"
-    );
-    expect(entries).toHaveLength(1);
-    // The wrapper keeps the service's discriminated-upsert contract: its own
-    // body branches, and its own doc names the row it updates.
-    expect(entries[0]!.upsert).toEqual({
-      keys: ["id"],
-      lookups: [{ table: "jobMaterial", match: { id: "id" } }]
-    });
-  });
-
   // A union/intersection AROUND a validator reference publishes the
   // intersection extras, not the validator verbatim. `jobId` is NOT NULL in
   // the DB but lived only in the `& { jobId: string }` extras, so the schema
@@ -167,11 +151,6 @@ describe("mcp tool-metadata generator", () => {
   // found this live. Required only where required in EVERY union branch, so a
   // create-only `Omit<…, "id">` branch demotes `id` to optional.
   it("publishes intersection extras on discriminated upserts", () => {
-    const jobMaterial = get("production_upsertJobMaterial");
-    expect(props(jobMaterial).jobId?.type).toBe("string");
-    expect(jobMaterial.schema.required).toContain("jobId");
-    expect(Object.keys(props(jobMaterial))).toContain("customFields");
-
     const quoteMaterial = get("sales_upsertQuoteMaterial");
     expect(quoteMaterial.schema.required).toContain("quoteId");
     expect(quoteMaterial.schema.required).toContain("quoteLineId");
@@ -197,9 +176,10 @@ describe("mcp tool-metadata generator", () => {
   // boolean — publishes its two legal values instead of a bare string. An MCP
   // agent passing real booleans got an opaque validation failure.
   it("annotates string-encoded booleans with their legal values", () => {
-    const p = props(get("production_upsertJobMaterial"));
-    expect(p.requiresBatchTracking?.enum).toEqual(["true", "false"]);
-    expect(p.requiresSerialTracking?.enum).toEqual(["true", "false"]);
+    expect(props(get("items_upsertMethodMaterial")).kit?.enum).toEqual([
+      "true",
+      "false"
+    ]);
   });
 
   // A JSON-string-transform field ALSO maps "true"/"false" to the booleans

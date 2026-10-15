@@ -11985,6 +11985,9 @@ msgstr "Производственный заказ · {itemReadableId}"
 msgid "Job cancelled"
 msgstr ""
 
+msgid "Job completed successfully"
+msgstr ""
+
 msgid "Job completions"
 msgstr "Завершение производственных заказов"
 
@@ -13158,6 +13161,9 @@ msgstr "Материал"
 msgid "Material Cost"
 msgstr "Стоимость материала"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "Измерение материала"
 
@@ -13238,6 +13244,9 @@ msgstr "Типы материалов"
 
 msgid "Material Types"
 msgstr "Типы материалов"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "Отклонение использования материала"
@@ -15646,6 +15655,9 @@ msgstr "Операция"
 msgid "Operation batch"
 msgstr "Серия операций"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "Срок поставки операции"
 
@@ -15672,6 +15684,9 @@ msgstr "Тип операции"
 
 msgid "Operation unit cost"
 msgstr "Себестоимость операции за единицу"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "Операции"
@@ -24576,6 +24591,9 @@ msgstr "Обновлено"
 
 msgid "Updated By"
 msgstr "Обновлено"
+
+msgid "Updated job status"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "Успешно обновлено"

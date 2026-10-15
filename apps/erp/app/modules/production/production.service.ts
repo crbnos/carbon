@@ -82,7 +82,6 @@ import type {
   deadlineTypes,
   failureModeValidator,
   jobMaterialValidator,
-  jobOperationStatus,
   jobOperationValidator,
   jobStatus,
   jobValidator,
@@ -552,29 +551,6 @@ export function nextJobPriority(
   const beforePriority = siblings[insertBeforeIndex - 1]!.priority ?? 0;
   const afterPriority = siblings[insertBeforeIndex]!.priority ?? 0;
   return (beforePriority + afterPriority) / 2;
-}
-
-/** @mcp delete */
-export async function deleteJob(
-  client: SupabaseClient<Database>,
-  jobId: string
-) {
-  return client.from("job").delete().eq("id", jobId);
-}
-
-/** @mcp delete */
-export async function deleteJobMaterial(
-  client: SupabaseClient<Database>,
-  jobMaterialId: string
-) {
-  return client.from("jobMaterial").delete().eq("id", jobMaterialId);
-}
-
-export async function deleteJobOperation(
-  client: SupabaseClient<Database>,
-  jobOperationId: string
-) {
-  return client.from("jobOperation").delete().eq("id", jobOperationId);
 }
 
 /** @mcp delete */
@@ -3304,21 +3280,6 @@ export async function updateJobMaterialOrder(
 }
 
 /** @mcp update */
-export async function updateJobOperationOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("jobOperation").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-/** @mcp update */
 export async function updateJobOperationStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3390,25 +3351,6 @@ export async function updateMethodOperationStepOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp update */
-export async function updateJobOperationStatus(
-  client: SupabaseClient<Database>,
-  id: string,
-  status: (typeof jobOperationStatus)[number],
-  updatedBy: string
-) {
-  return client
-    .from("jobOperation")
-    .update({
-      status,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .select()
-    .single();
-}
-
 /**
  * Returns picked-but-unconsumed material an operation left at lineside once it
  * is Done; when that completed the job, the whole job's remainder. Pass a
@@ -3446,26 +3388,6 @@ export async function returnPickedRemaindersForJob(
 }
 
 /** @mcp update */
-export async function updateJobOperationDueDate(
-  client: SupabaseClient<Database>,
-  id: string,
-  dueDate: string | null,
-  updatedBy: string
-) {
-  return client
-    .from("jobOperation")
-    .update({
-      dueDate,
-      manuallyScheduled: dueDate !== null,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .select()
-    .single();
-}
-
-/** @mcp update */
 export async function updateProcedureStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3480,7 +3402,7 @@ export async function updateProcedureStepOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp upsert */
+/** The row write only; `production.event.create` / `.update` also post the time to the GL. */
 export async function upsertProductionEvent(
   client: SupabaseClient<Database>,
   productionEvent:
@@ -3863,7 +3785,7 @@ async function assignJobSerialNumbers(
   }
 }
 
-/** @mcp update */
+/** The row write only; `production.job.update` also checks the job and recalculates it. */
 export async function updateJob(
   client: SupabaseClient<Database>,
   input: {
@@ -4154,10 +4076,7 @@ export async function upsertJobMaterial(
     .single();
 }
 
-/**
- * @mcp upsert
- * @mcp key jobOperation id
- */
+/** The row write only; `production.operation.create` / `.update` are the operations. */
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4695,7 +4614,7 @@ export async function setJobOperationToolStepLink(
     .eq("jobOperationStepId", args.jobOperationStepId);
 }
 
-/** @mcp upsert */
+/** The copy only; `production.method.copyToJob` also recalculates the job. */
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4777,7 +4696,7 @@ export async function upsertJobMethod(
   });
 }
 
-/** @mcp upsert */
+/** Published as `production.method.copyToMaterial`. */
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

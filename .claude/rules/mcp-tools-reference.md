@@ -220,9 +220,9 @@ Three fixes from letting a real MCP agent drive the server; all pinned by
   `(z.infer<V> & { jobId; …; createdBy }) | (z.infer<V> & { jobId; …;
   updatedBy })` used to publish the validator VERBATIM (the unanchored
   `z.infer<` match in `buildToolSchema` won first), silently dropping every
-  `& {...}` extra — `jobId` (NOT NULL in the DB) was missing from
-  `production_upsertJobMaterial`, `quoteId`/`quoteLineId` from
-  `sales_upsertQuoteMaterial`; ~120 tools carried some form of it. Union
+  `& {...}` extra — `quoteId`/`quoteLineId` (NOT NULL in the DB) were
+  missing from `sales_upsertQuoteMaterial`; ~120 tools carried some form of
+  it. Union
   branches now resolve through the intersection-aware machinery and merge
   flat: properties from every branch, required only where required in EVERY
   branch (so a create-only `Omit<…, "id">` branch demotes `id` to optional),
@@ -838,20 +838,12 @@ the model context or the MCP dispatch.
   `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
   and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
   metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
-  holds `issueMaterial` / `completeJob`.
+  holds `issueMaterial` / `scheduleJob`.
 - **A same-named `{module}.mcp.server.ts` export SHADOWS the service function** —
   the generator dedupes by name (mcp wins, matching the runtime registry spread),
   so an orchestration wrapper can replace a bare service function without
-  renaming the published tool. Precedent: `upsertJobMaterial` — the ROUTES run
-  the requirements recalc themselves (`recalculateJobMakeMethodRequirements`,
-  which fills `estimatedQuantity`; the generated `quantityToIssue` derives from
-  it), so a connector call to the bare service left every imported material at
-  estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
-  routes' orchestration (MTO method pull on transition, recalc released creates /
-  all updates) and keeps the exact service payload type so the published schema
-  hash is unchanged. Classification, the upsert rule and the audit-column rule are
-  read from the WRAPPER's own body (it replaces the service function in the AST),
-  and it is the wrapper that carries the `@mcp` tags; the service function it
-  shadows carries none. Pinned by
-  `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
-  function exactly once" case in `mcp-tool-metadata.test.ts`.
+  renaming the published tool. Classification, the upsert rule and the
+  audit-column rule are read from the WRAPPER's own body, and it is the wrapper
+  that carries the `@mcp` tags. No wrapper uses this today: the last one,
+  `upsertJobMaterial`, became the `production.material.create` / `.update`
+  service functions. New orchestration is a `defineServiceFn`, not a wrapper.

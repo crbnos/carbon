@@ -11985,6 +11985,9 @@ msgstr "जॉब · {itemReadableId}"
 msgid "Job cancelled"
 msgstr ""
 
+msgid "Job completed successfully"
+msgstr ""
+
 msgid "Job completions"
 msgstr "जॉब समाप्ति"
 
@@ -13158,6 +13161,9 @@ msgstr "सामग्री"
 msgid "Material Cost"
 msgstr "सामग्री लागत"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "सामग्री आयाम"
 
@@ -13238,6 +13244,9 @@ msgstr "सामग्री प्रकार"
 
 msgid "Material Types"
 msgstr "सामग्री प्रकार"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "सामग्री उपयोग विचलन"
@@ -15646,6 +15655,9 @@ msgstr "ऑपरेशन"
 msgid "Operation batch"
 msgstr "ऑपरेशन बैच"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "ऑपरेशन लीड टाइम"
 
@@ -15672,6 +15684,9 @@ msgstr "ऑपरेशन प्रकार"
 
 msgid "Operation unit cost"
 msgstr "ऑपरेशन यूनिट लागत"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "ऑपरेशन"
@@ -24576,6 +24591,9 @@ msgstr "अपडेट किया गया"
 
 msgid "Updated By"
 msgstr "अपडेट किया गया"
+
+msgid "Updated job status"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"

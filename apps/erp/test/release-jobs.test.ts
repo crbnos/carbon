@@ -159,7 +159,20 @@ describe("releaseCheckedJobs", () => {
 // The planning drawer's Plan on a Draft job follows releaseJobs' order: MRP
 // must never count a job as supply while its requirements are stale.
 describe("planDraftJob", () => {
-  const plan = () => planDraftJob(contextFor({}), { jobId: "job-1" });
+  // The user client: the job's status, read before anything runs.
+  const jobWithStatus = (status: string) => {
+    const chain: Record<string, any> = {};
+    for (const method of ["select", "eq"]) chain[method] = () => chain;
+    chain.maybeSingle = async () => ({ data: { status }, error: null });
+    return { from: () => chain } as any;
+  };
+  const plan = (status = "Draft") =>
+    planDraftJob(contextFor(jobWithStatus(status)), { jobId: "job-1" });
+
+  it("refuses a job that is not Draft before recalculating it", async () => {
+    expect((await plan("Planned")).error?.category).toBe("conflict");
+    expect(recalculateJobRequirements).not.toHaveBeenCalled();
+  });
 
   it("recalculates, flips only from Draft, then runs MRP", async () => {
     const order: string[] = [];

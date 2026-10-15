@@ -11985,6 +11985,9 @@ msgstr "製造指図 · {itemReadableId}"
 msgid "Job cancelled"
 msgstr ""
 
+msgid "Job completed successfully"
+msgstr ""
+
 msgid "Job completions"
 msgstr "製造指図完了"
 
@@ -13158,6 +13161,9 @@ msgstr "材料"
 msgid "Material Cost"
 msgstr "材料費"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "材料ディメンション"
 
@@ -13238,6 +13244,9 @@ msgstr "材料タイプ"
 
 msgid "Material Types"
 msgstr "材料タイプ"
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "材料使用量差異"
@@ -15646,6 +15655,9 @@ msgstr "操作"
 msgid "Operation batch"
 msgstr "工程バッチ"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "工程リードタイム"
 
@@ -15672,6 +15684,9 @@ msgstr "操作タイプ"
 
 msgid "Operation unit cost"
 msgstr "工程単位原価"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "工程"
@@ -24576,6 +24591,9 @@ msgstr "更新日時"
 
 msgid "Updated By"
 msgstr "更新者"
+
+msgid "Updated job status"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "正常に更新されました"

@@ -19,7 +19,7 @@ const spies = vi.hoisted(() => ({
   getAccountLedger: vi.fn(),
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
-  upsertJobMaterial: vi.fn(),
+  upsertContractor: vi.fn(),
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
@@ -29,7 +29,7 @@ const spies = vi.hoisted(() => ({
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
-  updateJobOperationStatus: vi.fn(),
+  deleteProject: vi.fn(),
   getActiveJobOperationsByLocation: vi.fn(),
   getPurchaseLinePivot: vi.fn(),
   deleteCustomer: vi.fn(),
@@ -56,7 +56,8 @@ vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
   getTrialBalance: spies.getTrialBalance,
   getPurchaseLinePivot: spies.getPurchaseLinePivot,
-  upsertAccount: spies.upsertAccount
+  upsertAccount: spies.upsertAccount,
+  deleteProject: spies.deleteProject
 }));
 vi.mock("~/modules/documents/documents.service", () => ({}));
 vi.mock("~/modules/inventory/inventory.service", () => ({
@@ -73,9 +74,7 @@ vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
-  updateJobOperationStatus: spies.updateJobOperationStatus,
-  getActiveJobOperationsByLocation: spies.getActiveJobOperationsByLocation,
-  upsertJobMaterial: spies.upsertJobMaterial
+  getActiveJobOperationsByLocation: spies.getActiveJobOperationsByLocation
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder,
@@ -87,7 +86,9 @@ vi.mock("~/modules/quality/quality.service", () => ({
   insertIssue: spies.insertIssue,
   getInspectionDocument: spies.getInspectionDocument
 }));
-vi.mock("~/modules/resources/resources.service", () => ({}));
+vi.mock("~/modules/resources/resources.service", () => ({
+  upsertContractor: spies.upsertContractor
+}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
@@ -197,7 +198,7 @@ const allSpies = [
   spies.getAccountLedger,
   spies.getTrialBalance,
   spies.upsertAccount,
-  spies.upsertJobMaterial,
+  spies.upsertContractor,
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.updateQuoteLineOrder,
@@ -207,7 +208,7 @@ const allSpies = [
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
-  spies.updateJobOperationStatus,
+  spies.deleteProject,
   spies.getActiveJobOperationsByLocation,
   spies.upsertPurchasingRFQSuppliers,
   spies.insertIssue,
@@ -387,19 +388,19 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
   // (`contextParams`); before that the whole body was passed in its place and
   // the write failed on the `updatedBy` foreign key.
   it("a3. fills a positional updatedBy / createdBy from context, never from the body", async () => {
-    const status = await runDispatch(
-      "production_updateJobOperationStatus",
-      spies.updateJobOperationStatus,
-      { id: "op1", status: "Done", updatedBy: "forged" }
+    const project = await runDispatch(
+      "accounting_deleteProject",
+      spies.deleteProject,
+      { projectId: "p1", updatedBy: "forged" }
     );
-    expect(status.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+    expect(project.calls).toEqual([[spies.FAKE_CLIENT, "c1", "p1", "u1"]]);
 
     const omitted = await runDispatch(
-      "production_updateJobOperationStatus",
-      spies.updateJobOperationStatus,
-      { id: "op1", status: "Done" }
+      "accounting_deleteProject",
+      spies.deleteProject,
+      { projectId: "p1" }
     );
-    expect(omitted.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+    expect(omitted.calls).toEqual([[spies.FAKE_CLIENT, "c1", "p1", "u1"]]);
 
     const suppliers = await runDispatch(
       "purchasing_upsertPurchasingRFQSuppliers",
@@ -1203,46 +1204,40 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     });
   });
 
-  // The inverted discriminator: upsertJobMaterial branches on `if ("updatedBy" in
-  // jobMaterial)` (update-branch first), the mirror image of upsertAccount. A stamped
+  // The inverted discriminator: upsertContractor branches on `if ("updatedBy" in
+  // contractor)` (update-branch first), the mirror image of upsertAccount. A stamped
   // updatedBy would force its UPDATE branch, which matches zero rows for a fresh id and
   // returns PGRST116 — the create silently no-ops. The generator now gives these tools a
   // required `_operation` too, and the dispatch suppresses updatedBy on create so the
   // service falls through to its insert branch.
   it('o. inverted `"updatedBy" in` discriminator, create: updatedBy suppressed, createdBy + companyId stamped, so the service inserts', async () => {
     const r = await runDispatch(
-      "production_upsertJobMaterial",
-      spies.upsertJobMaterial,
-      {
-        _operation: "create",
-        jobId: "j1",
-        itemId: "i1",
-        methodType: "Pull from Inventory",
-        quantity: 2
-      }
+      "resources_upsertContractor",
+      spies.upsertContractor,
+      { _operation: "create", id: "con1", abilities: ["a1"] }
     );
     const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("updatedBy" in payload).toBe(false);
     expect(payload).toMatchObject({
       createdBy: "u1",
       companyId: "c1",
-      jobId: "j1",
-      itemId: "i1"
+      id: "con1",
+      abilities: ["a1"]
     });
   });
 
   it('p. inverted `"updatedBy" in` discriminator, update: updatedBy + companyId stamped, createdBy suppressed', async () => {
     const r = await runDispatch(
-      "production_upsertJobMaterial",
-      spies.upsertJobMaterial,
-      { _operation: "update", id: "jm1", quantity: 3 }
+      "resources_upsertContractor",
+      spies.upsertContractor,
+      { _operation: "update", id: "con1", abilities: [] }
     );
     const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("createdBy" in payload).toBe(false);
     expect(payload).toMatchObject({
       updatedBy: "u1",
       companyId: "c1",
-      id: "jm1"
+      id: "con1"
     });
   });
 });
@@ -1272,17 +1267,17 @@ describe("upserts decided by whether the record exists", () => {
     return { asked, rowExists };
   };
 
-  it("q. a job material with a client-chosen id: created when new, updated once it exists", async () => {
-    const upsert = rule("production_upsertJobMaterial");
-    const args = { id: "jm1", jobId: "j1", quantity: 2 };
+  it("q. a contractor with a client-chosen id: created when new, updated once it exists", async () => {
+    const upsert = rule("resources_upsertContractor");
+    const args = { id: "con1", abilities: [] };
 
     const empty = database({});
     expect(
       await resolveUpsertOperation(upsert, args, PARAMS, empty.rowExists)
     ).toBe("create");
-    expect(empty.asked).toEqual([["jobMaterial", { id: "jm1" }]]);
+    expect(empty.asked).toEqual([["contractor", { id: "con1" }]]);
 
-    const stored = database({ jobMaterial: [{ id: "jm1" }] });
+    const stored = database({ contractor: [{ id: "con1" }] });
     expect(
       await resolveUpsertOperation(upsert, args, PARAMS, stored.rowExists)
     ).toBe("update");

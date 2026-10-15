@@ -5,6 +5,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),

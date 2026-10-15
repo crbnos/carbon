@@ -81,11 +81,12 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
   const { jobId, methodId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
-  const fetcher = useAction<{ error: string | null }>({
+  // Get Method and Save Method. Save still answers `{ error }` itself.
+  const fetcher = useAction<{ error: string | { message: string } | null }>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error);
-      }
+      const message =
+        typeof data?.error === "string" ? data.error : data?.error?.message;
+      if (message) toast.error(message);
     }
   });
   const routeData = useRouteData<{
