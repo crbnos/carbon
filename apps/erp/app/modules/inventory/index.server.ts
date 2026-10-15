@@ -11,6 +11,8 @@ import {
   createShipment,
   createStockTransfer,
   createWarehouseTransferLine,
+  pickPickingListLineChecked,
+  pickPickingListLineEntity,
   pickStockTransferLine,
   pickStockTransferLineEntity,
   postInventoryCount,
@@ -20,6 +22,7 @@ import {
   removeStorageUnit,
   removeWarehouseTransferLine,
   scanKanban,
+  setPickingListStatus,
   setReceiptLineBatch,
   setReceiptLineSerial,
   setStockTransferStatus,
@@ -27,6 +30,7 @@ import {
   splitReceiptLine,
   splitShipmentLine,
   unpickStockTransferLine,
+  updatePickingList,
   updateReceipt,
   updateReceiptFixedAssetLine,
   updateReceiptLines,
@@ -43,6 +47,14 @@ import {
 export const inventory = {
   item: { adjust: adjustInventory },
   kanban: { scan: scanKanban },
+  pickingList: {
+    setStatus: setPickingListStatus,
+    update: updatePickingList,
+    line: {
+      pick: pickPickingListLineChecked,
+      pickEntity: pickPickingListLineEntity
+    }
+  },
   inventoryCount: { create: createInventoryCount, post: postInventoryCount },
   storageUnit: { delete: removeStorageUnit },
   receipt: {

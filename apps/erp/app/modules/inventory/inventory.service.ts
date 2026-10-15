@@ -3421,8 +3421,9 @@ export async function getPickingListLineTrackedEntities(
  * Pick (or unpick) a tracked (serial/batch) lot for a picking line. A pick
  * MOVES the chosen lot from its warehouse bin to the line's lineside shelf via
  * the `post-picking` server function (serial/batch), records it on the line, and
- * points the job material at lineside. `unpick` reverses it.
- * @mcp update
+ * points the job material at lineside. `unpick` reverses it. Published as
+ * `inventory.pickingList.line.pickEntity`, which checks the line is on the
+ * list first.
  */
 export async function setPickingListLineTrackedEntity(
   client: SupabaseClient<Database>,
@@ -3523,7 +3524,7 @@ export async function setPickingListLineTrackedEntity(
   return { data: { id: args.pickingListLineId }, error: null };
 }
 
-/** @mcp upsert */
+/** Writes without the Draft lock: `inventory.pickingList.update` checks it; lists are created by `generatePickingList`. */
 export async function upsertPickingList(
   client: SupabaseClient<Database>,
   pickingList:
@@ -3670,7 +3671,7 @@ export async function cancelOpenPickingListsForJob(
   }
 }
 
-/** @mcp update */
+/** A bare status write: `inventory.pickingList.setStatus` applies the completion policy and the reopen permission. */
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -4434,7 +4435,8 @@ export async function generatePickingList(
  *   - Unpick:       quantity = 0
  *   - Short:        quantity = whatever was actually picked, markShort = true
  * Tracked items go through the scan flow and are rejected here.
- * @mcp action
+ * Published as `inventory.pickingList.line.pick`, which checks the line is on
+ * the list first.
  */
 export async function pickPickingListLine(
   client: SupabaseClient<Database>,

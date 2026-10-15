@@ -54,7 +54,11 @@ import {
   type ErrorCategory,
   type ServiceContext
 } from "~/modules/service-fn.server";
-import { getNextSequence } from "~/modules/settings/settings.service";
+import {
+  getCompanySettings,
+  getNextSequence
+} from "~/modules/settings/settings.service";
+import { refuseUnlessOwned } from "~/modules/shared/shared.server";
 import { resolveSupplierPrice } from "~/modules/shared/shared.service";
 import {
   getCompanyTimeZone,
@@ -62,10 +66,13 @@ import {
 } from "~/modules/shared/timezone.server";
 import { stripSpecialCharacters } from "~/utils/string";
 import {
+  finishPickingList,
   inventoryAdjustmentTypes,
   inventoryItemTypes,
+  isPickingListLocked,
   isStockTransferLocked,
   isWarehouseTransferLocked,
+  pickingListStatusType,
   receiptFixedAssetLineUpdateValidator,
   receiptSourceDocumentType,
   resolveStockTransferPickForward,
@@ -83,12 +90,18 @@ import {
   getDefaultStorageUnitForJob,
   getInventoryCount,
   getKanban,
+  getPickingList,
+  getUnresolvedPickingListLines,
   insertInventoryCount,
   insertManualInventoryAdjustment,
   insertStockTransfer,
+  pickPickingListLine,
   reconcileReceiptSerialEntities,
+  setPickingListLineTrackedEntity,
+  updatePickingListStatus,
   updateStockTransferStatus,
   updateWarehouseTransferStatus,
+  upsertPickingList,
   upsertReceipt,
   upsertShipment,
   upsertWarehouseTransferLine
@@ -3303,6 +3316,294 @@ export const removeStorageUnit = defineServiceFn({
     return { storageUnitId, cascade };
   }
 });
+
+// ---------------------------------------------------------------------------
+// Picking lists
+// ---------------------------------------------------------------------------
+
+/**
+ * Set a picking list's status.
+ *
+ * @remarks
+ * Reopening a Completed, Partial or Cancelled list needs the inventory delete
+ * permission. Finishing (Completed) checks the lines first: with lines left
+ * unpicked, the company's incomplete picking list policy refuses (`error`) or
+ * returns `needsAcknowledgement` with those lines until the call is repeated
+ * with `acknowledged` (`warn`). A list with unpicked or short lines finishes
+ * Partial, not Completed.
+ *
+ * @mcp
+ */
+export const setPickingListStatus = defineServiceFn({
+  input: z.object({
+    pickingListId: z.string(),
+    status: z.enum(pickingListStatusType),
+    acknowledged: z.boolean().optional()
+  }),
+  permission: { update: "inventory" },
+
+  async run(ctx, { pickingListId, status, acknowledged }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const current = await client
+      .from("pickingList")
+      .select("status")
+      .eq("id", pickingListId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the picking list",
+        current.error
+      );
+    }
+    if (!current.data) return ctx.error("notFound", "Picking list not found");
+
+    if (
+      isPickingListLocked(current.data.status) &&
+      !isPickingListLocked(status) &&
+      !ctx.can({ delete: "inventory" })
+    ) {
+      return ctx.error(
+        "forbidden",
+        "Reopening a closed picking list needs the inventory delete permission"
+      );
+    }
+
+    let finalStatus = status;
+    if (status === "Completed") {
+      const [lines, settings] = await Promise.all([
+        getUnresolvedPickingListLines(client, pickingListId, companyId),
+        getCompanySettings(client, companyId)
+      ]);
+      if (lines.error) {
+        return ctx.error(
+          "internal",
+          "Failed to check picking list lines",
+          lines.error
+        );
+      }
+      // Fail closed: an unreadable policy must not fall back to the
+      // bypassable 'warn' default.
+      if (settings.error || !settings.data) {
+        return ctx.error(
+          "internal",
+          "Failed to read the picking list completion policy",
+          settings.error
+        );
+      }
+      const finish = finishPickingList({
+        unresolvedItemNames: lines.unresolved.map((line) => line.itemName),
+        hasShort: lines.hasShort,
+        policy: settings.data.incompletePickingListPolicy,
+        acknowledged: acknowledged ?? false
+      });
+      if (finish.outcome === "refuse") return ctx.error("rule", finish.message);
+      if (finish.outcome === "ask") {
+        return {
+          needsAcknowledgement: true as const,
+          unresolvedLines: lines.unresolved
+        };
+      }
+      finalStatus = finish.status;
+    }
+
+    const update = await updatePickingListStatus(
+      client,
+      pickingListId,
+      finalStatus,
+      ctx.auditUserId
+    );
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update picking list status",
+        update.error
+      );
+    }
+
+    if (finalStatus === "Completed" || finalStatus === "Partial") {
+      // Partial means a line could not be filled: the material-availability
+      // half of job cycle time. The status is the discriminator, so a list
+      // that goes Partial and later Completed records both.
+      trackWorkEvent(
+        "picking_list_completed",
+        {
+          companyId,
+          userId: ctx.auditUserId,
+          pickingListId,
+          finalStatus,
+          source: "erp"
+        },
+        { discriminator: finalStatus }
+      );
+    }
+    return { pickingListId, status: finalStatus };
+  }
+});
+
+/**
+ * Update a Draft picking list's details.
+ *
+ * @remarks
+ * Location, assignee, due date, notes and custom fields. A list past Draft is
+ * locked: reopen it first.
+ *
+ * @mcp
+ */
+export const updatePickingList = defineServiceFn({
+  input: z.object({
+    pickingListId: z.string(),
+    locationId: z.string().min(1),
+    assignee: z.string().optional(),
+    dueDate: z.string().optional(),
+    notes: z.string().optional(),
+    customFields: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "inventory" },
+
+  async run(ctx, { pickingListId, customFields, ...fields }) {
+    const existing = await getPickingList(ctx.asCaller.supabase, pickingListId);
+    if (existing.error || !existing.data) {
+      return ctx.error("notFound", "Picking list not found", existing.error);
+    }
+    if (existing.data.status !== "Draft") {
+      return ctx.error(
+        "rule",
+        "Cannot modify a locked picking list. Reopen it first."
+      );
+    }
+
+    const updated = await upsertPickingList(ctx.asCaller.supabase, {
+      id: pickingListId,
+      pickingListId: existing.data.pickingListId,
+      ...fields,
+      updatedBy: ctx.auditUserId,
+      customFields: customFields as Json | undefined
+    });
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update picking list",
+        updated.error
+      );
+    }
+    return { pickingListId };
+  }
+});
+
+const pickingListLineInput = {
+  pickingListId: z.string(),
+  pickingListLineId: z.string()
+};
+
+/**
+ * Pick a picking list line, or mark it short.
+ *
+ * @remarks
+ * Sets the line's picked quantity (0 unpicks); with `markShort` the line is
+ * Short at that quantity. The line must be on the list.
+ *
+ * @mcp
+ */
+export const pickPickingListLineChecked = defineServiceFn({
+  input: z.object({
+    ...pickingListLineInput,
+    quantity: z.number().min(0),
+    markShort: z.boolean().optional()
+  }),
+  permission: { update: "inventory" },
+
+  async run(ctx, { pickingListId, pickingListLineId, quantity, markShort }) {
+    const owned = await refuseUnlessOwned(ctx, "pickingListLine", {
+      id: pickingListLineId,
+      pickingListId
+    });
+    if (owned) return owned;
+
+    const result = await pickPickingListLine(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        pickingListLineId,
+        quantity,
+        markShort,
+        userId: ctx.auditUserId,
+        companyId: ctx.company.id
+      }
+    );
+    if (result.error) return pickRefusal(ctx, result.error);
+    return result.data;
+  }
+});
+
+/**
+ * Pick a serial or batch for a picking list line, or put it back.
+ *
+ * @remarks
+ * Picks `quantity` of the tracked entity (from `fromStorageUnitId` when
+ * given) onto the line; with `unpick` the entity's pick is undone. The line
+ * must be on the list.
+ *
+ * @mcp
+ */
+export const pickPickingListLineEntity = defineServiceFn({
+  input: z.object({
+    ...pickingListLineInput,
+    trackedEntityId: z.string(),
+    fromStorageUnitId: z.string().nullable().optional(),
+    quantity: z.number().min(0),
+    unpick: z.boolean().optional()
+  }),
+  permission: { update: "inventory" },
+
+  async run(
+    ctx,
+    {
+      pickingListId,
+      pickingListLineId,
+      trackedEntityId,
+      fromStorageUnitId,
+      quantity,
+      unpick
+    }
+  ) {
+    const owned = await refuseUnlessOwned(ctx, "pickingListLine", {
+      id: pickingListLineId,
+      pickingListId
+    });
+    if (owned) return owned;
+
+    const result = await setPickingListLineTrackedEntity(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        pickingListLineId,
+        trackedEntityId,
+        fromStorageUnitId: fromStorageUnitId ?? null,
+        quantity,
+        unpick: unpick ?? false,
+        userId: ctx.auditUserId,
+        companyId: ctx.company.id
+      }
+    );
+    if (result.error) return pickRefusal(ctx, result.error);
+    return result.data;
+  }
+});
+
+/** A pick's refusal: its message is written for the person picking. */
+function pickRefusal(
+  ctx: ServiceContext,
+  error: string | { message?: string }
+) {
+  return ctx.error(
+    "rule",
+    typeof error === "string" ? error : (error.message ?? "Failed to pick line")
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Kanbans

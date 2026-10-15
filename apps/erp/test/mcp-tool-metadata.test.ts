@@ -230,8 +230,8 @@ describe("mcp tool-metadata generator", () => {
   // Database["public"]["Enums"][...] fields publish real enum values from the
   // generated types, so a client picks from the actual statuses.
   it("resolves generated DB enum references to value enums", () => {
-    const status = props(get("inventory_updatePickingListStatus")).status;
-    expect(status?.enum).toContain("In Progress");
+    const status = props(get("inventory_updateInventoryCountStatus")).status;
+    expect(status?.enum).toContain("Pending");
     const mode = props(get("items_updateChangeNoticeAffectedItemCutover"))
       .supersessionMode;
     expect(mode?.enum).toContain("Consume First");

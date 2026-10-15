@@ -757,6 +757,42 @@ export function isPickingListLocked(
   );
 }
 
+/**
+ * What finishing a picking list does, given its unresolved lines (neither
+ * fully picked, cancelled nor marked Short) and the company's
+ * incomplete-list policy: refuse (`error`), ask first (`warn`, until
+ * acknowledged), or finish — Partial when anything was left or short.
+ */
+export function finishPickingList({
+  unresolvedItemNames,
+  hasShort,
+  policy,
+  acknowledged
+}: {
+  unresolvedItemNames: string[];
+  hasShort: boolean;
+  policy: string | null;
+  acknowledged: boolean;
+}):
+  | { outcome: "refuse"; message: string }
+  | { outcome: "ask" }
+  | { outcome: "finish"; status: "Completed" | "Partial" } {
+  if (unresolvedItemNames.length > 0) {
+    if (policy === "error") {
+      return {
+        outcome: "refuse",
+        message: `Can't finish — still unpicked: ${unresolvedItemNames.join(", ")}`
+      };
+    }
+    if (!acknowledged) return { outcome: "ask" };
+  }
+  return {
+    outcome: "finish",
+    status:
+      unresolvedItemNames.length === 0 && !hasShort ? "Completed" : "Partial"
+  };
+}
+
 export const pickingListValidator = z.object({
   id: zfd.text(z.string().optional()),
   pickingListId: zfd.text(z.string().optional()),
