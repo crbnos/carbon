@@ -5,7 +5,7 @@ description: "Locking and closing a fiscal period: the close checklist, what a l
 
 An <Term id="accounting-period">accounting period</Term> is a calendar month assigned to transactions by posting date. <Term id="period-close">Closing a period</Term> prevents further postings and snapshots its balances for reporting. Carbon uses a three-state lifecycle and requires the close checklist to pass before closure.
 
-Period close is available only when accounting is enabled (`companySettings.accountingEnabled`). When accounting is disabled, Carbon does not create journals or periods to close.
+Period close is available only after the company [sets up accounting](/docs/reference/accounting#setting-up-accounting). Before that, journals are *Provisional*: they have no period, so Carbon creates no periods for them, and locking or closing a period is refused with *"Set up accounting before you post journals, runs or period closes."* Setting up accounting closes every period that ends before the cutover date.
 
 ## The close lifecycle
 
@@ -33,7 +33,7 @@ The gate lives in `getOrCreateAccountingPeriod`, which every posting path calls 
   <Field name="Open">Everything posts normally.</Field>
 </FieldTable>
 
-A database trigger (`check_accounting_period_open`) is the hard backstop underneath the service check: it rejects any `INSERT`, `DELETE`, or period-move of a <Term>journal</Term> into or out of a **Closed** period, so even a service-role job or server function can't slip a posting into a closed month. (Locked semantics need actor identity, so they're enforced at the service layer; the trigger only guards the Closed invariant.) The one exception the trigger allows: a `Posted → Reversed` status flip, since the offsetting reversal lands in an open period.
+A database trigger (`check_accounting_period_open`) is the hard backstop underneath the service check: it rejects any `INSERT`, `DELETE`, or period-move of a <Term>journal</Term> into or out of a **Closed** period, so even a service-role job or server function can't slip a posting into a closed month. (Locked semantics need actor identity, so they're enforced at the service layer; the trigger only guards the Closed invariant.) The one exception the trigger allows: a `Posted → Reversed` status flip, since the offsetting reversal lands in an open period. A `Draft → Posted` or `Provisional → Posted` change is a posting, so the trigger checks it like an insert.
 
 ## The close checklist
 
@@ -131,5 +131,5 @@ The task's severity is **Blocker**, and Blockers can never be skipped — only r
 The close re-evaluates the whole checklist server-side and refuses unless **every required task is Done or Skipped and no Blocker check is failing** — the error names the specific blocking task. A database trigger (`check_accounting_period_open`) is the final backstop: it raises *"Accounting period is closed for posting date …"* / *"Cannot delete journal …: accounting period is closed"* if anything tries to post into or delete a journal from a Closed period, even a service-role job.
 
 ### A period won't delete or its fiscal start month is locked
-An <Term id="accounting-period">accounting period</Term> can only be deleted while it's **empty and Open**; one with posted journals, or in any Locked/Closed state, refuses. The fiscal start month locks once the calendar is *committed* — any posting exists, or any period is Locked/Closed — because relabeling reported periods would rewrite history.
+An <Term id="accounting-period">accounting period</Term> can only be deleted while it's **empty and Open**; one with posted journals, or in any Locked/Closed state, refuses. The fiscal start month locks once the calendar is *committed* — any Posted or Reversed journal exists (a Provisional one does not count), or any period is Locked/Closed — because relabeling reported periods would rewrite history. After accounting is set up, a database trigger also refuses any change to the fiscal start month (*"The fiscal year start is locked: accounting was set up …"*).
 </AgentContext>

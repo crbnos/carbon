@@ -7,23 +7,21 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import type { Database } from "@carbon/database";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
 import { Loading } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-import {
-  getDefaultStorageUnitForJob,
-  getKanban,
-  insertStockTransfer
-} from "~/modules/inventory";
-import { getItemReplenishment } from "~/modules/items";
+import { getDefaultStorageUnitForJob, getKanban } from "~/modules/inventory";
+import { getItemReplenishment, getSupplierPartPricing } from "~/modules/items";
 import {
   getActiveJobOperationByJobId,
   insertJob,
@@ -35,6 +33,7 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { resolveSupplierPrice } from "~/modules/shared";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
@@ -240,13 +239,15 @@ async function handleKanban({
   } else if (kanban.data.replenishmentSystem === "Buy") {
     const existingPurchaseOrder = await client
       .from("purchaseOrder")
-      .select("id")
+      .select("id, currencyCode, exchangeRate")
       .eq("supplierId", kanban.data.supplierId!)
       .in("status", ["Planned", "Draft"])
       .eq("companyId", companyId)
       .maybeSingle();
 
     let purchaseOrderId = existingPurchaseOrder.data?.id;
+    let orderCurrencyCode = existingPurchaseOrder.data?.currencyCode ?? null;
+    let orderExchangeRate = existingPurchaseOrder.data?.exchangeRate ?? 1;
 
     if (!purchaseOrderId) {
       const newPurchaseOrder = await insertPurchaseOrder(client, {
@@ -269,9 +270,11 @@ async function handleKanban({
       }
 
       purchaseOrderId = newPurchaseOrder.data.id;
+      orderCurrencyCode = null;
+      orderExchangeRate = newPurchaseOrder.data.exchangeRate;
     }
 
-    const [item, supplierPart, inventory] = await Promise.all([
+    const [item, supplierPart, inventory, company] = await Promise.all([
       client
         .from("item")
         .select(
@@ -293,11 +296,46 @@ async function handleKanban({
         .eq("itemId", kanban.data.itemId!)
         .eq("companyId", companyId)
         .eq("locationId", kanban.data.locationId!)
-        .maybeSingle()
+        .maybeSingle(),
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", companyId)
+        .single()
     ]);
 
     const itemCost = item?.data?.itemCost?.[0];
     const itemReplenishment = item?.data?.itemReplenishment;
+
+    // The line is in the ORDER's currency: the supplier part's price converts
+    // from its own currency at today's rate, the item cost from base.
+    const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+    const order = {
+      currencyCode: orderCurrencyCode ?? baseCurrencyCode,
+      exchangeRate: orderExchangeRate
+    };
+    const pricing = supplierPart.data
+      ? await getSupplierPartPricing(
+          client,
+          supplierPart.data,
+          baseCurrencyCode,
+          order.currencyCode
+        )
+      : null;
+    if (pricing?.error) {
+      logger.error("Kanban operation failed", { error: pricing.error });
+      return { data: null, error: pricing.error.message };
+    }
+    const supplierUnitPrice = resolveSupplierPrice(
+      pricing?.data ?? null,
+      kanban.data.quantity!,
+      order,
+      convertUnitPrice(
+        itemCost?.unitCost ?? 0,
+        { currencyCode: baseCurrencyCode, exchangeRate: 1 },
+        order
+      )
+    );
 
     if (item.error) {
       logger.error("Kanban operation failed", { error: item.error });
@@ -312,12 +350,11 @@ async function handleKanban({
       purchaseOrderLineType: item.data?.type as any,
       itemId: kanban.data.itemId!,
       purchaseQuantity: kanban.data.quantity!,
-      supplierUnitPrice:
-        supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+      supplierUnitPrice,
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
       taxPercent: 0,
-      exchangeRate: 1,
+      exchangeRate: order.exchangeRate,
       purchaseUnitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
       inventoryUnitOfMeasureCode:
         item.data?.unitOfMeasureCode || kanban.data.purchaseUnitOfMeasureCode!,
@@ -353,79 +390,29 @@ async function handleKanban({
       return { data: null, error: "Failed to create stock transfer" };
     }
 
-    if (!kanban.data.fromStorageUnitId || !kanban.data.storageUnitId) {
-      return {
-        data: null,
-        error: "Kanban is missing a from or to storage unit"
-      };
-    }
+    // kanban-replenish re-reads the kanban under companyId, checks both
+    // storage units belong to the kanban's location (CWE-639), and writes the
+    // Released transfer with its kanbanId and "Kanban replenishment" note.
+    // Run as the scanner: a scan needs inventory create permission, the same
+    // check the stock transfer's RLS rule makes.
+    const replenish = await serverFns
+      .as({ client, db: getDatabaseClient(), companyId, userId })
+      .invoke("kanban-replenish", { mode: "scan", kanbanId: id });
 
-    // Defense in depth: confirm BOTH storage units belong to this company and
-    // this kanban's location before moving stock. A stock transfer is
-    // intra-location, and the ids could have been set to another location's (or
-    // company's) bin — validate rather than trust the stored ids (CWE-639).
-    const storageUnits = await client
-      .from("storageUnit")
-      .select("id")
-      .in("id", [kanban.data.fromStorageUnitId, kanban.data.storageUnitId])
-      .eq("companyId", companyId)
-      .eq("locationId", kanban.data.locationId!);
-
-    const validIds = new Set((storageUnits.data ?? []).map((s) => s.id));
-    if (
-      !validIds.has(kanban.data.fromStorageUnitId) ||
-      !validIds.has(kanban.data.storageUnitId)
-    ) {
-      return {
-        data: null,
-        error: "Storage unit does not belong to the kanban location"
-      };
-    }
-
-    // Derive tracking from the item so the transfer line demands the right
-    // serial/batch handling at pick time. insertStockTransfer expands a
-    // serial-tracked line of qty > 1 into individual qty-1 lines.
-    const item = await client
-      .from("item")
-      .select("itemTrackingType")
-      .eq("id", kanban.data.itemId)
-      .eq("companyId", companyId)
-      .single();
-
-    if (item.error) {
-      logger.error("Kanban operation failed", { error: item.error });
-      return { data: null, error: "Failed to get item" };
-    }
-
-    const trackingType = item.data?.itemTrackingType;
-
-    const createStockTransfer = await insertStockTransfer(client, {
-      locationId: kanban.data.locationId!,
-      lines: [
-        {
-          itemId: kanban.data.itemId,
-          fromStorageUnitId: kanban.data.fromStorageUnitId,
-          toStorageUnitId: kanban.data.storageUnitId,
-          quantity: kanban.data.quantity!,
-          requiresSerialTracking: trackingType === "Serial",
-          requiresBatchTracking: trackingType === "Batch"
-        }
-      ],
-      companyId,
-      createdBy: userId
-    });
-
-    if (createStockTransfer.error || !createStockTransfer.data) {
-      logger.error("Kanban operation failed", {
-        error: createStockTransfer.error
-      });
+    if (replenish.error) {
+      logger.error("Kanban operation failed", { error: replenish.error });
       return { data: null, error: "Failed to create stock transfer" };
     }
 
-    return {
-      data: path.to.stockTransfer(createStockTransfer.data.id),
-      error: null
-    };
+    const outcome = replenish.data.results[0];
+    if (outcome?.outcome === "invalid") {
+      return { data: null, error: outcome.reason };
+    }
+    if (outcome?.outcome === "created") {
+      return { data: path.to.stockTransfer(outcome.id), error: null };
+    }
+
+    return { data: null, error: "Failed to create stock transfer" };
   } else {
     return {
       data: null,

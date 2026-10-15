@@ -48,6 +48,11 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import {
+  RecordAction,
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
@@ -492,64 +497,80 @@ const InspectionView = ({
     .filter(Boolean)
     .join("  ·  ");
 
+  const statusBadge = (
+    <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+  );
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
+      <RecordHero subtitle={metaLine} status={statusBadge} />
+      <RecordPhoneChrome />
       {/* Header bar — mirrors InspectionDocumentEditor's header */}
-      <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
+      <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide max-md:hidden">
         <div className="min-w-0 flex-1 pr-2">
           <HStack spacing={2} className="items-center">
             <h1 className="truncate text-base font-semibold">
               {inspection.inspectionId}
             </h1>
-            <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+            {statusBadge}
           </HStack>
           <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
-          <Button
-            variant="secondary"
-            leftIcon={<LuShieldAlert />}
-            asChild
-            isDisabled={failedTrackedEntityIds.length === 0}
-          >
-            <a href={newIssueHref} target="_blank" rel="noreferrer">
-              <Trans>Create Issue</Trans>
-            </a>
-          </Button>
-          {canUpdate && !lotClosed && !hasMeasurements && (
+          <RecordAction slot="overflow">
             <Button
               variant="secondary"
-              leftIcon={<LuFileText />}
-              onClick={documentSwitchDisclosure.onOpen}
+              leftIcon={<LuShieldAlert />}
+              asChild
+              isDisabled={failedTrackedEntityIds.length === 0}
             >
-              <Trans>Change Document</Trans>
+              <a href={newIssueHref} target="_blank" rel="noreferrer">
+                <Trans>Create Issue</Trans>
+              </a>
             </Button>
+          </RecordAction>
+          {canUpdate && !lotClosed && !hasMeasurements && (
+            <RecordAction slot="overflow">
+              <Button
+                variant="secondary"
+                leftIcon={<LuFileText />}
+                onClick={documentSwitchDisclosure.onOpen}
+              >
+                <Trans>Change Document</Trans>
+              </Button>
+            </RecordAction>
           )}
           {isSerial && !lotClosed && (
-            <Button
-              variant={allSamplesLoaded ? "secondary" : "primary"}
-              leftIcon={<LuScan />}
-              onClick={scannerDisclosure.onOpen}
-              isDisabled={!canUpdate}
-            >
-              <Trans>Add Sample</Trans>
-            </Button>
+            <RecordAction slot={isReceiptSource ? "overflow" : "primary"}>
+              <Button
+                variant={allSamplesLoaded ? "secondary" : "primary"}
+                leftIcon={<LuScan />}
+                onClick={scannerDisclosure.onOpen}
+                isDisabled={!canUpdate}
+              >
+                <Trans>Add Sample</Trans>
+              </Button>
+            </RecordAction>
           )}
           {isReceiptSource && (
             <>
-              <Button
-                variant="destructive"
-                onClick={rejectConfirmDisclosure.onOpen}
-                isDisabled={!canUpdate || !canReject}
-              >
-                <Trans>Reject Lot</Trans>
-              </Button>
-              <Button
-                onClick={acceptConfirmDisclosure.onOpen}
-                isDisabled={!canUpdate || !canAccept}
-              >
-                <Trans>Accept Lot</Trans>
-              </Button>
+              <RecordAction slot="secondary">
+                <Button
+                  variant="destructive"
+                  onClick={rejectConfirmDisclosure.onOpen}
+                  isDisabled={!canUpdate || !canReject}
+                >
+                  <Trans>Reject Lot</Trans>
+                </Button>
+              </RecordAction>
+              <RecordAction slot="primary">
+                <Button
+                  onClick={acceptConfirmDisclosure.onOpen}
+                  isDisabled={!canUpdate || !canAccept}
+                >
+                  <Trans>Accept Lot</Trans>
+                </Button>
+              </RecordAction>
             </>
           )}
         </HStack>
@@ -582,7 +603,9 @@ const InspectionView = ({
             {/* PDF viewer — pinned height while the grid is expanded */}
             <div
               className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
-                gridExpanded ? "shrink-0" : "min-h-[220px] flex-1"
+                gridExpanded
+                  ? "shrink-0 max-md:!h-[40dvh]"
+                  : "min-h-[220px] flex-1"
               }`}
               style={{
                 ...(gridExpanded ? { height: pdfPaneHeightPx } : undefined),
@@ -621,7 +644,7 @@ const InspectionView = ({
                 aria-orientation="horizontal"
                 aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
-                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
+                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 max-md:hidden ${
                   isResizingSplit ? "bg-muted" : ""
                 }`}
                 onMouseDown={onSplitResizeMouseDown}
@@ -634,7 +657,7 @@ const InspectionView = ({
             <div
               className={
                 gridExpanded
-                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card"
+                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card max-md:mt-2 max-md:!min-h-0"
                   : "flex max-h-[14rem] min-w-0 shrink-0 flex-col overflow-hidden rounded-lg bg-card"
               }
               style={
@@ -696,7 +719,7 @@ const InspectionView = ({
         // No drawing: the grid takes the full body. Feature-driven lots still
         // render their features; lots without a document collapse to the
         // single "Overall result" row inside the same grid.
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:px-0">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card">
             <div className="min-h-0 flex-1 overflow-auto">
               <InspectionMeasurementGrid

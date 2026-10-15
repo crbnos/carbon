@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
+import {
+  fetchAllByIds,
+  fetchAllFromTable,
+  fetchAllRecords
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -40,6 +44,7 @@ import {
   indexAssemblyGraph,
   validateSubAssemblies
 } from "@carbon/viewer";
+import { isPlanFlagged } from "@carbon/viewer/steps";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
@@ -105,9 +110,9 @@ import {
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
   motionSchema,
+  orientationSchema,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
-  stepPlanWarningsSchema,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {
@@ -123,6 +128,10 @@ import {
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
+import {
+  type MachineTimeListFilters,
+  machineTimeQueueKeyset
+} from "./ui/MachineTime/machine-time-filters.ee";
 
 const logger = getLogger("erp", "production");
 
@@ -2943,29 +2952,6 @@ export async function updateJobBatchNumber(
     .eq("id", trackedEntityId)
     .eq("companyId", companyId)
     .select("id, readableId");
-}
-
-// An `in` filter rides in the request URL and a response stops at PostgREST's
-// row cap, so a read keyed by an id list walks the ids in groups and pages each
-// group. A read cut short either way would say "nothing there" for the rest.
-const IN_FILTER_BATCH_SIZE = 100;
-
-async function fetchAllByIds<T extends object>(
-  ids: string[],
-  buildQuery: (batch: string[]) => {
-    range(
-      from: number,
-      to: number
-    ): PromiseLike<{ data: T[] | null; error: PostgrestError | null }>;
-  }
-): Promise<{ data: T[] | null; error: PostgrestError | null }> {
-  const rows: T[] = [];
-  for (const batch of chunkArray(ids, IN_FILTER_BATCH_SIZE)) {
-    const result = await fetchAllRecords(() => buildQuery(batch));
-    if (result.error) return { data: null, error: result.error };
-    rows.push(...result.data);
-  }
-  return { data: rows, error: null };
 }
 
 export type JobReleaseReadiness = {
@@ -6679,6 +6665,289 @@ export async function getJobOperationBatches(
   return query;
 }
 
+// The filters the Unattributed Time list and its review queue share. The
+// query reads the view `unattributedMachineTimes` (for `startDate` and
+// `endDate`) and must embed `workCenter!inner(name, locationId)`: the search
+// and the location filter read the work center. `workCenterId` is NOT NULL, so the
+// inner join drops no row.
+type MachineTimeFilterableQuery<Q> = {
+  ilike(column: string, pattern: string): Q;
+  in(column: string, values: readonly string[]): Q;
+  gte(column: string, value: string): Q;
+  lte(column: string, value: string): Q;
+  is(column: string, value: null): Q;
+  not(column: string, operator: string, value: null): Q;
+};
+
+export function applyMachineTimeListFilters<
+  Q extends MachineTimeFilterableQuery<Q>
+>(query: Q, filters: MachineTimeListFilters): Q {
+  let filtered = query;
+  if (filters.search) {
+    filtered = filtered.ilike("workCenter.name", `%${filters.search}%`);
+  }
+  if (filters.workCenterIds.length > 0) {
+    filtered = filtered.in("workCenterId", filters.workCenterIds);
+  }
+  if (filters.locationIds.length > 0) {
+    filtered = filtered.in("workCenter.locationId", filters.locationIds);
+  }
+  // Days in the row's location timezone: the view's `startDate`/`endDate`.
+  if (filters.start.from)
+    filtered = filtered.gte("startDate", filters.start.from);
+  if (filters.start.to) filtered = filtered.lte("startDate", filters.start.to);
+  if (filters.end.from) filtered = filtered.gte("endDate", filters.end.from);
+  if (filters.end.to) filtered = filtered.lte("endDate", filters.end.to);
+  if (filters.state === "Running") filtered = filtered.is("endTime", null);
+  if (filters.state === "Stopped") {
+    filtered = filtered.not("endTime", "is", null);
+  }
+  return filtered;
+}
+
+// Machine run time the OEE sync could not attribute to a loaded operation,
+// newest start first, then `id`: the review queue walks the same order.
+export async function getUnattributedMachineTimes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    filters: MachineTimeListFilters;
+    limit: number;
+    offset: number;
+  }
+) {
+  let query = applyMachineTimeListFilters(
+    client
+      .from("unattributedMachineTimes")
+      .select(
+        "*, workCenter!inner(name, locationId, location(name, timezone))",
+        {
+          count: LIST_COUNT
+        }
+      )
+      .eq("companyId", companyId),
+    args.filters
+  );
+
+  // No `filters` and no `sorts`: the filters above replace the generic ones,
+  // and the list allows no column sort.
+  query = setGenericQueryFilters(
+    query,
+    { limit: args.limit, offset: args.offset },
+    [
+      { column: "startTime", ascending: false },
+      { column: "id", ascending: false }
+    ]
+  );
+
+  // A view types every column nullable; these come from the table's own
+  // NOT NULL columns.
+  return query.overrideTypes<
+    Database["public"]["Tables"]["unattributedMachineTime"]["Row"][]
+  >();
+}
+
+export async function getUnattributedMachineTime(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("unattributedMachineTime")
+    .select("*, workCenter!inner(name, locationId)")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+// Where a row sits in the queue, in the list's order (newest start first,
+// then `id`) and under the list's search and filters: its position, the
+// total, and its neighbours above and below. The queue holds stopped rows
+// only, whatever the State filter says: a running row cannot be answered. So a
+// running row has no position, but its neighbours are still the stopped rows
+// around it.
+export async function getUnattributedMachineTimeNeighbors(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    id: string;
+    startTime: string;
+    endTime: string | null;
+    filters: MachineTimeListFilters;
+  }
+) {
+  const keyset = machineTimeQueueKeyset(args);
+  const queue = (options?: { count: "exact"; head: true }) =>
+    applyMachineTimeListFilters(
+      client
+        .from("unattributedMachineTimes")
+        .select("id, workCenter!inner(name, locationId)", options)
+        .eq("companyId", args.companyId)
+        .not("endTime", "is", null),
+      args.filters
+    );
+
+  const [total, above, previous, next] = await Promise.all([
+    queue({ count: "exact", head: true }),
+    queue({ count: "exact", head: true }).or(keyset.above),
+    queue()
+      .or(keyset.above)
+      .order("startTime", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(1),
+    queue()
+      .or(keyset.below)
+      .order("startTime", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+  ]);
+
+  const error = total.error ?? above.error ?? previous.error ?? next.error;
+  if (error) return { data: null, error };
+
+  return {
+    data: {
+      position: args.endTime ? (above.count ?? 0) + 1 : null,
+      total: total.count ?? 0,
+      previousId: previous.data?.[0]?.id ?? null,
+      nextId: next.data?.[0]?.id ?? null
+    },
+    error: null
+  };
+}
+
+// The operation a supervisor assigns machine time to, with its job. The id
+// comes from the form, so the read is scoped to the company.
+export async function getMachineTimeAssignTarget(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; companyId: string }
+) {
+  return client
+    .from("jobOperation")
+    .select("id, job!inner(jobId, status)")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+}
+
+// Every production event on the work center that overlaps the window (the
+// days of the unattributed time), with its operation and job: what ran there,
+// for the suggestion cards.
+export async function getWorkCenterDayEvents(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    workCenterId: string;
+    dayStart: string;
+    dayEnd: string;
+  }
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "jobOperationId, startTime, endTime, jobOperation(id, description, status, job(id, jobId, status, item(readableIdWithRevision)))"
+    )
+    .eq("companyId", args.companyId)
+    .eq("workCenterId", args.workCenterId)
+    .lt("startTime", args.dayEnd)
+    .or(`endTime.is.null,endTime.gt."${args.dayStart}"`)
+    .order("startTime", { ascending: true })
+    .limit(1000);
+}
+
+// The operations a supervisor can search to assign machine time to: open
+// operations on open jobs at the work center's location (or on the work
+// center itself when it has no location), this work center's first, In
+// Progress next, then the most recent production event there.
+export async function getMachineTimeOperationCandidates(
+  client: SupabaseClient<Database>,
+  args: { workCenterId: string; locationId: string | null; companyId: string }
+) {
+  const operationSelect =
+    "id, description, status, workCenterId, workCenter(name), job!inner(jobId, locationId, status)";
+  const lockedJobStatuses = `(${JOB_LOCKED_STATUSES.join(",")})`;
+
+  const [here, elsewhere, events] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select(operationSelect)
+      .eq("companyId", args.companyId)
+      .eq("workCenterId", args.workCenterId)
+      .not("status", "in", "(Done,Canceled)")
+      .not("job.status", "in", lockedJobStatuses)
+      .limit(1000),
+    args.locationId
+      ? client
+          .from("jobOperation")
+          .select(operationSelect)
+          .eq("companyId", args.companyId)
+          .eq("job.locationId", args.locationId)
+          // `neq` alone drops an operation with no work center (NULL).
+          .or(`workCenterId.is.null,workCenterId.neq.${args.workCenterId}`)
+          .not("status", "in", "(Done,Canceled)")
+          .not("job.status", "in", lockedJobStatuses)
+          // The rank below sets the order; this one decides which rows the
+          // cap keeps: the most recently touched.
+          .order("updatedAt", { ascending: false })
+          .limit(1000)
+      : null,
+    client
+      .from("productionEvent")
+      .select("jobOperationId, startTime")
+      .eq("workCenterId", args.workCenterId)
+      .eq("companyId", args.companyId)
+      .order("startTime", { ascending: false })
+      .limit(200)
+  ]);
+
+  if (here.error) return { data: null, error: here.error };
+  if (elsewhere?.error) return { data: null, error: elsewhere.error };
+  if (events.error) return { data: null, error: events.error };
+
+  // This work center's operations first, then the rest of the location.
+  const operations = [...(here.data ?? []), ...(elsewhere?.data ?? [])];
+
+  // Events arrive latest first, so the first start seen per operation is its
+  // latest. ISO timestamps from PostgREST share one format, so string order is
+  // chronological.
+  const latestEventStart = new Map<string, string>();
+  for (const event of events.data ?? []) {
+    if (!latestEventStart.has(event.jobOperationId)) {
+      latestEventStart.set(event.jobOperationId, event.startTime);
+    }
+  }
+
+  const rank = (operation: (typeof operations)[number]) => [
+    operation.workCenterId === args.workCenterId ? 0 : 1,
+    operation.status === "In Progress" ? 0 : 1
+  ];
+
+  const ranked = operations.sort((a, b) => {
+    const [aHere, aInProgress] = rank(a);
+    const [bHere, bInProgress] = rank(b);
+    if (aHere !== bHere) return aHere - bHere;
+    if (aInProgress !== bInProgress) return aInProgress - bInProgress;
+
+    const aStart = latestEventStart.get(a.id) ?? "";
+    const bStart = latestEventStart.get(b.id) ?? "";
+    if (aStart !== bStart) return aStart < bStart ? 1 : -1;
+
+    return (a.description ?? "").localeCompare(b.description ?? "");
+  });
+
+  return {
+    data: ranked.map((operation) => ({
+      value: operation.id,
+      label: `${operation.job?.jobId ?? ""} · ${operation.description ?? ""}`,
+      // The drawer shows the status when there is no work center: it
+      // translates it, so it stays the enum here.
+      workCenterName: operation.workCenter?.name ?? null,
+      status: operation.status
+    })),
+    error: null
+  };
+}
+
 // The members' shared work-center name: null when they disagree (or none are
 // set), the single distinct name when they all agree. The list stats and the
 // detail drawer both fall back to this when the batch has no header work center
@@ -7872,31 +8141,82 @@ export async function upsertAssemblyInstructionStep(
  * Kept separate from `upsertAssemblyInstructionStep` (which always rewrites
  * `title` and the typed-step fields) so the 3D editor can autosave a drag or a
  * "Set view" click without touching the rest of the step. `camera: null` clears
- * the pose (return to auto-framing); omitting a field leaves it untouched.
+ * the pose (return to auto-framing); `orientation: null` makes the step keep the
+ * previous step's build orientation; omitting a field leaves it untouched.
+ *
+ * The first hand-drawn edit keeps the motion it replaces in
+ * `warnings.plannedMotion`; `reset` restores it and drops the marker. Both are
+ * ONE UPDATE that reads `motion`/`warnings` from the row it writes, so a drag
+ * save and a Reset reaching the server together cannot lose `plannedMotion`.
  * @mcp update
  */
 export async function updateAssemblyStepMotion(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   data: {
     id: string;
     motion?: z.infer<typeof motionSchema>;
     camera?: z.infer<typeof cameraSchema> | null;
+    orientation?: z.infer<typeof orientationSchema> | null;
+    /** Put back the motion the step had before its path was first drawn. */
+    reset?: boolean;
+    companyId: string;
     updatedBy: string;
   }
-) {
-  return client
-    .from("assemblyInstructionStep")
-    .update({
-      ...(data.motion !== undefined ? { motion: data.motion as Json } : {}),
-      ...(data.camera !== undefined
-        ? { camera: data.camera as Json | null }
-        : {}),
-      updatedBy: data.updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", data.id)
-    .select("id")
-    .single();
+): Promise<
+  { data: { id: string }; error: null } | { data: null; error: Error }
+> {
+  const flags = sql<Json>`CASE WHEN jsonb_typeof("warnings") = 'object' THEN "warnings" ELSE '{}'::jsonb END`;
+  const motionPatch = data.reset
+    ? {
+        motion: sql<Json>`COALESCE(NULLIF(${flags} -> 'plannedMotion', 'null'::jsonb), '{"type":"none"}'::jsonb)`,
+        warnings: sql<Json | null>`NULLIF(${flags} - 'plannedMotion', '{}'::jsonb)`
+      }
+    : data.motion !== undefined
+      ? {
+          motion: sql<Json>`${JSON.stringify(data.motion)}::jsonb`,
+          // `"motion"` is the pre-UPDATE value: the motion the drawn path replaces.
+          warnings: sql<Json | null>`CASE WHEN ${flags} ? 'plannedMotion' THEN "warnings" ELSE ${flags} || jsonb_build_object('plannedMotion', "motion") END`
+        }
+      : {};
+  try {
+    const row = await db
+      .updateTable("assemblyInstructionStep")
+      .set({
+        ...motionPatch,
+        ...(data.camera !== undefined
+          ? {
+              camera:
+                data.camera === null
+                  ? null
+                  : sql<Json>`${JSON.stringify(data.camera)}::jsonb`
+            }
+          : {}),
+        ...(data.orientation !== undefined
+          ? {
+              orientation:
+                data.orientation === null
+                  ? null
+                  : sql<Json>`${JSON.stringify(data.orientation)}::jsonb`
+            }
+          : {}),
+        updatedBy: data.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", data.id)
+      .where("companyId", "=", data.companyId)
+      .returning("id")
+      .executeTakeFirst();
+    if (!row) return { data: null, error: new Error("Step not found") };
+    return { data: row, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error:
+        err instanceof Error
+          ? err
+          : new Error(getErrorMessage(err, "Failed to update motion"))
+    };
+  }
 }
 
 // Autosave target for the Details panel's Add/remove component controls: patches
@@ -10446,8 +10766,8 @@ export async function generateAssemblyStepsFromPlan(
 export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
   const motion = motionSchema.safeParse(step.motion);
   const camera = cameraSchema.safeParse(step.camera);
+  const orientation = orientationSchema.safeParse(step.orientation);
   const fastener = fastenerSchema.safeParse(step.fastener);
-  const planWarnings = stepPlanWarningsSchema.safeParse(step.warnings);
 
   return {
     id: step.id,
@@ -10460,12 +10780,10 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     usedInStepId: step.usedInStepId ?? null,
     motion: motion.success ? motion.data : { type: "none" },
     camera: camera.success ? camera.data : null,
+    orientation: orientation.success ? orientation.data : null,
     fastener: fastener.success ? fastener.data : null,
     durationSeconds: step.durationSeconds,
-    flagged:
-      planWarnings.success && planWarnings.data.flagged === true
-        ? true
-        : undefined
+    flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
   };
 }
 

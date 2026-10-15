@@ -56,6 +56,7 @@ const ProductionEventsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: operations.map((operation) => ({
@@ -80,6 +81,7 @@ const ProductionEventsTable = memo(
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -107,6 +109,7 @@ const ProductionEventsTable = memo(
             </Badge>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Setup", "Labor", "Machine"].map((type) => ({
@@ -135,7 +138,8 @@ const ProductionEventsTable = memo(
           cell: ({ row }) =>
             row.original.duration
               ? formatDurationMilliseconds(row.original.duration * 1000)
-              : null
+              : null,
+          meta: { mobile: "P2" }
         },
         {
           accessorKey: "workCenterId",

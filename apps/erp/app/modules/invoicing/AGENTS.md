@@ -23,10 +23,17 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
-  in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`, and
-  `update{Sales,Purchase}InvoiceStatus` returns an error rather than writing either.
-  Base-status `Paid` is the manual/legacy/Xero "settled" signal, allowed by the route only
-  when accounting is disabled.
+  in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no
+  manual status change: Mark as Paid / Mark as Unpaid, their `$invoiceId.status.tsx` routes
+  and `update{Sales,Purchase}InvoiceStatus` are gone, so in Carbon a payment (through
+  `invoiceSettlement`) is the only way an invoice becomes paid. An accounting-provider pull
+  still writes the base status: the Xero and QuickBooks Online invoice and bill syncers
+  (`packages/ee/src/accounting/providers/{xero,quickbooks-online}/entities/{invoice,bill}.ts`,
+  `upsertLocal`) set `Paid` or `Partially Paid` from the remote document (Xero: `PAID` gives
+  `Paid`, and a bill with `AmountPaid` and `AmountDue` gives `Partially Paid`; QBO: `Balance`
+  against `TotalAmt`), and the bill syncers also set `datePaid`.
+  The `salesInvoices` / `purchaseInvoices` views show a base `Paid` as `Paid` with a zero
+  `balance`, whatever the settlements say.
 - **Due date** — `computeInvoiceDateDue` anchors `paymentTerm.daysDue` by `calculationMethod`
   (`Net` / `End of Month` / `Day of Month`, clamped). A missing term falls back to
   `DEFAULT_PAYMENT_TERM` (Net 30); a term *query failure* throws so the caller aborts instead
@@ -116,6 +123,12 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `post-purchase-invoice`, `post-memo`, `post-payment`, `post-charge`, `post-reimbursement`
   server functions — never a direct status write.
 - Re-export `reimbursement.server.ts` or `stripe-customer.server.ts` from `index.ts`.
+- Delete a purchase invoice, or one of its lines, with a plain delete when it may carry Lease
+  lines: `leasePayment.purchaseInvoiceLineId` has no FK, so the payment row stays Invoiced and
+  is never billed again. The delete routes call `deletePurchaseInvoiceReleasingLeases` /
+  `deletePurchaseInvoiceLineReleasingLeases` (`~/modules/purchasing/purchasing.server`), which
+  return the rows to Pending in the same transaction; the MCP `invoicing_deletePurchaseInvoice`
+  / `invoicing_deletePurchaseInvoiceLine` tools are blocked.
 
 ## Validation Commands
 
@@ -133,7 +146,7 @@ pnpm --filter erp test                                    # the whole app's vite
 | `salesInvoiceLine` / `salesInvoiceLines` / `salesInvoiceLocations` (views) | AR lines (`salesInvoiceLineType` includes `Fixed Asset`). **Line discount** (migration `20261006221401`): `discountPercent` is a FRACTION 0–1 (CHECK, default 0) with generated `netUnitPrice` / `convertedNetUnitPrice`; it discounts the merchandise (`quantity × unitPrice`) only — add-ons and shipping never — and tax is charged on the discounted merchandise. `unitPrice` stays the LIST price. Every amount path applies it: the `salesInvoices` view totals, `calculateSalesPostingAmounts` (`@carbon/database`, `sales-posting-amounts.ts`), the PDF / email (`@carbon/documents` `utils/sales-invoice.ts`), `SalesInvoiceSummary`, Stripe (`toStripeInvoiceLines`) and the accounting providers (`sales-document-components.ts`). The form field "Discount (%)" posts percent POINTS; `$invoiceId.new` / `$invoiceId.$lineId.details` divide by 100 (`salesInvoiceLineValidator` accepts 0–100). `upsertSalesInvoiceLine` (an MCP tool) writes the value as given, so an MCP caller must send the fraction (20 is refused by the CHECK). Contract provenance: `customerContractId` / `customerContractLineId` / `customerContractInvoiceLineId` and `projectId` (written as the Project dimension on the line's revenue legs); `salesInvoice.customerContractId` and `memo.customerContractId` likewise. With these FKs, inferring a bare `salesInvoice(...)` embed from `salesInvoiceLine` exceeds TypeScript's instantiation depth (TS2589): name the FK, `salesInvoice!salesInvoiceLine_invoiceId_fkey(...)` |
 | `salesInvoiceShipment` | Per-invoice shipping method/term/cost + incoterm, and the customer ship-to `customerLocationId` ("Ship To" on `SalesInvoiceShipmentForm`; copied from the order / contract / rental agreement when one drafts the invoice; sales rules evaluate standalone lines against it, never the bill-to — see sales `AGENTS.md` "Invoice ship-to") |
 | `purchaseInvoice` / `purchaseInvoices` (view) | AP header; view derives `balance`, `orderTotal`, the derived statuses |
-| `purchaseInvoiceLine` / `purchaseInvoiceLines` (view) | AP lines (`purchaseInvoiceLineType` includes `G/L Account`) |
+| `purchaseInvoiceLine` / `purchaseInvoiceLines` (view) | AP lines (`invoiceLineType`, enum `payableLineType`, includes `G/L Account` and `Lease`). A **Lease** line (migrations `20261011163133` / `20261011202305`) has no item, account or asset: `leaseId` names the lessee lease (CHECK `purchaseInvoiceLine_lease_check`: type `Lease` iff `leaseId` set) and `leasePaymentId` the `leasePayment` row it bills when the `create-lease-invoices` server function drafted it (one line per leased asset's row, described with the asset; `upsertPurchaseInvoiceLine` never takes `leasePaymentId` from a caller). The view adds `leaseReadableId` / `leaseName`. `purchaseInvoiceLineValidator` requires `leaseId` and a description on a Lease line; `PurchaseInvoiceLineForm` has a **Lease** tab listing the supplier's Active / Expired / Terminated / Purchased leases, and locks the lease and amount of a drafted line. Posting (`post-purchase-invoice`; the account and checks in `resolveLeasePostingLine`, `post-purchase-invoice/lease-lines.ts`, shared with the cutover's legacy backfill; the lines in `kind: "lease"` of `posting-lines.ts`): by the classification of the row's asset (`leaseLine`), a capitalized (Operating / Finance) asset's line debits `leaseLiabilityAccount` with its NOMINAL amount (`nominalBaseCost`, quantity × base unit price), which must equal the row's amount (`equals`), and its tax, line shipping and share of the header freight to `operatingLeaseExpenseAccount`; a Short-Term asset's line debits `operatingLeaseExpenseAccount` in full; a line without a payment row debits `variableLeaseExpenseAccount` in full; AP is credited the whole total. Refused for a lease that is not billable (`BILLABLE_LEASE_STATUSES`: a Draft or Cancelled lease), a payment row of another lease, a row whose `purchaseInvoiceLineId` is not this line (billed by another line), or with a project. VOID returns the billed rows to Pending and stamps `voidedPurchaseInvoiceId`. See purchasing AGENTS → Leases |
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
@@ -199,7 +212,9 @@ guarded by `requireUnlockedBulk`, not validators.
 - **sales** / **purchasing** — invoices convert from sales orders, shipments and POs; sales
   rules gate the sales-invoice post; `getCustomerPayment`/`getCustomerShipping` (and the
   supplier equivalents) seed invoice headers.
-- **settings** — `getNextSequence`, `getCompanySettings` (`accountingEnabled`),
+- **settings** — `getNextSequence`, `getCompanySettings` (`accountingCutoverDate`, read through
+  `hasAccountingCutover` from `~/modules/accounting/accounting.utils`: before the cutover the receivables / payables
+  workbenches and the invoicing dashboard skip the GL tie-out, and the adjust routes refuse),
   `party-contact.server`.
 - **shared** — `getCompanyTimeZone` (`timezone.server`); `incoterms`/`itemType`/`methodType` from
   `shared.models` imported DIRECTLY, never via the `../shared` barrel (which drags Lingui macros

@@ -23,29 +23,35 @@ import {
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
+import { getVapidDetails } from "@carbon/env/push.server";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
-import { RouteRealtime } from "@carbon/query";
+import { RouteRealtime, useLoaderQuery } from "@carbon/query";
 import { setClientCompanyId } from "@carbon/query/cache";
 import {
+  AnnouncementBar,
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
-  useNProgress
+  useNProgress,
+  useViewport
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  formatDate,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -61,6 +67,11 @@ import {
   PrimaryNavigation,
   Topbar
 } from "~/components/Layout";
+import {
+  MobileAppBar,
+  MobileBottomChrome,
+  MobileDock
+} from "~/components/Layout/Mobile";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
@@ -70,6 +81,7 @@ import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
+import AccountSettings from "~/modules/account/ui/AccountSettings";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import { employeeCompaniesOf, getEmployeeCompanies } from "~/modules/settings";
@@ -80,6 +92,7 @@ import {
 } from "~/modules/shared/shared.server";
 import { getItarCertificationStatus } from "~/modules/users";
 import { getUserClaims } from "~/modules/users/users.server";
+import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -325,6 +338,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,
+    // Null hides the bell's "Enable browser notifications" row: the
+    // deployment has no push keys (no SESSION_SECRET).
+    pushPublicKey: getVapidDetails()?.publicKey ?? null,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
@@ -364,6 +380,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AuthenticatedRoute() {
   const loaderData = useLoaderData<typeof loader>();
+  const { isPhone } = useViewport();
   const {
     company,
     session,
@@ -377,6 +394,22 @@ export default function AuthenticatedRoute() {
   } = loaderData;
   // During render, not in an effect: clientLoaders and the first child read it.
   setClientCompanyId(company?.id ?? null, user?.id ?? null);
+  const { t } = useLingui();
+  const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
+    path.to.api.systemStatus
+  );
+  const { locale } = useLocale();
+  const moveDate = systemStatus.data?.accountMoveDate;
+  // The account move outranks the deployment-wide announcement, and cannot
+  // be dismissed: it stays until the date is cleared on the company.
+  const announcement = moveDate
+    ? {
+        id: `account-move:${moveDate}`,
+        severity: "warning" as const,
+        message: t`🚨 Heads up: on ${formatDate(moveDate, { dateStyle: "long" }, locale)} your account will be moved to erp.try.carbon.ms`,
+        dismissible: false
+      }
+    : systemStatus.data?.announcement;
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
@@ -521,12 +554,22 @@ export default function AuthenticatedRoute() {
               <TooltipProvider>
                 <SidebarProvider
                   defaultOpen={false}
-                  keyboardShortcut={false}
                   className="h-screen min-h-0"
                 >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
+                    {/* Phones: app bar on top; below <main>, a page's
+                        bottom bar in flow or the dock floating over it.
+                        Mounted only on phones so their hooks
+                        (notifications, sheets) never run on desktop. */}
+                    {isPhone && <MobileAppBar />}
                     <Topbar />
+                    <AnnouncementBar
+                      announcement={announcement}
+                      userId={user?.id ?? ""}
+                      dismissLabel={t`Dismiss`}
+                      defaultLinkLabel={t`Learn more`}
+                    />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <ModuleSidebarLayout>
                         {/* A company switch stays on the same page. Without the key the page
@@ -534,7 +577,21 @@ export default function AuthenticatedRoute() {
                             values and saving wrote them to the new one. */}
                         <Outlet key={companyId} />
                       </ModuleSidebarLayout>
+                      {/* Room to scroll a page's end out from under the
+                          floating dock. A spacer, not padding: padding would
+                          shrink h-full pages and end them above the dock. */}
+                      {isPhone && (
+                        <div
+                          aria-hidden
+                          className="h-[var(--dock-height,0px)] md:hidden"
+                        />
+                      )}
                     </main>
+                    {isPhone && (
+                      <MobileBottomChrome>
+                        <MobileDock />
+                      </MobileBottomChrome>
+                    )}
                   </div>
                 </SidebarProvider>
                 <TrainingPanel
@@ -550,6 +607,7 @@ export default function AuthenticatedRoute() {
                 />
                 <AgentRoot />
                 <ShortcutHelp />
+                <AccountSettings />
                 {companySettings?.timeCardEnabled && (
                   <Suspense fallback={null}>
                     <Await resolve={openClockEntry}>

@@ -67,6 +67,7 @@ const PurchasingRFQsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -95,6 +96,7 @@ const PurchasingRFQsTable = memo(
             );
           },
           meta: {
+            mobile: "P3",
             icon: <LuContainer />,
             filter: {
               type: "static",
@@ -115,6 +117,7 @@ const PurchasingRFQsTable = memo(
             return <PurchasingRFQStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: purchasingRfqStatusType.map((status) => ({

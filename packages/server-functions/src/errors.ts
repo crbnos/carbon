@@ -42,10 +42,15 @@ export class NotFoundError extends ServerFnError {
   }
 }
 
+/** SQLSTATE of a plpgsql `RAISE EXCEPTION`: a message our own SQL wrote for
+ *  the person (e.g. "Job J000343 has 6 serial unit(s) left to receive…"). */
+const RAISED_EXCEPTION = "P0001";
+
 /** Structural only: an authored message naming a table is still shown. */
 export function isDataLayerError(err: unknown): boolean {
   if (err === null || typeof err !== "object") return false;
   const e = err as Record<string, unknown>;
+  if (e.code === RAISED_EXCEPTION) return false;
   // supabase-js PostgrestError: exactly these documented keys.
   if (
     typeof e.code === "string" &&

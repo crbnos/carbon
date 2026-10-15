@@ -355,7 +355,7 @@ databaseTest(
 
       const result = await voidShipment(f, shipmentId);
       expect(result.error?.message).toContain(
-        "A posted revenue recognition run holds accrued rent for FA-"
+        "A posted run holds accrued rent for FA-"
       );
       expect((await shipmentStatus(f, shipmentId)).status).toEqual("Posted");
     } finally {

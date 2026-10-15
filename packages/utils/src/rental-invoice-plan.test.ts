@@ -20,6 +20,7 @@ const line = (
   item,
   lineType,
   isAdjustment: false,
+  invoiceSeparately: false,
   voidedInvoiceReadableId: null,
   ...overrides
 });
@@ -42,11 +43,11 @@ describe("planRentalInvoices", () => {
     ]);
   });
 
-  it("Post splits rent from charges and holds the charges", () => {
+  it("Post splits off separately invoiced charges and holds them", () => {
     expect(
       planRentalInvoices("Post", [
         line("rent", "Rent"),
-        line("damage", "Charge"),
+        line("damage", "Charge", { invoiceSeparately: true }),
         line("buyout", "Purchase Option")
       ])
     ).toEqual([
@@ -55,6 +56,52 @@ describe("planRentalInvoices", () => {
         lines: ["damage", "buyout"],
         holdReason: RENTAL_HOLD_CHARGES,
         role: "charges"
+      }
+    ]);
+  });
+
+  it("puts a charge on the unheld rent invoice by default", () => {
+    expect(
+      planRentalInvoices("Post and Email", [
+        line("rent", "Rent"),
+        line("insurance", "Charge"),
+        line("damage", "Charge", { invoiceSeparately: true })
+      ])
+    ).toEqual([
+      { lines: ["rent", "insurance"], holdReason: null, role: "rent" },
+      { lines: ["damage"], holdReason: RENTAL_HOLD_CHARGES, role: "charges" }
+    ]);
+  });
+
+  it("drafts a charge unheld when no rent is due", () => {
+    expect(planRentalInvoices("Post", [line("insurance", "Charge")])).toEqual([
+      { lines: ["insurance"], holdReason: null, role: "rent" }
+    ]);
+  });
+
+  it("always invoices a Purchase Option separately", () => {
+    expect(
+      planRentalInvoices("Post", [
+        line("rent", "Rent"),
+        line("buyout", "Purchase Option")
+      ])
+    ).toEqual([
+      { lines: ["rent"], holdReason: null, role: "rent" },
+      { lines: ["buyout"], holdReason: RENTAL_HOLD_CHARGES, role: "charges" }
+    ]);
+  });
+
+  it("holds a rent invoice re-billing a voided charge", () => {
+    expect(
+      planRentalInvoices("Post", [
+        line("rent", "Rent"),
+        line("insurance", "Charge", { voidedInvoiceReadableId: "INV-7" })
+      ])
+    ).toEqual([
+      {
+        lines: ["rent", "insurance"],
+        holdReason: rentalHoldRebill(["INV-7"]),
+        role: "rent"
       }
     ]);
   });
@@ -74,8 +121,12 @@ describe("planRentalInvoices", () => {
     ]);
   });
 
-  it("Post with charges only drafts one held charges invoice", () => {
-    expect(planRentalInvoices("Post", [line("damage", "Charge")])).toEqual([
+  it("Post with separate charges only drafts one held charges invoice", () => {
+    expect(
+      planRentalInvoices("Post", [
+        line("damage", "Charge", { invoiceSeparately: true })
+      ])
+    ).toEqual([
       { lines: ["damage"], holdReason: RENTAL_HOLD_CHARGES, role: "charges" }
     ]);
   });

@@ -104,13 +104,15 @@ const MaintenanceSchedulesTable = memo(
           header: t`Schedule Name`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id!}>{row.original.name}</Hyperlink>
-          )
+          ),
+          meta: { mobile: "P1" }
         },
         {
           accessorKey: "workCenterName",
           header: t`Work Center`,
           cell: ({ row }) => <Enumerable value={row.original.workCenterName} />,
           meta: {
+            mobile: "P3",
             icon: <LuBuilding />
           }
         },
@@ -231,6 +233,7 @@ const MaintenanceSchedulesTable = memo(
               "-"
             ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendar />
           }
         }

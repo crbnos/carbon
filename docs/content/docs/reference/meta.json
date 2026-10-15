@@ -31,6 +31,7 @@
     "purchase-orders",
     "supplier-returns",
     "supplier-quotes",
+    "leases",
     "suppliers-and-customers",
     "shipments",
     "picking",

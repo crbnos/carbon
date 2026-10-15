@@ -403,7 +403,7 @@ export function RevisionsItem({
                           variant="secondary"
                           icon={<LuEllipsisVertical />}
                           aria-label={t`Edit`}
-                          className="absolute right-2 top-1 flex-shrink-0 opacity-0 group-hover/used-in:opacity-100 data-[state=open]:opacity-100"
+                          className="absolute right-2 top-1 flex-shrink-0 md:opacity-0 group-hover/used-in:opacity-100 data-[state=open]:opacity-100"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

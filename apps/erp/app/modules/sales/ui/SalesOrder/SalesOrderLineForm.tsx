@@ -526,7 +526,7 @@ const SalesOrderLineForm = ({
               >
                 <HStack
                   className={cn(
-                    "w-full justify-between items-start",
+                    "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                     type === "modal" && "pr-16"
                   )}
                 >
@@ -605,7 +605,7 @@ const SalesOrderLineForm = ({
                       )}
                     </ModalCardDescription>
                   </ModalCardHeader>
-                  <div className="flex-shrink-0 flex items-center gap-2">
+                  <div className="flex-shrink-0 flex items-center gap-2 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                     {!isEditing && (
                       <TabsList>
                         <TabsTrigger value="item">

@@ -3,11 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ManifestEntry } from "@carbon/api";
-import { hashOAuthSecret } from "@carbon/auth/auth.server";
-import {
-  getCarbonServiceRole,
-  getUserScopedClient
-} from "@carbon/auth/client.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createCatalogSearch } from "@carbon/ee/mcp";
 import { createMcpServer } from "@carbon/ee/mcp.server";
@@ -18,7 +13,11 @@ import { datetime, getRequestOrigin } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { authenticateApiKey } from "../v1+/lib/authenticate.server";
+import {
+  authenticateApiKey,
+  findOAuthToken,
+  oauthContext
+} from "../v1+/lib/authenticate.server";
 import type { AuthedContext } from "../v1+/lib/base.server";
 import { callOperation } from "../v1+/lib/call.server";
 import {
@@ -52,25 +51,6 @@ function addCorsHeaders(response: Response): Response {
     status: response.status,
     headers
   });
-}
-
-async function authenticateOAuthToken(
-  accessToken: string
-): Promise<{ userId: string; companyId: string } | null> {
-  const serviceRole = getCarbonServiceRole();
-  const tokenResult = await serviceRole
-    .from("oauthToken")
-    .select("userId, companyId, expiresAt")
-    .eq("accessToken", hashOAuthSecret(accessToken))
-    .single();
-
-  if (!tokenResult.data) return null;
-  if (new Date(tokenResult.data.expiresAt) < new Date()) return null;
-
-  return {
-    userId: tokenResult.data.userId,
-    companyId: tokenResult.data.companyId
-  };
 }
 
 /**
@@ -144,32 +124,15 @@ async function resolveAuth(request: Request): Promise<{
 
     // Try OAuth for non-API-key tokens
     if (!token.startsWith("crbn_")) {
-      const oauthAuth = await authenticateOAuthToken(token);
-      if (oauthAuth) {
-        const rl = await oauthRatelimit.limit(`mcp-oauth:${oauthAuth.userId}`);
+      const identity = await findOAuthToken(token);
+      if (identity) {
+        const rl = await oauthRatelimit.limit(`mcp-oauth:${identity.userId}`);
         if (!rl.success) {
           throw make429Response(rl.reset, rl.remaining);
         }
 
-        const client = await getUserScopedClient(oauthAuth.userId);
-        const companyResult = await client
-          .from("company")
-          .select("companyGroupId")
-          .eq("id", oauthAuth.companyId)
-          .single();
-
-        return {
-          ctx: {
-            client,
-            companyId: oauthAuth.companyId,
-            companyGroupId:
-              companyResult.data?.companyGroupId ?? oauthAuth.companyId,
-            userId: oauthAuth.userId,
-            authKind: "oauth" as const,
-            scopes: {}
-          },
-          request
-        };
+        const ctx = await oauthContext(identity);
+        if (ctx) return { ctx, request };
       }
 
       throw make401Response(request);

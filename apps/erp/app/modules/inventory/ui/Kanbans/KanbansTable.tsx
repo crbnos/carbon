@@ -20,15 +20,25 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuItem,
   PulsingDot,
+  Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useMemo,
+  useState
+} from "react";
 import {
   LuBlocks,
   LuCalendar,
@@ -61,6 +71,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { kanbanOutputTypes } from "~/modules/settings/settings.models";
 import { useSuppliers } from "~/stores";
@@ -74,26 +85,103 @@ type KanbansTableProps = {
   count: number;
   locationId: string;
   kanbanOutput: (typeof kanbanOutputTypes)[number];
+  /** Kanban id → projected quantity at its To storage unit (armed Transfer kanbans only). */
+  projectedQuantities: Record<string, number>;
 };
 
 const defaultColumnVisibility = {
   createdBy: false,
+  // Blank for every Buy and Make kanban; shown from the column picker.
+  replenishmentLevel: false,
+  projectedQuantity: false,
   supplierName: false,
   createdAt: false,
   updatedBy: false,
   updatedAt: false
 };
 
+type KanbanQrCodeAction = "order" | "start" | "complete";
+
+// One QR code popover open at a time across the whole table. Each hover card
+// closes only after its own delay, so moving across the Create / Start /
+// Complete badges used to leave several popovers open on top of each other.
+const OpenQrCodeContext = createContext<
+  [string | null, Dispatch<SetStateAction<string | null>>] | null
+>(null);
+
+function KanbanQrCodeHoverCard({
+  kanbanId,
+  action,
+  label,
+  tooltip
+}: {
+  kanbanId: string;
+  action: KanbanQrCodeAction;
+  label: ReactNode;
+  tooltip: ReactNode;
+}) {
+  const openQrCode = useContext(OpenQrCodeContext);
+  const key = `${kanbanId}:${action}`;
+  const isOpen = openQrCode ? openQrCode[0] === key : undefined;
+
+  return (
+    <HoverCard
+      open={isOpen}
+      onOpenChange={(open) =>
+        openQrCode?.[1]((current) =>
+          open ? key : current === key ? null : current
+        )
+      }
+    >
+      <Tooltip>
+        <TooltipTrigger>
+          <HoverCardTrigger>
+            <Badge
+              variant="outline"
+              className="flex flex-row items-center gap-1 cursor-pointer"
+            >
+              <LuQrCode />
+              {label}
+            </Badge>
+          </HoverCardTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+      <HoverCardContent
+        align="center"
+        className="size-[236px] overflow-hidden z-[100] bg-white p-4"
+      >
+        <iframe
+          seamless
+          title={"Kanban QR Code"}
+          width="198"
+          height="198"
+          src={path.to.file.kanbanQrCode(kanbanId, action)}
+        />
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
 const KanbansTable = memo(
-  ({ data, count, locationId, kanbanOutput }: KanbansTableProps) => {
+  ({
+    data,
+    count,
+    locationId,
+    kanbanOutput,
+    projectedQuantities
+  }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const formatQuantity = useQuantityFormatter();
+    const openQrCode = useState<string | null>(null);
 
     const permissions = usePermissions();
     const [people] = usePeople();
     const [items] = useItems();
     const [suppliers] = useSuppliers();
     const locations = useLocations();
+    const { isPhone } = useViewport();
 
     const columns = useMemo<ColumnDef<Kanban>[]>(
       () => [
@@ -120,6 +208,7 @@ const KanbansTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -154,6 +243,10 @@ const KanbansTable = memo(
                 </Link>
               </Badge>
             );
+          },
+          meta: {
+            mobile: "P2",
+            mobilePill: true
           }
         },
         {
@@ -246,112 +339,35 @@ const KanbansTable = memo(
               )}
               {kanbanOutput === "qrcode" && (
                 <HStack>
-                  <HoverCard>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HoverCardTrigger>
-                          <Badge
-                            variant="outline"
-                            className="flex flex-row items-center gap-1 cursor-pointer"
-                          >
-                            <LuQrCode />
-                            <Trans>Create</Trans>
-                          </Badge>
-                        </HoverCardTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t`QR Code to create a ${getKanbanCreateNoun(row.original.replenishmentSystem)} for this kanban`}
-                      </TooltipContent>
-                    </Tooltip>
-                    <HoverCardContent
-                      align="center"
-                      className="size-[236px] overflow-hidden z-[100] bg-white p-4"
-                    >
-                      <iframe
-                        seamless
-                        title={"Kanban QR Code"}
-                        width="198"
-                        height="198"
-                        src={path.to.file.kanbanQrCode(
-                          row.original.id!,
-                          "order"
-                        )}
-                      />
-                    </HoverCardContent>
-                  </HoverCard>
+                  <KanbanQrCodeHoverCard
+                    kanbanId={row.original.id!}
+                    action="order"
+                    label={<Trans>Create</Trans>}
+                    tooltip={t`QR Code to create a ${getKanbanCreateNoun(row.original.replenishmentSystem)} for this kanban`}
+                  />
                   {row.original.replenishmentSystem === "Make" && (
                     <>
-                      <HoverCard>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HoverCardTrigger>
-                              <Badge
-                                variant="outline"
-                                className="flex flex-row items-center gap-1 cursor-pointer"
-                              >
-                                <LuQrCode />
-                                <Trans>Start</Trans>
-                              </Badge>
-                            </HoverCardTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <Trans>
-                              QR Code to start the next operation for this
-                              kanban
-                            </Trans>
-                          </TooltipContent>
-                        </Tooltip>
-                        <HoverCardContent
-                          align="center"
-                          className="size-[236px] overflow-hidden z-[100] bg-white p-4"
-                        >
-                          <iframe
-                            seamless
-                            title={"Kanban QR Code"}
-                            width="198"
-                            height="198"
-                            src={path.to.file.kanbanQrCode(
-                              row.original.id!,
-                              "start"
-                            )}
-                          />
-                        </HoverCardContent>
-                      </HoverCard>
-
-                      <HoverCard>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HoverCardTrigger>
-                              <Badge
-                                variant="outline"
-                                className="flex flex-row items-center gap-1 cursor-pointer"
-                              >
-                                <LuQrCode />
-                                Complete
-                              </Badge>
-                            </HoverCardTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent>
+                      <KanbanQrCodeHoverCard
+                        kanbanId={row.original.id!}
+                        action="start"
+                        label={<Trans>Start</Trans>}
+                        tooltip={
+                          <Trans>
+                            QR Code to start the next operation for this kanban
+                          </Trans>
+                        }
+                      />
+                      <KanbanQrCodeHoverCard
+                        kanbanId={row.original.id!}
+                        action="complete"
+                        label={<Trans>Complete</Trans>}
+                        tooltip={
+                          <Trans>
                             QR Code to complete the current operation for this
                             kanban
-                          </TooltipContent>
-                        </Tooltip>
-                        <HoverCardContent
-                          align="center"
-                          className="size-[236px] overflow-hidden z-[100] bg-white p-4"
-                        >
-                          <iframe
-                            seamless
-                            title={"Kanban QR Code"}
-                            width="198"
-                            height="198"
-                            src={path.to.file.kanbanQrCode(
-                              row.original.id!,
-                              "complete"
-                            )}
-                          />
-                        </HoverCardContent>
-                      </HoverCard>
+                          </Trans>
+                        }
+                      />
                     </>
                   )}
                 </HStack>
@@ -400,6 +416,45 @@ const KanbansTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
+            icon: <LuHash />
+          }
+        },
+        {
+          accessorKey: "replenishmentLevel",
+          header: t`Replenishment Level`,
+          cell: ({ row }) =>
+            row.original.replenishmentLevel === null ||
+            row.original.replenishmentLevel === undefined
+              ? null
+              : formatQuantity(row.original.replenishmentLevel),
+          meta: {
+            icon: <LuHash />
+          }
+        },
+        {
+          id: "projectedQuantity",
+          header: t`Projected (To)`,
+          cell: ({ row }) => {
+            const projected = row.original.id
+              ? projectedQuantities[row.original.id]
+              : undefined;
+            if (projected === undefined) return null;
+            const level = row.original.replenishmentLevel;
+            const isBelowLevel =
+              level !== null && level !== undefined && projected < level;
+            return (
+              <HStack spacing={2}>
+                <span>{formatQuantity(projected)}</span>
+                {isBelowLevel && (
+                  <Status color="red">
+                    <Trans>Below level</Trans>
+                  </Status>
+                )}
+              </HStack>
+            );
+          },
+          meta: {
             icon: <LuHash />
           }
         },
@@ -410,6 +465,7 @@ const KanbansTable = memo(
             <Enumerable value={row.original.replenishmentSystem} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Buy", "Make", "Transfer"].map((type) => ({
@@ -427,6 +483,7 @@ const KanbansTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuContainer />,
             filter: {
               type: "static",
@@ -549,7 +606,16 @@ const KanbansTable = memo(
           }
         }
       ],
-      [items, kanbanOutput, params, people, suppliers, t]
+      [
+        formatQuantity,
+        items,
+        kanbanOutput,
+        params,
+        people,
+        projectedQuantities,
+        suppliers,
+        t
+      ]
     );
 
     const renderContextMenu = useCallback(
@@ -567,6 +633,48 @@ const KanbansTable = memo(
                   <Trans>Edit</Trans>
                 </Link>
               </MenuItem>
+            )}
+            {/* Phone rows drop the label links column; keep them reachable here */}
+            {isPhone && kanbanOutput === "label" && (
+              <>
+                <MenuItem asChild>
+                  <a
+                    href={path.to.file.kanbanLabelsPdf([row.id!], "order")}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <LuTag className="mr-2 size-4" />
+                    <Trans>Create</Trans>
+                  </a>
+                </MenuItem>
+                {row.replenishmentSystem === "Make" && (
+                  <>
+                    <MenuItem asChild>
+                      <a
+                        href={path.to.file.kanbanLabelsPdf([row.id!], "start")}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuTag className="mr-2 size-4" />
+                        <Trans>Start</Trans>
+                      </a>
+                    </MenuItem>
+                    <MenuItem asChild>
+                      <a
+                        href={path.to.file.kanbanLabelsPdf(
+                          [row.id!],
+                          "complete"
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuTag className="mr-2 size-4" />
+                        <Trans>Complete</Trans>
+                      </a>
+                    </MenuItem>
+                  </>
+                )}
+              </>
             )}
             {canViewItems &&
               row.itemId &&
@@ -607,7 +715,7 @@ const KanbansTable = memo(
           </>
         );
       },
-      [params, permissions, items.find]
+      [params, permissions, items.find, isPhone, kanbanOutput]
     );
 
     const renderActions = useCallback((selectedRows: typeof data) => {
@@ -640,38 +748,40 @@ const KanbansTable = memo(
     }, []);
 
     return (
-      <Table<Kanban>
-        count={count}
-        columns={columns}
-        data={data}
-        defaultColumnVisibility={defaultColumnVisibility}
-        primaryAction={
-          <div className="flex items-center gap-2">
-            <Combobox
-              asButton
-              size="sm"
-              value={locationId}
-              options={locations}
-              onChange={(selected) => {
-                // hard refresh because initialValues update has no effect otherwise
-                window.location.href = getLocationPath(selected);
-              }}
-            />
-            <Button variant="secondary" asChild leftIcon={<LuSettings />}>
-              <Link to={path.to.inventorySettings}>Settings</Link>
-            </Button>
-            {permissions.can("create", "inventory") && (
-              <New label={t`Kanban`} to={path.to.newKanban} />
-            )}
-          </div>
-        }
-        renderActions={renderActions}
-        renderContextMenu={renderContextMenu}
-        title={t`Kanbans`}
-        table="kanban"
-        withSavedView
-        withSelectableRows
-      />
+      <OpenQrCodeContext.Provider value={openQrCode}>
+        <Table<Kanban>
+          count={count}
+          columns={columns}
+          data={data}
+          defaultColumnVisibility={defaultColumnVisibility}
+          primaryAction={
+            <div className="flex items-center gap-2">
+              <Combobox
+                asButton
+                size="sm"
+                value={locationId}
+                options={locations}
+                onChange={(selected) => {
+                  // hard refresh because initialValues update has no effect otherwise
+                  window.location.href = getLocationPath(selected);
+                }}
+              />
+              <Button variant="secondary" asChild leftIcon={<LuSettings />}>
+                <Link to={path.to.inventorySettings}>Settings</Link>
+              </Button>
+              {permissions.can("create", "inventory") && (
+                <New label={t`Kanban`} to={path.to.newKanban} />
+              )}
+            </div>
+          }
+          renderActions={renderActions}
+          renderContextMenu={renderContextMenu}
+          title={t`Kanbans`}
+          table="kanban"
+          withSavedView
+          withSelectableRows
+        />
+      </OpenQrCodeContext.Provider>
     );
   }
 );

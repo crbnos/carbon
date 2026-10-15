@@ -3,6 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus,
+  MissingAccountDefaultError,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import {
   inOrder,
   many,
@@ -17,7 +25,8 @@ import { credit, datetime, debit, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
+import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 
@@ -36,6 +45,45 @@ export const postProductionEventInput = z.object({
  */
 export type PostProductionEventResult = { success: boolean; reason?: string };
 
+export const PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR =
+  "This production event was just posted by another process.";
+
+/** The net amount posted for one event so far, per account. */
+async function readPostedNet(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  eventReference: string
+) {
+  const lines = await db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .select([
+      "journalLine.accountId",
+      "journalLine.accountDefaultRole",
+      (eb) => eb.fn.sum("journalLine.amount").as("amount")
+    ])
+    .where("journalLine.documentLineReference", "=", eventReference)
+    .where("journalLine.companyId", "=", companyId)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .groupBy(["journalLine.accountId", "journalLine.accountDefaultRole"])
+    .execute();
+  return lines.filter((line) => Math.abs(Number(line.amount)) >= 0.000001);
+}
+
+/** A posted net as one comparable value, independent of row order. */
+const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
+  lines
+    .map(
+      (line) =>
+        `${line.accountId}|${line.accountDefaultRole ?? ""}|${round(Number(line.amount))}`
+    )
+    .sort()
+    .join(";");
+
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 const postProductionEvent = defineServerFn({
   name: "post-production-event",
@@ -50,29 +98,12 @@ const postProductionEvent = defineServerFn({
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [accountingSettings, companyRecord] = await inOrder([
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
-        ),
-      () =>
-        single(
-          db,
-          "company",
-          { id: companyId },
-          { columns: ["companyGroupId"] }
-        )
-    ]);
-
-    const accountingEnabled =
-      accountingSettings.data?.accountingEnabled ?? false;
-
-    if (!accountingEnabled) {
-      return { success: true } as PostProductionEventResult;
-    }
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
 
@@ -133,14 +164,20 @@ const postProductionEvent = defineServerFn({
     if (accountDefaults?.error || !accountDefaults?.data) {
       throw new Error("Error getting account defaults");
     }
-    if (!accountDefaults.data.laborAbsorptionAccount) {
-      throw new Error(
-        "laborAbsorptionAccount not configured in account defaults"
-      );
+
+    // Every event with a cost posts a journal: Provisional before the
+    // company's accounting cutover, Posted after it. Read here to decide
+    // whether to resolve a period, and again inside the transaction.
+    const postingStatus = await journalPostingStatus(db, companyId);
+
+    // After the cutover an empty absorption account refuses the posting, as
+    // it always has. Before it, the line becomes a stand-in (see below).
+    if (
+      postingStatus === "Posted" &&
+      !accountDefaults.data.laborAbsorptionAccount
+    ) {
+      throw new MissingAccountDefaultError("laborAbsorptionAccount");
     }
-    // Cast until the cloud-generated DB types include the new column.
-    const overheadAbsorptionAccount = (accountDefaults.data as any)
-      .overheadAbsorptionAccount as string | undefined;
 
     const event = productionEvent.data;
 
@@ -191,28 +228,45 @@ const postProductionEvent = defineServerFn({
       cost = durationHours * rate;
       overheadCost = durationHours * Number(workCenter.data.overheadRate ?? 0);
 
-      if (overheadCost > 0 && !overheadAbsorptionAccount) {
-        throw new Error(
-          "overheadAbsorptionAccount not configured in account defaults"
-        );
+      if (
+        postingStatus === "Posted" &&
+        overheadCost > 0 &&
+        !accountDefaults.data.overheadAbsorptionAccount
+      ) {
+        throw new MissingAccountDefaultError("overheadAbsorptionAccount");
       }
     }
 
     // Net amount already posted for this specific event, grouped by account.
     const eventReference =
       journalReference.to.productionEvent(productionEventId);
-    const priorLines = event.postedToGL
-      ? await db
-          .selectFrom("journalLine")
-          .select(["accountId", (eb) => eb.fn.sum("amount").as("amount")])
-          .where("documentLineReference", "=", eventReference)
-          .where("companyId", "=", companyId)
-          .groupBy("accountId")
-          .execute()
+
+    // The enable superseded the journal of an event posted before the
+    // cutover and opened the job's WIP with its cost, so the reads below see
+    // nothing to reverse: a re-post would add the cost again and a reversal
+    // would leave it. The re-post is dated today, after the cutover, so no
+    // closed period refuses it.
+    if (event.postedToGL) {
+      const superseded = await db
+        .selectFrom("journalLine")
+        .innerJoin("journal", (join) =>
+          join
+            .onRef("journal.id", "=", "journalLine.journalId")
+            .onRef("journal.companyId", "=", "journalLine.companyId")
+        )
+        .select("journalLine.id")
+        .where("journalLine.documentLineReference", "=", eventReference)
+        .where("journalLine.companyId", "=", companyId)
+        .where("journal.status", "=", "Superseded")
+        .limit(1)
+        .executeTakeFirst();
+      if (superseded) {
+        throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
+      }
+    }
+    const reversalLines = event.postedToGL
+      ? await readPostedNet(db, companyId, eventReference)
       : [];
-    const reversalLines = priorLines.filter(
-      (line) => Math.abs(Number(line.amount)) >= 0.000001
-    );
 
     // Did this event's job post any production-event lines under the old
     // job-tagged scheme (documentLineReference = job:...)? Those can't be
@@ -227,15 +281,21 @@ const postProductionEvent = defineServerFn({
             (
               await db
                 .selectFrom("journalLine")
+                .innerJoin("journal", (join) =>
+                  join
+                    .onRef("journal.id", "=", "journalLine.journalId")
+                    .onRef("journal.companyId", "=", "journalLine.companyId")
+                )
                 .select((eb) => eb.fn.countAll().as("count"))
-                .where("documentType", "=", "Production Event")
-                .where("documentId", "=", jobId)
+                .where("journalLine.documentType", "=", "Production Event")
+                .where("journalLine.documentId", "=", jobId)
                 .where(
-                  "documentLineReference",
+                  "journalLine.documentLineReference",
                   "=",
                   journalReference.to.job(jobId)
                 )
-                .where("companyId", "=", companyId)
+                .where("journalLine.companyId", "=", companyId)
+                .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
                 .executeTakeFirst()
             )?.count ?? 0
           ) > 0
@@ -297,11 +357,31 @@ const postProductionEvent = defineServerFn({
 
     const journalLineReference = nanoid();
 
+    // Resolved only for a line that is built: after the cutover an empty
+    // default has already refused the posting above.
+    const laborAbsorption =
+      !reverse && cost > 0
+        ? resolveDefaultAccount(
+            accountDefaults.data,
+            "laborAbsorptionAccount",
+            postingStatus
+          )
+        : null;
+    const overheadAbsorption =
+      !reverse && overheadCost > 0
+        ? resolveDefaultAccount(
+            accountDefaults.data,
+            "overheadAbsorptionAccount",
+            postingStatus
+          )
+        : null;
+
     const journalLineInserts = [
       // Reposting an edited event: first negate the net previously posted for
       // this event per account, then post the new amount.
       ...reversalLines.map((line) => ({
         accountId: line.accountId,
+        accountDefaultRole: line.accountDefaultRole,
         description: "Production Event Reversal",
         amount: round(-Number(line.amount)),
         quantity: 1,
@@ -311,10 +391,11 @@ const postProductionEvent = defineServerFn({
         journalLineReference,
         companyId
       })),
-      ...(!reverse && cost > 0
+      ...(laborAbsorption
         ? [
             {
               accountId: accountDefaults.data.workInProgressAccount,
+              accountDefaultRole: null,
               description: "WIP Account",
               amount: round(debit("asset", cost)),
               quantity: 1,
@@ -325,7 +406,8 @@ const postProductionEvent = defineServerFn({
               companyId
             },
             {
-              accountId: accountDefaults.data.laborAbsorptionAccount!,
+              accountId: laborAbsorption.accountId,
+              accountDefaultRole: laborAbsorption.accountDefaultRole,
               description: "Labor/Machine Absorption",
               amount: round(credit("expense", cost)),
               quantity: 1,
@@ -337,10 +419,11 @@ const postProductionEvent = defineServerFn({
             }
           ]
         : []),
-      ...(!reverse && overheadCost > 0
+      ...(overheadAbsorption
         ? [
             {
               accountId: accountDefaults.data.workInProgressAccount,
+              accountDefaultRole: null,
               description: "WIP Account (Overhead)",
               amount: round(debit("asset", overheadCost)),
               quantity: 1,
@@ -351,7 +434,8 @@ const postProductionEvent = defineServerFn({
               companyId
             },
             {
-              accountId: overheadAbsorptionAccount!,
+              accountId: overheadAbsorption.accountId,
+              accountDefaultRole: overheadAbsorption.accountDefaultRole,
               description: "Overhead Absorption",
               amount: round(credit("expense", overheadCost)),
               quantity: 1,
@@ -365,13 +449,41 @@ const postProductionEvent = defineServerFn({
         : [])
     ];
 
-    const accountingPeriodId = await getCurrentAccountingPeriod(
-      companyId,
-      db,
-      today
-    );
+    // A Provisional journal has no accounting period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, today)
+        : null;
 
     await db.transaction().execute(async (trx) => {
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // Several callers post an event as it ends: a press, the OEE sync, an
+      // operation finish, an edit's repost. Under the row lock, a second
+      // caller that read the event before the first committed sees what the
+      // first wrote and stops, instead of posting the cost or the adjustment
+      // twice: the flag for a first post, the net already posted for a
+      // repost (the flag stays true across reposts).
+      const locked = await trx
+        .selectFrom("productionEvent")
+        .select("postedToGL")
+        .where("id", "=", productionEventId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (
+        !locked ||
+        locked.postedToGL !== event.postedToGL ||
+        (locked.postedToGL &&
+          postedNetKey(await readPostedNet(trx, companyId, eventReference)) !==
+            postedNetKey(reversalLines))
+      ) {
+        throw new ServerFnError(
+          PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR,
+          409
+        );
+      }
+
       const journalEntryId = await getNextSequence(
         trx,
         "journalEntry",
@@ -393,7 +505,7 @@ const postProductionEvent = defineServerFn({
           postingDate: today,
           companyId,
           sourceType: "Production Event",
-          status: "Posted",
+          status: postingStatus,
           postedAt: datetime.timestamp(),
           postedBy: userId,
           createdBy: userId

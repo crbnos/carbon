@@ -348,7 +348,7 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     if (!local.reasonAccount) {
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
-        message: `Cannot sync memo ${local.memoId}: it has no reason account. Post the memo (with accounting enabled), then retry.`,
+        message: `Cannot sync memo ${local.memoId}: it has no reason account. Post the memo, then retry.`,
         warning: true,
         metadata: { memoId: local.id }
       });

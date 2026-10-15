@@ -54,6 +54,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuMapPin />
         }
       },
@@ -62,6 +63,16 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         header: t`Address`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 is the joined address (street, city, state).
+          mobileCell: (item) =>
+            [
+              item.row.original.addressLine1,
+              item.row.original.city,
+              item.row.original.stateProvince
+            ]
+              .filter(Boolean)
+              .join(", "),
           icon: <LuHouse />
         }
       },

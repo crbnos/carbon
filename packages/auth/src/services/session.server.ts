@@ -3,9 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import { Edition, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
-import { createCookieSessionStorage } from "react-router";
+import {
+  type CookieOptions,
+  createCookie,
+  createCookieSessionStorage
+} from "react-router";
 
 import {
   CarbonEdition,
@@ -18,6 +23,7 @@ import {
   SESSION_MAX_AGE,
   SESSION_SECRET
 } from "../config/env";
+import { isCrossSiteNavigation } from "../lib/security";
 import type { AuthSession, Result } from "../types";
 import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
@@ -55,17 +61,65 @@ export const isTestEdition = CarbonEdition === Edition.Test;
 
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 
+// Shared by every signed cookie in this file.
+const signedCookieOptions: CookieOptions = {
+  httpOnly: true,
+  path: "/",
+  sameSite: isTestEdition ? "none" : "lax",
+  secrets: [SESSION_SECRET!],
+  secure: isTestEdition || !!cookieDomain,
+  domain: cookieDomain
+};
+
 const sessionStorage = createCookieSessionStorage({
-  cookie: {
-    name: "carbon",
-    httpOnly: true,
-    path: "/",
-    sameSite: isTestEdition ? "none" : "lax",
-    secrets: [SESSION_SECRET!],
-    secure: isTestEdition || !!cookieDomain,
-    domain: cookieDomain
-  }
+  cookie: { name: "carbon", ...signedCookieOptions }
 });
+
+const log = getLogger("auth", "session");
+
+// The Web Push endpoint of this browser, set when the user enables browser
+// notifications. Signing out (clearAuthCookies) deletes the endpoint's
+// subscription rows, so a browser nobody is signed into stops receiving
+// pushes — whichever path signed it out.
+export const pushEndpointCookie = createCookie("carbon-push", {
+  ...signedCookieOptions,
+  // Browsers cap a cookie's lifetime at 400 days.
+  maxAge: 60 * 60 * 24 * 400
+});
+
+async function endBrowserPush(request: Request) {
+  const endpoint = await pushEndpointCookie.parse(
+    request.headers.get("Cookie")
+  );
+  if (typeof endpoint !== "string" || !endpoint) return null;
+  // The login loader clears a dead session's cookies on a GET. A top-level
+  // navigation from another site must not write (packages/auth/AGENTS.md), so
+  // it leaves the rows and the cookie alone: they lapse once no session
+  // refreshes them (notify skips stale rows), or the next sign-in replaces
+  // them.
+  if (isCrossSiteNavigation(request.headers)) return null;
+  // Best effort: signing out must still succeed and clear its cookies, even
+  // when the client cannot be built (missing Supabase URL) or the delete
+  // fails. The next 404/410 from the push service cleans the row up.
+  try {
+    // Loaded here, not at module load: importing the session module must not
+    // build a Supabase client.
+    const { getCarbonServiceRole } = await import(
+      "../lib/supabase/client.server"
+    );
+    // Every user's row for this browser: after sign-out nobody is signed in.
+    const { error } = await getCarbonServiceRole()
+      .from("pushSubscription")
+      .delete()
+      .eq("endpoint", endpoint);
+    if (error) {
+      log.error("Failed to delete push subscriptions on sign-out", { error });
+    }
+  } catch (error) {
+    log.error("Failed to delete push subscriptions on sign-out", { error });
+  }
+  return pushEndpointCookie.serialize("", { maxAge: 0 });
+}
 
 export async function setAuthSession(
   request: Request,
@@ -212,9 +266,11 @@ export async function clearAuthCookies(request: Request) {
   const session = await getSession(request);
   const sessionCookie = await sessionStorage.destroySession(session);
   const companyIdCookie = setCompanyId(null);
+  const pushCookie = await endBrowserPush(request);
   return [
     ["Set-Cookie", sessionCookie] as [string, string],
-    ["Set-Cookie", companyIdCookie] as [string, string]
+    ["Set-Cookie", companyIdCookie] as [string, string],
+    ...(pushCookie ? [["Set-Cookie", pushCookie] as [string, string]] : [])
   ];
 }
 

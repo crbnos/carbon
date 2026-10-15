@@ -90,7 +90,10 @@ services:
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
       GOTRUE_SITE_URL: ${ERP_URL}
-      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/callback,${MES_URL},${MES_URL}/callback,${GTM_URL}
+      # `/**` so a callback carrying `?redirectTo=` still matches — an exact
+      # entry does not, and GoTrue then falls back to GOTRUE_SITE_URL (the
+      # ERP). localhost:4000 is the starter (`pnpm dev:starter`).
+      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/**,${MES_URL},${MES_URL}/**,${GTM_URL},http://localhost:4000,http://localhost:4000/**
       GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600

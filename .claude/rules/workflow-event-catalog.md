@@ -260,7 +260,7 @@ column always wins and a customer cannot shadow one.
   `walk` single-step, and matches the differ, which never emits the bare `customFields` key.
 - `custom-fields.ts` holds the ONLY `DataType → ValueType` map. List → `string` plus `choices`
   from `listOptions`; User/Customer/Supplier → `t.entity(...)`; File → the stored path as a
-  string, not a link.
+  string, not a link; Link → the web address as stored, a string.
 - Trigger ids are `<entity>.customFields.<fieldId>.changed` and are **parsed, not looked up**:
   `WORKFLOW_EVENTS` stays a closed, committed, drift-checked record. `getCatalogEvent(id)` is
   the single lookup — the static map first, then `resolveCustomFieldEvent`. Every consumer goes

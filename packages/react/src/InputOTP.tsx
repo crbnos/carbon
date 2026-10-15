@@ -7,6 +7,7 @@ import { OTPInput, OTPInputContext } from "input-otp";
 import * as React from "react";
 import { LuMinus } from "react-icons/lu";
 import { cn } from "./utils/cn";
+import { usePhoneAutoFocus } from "./Viewport";
 
 function InputOTP({
   className,
@@ -15,6 +16,7 @@ function InputOTP({
 }: React.ComponentProps<typeof OTPInput> & {
   containerClassName?: string;
 }) {
+  const autoFocus = usePhoneAutoFocus(props.autoFocus);
   return (
     <OTPInput
       data-slot="input-otp"
@@ -24,6 +26,7 @@ function InputOTP({
       )}
       className={cn("disabled:cursor-not-allowed", className)}
       {...props}
+      autoFocus={autoFocus}
     />
   );
 }

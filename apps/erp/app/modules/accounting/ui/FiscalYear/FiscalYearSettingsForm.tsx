@@ -74,7 +74,7 @@ const FiscalYearSettingsForm = ({
       className="w-full"
     >
       <div className="rounded-lg border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="flex items-center justify-between border-b border-border p-6 max-md:flex-col max-md:items-start max-md:gap-3 max-md:p-4">
           <div>
             <Heading as="h1" size="h3">
               <Trans>Fiscal Year Settings</Trans>
@@ -94,13 +94,13 @@ const FiscalYearSettingsForm = ({
             </Button>
           </HStack>
         </div>
-        <div className="flex flex-col gap-3 p-6">
+        <div className="flex flex-col gap-3 p-6 max-md:gap-5 max-md:p-4">
           {fields.map((field) => (
             <div
               key={field.name}
-              className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30"
+              className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30 max-md:border-0 max-md:p-0"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-medium text-foreground mb-1">
                     <LabelWithHelp variant="inline" termId={field.termId}>
@@ -119,7 +119,7 @@ const FiscalYearSettingsForm = ({
                     </p>
                   )}
                 </div>
-                <div className="flex-shrink-0 w-64">
+                <div className="flex-shrink-0 w-64 max-md:w-full">
                   <Select
                     name={field.name}
                     options={months.map((month) => ({

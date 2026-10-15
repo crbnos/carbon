@@ -211,8 +211,8 @@ export const inventoryAdjustmentValidator = z
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
-    // Required for Scrap (enforced below); lands on the itemLedger row and,
-    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // Required for Scrap (enforced below); lands on the itemLedger row and as
+    // a ScrapReason journal dimension. Unscrap
     // omits it — the server function inherits the reason from the original scrap
     // movement it reverses.
     scrapReasonId: zfd.text(z.string().optional()),
@@ -281,14 +281,23 @@ export const kanbanValidator = z
     autoStartJob: zfd.checkbox(),
     completedBarcodeOverride: zfd.text(z.string().optional()),
     quantity: zfd.numeric(
-      z.number().int().min(1, { message: "Quantity must be at least 1" })
+      z
+        .number()
+        .int({ message: "Quantity must be a whole number" })
+        .min(1, { message: "Quantity must be at least 1" })
     ),
     locationId: z.string().min(1, { message: "Location is required" }),
     storageUnitId: zfd.text(z.string().optional()),
     fromStorageUnitId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
-    conversionFactor: zfd.numeric(z.number().min(0).default(1))
+    conversionFactor: zfd.numeric(z.number().min(0).default(1)),
+    replenishmentLevel: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Replenishment level must be 0 or more" })
+        .optional()
+    )
   })
   .refine(
     (data) => (data.replenishmentSystem === "Buy" ? !!data.supplierId : true),
@@ -323,6 +332,16 @@ export const kanbanValidator = z
     {
       message: "From and to storage units must be different",
       path: ["storageUnitId"]
+    }
+  )
+  // Only a Transfer kanban has a To storage unit to watch.
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ||
+      data.replenishmentLevel === undefined,
+    {
+      message: "Only a transfer kanban can have a replenishment level",
+      path: ["replenishmentLevel"]
     }
   );
 
@@ -662,10 +681,9 @@ export const stockTransferLineScanValidator = z.object({
   trackedEntityId: z
     .string()
     .min(1, { message: "Tracked entity ID is required" }),
-  // The picker sends the clamped pick quantity and the bin the user chose; the
-  // action forwards both to the server function (serial always posts 1).
-  quantity: z.number().positive({ message: "Quantity must be greater than 0" }),
-  storageUnitId: z.string().nullable().optional()
+  // The picker sends the clamped pick quantity; the action forwards it to the
+  // server function (serial always posts 1). The source bin is the line's own.
+  quantity: z.number().positive({ message: "Quantity must be greater than 0" })
 });
 
 /**
@@ -675,19 +693,14 @@ export const stockTransferLineScanValidator = z.object({
  * re-checks the same limits under a row lock (`resolvePick` in @carbon/utils).
  *   - A serial scan always moves one unit; a batch scan moves the picker's
  *     clamped quantity.
- *   - The bin the user chose wins; the highest-quantity bin is only a fallback.
  *   - A line with no outstanding quantity (or a pick that exceeds it) is refused.
  */
 export function resolveStockTransferPickForward(input: {
   transferType: "batch" | "serial";
   quantity: number;
-  storageUnitId: string | null | undefined;
-  currentStorageUnitId: string | null;
   lineQuantity: number;
   pickedQuantity: number;
-}):
-  | { ok: true; quantity: number; fromStorageUnitId: string | null }
-  | { ok: false; message: string } {
+}): { ok: true; quantity: number } | { ok: false; message: string } {
   // Round like the server function's resolvePick does, so the pre-check and the
   // post-lock re-check cannot disagree about a residue pick.
   const pickQuantity = round(
@@ -713,11 +726,7 @@ export function resolveStockTransferPickForward(input: {
       message: `Only ${outstanding} left to pick on this line`
     };
   }
-  return {
-    ok: true,
-    quantity: pickQuantity,
-    fromStorageUnitId: input.storageUnitId ?? input.currentStorageUnitId
-  };
+  return { ok: true, quantity: pickQuantity };
 }
 
 export const pickingListStatusType = [

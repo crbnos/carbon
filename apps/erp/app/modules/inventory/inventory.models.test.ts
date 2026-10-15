@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  kanbanValidator,
   receiptFixedAssetLineUpdateValidator,
   resolveStockTransferPickForward,
   shipmentFixedAssetLineUpdateValidator,
@@ -45,23 +46,17 @@ describe("storageUnitValidator", () => {
 
 describe("resolveStockTransferPickForward", () => {
   const base = {
-    storageUnitId: "bin-chosen" as string | null,
-    currentStorageUnitId: "bin-default" as string | null,
     lineQuantity: 10,
     pickedQuantity: 0
   };
 
-  it("forwards the picker quantity and chosen bin for a batch scan", () => {
+  it("forwards the picker quantity for a batch scan", () => {
     const r = resolveStockTransferPickForward({
       ...base,
       transferType: "batch",
       quantity: 3
     });
-    expect(r).toEqual({
-      ok: true,
-      quantity: 3,
-      fromStorageUnitId: "bin-chosen"
-    });
+    expect(r).toEqual({ ok: true, quantity: 3 });
   });
 
   it("posts quantity 1 for a serial scan regardless of the picker quantity", () => {
@@ -70,21 +65,7 @@ describe("resolveStockTransferPickForward", () => {
       transferType: "serial",
       quantity: 4
     });
-    expect(r).toEqual({
-      ok: true,
-      quantity: 1,
-      fromStorageUnitId: "bin-chosen"
-    });
-  });
-
-  it("falls back to the highest-quantity bin when the picker sends none", () => {
-    const r = resolveStockTransferPickForward({
-      ...base,
-      transferType: "batch",
-      quantity: 3,
-      storageUnitId: null
-    });
-    expect(r.ok && r.fromStorageUnitId).toBe("bin-default");
+    expect(r).toEqual({ ok: true, quantity: 1 });
   });
 
   it("refuses a pick on a fully-picked line", () => {
@@ -194,5 +175,64 @@ describe("receiptFixedAssetLineUpdateValidator", () => {
       value: "true"
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("kanbanValidator replenishmentLevel", () => {
+  const transfer = {
+    itemId: "item-1",
+    replenishmentSystem: "Transfer",
+    quantity: "5",
+    locationId: "loc-1",
+    fromStorageUnitId: "su-a",
+    storageUnitId: "su-b"
+  };
+
+  const errorPaths = (r: ReturnType<typeof kanbanValidator.safeParse>) =>
+    r.success ? [] : r.error.issues.map((issue) => issue.path.join("."));
+
+  it("accepts a level on a Transfer kanban", () => {
+    const r = kanbanValidator.safeParse({
+      ...transfer,
+      replenishmentLevel: "10"
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.replenishmentLevel).toBe(10);
+  });
+
+  it("accepts a Transfer kanban with no level (scan-only)", () => {
+    const r = kanbanValidator.safeParse(transfer);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.replenishmentLevel).toBeUndefined();
+  });
+
+  it("refuses a level on a Buy kanban", () => {
+    const r = kanbanValidator.safeParse({
+      itemId: "item-1",
+      replenishmentSystem: "Buy",
+      quantity: "5",
+      locationId: "loc-1",
+      supplierId: "sup-1",
+      replenishmentLevel: "10"
+    });
+    expect(errorPaths(r)).toContain("replenishmentLevel");
+  });
+
+  it("refuses a decimal quantity with a readable message", () => {
+    const r = kanbanValidator.safeParse({ ...transfer, quantity: "2.5" });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.map((issue) => issue.message)).toContain(
+        "Quantity must be a whole number"
+      );
+    }
+  });
+
+  it("refuses a negative level", () => {
+    const r = kanbanValidator.safeParse({
+      ...transfer,
+      replenishmentLevel: "-1"
+    });
+    expect(errorPaths(r)).toContain("replenishmentLevel");
   });
 });

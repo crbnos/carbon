@@ -65,6 +65,18 @@ export const PAGINATION_SHORTCUTS = {
 } as const satisfies Record<string, ShortcutInput>;
 
 /**
+ * Unattributed Time review drawer. The table behind it pages on the arrows,
+ * so the queue moves on j/k; 1–6 assign the matching suggestion card.
+ */
+export const MACHINE_TIME_REVIEW_SHORTCUTS = {
+  previous: "k",
+  next: "j",
+  // One key per card: matches MACHINE_TIME_SUGGESTION_LIMIT
+  // (ui/MachineTime/machine-time-suggestions.ee.ts).
+  choose: ["1", "2", "3", "4", "5", "6"]
+} as const satisfies Record<string, ShortcutInput | readonly ShortcutInput[]>;
+
+/**
  * g-then-letter module go-to, keyed by the stable module `key` from
  * useModules() — never by position, since module order and visibility are
  * per-user. `shopFloor` is an external MES link and deliberately absent.
@@ -87,6 +99,31 @@ export const MODULE_GO_TO: Record<string, string> = {
   users: "y",
   workflows: "w"
 };
+
+/**
+ * c-then-letter create, from anywhere — the Create menu's items, keyed by a
+ * stable id (the menu is filtered by permission, so never by position). `c`
+ * rather than `n`: bare `n` is already the list page's New button.
+ */
+export const CREATE_PREFIX = "c";
+
+export const CREATE_SHORTCUTS = {
+  batch: "b",
+  customer: "c",
+  employee: "e",
+  issue: "i",
+  job: "j",
+  maintenance: "m",
+  part: "p",
+  pickingList: "l",
+  purchaseOrder: "u",
+  quote: "q",
+  rfq: "r",
+  salesOrder: "o",
+  stockTransfer: "x",
+  supplier: "s",
+  warehouseTransfer: "w"
+} as const;
 
 /** Leaves the rail's Customize mode without saving. */
 export const navigationEditCancelShortcut: ShortcutInput = "escape";

@@ -22,14 +22,15 @@ const SupplierSidebar = () => {
     );
 
   const routeData = useRouteData<{
-    purchaseOrder: SupplierDetail;
+    supplier: SupplierDetail;
     contacts: SupplierContact[];
     locations: SupplierLocation[];
   }>(path.to.supplier(supplierId));
 
   const links = useSupplierSidebar({
     contacts: routeData?.contacts.length ?? 0,
-    locations: routeData?.locations.length ?? 0
+    locations: routeData?.locations.length ?? 0,
+    parts: routeData?.supplier?.partCount ?? 0
   });
 
   return <DetailSidebar links={links} />;

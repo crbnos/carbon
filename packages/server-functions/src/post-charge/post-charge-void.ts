@@ -2,30 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getNextSequence } from "@carbon/database/sequence";
-import { resolveAccountingPeriod } from "../lib/get-accounting-period";
-import { allocateJournalLineIds } from "./journal-line-ids";
+import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import {
+  CHARGE_VOID_BEFORE_CUTOVER_ERROR,
+  refuseVoidBeforeCutover
+} from "../lib/cutover-void";
+import { insertNegatedJournal } from "../lib/void-journal";
 import type { ChargeContext } from "./post-charge-post";
 
 export async function voidCharge(
   context: ChargeContext
 ): Promise<{ journalId: string | null }> {
-  const {
+  const { trx, charge, postingStatus, companyId, userId, timestamp, today } =
+    context;
+
+  // The enable superseded the journal of a charge dated before the cutover
+  // and opened its balances in the opening journal, so a reversal of its own
+  // lines would undo nothing. The date is the one the posting used.
+  await refuseVoidBeforeCutover(
     trx,
-    charge,
-    accountingEnabled,
     companyId,
-    userId,
-    timestamp,
-    today
-  } = context;
+    charge.postingDate ?? charge.transactionDate,
+    CHARGE_VOID_BEFORE_CUTOVER_ERROR
+  );
 
   if (charge.journalId) {
-    if (!accountingEnabled) {
-      throw new Error(
-        "Enable accounting before reversing a posted charge journal"
-      );
-    }
     const originalJournal = await trx
       .selectFrom("journal")
       .select(["id", "status", "sourceType"])
@@ -35,7 +36,9 @@ export async function voidCharge(
       .executeTakeFirst();
     if (
       !originalJournal ||
-      originalJournal.status !== "Posted" ||
+      !(OPEN_ITEM_JOURNAL_STATUSES as readonly string[]).includes(
+        originalJournal.status
+      ) ||
       originalJournal.sourceType !== "Charge"
     ) {
       throw new Error("Original charge journal has invalid provenance");
@@ -43,6 +46,7 @@ export async function voidCharge(
     const originalLines = await trx
       .selectFrom("journalLine")
       .selectAll()
+      // The journal's status was checked above, under FOR SHARE.
       .where("journalId", "=", originalJournal.id)
       .where("companyId", "=", companyId)
       .orderBy("id")
@@ -56,80 +60,17 @@ export async function voidCharge(
     ) {
       throw new Error("Original charge journal has invalid lines");
     }
-    const period = await resolveAccountingPeriod(
-      trx,
+    await insertNegatedJournal(trx, {
       companyId,
-      today,
-      "current"
-    );
-    const reversal = await trx
-      .insertInto("journal")
-      .values({
-        journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period.id,
-        description: `VOID Charge ${charge.chargeId}`,
-        postingDate: period.postingDate,
-        companyId,
-        sourceType: "Charge",
-        status: "Posted",
-        postedAt: timestamp,
-        postedBy: userId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    const reversalLineIds = await allocateJournalLineIds(
-      trx,
-      originalLines.length
-    );
-    await trx
-      .insertInto("journalLine")
-      .values(
-        originalLines.map((line, index) => ({
-          id: reversalLineIds[index],
-          journalId: reversal.id,
-          accountId: line.accountId,
-          amount: -Number(line.amount),
-          quantity: line.quantity,
-          description: `VOID: ${line.description ?? ""}`,
-          documentType: "Charge" as const,
-          documentId: charge.id,
-          documentLineReference: line.documentLineReference,
-          journalLineReference: line.journalLineReference,
-          companyId
-        }))
-      )
-      .execute();
-    const dimensions = await trx
-      .selectFrom("journalLineDimension")
-      .select(["journalLineId", "dimensionId", "valueId"])
-      .where("companyId", "=", companyId)
-      .where(
-        "journalLineId",
-        "in",
-        originalLines.map((line) => line.id)
-      )
-      .execute();
-    const reversalByOriginal = new Map(
-      originalLines.map((line, index) => [line.id, reversalLineIds[index]])
-    );
-    if (dimensions.length) {
-      const reversedDimensions = dimensions.map((dimension) => {
-        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
-        if (!journalLineId) {
-          throw new Error("Failed to map reversed journal line");
-        }
-        return {
-          ...dimension,
-          journalLineId,
-          companyId
-        };
-      });
-      await trx
-        .insertInto("journalLineDimension")
-        .values(reversedDimensions)
-        .execute();
-    }
+      userId,
+      originalLines,
+      description: `VOID Charge ${charge.chargeId}`,
+      sourceType: "Charge",
+      postingStatus,
+      date: today,
+      periodMode: "current",
+      postedAt: timestamp
+    });
   }
 
   await trx

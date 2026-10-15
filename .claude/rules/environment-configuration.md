@@ -103,6 +103,25 @@ default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (default
 Optional `RESEND_API_KEY` (marketing contacts; also a legacy SMTP fallback via
 smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
 
+**Push** — no env vars. `getVapidDetails()` (`@carbon/env/push.server`,
+server-only because it imports `node:crypto`) derives the VAPID pair from
+`SESSION_SECRET` with HKDF-SHA256 (salt `carbon`, info `web-push-vapid/<n>`,
+the first `n` whose 32 bytes are a valid P-256 scalar) and memoizes it. The
+subject is `getAppUrl()` when it is https, else `mailto:` + `SUPPORT_EMAIL`.
+Every browser subscription is bound to the public key, so the pair must be
+stable: never generate it at build time (images are published per commit, which
+would rotate it and ship the private key). Rotating `SESSION_SECRET` rotates the
+pair — each browser re-subscribes on its next visit
+(`useRestoreBrowserNotifications`); until then, a push to an old-key row gets
+401 (WNS) or 403 (FCM), and `send-push` logs a warning and keeps the row. It
+never deletes on those codes: Apple answers 403 for a token it refuses, which
+would remove every Safari row. The hash, salt and info label are frozen —
+`push.server.test.ts` pins a known answer.
+`isPushConfigured()` is false only without `SESSION_SECRET` (a
+`SKIP_ENV_VALIDATION` script). The public key reaches the browser through the
+account notifications loader and the app shell loader (`pushPublicKey`), not
+`getBrowserEnv()`.
+
 **Integrations (all optional)** — Ramp (`RAMP_CLIENT_ID`, public and exposed by
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
@@ -132,6 +151,24 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 (optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
+
+**Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`
+makes `maintenanceMiddleware` (`@carbon/auth/middleware/maintenance.server`, in
+every app's root `middleware`, after `security`) answer every request with a 503:
+a page renders the root ErrorBoundary's 503 screen, an open tab gets the same
+screen on its next navigation, and a resource route (API, MCP, webhooks,
+`/api/inngest`) returns a bare 503 with `Retry-After: 300` so the caller retries.
+`/health` answers 200 `{ status: "maintenance" }` without probing the database,
+so the load balancer keeps the tasks. The flag is read at start: changing it
+needs a restart or redeploy. `SYSTEM_STATUS_URL` is a JSON document the app
+reads for `{ latestVersion?, announcement? }` (`systemStatusValidator`,
+`@carbon/lib/system-status`); unset means no request is made, on any edition.
+`getSystemStatus()` caches it in Redis for 5 minutes (a failure for 1), each
+app serves it at `api+/system-status`, and the shell shows the announcement
+with `AnnouncementBar` (`@carbon/react`). `latestVersion` is returned but not
+shown — Carbon has no version to compare it with. Neither variable is on the
+`workspaces` row, so `ci/src/deploy.ts` does not set them; `sst.config.ts`
+forwards them from the deploying process's environment.
 
 **Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
 the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or

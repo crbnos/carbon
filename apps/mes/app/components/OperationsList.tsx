@@ -3,37 +3,33 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Badge,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   cn,
-  Heading,
   HStack,
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import {
-  convertDateStringToIsoString,
-  formatDurationMilliseconds
-} from "@carbon/utils";
+import { convertDateStringToIsoString } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
-import {
-  LuCalendarDays,
-  LuCirclePlay,
-  LuClipboardCheck,
-  LuTimer
-} from "react-icons/lu";
-import { Link } from "react-router";
+import { LuCalendarDays, LuCirclePlay, LuClipboardCheck } from "react-icons/lu";
+import { Link, useLocation } from "react-router";
 import { DateTime } from "~/components";
-import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { useDateFormatter } from "~/hooks";
 import type { Operation, OperationSettings } from "~/services/types";
+import { withOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { DeadlineIcon, OperationStatusIcon } from "./Icons";
+import {
+  AssigneeTags,
+  OperationDuration,
+  PhoneThumbnail,
+  QuantityStat
+} from "./OperationCardParts";
 
 type OperationsListProps = {
   operations: Operation[];
@@ -98,6 +94,7 @@ function OperationCard({
 }: OperationCardProps) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
+  const location = useLocation();
   const isOverdue =
     operation.jobDeadlineType !== "No Deadline" && operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
@@ -113,29 +110,35 @@ function OperationCard({
       )}
     >
       <Link
-        to={path.to.operation(operation.id)}
+        to={withOrigin(path.to.operation(operation.id), location)}
         className="flex flex-col flex-1"
       >
-        <CardHeader className="flex flex-col justify-between relative gap-2">
+        <CardHeader className="flex flex-col justify-between relative gap-2 max-md:pb-1">
           <div className="flex w-full max-w-full justify-between items-start gap-2">
-            <div className="flex flex-col space-y-0 min-w-0">
+            {showThumbnail && operation.thumbnailPath && (
+              <PhoneThumbnail
+                path={operation.thumbnailPath}
+                alt={operation.jobReadableId ?? ""}
+              />
+            )}
+            <div className="flex flex-col space-y-0 min-w-0 max-md:flex-1">
               {operation.itemReadableId && (
                 <span className="text-xs text-muted-foreground line-clamp-1">
                   {operation.itemReadableId}
                 </span>
               )}
-              <span className="mr-auto font-semibold line-clamp-2 leading-tight">
+              <span className="mr-auto font-semibold line-clamp-2 leading-tight max-md:text-foreground">
                 {operation.itemDescription || operation.itemReadableId}
               </span>
             </div>
-            <Heading size="h4" className="text-muted-foreground/70">
+            <QuantityStat className="text-muted-foreground/70 max-md:text-foreground max-md:tabular-nums">
               {operation.targetQuantity ?? operation.operationQuantity ?? 0}
-            </Heading>
+            </QuantityStat>
           </div>
         </CardHeader>
-        <CardContent className="gap-2 text-left whitespace-pre-wrap text-sm flex-grow">
+        <CardContent className="gap-2 text-left whitespace-pre-wrap text-sm max-md:border-t-0 max-md:pt-1 flex-grow max-md:grid max-md:grid-cols-2 max-md:content-start max-md:gap-x-3 max-md:gap-y-1.5 max-md:[&>*]:min-w-0">
           {showThumbnail && operation.thumbnailPath && (
-            <div className="flex justify-center">
+            <div className="flex justify-center max-md:hidden">
               <img
                 src={getPrivateUrl(operation.thumbnailPath)}
                 alt={operation.jobReadableId}
@@ -143,7 +146,7 @@ function OperationCard({
               />
             </div>
           )}
-          <HStack className="justify-start space-x-2">
+          <HStack className="justify-start space-x-2 max-md:col-span-2">
             <LuCirclePlay className="text-muted-foreground" />
             <span className="text-sm line-clamp-1">
               {operation.jobReadableId}
@@ -151,7 +154,7 @@ function OperationCard({
           </HStack>
 
           {showDescription && operation.description && (
-            <HStack className="justify-start space-x-2">
+            <HStack className="justify-start space-x-2 max-md:col-span-2">
               <LuClipboardCheck className="text-muted-foreground" />
               <span className="text-sm line-clamp-1">
                 {operation.description}
@@ -165,12 +168,7 @@ function OperationCard({
             </HStack>
           )}
           {showDuration && typeof operation.duration === "number" && (
-            <HStack className="justify-start space-x-2">
-              <LuTimer className="text-muted-foreground" />
-              <span className="text-sm">
-                {formatDurationMilliseconds(operation.duration)}
-              </span>
-            </HStack>
+            <OperationDuration value={operation.duration} />
           )}
           {showDueDate && operation.jobDeadlineType && (
             <>
@@ -210,22 +208,20 @@ function OperationCard({
               )}
             </>
           )}
+          {(operation.assignee ||
+            (operation.tags && operation.tags.length > 0)) && (
+            <div className="hidden flex-wrap items-center gap-1 text-xs max-md:col-span-2 max-md:flex">
+              <AssigneeTags
+                assignee={operation.assignee}
+                tags={operation.tags}
+              />
+            </div>
+          )}
         </CardContent>
         {(operation.assignee ||
           (operation.tags && operation.tags.length > 0)) && (
-          <CardFooter className="items-center justify-start text-xs flex-wrap mt-auto">
-            {operation.assignee && (
-              <EmployeeAvatar size="xs" employeeId={operation.assignee} />
-            )}
-            {operation.tags?.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="border dark:border-none dark:shadow-button-base"
-              >
-                {tag}
-              </Badge>
-            ))}
+          <CardFooter className="items-center justify-start text-xs flex-wrap mt-auto max-md:hidden">
+            <AssigneeTags assignee={operation.assignee} tags={operation.tags} />
           </CardFooter>
         )}
       </Link>

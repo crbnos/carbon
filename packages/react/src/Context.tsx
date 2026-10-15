@@ -13,25 +13,31 @@ import type {
 import { forwardRef } from "react";
 import { LuChevronRight, LuCircle } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
-
+import { ActionPresentationBoundary } from "./ActionPresentation";
+import {
+  compactPart,
+  MenuSheetCheckboxItem,
+  MenuSheetContent,
+  MenuSheetContextTrigger,
+  MenuSheetGroup,
+  MenuSheetItem,
+  MenuSheetLabel,
+  MenuSheetPortal,
+  MenuSheetRadioGroup,
+  MenuSheetRadioItem,
+  MenuSheetRoot,
+  MenuSheetSeparator,
+  MenuSheetSub,
+  MenuSheetSubContent,
+  MenuSheetSubTrigger
+} from "./MenuSheet";
 import { ShortcutKey } from "./ShortcutKey";
 import type { MenuItemShortcut } from "./shortcuts";
 import { cn } from "./utils/cn";
 import { withMenuShortcuts } from "./utils/menuShortcut";
+import { useViewport } from "./Viewport";
 
-const ContextMenu = ContextMenuPrimitive.Root;
-
-const ContextMenuTrigger = ContextMenuPrimitive.Trigger;
-
-const ContextMenuGroup = ContextMenuPrimitive.Group;
-
-const ContextMenuPortal = ContextMenuPrimitive.Portal;
-
-const ContextMenuSub = ContextMenuPrimitive.Sub;
-
-const ContextMenuRadioGroup = ContextMenuPrimitive.RadioGroup;
-
-const ContextMenuSubTrigger = forwardRef<
+const DesktopContextMenuSubTrigger = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubTrigger> & {
     inset?: boolean;
@@ -50,43 +56,54 @@ const ContextMenuSubTrigger = forwardRef<
     <LuChevronRight className="ml-auto h-4 w-4" />
   </ContextMenuPrimitive.SubTrigger>
 ));
-ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName;
+DesktopContextMenuSubTrigger.displayName =
+  ContextMenuPrimitive.SubTrigger.displayName;
 
-const ContextMenuSubContent = forwardRef<
+const DesktopContextMenuSubContent = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.SubContent>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubContent>
->(({ className, onKeyDown, ...props }, ref) => (
-  <ContextMenuPrimitive.SubContent
-    ref={ref}
-    onKeyDown={withMenuShortcuts(onKeyDown)}
-    className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-      className
-    )}
-    {...props}
-  />
-));
-ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName;
-
-const ContextMenuContent = forwardRef<
-  ElementRef<typeof ContextMenuPrimitive.Content>,
-  ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
->(({ className, onKeyDown, ...props }, ref) => (
-  <ContextMenuPrimitive.Portal>
-    <ContextMenuPrimitive.Content
+>(({ className, onKeyDown, children, ...props }, ref) => {
+  return (
+    <ContextMenuPrimitive.SubContent
       ref={ref}
       onKeyDown={withMenuShortcuts(onKeyDown)}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className
       )}
       {...props}
-    />
-  </ContextMenuPrimitive.Portal>
-));
-ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName;
+    >
+      {children}
+    </ContextMenuPrimitive.SubContent>
+  );
+});
+DesktopContextMenuSubContent.displayName =
+  ContextMenuPrimitive.SubContent.displayName;
 
-const ContextMenuItem = forwardRef<
+const DesktopContextMenuContent = forwardRef<
+  ElementRef<typeof ContextMenuPrimitive.Content>,
+  ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
+>(({ className, onKeyDown, children, ...props }, ref) => {
+  return (
+    <ContextMenuPrimitive.Portal>
+      <ContextMenuPrimitive.Content
+        ref={ref}
+        onKeyDown={withMenuShortcuts(onKeyDown)}
+        className={cn(
+          "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          className
+        )}
+        {...props}
+      >
+        <ActionPresentationBoundary>{children}</ActionPresentationBoundary>
+      </ContextMenuPrimitive.Content>
+    </ContextMenuPrimitive.Portal>
+  );
+});
+DesktopContextMenuContent.displayName =
+  ContextMenuPrimitive.Content.displayName;
+
+const DesktopContextMenuItem = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.Item>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
     inset?: boolean;
@@ -129,9 +146,9 @@ const ContextMenuItem = forwardRef<
     </ContextMenuPrimitive.Item>
   )
 );
-ContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName;
+DesktopContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName;
 
-const ContextMenuCheckboxItem = forwardRef<
+const DesktopContextMenuCheckboxItem = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.CheckboxItem>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.CheckboxItem>
 >(({ className, children, checked, ...props }, ref) => (
@@ -152,10 +169,10 @@ const ContextMenuCheckboxItem = forwardRef<
     {children}
   </ContextMenuPrimitive.CheckboxItem>
 ));
-ContextMenuCheckboxItem.displayName =
+DesktopContextMenuCheckboxItem.displayName =
   ContextMenuPrimitive.CheckboxItem.displayName;
 
-const ContextMenuRadioItem = forwardRef<
+const DesktopContextMenuRadioItem = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.RadioItem>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.RadioItem>
 >(({ className, children, ...props }, ref) => (
@@ -175,9 +192,10 @@ const ContextMenuRadioItem = forwardRef<
     {children}
   </ContextMenuPrimitive.RadioItem>
 ));
-ContextMenuRadioItem.displayName = ContextMenuPrimitive.RadioItem.displayName;
+DesktopContextMenuRadioItem.displayName =
+  ContextMenuPrimitive.RadioItem.displayName;
 
-const ContextMenuLabel = forwardRef<
+const DesktopContextMenuLabel = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.Label>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Label> & {
     inset?: boolean;
@@ -193,9 +211,9 @@ const ContextMenuLabel = forwardRef<
     {...props}
   />
 ));
-ContextMenuLabel.displayName = ContextMenuPrimitive.Label.displayName;
+DesktopContextMenuLabel.displayName = ContextMenuPrimitive.Label.displayName;
 
-const ContextMenuSeparator = forwardRef<
+const DesktopContextMenuSeparator = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.Separator>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Separator>
 >(({ className, ...props }, ref) => (
@@ -205,7 +223,8 @@ const ContextMenuSeparator = forwardRef<
     {...props}
   />
 ));
-ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName;
+DesktopContextMenuSeparator.displayName =
+  ContextMenuPrimitive.Separator.displayName;
 
 const ContextMenuShortcut = ({
   className,
@@ -222,6 +241,90 @@ const ContextMenuShortcut = ({
   );
 };
 ContextMenuShortcut.displayName = "ContextMenuShortcut";
+
+/*
+ * Phones render each part from MenuSheet (a bottom sheet) instead of Radix's
+ * menu; see MenuSheet.tsx.
+ */
+const ContextMenu = (
+  props: ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Root>
+) =>
+  useViewport().isPhone ? (
+    <MenuSheetRoot {...props} />
+  ) : (
+    <ContextMenuPrimitive.Root {...props} />
+  );
+const ContextMenuTrigger = compactPart(
+  ContextMenuPrimitive.Trigger,
+  MenuSheetContextTrigger,
+  "ContextMenuTrigger"
+);
+const ContextMenuGroup = compactPart(
+  ContextMenuPrimitive.Group,
+  MenuSheetGroup,
+  "ContextMenuGroup"
+);
+const ContextMenuPortal = (
+  props: ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Portal>
+) =>
+  useViewport().isPhone ? (
+    <MenuSheetPortal {...props} />
+  ) : (
+    <ContextMenuPrimitive.Portal {...props} />
+  );
+const ContextMenuSub = (
+  props: ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Sub>
+) =>
+  useViewport().isPhone ? (
+    <MenuSheetSub {...props} />
+  ) : (
+    <ContextMenuPrimitive.Sub {...props} />
+  );
+const ContextMenuRadioGroup = compactPart(
+  ContextMenuPrimitive.RadioGroup,
+  MenuSheetRadioGroup,
+  "ContextMenuRadioGroup"
+);
+const ContextMenuSubTrigger = compactPart(
+  DesktopContextMenuSubTrigger,
+  MenuSheetSubTrigger,
+  "ContextMenuSubTrigger"
+);
+const ContextMenuSubContent = compactPart(
+  DesktopContextMenuSubContent,
+  MenuSheetSubContent,
+  "ContextMenuSubContent"
+);
+const ContextMenuContent = compactPart(
+  DesktopContextMenuContent,
+  MenuSheetContent,
+  "ContextMenuContent"
+);
+const ContextMenuItem = compactPart(
+  DesktopContextMenuItem,
+  MenuSheetItem,
+  "ContextMenuItem"
+);
+const ContextMenuCheckboxItem = compactPart(
+  DesktopContextMenuCheckboxItem,
+  MenuSheetCheckboxItem,
+  "ContextMenuCheckboxItem"
+);
+const ContextMenuRadioItem = compactPart(
+  DesktopContextMenuRadioItem,
+  MenuSheetRadioItem,
+  "ContextMenuRadioItem"
+);
+const ContextMenuLabel = compactPart(
+  DesktopContextMenuLabel,
+  MenuSheetLabel,
+  "ContextMenuLabel"
+);
+const ContextMenuSeparator = compactPart(
+  DesktopContextMenuSeparator,
+  MenuSheetSeparator,
+  "ContextMenuSeparator"
+);
 
 export {
   ContextMenu,

@@ -4,31 +4,19 @@
 
 import {
   Badge,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect } from "react";
-import {
-  LuEllipsisVertical,
-  LuPanelLeft,
-  LuPanelRight,
-  LuTrash
-} from "react-icons/lu";
+import { LuTrash } from "react-icons/lu";
 import { Await, useParams } from "react-router";
 import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useDocumentStore } from "~/stores";
@@ -60,85 +48,76 @@ const ProcedureHeader = () => {
     newVersionDisclosure.onClose();
   }, [id]);
 
+  const versionBadge = (
+    <Badge variant="outline">V{routeData?.procedure?.version}</Badge>
+  );
+  const statusBadge = <ProcedureStatus status={routeData?.procedure?.status} />;
+  const menuItems = (
+    <DropdownMenuItem
+      shortcut={MENU_ITEM_SHORTCUTS.delete}
+      disabled={
+        !permissions.can("delete", "production") || !permissions.is("employee")
+      }
+      destructive
+      onClick={deleteDisclosure.onOpen}
+    >
+      <DropdownMenuIcon icon={<LuTrash />} />
+      <Trans>Delete Procedure</Trans>
+    </DropdownMenuItem>
+  );
+
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-      <VStack spacing={0} className="flex-grow">
-        <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
-          <Heading size="h4" className="flex items-center gap-2">
-            <span>{displayName}</span>
-            <Badge variant="outline">V{routeData?.procedure?.version}</Badge>
-            <ProcedureStatus status={routeData?.procedure?.status} />
-          </Heading>
-          <Copy text={routeData?.procedure?.name ?? ""} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.delete}
-                disabled={
-                  !permissions.can("delete", "production") ||
-                  !permissions.is("employee")
-                }
-                destructive
-                onClick={deleteDisclosure.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete Procedure</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </HStack>
-      </VStack>
-      <div className="flex flex-shrink-0 gap-1 items-center justify-end">
-        <Suspense fallback={null}>
-          <Await resolve={routeData?.versions}>
-            {(versions) => {
-              const allVersions =
-                versions?.data ??
-                (routeData?.procedure ? [routeData.procedure] : []);
-              return (
-                <VersionMenu
-                  versions={allVersions}
-                  currentVersionId={id}
-                  getKey={(v) => v.id}
-                  getHref={(v) => path.to.procedure(v.id)}
-                  renderLabel={(v) => (
-                    <>
-                      <Badge variant="outline">V{v.version}</Badge>
-                      <span>{v.name}</span>
-                    </>
-                  )}
-                  renderStatus={(v) => <ProcedureStatus status={v.status} />}
-                  onNewVersion={
-                    permissions.can("create", "production")
-                      ? newVersionDisclosure.onOpen
-                      : undefined
-                  }
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-        <IconButton
-          aria-label={t`Toggle Properties`}
-          icon={<LuPanelRight />}
-          onClick={toggleProperties}
-          variant="ghost"
-        />
-      </div>
+    <>
+      <RecordHeader
+        title={displayName}
+        copyValue={routeData?.procedure?.name ?? ""}
+        menu={menuItems}
+        status={
+          <>
+            {versionBadge}
+            {statusBadge}
+          </>
+        }
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            <RecordAction slot="overflow">
+              <Suspense fallback={null}>
+                <Await resolve={routeData?.versions}>
+                  {(versions) => {
+                    const allVersions =
+                      versions?.data ??
+                      (routeData?.procedure ? [routeData.procedure] : []);
+                    return (
+                      <VersionMenu
+                        versions={allVersions}
+                        currentVersionId={id}
+                        getKey={(v) => v.id}
+                        getHref={(v) => path.to.procedure(v.id)}
+                        renderLabel={(v) => (
+                          <>
+                            <Badge variant="outline">V{v.version}</Badge>
+                            <span>{v.name}</span>
+                          </>
+                        )}
+                        renderStatus={(v) => (
+                          <ProcedureStatus status={v.status} />
+                        )}
+                        onNewVersion={
+                          permissions.can("create", "production")
+                            ? newVersionDisclosure.onOpen
+                            : undefined
+                        }
+                      />
+                    );
+                  }}
+                </Await>
+              </Suspense>
+            </RecordAction>
+          </>
+        }
+      />
       {newVersionDisclosure.isOpen && (
         <ProcedureForm
           type="copy"
@@ -167,7 +146,7 @@ const ProcedureHeader = () => {
           }}
         />
       )}
-    </div>
+    </>
   );
 };
 

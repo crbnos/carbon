@@ -11,7 +11,6 @@ import useHydrated from "./useHydrated";
 import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
-import useIsMobile from "./useIsMobile";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 import { useKeyboardWedge } from "./useKeyboardWedge";
 import useLocalStorage from "./useLocalStorage";
@@ -42,7 +41,6 @@ export {
   useHydrated,
   useInitialDimensions,
   useInterval,
-  useIsMobile,
   useIsomorphicLayoutEffect,
   useKeyboardWedge,
   useLocalStorage,

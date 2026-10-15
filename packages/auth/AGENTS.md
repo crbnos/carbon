@@ -41,13 +41,14 @@ pnpm --filter @carbon/auth test
 | `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators |
 | `./auth.server` | `requirePermissions`, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
-| `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge` |
+| `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge`; `pushEndpointCookie` (signed `carbon-push`, this browser's Web Push endpoint) — `clearAuthCookies` deletes that endpoint's `pushSubscription` rows on every same-site sign-out (a cross-site navigation skips it, per the GET-write rule) |
 | `./company.server` | Company switching, `updateCompanySession`; the cached plan lookups `getCompanyPlanId` and `isCarbonOwnedCompany` (Redis 5 min, a missing plan row cached as `""`) |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
 | `./console-pin.server` | MES console pin-in cookie (signed, bound to company + terminal session user): `setConsolePinIn`, `clearConsolePinIn`, `resolveConsolePinIn` (re-validated against the DB, memoized per read), `ConsolePinIn`; `requirePermissions` uses it to derive `userId` in console mode |
 | `./self-signup.server` | Cloud self-signup blocklist: `isSelfSignupBlockedForEmail`, `SELF_SIGNUP_BLOCKED_MESSAGE` (free/disposable email domains; used by ERP login/verify/callback + MES callback) |
 | `./middleware/flash.server` | Flash message middleware |
+| `./middleware/maintenance.server` | `maintenanceMiddleware` (with `MAINTENANCE_MODE` on: 503 for every request, 200 for `/health`); keep it after `securityMiddleware` in each root `middleware`. The decision is the pure `maintenanceVerdict` |
 | `./middleware/security.server` | `securityMiddleware` (CSRF check + CSP nonce + baseline headers), `rejectCrossSiteNavigation`, `getNonce`, `setStrictContentSecurityPolicy` (report-only for now; `entry.server` calls it), `cspReportAction` + `CSP_REPORT_PATH`. The decisions are pure and tested in `lib/security.ts` |
 
 SAML SSO lives in `@carbon/ee/sso.server` (Enterprise-gated), NOT here — auth

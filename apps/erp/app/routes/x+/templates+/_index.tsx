@@ -4,12 +4,28 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { DOCUMENT_CATALOG } from "@carbon/documents/template";
-import { Badge, Button, cn, Heading, ScrollArea, VStack } from "@carbon/react";
+import { Badge, Button, cn, ScrollArea, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuChevronRight, LuFileText, LuLibrary } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link } from "react-router";
+import { GroupedContentSidebar } from "~/components/Layout";
+import { SettingsPageHeading } from "~/components/SettingsPage";
+import { useSettingsSubmodules } from "~/modules/settings";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+// Phones: the templates list is a section of Settings, so it gets the module's
+// section switcher there (desktop shows no sidebar here, unchanged). Only this
+// index route: the editor below it is a pushed screen with Back.
+function SettingsSections() {
+  const { groups } = useSettingsSubmodules();
+  return <GroupedContentSidebar groups={groups} />;
+}
+
+export const handle: Handle = {
+  compactSidebar: SettingsSections
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, { view: "settings", role: "employee" });
@@ -35,13 +51,13 @@ export default function DocumentTemplatesIndexRoute() {
     <ScrollArea className="h-full w-full">
       <VStack
         spacing={4}
-        className="mx-auto h-full max-w-[60rem] gap-6 px-4 py-12"
+        className="mx-auto h-full max-w-[60rem] gap-6 px-4 py-12 max-md:py-3"
       >
-        <div className="flex w-full items-start justify-between gap-4">
+        <div className="flex w-full items-start justify-between gap-4 max-md:flex-col max-md:gap-3">
           <div className="flex flex-col gap-1">
-            <Heading size="h3">
+            <SettingsPageHeading>
               <Trans>Document Templates</Trans>
-            </Heading>
+            </SettingsPageHeading>
             <p className="text-sm text-muted-foreground">
               <Trans>
                 Customize the layout of your PDF documents — reorder sections,

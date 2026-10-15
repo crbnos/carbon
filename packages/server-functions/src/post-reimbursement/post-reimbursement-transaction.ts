@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { datetime } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { NotFoundError } from "../errors";
@@ -62,14 +63,10 @@ export function postReimbursementTransaction(
       );
     }
 
-    const settings = await trx
-      .selectFrom("companySettings")
-      .select("accountingEnabled")
-      .where("id", "=", companyId)
-      .executeTakeFirst();
-    if (!settings) {
-      throw new Error("Reimbursement company settings not found");
-    }
+    // Every posting writes a journal: Provisional before the company's
+    // accounting cutover, Posted after it. FOR SHARE holds the status until
+    // commit.
+    const postingStatus = await journalPostingStatus(trx, companyId);
 
     const company = await trx
       .selectFrom("company")
@@ -86,7 +83,7 @@ export function postReimbursementTransaction(
       trx,
       reimbursement,
       company,
-      accountingEnabled: settings.accountingEnabled,
+      postingStatus,
       companyId,
       userId,
       timestamp,

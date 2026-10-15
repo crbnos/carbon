@@ -611,8 +611,6 @@
   "no-state-copy-of-loader-data::apps/mes/app/routes/x+/operations.tsx::const [items, setItems] = useState<Item[]>(initialItems);",
   "no-unguarded-submit::apps/erp/app/components/AvatarMenu.tsx::<button type=\"submit\" className=\"w-full h-full flex items-center\">",
   "no-unguarded-submit::apps/erp/app/components/Configurator/ConfiguratorForm/ConfiguratorForm.tsx::<Button type=\"submit\" disabled={!isStepValid} variant={isLastStep && destructive ? \"destructive\" : \"primary\"} >",
-  "no-unguarded-submit::apps/erp/app/components/Layout/Topbar/Breadcrumbs.tsx::<button type=\"submit\">",
-  "no-unguarded-submit::apps/erp/app/components/Layout/Topbar/CompanySwitcher.tsx::<button type=\"submit\">",
   "no-unguarded-submit::apps/erp/app/components/MfaEnrollmentRequired.tsx::<Button type=\"submit\" variant=\"ghost\" size=\"md\" className=\"w-full text-muted-foreground\" >",
   "no-unguarded-submit::apps/erp/app/components/RichText.tsx::<Button type=\"submit\" variant=\"link\" size=\"md\">",
   "no-unguarded-submit::apps/erp/app/components/SessionLockOverlay.tsx::<Button type=\"submit\" variant=\"link\" size=\"sm\" className=\"text-muted-foreground\" >",

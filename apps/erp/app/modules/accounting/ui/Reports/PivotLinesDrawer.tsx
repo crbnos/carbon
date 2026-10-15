@@ -86,7 +86,7 @@ const PivotLinesDrawer = ({
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           {isLoading ? (
             <div className="flex w-full items-center justify-center py-16">
               <Spinner size={24} />

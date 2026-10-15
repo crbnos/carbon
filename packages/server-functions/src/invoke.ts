@@ -13,10 +13,13 @@ import type { ServerFnError } from "./errors";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
+  "activate-accounting": () => import("./activate-accounting"),
+  "apply-account-import": () => import("./apply-account-import"),
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
+  "create-lease-invoices": () => import("./create-lease-invoices"),
   "create-rental-invoices": () => import("./create-rental-invoices"),
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),
@@ -26,11 +29,14 @@ const registry = {
   "get-method": () => import("./get-method"),
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
+  "journal-legacy-documents": () => import("./journal-legacy-documents"),
+  "kanban-replenish": () => import("./kanban-replenish"),
   "post-asset-transfer": () => import("./post-asset-transfer"),
   "post-charge": () => import("./post-charge"),
   "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
   "post-inventory-count": () => import("./post-inventory-count"),
+  "post-lease": () => import("./post-lease"),
   "post-maintenance-event": () => import("./post-maintenance-event"),
   "post-memo": () => import("./post-memo"),
   "post-nonconformance": () => import("./post-nonconformance"),

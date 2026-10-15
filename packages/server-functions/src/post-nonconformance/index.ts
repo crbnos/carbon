@@ -3,6 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import { inOrder, many, single } from "@carbon/database/rows";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
@@ -21,9 +26,9 @@ import type { AdjustmentItemCost } from "../lib/post-adjustment-cost";
 // write-offs. The caller (inspection reject route / closeIssue) owns the
 // physical/status side — tracked-entity flips, nonConformance.status — and hands
 // this function a batch of explicit SIGNED movements. In ONE transaction each
-// movement books through the shared core: item ledger + cost layers + (when
-// companySettings.accountingEnabled) a balanced journal against the company's
-// scrapAccount (offset), one shared journal per call. Scrap / Return post a
+// movement books through the shared core: item ledger + cost layers + a
+// balanced journal (Provisional before the accounting cutover, Posted after it)
+// against the company's scrapAccount (offset), one shared journal per call. Scrap / Return post a
 // Negative Adjmt. (Dr Scrap / Cr Inventory + relieve layers); a kept lot's
 // restore posts a Positive Adjmt. (Dr Inventory / Cr Scrap + create a layer).
 export const postNonConformanceInput = z.object({
@@ -100,7 +105,7 @@ const postNonConformance = defineServerFn({
 
     const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
 
-    const [itemsResult, itemCostsResult, accountingSettings] = await inOrder([
+    const [itemsResult, itemCostsResult] = await inOrder([
       () =>
         many(
           db,
@@ -122,21 +127,11 @@ const postNonConformance = defineServerFn({
               "itemPostingGroupId"
             ]
           }
-        ),
-      () =>
-        single(
-          db,
-          "companySettings",
-          { id: companyId },
-          { columns: ["accountingEnabled"] }
         )
     ]);
 
     if (itemsResult.error) throw new Error("Failed to fetch items");
     if (itemCostsResult.error) throw new Error("Failed to fetch item costs");
-    if (accountingSettings.error) {
-      throw new Error("Failed to fetch company settings");
-    }
 
     // The generated types are deep enough that a multi-row .select() infers as
     // {} here; type the projected rows explicitly (the reference sidesteps this
@@ -165,57 +160,51 @@ const postNonConformance = defineServerFn({
       ])
     );
 
-    // The accountingEnabled flag gates ALL journal writes: when false the posting
-    // core still moves the ledger + cost layers, just no journal. Fail closed —
-    // a failed settings read must not silently post without GL.
-    const accountingEnabled =
-      accountingSettings.data?.accountingEnabled ?? false;
-    const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(db, companyId)
-      : null;
-    if (
-      accountingEnabled &&
-      (accountDefaults?.error || !accountDefaults?.data)
-    ) {
+    // Every movement that carries value posts a journal: Provisional before the
+    // company's accounting cutover, Posted after it. Read here to decide
+    // whether to resolve a period, and again inside the transaction.
+    const postingStatus = await journalPostingStatus(db, companyId);
+    const accountDefaults = await getDefaultPostingGroup(db, companyId);
+    if (accountDefaults.error || !accountDefaults.data) {
       throw new Error("Error getting account defaults");
     }
 
     // Active dimensions for the company group — journal lines get
     // Item / ItemPostingGroup / Location tags (post-adjustment precedent).
     const dimensionMap: Record<string, string> = {};
-    if (accountingEnabled) {
-      const companyRecord = await single(
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
+    if (companyRecord.error) throw new Error("Failed to fetch company");
+    const companyGroupId = companyRecord.data.companyGroupId;
+    if (companyGroupId) {
+      const dimensions = await many(
         db,
-        "company",
-        { id: companyId },
-        { columns: ["companyGroupId"] }
+        "dimension",
+        {
+          companyGroupId,
+          active: true,
+          entityType: ["Item", "ItemPostingGroup", "Location"]
+        },
+        { columns: ["id", "entityType"] }
       );
-      if (companyRecord.error) throw new Error("Failed to fetch company");
-      const companyGroupId = companyRecord.data.companyGroupId;
-      if (companyGroupId) {
-        const dimensions = await many(
-          db,
-          "dimension",
-          {
-            companyGroupId,
-            active: true,
-            entityType: ["Item", "ItemPostingGroup", "Location"]
-          },
-          { columns: ["id", "entityType"] }
-        );
-        if (dimensions.error) throw new Error("Failed to fetch dimensions");
-        for (const dim of dimensions.data ?? []) {
-          if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
-        }
+      if (dimensions.error) throw new Error("Failed to fetch dimensions");
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }
     }
 
     // Resolve the accounting period BEFORE opening the transaction —
     // getCurrentAccountingPeriod uses the REST client and calling it
-    // mid-transaction parks the (size 1) pool in idle-in-transaction.
-    const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(companyId, db, postingDate)
-      : null;
+    // mid-transaction parks the (size 1) pool in idle-in-transaction. A
+    // Provisional journal has no accounting period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, db, postingDate)
+        : null;
 
     const journalDescription =
       description?.trim() ||
@@ -240,43 +229,47 @@ const postNonConformance = defineServerFn({
         .executeTakeFirst();
       if (alreadyPosted) return;
 
+      await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
       // One shared journal per call (per reject / per disposition close), a line
       // pair per movement — created lazily so an all-zero-value run posts none.
-      const accounting =
-        accountingEnabled && accountDefaults?.data && accountingPeriodId
-          ? {
+      // Cost of quality: offset to scrapAccount, or to the variance account
+      // when it is empty.
+      const scrapAccountId = resolveDefaultAccount(
+        accountDefaults.data,
+        "scrapAccount",
+        postingStatus
+      ).accountId;
+      const accounting = {
+        postingStatus,
+        accountingPeriodId,
+        accountDefaults: {
+          rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+          finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+          inventoryAdjustmentVarianceAccount:
+            accountDefaults.data.inventoryAdjustmentVarianceAccount
+        },
+        offsetAccount: scrapAccountId,
+        offsetDescription: "Scrap / Cost of Quality",
+        sourceType: documentType,
+        description: journalDescription,
+        userId,
+        dimensions: dimensionMap,
+        getJournalId: async () => {
+          if (!journalId) {
+            journalId = await createAdjustmentJournal(trx, {
+              companyId,
               accountingPeriodId,
-              accountDefaults: {
-                rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-                finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
-                inventoryAdjustmentVarianceAccount:
-                  accountDefaults.data.inventoryAdjustmentVarianceAccount
-              },
-              // Cost of quality: offset to scrapAccount, falling back to the
-              // variance account for companies whose scrapAccount is unset.
-              offsetAccount:
-                accountDefaults.data.scrapAccount ??
-                accountDefaults.data.inventoryAdjustmentVarianceAccount,
-              offsetDescription: "Scrap / Cost of Quality",
-              sourceType: documentType,
+              status: postingStatus,
               description: journalDescription,
+              postingDate,
               userId,
-              dimensions: dimensionMap,
-              getJournalId: async () => {
-                if (!journalId) {
-                  journalId = await createAdjustmentJournal(trx, {
-                    companyId,
-                    accountingPeriodId,
-                    description: journalDescription,
-                    postingDate,
-                    userId,
-                    sourceType: documentType
-                  });
-                }
-                return journalId;
-              }
-            }
-          : null;
+              sourceType: documentType
+            });
+          }
+          return journalId;
+        }
+      };
 
       for (const movement of effectiveMovements) {
         const itemRow = itemById.get(movement.itemId);

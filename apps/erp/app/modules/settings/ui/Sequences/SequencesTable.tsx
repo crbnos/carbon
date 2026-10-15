@@ -41,6 +41,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
           <Hyperlink to={row.original.table}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuText />
         }
       },
@@ -49,6 +50,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         header: t`Prefix`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
           icon: <LuTextCursor />
         }
       },
@@ -57,6 +59,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
         header: t`Current`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P2",
           icon: <LuArrowRight />
         }
       },

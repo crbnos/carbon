@@ -12,6 +12,7 @@ export type {
 export { findClobbers, objectRefs } from "./clobber";
 export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
+export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";

@@ -1,21 +1,14 @@
 name: Sync Inngest Functions
 
 on:
-  # Run after the Deploy Apps workflow completes
-  workflow_run:
-    workflows: ["Deploy Apps"]
-    types:
-      - completed
-    branches:
-      - main
+  # Called by deploy.yml after a successful deploy.
+  workflow_call:
   workflow_dispatch:
 
 jobs:
   sync:
     name: Sync Inngest
     runs-on: ubuntu-latest
-    # Only run if the triggering workflow succeeded (or if manually/push triggered)
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout code

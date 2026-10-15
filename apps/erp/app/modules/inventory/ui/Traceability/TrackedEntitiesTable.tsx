@@ -88,6 +88,7 @@ const TrackedEntitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
 
             filter: {
@@ -110,6 +111,7 @@ const TrackedEntitiesTable = memo(
               </Badge>
             ) : null,
           meta: {
+            mobile: "P3",
             icon: <LuHash />
           }
         },
@@ -120,6 +122,7 @@ const TrackedEntitiesTable = memo(
             <span>{numberFormatter.format(row.original.quantity)}</span>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuHash />,
             renderTotal: true
           }
@@ -131,6 +134,7 @@ const TrackedEntitiesTable = memo(
             <TrackedEntityStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",

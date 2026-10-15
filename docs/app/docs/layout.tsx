@@ -77,6 +77,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Purchasing",
     slugs: [
       "purchase-orders",
+      "leases",
       "supplier-returns",
       "supplier-quotes",
       "suppliers-and-customers",

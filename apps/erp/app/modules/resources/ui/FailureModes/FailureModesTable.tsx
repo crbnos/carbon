@@ -37,6 +37,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCircleAlert />
         }
       },
@@ -45,6 +46,7 @@ const FailureModesTable = memo(({ data, count }: FailureModesTableProps) => {
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.type} />,
         meta: {
+          mobile: "P3",
           icon: <LuShapes />,
           filter: {
             type: "static",

@@ -1009,7 +1009,9 @@ export const supplierPartValidator = z.object({
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),
   orderMultiple: zfd.numeric(z.number().min(1)).optional(),
   conversionFactor: zfd.numeric(z.number().min(0)),
-  unitPrice: zfd.numeric(z.number().min(0).optional())
+  // Per purchase unit, in currencyCode — the price as the supplier quoted it.
+  currencyCode: zfd.text(z.string().optional()),
+  supplierUnitPrice: zfd.numeric(z.number().min(0).optional())
 });
 
 export const toolValidator = applyStorageAndShelfLifeRefines(
@@ -1197,6 +1199,11 @@ export function changeNoticeLockedMessage(status: string | null | undefined) {
     ? "This change notice is being implemented, so its changes are locked. Reopen it to make changes."
     : "This change notice is closed, so its changes are read-only.";
 }
+
+// Engineering content is also frozen while an approval request is pending: the
+// approver signs off on exactly what they reviewed.
+export const changeNoticeAwaitingApprovalMessage =
+  "This change notice is waiting for approval. Engineering changes are locked until it is approved or rejected.";
 
 // Workflow content — action tasks, assignee, dates, priority. Editable until closed.
 export function canEditChangeNoticeWorkflow(

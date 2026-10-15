@@ -52,6 +52,7 @@ const ProductionQuantitiesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: operations.map((operation) => ({
@@ -76,6 +77,7 @@ const ProductionQuantitiesTable = memo(
             <EmployeeAvatar employeeId={row.original.createdBy} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -102,6 +104,7 @@ const ProductionQuantitiesTable = memo(
             </Badge>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Production", "Rework", "Scrap"].map((type) => ({
@@ -126,7 +129,8 @@ const ProductionQuantitiesTable = memo(
         {
           accessorKey: "quantity",
           header: t`Quantity`,
-          cell: ({ row }) => row.original.quantity
+          cell: ({ row }) => row.original.quantity,
+          meta: { mobile: "P2" }
         },
         {
           accessorKey: "scrapReasonId",

@@ -84,7 +84,7 @@ Import writes the entity's standard fields plus its documented side-tables (addr
 
 ## Opening stock
 
-The **Inventory → Quantities** table carries three imports that load on-hand stock, typically once during go-live. Each row is posted as a **Positive Adjmt.** through the same posting core as a manual inventory adjustment: an item ledger entry at the item's current cost, dated today, and, when accounting is enabled, a line pair on **one** inventory adjustment journal for the whole file. A row whose item has zero cost posts no journal lines. Inventory adjustment business rules are not evaluated on import. These imports only ever **add** stock; they never reduce or set a quantity.
+The **Inventory → Quantities** table carries three imports that load on-hand stock, typically once during go-live. Each row is posted as a **Positive Adjmt.** through the same posting core as a manual inventory adjustment: an item ledger entry at the item's current cost, dated today, and a line pair on **one** inventory adjustment journal for the whole file. A row whose item has zero cost posts no journal lines. Inventory adjustment business rules are not evaluated on import. These imports only ever **add** stock; they never reduce or set a quantity.
 
 Pick the import that matches the item's tracking type. A row whose item is tracked differently is reported as an error naming the right import, and Non-Inventory items can't be stocked at all.
 

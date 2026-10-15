@@ -5,9 +5,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { getFixedAssetClasses } from "~/modules/accounting";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
@@ -55,6 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AssetClassesRoute() {
   const { data, count, taxDepreciationEnabled } =
     useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
 
@@ -66,13 +69,15 @@ export default function AssetClassesRoute() {
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
           permissions.can("create", "accounting") && (
-            <Button
-              leftIcon={<LuCirclePlus />}
-              variant="primary"
-              onClick={() => navigate(path.to.newAssetClass)}
-            >
-              Add Asset Class
-            </Button>
+            <NewAction label={t`Add Asset Class`} to={path.to.newAssetClass}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                variant="primary"
+                onClick={() => navigate(path.to.newAssetClass)}
+              >
+                <Trans>Add Asset Class</Trans>
+              </Button>
+            </NewAction>
           )
         }
       />

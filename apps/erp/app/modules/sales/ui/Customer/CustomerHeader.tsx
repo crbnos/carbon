@@ -36,6 +36,10 @@ import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
+import {
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/settings+/tags";
@@ -96,11 +100,30 @@ const CustomerHeader = () => {
     [customerId, fetcher.submit]
   );
 
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={!permissions.can("delete", "sales")}
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Customer</Trans>
+      </DropdownMenuItem>
+    </>
+  );
   return (
     <>
+      {/* The app bar titles the record with its name, so no hero. */}
+      {/* No hero; it still zeroes --header-height on phones. */}
+      <RecordHero />
+      <RecordPhoneChrome menu={menuItems} copyValue={customerId} />
       <VStack>
         <Card>
-          <HStack className="justify-between items-start">
+          <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span>{routeData?.customer?.name}</span>
@@ -113,19 +136,7 @@ const CustomerHeader = () => {
                       size="sm"
                     />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {auditLogTrigger}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.delete}
-                      disabled={!permissions.can("delete", "sales")}
-                      destructive
-                      onClick={deleteModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTrash />} />
-                      <Trans>Delete Customer</Trans>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <DropdownMenuContent>{menuItems}</DropdownMenuContent>
                 </DropdownMenu>
                 <Copy
                   text={customerId}

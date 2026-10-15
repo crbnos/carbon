@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { AccountSettings } from "@carbon/account/ui";
 import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getAppUrl,
   getCarbon,
   getCompanies,
   getUser,
@@ -28,10 +28,12 @@ import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
-import { RouteRealtime } from "@carbon/query";
+import { RouteRealtime, useLoaderQuery } from "@carbon/query";
 import { setClientCompanyId } from "@carbon/query/cache";
 import {
+  AnnouncementBar,
   Button,
+  cn,
   Heading,
   ItarEntityPendingBlock,
   ItarUserCertification,
@@ -44,15 +46,17 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  formatDate,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -64,10 +68,12 @@ import {
   Form,
   Outlet,
   useLoaderData,
+  useLocation,
   useNavigate
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
+import { isTabBarPath, MesTabBar } from "~/components/MesTabBar";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
@@ -76,6 +82,7 @@ import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
+import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
@@ -193,8 +200,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     // A company-less authenticated user (e.g. an enterprise first-run user who
     // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
     // Send them to a terminal screen that links to ERP onboarding, not into
-    // accountSettings (an ERP /x route that would itself bounce a no-company
-    // user, i.e. a redirect loop).
+    // the ERP's /x routes (which would themselves bounce a no-company user,
+    // i.e. a redirect loop).
     throw redirect(path.to.setupRequired);
   }
 
@@ -354,6 +361,9 @@ export default function AuthenticatedRoute() {
   }, [loaderData]);
 
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const showTabBar = isTabBarPath(pathname);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
@@ -397,6 +407,22 @@ export default function AuthenticatedRoute() {
   });
 
   const userId = user?.id;
+  const { t } = useLingui();
+  const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
+    path.to.api.systemStatus
+  );
+  const { locale } = useLocale();
+  const moveDate = systemStatus.data?.accountMoveDate;
+  // The account move outranks the deployment-wide announcement, and cannot
+  // be dismissed: it stays until the date is cleared on the company.
+  const announcement = moveDate
+    ? {
+        id: `account-move:${moveDate}`,
+        severity: "warning" as const,
+        message: t`🚨 Heads up: on ${formatDate(moveDate, { dateStyle: "long" }, locale)} your account will be moved to erp.try.carbon.ms`,
+        dismissible: false
+      }
+    : systemStatus.data?.announcement;
   const userEmail = user?.email;
   const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
   const companyId = company?.companyId;
@@ -448,7 +474,7 @@ export default function AuthenticatedRoute() {
             </Trans>
           </p>
           <Button size="lg" className="w-full" asChild>
-            <a href={`${getAppUrl()}/x/account/profile`}>
+            <a href={path.to.erpAccountSecurity}>
               <Trans>Set up in Carbon</Trans>
             </a>
           </Button>
@@ -526,14 +552,44 @@ export default function AuthenticatedRoute() {
                     openClockEntry={openClockEntry}
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
                   />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
+                  {/* From lg the shell does not scroll, so the page area stops at the
+                      screen and each page's own scroller takes the overflow. */}
+                  <div
+                    className={cn(
+                      "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
+                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+                    )}
+                  >
                     {/* A company switch stays on the same page. Without the key the page
                         keeps its state, so a form still held the previous company's
                         values and saving wrote them to the new one. */}
+                    <AnnouncementBar
+                      announcement={announcement}
+                      // The pinned-in operator on a console, so one
+                      // operator's dismissal is not everyone's.
+                      userId={loaderData.effectiveUserId ?? user?.id ?? ""}
+                      dismissLabel={t`Dismiss`}
+                      defaultLinkLabel={t`Learn more`}
+                    />
                     <Outlet key={companyId} />
                   </div>
+                  <MesTabBar
+                    activeEvents={activeEvents}
+                    activeMaintenanceCount={activeMaintenanceCount}
+                    moreOpen={moreOpen}
+                    onMoreOpenChange={setMoreOpen}
+                  />
                   <ShortcutHelp />
+                  {user && company?.id && (
+                    <AccountSettings
+                      api={path.to.erpApi}
+                      user={user}
+                      companyId={company.id}
+                    />
+                  )}
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>

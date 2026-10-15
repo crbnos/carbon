@@ -12,7 +12,8 @@ export enum NotificationEvent {
   ApprovalApproved = "approval-approved",
   ApprovalRejected = "approval-rejected",
   ApprovalRequested = "approval-requested",
-  // Change-notice stage broadcasts (the only CN events; no approval flow in v1).
+  // Change-notice stage broadcasts. Change notice approvals use the Approval*
+  // events above with documentType "changeOrder".
   // Values are persisted in `notification.event`, so they keep the legacy
   // "change-order" spelling.
   ChangeNoticeStarted = "change-order-started",
@@ -31,6 +32,10 @@ export enum NotificationEvent {
   // Digest (documentIds-shaped): jobs a regen flipped to projected-late, one
   // digest per assignee. In-app only by default.
   JobsProjectedLate = "jobs-projected-late",
+  // A lease's notice date or end date is within the company's reminder days.
+  // Sent once per date by the recurring-billing job; the text comes from the
+  // payload's `body`, the lease is read for the details.
+  LeaseCriticalDate = "lease-critical-date",
   MaintenanceDispatchAssignment = "maintenance-dispatch-assignment",
   MaintenanceDispatchCreated = "maintenance-dispatch-created",
   NonConformanceAssignment = "issue-assignment",
@@ -100,7 +105,9 @@ export const USER_FACING_NOTIFICATION_TOPICS = [
   NotificationTopic.Changelog
 ] as const satisfies readonly NotificationTopic[];
 
-// In-app is always delivered, so it is not a preference channel.
+// In-app is always delivered, so it is not a preference channel. Neither is
+// browser push: it mirrors in-app, every notification to every browser with
+// notifications enabled.
 export type NotificationPreferenceChannel = "email" | "slack";
 
 export function getNotificationTopicChannels(
@@ -126,6 +133,11 @@ export function isNotificationTopicEnabledByDefault(
       return true;
   }
 }
+
+// What a Recurring invoicing notification lists, which decides where its link
+// lands: the sales invoices the run posted or held, or the lease purchase
+// invoices it drafted. The two are never mixed in one notification.
+export type RecurringInvoicingDocumentType = "salesInvoice" | "purchaseInvoice";
 
 // A labeled fact attached to a notification (e.g. Customer / Acme Corp),
 // rendered in the email, Slack text, and notification.payload.details.
@@ -154,7 +166,8 @@ export function isRecurringNotificationEvent(
 
 // Fan-out targets understood by the notify Inngest function. inApp is
 // always included regardless of what the caller passes — the topbar reflects
-// every notification. email and slack are opt-in extras.
+// every notification. email and slack are opt-in extras. Browser push is not
+// a destination: it follows in-app, so every notification pushes too.
 export enum NotificationDestination {
   InApp = "inApp",
   Email = "email",
@@ -174,6 +187,7 @@ export function getNotificationTopic(
     case NotificationEvent.PurchaseInvoiceAssignment:
     case NotificationEvent.PurchaseOrderAssignment:
     case NotificationEvent.PurchasingRfqAssignment:
+    case NotificationEvent.LeaseCriticalDate:
       return NotificationTopic.Purchasing;
     case NotificationEvent.QuoteAssignment:
     case NotificationEvent.QuoteExpired:
@@ -304,6 +318,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Accounting sync needs attention";
     case NotificationEvent.RecurringInvoicing:
       return "Recurring invoicing summary";
+    case NotificationEvent.LeaseCriticalDate:
+      return "Lease date coming up";
     default:
       return "You have a new notification";
   }
@@ -344,6 +360,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View sync activity";
     case NotificationEvent.RecurringInvoicing:
       return "Review invoices";
+    case NotificationEvent.LeaseCriticalDate:
+      return "Open lease";
     default:
       return "View details";
   }

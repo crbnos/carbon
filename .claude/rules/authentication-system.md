@@ -251,6 +251,18 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
+- `clearAuthCookies` (which `destroyAuthSession` and the login loader's
+  expired-session branch call) also ends this browser's push notifications: it
+  reads the signed `carbon-push` cookie (`pushEndpointCookie`, set by
+  `api+/push-subscription` when browser notifications are enabled), deletes every
+  `pushSubscription` row of that endpoint with the service role, and clears the
+  cookie. Every sign-out path therefore stops pushes in that browser. A cross-site
+  navigation (`Sec-Fetch-Site: cross-site`, the login GET from another site's
+  link) skips the cleanup, per the GET-write rule; such rows lapse anyway, because
+  `notify` skips rows no page load has refreshed within a session's lifetime. The
+  service-role client is imported inside that cleanup, not at module load, so
+  importing `session.server` builds no Supabase client (the session tests mock
+  `config/env` without the Supabase keys).
   `updateCompanySession` / `updateSessionConsole` switch active company / console mode.
 - **Console pin-in** (`@carbon/auth/console-pin.server`): which operator is pinned in
   at a console terminal lives in the `console-pin-<companyId>` cookie, SIGNED with
@@ -290,8 +302,9 @@ Supabase's `auth.mfa_factors` — no app table.
 - **auth-js gotcha**: `supabase.auth.mfa.*` reads the client's INTERNAL session, not the
   `Authorization` header override — `mfa.server.ts` seeds a fresh anon client via
   `auth.setSession` with the cookie's tokens.
-- **Enrollment**: Account → Security (`x+/account+/security.tsx`, which also owns
-  passkeys) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
+- **Enrollment**: Account settings → Security (the modal pane
+  `packages/account/src/ui/SecuritySettings.tsx`, data and passkey writes in
+  `api+/account.security.ts`) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
   current code as step-up). The enroll→scan→verify state machine, the 6-slot code
   input, and the invalid-code copy are shared with the enforcement gate via
   `~/components/TotpEnrollment` (`useTotpEnrollment`, `OtpInput`,
@@ -434,17 +447,36 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 `_oauth+/` (`authorize.tsx`, `token.tsx`, `register.ts`) plus discovery at
 `[.]well-known.oauth-authorization-server.ts` and `[.]well-known.oauth-protected-resource.ts`.
 
-- PKCE supported (`code_challenge` / `code_challenge_method` S256|plain on authorize,
-  `code_verifier` on token).
+- PKCE: `code_challenge` on authorize (required for public clients), verified S256-only
+  with `code_verifier` on token.
 - Dynamic client registration (`POST /oauth/register`) writes to the **`oauthClient`**
-  table. <!-- UNVERIFIED: the old cache doc described a separate `oauthDynamicClient` table; it does not exist in current migrations. -->
+  table. It is open by design (MCP clients self-register) but rate-limited per IP
+  (100/hour), and the rules live in `~/services/oauth.server.ts`:
+  `isAllowedRedirectUri` admits https, http only on a loopback host, or a
+  private-use scheme, never a fragment; `supportedScope` keeps only `mcp:tools`.
+  Only `client_secret_post` and `none` are accepted as `token_endpoint_auth_method`
+  (what discovery advertises; `/token` never reads a Basic header).
+- **Authorize** (`authorize.tsx`) requires `settings_update` and employee role in the
+  SELECTED company (`canAuthorizeForCompany`), not just the session's active one, and
+  re-checks the redirect URI with `isRegisteredRedirectUri` (registered AND still
+  allowed — clients registered before the rules existed are held to them too). The
+  consent page shows the redirect host only once it passes that check.
+- **Refresh tokens rotate** on every use (the update matches the OLD hash, so one of
+  two concurrent refreshes loses) and die after 30 days idle (`isRefreshTokenIdle`:
+  `expiresAt` + 30 days — no extra column). There is no revocation endpoint.
+- A token carries no permissions of its own: the MCP endpoint re-checks on every
+  request that the user is still an `employee` of the token's company and gates each
+  operation on that user's live permissions (see `mcp-tools-reference.md`).
 - Tables: `oauthClient`, `oauthCode`, `oauthToken` (all PK `xid()`, scoped by
   `companyId`/`userId`). Columns are plain TEXT, but **access tokens, refresh tokens, and
   client secrets are SHA-256 hashed at the app layer before storage** via
   `hashOAuthSecret` (`auth.server.ts`). Lookups hash the incoming value and compare.
-- MCP endpoint (`apps/erp/app/routes/api+/mcp+/_index.ts`): a `Bearer` token (when no
-  `carbon-key`) is hashed and looked up in `oauthToken`; on miss it falls back to
-  `carbon-key` API-key auth. `companyId`/`userId` always come from the token context.
+- MCP endpoint (`apps/erp/app/routes/api+/mcp+/_index.ts`): a `Bearer` token not
+  prefixed `crbn_` is an OAuth token — `findOAuthToken` (hash lookup + expiry), the
+  per-user rate limit, then `oauthContext` (membership, company group, claims, user
+  client, in parallel), both in `api+/v1+/lib/authenticate.server.ts` beside
+  `authenticateApiKey`. A `crbn_` bearer is rewritten to `carbon-key` API-key auth.
+  `companyId`/`userId` always come from the token row.
 
 ## Schema (newest migrations; `packages/database/supabase/migrations`)
 

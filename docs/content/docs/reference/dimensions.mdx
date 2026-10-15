@@ -28,7 +28,7 @@ A dimension carries two flags: **active** (an inactive dimension stops being att
 
 Dimensions are stored in a join table, `journalLineDimension`, with one row per tag: `journalLineId`, `dimensionId`, and a **`valueId`**. That `valueId` is deliberately **polymorphic** — for a `Custom` dimension it points at a `dimensionValue.id`; for an entity-type dimension it points straight at the entity row's id (`location.id`, `customer.id`, `costCenter.id`). It is intentionally *not* a foreign key; the reference target depends on the dimension's entity type and is enforced in application code (`20260228024512_dimensions.sql:131`). A line can hold at most one value per dimension (`UNIQUE("journalLineId", "dimensionId")`).
 
-When accounting is enabled, operational posting resolves dimensions automatically:
+Operational posting resolves dimensions automatically:
 
 1. It loads every **active** dimension for the company group into a map keyed by entity type (`post-shipment/index.ts`).
 2. As it builds each journal line, it already knows the source facts — the customer, the item, the item posting group, the location, the cost center behind that line.

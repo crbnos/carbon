@@ -176,6 +176,10 @@ ERP and MES are React Router apps over a single Postgres database. Permissions (
   <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
 </a>
 
+## Building E2E Systems
+
+Carbon is intended to be the core of a bespoke end-to-end manufacturing system. We provide an `apps/starter` and allow you to build a custom sales and shop-floor engine with Carbon at the center.
+
 ![Carbon Functionality](https://github.com/user-attachments/assets/d73b3297-afb4-4bd4-a381-61b31a78aa38)
 
 ![Carbon Architecture](https://github.com/user-attachments/assets/e5532a5f-609c-4404-8706-aa9bd59e180b)
@@ -335,7 +339,7 @@ The full command reference is in the [local development guide](https://docs.carb
 <details>
 <summary><h3>Restoring a production snapshot</h3></summary>
 
-To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types.
+To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, fits the backup to your stack's auth/storage/realtime schemas, verifies that every index, constraint, trigger and policy landed, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types. If verification fails, it exits nonzero and applies no migrations.
 
 1. Export a backup of your production database with `pg_dump`.
 2. Run it from your worktree root:

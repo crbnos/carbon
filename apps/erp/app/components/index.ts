@@ -36,6 +36,7 @@ import {
 } from "./Icons";
 import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
+import LinkValue from "./LinkValue";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
 import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
@@ -82,6 +83,7 @@ export {
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
+  LinkValue,
   Location,
   MethodBadge,
   MethodIcon,

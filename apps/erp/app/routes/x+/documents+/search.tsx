@@ -102,7 +102,7 @@ export default function DocumentsAllRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel>
           <DocumentsTable
             data={documents}

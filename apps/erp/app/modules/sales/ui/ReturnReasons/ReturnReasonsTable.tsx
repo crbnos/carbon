@@ -45,6 +45,7 @@ const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },

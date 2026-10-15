@@ -11,11 +11,16 @@ import {
   HStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { LuCircleCheck, LuClock, LuTriangleAlert } from "react-icons/lu";
+import {
+  LuCircleCheck,
+  LuClock,
+  LuFileCheck,
+  LuTriangleAlert
+} from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime } from "~/components";
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 
 type PersonTrainingsProps = {
   trainings: TrainingAssignmentStatusItem[];
@@ -72,24 +77,39 @@ const PersonTrainings = ({ trainings }: PersonTrainingsProps) => {
                   <HStack spacing={2}>
                     <Link
                       className="font-medium"
-                      to={path.to.trainingAssignmentDetail(training.trainingId)}
+                      to={path.to.trainingAssignmentDetail(
+                        training.trainingAssignmentId
+                      )}
                     >
                       {training.trainingName}
                     </Link>
                     <TrainingStatusBadge status={training.status} />
                   </HStack>
-                  {training.completedAt && (
-                    <p className="text-sm text-muted-foreground">
-                      <DateTime
-                        value={training.completedAt}
-                        variant="date"
-                        dateOptions={{
-                          month: "short",
-                          year: "numeric"
-                        }}
-                      />
-                    </p>
-                  )}
+                  <HStack spacing={3}>
+                    {training.certificatePath && (
+                      <a
+                        className="flex items-center gap-1 text-sm"
+                        href={getPrivateUrl(training.certificatePath)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuFileCheck />
+                        <Trans>View Certificate</Trans>
+                      </a>
+                    )}
+                    {training.completedAt && (
+                      <p className="text-sm text-muted-foreground">
+                        <DateTime
+                          value={training.completedAt}
+                          variant="date"
+                          dateOptions={{
+                            month: "short",
+                            year: "numeric"
+                          }}
+                        />
+                      </p>
+                    )}
+                  </HStack>
                 </HStack>
               </li>
             ))}

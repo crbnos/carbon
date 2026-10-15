@@ -17,17 +17,12 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -106,17 +101,6 @@ export default function PurchaseInvoiceExplorer() {
     setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const lines = purchaseInvoiceData?.purchaseInvoiceLines ?? [];
   const unmappedLines = lines.filter(
@@ -213,33 +197,16 @@ export default function PurchaseInvoiceExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newPurchaseInvoiceLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newPurchaseInvoiceLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
                   aria-label="Reorder lines"
@@ -292,10 +259,12 @@ function PurchaseInvoiceLineBody({
   const subtitle =
     line.invoiceLineType === "G/L Account"
       ? "G/L Account"
-      : distinctItemText(
-          getItemReadableId(items, line.itemId),
-          line.description
-        );
+      : line.invoiceLineType === "Lease"
+        ? line.description
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -304,7 +273,9 @@ function PurchaseInvoiceLineBody({
           <span className="font-semibold line-clamp-1">
             {line.invoiceLineType === "G/L Account"
               ? line.description || "Indirect Expense"
-              : getItemReadableId(items, line.itemId)}
+              : line.invoiceLineType === "Lease"
+                ? line.leaseReadableId || "Lease"
+                : getItemReadableId(items, line.itemId)}
           </span>
           {subtitle && (
             <span className="text-muted-foreground text-xs truncate line-clamp-1">
@@ -343,10 +314,12 @@ function PurchaseInvoiceLineItem({
       ? "G/L Account"
       : line.invoiceLineType === "Fixed Asset"
         ? line.assetName || line.description
-        : distinctItemText(
-            getItemReadableId(items, line.itemId),
-            line.description
-          );
+        : line.invoiceLineType === "Lease"
+          ? line.description
+          : distinctItemText(
+              getItemReadableId(items, line.itemId),
+              line.description
+            );
 
   return (
     <VStack spacing={0} className="border-b">
@@ -368,7 +341,9 @@ function PurchaseInvoiceLineItem({
                   ? line.description || "G/L Account"
                   : line.invoiceLineType === "Fixed Asset"
                     ? (line as any).assetReadableId || "Fixed Asset"
-                    : getItemReadableId(items, line.itemId)}
+                    : line.invoiceLineType === "Lease"
+                      ? line.leaseReadableId || "Lease"
+                      : getItemReadableId(items, line.itemId)}
               </span>
               {subtitle && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
@@ -382,7 +357,7 @@ function PurchaseInvoiceLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label={t`More`}
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}

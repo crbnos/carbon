@@ -13,6 +13,9 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -34,6 +37,8 @@ export type IntegrationHealth = {
   id: string;
   active: boolean;
   health: IntegrationHealthStatus;
+  /** Why the last check failed, when the integration says. */
+  healthReason?: string | null;
   /**
    * Which install mode this one is in, resolved SERVER-side.
    *
@@ -79,11 +84,14 @@ export function IntegrationCard({
   // refusal as a failed install — and it names the incumbent, so the next step
   // is obvious.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
-  const roleIncumbent = providerRole
-    ? (routeData?.activeRoles?.[providerRole] ?? null)
-    : null;
+  // Several OEE providers may be active at once (the database exempts the
+  // role), so an active one is never an incumbent.
+  const roleIncumbent =
+    providerRole && providerRole !== "oee"
+      ? (routeData?.activeRoles?.[providerRole] ?? null)
+      : null;
   const modes =
     (
       integration as {
@@ -237,7 +245,10 @@ export function IntegrationCard({
           </span>
         )}
         {installed && integration.active && (
-          <StatusBadge status={installed.health} />
+          <StatusBadge
+            status={installed.health}
+            reason={installed.healthReason}
+          />
         )}
       </CardFooter>
       {showModeDialog && (
@@ -252,7 +263,13 @@ export function IntegrationCard({
   );
 }
 
-const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
+const StatusBadge = ({
+  status,
+  reason
+}: {
+  status: IntegrationHealthStatus;
+  reason?: string | null;
+}) => {
   const { t } = useLingui();
 
   const colors = {
@@ -279,7 +296,7 @@ const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
   } as const;
 
   const ping = colors[status] || "text-gray-400";
-  return (
+  const badge = (
     <Badge
       variant={badgeVariants[status]}
       className="flex items-center mr-auto gap-x-2 py-0.5"
@@ -300,5 +317,13 @@ const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
       </span>
       {labels[status]}
     </Badge>
+  );
+
+  if (!reason) return badge;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+    </Tooltip>
   );
 };

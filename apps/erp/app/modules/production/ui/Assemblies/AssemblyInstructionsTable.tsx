@@ -96,6 +96,7 @@ const AssemblyInstructionsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBlocks />
           }
         },
@@ -106,6 +107,8 @@ const AssemblyInstructionsTable = memo(
             <AssemblyInstructionStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
+            mobilePill: true,
             icon: <LuCircleCheck />
           }
         },
@@ -128,6 +131,7 @@ const AssemblyInstructionsTable = memo(
             );
           },
           meta: {
+            mobile: "P3",
             icon: <LuSquareStack />,
             // Without this the exporter substitutes the item's name for the id
             // (Download.tsx idNameMaps), losing the readable id the cell shows.

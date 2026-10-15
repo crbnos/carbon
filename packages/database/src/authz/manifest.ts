@@ -99,6 +99,9 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  accountingCutoverIgnoredInvoice: company("accounting", {
+    read: "accounting_view"
+  }),
   accountingPeriod: company("accounting", { read: "accounting_view" }),
   accountingPeriodBalance: company("accounting", {
     read: "accounting_view",
@@ -834,19 +837,50 @@ export const manifest = {
       "production_delete"
     )
   }),
-  journal: company("accounting", {
-    read: "accounting_view",
-    where: {
-      // Posted stays updatable only for the Posted -> Reversed transition, which the
-      // journal_posted_immutable trigger enforces. The new row is always checked
-      // against the company scope alone, so a journal can never move company.
-      update: (eb) => eb("status", "in", ["Draft", "Posted"]),
-      delete: (eb) => eb("status", "=", "Draft")
-    }
+  // Provisional and Superseded are the accounting cutover's automatic statuses
+  // (.ai/specs/implemented/2026-10-08-accounting-cutover.md): only the posting
+  // server functions and the enable write them, as the service connection. A
+  // user never creates a journal in either status nor moves one into it.
+  journal: policies({
+    select: inCompany("companyId", "accounting_view"),
+    insert: and(
+      where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"])),
+      inCompany("companyId", "accounting_create")
+    ),
+    // Posted stays updatable only for the Posted -> Reversed transition, which the
+    // journal_posted_immutable trigger enforces. The new row keeps the company scope,
+    // so a journal can never move company, and a status a user may set: Draft,
+    // Posted (a manual posting) or Reversed (a reversal).
+    update: {
+      using: and(
+        where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"])),
+        inCompany("companyId", "accounting_update")
+      ),
+      check: and(
+        where<"journal">((eb) =>
+          eb("status", "in", ["Draft", "Posted", "Reversed"])
+        ),
+        inCompany("companyId", "accounting_update")
+      )
+    },
+    delete: and(
+      where<"journal">((eb) => eb("status", "=", "Draft")),
+      inCompany("companyId", "accounting_delete")
+    )
   }),
   journalLine: policies({
     select: inCompany("companyId", "accounting_view"),
-    insert: inCompany("companyId", "accounting_create"),
+    // Lines go into a Draft journal, or into the Posted reversal the ERP's
+    // reverseJournalEntry writes through the user's client. Never into a
+    // Provisional, Superseded or Reversed journal.
+    insert: and(
+      inCompany("companyId", "accounting_create"),
+      exists(
+        "journal",
+        "journalId",
+        where<"journal">((eb) => eb("status", "in", ["Draft", "Posted"]))
+      )
+    ),
     update: and(
       inCompany("companyId", "accounting_update"),
       exists(
@@ -869,11 +903,31 @@ export const manifest = {
     update: false
   }),
   kanban: company("inventory"),
+  lease: company("purchasing", { read: "purchasing_view" }),
+  // Written only by post-lease and the lease run (Kysely); read-only over the API.
+  leaseEvent: company("purchasing", {
+    read: "purchasing_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  leaseLine: company("purchasing", { read: "purchasing_view" }),
+  leasePayment: company("purchasing", { read: "purchasing_view" }),
+  // Written only by post-lease and the lease run (Kysely); read-only over the API.
+  leaseScheduleLine: company("purchasing", {
+    read: "purchasing_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   lessonCompletion: policies({
     select: owner("userId"),
     insert: owner("userId")
   }),
   location: company("resources"),
+  // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
+  // functions, over Kysely and under the device lock: read-only through the API.
+  machineStateChange: policies({ select: inCompany("companyId", "employee") }),
   maintenanceDispatch: company("resources", {
     create: "employee",
     update: "employee"
@@ -1136,6 +1190,15 @@ export const manifest = {
     read: "purchasing_view",
     update: false,
     delete: false
+  }),
+  pushSubscription: policies({
+    select: and(owner("userId"), member("companyId")),
+    insert: and(owner("userId"), member("companyId")),
+    update: {
+      using: owner("userId"),
+      check: and(owner("userId"), member("companyId"))
+    },
+    delete: and(owner("userId"), member("companyId"))
   }),
   qualityDocument: company("quality"),
   qualityDocumentStep: company("production"),
@@ -1540,6 +1603,11 @@ export const manifest = {
     delete: inCompany("companyId", "resources_delete")
   }),
   trainingQuestion: company("people"),
+  // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
+  // functions, over Kysely and under the device lock: read-only through the API.
+  unattributedMachineTime: policies({
+    select: inCompany("companyId", "employee")
+  }),
   unitOfMeasure: company("parts", { read: "member" }),
   user: custom(
     "bespoke: five overlapping policies — self, shared company membership, employee/customer/supplier accounts, users_update, and an API-key EXISTS on userToCompany",
@@ -1636,6 +1704,11 @@ export const manifest = {
   webhook: company("settings", { read: "settings_view" }),
   webhookTable: policies({ select: authenticated }),
   workCenter: company("resources"),
+  // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
+  // functions, over Kysely and under the device lock: read-only through the API.
+  workCenterDevice: policies({ select: inCompany("companyId", "employee") }),
+  // Written only by the load and unload interceptors: read-only through the API.
+  workCenterLoad: policies({ select: inCompany("companyId", "employee") }),
   workCenterProcess: company("resources"),
   workCenterReplacementPart: company("resources", { read: "resources_view" }),
   workCenterShift: company("resources"),

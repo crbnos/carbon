@@ -67,6 +67,28 @@ function resolveConfig(error: unknown, retry: () => void): ErrorScreenProps {
       };
     }
 
+    // Thrown by `maintenanceMiddleware` while MAINTENANCE_MODE is on. A 503
+    // from anywhere else (a gateway, an overloaded upstream) is not maintenance.
+    if (error.status === 503 && error.data?.message === "maintenance") {
+      return {
+        code: "503",
+        eyebrow: "— scheduled maintenance",
+        title: "Carbon is down for maintenance.",
+        message:
+          "We are working on the system and will be back shortly. Nothing you saved is lost; try again in a few minutes.",
+        highlightIndex: 3,
+        logLines: [
+          "> opening channel to server ...",
+          "> maintenance window in progress",
+          "> requests paused, data intact",
+          "> status_code: 503 / SERVICE_UNAVAILABLE",
+          "> retry_after: 300s",
+          "> recommendation: retry shortly"
+        ],
+        actions: [{ label: "retry", onClick: retry }]
+      };
+    }
+
     // Any other HTTP status thrown as a route response
     const detail =
       typeof error.data === "string"

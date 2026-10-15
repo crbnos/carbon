@@ -20,17 +20,12 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -104,17 +99,6 @@ export default function PurchaseReturnOrderExplorer() {
     deleteLineDisclosure.onClose();
   };
 
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
-
   const lines = routeData?.lines ?? [];
 
   return (
@@ -149,31 +133,16 @@ export default function PurchaseReturnOrderExplorer() {
           )}
         </VStack>
         <div className="w-full flex border-t border-border p-4">
-          <Tooltip>
-            <TooltipTrigger className="flex-1">
-              <Button
-                ref={newButtonRef}
-                className="w-full"
-                isDisabled={isDisabled}
-                leftIcon={<LuCirclePlus />}
-                variant="secondary"
-                onClick={chooseSourceDisclosure.onOpen}
-              >
-                <Trans>Add Line Item</Trans>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <HStack>
-                <span>
-                  <Trans>New Line Item</Trans>
-                </span>
-                <ShortcutKey
-                  shortcut={EXPLORER_SHORTCUTS.addLine}
-                  variant="small"
-                />
-              </HStack>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            className="flex-1"
+            shortcut={EXPLORER_SHORTCUTS.addLine}
+            isDisabled={isDisabled}
+            leftIcon={<LuCirclePlus />}
+            variant="secondary"
+            onClick={chooseSourceDisclosure.onOpen}
+          >
+            <Trans>Add Line Item</Trans>
+          </Button>
         </div>
       </VStack>
       {chooseSourceDisclosure.isOpen && (
@@ -329,7 +298,7 @@ function PurchaseReturnOrderLineItem({
             <IconButton
               aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
               className={cn(
-                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -344,7 +313,7 @@ function PurchaseReturnOrderLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"

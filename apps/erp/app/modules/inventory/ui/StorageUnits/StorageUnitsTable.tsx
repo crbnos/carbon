@@ -7,6 +7,7 @@ import {
   Button,
   Checkbox,
   Combobox,
+  EnumerableAsText,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -23,7 +24,7 @@ import {
 } from "@carbon/react";
 import { async } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBookMarked,
@@ -309,6 +310,86 @@ const StorageUnitsTable = memo(
     }, [displayRows]);
 
     const columns = useMemo<ColumnDef<StorageUnit>[]>(() => {
+      const renderStorageTypes = (ids: string[]) => (
+        <HStack spacing={1}>
+          {ids.map((id) => {
+            const label =
+              storageTypes?.find((st) => st.value === id)?.label ?? id;
+            return <Enumerable key={id} value={label} />;
+          })}
+        </HStack>
+      );
+
+      const renderName = (
+        { row, table }: CellContext<StorageUnit, unknown>,
+        withTypes: boolean
+      ) => {
+        const depth = Math.max(0, (row.original.depth ?? 1) - 1);
+        const isExpanded = expandedIds.has(row.original.id);
+        const isLoading = loadingIds.has(row.original.id);
+        const hasChildren = hasChildrenSet.has(row.original.id);
+
+        return (
+          <div className="flex flex-1">
+            {Array.from({ length: depth }).map((_, i) => (
+              <div
+                key={i}
+                aria-hidden
+                className="w-5 shrink-0 border-l border-border -my-2 max-md:border-l-0"
+              />
+            ))}
+            <div className="w-5 shrink-0 flex items-center justify-center self-center max-md:self-start max-md:h-[1lh]">
+              {hasChildren ? (
+                isLoading ? (
+                  <Spinner className="size-3" />
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={
+                      isExpanded ? t`Collapse subtree` : t`Expand subtree`
+                    }
+                    className="text-muted-foreground hover:text-foreground shrink-0 max-md:hit-area"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      toggleExpand(row.original.id);
+                    }}
+                  >
+                    {isExpanded ? (
+                      <LuChevronDown className="size-4" />
+                    ) : (
+                      <LuChevronRight className="size-4" />
+                    )}
+                  </button>
+                )
+              ) : null}
+            </div>
+            <div className="flex items-center py-1 max-md:flex-col max-md:items-start max-md:gap-1 max-md:py-0">
+              <Hyperlink
+                to={`${path.to.storageUnit(row.original.id)}?${params}`}
+              >
+                <span
+                  className={depth === 0 ? "font-medium" : "text-foreground/90"}
+                >
+                  {row.original.name}
+                </span>
+              </Hyperlink>
+              {/* Phones: the context line sits under the name, so it
+                  shares the tree indent instead of starting at the gutter. */}
+              {withTypes &&
+              table.getColumn("storageTypeIds")?.getIsVisible() &&
+              row.original.storageTypeIds?.length ? (
+                <div className="text-[13px] font-normal text-muted-foreground">
+                  <EnumerableAsText value>
+                    {renderStorageTypes(row.original.storageTypeIds)}
+                  </EnumerableAsText>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        );
+      };
+
       return [
         {
           // The id "Select" opts into the Table's compact checkbox-column
@@ -343,64 +424,10 @@ const StorageUnitsTable = memo(
         {
           accessorKey: "name",
           header: t`Name`,
-          cell: ({ row }) => {
-            const depth = Math.max(0, (row.original.depth ?? 1) - 1);
-            const isExpanded = expandedIds.has(row.original.id);
-            const isLoading = loadingIds.has(row.original.id);
-            const hasChildren = hasChildrenSet.has(row.original.id);
-
-            return (
-              <div className="flex flex-1">
-                {Array.from({ length: depth }).map((_, i) => (
-                  <div
-                    key={i}
-                    aria-hidden
-                    className="w-5 shrink-0 border-l border-border -my-2"
-                  />
-                ))}
-                <div className="w-5 shrink-0 flex items-center justify-center self-center">
-                  {hasChildren ? (
-                    isLoading ? (
-                      <Spinner className="size-3" />
-                    ) : (
-                      <button
-                        type="button"
-                        aria-label={
-                          isExpanded ? t`Collapse subtree` : t`Expand subtree`
-                        }
-                        className="text-muted-foreground hover:text-foreground shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          toggleExpand(row.original.id);
-                        }}
-                      >
-                        {isExpanded ? (
-                          <LuChevronDown className="size-4" />
-                        ) : (
-                          <LuChevronRight className="size-4" />
-                        )}
-                      </button>
-                    )
-                  ) : null}
-                </div>
-                <div className="flex items-center py-1">
-                  <Hyperlink
-                    to={`${path.to.storageUnit(row.original.id)}?${params}`}
-                  >
-                    <span
-                      className={
-                        depth === 0 ? "font-medium" : "text-foreground/90"
-                      }
-                    >
-                      {row.original.name}
-                    </span>
-                  </Hyperlink>
-                </div>
-              </div>
-            );
-          },
+          cell: (context) => renderName(context, false),
           meta: {
+            mobile: "P1",
+            mobileCell: (context) => renderName(context, true),
             icon: <LuBookMarked />
           }
         },
@@ -424,17 +451,10 @@ const StorageUnitsTable = memo(
           header: t`Storage Types`,
           cell: ({ row }) => {
             if (!row.original.storageTypeIds?.length) return null;
-            return (
-              <HStack spacing={1}>
-                {row.original.storageTypeIds.map((id) => {
-                  const label =
-                    storageTypes?.find((st) => st.value === id)?.label ?? id;
-                  return <Enumerable key={id} value={label} />;
-                })}
-              </HStack>
-            );
+            return renderStorageTypes(row.original.storageTypeIds);
           },
           meta: {
+            // No compact slot: the name cell renders it under the name (tree indent).
             filter: {
               type: "static",
               options: storageTypes?.map((st) => ({

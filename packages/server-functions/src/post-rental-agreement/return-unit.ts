@@ -15,12 +15,12 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { currencyDecimals } from "../lib/currency-decimals";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
 import {
   type AgreementRow,
   billingPeriodRow,
-  currencyDecimals,
   insertUnitActivity,
   loadLeaseAccounting,
   postLeaseJournal,
@@ -279,9 +279,8 @@ export async function returnRentalUnit(
  * them, and their interest posts through recognition runs after the return,
  * bringing Net Investment in Leases to zero. Only what is dated AFTER the
  * return is dropped — nothing accrues on a lease that has ended (normally
- * nothing, since a unit comes back on or after the end date). With
- * accounting off, the asset / stock moves identically and no journal is
- * posted.
+ * nothing, since a unit comes back on or after the end date). Before the
+ * accounting cutover the journal is Provisional.
  */
 async function returnResidual(
   trx: Trx,
@@ -320,7 +319,7 @@ async function returnResidual(
     .executeTakeFirstOrThrow();
   if (Number(claimed.count) > 0) {
     throw new InvalidInputError(
-      "A draft revenue recognition run includes this lease's interest; post or delete the run before returning the unit"
+      "A draft lease run includes this lease's interest; post or delete the run before returning the unit"
     );
   }
 
@@ -351,11 +350,6 @@ async function returnResidual(
   const company = await trx
     .selectFrom("company")
     .select("companyGroupId")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
-  const settings = await trx
-    .selectFrom("companySettings")
-    .select("accountingEnabled")
     .where("id", "=", companyId)
     .executeTakeFirstOrThrow();
   const item = await trx
@@ -400,13 +394,11 @@ async function returnResidual(
     : undefined;
   if (!item) throw new NotFoundError("Item not found");
   const serial = entity?.readableId ?? item.readableId;
-  const accounting = settings.accountingEnabled
-    ? await loadLeaseAccounting(trx, {
-        companyId,
-        companyGroupId: company.companyGroupId,
-        today
-      })
-    : null;
+  const accounting = await loadLeaseAccounting(trx, {
+    companyId,
+    companyGroupId: company.companyGroupId,
+    today
+  });
   const tags = {
     customerId: agreement.customerId,
     itemId: line.itemId,
@@ -460,7 +452,7 @@ async function returnResidual(
     }
 
     let journalId: string | null = null;
-    if (accounting && closing > 0) {
+    if (closing > 0) {
       journalId = await postLeaseJournal(trx, {
         accounting,
         companyId,
@@ -472,7 +464,8 @@ async function returnResidual(
           debitAccountId: assetClass.assetAccountId,
           debitDescription: "Fixed Asset Acquisition",
           netInvestmentInLeasesAccountId:
-            accounting.accounts.netInvestmentInLeasesAccount
+            accounting.accounts.netInvestmentInLeasesAccount,
+          accountDefaultRoles: accounting.accountDefaultRoles
         }),
         rentalAgreementId: agreement.id,
         rentalAgreementLineId: line.id,
@@ -589,7 +582,7 @@ async function returnResidual(
       fixedUnitCost: closing
     });
 
-    if (accounting && closing > 0) {
+    if (closing > 0) {
       const inventoryAccount = resolveInventoryAccount(
         item.replenishmentSystem,
         accounting.accounts
@@ -605,7 +598,8 @@ async function returnResidual(
           debitAccountId: inventoryAccount.account,
           debitDescription: inventoryAccount.description,
           netInvestmentInLeasesAccountId:
-            accounting.accounts.netInvestmentInLeasesAccount
+            accounting.accounts.netInvestmentInLeasesAccount,
+          accountDefaultRoles: accounting.accountDefaultRoles
         }),
         rentalAgreementId: agreement.id,
         rentalAgreementLineId: line.id,

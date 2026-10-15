@@ -277,7 +277,7 @@ const JobForm = ({
       <Tabs defaultValue="job">
         <VStack className="w-full items-center relative">
           {!isEditing && (
-            <TabsList className="absolute top-6 right-4 z-50">
+            <TabsList className="absolute top-6 right-4 z-50 max-md:static max-md:self-start max-md:mb-3">
               <TabsTrigger value="job">
                 <LuDiamond className="mr-1" />
                 Single Job

@@ -157,10 +157,12 @@ export async function reimbursementFixture(
       .insertInto("companySettings")
       .values({
         id: companyId,
-        accountingEnabled: true
+        accountingCutoverDate: "2000-01-01"
       })
       .onConflict((oc) =>
-        oc.column("id").doUpdateSet({ accountingEnabled: true })
+        oc.column("id").doUpdateSet({
+          accountingCutoverDate: "2000-01-01"
+        })
       )
       .execute();
     // `Object.fromEntries` erases the literal key types, so the assembled row

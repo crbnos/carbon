@@ -74,6 +74,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -85,6 +86,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           <CustomerAvatar customerId={row.original.customerId} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: customers?.map((customer) => ({
@@ -103,6 +105,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           return <SalesRFQStatus status={status} />;
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesRFQStatusType.map((status) => ({

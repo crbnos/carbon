@@ -10,6 +10,12 @@ import {
 } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  type AutomaticJournalStatus,
+  assertPostingStatusUnchanged,
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
+import {
   allocateAcrossBudgets,
   getOperationLinesideBin,
   getPickedBudgets,
@@ -119,7 +125,7 @@ async function issueJobOperationMaterials(
     quantity,
     companyId,
     userId,
-    accountingEnabled,
+    postingStatus,
     accountDefaults,
     dimensionMap,
     db
@@ -128,8 +134,9 @@ async function issueJobOperationMaterials(
     quantity: number;
     companyId: string;
     userId: string;
-    accountingEnabled: boolean;
-    accountDefaults: any;
+    // Provisional before the company's accounting cutover, Posted after it.
+    postingStatus: AutomaticJournalStatus;
+    accountDefaults: ConsumeAccountDefaults;
     dimensionMap: Map<string, string>;
     db: Kysely<KyselyDatabase>;
   }
@@ -362,8 +369,7 @@ async function issueJobOperationMaterials(
 
   // Total material cost this call relieved from inventory into WIP — the
   // jobOperationScrap case posts its WIP→scrap journal from this figure so a
-  // second calculateCOGS pass never double-relieves cost layers. 0 when
-  // accounting is disabled (no journal needed).
+  // second calculateCOGS pass never double-relieves cost layers.
   let totalMaterialCost = 0;
 
   if (itemLedgerInserts.length > 0) {
@@ -381,11 +387,7 @@ async function issueJobOperationMaterials(
     }
   }
 
-  if (
-    accountingEnabled &&
-    accountDefaults?.data &&
-    itemLedgerInserts.length > 0
-  ) {
+  if (itemLedgerInserts.length > 0) {
     const journalLineInserts: {
       accountId: string;
       description: string;
@@ -451,7 +453,7 @@ async function issueJobOperationMaterials(
       const journalLineReference = nanoid();
 
       journalLineInserts.push({
-        accountId: accountDefaults.data.workInProgressAccount,
+        accountId: accountDefaults.workInProgressAccount,
         description: "WIP Account",
         amount: debit("asset", cogsResult.totalCost),
         quantity: materialQuantity,
@@ -465,7 +467,7 @@ async function issueJobOperationMaterials(
 
       const inventoryAccount = resolveInventoryAccount(
         consumedReplenishmentMap.get(ledger.itemId) ?? null,
-        accountDefaults.data
+        accountDefaults
       );
       journalLineInserts.push({
         accountId: inventoryAccount.account,
@@ -510,11 +512,11 @@ async function issueJobOperationMaterials(
     if (journalLineInserts.length > 0) {
       // Resolve the period from the SAME hoisted `today` the ledger rows used —
       // a midnight rollover mid-transaction must not split journal and ledger.
-      const accountingPeriodId = await getCurrentAccountingPeriod(
-        companyId,
-        trx,
-        today
-      );
+      // A Provisional journal has no accounting period.
+      const accountingPeriodId =
+        postingStatus === "Posted"
+          ? await getCurrentAccountingPeriod(companyId, trx, today)
+          : null;
       const journalEntryId = await getNextSequence(
         trx,
         "journalEntry",
@@ -530,7 +532,7 @@ async function issueJobOperationMaterials(
           postingDate: today,
           companyId,
           sourceType: "Job Consumption",
-          status: "Posted",
+          status: postingStatus,
           postedAt: datetime.timestamp(),
           postedBy: userId,
           createdBy: userId
@@ -621,6 +623,8 @@ async function createMaterialWipEntries(
     db: Kysely<KyselyDatabase>;
     companyId: string;
     userId: string;
+    // Provisional before the company's accounting cutover, Posted after it.
+    postingStatus: AutomaticJournalStatus;
   }
 ) {
   const {
@@ -634,7 +638,8 @@ async function createMaterialWipEntries(
     dimensionMap,
     jobLocationId,
     companyId,
-    userId
+    userId,
+    postingStatus
   } = args;
 
   // Cost layer posts on the company business day, matching the caller's
@@ -800,12 +805,12 @@ async function createMaterialWipEntries(
 
   if (journalLineInserts.length === 0) return;
 
-  // Same hoisted `today` as this function's ledger rows (see above).
-  const accountingPeriodId = await getCurrentAccountingPeriod(
-    companyId,
-    trx,
-    today
-  );
+  // Same hoisted `today` as this function's ledger rows (see above). A
+  // Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, trx, today)
+      : null;
   const journalEntryId = await getNextSequence(trx, "journalEntry", companyId);
 
   const journalResult = await trx
@@ -817,7 +822,7 @@ async function createMaterialWipEntries(
       postingDate: today,
       companyId,
       sourceType: "Job Consumption",
-      status: "Posted",
+      status: postingStatus,
       postedAt: datetime.timestamp(),
       postedBy: userId,
       createdBy: userId
@@ -1114,61 +1119,55 @@ async function assertProductionQuantityLinks(
   );
 }
 
-// Shared accounting context for the tracked-consumption paths (the per-op and
-// per-batch cases): whether accounting is enabled, the posting-group defaults,
-// and the active dimension map.
+// Shared accounting context for the job consumption paths: the posting-group
+// defaults and the active dimension map. Every company posts these journals
+// (Provisional before its accounting cutover), so both always load.
 async function loadConsumeAccountingContext(
   db: Kysely<KyselyDatabase>,
   companyId: string
 ) {
-  const [accountingSettings, companyRecord] = await inOrder([
-    () =>
-      single(
-        db,
-        "companySettings",
-        { id: companyId },
-        { columns: ["accountingEnabled"] }
-      ),
-    () =>
-      single(db, "company", { id: companyId }, { columns: ["companyGroupId"] })
-  ]);
+  const companyRecord = await single(
+    db,
+    "company",
+    { id: companyId },
+    { columns: ["companyGroupId"] }
+  );
   if (companyRecord.error) throw new Error("Failed to fetch company");
-  const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
 
-  const accountDefaults = accountingEnabled
-    ? await getDefaultPostingGroup(db, companyId)
-    : null;
-  if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults.error || !accountDefaults.data) {
     throw new Error("Error getting account defaults");
   }
 
-  const dimensions = accountingEnabled
-    ? await many(
-        db,
-        "dimension",
-        {
-          companyGroupId: companyRecord.data.companyGroupId!,
-          active: true,
-          entityType: ["ItemPostingGroup", "Item", "Location"]
-        },
-        { columns: ["id", "entityType"] }
-      )
-    : null;
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: companyRecord.data.companyGroupId!,
+      active: true,
+      entityType: ["ItemPostingGroup", "Item", "Location"]
+    },
+    { columns: ["id", "entityType"] }
+  );
 
   const dimensionMap = new Map<string, string>();
-  if (dimensions?.data) {
+  if (dimensions.data) {
     for (const dim of dimensions.data) {
       if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
     }
   }
 
-  return { accountingEnabled, accountDefaults, dimensionMap };
+  return { accountDefaults: accountDefaults.data, dimensionMap };
 }
+
+type ConsumeAccountDefaults = Awaited<
+  ReturnType<typeof loadConsumeAccountingContext>
+>["accountDefaults"];
 
 // Spare parts issued to a maintenance dispatch are an expense the moment they
 // leave stock. The caller writes the item ledger rows; this values them: each
-// movement relieves (or, on a return, restores) the item's cost layers and,
-// with accounting enabled, posts Dr maintenanceAccount / Cr inventory through
+// movement relieves (or, on a return, restores) the item's cost layers and
+// posts Dr maintenanceAccount / Cr inventory through
 // the shared adjustment core — one journal per call, tagged with the dispatch's
 // work center. A return reverses at what the dispatch actually booked
 // (`resolveMaintenanceReturnCost`), so a part issued before maintenance
@@ -1196,12 +1195,9 @@ async function valueMaintenanceMovements(
   const itemIds = [...new Set(movements.map((m) => m.itemId))];
   const hasReturns = movements.some((m) => Number(m.quantity) > 0);
 
-  const [settings, items, itemCosts, bookedRows] = await Promise.all([
-    trx
-      .selectFrom("companySettings")
-      .select("accountingEnabled")
-      .where("id", "=", companyId)
-      .executeTakeFirst(),
+  // Provisional before the company's accounting cutover, Posted after it.
+  const postingStatus = await journalPostingStatus(trx, companyId);
+  const [items, itemCosts, bookedRows] = await Promise.all([
     trx
       .selectFrom("item")
       .select(["id", "itemTrackingType", "replenishmentSystem"])
@@ -1244,71 +1240,69 @@ async function valueMaintenanceMovements(
     bookedByItem.set(row.itemId as string, list);
   }
 
-  let accounting: Parameters<typeof valueMovement>[1]["accounting"] = null;
-  if (settings?.accountingEnabled) {
-    const accountDefaults = await trx
-      .selectFrom("accountDefault")
-      .selectAll()
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (!accountDefaults) throw new Error("Error getting account defaults");
+  const accountDefaults = await trx
+    .selectFrom("accountDefault")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!accountDefaults) throw new Error("Error getting account defaults");
 
-    const dimensions = await trx
-      .selectFrom("dimension")
-      .innerJoin(
-        "company",
-        "company.companyGroupId",
-        "dimension.companyGroupId"
-      )
-      .select(["dimension.id", "dimension.entityType"])
-      .where("company.id", "=", companyId)
-      .where("dimension.active", "=", true)
-      .where("dimension.entityType", "in", [
-        "Item",
-        "ItemPostingGroup",
-        "Location",
-        "WorkCenter"
-      ])
-      .execute();
+  const dimensions = await trx
+    .selectFrom("dimension")
+    .innerJoin("company", "company.companyGroupId", "dimension.companyGroupId")
+    .select(["dimension.id", "dimension.entityType"])
+    .where("company.id", "=", companyId)
+    .where("dimension.active", "=", true)
+    .where("dimension.entityType", "in", [
+      "Item",
+      "ItemPostingGroup",
+      "Location",
+      "WorkCenter"
+    ])
+    .execute();
 
-    const accountingPeriodId = (
-      await resolveAccountingPeriod(trx, companyId, postingDate, "current")
-    ).id;
-    const description = `Maintenance Consumption ${dispatch.maintenanceDispatchId}`;
-    let journalId: string | null = null;
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? (await resolveAccountingPeriod(trx, companyId, postingDate, "current"))
+          .id
+      : null;
+  const description = `Maintenance Consumption ${dispatch.maintenanceDispatchId}`;
+  let journalId: string | null = null;
 
-    accounting = {
-      accountingPeriodId,
-      accountDefaults: {
-        rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
-        finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
-        inventoryAdjustmentVarianceAccount:
-          accountDefaults.inventoryAdjustmentVarianceAccount
-      },
-      offsetAccount: accountDefaults.maintenanceAccount,
-      offsetDescription: "Maintenance Expense",
-      description,
-      userId,
-      dimensions: Object.fromEntries(
-        dimensions
-          .filter((dim) => dim.entityType)
-          .map((dim) => [dim.entityType as string, dim.id])
-      ),
-      extraDimensions: dispatch.workCenterId
-        ? [{ entityType: "WorkCenter", valueId: dispatch.workCenterId }]
-        : [],
-      getJournalId: async () => {
-        journalId ??= await createAdjustmentJournal(trx, {
-          companyId,
-          accountingPeriodId,
-          description,
-          postingDate,
-          userId
-        });
-        return journalId;
-      }
-    };
-  }
+  const accounting: Parameters<typeof valueMovement>[1]["accounting"] = {
+    postingStatus,
+    accountingPeriodId,
+    accountDefaults: {
+      rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+      finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
+      inventoryAdjustmentVarianceAccount:
+        accountDefaults.inventoryAdjustmentVarianceAccount
+    },
+    offsetAccount: accountDefaults.maintenanceAccount,
+    offsetDescription: "Maintenance Expense",
+    description,
+    userId,
+    dimensions: Object.fromEntries(
+      dimensions
+        .filter((dim) => dim.entityType)
+        .map((dim) => [dim.entityType as string, dim.id])
+    ),
+    extraDimensions: dispatch.workCenterId
+      ? [{ entityType: "WorkCenter", valueId: dispatch.workCenterId }]
+      : [],
+    getJournalId: async () => {
+      journalId ??= await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId,
+        status: postingStatus,
+        description,
+        postingDate,
+        userId
+      });
+      return journalId;
+    }
+  };
 
   for (const movement of movements) {
     let quantity = Number(movement.quantity);
@@ -1374,7 +1368,7 @@ async function consumeTrackedEntitiesIntoOperation(
     userId,
     companyToday,
     db,
-    accountingEnabled: accountingEnabledTracked,
+    postingStatus,
     accountDefaults: accountDefaultsTracked,
     dimensionMap: dimensionMapTracked
   }: {
@@ -1391,8 +1385,9 @@ async function consumeTrackedEntitiesIntoOperation(
     userId: string;
     companyToday: CalendarDate;
     db: Kysely<KyselyDatabase>;
-    accountingEnabled: boolean;
-    accountDefaults: any;
+    // Provisional before the company's accounting cutover, Posted after it.
+    postingStatus: AutomaticJournalStatus;
+    accountDefaults: ConsumeAccountDefaults;
     dimensionMap: Map<string, string>;
   }
 ): Promise<{
@@ -1845,11 +1840,7 @@ async function consumeTrackedEntitiesIntoOperation(
     }
   }
 
-  if (
-    accountingEnabledTracked &&
-    accountDefaultsTracked?.data &&
-    itemLedgerInserts.length > 0
-  ) {
+  if (itemLedgerInserts.length > 0) {
     const consumptionEntries = itemLedgerInserts
       .filter((l) => l.entryType === "Consumption")
       .map((l) => ({
@@ -1864,15 +1855,16 @@ async function consumeTrackedEntitiesIntoOperation(
         jobId: job?.id!,
         operationId: jobMaterial?.jobOperationId ?? actualMaterialId!,
         description: "Tracked Entity Material Issue",
-        wipAccount: accountDefaultsTracked.data.workInProgressAccount,
-        rawMaterialsAccount: accountDefaultsTracked.data.rawMaterialsAccount,
-        finishedGoodsAccount: accountDefaultsTracked.data.finishedGoodsAccount,
+        wipAccount: accountDefaultsTracked.workInProgressAccount,
+        rawMaterialsAccount: accountDefaultsTracked.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaultsTracked.finishedGoodsAccount,
         dimensionMap: dimensionMapTracked,
 
         jobLocationId: job?.locationId ?? null,
         db,
         companyId,
-        userId
+        userId,
+        postingStatus
       });
     }
   }
@@ -2031,64 +2023,19 @@ const issue = defineServerFn({
       case "jobOperation": {
         const { id, companyId, quantity, userId } = validatedPayload;
 
-        const [accountingSettings, companyRecord] = await inOrder([
-          () =>
-            single(
-              db,
-              "companySettings",
-              { id: companyId },
-              { columns: ["accountingEnabled"] }
-            ),
-          () =>
-            single(
-              db,
-              "company",
-              { id: companyId },
-              { columns: ["companyGroupId"] }
-            )
-        ]);
-        if (companyRecord.error) throw new Error("Failed to fetch company");
-        const accountingEnabled =
-          accountingSettings.data?.accountingEnabled ?? false;
-
-        const accountDefaults = accountingEnabled
-          ? await getDefaultPostingGroup(db, companyId)
-          : null;
-        if (
-          accountingEnabled &&
-          (accountDefaults?.error || !accountDefaults?.data)
-        ) {
-          throw new Error("Error getting account defaults");
-        }
-
-        const dimensions = accountingEnabled
-          ? await many(
-              db,
-              "dimension",
-              {
-                companyGroupId: companyRecord.data.companyGroupId!,
-                active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
-              },
-              { columns: ["id", "entityType"] }
-            )
-          : null;
-
-        const dimensionMap = new Map<string, string>();
-        if (dimensions?.data) {
-          for (const dim of dimensions.data) {
-            if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
-          }
-        }
+        const { accountDefaults, dimensionMap } =
+          await loadConsumeAccountingContext(db, companyId);
 
         await db.transaction().execute(async (trx) => {
+          // Provisional before the company's accounting cutover, Posted after it.
+          const postingStatus = await journalPostingStatus(trx, companyId);
           await issueJobOperationMaterials(trx, {
             jobOperationId: id,
             quantity,
             companyId,
             userId,
-            accountingEnabled,
-            accountDefaults: accountDefaults?.data ? accountDefaults : null,
+            postingStatus,
+            accountDefaults,
             dimensionMap,
             db
           });
@@ -2121,6 +2068,8 @@ const issue = defineServerFn({
         );
 
         await db.transaction().execute(async (trx) => {
+          // Provisional before the company's accounting cutover, Posted after it.
+          const postingStatus = await journalPostingStatus(trx, companyId);
           await trx
             .insertInto("productionQuantity")
             .values({
@@ -2151,10 +2100,8 @@ const issue = defineServerFn({
             quantity: row.quantity,
             companyId,
             userId,
-            accountingEnabled: accountingBatch.accountingEnabled,
-            accountDefaults: accountingBatch.accountDefaults?.data
-              ? accountingBatch.accountDefaults
-              : null,
+            postingStatus,
+            accountDefaults: accountingBatch.accountDefaults,
             dimensionMap: accountingBatch.dimensionMap,
             db
           });
@@ -2287,59 +2234,15 @@ const issue = defineServerFn({
             (trackedEntity.attributes as TrackedEntityAttributes)
         );
 
-        const [accountingSettingsSerial, companyRecordSerial] = await inOrder([
-          () =>
-            single(
-              db,
-              "companySettings",
-              { id: companyId },
-              { columns: ["accountingEnabled"] }
-            ),
-          () =>
-            single(
-              db,
-              "company",
-              { id: companyId },
-              { columns: ["companyGroupId"] }
-            )
-        ]);
-        if (companyRecordSerial.error)
-          throw new Error("Failed to fetch company");
-        const accountingEnabledSerial =
-          accountingSettingsSerial.data?.accountingEnabled ?? false;
-
-        const accountDefaultsSerial = accountingEnabledSerial
-          ? await getDefaultPostingGroup(db, companyId)
-          : null;
-        if (
-          accountingEnabledSerial &&
-          (accountDefaultsSerial?.error || !accountDefaultsSerial?.data)
-        ) {
-          throw new Error("Error getting account defaults");
-        }
-
-        const dimensionsSerial = accountingEnabledSerial
-          ? await many(
-              db,
-              "dimension",
-              {
-                companyGroupId: companyRecordSerial.data.companyGroupId!,
-                active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
-              },
-              { columns: ["id", "entityType"] }
-            )
-          : null;
-
-        const dimensionMapSerial = new Map<string, string>();
-        if (dimensionsSerial?.data) {
-          for (const dim of dimensionsSerial.data) {
-            if (dim.entityType) dimensionMapSerial.set(dim.entityType, dim.id);
-          }
-        }
+        const {
+          accountDefaults: accountDefaultsSerial,
+          dimensionMap: dimensionMapSerial
+        } = await loadConsumeAccountingContext(db, companyId);
 
         let newEntityId: string | undefined;
         await db.transaction().execute(async (trx) => {
+          // Provisional before the company's accounting cutover, Posted after it.
+          const postingStatus = await journalPostingStatus(trx, companyId);
           await trx
             .insertInto("productionQuantity")
             .values({
@@ -2487,10 +2390,8 @@ const issue = defineServerFn({
             quantity: row.quantity,
             companyId,
             userId,
-            accountingEnabled: accountingEnabledSerial,
-            accountDefaults: accountDefaultsSerial?.data
-              ? accountDefaultsSerial
-              : null,
+            postingStatus,
+            accountDefaults: accountDefaultsSerial,
             dimensionMap: dimensionMapSerial,
             db
           });
@@ -2542,7 +2443,6 @@ const issue = defineServerFn({
           makeMethodRes,
           jobRes,
           trackedEntitiesRes,
-          accountingSettingsScrapOp,
           companyRecordScrapOp
         ] = await inOrder([
           () =>
@@ -2582,13 +2482,6 @@ const issue = defineServerFn({
           () =>
             single(
               db,
-              "companySettings",
-              { id: companyId },
-              { columns: ["accountingEnabled"] }
-            ),
-          () =>
-            single(
-              db,
               "company",
               { id: companyId },
               { columns: ["companyGroupId"] }
@@ -2606,39 +2499,33 @@ const issue = defineServerFn({
         const job = jobRes.data;
         const existingEntityCount = trackedEntitiesRes.data?.length ?? 0;
 
-        const accountingEnabledScrapOp =
-          accountingSettingsScrapOp.data?.accountingEnabled ?? false;
-        const accountDefaultsScrapOp = accountingEnabledScrapOp
-          ? await getDefaultPostingGroup(db, companyId)
-          : null;
-        if (
-          accountingEnabledScrapOp &&
-          (accountDefaultsScrapOp?.error || !accountDefaultsScrapOp?.data)
-        ) {
+        const accountDefaultsScrapOp = await getDefaultPostingGroup(
+          db,
+          companyId
+        );
+        if (accountDefaultsScrapOp.error || !accountDefaultsScrapOp.data) {
           throw new Error("Error getting account defaults");
         }
 
-        const dimensionsScrapOp = accountingEnabledScrapOp
-          ? await many(
-              db,
-              "dimension",
-              {
-                companyGroupId: companyRecordScrapOp.data.companyGroupId!,
-                active: true,
-                entityType: [
-                  "ItemPostingGroup",
-                  "Item",
-                  "Location",
-                  "ScrapReason",
-                  "WorkCenter",
-                  "Employee"
-                ]
-              },
-              { columns: ["id", "entityType"] }
-            )
-          : null;
+        const dimensionsScrapOp = await many(
+          db,
+          "dimension",
+          {
+            companyGroupId: companyRecordScrapOp.data.companyGroupId!,
+            active: true,
+            entityType: [
+              "ItemPostingGroup",
+              "Item",
+              "Location",
+              "ScrapReason",
+              "WorkCenter",
+              "Employee"
+            ]
+          },
+          { columns: ["id", "entityType"] }
+        );
         const dimensionMapScrapOp = new Map<string, string>();
-        if (dimensionsScrapOp?.data) {
+        if (dimensionsScrapOp.data) {
           for (const dim of dimensionsScrapOp.data) {
             if (dim.entityType) dimensionMapScrapOp.set(dim.entityType, dim.id);
           }
@@ -2658,6 +2545,9 @@ const issue = defineServerFn({
 
         let newEntityId: string | undefined;
         await db.transaction().execute(async (trx) => {
+          // Provisional before the company's accounting cutover, Posted after it.
+          const postingStatus = await journalPostingStatus(trx, companyId);
+
           // 1. Scrap quantity record. The quantity-sync interceptor aggregates
           //    quantityScrapped; scrap no longer counts toward the auto-Done
           //    target (20260807090629), so the operation stays open until the
@@ -2686,10 +2576,8 @@ const issue = defineServerFn({
             quantity,
             companyId,
             userId,
-            accountingEnabled: accountingEnabledScrapOp,
-            accountDefaults: accountDefaultsScrapOp?.data
-              ? accountDefaultsScrapOp
-              : null,
+            postingStatus,
+            accountDefaults: accountDefaultsScrapOp.data,
             dimensionMap: dimensionMapScrapOp,
             db
           });
@@ -2835,148 +2723,148 @@ const issue = defineServerFn({
           //    (jobMaterial per-unit quantity × itemCost.unitCost). Labor and
           //    overhead already absorbed stay in WIP and settle via close-job
           //    variance (spec decision 6).
-          if (accountingEnabledScrapOp && accountDefaultsScrapOp?.data) {
-            let priorUnitMaterialCost = 0;
-            const priorOperations = await trx
-              .selectFrom("jobOperation")
-              .select(["id"])
-              .where("jobMakeMethodId", "=", operation.jobMakeMethodId!)
-              .where("order", "<", operation.order)
+          let priorUnitMaterialCost = 0;
+          const priorOperations = await trx
+            .selectFrom("jobOperation")
+            .select(["id"])
+            .where("jobMakeMethodId", "=", operation.jobMakeMethodId!)
+            .where("order", "<", operation.order)
+            .execute();
+          if (priorOperations.length > 0) {
+            const priorMaterials = await trx
+              .selectFrom("jobMaterial")
+              .select(["itemId", "quantity"])
+              .where(
+                "jobOperationId",
+                "in",
+                priorOperations.map((op) => op.id)
+              )
+              .where("methodType", "!=", "Make to Order")
               .execute();
-            if (priorOperations.length > 0) {
-              const priorMaterials = await trx
-                .selectFrom("jobMaterial")
-                .select(["itemId", "quantity"])
+            if (priorMaterials.length > 0) {
+              const priorCosts = await trx
+                .selectFrom("itemCost")
+                .select(["itemId", "unitCost"])
                 .where(
-                  "jobOperationId",
+                  "itemId",
                   "in",
-                  priorOperations.map((op) => op.id)
+                  priorMaterials.map((m) => m.itemId)
                 )
-                .where("methodType", "!=", "Make to Order")
+                .where("companyId", "=", companyId)
                 .execute();
-              if (priorMaterials.length > 0) {
-                const priorCosts = await trx
-                  .selectFrom("itemCost")
-                  .select(["itemId", "unitCost"])
-                  .where(
-                    "itemId",
-                    "in",
-                    priorMaterials.map((m) => m.itemId)
-                  )
-                  .where("companyId", "=", companyId)
-                  .execute();
-                const unitCostByItem = new Map(
-                  priorCosts.map((c) => [c.itemId, Number(c.unitCost) || 0])
-                );
-                for (const material of priorMaterials) {
-                  priorUnitMaterialCost +=
-                    (Number(material.quantity) || 0) *
-                    (unitCostByItem.get(material.itemId) ?? 0);
-                }
+              const unitCostByItem = new Map(
+                priorCosts.map((c) => [c.itemId, Number(c.unitCost) || 0])
+              );
+              for (const material of priorMaterials) {
+                priorUnitMaterialCost +=
+                  (Number(material.quantity) || 0) *
+                  (unitCostByItem.get(material.itemId) ?? 0);
               }
             }
+          }
 
-            const scrapCost =
-              backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
-            if (scrapCost > 0) {
-              const accountingPeriodId = await getCurrentAccountingPeriod(
-                companyId,
-                trx,
-                todayScrapOp
-              );
-              const journalEntryId = await getNextSequence(
-                trx,
-                "journalEntry",
-                companyId
-              );
-              const journalResult = await trx
-                .insertInto("journal")
-                .values({
-                  journalEntryId,
-                  accountingPeriodId,
-                  description: `Scrap — Job ${job.jobId ?? job.id}`,
-                  postingDate: todayScrapOp,
-                  companyId,
-                  sourceType: "Job Consumption",
-                  status: "Posted",
-                  postedAt: datetime.timestamp(),
-                  postedBy: userId,
-                  createdBy: userId
-                })
-                .returning(["id"])
-                .executeTakeFirstOrThrow();
-
-              const scrapAccount =
-                accountDefaultsScrapOp.data.scrapAccount ??
-                accountDefaultsScrapOp.data.inventoryAdjustmentVarianceAccount;
-              const journalLineReference = nanoid();
-              const journalLineResults = await trx
-                .insertInto("journalLine")
-                .values([
-                  {
-                    journalId: journalResult.id,
-                    accountId: scrapAccount,
-                    description: "Scrap Account",
-                    amount: debit("expense", scrapCost),
-                    quantity,
-                    documentType: "Scrap",
-                    documentId: job.id,
-                    documentLineReference: `jobOperationScrap:${jobOperationId}`,
-                    journalLineReference,
-                    companyId
-                  },
-                  {
-                    journalId: journalResult.id,
-                    accountId:
-                      accountDefaultsScrapOp.data.workInProgressAccount,
-                    description: "WIP Account",
-                    amount: credit("asset", scrapCost),
-                    quantity,
-                    documentType: "Scrap",
-                    documentId: job.id,
-                    documentLineReference: `jobOperationScrap:${jobOperationId}`,
-                    journalLineReference,
-                    companyId
-                  }
-                ])
-                .returning(["id"])
-                .execute();
-
-              const itemCostRow = makeMethod.itemId
-                ? await trx
-                    .selectFrom("itemCost")
-                    .select(["itemPostingGroupId"])
-                    .where("itemId", "=", makeMethod.itemId)
-                    .where("companyId", "=", companyId)
-                    .executeTakeFirst()
+          const scrapCost =
+            backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
+          if (scrapCost > 0) {
+            // A Provisional journal has no accounting period.
+            const accountingPeriodId =
+              postingStatus === "Posted"
+                ? await getCurrentAccountingPeriod(companyId, trx, todayScrapOp)
                 : null;
-              const scrapDimensionValues: Array<[string, string | null]> = [
-                ["Item", makeMethod.itemId ?? null],
-                ["ItemPostingGroup", itemCostRow?.itemPostingGroupId ?? null],
-                ["Location", job.locationId ?? null],
-                ["ScrapReason", scrapReasonId],
-                ["WorkCenter", operation.workCenterId ?? null],
-                ["Employee", userId]
-              ];
-              const dimensionInserts = journalLineResults.flatMap((line) =>
-                scrapDimensionValues
-                  .filter(
-                    ([entityType, valueId]) =>
-                      dimensionMapScrapOp.has(entityType) && valueId
-                  )
-                  .map(([entityType, valueId]) => ({
-                    journalLineId: line.id,
-                    dimensionId: dimensionMapScrapOp.get(entityType)!,
-                    valueId: valueId as string,
-                    companyId
-                  }))
-              );
-              if (dimensionInserts.length > 0) {
-                await trx
-                  .insertInto("journalLineDimension")
-                  .values(dimensionInserts)
-                  .execute();
-              }
+            const journalEntryId = await getNextSequence(
+              trx,
+              "journalEntry",
+              companyId
+            );
+            const journalResult = await trx
+              .insertInto("journal")
+              .values({
+                journalEntryId,
+                accountingPeriodId,
+                description: `Scrap — Job ${job.jobId ?? job.id}`,
+                postingDate: todayScrapOp,
+                companyId,
+                sourceType: "Job Consumption",
+                status: postingStatus,
+                postedAt: datetime.timestamp(),
+                postedBy: userId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .executeTakeFirstOrThrow();
+
+            // An empty scrapAccount falls back to the variance account.
+            const scrapAccountId = resolveDefaultAccount(
+              accountDefaultsScrapOp.data,
+              "scrapAccount",
+              postingStatus
+            ).accountId;
+            const journalLineReference = nanoid();
+            const journalLineResults = await trx
+              .insertInto("journalLine")
+              .values([
+                {
+                  journalId: journalResult.id,
+                  accountId: scrapAccountId,
+                  description: "Scrap Account",
+                  amount: debit("expense", scrapCost),
+                  quantity,
+                  documentType: "Scrap",
+                  documentId: job.id,
+                  documentLineReference: `jobOperationScrap:${jobOperationId}`,
+                  journalLineReference,
+                  companyId
+                },
+                {
+                  journalId: journalResult.id,
+                  accountId: accountDefaultsScrapOp.data.workInProgressAccount,
+                  description: "WIP Account",
+                  amount: credit("asset", scrapCost),
+                  quantity,
+                  documentType: "Scrap",
+                  documentId: job.id,
+                  documentLineReference: `jobOperationScrap:${jobOperationId}`,
+                  journalLineReference,
+                  companyId
+                }
+              ])
+              .returning(["id"])
+              .execute();
+
+            const itemCostRow = makeMethod.itemId
+              ? await trx
+                  .selectFrom("itemCost")
+                  .select(["itemPostingGroupId"])
+                  .where("itemId", "=", makeMethod.itemId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst()
+              : null;
+            const scrapDimensionValues: Array<[string, string | null]> = [
+              ["Item", makeMethod.itemId ?? null],
+              ["ItemPostingGroup", itemCostRow?.itemPostingGroupId ?? null],
+              ["Location", job.locationId ?? null],
+              ["ScrapReason", scrapReasonId],
+              ["WorkCenter", operation.workCenterId ?? null],
+              ["Employee", userId]
+            ];
+            const dimensionInserts = journalLineResults.flatMap((line) =>
+              scrapDimensionValues
+                .filter(
+                  ([entityType, valueId]) =>
+                    dimensionMapScrapOp.has(entityType) && valueId
+                )
+                .map(([entityType, valueId]) => ({
+                  journalLineId: line.id,
+                  dimensionId: dimensionMapScrapOp.get(entityType)!,
+                  valueId: valueId as string,
+                  companyId
+                }))
+            );
+            if (dimensionInserts.length > 0) {
+              await trx
+                .insertInto("journalLineDimension")
+                .values(dimensionInserts)
+                .execute();
             }
           }
         });
@@ -3020,57 +2908,12 @@ const issue = defineServerFn({
           "Job operation step"
         );
 
-        const [accountingSettings, companyRecord] = await inOrder([
-          () =>
-            single(
-              db,
-              "companySettings",
-              { id: companyId },
-              { columns: ["accountingEnabled"] }
-            ),
-          () =>
-            single(
-              db,
-              "company",
-              { id: companyId },
-              { columns: ["companyGroupId"] }
-            )
-        ]);
-        if (companyRecord.error) throw new Error("Failed to fetch company");
-        const accountingEnabled =
-          accountingSettings.data?.accountingEnabled ?? false;
-
-        const accountDefaults = accountingEnabled
-          ? await getDefaultPostingGroup(db, companyId)
-          : null;
-        if (
-          accountingEnabled &&
-          (accountDefaults?.error || !accountDefaults?.data)
-        ) {
-          throw new Error("Error getting account defaults");
-        }
-
-        const dimensions = accountingEnabled
-          ? await many(
-              db,
-              "dimension",
-              {
-                companyGroupId: companyRecord.data.companyGroupId!,
-                active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
-              },
-              { columns: ["id", "entityType"] }
-            )
-          : null;
-
-        const dimensionMap = new Map<string, string>();
-        if (dimensions?.data) {
-          for (const dim of dimensions.data) {
-            if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
-          }
-        }
+        const { accountDefaults, dimensionMap } =
+          await loadConsumeAccountingContext(db, companyId);
 
         await db.transaction().execute(async (trx) => {
+          // Provisional before the company's accounting cutover, Posted after it.
+          const postingStatus = await journalPostingStatus(trx, companyId);
           const jobOperation = await trx
             .selectFrom("jobOperation")
             .where("id", "=", id)
@@ -3327,11 +3170,7 @@ const issue = defineServerFn({
             }
           }
 
-          if (
-            accountingEnabled &&
-            accountDefaults?.data &&
-            itemLedgerInserts.length > 0
-          ) {
+          if (itemLedgerInserts.length > 0) {
             const jobOperation = await trx
               .selectFrom("jobOperation")
               .where("id", "=", id)
@@ -3355,15 +3194,16 @@ const issue = defineServerFn({
               jobId: jobOperation?.jobId!,
               operationId: id,
               description: "Manual Material Issue",
-              wipAccount: accountDefaults.data.workInProgressAccount,
-              rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
-              finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+              wipAccount: accountDefaults.workInProgressAccount,
+              rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+              finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
               dimensionMap,
 
               jobLocationId: jobRecord?.locationId ?? null,
               db,
               companyId,
-              userId
+              userId,
+              postingStatus
             });
           }
         });
@@ -3412,59 +3252,45 @@ const issue = defineServerFn({
           throw new Error("Tracked entity has already been scrapped");
         }
 
-        const [accountingSettingsScrap, companyRecordScrap] = await inOrder([
-          () =>
-            single(
-              db,
-              "companySettings",
-              { id: companyId },
-              { columns: ["accountingEnabled"] }
-            ),
-          () =>
-            single(
-              db,
-              "company",
-              { id: companyId },
-              { columns: ["companyGroupId"] }
-            )
-        ]);
+        const companyRecordScrap = await single(
+          db,
+          "company",
+          { id: companyId },
+          { columns: ["companyGroupId"] }
+        );
         if (companyRecordScrap.error)
           throw new Error("Failed to fetch company");
-        const accountingEnabledScrap =
-          accountingSettingsScrap.data?.accountingEnabled ?? false;
+        // Provisional before the company's accounting cutover, Posted after it.
+        const postingStatusScrap = await journalPostingStatus(db, companyId);
 
-        const accountDefaultsScrap = accountingEnabledScrap
-          ? await getDefaultPostingGroup(db, companyId)
-          : null;
-        if (
-          accountingEnabledScrap &&
-          (accountDefaultsScrap?.error || !accountDefaultsScrap?.data)
-        ) {
+        const accountDefaultsScrap = await getDefaultPostingGroup(
+          db,
+          companyId
+        );
+        if (accountDefaultsScrap.error || !accountDefaultsScrap.data) {
           throw new Error("Error getting account defaults");
         }
 
-        const dimensionsScrap = accountingEnabledScrap
-          ? await many(
-              db,
-              "dimension",
-              {
-                companyGroupId: companyRecordScrap.data.companyGroupId!,
-                active: true,
-                entityType: [
-                  "ItemPostingGroup",
-                  "Item",
-                  "Location",
-                  "ScrapReason",
-                  "WorkCenter",
-                  "Employee"
-                ]
-              },
-              { columns: ["id", "entityType"] }
-            )
-          : null;
+        const dimensionsScrap = await many(
+          db,
+          "dimension",
+          {
+            companyGroupId: companyRecordScrap.data.companyGroupId!,
+            active: true,
+            entityType: [
+              "ItemPostingGroup",
+              "Item",
+              "Location",
+              "ScrapReason",
+              "WorkCenter",
+              "Employee"
+            ]
+          },
+          { columns: ["id", "entityType"] }
+        );
 
         const dimensionMapScrap = new Map<string, string>();
-        if (dimensionsScrap?.data) {
+        if (dimensionsScrap.data) {
           for (const dim of dimensionsScrap.data) {
             if (dim.entityType) dimensionMapScrap.set(dim.entityType, dim.id);
           }
@@ -3474,12 +3300,27 @@ const issue = defineServerFn({
           .today(await getCompanyTimeZone(db, companyId))
           .toString();
         // Resolve the period BEFORE the transaction parks the (size 1) pool.
-        const accountingPeriodIdScrap = accountingEnabledScrap
-          ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
-          : null;
+        // A Provisional journal has no accounting period.
+        const accountingPeriodIdScrap =
+          postingStatusScrap === "Posted"
+            ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
+            : null;
+        // An empty scrapAccount falls back to the variance account.
+        const scrapAccountIdScrap = resolveDefaultAccount(
+          accountDefaultsScrap.data,
+          "scrapAccount",
+          postingStatusScrap
+        ).accountId;
 
         let didReplace = false;
         await db.transaction().execute(async (trx) => {
+          // Re-read inside the transaction: its FOR SHARE lock holds the
+          // status until commit, and the period above was resolved for it.
+          await assertPostingStatusUnchanged(
+            trx,
+            companyId,
+            postingStatusScrap
+          );
           const entity = trackedEntity.data!;
           const material = jobMaterial.data!;
           const quantity = Number(entity.quantity);
@@ -3639,32 +3480,24 @@ const issue = defineServerFn({
                 unitCost: resolvedItemCost.unitCost,
                 standardCost: resolvedItemCost.standardCost
               },
-              accounting:
-                accountingEnabledScrap &&
-                accountDefaultsScrap?.data &&
-                accountingPeriodIdScrap
-                  ? {
-                      accountingPeriodId: accountingPeriodIdScrap,
-                      accountDefaults: {
-                        rawMaterialsAccount:
-                          accountDefaultsScrap.data.rawMaterialsAccount,
-                        finishedGoodsAccount:
-                          accountDefaultsScrap.data.finishedGoodsAccount,
-                        inventoryAdjustmentVarianceAccount:
-                          accountDefaultsScrap.data
-                            .inventoryAdjustmentVarianceAccount
-                      },
-                      offsetAccount:
-                        accountDefaultsScrap.data.scrapAccount ??
-                        accountDefaultsScrap.data
-                          .inventoryAdjustmentVarianceAccount,
-                      offsetDescription: "Scrap Account",
-                      description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
-                      userId,
-                      dimensions: Object.fromEntries(dimensionMapScrap),
-                      extraDimensions: scrapExtraDimensions
-                    }
-                  : null
+              accounting: {
+                postingStatus: postingStatusScrap,
+                accountingPeriodId: accountingPeriodIdScrap,
+                accountDefaults: {
+                  rawMaterialsAccount:
+                    accountDefaultsScrap.data.rawMaterialsAccount,
+                  finishedGoodsAccount:
+                    accountDefaultsScrap.data.finishedGoodsAccount,
+                  inventoryAdjustmentVarianceAccount:
+                    accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount
+                },
+                offsetAccount: scrapAccountIdScrap,
+                offsetDescription: "Scrap Account",
+                description: `Scrap — ${item?.readableIdWithRevision ?? ""}`,
+                userId,
+                dimensions: Object.fromEntries(dimensionMapScrap),
+                extraDimensions: scrapExtraDimensions
+              }
             });
           } else {
             // CONSUMED → the material cost was moved into WIP at consumption.
@@ -3672,12 +3505,7 @@ const issue = defineServerFn({
             // cost — materials-only, spec decision 6) and reopen the material
             // requirement so a replacement can be issued.
             const scrapCost = resolvedItemCost.unitCost * quantity;
-            if (
-              accountingEnabledScrap &&
-              accountDefaultsScrap?.data &&
-              accountingPeriodIdScrap &&
-              scrapCost > 0
-            ) {
+            if (scrapCost > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
                 "journalEntry",
@@ -3692,7 +3520,7 @@ const issue = defineServerFn({
                   postingDate: todayScrap,
                   companyId,
                   sourceType: "Job Consumption",
-                  status: "Posted",
+                  status: postingStatusScrap,
                   postedAt: datetime.timestamp(),
                   postedBy: userId,
                   createdBy: userId
@@ -3700,16 +3528,13 @@ const issue = defineServerFn({
                 .returning(["id"])
                 .executeTakeFirstOrThrow();
 
-              const scrapAccount =
-                accountDefaultsScrap.data.scrapAccount ??
-                accountDefaultsScrap.data.inventoryAdjustmentVarianceAccount;
               const journalLineReference = nanoid();
               const journalLineResults = await trx
                 .insertInto("journalLine")
                 .values([
                   {
                     journalId: journalResult.id,
-                    accountId: scrapAccount,
+                    accountId: scrapAccountIdScrap,
                     description: "Scrap Account",
                     amount: debit("expense", scrapCost),
                     quantity,
@@ -3934,7 +3759,7 @@ const issue = defineServerFn({
         );
         const accounting = await loadConsumeAccountingContext(db, companyId);
 
-        const result = await db.transaction().execute((trx) =>
+        const result = await db.transaction().execute(async (trx) =>
           consumeTrackedEntitiesIntoOperation(trx, {
             db,
             materialId,
@@ -3949,6 +3774,8 @@ const issue = defineServerFn({
             companyId,
             userId,
             companyToday,
+            // Provisional before the company's accounting cutover, Posted after it.
+            postingStatus: await journalPostingStatus(trx, companyId),
             ...accounting
           })
         );
@@ -3984,8 +3811,11 @@ const issue = defineServerFn({
         // writes in-transaction, so two members inside ONE transaction would
         // each try to create a missing period — the second cannot see the
         // first's uncommitted insert and the unique index rolls the whole pick
-        // back. Committed here, every member's read finds it.
-        if (accounting.accountingEnabled) {
+        // back. Committed here, every member's read finds it. A Provisional
+        // journal has no accounting period, so none is created before the
+        // company's accounting cutover.
+        const postingStatus = await journalPostingStatus(db, companyId);
+        if (postingStatus === "Posted") {
           await getCurrentAccountingPeriod(
             companyId,
             db,
@@ -3994,6 +3824,9 @@ const issue = defineServerFn({
         }
 
         const batchResult = await db.transaction().execute(async (trx) => {
+          // Re-read inside the transaction: its FOR SHARE lock holds the
+          // status until commit, and the period above was resolved for it.
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           const batch = await trx
             .selectFrom("jobOperationBatch")
             .select(["id", "status"])
@@ -4164,6 +3997,7 @@ const issue = defineServerFn({
                 companyId,
                 userId,
                 companyToday,
+                postingStatus,
                 ...accounting
               }
             );
@@ -4351,60 +4185,14 @@ const issue = defineServerFn({
           throw new Error("Children are required");
         }
 
-        const [accountingSettingsUnconsume, companyRecordUnconsume] =
-          await inOrder([
-            () =>
-              single(
-                db,
-                "companySettings",
-                { id: companyId },
-                { columns: ["accountingEnabled"] }
-              ),
-            () =>
-              single(
-                db,
-                "company",
-                { id: companyId },
-                { columns: ["companyGroupId"] }
-              )
-          ]);
-        if (companyRecordUnconsume.error)
-          throw new Error("Failed to fetch company");
-        const accountingEnabledUnconsume =
-          accountingSettingsUnconsume.data?.accountingEnabled ?? false;
-
-        const accountDefaultsUnconsume = accountingEnabledUnconsume
-          ? await getDefaultPostingGroup(db, companyId)
-          : null;
-        if (
-          accountingEnabledUnconsume &&
-          (accountDefaultsUnconsume?.error || !accountDefaultsUnconsume?.data)
-        ) {
-          throw new Error("Error getting account defaults");
-        }
-
-        const dimensionsUnconsume = accountingEnabledUnconsume
-          ? await many(
-              db,
-              "dimension",
-              {
-                companyGroupId: companyRecordUnconsume.data.companyGroupId!,
-                active: true,
-                entityType: ["ItemPostingGroup", "Item", "Location"]
-              },
-              { columns: ["id", "entityType"] }
-            )
-          : null;
-
-        const dimensionMapUnconsume = new Map<string, string>();
-        if (dimensionsUnconsume?.data) {
-          for (const dim of dimensionsUnconsume.data) {
-            if (dim.entityType)
-              dimensionMapUnconsume.set(dim.entityType, dim.id);
-          }
-        }
+        const {
+          accountDefaults: accountDefaultsUnconsume,
+          dimensionMap: dimensionMapUnconsume
+        } = await loadConsumeAccountingContext(db, companyId);
 
         await db.transaction().execute(async (trx) => {
+          // Provisional before the company's accounting cutover, Posted after it.
+          const postingStatus = await journalPostingStatus(trx, companyId);
           const trackedEntities = await trx
             .selectFrom("trackedEntity")
             .where(
@@ -4584,30 +4372,28 @@ const issue = defineServerFn({
               );
             }
 
-            if (accountingEnabledUnconsume && accountDefaultsUnconsume?.data) {
-              const returnEntries = itemLedgerInserts.map((l) => ({
-                itemId: l.itemId as string,
-                quantity: Number(l.quantity)
-              }));
+            const returnEntries = itemLedgerInserts.map((l) => ({
+              itemId: l.itemId as string,
+              quantity: Number(l.quantity)
+            }));
 
-              await createMaterialWipEntries(trx, {
-                consumptionLedgers: returnEntries,
-                jobId: job?.id!,
-                operationId: jobMaterial?.jobOperationId ?? materialId,
-                description: "Unconsume Material Return",
-                wipAccount: accountDefaultsUnconsume.data.workInProgressAccount,
-                rawMaterialsAccount:
-                  accountDefaultsUnconsume.data.rawMaterialsAccount,
-                finishedGoodsAccount:
-                  accountDefaultsUnconsume.data.finishedGoodsAccount,
-                dimensionMap: dimensionMapUnconsume,
+            await createMaterialWipEntries(trx, {
+              consumptionLedgers: returnEntries,
+              jobId: job?.id!,
+              operationId: jobMaterial?.jobOperationId ?? materialId,
+              description: "Unconsume Material Return",
+              wipAccount: accountDefaultsUnconsume.workInProgressAccount,
+              rawMaterialsAccount: accountDefaultsUnconsume.rawMaterialsAccount,
+              finishedGoodsAccount:
+                accountDefaultsUnconsume.finishedGoodsAccount,
+              dimensionMap: dimensionMapUnconsume,
 
-                jobLocationId: job?.locationId ?? null,
-                db,
-                companyId,
-                userId
-              });
-            }
+              jobLocationId: job?.locationId ?? null,
+              db,
+              companyId,
+              userId,
+              postingStatus
+            });
           }
 
           const totalChildQuantity = roundedChildTotal(children);

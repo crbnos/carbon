@@ -9,7 +9,7 @@ import { activeJobStatuses } from "@carbon/database";
 import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
@@ -69,6 +69,7 @@ async function getJobOrderStatus(
 }
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Job`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId
@@ -162,6 +163,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobRoute() {
+  const { t } = useLingui();
   const params = useParams();
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -175,6 +177,7 @@ export default function JobRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Structure`}
               explorer={
                 <div className="w-full h-full p-2">
                   <Suspense fallback={<ExplorerSkeleton />}>

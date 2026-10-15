@@ -102,6 +102,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -112,6 +113,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           return <SupplierAvatar supplierId={row.original.supplierId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: suppliers?.map((supplier) => ({
@@ -135,6 +137,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           filter: {
             type: "static",
@@ -154,6 +157,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -218,6 +222,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <DateTime value={row.original.nextCalibrationDate} variant="date" />
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "dateRange"
           },

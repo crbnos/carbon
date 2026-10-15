@@ -66,7 +66,9 @@ it("records each middleware's own time on the request span, not what runs after 
   const quickMs = attributes["carbon.middleware.quick.ms"] as number;
   expect(slowMs).toBeGreaterThanOrEqual(25);
   expect(slowMs).toBeLessThan(55);
-  expect(quickMs).toBeLessThan(10);
+  // The quick middleware does nothing of its own; it fails only if it were
+  // charged the 60 ms that run after it. A tighter bound fails on a busy machine.
+  expect(quickMs).toBeLessThan(30);
 });
 
 it("wraps a call in a span and marks it failed when the call throws", async () => {

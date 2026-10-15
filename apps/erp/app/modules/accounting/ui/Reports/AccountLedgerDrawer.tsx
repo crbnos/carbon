@@ -116,7 +116,7 @@ const AccountLedgerDrawer = ({
             <span>{periodLabel}</span>
           </div>
         </DrawerHeader>
-        <DrawerBody className="p-0">
+        <DrawerBody className="p-0 max-md:p-0">
           <div className="grid w-full grid-cols-3 divide-x divide-border border-b border-border">
             <div className="px-4 py-3">
               <p className="text-xs text-muted-foreground">

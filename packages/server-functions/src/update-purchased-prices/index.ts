@@ -11,6 +11,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { getSupplierPartPriceConverter } from "../lib/supplier-part-currency";
 
 const logger = getLogger("server-functions", "update-purchased-prices");
 
@@ -32,7 +33,10 @@ export const updatePurchasedPricesInput = z.discriminatedUnion("source", [
 interface PurchaseLineData {
   itemId: string | null;
   jobOperationId: string | null;
+  /** Base currency, per purchase unit. */
   unitPrice: number;
+  /** The document's currency, per purchase unit — what the supplier charged. */
+  supplierUnitPrice: number;
   quantity: number;
   conversionFactor: number | null;
   purchaseUnitOfMeasureCode: string | null;
@@ -69,6 +73,7 @@ const updatePurchasedPrices = defineServerFn({
 
     let supplierId: string;
     let lines: PurchaseLineData[];
+    let documentCurrency: { currencyCode: string | null; exchangeRate: number };
 
     switch (source) {
       case "purchaseOrder": {
@@ -99,11 +104,16 @@ const updatePurchasedPrices = defineServerFn({
           throw new Error("Purchase order has no supplier");
 
         supplierId = purchaseOrder.data.supplierId;
+        documentCurrency = {
+          currencyCode: purchaseOrder.data.currencyCode,
+          exchangeRate: purchaseOrder.data.exchangeRate ?? 1
+        };
         lines = purchaseOrderLines.data
           .map((line) => ({
             itemId: line.itemId,
             jobOperationId: null,
             unitPrice: line.unitPrice ?? 0,
+            supplierUnitPrice: line.supplierUnitPrice ?? 0,
             quantity:
               (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1),
             conversionFactor: line.conversionFactor,
@@ -182,11 +192,16 @@ const updatePurchasedPrices = defineServerFn({
           throw new Error("Purchase invoice has no supplier");
 
         supplierId = purchaseInvoice.data.supplierId;
+        documentCurrency = {
+          currencyCode: purchaseInvoice.data.currencyCode,
+          exchangeRate: purchaseInvoice.data.exchangeRate ?? 1
+        };
         lines = purchaseInvoiceLines.data
           .map((line) => ({
             itemId: line.itemId,
             jobOperationId: line.jobOperationId,
             unitPrice: line.unitPrice ?? 0,
+            supplierUnitPrice: line.supplierUnitPrice ?? 0,
             quantity: (line.quantity ?? 0) * (line.conversionFactor ?? 1),
             conversionFactor: line.conversionFactor,
             purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode
@@ -391,6 +406,21 @@ const updatePurchasedPrices = defineServerFn({
       }
     }
 
+    // The supplier part records what the supplier charged, in its own
+    // currency: copied exactly when it matches the document's, converted at
+    // today's rate when it does not.
+    const priceConverter =
+      shouldUpdatePrices && itemIds.length > 0
+        ? await getSupplierPartPriceConverter(
+            db,
+            companyId,
+            documentCurrency,
+            supplierPartRows
+              .filter((sp) => sp.supplierId === supplierId)
+              .map((sp) => sp.currencyCode)
+          )
+        : null;
+
     lines.forEach((line) => {
       if (line.itemId && !line.jobOperationId) {
         const costHistory = historicalPartCosts[line.itemId];
@@ -416,7 +446,10 @@ const updatePurchasedPrices = defineServerFn({
           if (supplierPart && supplierPart.id) {
             supplierPartUpdates.push({
               id: supplierPart.id,
-              unitPrice: line.unitPrice,
+              supplierUnitPrice: priceConverter!.toPartCurrency(
+                line.supplierUnitPrice,
+                supplierPart.currencyCode
+              ),
               conversionFactor: line.conversionFactor ?? 1,
               supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               updatedBy: "system"
@@ -425,7 +458,8 @@ const updatePurchasedPrices = defineServerFn({
             supplierPartInserts.push({
               itemId: line.itemId,
               supplierId: supplierId,
-              unitPrice: line.unitPrice,
+              supplierUnitPrice: line.supplierUnitPrice,
+              currencyCode: documentCurrency.currencyCode,
               conversionFactor: line.conversionFactor ?? 1,
               supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               createdBy: "system",
@@ -502,7 +536,8 @@ const updatePurchasedPrices = defineServerFn({
           .values(supplierPartInserts)
           .onConflict((oc) =>
             oc.columns(["itemId", "supplierId", "companyId"]).doUpdateSet({
-              unitPrice: (eb) => eb.ref("excluded.unitPrice"),
+              supplierUnitPrice: (eb) => eb.ref("excluded.supplierUnitPrice"),
+              currencyCode: (eb) => eb.ref("excluded.currencyCode"),
               conversionFactor: (eb) => eb.ref("excluded.conversionFactor"),
               supplierUnitOfMeasureCode: (eb) =>
                 eb.ref("excluded.supplierUnitOfMeasureCode"),

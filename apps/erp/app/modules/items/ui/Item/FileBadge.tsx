@@ -49,7 +49,7 @@ export function FileBadge({
 
       <LuDownload
         onClick={() => download(file)}
-        className="cursor-pointer group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
+        className="cursor-pointer group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
       />
     </HStack>
   );

@@ -66,11 +66,14 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { trainingId, groupIds } = validation.data;
+  const { isExternal, trainingId, name, groupIds } = validation.data;
 
   // One assignment per training — duplicates double every employee in the status views
-  const existing = await getTrainingAssignments(client, companyId, trainingId);
-  if (existing.data && existing.data.length > 0) {
+  const existing =
+    !isExternal && trainingId
+      ? await getTrainingAssignments(client, companyId, trainingId)
+      : null;
+  if (existing?.data && existing.data.length > 0) {
     // 200 on purpose: a 4xx response skips revalidation and the toast never shows
     return data(
       { error: "This training is already assigned" },
@@ -85,7 +88,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const result = await upsertTrainingAssignment(client, {
-    trainingId,
+    trainingId: isExternal ? null : trainingId,
+    name: isExternal ? name : null,
     groupIds,
     companyId,
     createdBy: userId
@@ -105,8 +109,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Send notifications to all users in the assigned groups
-  if (result.data?.id) {
+  // An external training happens in an outside system, which notifies people.
+  if (result.data?.id && !isExternal) {
     try {
       await trigger("notify", {
         companyId,
@@ -137,7 +141,9 @@ export default function NewTrainingAssignmentRoute() {
 
   const initialValues = {
     id: undefined,
+    isExternal: false,
     trainingId: "",
+    name: "",
     groupIds: [] as string[]
   };
 

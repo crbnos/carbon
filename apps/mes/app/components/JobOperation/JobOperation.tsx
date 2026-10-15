@@ -17,8 +17,14 @@ import {
   BottomSheet,
   BottomSheetBody,
   BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
   Button,
   Card,
+  CardAttribute,
+  CardAttributeLabel,
+  CardAttributes,
+  CardAttributeValue,
   CardContent,
   CardHeader,
   CardTitle,
@@ -57,6 +63,7 @@ import {
   useKeyboardWedge,
   useMode,
   useRouteData,
+  useViewport,
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
@@ -65,7 +72,6 @@ import {
   convertDateStringToIsoString,
   formatDate,
   formatDurationMilliseconds,
-  getItemReadableId,
   MODEL_RAW_KEEP_MAX_BYTES,
   round
 } from "@carbon/utils";
@@ -79,7 +85,6 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { FaCheck, FaPlus, FaTrash } from "react-icons/fa6";
 import {
-  LuArrowLeft,
   LuAxis3D,
   LuBarcode,
   LuCheck,
@@ -112,11 +117,7 @@ import {
   OperationStatusIcon,
   PrintButton
 } from "~/components";
-import {
-  MethodIcon,
-  MethodItemTypeIcon,
-  TrackingTypeIcon
-} from "~/components/Icons";
+import { MethodItemTypeIcon } from "~/components/Icons";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import type {
@@ -140,8 +141,10 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import { useOrigin } from "~/utils/origin";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
+import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
 import { BatchOverview } from "./components/BatchOverview";
 import { OperationChat } from "./components/Chat";
@@ -154,6 +157,7 @@ import {
 } from "./components/Controls";
 import { IssueMaterialModal } from "./components/IssueMaterialModal";
 import { MaintenanceDispatch } from "./components/MaintenanceDispatch";
+import { OperationMaterials } from "./components/Materials";
 import { ParametersListItem } from "./components/Parameter";
 import { QualityIssueModal } from "./components/QualityIssueModal";
 import { QuantityModal } from "./components/QuantityModal";
@@ -220,82 +224,6 @@ type JobOperationProps = {
   >;
 };
 
-/**
- * Additive overlay badge showing how much of a material has been picked (staged at
- * lineside). Picking is optional, so this renders nothing unless something has actually
- * been picked — orange while partial, green once the full requirement is staged.
- */
-function PickedBadge({
-  quantityPicked,
-  quantityToPick
-}: {
-  quantityPicked?: number | null;
-  quantityToPick?: number | null;
-}) {
-  const picked = Number(quantityPicked ?? 0);
-  if (picked <= 0) return null;
-  const toPick = Number(quantityToPick ?? 0);
-  const isFullyPicked = toPick > 0 && picked >= toPick;
-  return (
-    <Badge
-      variant={isFullyPicked ? "green" : "orange"}
-      className="gap-1 shrink-0"
-      title="Quantity picked to lineside"
-    >
-      <LuPackageCheck className="size-3" />
-      {isFullyPicked ? <Trans>Picked</Trans> : `${picked}/${toPick}`}
-    </Badge>
-  );
-}
-
-function PickedBreakdown({
-  materialItemId,
-  pickedByItem
-}: {
-  materialItemId: string | null | undefined;
-  pickedByItem?:
-    | {
-        itemId: string;
-        itemReadableId: string;
-        quantityPicked: number;
-        quantityToPick: number;
-      }[]
-    | null;
-}) {
-  const picks = pickedByItem ?? [];
-  if (!picks.some((p) => p.itemId !== materialItemId)) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-1 text-xs text-blue-700 dark:text-blue-300">
-      <span>
-        <Trans>Picked as</Trans>
-      </span>
-      {picks.map((pick) => {
-        const isFullyPicked =
-          pick.quantityToPick > 0 && pick.quantityPicked >= pick.quantityToPick;
-        return (
-          <Badge
-            key={pick.itemId}
-            variant={
-              isFullyPicked
-                ? "green"
-                : pick.quantityPicked > 0
-                  ? "orange"
-                  : "secondary"
-            }
-            className="gap-1 shrink-0"
-          >
-            {isFullyPicked
-              ? pick.quantityPicked
-              : `${pick.quantityPicked}/${pick.quantityToPick}`}
-            {" × "}
-            {pick.itemReadableId}
-          </Badge>
-        );
-      })}
-    </div>
-  );
-}
-
 export const JobOperation = ({
   batch,
   batchMaterialTotals,
@@ -317,8 +245,10 @@ export const JobOperation = ({
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { formatRelativeTime } = useDateFormatter();
   const [params, setParams] = useUrlParams();
+  const origin = useOrigin();
 
   const trackedEntityParam = params.get("trackedEntityId");
   const trackedEntityId = trackedEntityParam ?? trackedEntities[0]?.id;
@@ -568,12 +498,21 @@ export const JobOperation = ({
     labor: t`Labor`,
     machine: t`Machine`
   } as const;
-  const runningType = (["setup", "labor", "machine"] as const).find(
-    (type) => active[type]
-  );
+  // Phones: the caption follows the toggle, the selected type's timer when it
+  // runs, else the first running one in the toggle's order.
+  const selectedType = eventType.toLowerCase() as keyof typeof workTypeLabels;
+  const runningType =
+    isPhone && active[selectedType]
+      ? selectedType
+      : (isPhone
+          ? (["setup", "machine", "labor"] as const)
+          : (["setup", "labor", "machine"] as const)
+        ).find((type) => active[type]);
   // Chat is one job's thread, so a Chat tab left open in the job scope falls
   // back to Details on the batch.
   const tab = scope === "batch" && activeTab === "chat" ? "details" : activeTab;
+  // Phones on Details show the context row and meters in the scrolling pane.
+  const contextInPane = isPhone && tab === "details";
   const showControls = !["chat", "procedure"].includes(tab);
   // Read after mount (never during render) so SSR and the first client
   // render agree; storage can throw in private/locked-down browsers.
@@ -748,6 +687,13 @@ export const JobOperation = ({
 
   const item = items.find((it) => it.id === operation.itemId);
 
+  const openIssueModal = (material: JobMaterial | null) => {
+    flushSync(() => {
+      setSelectedMaterial(material);
+    });
+    issueModal.onOpen();
+  };
+
   // Mounted by BOTH the per-job materials table and the batch overview —
   // the batch scope's Pick opens the same shared-pick modal.
   const renderIssueModal = (
@@ -783,6 +729,408 @@ export const JobOperation = ({
       />
     ) : null;
 
+  // Labelled meters: 1 row of up to 4 on a phone, then as many columns as fit.
+  // Phones show them in the Details scroll pane, so only 1 bar stays pinned.
+  const meters = (
+    <div className="grid gap-y-2 max-md:grid-flow-col max-md:auto-cols-[minmax(0,1fr)] max-md:gap-x-2 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))] md:gap-x-6">
+      {(
+        [
+          {
+            type: "setup",
+            label: t`Setup`,
+            elapsed: progress.setup,
+            planned: displayOperation.setupDuration
+          },
+          {
+            type: "labor",
+            label: t`Labor`,
+            elapsed: progress.labor,
+            planned: displayOperation.laborDuration
+          },
+          {
+            type: "machine",
+            label: t`Machine`,
+            elapsed: progress.machine,
+            planned: displayOperation.machineDuration
+          }
+        ] as const
+      )
+        .filter((meter) => meter.planned > 0)
+        .map((meter) => {
+          // A batch with no planned time anywhere carries a 1ms
+          // placeholder plan (so ratios never divide by zero). That is
+          // not a plan: show elapsed time alone over an empty track.
+          const hasPlan = meter.planned > 1;
+          const elapsed = formatDurationMilliseconds(meter.elapsed, {
+            style: "short"
+          });
+          return (
+            <BarProgress
+              key={meter.type}
+              label={meter.label}
+              value={
+                hasPlan
+                  ? `${elapsed} / ${formatDurationMilliseconds(meter.planned, {
+                      style: "short"
+                    })}`
+                  : elapsed
+              }
+              gradient
+              invertGradient
+              stackOnPhone
+              progress={hasPlan ? (meter.elapsed / meter.planned) * 100 : 0}
+              activeClassName={
+                meter.elapsed > meter.planned ? "bg-red-500" : "bg-emerald-500"
+              }
+            />
+          );
+        })}
+      <BarProgress
+        stackOnPhone
+        label={isBatched ? t`Batch quantity` : t`Quantity`}
+        value={`${quantityProgress.complete} / ${quantityProgress.target}`}
+        segments={[
+          {
+            value: quantityProgress.complete,
+            className: "bg-emerald-500"
+          },
+          {
+            value: quantityProgress.reworked,
+            className: "bg-yellow-500"
+          },
+          {
+            value: quantityProgress.scrapped,
+            className: "bg-red-500"
+          }
+        ]}
+        max={quantityProgress.target || 1}
+        progress={
+          (quantityProgress.complete / (quantityProgress.target || 1)) * 100
+        }
+      />
+    </div>
+  );
+
+  // The job ⋮ menu: in the context row from md, in the app bar on phones.
+  const renderJobMenu = ({
+    className,
+    size,
+    align
+  }: {
+    className?: string;
+    size?: "lg";
+    align: "start" | "end";
+  }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <IconButton
+          aria-label={t`More options`}
+          variant="ghost"
+          size={size}
+          className={className}
+          icon={<LuEllipsisVertical />}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={align}>
+        {scope === "job" && (
+          <DropdownMenuItem asChild>
+            <a
+              href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <DropdownMenuIcon icon={<LuQrCode />} />
+              <Trans>Job Traveler</Trans>
+            </a>
+          </DropdownMenuItem>
+        )}
+        {scope === "job" && (
+          <DropdownMenuItem asChild>
+            <Link
+              to={
+                // A subassembly's operation opens its own make method,
+                // not the job header.
+                operation.parentMaterialId
+                  ? path.to.jobMakeMethodDetail(
+                      operation.jobId,
+                      operation.jobMakeMethodId
+                    )
+                  : path.to.jobDetail(operation.jobId)
+              }
+            >
+              <DropdownMenuIcon icon={<LuCirclePlay />} />
+              <Trans>Job Details</Trans>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {scope === "batch" && batch && (
+          <DropdownMenuItem asChild>
+            <a
+              href={path.to.batchDetail(batch.id as string)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <DropdownMenuIcon icon={<LuLayers />} />
+              <Trans>Batch Details</Trans>
+            </a>
+          </DropdownMenuItem>
+        )}
+        {scope === "batch" && batch && (
+          <DropdownMenuItem asChild>
+            <a
+              href={path.to.file.batchList(batch.id as string)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <DropdownMenuIcon icon={<LuPrinter />} />
+              <Trans>Print batch list</Trans>
+            </a>
+          </DropdownMenuItem>
+        )}
+        {item && (scope === "job" || batchFacts?.items.length === 1) && (
+          <DropdownMenuItem asChild>
+            <Link to={path.to.itemMaster(item?.id, item.type)}>
+              <DropdownMenuIcon
+                icon={<MethodItemTypeIcon type={item.type} />}
+              />
+              <Trans>Item Master</Trans>
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  // The job, customer, status and due row. Phones on the Details tab render
+  // it inside the scrolling pane, so it scrolls away with the content.
+  const renderContextRow = (className: string) => (
+    <div
+      className={cn(
+        "flex shrink-0 flex-wrap lg:flex-nowrap items-center justify-start px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-x-2 gap-y-1 md:gap-x-4 w-full min-w-0",
+        className
+      )}
+    >
+      <HStack
+        className={cn(
+          "min-w-22 shrink-0 justify-between",
+          !batch && "max-md:hidden"
+        )}
+      >
+        {batch ? (
+          // One control for "which part of the batch am I looking at":
+          // the batch, this job, or (via the chevron) another member job.
+          <div className="flex shrink-0 items-center rounded-full border bg-card p-0.5 text-sm">
+            <button
+              type="button"
+              aria-pressed={scope === "batch"}
+              aria-label={t`Whole batch`}
+              onClick={() => setParams({ scope: "" })}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1 transition-[background-color,color,transform] active:scale-[0.98]",
+                scope === "batch"
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LuLayers className="size-3.5" />
+              <span className="font-medium tabular-nums">
+                {batch.readableId}
+              </span>
+              <span className="opacity-60">
+                {t`${(batch.operations ?? []).length} jobs`}
+              </span>
+              {isCompleting && (
+                <Badge variant="yellow" className="ml-0.5">
+                  <Trans>Completing</Trans>
+                </Badge>
+              )}
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-pressed={scope === "job"}
+                  aria-label={t`Choose a job`}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full py-1 pl-3 pr-2 font-medium transition-[background-color,color,transform] active:scale-[0.98]",
+                    scope === "job"
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {scope === "job" ? (
+                    operation.jobReadableId
+                  ) : (
+                    <Trans>Jobs</Trans>
+                  )}
+                  <LuChevronDown className="size-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[240px]">
+                <DropdownMenuLabel>
+                  <Trans>Open a job in this batch</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {[...(batch.operations ?? [])]
+                  .sort((a, b) =>
+                    (
+                      (a.job as { jobId?: string | null } | null)?.jobId ?? ""
+                    ).localeCompare(
+                      (b.job as { jobId?: string | null } | null)?.jobId ?? "",
+                      undefined,
+                      { numeric: true }
+                    )
+                  )
+                  .map((member) => {
+                    const isOpen =
+                      scope === "job" && member.id === operation.id;
+                    return (
+                      <DropdownMenuItem key={member.id} asChild>
+                        <Link to={`${path.to.operation(member.id)}?scope=job`}>
+                          <DropdownMenuIcon
+                            icon={
+                              isOpen ? (
+                                <LuCheck className="text-emerald-500" />
+                              ) : (
+                                <LuClipboardCheck />
+                              )
+                            }
+                          />
+                          <span className="truncate">
+                            {(member.job as { jobId?: string | null } | null)
+                              ?.jobId ?? member.id}
+                            {member.jobMakeMethod?.item?.readableIdWithRevision
+                              ? ` — ${member.jobMakeMethod.item.readableIdWithRevision}`
+                              : ""}
+                          </span>
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : (
+          <Heading size="h4" className="max-md:hidden">
+            {operation.jobReadableId}
+          </Heading>
+        )}
+
+        {renderJobMenu({ className: "max-md:hidden", align: "start" })}
+      </HStack>
+
+      <HStack className="flex w-full lg:w-auto min-w-0 lg:flex-1 justify-start lg:justify-end items-center gap-3 overflow-x-auto lg:overflow-hidden scrollbar-hide scroll-fade-x [&>*]:shrink-0 lg:[&>*]:shrink max-md:flex-wrap max-md:overflow-visible max-md:gap-y-1 max-md:mask-none max-md:[&>*]:shrink">
+        {scope === "batch" && batchFacts
+          ? batchFacts.customers.length > 0 && (
+              <HStack className="min-w-0 justify-start space-x-2 max-md:order-3">
+                <LuSquareUser className="text-muted-foreground shrink-0" />
+                <span className="text-sm truncate">
+                  {batchFacts.customers.length === 1
+                    ? batchFacts.customers[0]
+                    : t`${batchFacts.customers.length} customers`}
+                </span>
+              </HStack>
+            )
+          : job.customer?.name && (
+              <HStack className="min-w-0 justify-start space-x-2 max-md:order-3">
+                <LuSquareUser className="text-muted-foreground shrink-0" />
+                <span className="text-sm truncate">{job.customer.name}</span>
+              </HStack>
+            )}
+        {operation.description && (
+          <HStack className="min-w-0 justify-start space-x-2 max-md:order-4">
+            <LuClipboardCheck className="text-muted-foreground shrink-0" />
+            <span className="text-sm truncate">{operation.description}</span>
+          </HStack>
+        )}
+        {scope === "batch" && batch ? (
+          <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-1">
+            <LuLayers className="text-muted-foreground shrink-0" />
+            <span className="text-sm truncate">
+              {isCompleting ? t`Completing` : t`Released`}
+            </span>
+          </HStack>
+        ) : (
+          operation.operationStatus && (
+            <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-1">
+              <OperationStatusIcon
+                status={
+                  operation.jobStatus === "Paused"
+                    ? "Paused"
+                    : operation.operationStatus
+                }
+              />
+              <span className="text-sm truncate">
+                {operation.jobStatus === "Paused"
+                  ? "Paused"
+                  : operation.operationStatus}
+              </span>
+            </HStack>
+          )
+        )}
+        {/* Batch mode shows the batch's planned total (shared setup +
+            summed work); a zero plan renders nothing rather than
+            "0 milliseconds". */}
+        {typeof displayOperation.duration === "number" &&
+          displayOperation.duration > 1 && (
+            <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-5">
+              <LuTimer className="text-muted-foreground shrink-0" />
+              <span className="text-sm truncate tabular-nums">
+                {formatDurationMilliseconds(displayOperation.duration)}
+              </span>
+            </HStack>
+          )}
+        {scope === "batch" && batchFacts ? (
+          <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-2">
+            <DeadlineIcon
+              deadlineType={
+                (batchFacts.deadline ??
+                  "Hard Deadline") as typeof operation.jobDeadlineType
+              }
+              overdue={batchOverdue}
+            />
+            <span
+              className={cn(
+                "text-sm truncate",
+                batchOverdue ? "text-red-500" : ""
+              )}
+            >
+              {batchFacts.dueDate
+                ? t`First due ${formatRelativeTime(
+                    convertDateStringToIsoString(batchFacts.dueDate)
+                  )}`
+                : batchFacts.deadline}
+            </span>
+          </HStack>
+        ) : (
+          operation.jobDeadlineType && (
+            <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-2">
+              <DeadlineIcon
+                deadlineType={operation.jobDeadlineType}
+                overdue={isOverdue}
+              />
+
+              <span
+                className={cn(
+                  "text-sm truncate",
+                  isOverdue ? "text-red-500" : ""
+                )}
+              >
+                {["ASAP", "No Deadline"].includes(operation.jobDeadlineType)
+                  ? operation.jobDeadlineType
+                  : operation.jobDueDate
+                    ? t`Due ${formatRelativeTime(
+                        convertDateStringToIsoString(operation.jobDueDate)
+                      )}`
+                    : "–"}
+              </span>
+            </HStack>
+          )
+        )}
+      </HStack>
+    </div>
+  );
+
   return (
     <>
       <Tabs
@@ -797,350 +1145,74 @@ export const JobOperation = ({
         // the viewport itself, less the frame's md:my-2 inset.
         className="grid h-svh md:h-[calc(100svh-1rem)] min-h-0 w-full min-w-0 bg-card grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_auto_minmax(0,1fr)_auto_auto] [grid-template-areas:'header'_'context'_'sep'_'main'_'status'_'dock'] lg:grid-cols-[minmax(0,1fr)_auto] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:[grid-template-areas:'header_header'_'context_context'_'sep_sep'_'main_dock'_'status_dock']"
       >
-        <header className="[grid-area:header] flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b px-2">
-          <HStack className="w-full justify-between">
-            <div className="flex items-center gap-0">
-              <SidebarTrigger />
+        <div className="[grid-area:header] flex min-w-0 flex-col">
+          <MesAppBar
+            title={
+              scope === "batch" && batch
+                ? batch.readableId
+                : operation.jobReadableId
+            }
+            subtitle={origin.label}
+            back={{ to: origin.to }}
+            actions={renderJobMenu({ size: "lg", align: "end" })}
+          />
+          <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b px-2 max-md:h-auto max-md:py-0">
+            <HStack className="w-full justify-between max-md:flex-wrap max-md:gap-y-1">
+              <div className="flex items-center gap-0 max-md:hidden">
+                <SidebarTrigger />
 
-              <Button
-                variant="ghost"
-                leftIcon={<LuChevronLeft />}
-                onClick={() => navigate(path.to.operations)}
-                className="pl-2"
-              >
-                <Trans>Schedule</Trans>
-              </Button>
-            </div>
-            <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x">
-              <TabsList className="ml-auto shrink-0">
-                <TabsTrigger value="details">
-                  <Trans>Details</Trans>
-                </TabsTrigger>
-                <TabsTrigger
-                  disabled={!job.modelPath && !operation.itemModelPath}
-                  value="model"
-                >
-                  <Trans>Model</Trans>
-                </TabsTrigger>
-                <TabsTrigger value="procedure">
-                  <Trans>Instructions</Trans>
-                </TabsTrigger>
-                {/* Notes are kept per job operation — on the batch there is no
-                    one thread to show, so Chat opens from a job. */}
-                <TabsTrigger value="chat" disabled={scope === "batch"}>
-                  <Trans>Chat</Trans>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          </HStack>
-        </header>
-
-        <div className="[grid-area:context] flex shrink-0 flex-wrap lg:flex-nowrap items-center justify-start px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-x-2 gap-y-1 md:gap-x-4 w-full min-w-0">
-          <HStack className="min-w-22 shrink-0 justify-between">
-            {batch ? (
-              // One control for "which part of the batch am I looking at":
-              // the batch, this job, or (via the chevron) another member job.
-              <div className="flex shrink-0 items-center rounded-full border bg-card p-0.5 text-sm">
-                <button
-                  type="button"
-                  aria-pressed={scope === "batch"}
-                  aria-label={t`Whole batch`}
-                  onClick={() => setParams({ scope: "" })}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1 transition-[background-color,color,transform] active:scale-[0.98]",
-                    scope === "batch"
-                      ? "bg-accent text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <LuLayers className="size-3.5" />
-                  <span className="font-medium tabular-nums">
-                    {batch.readableId}
-                  </span>
-                  <span className="opacity-60">
-                    {t`${(batch.operations ?? []).length} jobs`}
-                  </span>
-                  {isCompleting && (
-                    <Badge variant="yellow" className="ml-0.5">
-                      <Trans>Completing</Trans>
-                    </Badge>
-                  )}
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      aria-pressed={scope === "job"}
-                      aria-label={t`Choose a job`}
-                      className={cn(
-                        "flex items-center gap-1 rounded-full py-1 pl-3 pr-2 font-medium transition-[background-color,color,transform] active:scale-[0.98]",
-                        scope === "job"
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {scope === "job" ? (
-                        operation.jobReadableId
-                      ) : (
-                        <Trans>Jobs</Trans>
-                      )}
-                      <LuChevronDown className="size-3.5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[240px]">
-                    <DropdownMenuLabel>
-                      <Trans>Open a job in this batch</Trans>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {[...(batch.operations ?? [])]
-                      .sort((a, b) =>
-                        (
-                          (a.job as { jobId?: string | null } | null)?.jobId ??
-                          ""
-                        ).localeCompare(
-                          (b.job as { jobId?: string | null } | null)?.jobId ??
-                            "",
-                          undefined,
-                          { numeric: true }
-                        )
-                      )
-                      .map((member) => {
-                        const isOpen =
-                          scope === "job" && member.id === operation.id;
-                        return (
-                          <DropdownMenuItem key={member.id} asChild>
-                            <Link
-                              to={`${path.to.operation(member.id)}?scope=job`}
-                            >
-                              <DropdownMenuIcon
-                                icon={
-                                  isOpen ? (
-                                    <LuCheck className="text-emerald-500" />
-                                  ) : (
-                                    <LuClipboardCheck />
-                                  )
-                                }
-                              />
-                              <span className="truncate">
-                                {(
-                                  member.job as { jobId?: string | null } | null
-                                )?.jobId ?? member.id}
-                                {member.jobMakeMethod?.item
-                                  ?.readableIdWithRevision
-                                  ? ` — ${member.jobMakeMethod.item.readableIdWithRevision}`
-                                  : ""}
-                              </span>
-                            </Link>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ) : (
-              <Heading size="h4">{operation.jobReadableId}</Heading>
-            )}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label="More options"
+                <Button
                   variant="ghost"
-                  icon={<LuEllipsisVertical />}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {scope === "job" && (
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuQrCode />} />
-                      <Trans>Job Traveler</Trans>
-                    </a>
-                  </DropdownMenuItem>
-                )}
-                {scope === "job" && (
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={
-                        // A subassembly's operation opens its own make method,
-                        // not the job header.
-                        operation.parentMaterialId
-                          ? path.to.jobMakeMethodDetail(
-                              operation.jobId,
-                              operation.jobMakeMethodId
-                            )
-                          : path.to.jobDetail(operation.jobId)
-                      }
-                    >
-                      <DropdownMenuIcon icon={<LuCirclePlay />} />
-                      <Trans>Job Details</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {scope === "batch" && batch && (
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.batchDetail(batch.id as string)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuLayers />} />
-                      <Trans>Batch Details</Trans>
-                    </a>
-                  </DropdownMenuItem>
-                )}
-                {scope === "batch" && batch && (
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.file.batchList(batch.id as string)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuPrinter />} />
-                      <Trans>Print batch list</Trans>
-                    </a>
-                  </DropdownMenuItem>
-                )}
-                {item &&
-                  (scope === "job" || batchFacts?.items.length === 1) && (
-                    <DropdownMenuItem asChild>
-                      <Link to={path.to.itemMaster(item?.id, item.type)}>
-                        <DropdownMenuIcon
-                          icon={<MethodItemTypeIcon type={item.type} />}
-                        />
-                        <Trans>Item Master</Trans>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </HStack>
-
-          <HStack className="flex w-full lg:w-auto min-w-0 lg:flex-1 justify-start lg:justify-end items-center gap-3 overflow-x-auto lg:overflow-hidden scrollbar-hide scroll-fade-x [&>*]:shrink-0 lg:[&>*]:shrink">
-            {scope === "batch" && batchFacts
-              ? batchFacts.customers.length > 0 && (
-                  <HStack className="min-w-0 justify-start space-x-2">
-                    <LuSquareUser className="text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate">
-                      {batchFacts.customers.length === 1
-                        ? batchFacts.customers[0]
-                        : t`${batchFacts.customers.length} customers`}
-                    </span>
-                  </HStack>
-                )
-              : job.customer?.name && (
-                  <HStack className="min-w-0 justify-start space-x-2">
-                    <LuSquareUser className="text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate">
-                      {job.customer.name}
-                    </span>
-                  </HStack>
-                )}
-            {operation.description && (
-              <HStack className="min-w-0 justify-start space-x-2">
-                <LuClipboardCheck className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate">
-                  {operation.description}
-                </span>
-              </HStack>
-            )}
-            {scope === "batch" && batch ? (
-              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                <LuLayers className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate">
-                  {isCompleting ? t`Completing` : t`Released`}
-                </span>
-              </HStack>
-            ) : (
-              operation.operationStatus && (
-                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                  <OperationStatusIcon
-                    status={
-                      operation.jobStatus === "Paused"
-                        ? "Paused"
-                        : operation.operationStatus
-                    }
-                  />
-                  <span className="text-sm truncate">
-                    {operation.jobStatus === "Paused"
-                      ? "Paused"
-                      : operation.operationStatus}
-                  </span>
-                </HStack>
-              )
-            )}
-            {/* Batch mode shows the batch's planned total (shared setup +
-                summed work); a zero plan renders nothing rather than
-                "0 milliseconds". */}
-            {typeof displayOperation.duration === "number" &&
-              displayOperation.duration > 1 && (
-                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                  <LuTimer className="text-muted-foreground shrink-0" />
-                  <span className="text-sm truncate tabular-nums">
-                    {formatDurationMilliseconds(displayOperation.duration)}
-                  </span>
-                </HStack>
-              )}
-            {scope === "batch" && batchFacts ? (
-              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                <DeadlineIcon
-                  deadlineType={
-                    (batchFacts.deadline ??
-                      "Hard Deadline") as typeof operation.jobDeadlineType
-                  }
-                  overdue={batchOverdue}
-                />
-                <span
-                  className={cn(
-                    "text-sm truncate",
-                    batchOverdue ? "text-red-500" : ""
-                  )}
+                  leftIcon={<LuChevronLeft />}
+                  onClick={() => navigate(origin.to)}
+                  className="pl-2"
                 >
-                  {batchFacts.dueDate
-                    ? t`First due ${formatRelativeTime(
-                        convertDateStringToIsoString(batchFacts.dueDate)
-                      )}`
-                    : batchFacts.deadline}
-                </span>
-              </HStack>
-            ) : (
-              operation.jobDeadlineType && (
-                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                  <DeadlineIcon
-                    deadlineType={operation.jobDeadlineType}
-                    overdue={isOverdue}
-                  />
-
-                  <span
-                    className={cn(
-                      "text-sm truncate",
-                      isOverdue ? "text-red-500" : ""
-                    )}
+                  {origin.label}
+                </Button>
+              </div>
+              <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x max-md:w-full">
+                <TabsList className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1">
+                  <TabsTrigger value="details">
+                    <Trans>Details</Trans>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    disabled={!job.modelPath && !operation.itemModelPath}
+                    value="model"
                   >
-                    {["ASAP", "No Deadline"].includes(operation.jobDeadlineType)
-                      ? operation.jobDeadlineType
-                      : operation.jobDueDate
-                        ? t`Due ${formatRelativeTime(
-                            convertDateStringToIsoString(operation.jobDueDate)
-                          )}`
-                        : "–"}
-                  </span>
-                </HStack>
-              )
-            )}
-          </HStack>
+                    <Trans>Model</Trans>
+                  </TabsTrigger>
+                  <TabsTrigger value="procedure">
+                    <Trans>Instructions</Trans>
+                  </TabsTrigger>
+                  {/* Notes are kept per job operation — on the batch there is no
+                    one thread to show, so Chat opens from a job. */}
+                  <TabsTrigger value="chat" disabled={scope === "batch"}>
+                    <Trans>Chat</Trans>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            </HStack>
+          </header>
         </div>
-        <Separator className="[grid-area:sep]" />
+
+        {!contextInPane && (
+          <>
+            {renderContextRow("[grid-area:context]")}
+            <Separator className="[grid-area:sep]" />
+          </>
+        )}
 
         <TabsContent
           value="details"
           className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
           <div className="w-full min-w-0">
+            {contextInPane && (
+              <>
+                {renderContextRow("border-b border-border")}
+                <div className="border-b border-border px-4 py-3">{meters}</div>
+              </>
+            )}
             {isCompleting && (
               <div className="px-4 pt-4 lg:px-6">
                 <Card>
@@ -1203,12 +1275,7 @@ export const JobOperation = ({
                         batch={batch}
                         totals={batchMaterialTotals ?? {}}
                         currentMaterials={resolvedMaterials?.materials ?? []}
-                        onIssue={(material) => {
-                          flushSync(() => {
-                            setSelectedMaterial(material);
-                          });
-                          issueModal.onOpen();
-                        }}
+                        onIssue={openIssueModal}
                         workInstructions={batchWorkInstructions}
                         onDownloadFile={downloadFile}
                       />
@@ -1239,7 +1306,10 @@ export const JobOperation = ({
                     </div>
                   </HStack>
                   <div className="flex flex-col shrink-0 items-end">
-                    <Heading size="h2" className="font-sans">
+                    <Heading
+                      size="h2"
+                      className="font-sans max-md:text-base max-md:text-muted-foreground"
+                    >
                       {formatDurationMilliseconds(
                         ((progress.setup ?? 0) +
                           (progress.labor ?? 0) +
@@ -1269,7 +1339,7 @@ export const JobOperation = ({
                 </div>
                 <Separator />
                 <div className="flex items-start p-4 lg:p-6">
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full min-w-0">
+                  <div className="grid gap-4 grid-cols-2 xl:grid-cols-3 w-full min-w-0 max-md:hidden">
                     <Card>
                       <CardHeader className="flex flex-row items-center gap-2 justify-between">
                         <CardTitle>
@@ -1300,7 +1370,7 @@ export const JobOperation = ({
                         </Heading>
                       </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="max-md:col-span-2">
                       <CardHeader className="flex flex-row items-center gap-2 justify-between">
                         <CardTitle>
                           <Trans>Due Date</Trans>
@@ -1371,6 +1441,102 @@ export const JobOperation = ({
                       </CardContent>
                     </Card>
                   </div>
+                  <Card className="md:hidden">
+                    <CardContent className="max-md:rounded-xl max-md:border-0 max-md:py-1">
+                      <CardAttributes className="divide-y divide-border">
+                        <CardAttribute>
+                          <CardAttributeLabel>
+                            <Trans>Completed</Trans>
+                          </CardAttributeLabel>
+                          <CardAttributeValue className="tabular-nums text-2xl font-semibold">
+                            <Trans>
+                              {operation.quantityComplete} of{" "}
+                              {operation.targetQuantity}
+                            </Trans>
+                          </CardAttributeValue>
+                        </CardAttribute>
+                        <CardAttribute>
+                          <CardAttributeLabel>
+                            <Trans>Scrapped</Trans>
+                          </CardAttributeLabel>
+                          <CardAttributeValue className="tabular-nums">
+                            {operation.quantityScrapped}
+                          </CardAttributeValue>
+                        </CardAttribute>
+                        <CardAttribute>
+                          <CardAttributeLabel>
+                            <Trans>Due Date</Trans>
+                          </CardAttributeLabel>
+                          <CardAttributeValue className="flex flex-col items-end gap-1 text-right">
+                            <span className="flex flex-wrap items-baseline justify-end gap-x-1 text-sm">
+                              {operation.jobDueDate ? (
+                                <>
+                                  <span className="text-muted-foreground">
+                                    <DateTime
+                                      value={operation.jobDueDate}
+                                      variant="date"
+                                    />
+                                  </span>
+                                  <span
+                                    aria-hidden
+                                    className="text-muted-foreground"
+                                  >
+                                    ·
+                                  </span>
+                                </>
+                              ) : null}
+                              <span
+                                className={cn(
+                                  "font-medium",
+                                  isOverdue && "text-red-500"
+                                )}
+                              >
+                                {["ASAP", "No Deadline"].includes(
+                                  operation.jobDeadlineType
+                                )
+                                  ? operation.jobDeadlineType
+                                  : operation.jobDueDate
+                                    ? t`Due ${formatRelativeTime(
+                                        convertDateStringToIsoString(
+                                          operation.jobDueDate
+                                        )
+                                      )}`
+                                    : "–"}
+                              </span>
+                            </span>
+                            {operation.operationDueDate &&
+                              operation.operationDueDate.slice(0, 10) !==
+                                operation.jobDueDate?.slice(0, 10) && (
+                                <span className="text-muted-foreground text-sm">
+                                  {t`Operation needed by ${formatDate(
+                                    operation.operationDueDate
+                                  )}`}
+                                </span>
+                              )}
+                            {projectedCompletionDate &&
+                              (isBehindTarget ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="red" className="gap-1">
+                                      <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                      {formatDate(projectedCompletionDate)}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {t`Behind target by ${daysBehindTarget} day(s)`}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                                  <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                  {formatDate(projectedCompletionDate)}
+                                </span>
+                              ))}
+                          </CardAttributeValue>
+                        </CardAttribute>
+                      </CardAttributes>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 <Suspense key={`non-conformance-actions-${operationId}`}>
@@ -1659,16 +1825,11 @@ export const JobOperation = ({
                         <Trans>Materials</Trans>
                       </Heading>
                       <Button
-                        aria-label="Issue Material"
+                        aria-label={t`Issue Material`}
                         leftIcon={<LuGitBranchPlus />}
                         variant="secondary"
                         size="lg"
-                        onClick={() => {
-                          flushSync(() => {
-                            setSelectedMaterial(null);
-                          });
-                          issueModal.onOpen();
-                        }}
+                        onClick={() => openIssueModal(null)}
                       >
                         <Trans>Issue Material</Trans>
                       </Button>
@@ -1678,541 +1839,20 @@ export const JobOperation = ({
                       fallback={<TableSkeleton />}
                     >
                       <Await resolve={materials}>
-                        {(resolvedMaterials) => {
-                          const baseMaterials =
-                            resolvedMaterials?.materials.filter(
-                              (m) => !m.isKitComponent
-                            );
-
-                          const kitMaterialsByParentId =
-                            resolvedMaterials?.materials
-                              .filter((m) => m.isKitComponent ?? false)
-                              .reduce(
-                                (acc, material) => {
-                                  if (material.kitParentId) {
-                                    if (!acc[material.kitParentId]) {
-                                      acc[material.kitParentId] = [];
-                                    }
-                                    acc[material.kitParentId].push(material);
-                                  }
-                                  return acc;
-                                },
-                                {} as Record<string, JobMaterial[]>
-                              );
-
-                          return (
-                            <>
-                              <div className="w-full overflow-hidden rounded-lg border bg-card">
-                                <Table className="w-full text-base">
-                                  <Thead className="bg-muted/40">
-                                    <Tr>
-                                      <Th className="text-sm">
-                                        <Trans>Part</Trans>
-                                      </Th>
-                                      <Th className="text-sm lg:table-cell hidden">
-                                        <Trans>Source</Trans>
-                                      </Th>
-                                      <Th className="text-sm">
-                                        <Trans>Estimated</Trans>
-                                      </Th>
-                                      <Th className="text-sm">
-                                        <Trans>Actual</Trans>
-                                      </Th>
-                                      <Th className="text-right" />
-                                    </Tr>
-                                  </Thead>
-                                  <Tbody className="[&>tr]:border-b [&>tr:last-child]:border-0">
-                                    {baseMaterials.length === 0 ? (
-                                      <Tr>
-                                        <Td
-                                          colSpan={24}
-                                          className="py-8 text-muted-foreground text-center"
-                                        >
-                                          <Trans>No materials</Trans>
-                                        </Td>
-                                      </Tr>
-                                    ) : (
-                                      baseMaterials.map((material) => {
-                                        const isRelatedToOperation =
-                                          material.jobOperationId ===
-                                          operationId;
-
-                                        const someRelatedMaterialIsIssued =
-                                          baseMaterials.some(
-                                            (m) =>
-                                              m.itemReadableIdWithoutRevision ===
-                                                material.itemReadableIdWithoutRevision &&
-                                              ((m.quantityIssued ?? 0) > 0 ||
-                                                (material.quantityIssued ?? 0) >
-                                                  0)
-                                          );
-
-                                        const kittedChildren = material.id
-                                          ? kitMaterialsByParentId[material.id]
-                                          : [];
-
-                                        return (
-                                          <>
-                                            <Tr
-                                              key={`material-${material.id}`}
-                                              className={cn(
-                                                "[&>td]:py-3",
-                                                !isRelatedToOperation &&
-                                                  "opacity-50 hover:opacity-100"
-                                              )}
-                                            >
-                                              <Td className="max-w-[20vw]">
-                                                <HStack
-                                                  spacing={2}
-                                                  className="justify-between min-w-0"
-                                                >
-                                                  <VStack
-                                                    spacing={0}
-                                                    className="min-w-0"
-                                                  >
-                                                    <span className="font-semibold text-base truncate max-w-full">
-                                                      {getItemReadableId(
-                                                        items,
-                                                        material.itemId ?? ""
-                                                      )}
-                                                    </span>
-                                                    <span className="text-muted-foreground text-sm truncate max-w-full">
-                                                      {material.description}
-                                                    </span>
-                                                    <PickedBreakdown
-                                                      materialItemId={
-                                                        material.itemId
-                                                      }
-                                                      pickedByItem={
-                                                        (
-                                                          material as {
-                                                            pickedByItem?: {
-                                                              itemId: string;
-                                                              itemReadableId: string;
-                                                              quantityPicked: number;
-                                                              quantityToPick: number;
-                                                            }[];
-                                                          }
-                                                        ).pickedByItem
-                                                      }
-                                                    />
-                                                  </VStack>
-                                                  {material.requiresBatchTracking ? (
-                                                    <Badge variant="secondary">
-                                                      <TrackingTypeIcon
-                                                        type="Batch"
-                                                        className="shrink-0"
-                                                      />
-                                                    </Badge>
-                                                  ) : material.requiresSerialTracking ? (
-                                                    <Badge variant="secondary">
-                                                      <TrackingTypeIcon
-                                                        type="Serial"
-                                                        className="shrink-0"
-                                                      />
-                                                    </Badge>
-                                                  ) : null}
-                                                  {(
-                                                    material as {
-                                                      hasExpiredConsumed?: boolean;
-                                                    }
-                                                  ).hasExpiredConsumed && (
-                                                    <Badge
-                                                      variant="red"
-                                                      className="gap-1 shrink-0"
-                                                      title="A consumed batch or serial is now past its expiry date."
-                                                    >
-                                                      <LuTriangleAlert className="size-3" />
-                                                      <Trans>
-                                                        Consumed expired
-                                                      </Trans>
-                                                    </Badge>
-                                                  )}
-                                                  <PickedBadge
-                                                    quantityPicked={
-                                                      (
-                                                        material as {
-                                                          quantityPicked?:
-                                                            | number
-                                                            | null;
-                                                        }
-                                                      ).quantityPicked
-                                                    }
-                                                    quantityToPick={
-                                                      (
-                                                        material as {
-                                                          quantityToPick?:
-                                                            | number
-                                                            | null;
-                                                        }
-                                                      ).quantityToPick
-                                                    }
-                                                  />
-                                                </HStack>
-                                              </Td>
-                                              <Td className="hidden lg:table-cell">
-                                                <div className="flex flex-row items-center gap-1">
-                                                  <Badge variant="secondary">
-                                                    <MethodIcon
-                                                      type={
-                                                        material.methodType ??
-                                                        ""
-                                                      }
-                                                      isKit={
-                                                        material.kit ?? false
-                                                      }
-                                                      className="mr-2"
-                                                    />
-                                                    {material.methodType ===
-                                                      "Make to Order" &&
-                                                    material.kit
-                                                      ? t`Kit`
-                                                      : material.methodType}
-                                                  </Badge>
-                                                  <LuArrowLeft
-                                                    className={cn(
-                                                      material.methodType ===
-                                                        "Make to Order"
-                                                        ? "rotate-180"
-                                                        : ""
-                                                    )}
-                                                  />
-                                                  <Badge variant="secondary">
-                                                    <LuGitPullRequest className="size-3 mr-1" />
-                                                    {material.storageUnitName ??
-                                                      (material.methodType ===
-                                                      "Make to Order"
-                                                        ? t`WIP`
-                                                        : t`Default Storage Unit`)}
-                                                  </Badge>
-                                                </div>
-                                              </Td>
-
-                                              <Td>
-                                                {parentIsSerial &&
-                                                (material.requiresBatchTracking ||
-                                                  material.requiresSerialTracking)
-                                                  ? `${
-                                                      material.quantity ??
-                                                      material.estimatedQuantity
-                                                    }/${
-                                                      material.estimatedQuantity ??
-                                                      material.quantity
-                                                    }`
-                                                  : (material.estimatedQuantity ??
-                                                    material.quantity)}
-                                                {isBatched &&
-                                                  material.itemId &&
-                                                  batchMaterialTotals?.[
-                                                    material.itemId
-                                                  ] && (
-                                                    <div className="text-xs text-muted-foreground whitespace-nowrap">
-                                                      <Trans>Batch</Trans>:{" "}
-                                                      {
-                                                        batchMaterialTotals[
-                                                          material.itemId
-                                                        ].required
-                                                      }
-                                                    </div>
-                                                  )}
-                                              </Td>
-                                              <Td>
-                                                {material.methodType ===
-                                                  "Make to Order" &&
-                                                material.requiresBatchTracking ===
-                                                  false &&
-                                                material.requiresSerialTracking ===
-                                                  false ? (
-                                                  <MethodIcon
-                                                    type="Make to Order"
-                                                    isKit={
-                                                      material.kit ?? false
-                                                    }
-                                                  />
-                                                ) : parentIsSerial &&
-                                                  (material.requiresBatchTracking ||
-                                                    material.requiresSerialTracking) ? (
-                                                  `${material.quantityIssued}/${
-                                                    material.quantity ??
-                                                    material.estimatedQuantity
-                                                  }`
-                                                ) : (
-                                                  material.quantityIssued
-                                                )}
-                                                {isBatched &&
-                                                  material.itemId &&
-                                                  batchMaterialTotals?.[
-                                                    material.itemId
-                                                  ] && (
-                                                    <div className="text-xs text-muted-foreground whitespace-nowrap">
-                                                      <Trans>Batch</Trans>:{" "}
-                                                      {
-                                                        batchMaterialTotals[
-                                                          material.itemId
-                                                        ].issued
-                                                      }
-                                                    </div>
-                                                  )}
-                                              </Td>
-                                              <Td className="text-right">
-                                                {material.methodType !==
-                                                  "Make to Order" &&
-                                                  material.requiresBatchTracking ===
-                                                    false &&
-                                                  material.requiresSerialTracking ===
-                                                    false && (
-                                                    <IconButton
-                                                      aria-label="Issue Material"
-                                                      variant="ghost"
-                                                      icon={<LuGitBranchPlus />}
-                                                      className="h-8 w-8"
-                                                      onClick={() => {
-                                                        flushSync(() => {
-                                                          setSelectedMaterial(
-                                                            material
-                                                          );
-                                                        });
-                                                        issueModal.onOpen();
-                                                      }}
-                                                    />
-                                                  )}
-                                                {(material.requiresBatchTracking ||
-                                                  material.requiresSerialTracking) && (
-                                                  <Button
-                                                    className="flex-shrink-0"
-                                                    size="lg"
-                                                    variant={
-                                                      someRelatedMaterialIsIssued ||
-                                                      !isRelatedToOperation
-                                                        ? "secondary"
-                                                        : "primary"
-                                                    }
-                                                    leftIcon={<LuQrCode />}
-                                                    onClick={() => {
-                                                      flushSync(() => {
-                                                        setSelectedMaterial(
-                                                          material
-                                                        );
-                                                      });
-                                                      issueModal.onOpen();
-                                                    }}
-                                                  >
-                                                    <Trans>Issue</Trans>
-                                                  </Button>
-                                                )}
-                                              </Td>
-                                            </Tr>
-
-                                            {kittedChildren &&
-                                              kittedChildren.map(
-                                                (kittedChild, index) => (
-                                                  <Tr
-                                                    key={`kittedChild-${kittedChild.id}`}
-                                                    className={cn(
-                                                      index ===
-                                                        kittedChildren.length -
-                                                          1
-                                                        ? "border-b"
-                                                        : index === 0
-                                                          ? "border-t"
-                                                          : "",
-                                                      !isRelatedToOperation &&
-                                                        "opacity-50 hover:opacity-100"
-                                                    )}
-                                                  >
-                                                    <Td className="pl-10 max-w-[20vw]">
-                                                      <HStack
-                                                        spacing={2}
-                                                        className="justify-between min-w-0"
-                                                      >
-                                                        <VStack
-                                                          spacing={0}
-                                                          className="min-w-0"
-                                                        >
-                                                          <span className="font-semibold truncate max-w-full">
-                                                            {getItemReadableId(
-                                                              items,
-                                                              kittedChild.itemId
-                                                            )}
-                                                          </span>
-                                                          <span className="text-muted-foreground text-xs truncate max-w-full">
-                                                            {
-                                                              kittedChild.description
-                                                            }
-                                                          </span>
-                                                          <PickedBreakdown
-                                                            materialItemId={
-                                                              kittedChild.itemId
-                                                            }
-                                                            pickedByItem={
-                                                              (
-                                                                kittedChild as {
-                                                                  pickedByItem?: {
-                                                                    itemId: string;
-                                                                    itemReadableId: string;
-                                                                    quantityPicked: number;
-                                                                    quantityToPick: number;
-                                                                  }[];
-                                                                }
-                                                              ).pickedByItem
-                                                            }
-                                                          />
-                                                        </VStack>
-                                                        {kittedChild.requiresBatchTracking ? (
-                                                          <Badge variant="secondary">
-                                                            <TrackingTypeIcon
-                                                              type="Batch"
-                                                              className="shrink-0"
-                                                            />
-                                                          </Badge>
-                                                        ) : kittedChild.requiresSerialTracking ? (
-                                                          <Badge variant="secondary">
-                                                            <TrackingTypeIcon
-                                                              type="Serial"
-                                                              className="shrink-0"
-                                                            />
-                                                          </Badge>
-                                                        ) : null}
-                                                        <PickedBadge
-                                                          quantityPicked={
-                                                            (
-                                                              kittedChild as {
-                                                                quantityPicked?:
-                                                                  | number
-                                                                  | null;
-                                                              }
-                                                            ).quantityPicked
-                                                          }
-                                                          quantityToPick={
-                                                            (
-                                                              kittedChild as {
-                                                                quantityToPick?:
-                                                                  | number
-                                                                  | null;
-                                                              }
-                                                            ).quantityToPick
-                                                          }
-                                                        />
-                                                      </HStack>
-                                                    </Td>
-                                                    <Td className="lg:table-cell hidden">
-                                                      <Badge variant="secondary">
-                                                        <MethodIcon
-                                                          type={
-                                                            kittedChild.methodType ??
-                                                            ""
-                                                          }
-                                                          isKit={
-                                                            kittedChild.kit ??
-                                                            false
-                                                          }
-                                                          className="mr-2"
-                                                        />
-                                                        {kittedChild.methodType ===
-                                                          "Make to Order" &&
-                                                        kittedChild.kit
-                                                          ? t`Kit`
-                                                          : kittedChild.methodType}
-                                                      </Badge>
-                                                    </Td>
-
-                                                    <Td>
-                                                      {parentIsSerial &&
-                                                      (kittedChild.requiresBatchTracking ||
-                                                        kittedChild.requiresSerialTracking)
-                                                        ? `${
-                                                            kittedChild.quantity ??
-                                                            kittedChild.estimatedQuantity
-                                                          }/${
-                                                            kittedChild.estimatedQuantity ??
-                                                            kittedChild.quantity
-                                                          }`
-                                                        : (kittedChild.estimatedQuantity ??
-                                                          kittedChild.quantity)}
-                                                    </Td>
-                                                    <Td>
-                                                      {kittedChild.methodType ===
-                                                        "Make to Order" &&
-                                                      kittedChild.requiresBatchTracking ===
-                                                        false &&
-                                                      kittedChild.requiresSerialTracking ===
-                                                        false ? (
-                                                        <MethodIcon
-                                                          type="Make to Order"
-                                                          isKit={
-                                                            kittedChild.kit ??
-                                                            false
-                                                          }
-                                                        />
-                                                      ) : parentIsSerial &&
-                                                        (kittedChild.requiresBatchTracking ||
-                                                          kittedChild.requiresSerialTracking) ? (
-                                                        `${
-                                                          kittedChild.quantityIssued
-                                                        }/${
-                                                          kittedChild.quantity ??
-                                                          kittedChild.estimatedQuantity
-                                                        }`
-                                                      ) : (
-                                                        kittedChild.quantityIssued
-                                                      )}
-                                                    </Td>
-                                                    <Td className="text-right">
-                                                      {kittedChild.methodType !==
-                                                        "Make to Order" &&
-                                                        kittedChild.requiresBatchTracking ===
-                                                          false &&
-                                                        kittedChild.requiresSerialTracking ===
-                                                          false && (
-                                                          <IconButton
-                                                            aria-label="Issue Material"
-                                                            variant="ghost"
-                                                            icon={
-                                                              <LuGitBranchPlus />
-                                                            }
-                                                            className="h-8 w-8"
-                                                            onClick={() => {
-                                                              flushSync(() => {
-                                                                setSelectedMaterial(
-                                                                  kittedChild
-                                                                );
-                                                              });
-                                                              issueModal.onOpen();
-                                                            }}
-                                                          />
-                                                        )}
-                                                      {(kittedChild.requiresBatchTracking ||
-                                                        kittedChild.requiresSerialTracking) && (
-                                                        <IconButton
-                                                          aria-label="Issue Material"
-                                                          variant="secondary"
-                                                          icon={<LuQrCode />}
-                                                          className="h-8 w-8"
-                                                          onClick={() => {
-                                                            flushSync(() => {
-                                                              setSelectedMaterial(
-                                                                kittedChild
-                                                              );
-                                                            });
-                                                            issueModal.onOpen();
-                                                          }}
-                                                        />
-                                                      )}
-                                                    </Td>
-                                                  </Tr>
-                                                )
-                                              )}
-                                          </>
-                                        );
-                                      })
-                                    )}
-                                  </Tbody>
-                                </Table>
-                              </div>
-                              {renderIssueModal(resolvedMaterials)}
-                            </>
-                          );
-                        }}
+                        {(resolvedMaterials) => (
+                          <>
+                            <OperationMaterials
+                              materials={resolvedMaterials?.materials ?? []}
+                              operationId={operation.id}
+                              parentIsSerial={parentIsSerial ?? false}
+                              batchMaterialTotals={
+                                isBatched ? batchMaterialTotals : undefined
+                              }
+                              onIssue={openIssueModal}
+                            />
+                            {renderIssueModal(resolvedMaterials)}
+                          </>
+                        )}
                       </Await>
                     </Suspense>
                   </div>
@@ -2912,7 +2552,9 @@ export const JobOperation = ({
             collapsed={dockCollapsed}
             onCollapsedChange={onDockCollapsedChange}
           >
-            <div className="flex w-full min-w-0 items-center gap-2 lg:flex-col lg:py-2">
+            {/* Phones: the work-type picker on its own row, then the big
+                button with what is running beside it, then Log and More. */}
+            <div className="flex w-full min-w-0 items-center gap-2 lg:flex-col lg:py-2 max-md:flex-wrap max-md:gap-y-2">
               <dl className="hidden w-full gap-3 rounded-lg border bg-card p-3 lg:grid lg:group-data-[collapsed=true]/dock:hidden">
                 <div className="min-w-0">
                   <dt className="text-xs text-muted-foreground">
@@ -2954,78 +2596,93 @@ export const JobOperation = ({
                 operation={displayOperation}
                 value={eventType}
                 onChange={setEventType}
-                className="min-w-0 flex-1 lg:flex-none"
+                className="min-w-0 flex-1 lg:flex-none max-md:basis-full"
               />
 
-              <StartStopButton
-                eventType={eventType as (typeof productionEventType)[number]}
-                job={job}
-                operation={operation}
-                setupProductionEvent={setupProductionEvent}
-                laborProductionEvent={laborProductionEvent}
-                machineProductionEvent={machineProductionEvent}
-                isTrackedActivity={
-                  !isBatched &&
-                  (method?.requiresSerialTracking === true ||
-                    method?.requiresBatchTracking === true)
-                }
-                trackedEntityId={trackedEntityId}
-                batchId={batch?.id}
-              />
-              {/* What the big button will do, or what is running — the dock
-                  only; the rail and the phone bar stay icon-sized. */}
-              <div className="hidden flex-col items-center gap-0.5 text-center lg:flex lg:group-data-[collapsed=true]/dock:hidden">
-                {runningType ? (
-                  <>
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
-                      {workTypeLabels[runningType]}
+              {/* From md the wrapper is invisible to layout. */}
+              <div className="flex flex-col items-center gap-0.5 md:contents max-md:min-w-0 max-md:flex-1 max-md:flex-row max-md:gap-3">
+                <StartStopButton
+                  eventType={eventType as (typeof productionEventType)[number]}
+                  job={job}
+                  operation={operation}
+                  setupProductionEvent={setupProductionEvent}
+                  laborProductionEvent={laborProductionEvent}
+                  machineProductionEvent={machineProductionEvent}
+                  isTrackedActivity={
+                    !isBatched &&
+                    (method?.requiresSerialTracking === true ||
+                      method?.requiresBatchTracking === true)
+                  }
+                  trackedEntityId={trackedEntityId}
+                  batchId={batch?.id}
+                />
+                {/* What the big button will do, or what is running — the dock
+                    only; the rail and the phone bar stay icon-sized. */}
+                <div
+                  className={cn(
+                    "flex flex-col items-center gap-0.5 text-center md:max-lg:hidden lg:group-data-[collapsed=true]/dock:hidden",
+                    // Phones: the caption beside the button, the type over the time.
+                    "max-md:min-w-0 max-md:items-start max-md:gap-0 max-md:text-left max-md:whitespace-nowrap"
+                  )}
+                >
+                  {runningType ? (
+                    <>
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 max-md:leading-tight">
+                        <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                        <span>{workTypeLabels[runningType]}</span>
+                      </span>
+                      <span className="font-mono text-lg tabular-nums max-md:text-base max-md:font-semibold max-md:leading-tight">
+                        {formatDurationMilliseconds(progress[runningType], {
+                          style: "short"
+                        })}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {t`Start ${workTypeLabels[
+                        eventType.toLowerCase() as keyof typeof workTypeLabels
+                      ].toLowerCase()}`}
                     </span>
-                    <span className="font-mono text-lg tabular-nums">
-                      {formatDurationMilliseconds(progress[runningType], {
-                        style: "short"
-                      })}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    {t`Start ${workTypeLabels[
-                      eventType.toLowerCase() as keyof typeof workTypeLabels
-                    ].toLowerCase()}`}
-                  </span>
-                )}
+                  )}
+                </div>
               </div>
               <div className="flex flex-row lg:hidden lg:group-data-[collapsed=true]/dock:flex lg:flex-col items-center gap-2 justify-center">
-                <IconButtonWithTooltip
-                  disabled={
-                    !isBatched &&
-                    parentIsSerial &&
-                    trackedEntities.some(
-                      (entity) =>
-                        entity.id === trackedEntityId &&
-                        `Operation ${operationId}` in
-                          (entity.attributes as TrackedEntityAttributes)
-                    )
-                  }
-                  icon={
-                    isBatched ? (
-                      <LuPackageCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                    ) : (
-                      <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                    )
-                  }
-                  tooltip={isBatched ? t`Complete Batch` : t`Log Completed`}
-                  onClick={
-                    isBatched ? batchCompleteModal.onOpen : completeModal.onOpen
-                  }
-                />
-                <IconButtonWithTooltip
-                  icon={
-                    <LuEllipsisVertical className="text-accent-foreground group-hover:text-accent-foreground/80" />
-                  }
-                  tooltip={t`More Actions`}
-                  onClick={actionsSheet.onOpen}
-                />
+                <div className="flex flex-col items-center gap-0.5">
+                  <IconButtonWithTooltip
+                    disabled={
+                      !isBatched &&
+                      parentIsSerial &&
+                      trackedEntities.some(
+                        (entity) =>
+                          entity.id === trackedEntityId &&
+                          `Operation ${operationId}` in
+                            (entity.attributes as TrackedEntityAttributes)
+                      )
+                    }
+                    icon={
+                      isBatched ? (
+                        <LuPackageCheck className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                      ) : (
+                        <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                      )
+                    }
+                    tooltip={isBatched ? t`Complete Batch` : t`Log Completed`}
+                    onClick={
+                      isBatched
+                        ? batchCompleteModal.onOpen
+                        : completeModal.onOpen
+                    }
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <IconButtonWithTooltip
+                    icon={
+                      <LuEllipsisVertical className="text-accent-foreground group-hover:text-accent-foreground/80" />
+                    }
+                    tooltip={t`More Actions`}
+                    onClick={actionsSheet.onOpen}
+                  />
+                </div>
               </div>
               <div className="hidden w-full flex-col gap-2 lg:flex lg:group-data-[collapsed=true]/dock:hidden">
                 <Button
@@ -3066,92 +2723,8 @@ export const JobOperation = ({
             </div>
           </Controls>
         )}
-        {!["chat"].includes(activeTab) && (
-          <Times className="[grid-area:status]">
-            {/* Labelled meters: two per row on a phone, then as many columns
-                as fit (four across a desktop). */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-x-6 sm:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
-              {(
-                [
-                  {
-                    type: "setup",
-                    label: t`Setup`,
-                    elapsed: progress.setup,
-                    planned: displayOperation.setupDuration
-                  },
-                  {
-                    type: "labor",
-                    label: t`Labor`,
-                    elapsed: progress.labor,
-                    planned: displayOperation.laborDuration
-                  },
-                  {
-                    type: "machine",
-                    label: t`Machine`,
-                    elapsed: progress.machine,
-                    planned: displayOperation.machineDuration
-                  }
-                ] as const
-              )
-                .filter((meter) => meter.planned > 0)
-                .map((meter) => {
-                  // A batch with no planned time anywhere carries a 1ms
-                  // placeholder plan (so ratios never divide by zero). That is
-                  // not a plan: show elapsed time alone over an empty track.
-                  const hasPlan = meter.planned > 1;
-                  const elapsed = formatDurationMilliseconds(meter.elapsed, {
-                    style: "short"
-                  });
-                  return (
-                    <BarProgress
-                      key={meter.type}
-                      label={meter.label}
-                      value={
-                        hasPlan
-                          ? `${elapsed} / ${formatDurationMilliseconds(
-                              meter.planned,
-                              { style: "short" }
-                            )}`
-                          : elapsed
-                      }
-                      gradient
-                      invertGradient
-                      progress={
-                        hasPlan ? (meter.elapsed / meter.planned) * 100 : 0
-                      }
-                      activeClassName={
-                        meter.elapsed > meter.planned
-                          ? "bg-red-500"
-                          : "bg-emerald-500"
-                      }
-                    />
-                  );
-                })}
-              <BarProgress
-                label={isBatched ? t`Batch quantity` : t`Quantity`}
-                value={`${quantityProgress.complete} / ${quantityProgress.target}`}
-                segments={[
-                  {
-                    value: quantityProgress.complete,
-                    className: "bg-emerald-500"
-                  },
-                  {
-                    value: quantityProgress.reworked,
-                    className: "bg-yellow-500"
-                  },
-                  {
-                    value: quantityProgress.scrapped,
-                    className: "bg-red-500"
-                  }
-                ]}
-                max={quantityProgress.target || 1}
-                progress={
-                  (quantityProgress.complete / (quantityProgress.target || 1)) *
-                  100
-                }
-              />
-            </div>
-          </Times>
+        {!["chat"].includes(activeTab) && !contextInPane && (
+          <Times className="[grid-area:status]">{meters}</Times>
         )}
       </Tabs>
       <BottomSheet
@@ -3161,6 +2734,11 @@ export const JobOperation = ({
         }}
       >
         <BottomSheetContent className="max-w-md mx-auto">
+          <BottomSheetHeader className="md:sr-only">
+            <BottomSheetTitle>
+              <Trans>More actions</Trans>
+            </BottomSheetTitle>
+          </BottomSheetHeader>
           <BottomSheetBody>
             <div className="flex flex-col gap-2 pb-2">
               {isBatched && (

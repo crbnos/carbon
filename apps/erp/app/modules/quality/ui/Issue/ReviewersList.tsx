@@ -7,6 +7,7 @@ import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -20,6 +21,7 @@ import {
   ModalOverlay,
   ModalTitle,
   useDisclosure,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -42,6 +44,7 @@ export function ReviewersList({
   isDisabled: boolean;
 }) {
   const disclosure = useDisclosure();
+  const { isPhone } = useViewport();
 
   const { t } = useLingui();
   const fetcher = useAction<typeof reviewAction>({
@@ -54,7 +57,28 @@ export function ReviewersList({
   });
   const submitted = useRef(false);
   if (reviewers.length === 0) {
-    return <NewApprovalRequirement isDisabled={isDisabled} />;
+    if (!isPhone) return <NewApprovalRequirement isDisabled={isDisabled} />;
+    // Phones: always a card. Its header "Add" opens the same modal as the
+    // desktop tile.
+    return (
+      <Card className="w-full" isCollapsible>
+        <HStack className="justify-between w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trans>Approval Requirements</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardAction className="px-0 pr-14">
+            <NewApprovalRequirement isDisabled={isDisabled} trigger="button" />
+          </CardAction>
+        </HStack>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            <Trans>No approval requirements yet.</Trans>
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -65,7 +89,22 @@ export function ReviewersList({
             <Trans>Approval Requirements</Trans>
           </CardTitle>
         </CardHeader>
-        <TaskProgress tasks={reviewers} />
+        {isPhone ? (
+          <HStack spacing={0} className="pr-14">
+            <TaskProgress tasks={reviewers} className="pr-2" />
+            <CardAction className="px-0">
+              <Button
+                variant="secondary"
+                leftIcon={<LuCirclePlus />}
+                onClick={disclosure.onOpen}
+              >
+                <Trans>Add</Trans>
+              </Button>
+            </CardAction>
+          </HStack>
+        ) : (
+          <TaskProgress tasks={reviewers} />
+        )}
       </HStack>
       <CardContent>
         <VStack spacing={3}>
@@ -122,7 +161,7 @@ export function ReviewersList({
               </ModalContent>
             </Modal>
           )}
-          <HStack>
+          <HStack className="max-md:hidden">
             {disclosure.isOpen ? (
               <Button variant="secondary" onClick={disclosure.onClose}>
                 <Trans>Cancel</Trans>
@@ -139,7 +178,14 @@ export function ReviewersList({
   );
 }
 
-function NewApprovalRequirement({ isDisabled }: { isDisabled: boolean }) {
+function NewApprovalRequirement({
+  isDisabled,
+  trigger = "tile"
+}: {
+  isDisabled: boolean;
+  /** `button`: a compact "Add" for a card header (phones) instead of the dashed tile. */
+  trigger?: "tile" | "button";
+}) {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
@@ -178,13 +224,24 @@ function NewApprovalRequirement({ isDisabled }: { isDisabled: boolean }) {
 
   return (
     <>
-      <button
-        className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        onClick={() => setIsOpen(true)}
-        disabled={isDisabled}
-      >
-        <LuCirclePlus size={16} /> <span>Add Approval Requirement</span>
-      </button>
+      {trigger === "button" ? (
+        <Button
+          variant="secondary"
+          leftIcon={<LuCirclePlus />}
+          isDisabled={isDisabled}
+          onClick={() => setIsOpen(true)}
+        >
+          <Trans>Add</Trans>
+        </Button>
+      ) : (
+        <button
+          className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => setIsOpen(true)}
+          disabled={isDisabled}
+        >
+          <LuCirclePlus size={16} /> <span>Add Approval Requirement</span>
+        </button>
+      )}
 
       <Modal
         open={isOpen}

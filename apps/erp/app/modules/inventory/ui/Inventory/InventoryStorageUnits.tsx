@@ -72,13 +72,13 @@ import {
 import ScrapReason from "~/components/Form/ScrapReason";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
 import {
   useCompanyToday,
   useCurrencyDecimals,
   usePermissions,
   usePrinting,
   useQuantityFormatter,
-  useSettings,
   useUser
 } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -104,6 +104,8 @@ type InventoryStorageUnitsProps = {
   } | null;
   trackedEntityExpirations: Record<string, string | null>;
   storageUnits: { value: string; label: string }[];
+  /** The inventory quantities page: phones show a bottom bar. */
+  variant?: "quantity";
 };
 
 const InventoryStorageUnits = ({
@@ -113,10 +115,12 @@ const InventoryStorageUnits = ({
   itemShelfLife,
   trackedEntityExpirations,
   pickMethod,
-  storageUnits
+  storageUnits,
+  variant
 }: InventoryStorageUnitsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const isQuantity = variant === "quantity";
   const adjustmentModal = useDisclosure();
   const ruleViolations = useRuleViolations({
     action: path.to.inventoryItemAdjustment(pickMethod.itemId),
@@ -340,7 +344,6 @@ const InventoryStorageUnits = ({
     permissions.can("update", "accounting") &&
     (serialCosts?.costingMethod === "FIFO" ||
       serialCosts?.costingMethod === "LIFO");
-  const { accountingEnabled } = useSettings();
   const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(company.baseCurrencyCode);
   const companyToday = useCompanyToday();
@@ -569,7 +572,11 @@ const InventoryStorageUnits = ({
                   />
                 </InputGroup>
               )}
-              <Button onClick={() => openAdjustmentModal()}>
+              {/* Quantities page, phones: the action is in the bottom bar. */}
+              <Button
+                className={isQuantity ? "max-md:hidden" : undefined}
+                onClick={() => openAdjustmentModal()}
+              >
                 <Trans>Update Inventory</Trans>
               </Button>
             </HStack>
@@ -683,6 +690,17 @@ const InventoryStorageUnits = ({
           </div>
         </CardContent>
       </Card>
+      {isQuantity ? (
+        <PhoneActionBar>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => openAdjustmentModal()}
+          >
+            <Trans>Update Inventory</Trans>
+          </Button>
+        </PhoneActionBar>
+      ) : null}
       {recostItem?.trackedEntityId && (
         <Modal
           open
@@ -712,18 +730,12 @@ const InventoryStorageUnits = ({
                 <Hidden name="trackedEntityId" />
                 <VStack spacing={4}>
                   <p className="text-sm text-muted-foreground">
-                    {accountingEnabled ? (
-                      <Trans>
-                        Sets what this unit is carried at in inventory. The
-                        difference is booked between inventory and the account
-                        the cost was spent from: Retained Earnings for an
-                        earlier year, or this year's labor or material expense.
-                      </Trans>
-                    ) : (
-                      <Trans>
-                        Sets what this unit is carried at in inventory.
-                      </Trans>
-                    )}
+                    <Trans>
+                      Sets what this unit is carried at in inventory. The
+                      difference is booked between inventory and the account the
+                      cost was spent from: Retained Earnings for an earlier
+                      year, or this year's labor or material expense.
+                    </Trans>
                   </p>
                   <NumberInput
                     name="unitCost"
@@ -734,9 +746,7 @@ const InventoryStorageUnits = ({
                       currencyDecimals
                     )}
                   />
-                  {accountingEnabled && (
-                    <Account name="offsetAccountId" label={t`Offset Account`} />
-                  )}
+                  <Account name="offsetAccountId" label={t`Offset Account`} />
                   <DatePicker name="postingDate" label={t`Posting Date`} />
                 </VStack>
               </ModalBody>

@@ -29,6 +29,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { useMesBottomBar } from "~/components/MesBottomBar";
 import type { productionEventType } from "~/services/models";
 import { productionEventValidator } from "~/services/models";
 import type {
@@ -54,10 +55,13 @@ export function Controls({
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
 }) {
+  const bottomBarRef = useMesBottomBar();
   const { t } = useLingui();
   return (
     <aside
       data-collapsed={collapsed}
+      ref={bottomBarRef}
+      data-mes-bottom-bar=""
       className={cn(
         "group/dock flex min-h-0 min-w-0 items-center gap-2 border-t bg-background/95 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/60",
         "lg:w-[var(--controls-width)] lg:flex-col lg:items-stretch lg:overflow-y-auto lg:overflow-x-hidden lg:border-t-0 lg:border-l lg:p-2 lg:transition-[width] lg:duration-200 lg:data-[collapsed=true]:w-[76px]",
@@ -95,7 +99,7 @@ export function Times({
     <TooltipProvider>
       <div
         className={cn(
-          "min-w-0 border-t bg-background/95 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6",
+          "min-w-0 border-t bg-background/95 px-4 py-2.5 max-md:py-1.5 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6",
           className
         )}
       >
@@ -112,7 +116,7 @@ export const ButtonWithTooltip = forwardRef<
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button ref={ref} {...props}>
+        <button ref={ref} aria-label={tooltip} {...props}>
           {children}
         </button>
       </TooltipTrigger>
@@ -165,6 +169,7 @@ export function WorkTypeToggle({
   onChange: (type: string) => void;
   className?: string;
 }) {
+  const { t } = useLingui();
   const count = useMemo(() => {
     let count = 0;
     if (operation.setupDuration > 0) {
@@ -192,6 +197,8 @@ export function WorkTypeToggle({
       className={cn(
         "grid w-full lg:group-data-[collapsed=true]/dock:grid-cols-1",
         count <= 1 && "grid-cols-1",
+        // Phones: one type needs no picker; the caption names it.
+        count <= 1 && "max-md:hidden",
         count === 2 && "grid-cols-2 lg:py-2",
         count === 3 && "grid-cols-3 lg:py-2",
         className
@@ -199,49 +206,49 @@ export function WorkTypeToggle({
     >
       {operation.setupDuration > 0 && (
         <ToggleGroupItem
-          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full"
+          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Setup"
           size="lg"
-          aria-label="Toggle setup"
+          aria-label={t`Toggle setup`}
         >
-          <LuTimer className="size-6 pt-1" />
-          <span className="text-xxs lg:group-data-[collapsed=true]/dock:sr-only">
+          <LuTimer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
+          <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Setup</Trans>
           </span>
           {active.setup && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
       {operation.laborDuration > 0 && (
         <ToggleGroupItem
-          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full"
+          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Labor"
           size="lg"
-          aria-label="Toggle labor"
+          aria-label={t`Toggle labor`}
         >
-          <LuHardHat className="size-6 pt-1" />
-          <span className="text-xxs lg:group-data-[collapsed=true]/dock:sr-only">
+          <LuHardHat className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
+          <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Labor</Trans>
           </span>
           {active.labor && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}
       {operation.machineDuration > 0 && (
         <ToggleGroupItem
-          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full"
+          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Machine"
           size="lg"
-          aria-label="Toggle machine"
+          aria-label={t`Toggle machine`}
         >
-          <LuHammer className="size-6 pt-1" />
-          <span className="text-xxs lg:group-data-[collapsed=true]/dock:sr-only">
+          <LuHammer className="size-6 pt-1 max-md:size-4 max-md:pt-0" />
+          <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Machine</Trans>
           </span>
           {active.machine && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}
         </ToggleGroupItem>
       )}

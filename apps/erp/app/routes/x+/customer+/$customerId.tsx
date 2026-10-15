@@ -72,9 +72,12 @@ export default function CustomerRoute() {
     <>
       <CustomerHeader />
       <div
-        className={cn("grid grid-cols-1 h-full w-full gap-4", {
-          "md:grid-cols-[1fr_4fr]": isEmployee
-        })}
+        className={cn(
+          "grid grid-cols-1 h-full w-full gap-4 max-md:h-auto max-md:gap-0",
+          {
+            "md:grid-cols-[1fr_4fr]": isEmployee
+          }
+        )}
       >
         {isEmployee && <CustomerSidebar />}
         <RecordOutlet />

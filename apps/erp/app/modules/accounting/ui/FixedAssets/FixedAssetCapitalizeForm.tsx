@@ -44,8 +44,6 @@ type FixedAssetCapitalizeFormProps = {
   // The unit's carrying cost — what the transfer will book. null when it
   // could not be read; the server function still decides on submit.
   cost: number | null;
-  // Whether an entered cost posts a journal, and so needs an offset account.
-  accountingEnabled: boolean;
   onClose: () => void;
 };
 
@@ -55,7 +53,6 @@ const FixedAssetCapitalizeForm = ({
   item,
   serialNumber,
   cost,
-  accountingEnabled,
   onClose
 }: FixedAssetCapitalizeFormProps) => {
   const { t } = useLingui();
@@ -125,15 +122,13 @@ const FixedAssetCapitalizeForm = ({
                           Someone who can update accounting has to enter what it
                           cost to make before it can be capitalized.
                         </Trans>
-                      ) : accountingEnabled ? (
+                      ) : (
                         <Trans>
                           Enter what it cost to make. The value is booked to the
                           asset from the account it was spent from: Retained
                           Earnings for an earlier year, or this year's labor or
                           material expense.
                         </Trans>
-                      ) : (
-                        <Trans>Enter what it cost to make.</Trans>
                       )}
                     </AlertDescription>
                   </Alert>
@@ -157,12 +152,7 @@ const FixedAssetCapitalizeForm = ({
                         currencyDecimals
                       )}
                     />
-                    {accountingEnabled && (
-                      <Account
-                        name="offsetAccountId"
-                        label={t`Offset Account`}
-                      />
-                    )}
+                    <Account name="offsetAccountId" label={t`Offset Account`} />
                   </>
                 )}
                 <Combobox

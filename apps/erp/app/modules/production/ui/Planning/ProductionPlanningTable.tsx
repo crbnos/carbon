@@ -505,6 +505,7 @@ const ProductionPlanningTable = ({
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -571,9 +572,15 @@ const ProductionPlanningTable = ({
         }
       },
       ...shared.periods,
-      shared.reorderPolicy,
+      {
+        ...shared.reorderPolicy,
+        meta: { ...shared.reorderPolicy.meta, mobile: "P2" }
+      },
       shared.unitOfMeasure,
-      shared.onHand,
+      {
+        ...shared.onHand,
+        meta: { ...shared.onHand.meta, mobile: "P3", mobileLabel: true }
+      },
       shared.firstNegativeDate,
       shared.latestOrderDate,
       shared.timeFence,
@@ -629,6 +636,9 @@ const ProductionPlanningTable = ({
               </Button>
             </div>
           );
+        },
+        meta: {
+          mobile: "action"
         }
       }
     ];
@@ -752,7 +762,11 @@ const ProductionPlanningTable = ({
                 window.location.href = getLocationPath(selected);
               }}
             />
-            <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
+            <mrpFetcher.Form
+              method="post"
+              action={path.to.api.mrp(locationId)}
+              className="max-md:hidden"
+            >
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -768,7 +782,24 @@ const ProductionPlanningTable = ({
                 <TooltipContent>{mrpScheduleDescription}</TooltipContent>
               </Tooltip>
             </mrpFetcher.Form>
+            <p className="basis-full text-xs text-muted-foreground md:hidden">
+              {mrpScheduleDescription}
+            </p>
           </div>
+        }
+        mobileMenuItems={
+          <DropdownMenuItem
+            disabled={mrpFetcher.state !== "idle"}
+            onSelect={() =>
+              mrpFetcher.submit(
+                {},
+                { method: "post", action: path.to.api.mrp(locationId) }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCirclePlay />} />
+            <Trans>Recalculate</Trans>
+          </DropdownMenuItem>
         }
         renderActions={renderActions}
         renderExpandedRow={renderExpandedRow}

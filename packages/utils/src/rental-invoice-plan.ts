@@ -24,6 +24,8 @@ export type PlannableLine<T> = {
   item: T;
   lineType: "Rent" | "Charge" | "Purchase Option";
   isAdjustment: boolean;
+  /** A Charge drafted on its own held invoice instead of with the rent. */
+  invoiceSeparately: boolean;
   /** Readable id of a voided invoice this row was previously billed on, else null. */
   voidedInvoiceReadableId: string | null;
 };
@@ -37,9 +39,12 @@ export type PlannedInvoice<T> = {
 /**
  * Splits one agreement's due lines into the invoices to draft.
  * - Draft Only → one combined invoice, no hold (nothing is automated).
- * - Otherwise → a rent invoice and a charges invoice (Charge + Purchase
- *   Option, always held: a person confirms damage and buy-outs).
+ * - Otherwise → a rent invoice, unheld, carrying the rent and every Charge
+ *   (alone when no rent is due), and a charges invoice, always held, for
+ *   the Charges marked `invoiceSeparately` and every Purchase Option — a
+ *   person confirms damage and buy-outs.
  * Rent hold precedence: re-bill of a voided invoice > early-return adjustment.
+ * The re-bill check covers every line of the rent invoice, charges included.
  * Empty invoices are omitted. Line order inside each invoice is the input order.
  */
 export function planRentalInvoices<T>(
@@ -54,8 +59,10 @@ export function planRentalInvoices<T>(
     ];
   }
 
-  const rent = lines.filter((l) => l.lineType === "Rent");
-  const charges = lines.filter((l) => l.lineType !== "Rent");
+  const withRent = (l: PlannableLine<T>) =>
+    l.lineType === "Rent" || (l.lineType === "Charge" && !l.invoiceSeparately);
+  const rent = lines.filter(withRent);
+  const charges = lines.filter((l) => !withRent(l));
   const planned: PlannedInvoice<T>[] = [];
 
   if (rent.length > 0) {

@@ -56,6 +56,7 @@ const TrialBalanceTable = memo(
           ),
           size: 100,
           meta: {
+            mobile: "P1",
             icon: <LuHash />
           }
         },
@@ -153,6 +154,7 @@ const TrialBalanceTable = memo(
         data={data}
         columns={columns}
         count={count}
+        mobileLayout="table"
         withSimpleSorting={false}
         title={t`Trial Balance`}
       />

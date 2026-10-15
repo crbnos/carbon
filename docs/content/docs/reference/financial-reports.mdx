@@ -5,7 +5,7 @@ description: "The Balance Sheet, Income Statement, and Trial Balance built from 
 
 Three reports read the posted [general ledger](/docs/reference/accounting). The **Balance Sheet** shows cumulative assets, liabilities, and equity at each selected period end. The **Income Statement** shows revenue and expense activity by period. The **Trial Balance** shows beginning and ending balances plus net debit or credit movement for one date range. All three use the same balance engine.
 
-The reports are under Accounting and require `accounting` view permission. They contain data only after **accounting enabled** is turned on. When accounting is disabled, operations do not create journals, so report balances remain zero.
+The reports are under Accounting and require `accounting` view permission. They are available after the company [sets up accounting](/docs/reference/accounting#setting-up-accounting). Before that, every posting writes a *Provisional* journal, and the reports count only Posted and Reversed journals.
 
 ## The three statements
 
@@ -86,10 +86,10 @@ The account ledger drawer (the drill-down you get by clicking an account on any 
 The financial reports (Balance Sheet, Income Statement, Trial Balance) rarely throw string errors; the common problems are wrong-looking numbers with a precondition cause.
 
 ### "Why are all my numbers zero"
-The company's **accounting enabled** setting is off, so no journal entries have ever been written. Reports read the posted general ledger, and there is nothing to read. Turn accounting on in company settings; balances accrue from postings made after that point. A brand-new company with accounting on but no posted documents also reads zero until the first shipment, invoice, receipt, or journal posts.
+The company has not set up accounting, so every journal is Provisional and the reports count none of them. Set up accounting (Settings → Accounting → **Set up accounting**): journals dated on or after the cutover date become Posted, and the opening journal carries the balances at the cutover. A company with accounting set up but no posted documents also reads zero until the first shipment, invoice, receipt, or journal posts.
 
 ### "Why do my numbers look too low / an entry is missing"
-Balances exclude **Draft** journals. An entry that is still Draft in the Journal Entries list does not move any report until it is posted. Post it (or check its status) and the figure updates. Reversed journals *do* count, as their offsetting entry.
+Balances count only **Posted** and **Reversed** journals. An entry that is still Draft in the Journal Entries list does not move any report until it is posted. Post it (or check its status) and the figure updates. Reversed journals *do* count, as their offsetting entry. *Provisional* journals (before the cutover) and *Before cutover* journals (replaced by the opening journal) never count.
 
 ### "Why is my Balance Sheet out of balance / Assets ≠ Liabilities + Equity"
 The Balance Sheet appends a computed **"Net Income"** equity line that carries undistributed Revenue-minus-Expense into equity. If a figure still looks off, it is almost always a date-selection issue (a range that ends before some postings) or an account created with the wrong class or `incomeBalance` marker (for example a Revenue account flagged Balance Sheet), which misroutes it in the sign-aware roll-up. Check the account's class and Balance Sheet vs Income Statement setting in the chart of accounts.
@@ -101,7 +101,7 @@ There isn't one. The core statements aggregate every posting on an account regar
 Each column is an as-of snapshot that is cumulative through that period's end. The report uses the selected start and end dates to choose which monthly, quarterly, or yearly period ends to display.
 
 ### Preconditions to check first
-- **accounting enabled** must be on (off by default) or every balance is zero.
+- Accounting must be set up (the company has a cutover date), or every balance is zero.
 - The report window is by **posting date**, independent of accounting-period close status; closing a period does not hide its postings from reports.
 - The signed-in user needs the `accounting` view permission to open any of the three reports.
 </AgentContext>

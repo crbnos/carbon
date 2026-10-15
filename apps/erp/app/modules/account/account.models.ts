@@ -7,10 +7,33 @@ import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+// Shared with the MES and the starter, which open the same settings modal.
+export {
+  type AccountSettingsTab,
+  accountProfileValidator,
+  accountSettingsTabs,
+  isAccountSettingsTab
+} from "@carbon/account";
+
 export const notificationPreferenceValidator = z.object({
   topic: z.nativeEnum(NotificationTopic),
   channel: z.enum(["email", "slack"]),
   enabled: z.enum(["true", "false"])
+});
+
+// The browser's PushSubscription.toJSON(), plus the endpoint it replaces when
+// the service worker re-subscribes after a pushsubscriptionchange.
+export const pushSubscriptionValidator = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1)
+  }),
+  oldEndpoint: z.string().url().optional()
+});
+
+export const pushSubscriptionEndpointValidator = z.object({
+  endpoint: z.string().url()
 });
 
 export const onboardingUserValidator = z.object({
@@ -18,13 +41,6 @@ export const onboardingUserValidator = z.object({
   lastName: z.string().min(1, { message: "Last name is required" }),
   // about: zfd.text(z.string().optional()),
   next: z.string().min(1, { message: "Next is required" })
-});
-
-export const accountProfileValidator = z.object({
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  about: z.string(),
-  phone: zfd.text(z.string().optional())
 });
 
 export const accountLanguageValidator = z.object({

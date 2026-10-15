@@ -127,6 +127,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuClipboardList />
         }
       },
@@ -254,6 +255,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
 
   return (
     <Table<JobOperation>
+      mobileLayout="table"
       compact
       count={count}
       columns={columns}

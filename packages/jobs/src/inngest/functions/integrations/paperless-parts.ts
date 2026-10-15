@@ -281,6 +281,7 @@ export const paperlessPartsFunction = inngest.createFunction(
           customerId: quoteCustomerId,
           customerContactId: quoteCustomerContactId,
           quoteId: quoteReadableId,
+          locationId: quoteLocationId,
           status: "Draft" as const,
           currencyCode: company.data.baseCurrencyCode,
           createdBy: quoteCreatedBy,

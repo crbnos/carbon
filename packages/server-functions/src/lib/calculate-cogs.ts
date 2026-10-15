@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
-import type { Transaction } from "kysely";
-import { orderLayersForConsumption } from "./cost-layer-order";
+import { isCostLayer, relieveLayers } from "@carbon/database/cost-relief";
+import { sql, type Transaction } from "kysely";
 
 export interface CostLayer {
   costLedgerId: string;
@@ -31,7 +31,7 @@ export async function calculateCOGS(
     companyId: string;
     // The serial units leaving, when the caller knows them: each is relieved
     // from the layer booked for it (specific identification) before the
-    // FIFO / LIFO layers. See cost-layer-order.ts.
+    // FIFO / LIFO layers (`orderLayersForConsumption`).
     trackedEntityIds?: readonly string[];
   }
 ): Promise<COGSResult> {
@@ -65,112 +65,89 @@ export async function calculateCOGS(
 
     case "FIFO":
     case "LIFO": {
-      const orderDirection = costingMethod === "FIFO" ? "asc" : "desc";
-
-      const orderedLayers = await trx
+      // The item's open layers, oldest first, and their open adjustment
+      // children. Locked for this transaction: two concurrent consumers
+      // would otherwise both read the same remainingQuantity and consume the
+      // layer twice (lost update).
+      const openLayers = trx
         .selectFrom("costLedger")
-        .selectAll()
         .where("itemId", "=", itemId)
         .where("companyId", "=", companyId)
         .where("remainingQuantity", ">", 0)
-        // adjustment child rows are consumed with their parent, not as layers
-        .where("adjustment", "=", false)
-        .where("appliesToCostLedgerId", "is", null)
-        // 'Purchase Order' rows are planning/cost-history artifacts, not layers
-        .where((eb) =>
-          eb.or([
-            eb("documentType", "is", null),
-            eb("documentType", "!=", "Purchase Order")
-          ])
-        )
-        .orderBy("postingDate", orderDirection)
-        .orderBy("createdAt", orderDirection)
-        // Lock the layers for this transaction — two concurrent consumers
-        // would otherwise both read the same remainingQuantity and consume
-        // the layer twice (lost update).
+        .where(isCostLayer);
+      const layers = await openLayers
+        .select([
+          "id",
+          "quantity",
+          "cost",
+          "remainingQuantity",
+          "trackedEntityId"
+        ])
+        .orderBy("postingDate", "asc")
+        .orderBy("createdAt", "asc")
         .forUpdate()
         .execute();
-      const layers = orderLayersForConsumption(orderedLayers, trackedEntityIds);
+      const children = await trx
+        .selectFrom("costLedger")
+        .select([
+          "id",
+          "appliesToCostLedgerId",
+          "quantity",
+          "cost",
+          "remainingQuantity"
+        ])
+        .where("companyId", "=", companyId)
+        .where("appliesToCostLedgerId", "in", openLayers.select("id"))
+        .where("remainingQuantity", ">", 0)
+        .orderBy("createdAt", "asc")
+        .forUpdate()
+        .execute();
+      const childrenByLayer = Map.groupBy(
+        children,
+        (child) => child.appliesToCostLedgerId
+      );
 
-      let remainingToConsume = quantity;
-      let totalCost = 0;
-      const layersConsumed: CostLayer[] = [];
+      const relief = relieveLayers(
+        layers.map((layer) => ({
+          id: layer.id,
+          quantity: Number(layer.quantity),
+          cost: Number(layer.cost),
+          remainingQuantity: Number(layer.remainingQuantity),
+          trackedEntityId: layer.trackedEntityId,
+          children: (childrenByLayer.get(layer.id) ?? []).map((child) => ({
+            id: child.id,
+            quantity: Number(child.quantity),
+            cost: Number(child.cost),
+            remainingQuantity: Number(child.remainingQuantity)
+          }))
+        })),
+        costingMethod,
+        { quantity, trackedEntityIds: trackedEntityIds ?? [] },
+        // Negative inventory: a quantity no layer covers.
+        Number(itemCost.unitCost ?? 0)
+      );
 
-      for (const layer of layers) {
-        if (remainingToConsume <= 0) break;
-
-        const layerRemaining = Number(layer.remainingQuantity);
-        const layerUnitCost =
-          Number(layer.quantity) > 0
-            ? Number(layer.cost) / Number(layer.quantity)
-            : 0;
-
-        const quantityFromLayer = Math.min(remainingToConsume, layerRemaining);
-        const costFromLayer = quantityFromLayer * layerUnitCost;
-
-        totalCost += costFromLayer;
-        remainingToConsume -= quantityFromLayer;
-
-        layersConsumed.push({
-          costLedgerId: layer.id,
-          quantityConsumed: quantityFromLayer,
-          unitCost: layerUnitCost
-        });
-
-        await trx
-          .updateTable("costLedger")
-          .set({
-            remainingQuantity: layerRemaining - quantityFromLayer
-          })
-          .where("id", "=", layer.id)
-          .where("companyId", "=", companyId)
-          .execute();
-
-        // Consume the layer's cost-adjustment children (invoice-vs-receipt
-        // price corrections) alongside the parent: each adjusted unit carries
-        // a per-unit bump of child.cost / child.quantity.
-        const children = await trx
-          .selectFrom("costLedger")
-          .selectAll()
-          .where("appliesToCostLedgerId", "=", layer.id)
-          .where("companyId", "=", companyId)
-          .where("remainingQuantity", ">", 0)
-          .orderBy("createdAt", "asc")
-          .forUpdate()
-          .execute();
-
-        let unappliedQuantity = quantityFromLayer;
-        for (const child of children) {
-          if (unappliedQuantity <= 0) break;
-          const childQty = Number(child.remainingQuantity);
-          const perUnitBump =
-            Number(child.quantity) > 0
-              ? Number(child.cost) / Number(child.quantity)
-              : 0;
-          const applyQty = Math.min(childQty, unappliedQuantity);
-          totalCost += applyQty * perUnitBump;
-          unappliedQuantity -= applyQty;
-          await trx
-            .updateTable("costLedger")
-            .set({ remainingQuantity: childQty - applyQty })
-            .where("id", "=", child.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+      if (relief.remaining.size > 0) {
+        await sql`
+          UPDATE "costLedger" AS c
+          SET "remainingQuantity" = v."remaining"
+          FROM (VALUES ${sql.join(
+            [...relief.remaining].map(
+              ([id, remaining]) => sql`(${id}, ${remaining}::numeric)`
+            )
+          )}) AS v("id", "remaining")
+          WHERE c."id" = v."id" AND c."companyId" = ${companyId}
+        `.execute(trx);
       }
-
-      // Fallback: insufficient layers (negative inventory scenario)
-      if (remainingToConsume > 0) {
-        const fallbackUnitCost = Number(itemCost.unitCost ?? 0);
-        totalCost += remainingToConsume * fallbackUnitCost;
-      }
-
-      const effectiveUnitCost = quantity > 0 ? totalCost / quantity : 0;
 
       return {
-        unitCost: effectiveUnitCost,
-        totalCost,
-        layersConsumed
+        unitCost: quantity > 0 ? relief.totalCost / quantity : 0,
+        totalCost: relief.totalCost,
+        layersConsumed: relief.layersConsumed.map((layer) => ({
+          costLedgerId: layer.layerId,
+          quantityConsumed: layer.quantity,
+          unitCost: layer.unitCost
+        }))
       };
     }
 

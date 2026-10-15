@@ -24,7 +24,7 @@ export default function AppIndexRoute() {
   );
 
   return (
-    <div className="p-8 w-full h-full bg-muted">
+    <div className="p-8 w-full h-full bg-card">
       <Heading size="h3">Hello, {user.firstName}</Heading>
       <Subheading>{formatter.format(date)}</Subheading>
       <Hr />

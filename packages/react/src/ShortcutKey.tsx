@@ -72,7 +72,14 @@ export const ShortcutKey = ({
   );
 
   return (
-    <span className={cn(shortcutKeyVariants[variant], className)}>
+    <span
+      className={cn(
+        shortcutKeyVariants[variant],
+        // Phones have no keyboard shortcuts to hint at.
+        "max-md:hidden",
+        className
+      )}
+    >
       <span className="sr-only">{readableShortcut}</span>
       <span aria-hidden="true" className="contents">
         {modifiers.map((k) => (

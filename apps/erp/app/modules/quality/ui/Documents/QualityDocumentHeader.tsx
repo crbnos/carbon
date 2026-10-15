@@ -2,46 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ApprovalDecision } from "@carbon/ee/approvals";
+import type {
+  ApprovalDecision,
+  DocumentApprovalState
+} from "@carbon/ee/approvals";
 import {
   Badge,
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useState } from "react";
-import {
-  LuCheckCheck,
-  LuClipboardCheck,
-  LuEllipsisVertical,
-  LuPanelRight,
-  LuTrash,
-  LuX
-} from "react-icons/lu";
+import { LuCheckCheck, LuClipboardCheck, LuTrash, LuX } from "react-icons/lu";
 import { Await, useFetcher, useParams } from "react-router";
 import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
+import ApprovalDecisionModal from "~/components/Modals/ApprovalDecision";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";
-import QualityDocumentApprovalModal from "./QualityDocumentApprovalModal";
 import QualityDocumentForm from "./QualityDocumentForm";
 import QualityDocumentStatus from "./QualityDocumentStatus";
 
@@ -52,12 +41,9 @@ const QualityDocumentHeader = () => {
   const routeData = useRouteData<{
     document: QualityDocument;
     versions: PostgrestResponse<QualityDocument>;
-    approvalRequest: { id: string } | null;
-    canApprove: boolean;
-    canReopen: boolean;
-    canDelete: boolean;
-    isApprovalRequired: boolean;
+    approval: DocumentApprovalState | null;
   }>(path.to.qualityDocument(id));
+  const user = useUser();
 
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -80,11 +66,14 @@ const QualityDocumentHeader = () => {
   const isDraft = status === "Draft";
   const isArchived = status === "Archived";
   const canActivate = isDraft || isArchived;
-  const approvalRequestId = routeData?.approvalRequest?.id;
+  const approval = routeData?.approval;
+  const approvalRequestId = approval?.pendingRequestId;
   const hasApprovalRequest = !!approvalRequestId;
-  const canApprove = routeData?.canApprove ?? false;
-  const canDelete = routeData?.canDelete ?? true;
-  const isApprovalRequired = routeData?.isApprovalRequired ?? false;
+  const canApprove = approval?.canApprove ?? false;
+  // While a request is pending only its requester may delete the document.
+  const canDelete =
+    !hasApprovalRequest || approval?.pendingRequestedBy === user.id;
+  const isApprovalRequired = approval?.isRequired ?? false;
 
   const statusIdle = statusFetcher.state === "idle";
   const submitLoading =
@@ -121,126 +110,133 @@ const QualityDocumentHeader = () => {
     newVersionDisclosure.onClose();
   }, [id]);
 
+  const versionBadge = (
+    <Badge variant="outline">V{routeData?.document?.version}</Badge>
+  );
+  const statusBadge = (
+    <QualityDocumentStatus status={routeData?.document?.status} />
+  );
+  const menuItems = (
+    <DropdownMenuItem
+      shortcut={MENU_ITEM_SHORTCUTS.delete}
+      disabled={
+        !permissions.can("delete", "quality") ||
+        !permissions.is("employee") ||
+        (canActivate && hasApprovalRequest && !canDelete)
+      }
+      destructive
+      onClick={deleteDisclosure.onOpen}
+    >
+      <DropdownMenuIcon icon={<LuTrash />} />
+      <Trans>Delete Document</Trans>
+    </DropdownMenuItem>
+  );
+
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-      <VStack spacing={0} className="flex-grow">
-        <HStack>
-          <Heading size="h4" className="flex items-center gap-2">
-            <span>{displayName}</span>
-            <Badge variant="outline">V{routeData?.document?.version}</Badge>
-            <QualityDocumentStatus status={routeData?.document?.status} />
-          </Heading>
-          <Copy text={routeData?.document?.name ?? ""} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.delete}
-                disabled={
-                  !permissions.can("delete", "quality") ||
-                  !permissions.is("employee") ||
-                  (canActivate && hasApprovalRequest && !canDelete)
-                }
-                destructive
-                onClick={deleteDisclosure.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete Document</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </HStack>
-      </VStack>
-      <div className="flex flex-shrink-0 gap-1 items-center justify-end">
-        {canActivate && !hasApprovalRequest && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <Button
-                  leftIcon={
-                    isApprovalRequired ? <LuClipboardCheck /> : <LuCheckCheck />
-                  }
-                  variant="primary"
-                  isLoading={submitLoading}
-                  isDisabled={
-                    !permissions.can("update", "quality") ||
-                    !permissions.is("employee") ||
-                    !statusIdle
-                  }
-                  onClick={submitForActivation}
-                >
-                  {submitButtonLabel}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{submitButtonTooltip}</TooltipContent>
-          </Tooltip>
-        )}
-        {canActivate && hasApprovalRequest && (
+    <>
+      <RecordHeader
+        title={displayName}
+        copyValue={routeData?.document?.name ?? ""}
+        menu={menuItems}
+        status={
           <>
-            <Button
-              leftIcon={<LuCheckCheck />}
-              variant="primary"
-              isDisabled={!canApprove}
-              onClick={() => setApprovalDecision("Approved")}
-            >
-              <Trans>Approve</Trans>
-            </Button>
-            <Button
-              leftIcon={<LuX />}
-              variant="destructive"
-              isDisabled={!canApprove}
-              onClick={() => setApprovalDecision("Rejected")}
-            >
-              <Trans>Reject</Trans>
-            </Button>
+            {versionBadge}
+            {statusBadge}
           </>
-        )}
-        <Suspense fallback={null}>
-          <Await resolve={routeData?.versions}>
-            {(versions) => {
-              const allVersions =
-                versions?.data ??
-                (routeData?.document ? [routeData.document] : []);
-              return (
-                <VersionMenu
-                  versions={allVersions}
-                  currentVersionId={id}
-                  getKey={(v) => v.id}
-                  getHref={(v) => path.to.qualityDocument(v.id)}
-                  renderLabel={(v) => (
-                    <>
-                      <Badge variant="outline">V{v.version}</Badge>
-                      <span>{v.name}</span>
-                    </>
-                  )}
-                  renderStatus={(v) => (
-                    <QualityDocumentStatus status={v.status} />
-                  )}
-                  onNewVersion={
-                    permissions.can("create", "quality")
-                      ? newVersionDisclosure.onOpen
-                      : undefined
-                  }
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-        <IconButton
-          aria-label={t`Toggle Properties`}
-          icon={<LuPanelRight />}
-          onClick={toggleProperties}
-          variant="ghost"
-        />
-      </div>
+        }
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {canActivate && !hasApprovalRequest && (
+              <RecordAction slot="primary">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button
+                        leftIcon={
+                          isApprovalRequired ? (
+                            <LuClipboardCheck />
+                          ) : (
+                            <LuCheckCheck />
+                          )
+                        }
+                        variant="primary"
+                        isLoading={submitLoading}
+                        isDisabled={
+                          !permissions.can("update", "quality") ||
+                          !permissions.is("employee") ||
+                          !statusIdle
+                        }
+                        onClick={submitForActivation}
+                      >
+                        {submitButtonLabel}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{submitButtonTooltip}</TooltipContent>
+                </Tooltip>
+              </RecordAction>
+            )}
+            {canActivate && hasApprovalRequest && (
+              <>
+                <RecordAction slot="primary">
+                  <Button
+                    leftIcon={<LuCheckCheck />}
+                    variant="primary"
+                    isDisabled={!canApprove}
+                    onClick={() => setApprovalDecision("Approved")}
+                  >
+                    <Trans>Approve</Trans>
+                  </Button>
+                </RecordAction>
+                <RecordAction slot="secondary">
+                  <Button
+                    leftIcon={<LuX />}
+                    variant="destructive"
+                    isDisabled={!canApprove}
+                    onClick={() => setApprovalDecision("Rejected")}
+                  >
+                    <Trans>Reject</Trans>
+                  </Button>
+                </RecordAction>
+              </>
+            )}
+            <RecordAction slot="overflow">
+              <Suspense fallback={null}>
+                <Await resolve={routeData?.versions}>
+                  {(versions) => {
+                    const allVersions =
+                      versions?.data ??
+                      (routeData?.document ? [routeData.document] : []);
+                    return (
+                      <VersionMenu
+                        versions={allVersions}
+                        currentVersionId={id}
+                        getKey={(v) => v.id}
+                        getHref={(v) => path.to.qualityDocument(v.id)}
+                        renderLabel={(v) => (
+                          <>
+                            <Badge variant="outline">V{v.version}</Badge>
+                            <span>{v.name}</span>
+                          </>
+                        )}
+                        renderStatus={(v) => (
+                          <QualityDocumentStatus status={v.status} />
+                        )}
+                        onNewVersion={
+                          permissions.can("create", "quality")
+                            ? newVersionDisclosure.onOpen
+                            : undefined
+                        }
+                      />
+                    );
+                  }}
+                </Await>
+              </Suspense>
+            </RecordAction>
+          </>
+        }
+      />
       {newVersionDisclosure.isOpen && (
         <QualityDocumentForm
           type="copy"
@@ -269,15 +265,25 @@ const QualityDocumentHeader = () => {
         />
       )}
       {approvalDecision && approvalRequestId && (
-        <QualityDocumentApprovalModal
-          qualityDocument={routeData?.document}
+        <ApprovalDecisionModal
+          action={path.to.qualityDocument(id)}
           approvalRequestId={approvalRequestId}
           decision={approvalDecision}
+          title={
+            approvalDecision === "Approved"
+              ? t`Approve ${displayName}`
+              : t`Reject ${displayName}`
+          }
+          description={
+            approvalDecision === "Approved"
+              ? t`Are you sure you want to approve this quality document? This will make it active.`
+              : t`Are you sure you want to reject this quality document? The document will remain in draft status.`
+          }
           fetcher={approvalFetcher}
           onClose={() => setApprovalDecision(null)}
         />
       )}
-    </div>
+    </>
   );
 };
 

@@ -58,6 +58,7 @@ const ShippingMethodsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -66,6 +67,7 @@ const ShippingMethodsTable = memo(
           header: t`Carrier`,
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: shippingCarrierType.map((v) => ({

@@ -3,13 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import {
-  Button,
-  Heading,
-  Input,
-  SidebarTrigger,
-  useIsMobile
-} from "@carbon/react";
+import { Button, Input, useViewport } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuSearch, LuTriangleAlert } from "react-icons/lu";
@@ -17,6 +11,7 @@ import type { ImperativePanelHandle } from "react-resizable-panels";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { getRecentJobOperationsByEmployee } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
@@ -46,7 +41,7 @@ export default function ActiveRoute() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const panelRef = useRef<ImperativePanelHandle>(null);
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
   const { operationId } = useParams();
 
   useEffect(() => {
@@ -70,18 +65,12 @@ export default function ActiveRoute() {
   }, [operations, searchTerm]);
 
   return (
-    <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">
-            <Trans>Recent</Trans>
-          </Heading>
-        </div>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <MesAppBar title={<Trans>Recent</Trans>} />
+      <MesQueueHeader title={<Trans>Recent</Trans>} />
 
       <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
-        <div className="w-full p-4 h-[var(--header-height)]">
+        <div className="w-full p-4 h-[var(--header-height)] max-md:h-auto max-md:pb-0">
           <div className="relative">
             <div className="flex justify-between gap-4">
               <div className="flex flex-grow">
@@ -97,7 +86,7 @@ export default function ActiveRoute() {
           </div>
         </div>
         {filteredOperations.length > 0 ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4 max-md:pt-3">
             <OperationsList key="active" operations={filteredOperations} />
           </div>
         ) : searchTerm ? (

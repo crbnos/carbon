@@ -5,7 +5,8 @@
 import type { Database } from "@carbon/database";
 import type {
   NotificationDestination,
-  NotificationEvent
+  NotificationEvent,
+  RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
@@ -32,7 +33,9 @@ export type Events = {
         | { type: "group"; groupIds: string[] }
         | { type: "users"; userIds: string[] };
       from?: string;
-      documentType?: ApprovalDocumentType;
+      /** The approvable document of an Approval* event, or what a Recurring
+       *  invoicing notification lists. */
+      documentType?: ApprovalDocumentType | RecurringInvoicingDocumentType;
       /** Set by a workflow: the message is authored by the customer, not read from a document. */
       title?: string;
       body?: string;
@@ -49,6 +52,20 @@ export type Events = {
       text: string;
       blocks?: any[];
       companyId: string;
+    };
+  };
+
+  // Web Push events: one per pushSubscription row. userId is the recipient:
+  // send-push only sends when the row still belongs to them.
+  "carbon/send-push": {
+    data: {
+      subscriptionId: string;
+      userId: string;
+      companyId: string;
+      title: string;
+      body: string;
+      url: string;
+      tag: string;
     };
   };
 
@@ -569,6 +586,12 @@ export type Events = {
   "carbon/workflow-run-retention.process": {
     data: Record<string, never>;
   };
+  // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,
+  // util.sweep_kanban_levels), never by app code. Every id is a Transfer
+  // kanban whose projected quantity was below its replenishment level.
+  "carbon/kanban.level-check": {
+    data: { companyId: string; kanbanIds: string[] };
+  };
 
   // Weekly tasks
   "carbon/weekly": {
@@ -629,11 +652,17 @@ export type Events = {
   };
 
   // Mount publish sweep (the integration's "Push customers / suppliers /
-  // parts" actions): push Carbon records Mount is missing or holds stale
+  // parts" actions, and the daily mount-sweep): push Carbon records Mount is
+  // missing or holds stale
   "carbon/mount-publish": {
     data: {
       companyId: string;
       entityTypes?: Array<"customer" | "supplier" | "item">;
+      // Who pressed Push; notified when the run needs attention.
+      userId?: string;
+      // Echoed into the run record so the page can find its own run.
+      requestId?: string;
+      trigger?: "manual" | "schedule";
     };
   };
 
@@ -688,6 +717,12 @@ export type Events = {
     data: {
       companyId: string;
       reason?: string;
+    };
+  };
+  "carbon/oee-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
     };
   };
 

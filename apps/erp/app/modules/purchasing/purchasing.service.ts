@@ -3,8 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllByIds,
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  convertUnitPrice,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
@@ -17,11 +26,11 @@ import {
   RoundingMode,
   round
 } from "@carbon/utils";
-import type {
+import {
   PostgrestError,
-  PostgrestResponse,
-  PostgrestSingleResponse,
-  SupabaseClient
+  type PostgrestResponse,
+  type PostgrestSingleResponse,
+  type SupabaseClient
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -42,6 +51,8 @@ import {
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  leasePaymentValidator,
+  leaseValidator,
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
@@ -67,6 +78,8 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  leaseDetailFields,
+  leaseTermColumns,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
@@ -332,7 +345,10 @@ export async function deleteSupplierLocation(
   }
 }
 
-/** @mcp delete */
+/**
+ * @mcp delete
+ * @mcp permission accounting:delete
+ */
 export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
@@ -340,7 +356,14 @@ export async function deleteSupplierBankAccount(
   return client.from("supplierBankAccount").delete().eq("id", id);
 }
 
-/** @mcp read */
+/**
+ * Lists a supplier's bank accounts.
+ *
+ * Gated on accounting, as the table's RLS and every bank-account screen are:
+ * a changed payee account is how payment fraud starts.
+ * @mcp read
+ * @mcp permission accounting:view
+ */
 export async function getSupplierBankAccounts(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -352,7 +375,10 @@ export async function getSupplierBankAccounts(
     .order("name");
 }
 
-/** @mcp upsert */
+/**
+ * @mcp upsert
+ * @mcp permission accounting:create+update
+ */
 export async function upsertSupplierBankAccount(
   db: Kysely<KyselyDatabase>,
   bankAccount:
@@ -1687,7 +1713,7 @@ export async function insertPurchaseOrder(
     customFields?: Json;
   }
 ): Promise<{
-  data: { id: string; purchaseOrderId: string } | null;
+  data: { id: string; purchaseOrderId: string; exchangeRate: number } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
   let purchaseOrderId: string;
@@ -1812,7 +1838,7 @@ export async function insertPurchaseOrder(
     return { data: null, error: delivery.error ?? payment.error };
   }
 
-  return { data: { id: orderId, purchaseOrderId }, error: null };
+  return { data: { id: orderId, purchaseOrderId, exchangeRate }, error: null };
 }
 
 /** @mcp update */
@@ -4781,6 +4807,7 @@ export async function getCreditableQuantitiesForPurchaseReturn(
  * `direction = "Debit"`, so a Credit-direction memo here is also invisible to
  * "Apply Credit" on a supplier invoice.
  * @mcp create
+ * @mcp permission invoicing:create
  * @mcp audit companyGroupId, createdBy, updatedBy, userId
  */
 export async function createPurchaseReturnOrderCredit(
@@ -5038,7 +5065,9 @@ export async function createReplacementPurchaseOrder(
 
   const supplierParts = await client
     .from("supplierPart")
-    .select("itemId, unitPrice, conversionFactor, supplierUnitOfMeasureCode")
+    .select(
+      "itemId, currencyCode, supplierUnitPrice, conversionFactor, supplierUnitOfMeasureCode"
+    )
     .eq("supplierId", order.data.supplierId)
     .eq("companyId", companyId)
     .in(
@@ -5068,6 +5097,54 @@ export async function createReplacementPurchaseOrder(
   }
   const purchaseOrderId = purchaseOrder.data.id;
 
+  // A supplier part's price is in its own currency; the replacement order is
+  // in the return's, so it converts at today's rate.
+  const [company, exchangeRates] = await Promise.all([
+    client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single(),
+    client.rpc("get_exchange_rates", { p_company_id: companyId })
+  ]);
+  if (company.error || exchangeRates.error) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: company.error ?? exchangeRates.error };
+  }
+  const baseCurrencyCode = company.data.baseCurrencyCode;
+  const exchangeRateByCurrency = new Map(
+    exchangeRates.data.map((rate) => [rate.currencyCode, rate.rate])
+  );
+  const orderCurrency = {
+    currencyCode: order.data.currencyCode ?? baseCurrencyCode,
+    exchangeRate: purchaseOrder.data.exchangeRate
+  };
+  const supplierPartPrice = (
+    supplierPart:
+      | { currencyCode: string | null; supplierUnitPrice: number | null }
+      | undefined
+  ) => {
+    if (supplierPart?.supplierUnitPrice == null) return null;
+    const currencyCode = supplierPartCurrency(
+      supplierPart.currencyCode,
+      baseCurrencyCode
+    );
+    // Base is always 1, whether or not the group lists it.
+    const exchangeRate =
+      currencyCode === orderCurrency.currencyCode
+        ? orderCurrency.exchangeRate
+        : currencyCode === baseCurrencyCode
+          ? 1
+          : exchangeRateByCurrency.get(currencyCode);
+    // No rate: leave it to the next fallback rather than price it at par.
+    if (!exchangeRate) return null;
+    return convertUnitPrice(
+      supplierPart.supplierUnitPrice,
+      { currencyCode, exchangeRate },
+      orderCurrency
+    );
+  };
+
   const lineTypeFor = (
     itemType: string | null | undefined
   ): Database["public"]["Enums"]["purchaseOrderLineType"] => {
@@ -5095,7 +5172,7 @@ export async function createReplacementPurchaseOrder(
     // unitPrice generated column is base currency and would double-convert
     const unitPrice = Number(
       poLine?.supplierUnitPrice ??
-        supplierPart?.unitPrice ??
+        supplierPartPrice(supplierPart) ??
         Number(line.unitPrice) * conversionFactor
     );
     const purchaseQuantity =
@@ -5109,6 +5186,7 @@ export async function createReplacementPurchaseOrder(
       itemId: line.itemId,
       purchaseQuantity,
       supplierUnitPrice: unitPrice,
+      exchangeRate: orderCurrency.exchangeRate,
       conversionFactor,
       purchaseUnitOfMeasureCode:
         poLine?.purchaseUnitOfMeasureCode ??
@@ -5184,4 +5262,443 @@ export async function createSupplierInteractionLineDocumentUploadUrl(
     entityId: args.lineId,
     name: args.name
   });
+}
+
+// ----------------------------------------------------------------------
+// Leases (lessee, ASC 842; spec `.ai/specs/2026-10-11-lessee-leases.md`).
+// Lifecycle changes — activate, modify, terminate, purchase, cancel — go
+// through the `post-lease` server function; invoices are drafted by
+// `create-lease-invoices`. These are the plain reads and the Draft writes.
+// ----------------------------------------------------------------------
+
+/** A refusal shaped like a PostgREST error, so every caller's existing
+ *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
+function leaseRefusal(code: string, message: string) {
+  return {
+    data: null,
+    error: new PostgrestError({ message, details: "", hint: "", code })
+  };
+}
+
+/** @mcp read */
+export async function getLeases(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("leases")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `leaseId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierName.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+/** @mcp read */
+export async function getLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leases")
+    .select("*")
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** `leaseId` (the readable LSE number) comes from the caller — the route
+ *  draws it from the sequence. The leased assets are added, and their
+ *  payment rows cut, by `saveDraftLeaseLine` (`purchasing.server.ts`).
+ *  @mcp create */
+export async function insertLease(
+  client: SupabaseClient<Database>,
+  lease: Omit<z.infer<typeof leaseValidator>, "id"> & {
+    leaseId: string;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
+) {
+  return client
+    .from("lease")
+    .insert([
+      {
+        ...leaseTermColumns(lease),
+        leaseId: lease.leaseId,
+        companyId: lease.companyId,
+        createdBy: lease.createdBy,
+        customFields: lease.customFields
+      }
+    ])
+    .select("id, leaseId")
+    .single();
+}
+
+/** A lease's details — its name, notes, owner and notice date
+ *  (`leaseDetailFields`) — which stay editable in every status: nothing was
+ *  measured from them. A Draft's terms are saved with `updateDraftLease`
+ *  (`purchasing.server.ts`), which cuts the payment rows again in the same
+ *  transaction; an active lease's terms change only with Modify.
+ *  @mcp update */
+export async function updateLeaseDetails(
+  client: SupabaseClient<Database>,
+  lease: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    name?: string | null;
+    description?: string | null;
+    assignee?: string | null;
+    /** `YYYY-MM-DD`; on or before the end date. */
+    noticeDate?: string | null;
+  }
+) {
+  const details = Object.fromEntries(
+    leaseDetailFields
+      .filter((field) => lease[field] !== undefined)
+      .map((field) => [field, lease[field] || null])
+  );
+  if (Object.keys(details).length === 0) {
+    return leaseRefusal("LEASE_NO_DETAILS", "Nothing to update");
+  }
+  const updated = await client
+    .from("lease")
+    .update({
+      ...details,
+      updatedBy: lease.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", lease.id)
+    .eq("companyId", lease.companyId)
+    .select("id")
+    .maybeSingle();
+  if (updated.error) return updated;
+  if (!updated.data) return leaseRefusal("LEASE_NOT_FOUND", "Lease not found");
+  return updated;
+}
+
+/** Only a Draft lease can be deleted; cancel an active one. @mcp delete */
+export async function deleteLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  const deleted = await client
+    .from("lease")
+    .delete()
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal(
+      "LEASE_NOT_DRAFT",
+      "No Draft lease was found to delete. Cancel or terminate an active lease instead."
+    );
+  }
+  return deleted;
+}
+
+/** The lease's assets in their order. @mcp read */
+export async function getLeaseLines(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leaseLine")
+      .select("*, fixedAsset(item(thumbnailPath))")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("sortOrder")
+      .order("createdAt")
+      .order("id")
+  );
+}
+
+/** Every payment row of every asset: a long lease of many assets runs past
+ *  PostgREST's 1,000-row page. @mcp read */
+export async function getLeasePayments(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leasePayment")
+      .select("*")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("dueDate")
+      .order("paymentType")
+      .order("leaseLineId")
+      .order("id")
+  );
+}
+
+/** The lease when it is a Draft, else why it cannot change. */
+async function requireDraftLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string,
+  what = "A payment row"
+) {
+  const lease = await client
+    .from("lease")
+    .select("status, invoiceFromDate")
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (lease.error) return { lease: null, refusal: lease.error.message };
+  if (!lease.data) return { lease: null, refusal: "Lease not found" };
+  if (lease.data.status !== "Draft") {
+    return {
+      lease: null,
+      refusal: `${what} changes only while the lease is Draft; modify an active lease instead`
+    };
+  }
+  return { lease: lease.data, refusal: null };
+}
+
+/** Removes an asset, and its payment rows with it, from a Draft lease.
+ *  @mcp delete */
+export async function deleteLeaseLine(
+  client: SupabaseClient<Database>,
+  args: { leaseId: string; leaseLineId: string; companyId: string }
+) {
+  const { refusal } = await requireDraftLease(
+    client,
+    args.leaseId,
+    args.companyId,
+    "An asset"
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  const deleted = await client
+    .from("leaseLine")
+    .delete()
+    .eq("id", args.leaseLineId)
+    .eq("leaseId", args.leaseId)
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal("LEASE_LINE_NOT_FOUND", "Asset not found");
+  }
+  return deleted;
+}
+
+/** Add or change one payment row of a Draft lease's asset (a rent holiday,
+ *  an irregular step). A row due before the lease's invoice-from date was
+ *  paid outside Carbon and is Skipped. @mcp update */
+export async function upsertLeasePayment(
+  client: SupabaseClient<Database>,
+  payment: z.infer<typeof leasePaymentValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { lease, refusal } = await requireDraftLease(
+    client,
+    payment.leaseId,
+    payment.companyId
+  );
+  if (refusal || !lease) {
+    return leaseRefusal("LEASE_NOT_DRAFT", refusal ?? "Lease not found");
+  }
+  const line = await client
+    .from("leaseLine")
+    .select("id")
+    .eq("id", payment.leaseLineId)
+    .eq("leaseId", payment.leaseId)
+    .eq("companyId", payment.companyId)
+    .maybeSingle();
+  if (line.error) return line;
+  if (!line.data) {
+    return leaseRefusal("LEASE_LINE_NOT_FOUND", "Asset not found");
+  }
+
+  const row = {
+    leaseId: payment.leaseId,
+    leaseLineId: payment.leaseLineId,
+    paymentType: payment.paymentType,
+    periodStart: payment.periodStart,
+    periodEnd: payment.periodEnd,
+    dueDate: payment.dueDate,
+    amount: payment.amount,
+    status:
+      payment.dueDate < lease.invoiceFromDate
+        ? ("Skipped" as const)
+        : ("Pending" as const)
+  };
+  if (payment.id) {
+    return client
+      .from("leasePayment")
+      .update({
+        ...row,
+        updatedBy: payment.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", payment.id)
+      .eq("leaseId", payment.leaseId)
+      .eq("companyId", payment.companyId)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("leasePayment")
+    .insert([
+      { ...row, companyId: payment.companyId, createdBy: payment.userId }
+    ])
+    .select("id")
+    .single();
+}
+
+/** @mcp delete */
+export async function deleteLeasePayment(
+  client: SupabaseClient<Database>,
+  args: { leaseId: string; paymentId: string; companyId: string }
+) {
+  const { refusal } = await requireDraftLease(
+    client,
+    args.leaseId,
+    args.companyId
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  const deleted = await client
+    .from("leasePayment")
+    .delete()
+    .eq("id", args.paymentId)
+    .eq("leaseId", args.leaseId)
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal("LEASE_PAYMENT_NOT_FOUND", "Payment not found");
+  }
+  return deleted;
+}
+
+/** The monthly schedule of every asset, each line with whether its lease run
+ *  rows have posted: a long lease of many assets runs past PostgREST's
+ *  1,000-row page. @mcp read */
+export async function getLeaseSchedule(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leaseScheduleLine")
+      .select(
+        "*, rows:revenueRecognitionSchedule!revenueRecognitionSchedule_leaseScheduleLine_fkey(id, type, status, journalId)"
+      )
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("periodDate")
+      .order("id")
+  );
+}
+
+/** @mcp read */
+export async function getLeaseEvents(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leaseEvent")
+      .select("*")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("effectiveDate", { ascending: false })
+      .order("id")
+  );
+}
+
+/** The purchase invoices that bill the lease, and the journals that name it.
+ *  @mcp read */
+export async function getLeaseRelatedDocuments(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  // Plain id reads, then one read per document table: the embedded selects
+  // trip TS2589 on these busy tables (.ai/lessons.md).
+  // Paged: every lease run month adds journal lines.
+  const [invoiceLines, journalLines] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("purchaseInvoiceLine")
+        .select("id, invoiceId")
+        .eq("leaseId", leaseId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("journalLine")
+        .select("id, journalId")
+        .eq("documentType", "Lease")
+        .eq("documentId", leaseId)
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+  if (invoiceLines.error) return { data: null, error: invoiceLines.error };
+  if (journalLines.error) return { data: null, error: journalLines.error };
+
+  const invoiceIds = [
+    ...new Set((invoiceLines.data ?? []).map((line) => line.invoiceId))
+  ];
+  const journalIds = [
+    ...new Set((journalLines.data ?? []).map((line) => line.journalId))
+  ];
+  // In groups of ids, so each `.in()` fits in the request URL.
+  const [invoices, journals] = await Promise.all([
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("purchaseInvoice")
+        .select("id, invoiceId, status, dateIssued")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(journalIds, (batch) =>
+      client
+        .from("journal")
+        .select("id, journalEntryId, postingDate, status, sourceType")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+  if (invoices.error) return { data: null, error: invoices.error };
+  if (journals.error) return { data: null, error: journals.error };
+
+  return {
+    data: {
+      // Newest first. ISO dates sort as strings.
+      purchaseInvoices: invoices.data.sort((a, b) =>
+        (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")
+      ),
+      journals: journals.data.sort((a, b) =>
+        b.postingDate.localeCompare(a.postingDate)
+      )
+    },
+    error: null
+  };
 }

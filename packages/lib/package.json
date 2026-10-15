@@ -43,6 +43,8 @@
     "./sales-invoice-document.server": "./src/sales-invoice-document.server.tsx",
     "./shims": "./src/shims.ts",
     "./slack.server": "./src/slack.server.ts",
+    "./system-status": "./src/system-status.ts",
+    "./system-status.server": "./src/system-status.server.ts",
     "./telemetry": "./src/telemetry/capture.ts",
     "./trigger": "./src/trigger.ts",
     "./twenty.server": "./src/twenty.server.ts",

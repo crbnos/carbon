@@ -378,8 +378,7 @@ it("planStockRows scatters each item's replayed costs back onto its own rows", (
       A: fifo(1 / 3),
       B: { costingMethod: "Standard", unitCost: 0, standardCost: 5 }
     }),
-    openLayersByItem: new Map(),
-    hasAccounting: true
+    openLayersByItem: new Map()
   });
 
   const replayA = planIncreaseUnitCosts(fifo(1 / 3), [], [1, 1000]);
@@ -403,8 +402,7 @@ it("planStockRows replays several rows of ONE item in file order", () => {
   const plans = planStockRows({
     rows,
     itemCosts: itemCosts({ A: fifo(1 / 3) }),
-    openLayersByItem: new Map(),
-    hasAccounting: true
+    openLayersByItem: new Map()
   });
   expect(plans.map((p) => round(p.cost))).toEqual(
     planIncreaseUnitCosts(fifo(1 / 3), [], quantities).map((i) => round(i.cost))
@@ -427,8 +425,7 @@ it("planStockRows values against the item's open layers", () => {
           }
         ]
       ]
-    ]),
-    hasAccounting: true
+    ])
   });
   // $10 average from the open layer, not the $1 itemCost fallback.
   expect(plans[0]!.cost).toEqual(50);
@@ -443,8 +440,7 @@ it("planStockRows: a zero-cost item plans a cost layer but no journal", () => {
     itemCosts: itemCosts({
       A: { costingMethod: "Average", unitCost: 0, standardCost: 0 }
     }),
-    openLayersByItem: new Map(),
-    hasAccounting: true
+    openLayersByItem: new Map()
   });
   expect(plans.map((p) => p.cost)).toEqual([0, 0]);
   // The layer is still written — only the journal pair is suppressed.
@@ -464,24 +460,6 @@ it("planStockRows: a zero-cost item plans a cost layer but no journal", () => {
   expect(row.remainingQuantity).toEqual(5);
 });
 
-it("planStockRows: accounting disabled posts no journal on any row", () => {
-  const plans = planStockRows({
-    rows: [
-      { itemId: "A", quantity: 3, itemTrackingType: "Inventory" },
-      { itemId: "B", quantity: 4, itemTrackingType: "Batch" }
-    ],
-    itemCosts: itemCosts({
-      A: { costingMethod: "Average", unitCost: 2, standardCost: 0 },
-      B: { costingMethod: "Average", unitCost: 2, standardCost: 0 }
-    }),
-    openLayersByItem: new Map(),
-    hasAccounting: false
-  });
-  // Cost layers are unaffected by the GL setting; only the journal is.
-  expect(plans.map((p) => p.cost)).toEqual([6, 8]);
-  expect(plans.map((p) => p.postsJournal)).toEqual([false, false]);
-});
-
 it("planStockRows: a Non-Inventory or zero-quantity row carries no value", () => {
   const plans = planStockRows({
     rows: [
@@ -490,8 +468,7 @@ it("planStockRows: a Non-Inventory or zero-quantity row carries no value", () =>
       { itemId: "A", quantity: 2, itemTrackingType: "Inventory" }
     ],
     itemCosts: itemCosts({ A: fifo(3) }),
-    openLayersByItem: new Map(),
-    hasAccounting: true
+    openLayersByItem: new Map()
   });
   expect(plans.map((p) => p.carriesValue)).toEqual([false, false, true]);
   expect(plans.map((p) => p.cost)).toEqual([0, 0, 6]);

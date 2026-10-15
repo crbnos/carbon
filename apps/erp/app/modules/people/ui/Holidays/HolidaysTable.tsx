@@ -41,6 +41,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           <Hyperlink to={row.original.id}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCalendar />
         }
       },
@@ -68,6 +69,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "dateRange"
           },

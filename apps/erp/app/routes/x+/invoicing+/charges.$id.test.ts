@@ -52,6 +52,9 @@ vi.mock("~/hooks", () => ({
   useCurrencyFormatter: vi.fn(),
   usePermissions: vi.fn()
 }));
+vi.mock("~/modules/accounting/ui/JournalEntries", () => ({
+  JournalEntryStatus: EmptyComponent
+}));
 vi.mock("~/modules/invoicing", () => ({
   ChargeStatus: EmptyComponent,
   getCharge

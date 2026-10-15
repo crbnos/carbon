@@ -163,6 +163,29 @@ function useReleasedJobsMessage() {
     t`${plural(count, { one: "Released # job", other: "Released # jobs" })}`;
 }
 
+function renderQuantity(job: Job, unit?: string | null) {
+  const quantity = job.quantity;
+  const quantityComplete = job.quantityComplete ?? 0;
+
+  if (["In Progress", "Released", "Paused"].includes(job.status ?? "")) {
+    return (
+      <BarProgress
+        progress={(quantityComplete / (quantity ?? 0)) * 100}
+        value={`${quantityComplete}/${quantity}`}
+      />
+    );
+  }
+  if (unit) {
+    return (
+      <>
+        {quantity}
+        <span className="ml-1 text-[13px] text-muted-foreground">{unit}</span>
+      </>
+    );
+  }
+  return quantity;
+}
+
 const JobsTable = memo((props: JobsTableProps) => {
   const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
@@ -233,6 +256,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -255,6 +279,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: items?.map((item) => ({
@@ -310,6 +335,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: jobStatus.map((status) => ({
@@ -355,25 +381,12 @@ const JobsTable = memo((props: JobsTableProps) => {
       {
         accessorKey: "quantity",
         header: t`Quantity`,
-        cell: ({ row }) => {
-          const quantity = row.original.quantity;
-          const quantityComplete = row.original.quantityComplete ?? 0;
-
-          if (
-            ["In Progress", "Released", "Paused"].includes(
-              row.original.status ?? ""
-            )
-          ) {
-            return (
-              <BarProgress
-                progress={(quantityComplete / (quantity ?? 0)) * 100}
-                value={`${quantityComplete}/${quantity}`}
-              />
-            );
-          }
-          return quantity;
-        },
+        cell: ({ row }) => renderQuantity(row.original),
         meta: {
+          mobile: "P2",
+          // Phones: no column header, so the number carries its unit.
+          mobileCell: ({ row }) =>
+            renderQuantity(row.original, row.original.unitOfMeasureCode),
           icon: <LuHash />,
           renderTotal: true
         }

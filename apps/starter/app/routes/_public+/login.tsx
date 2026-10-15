@@ -86,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, botToken } = validation.data;
+  const { email, botToken, redirectTo } = validation.data;
 
   const botError = await verifyBotProtection({
     token: botToken,
@@ -103,7 +103,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    // Back to this app, not VERCEL_URL: outside `crbn up` that is the ERP's
+    // URL, so the link signed the user in to the ERP instead.
+    const magicLink = await sendMagicLink(
+      email,
+      new URL(request.url).origin,
+      redirectTo
+    );
 
     if (magicLink.error) {
       const message = getMagicLinkErrorMessage(magicLink.error);

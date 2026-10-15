@@ -62,7 +62,7 @@ export const ENTITY_BY_TABLE: Record<string, string> = Object.fromEntries(
 /**
  * The ONE place `DataType` (`apps/erp/app/modules/shared/types.ts`) maps to a `ValueType`.
  * A File field is exposed as the stored path — comparable and printable, but not a link
- * and not a record to drill into.
+ * and not a record to drill into. A Link field is the web address as stored.
  */
 function valueTypeFor(dataTypeId: number): ValueType | undefined {
   switch (dataTypeId) {
@@ -85,6 +85,9 @@ function valueTypeFor(dataTypeId: number): ValueType | undefined {
       return t.entity("supplier");
     // File: the stored path.
     case 9:
+      return t.string;
+    // Link: the web address as stored.
+    case 10:
       return t.string;
     default:
       return undefined;

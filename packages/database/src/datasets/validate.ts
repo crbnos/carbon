@@ -250,7 +250,8 @@ export const COVERAGE = {
   },
   approvalRequestType: {
     values: enumValues("approvalDocumentType", {
-      qualityDocument: "the seed requests approval for orders and suppliers"
+      qualityDocument: "the seed requests approval for orders and suppliers",
+      changeOrder: "the seed does not create change notice approval requests"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },
@@ -385,7 +386,11 @@ export const COVERAGE = {
   },
 
   journalStatus: {
-    values: enumValues("journalEntryStatus"),
+    values: enumValues("journalEntryStatus", {
+      Provisional:
+        "a demo company starts with a cutover, so it posts no Provisional journal",
+      Superseded: "only the enable turns a Provisional journal into Superseded"
+    }),
     missing: (status) => `accounting.journalEntries: no "${status}" entry`
   },
   memoDirection: {

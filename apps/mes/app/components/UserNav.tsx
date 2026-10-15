@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Company } from "@carbon/auth";
+import { useAccountSettings } from "@carbon/account";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
   Avatar,
@@ -18,7 +18,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  HStack,
   ItarDisclosure,
   NavRailItem,
   Switch,
@@ -30,9 +29,7 @@ import {
 } from "@carbon/react";
 import { modeValidator } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import { useRef } from "react";
 import {
-  LuBuilding,
   LuChevronDown,
   LuLaptop,
   LuLogOut,
@@ -44,38 +41,50 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { Form, Link, useFetcher } from "react-router";
+import { Form, useFetcher, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
 import type { PinnedInUser } from "~/types";
 import { path } from "~/utils/path";
 
-export function UserNav({
-  company,
-  companies,
-  consoleEnabled,
-  consoleMode,
-  location,
-  locations,
-  pinnedInUser
-}: {
-  company: Company;
-  companies: Company[];
+type UserNavProps = {
   consoleEnabled?: boolean;
   consoleMode: boolean;
   location: string;
   locations: Location[];
   pinnedInUser: PinnedInUser | null;
-}) {
+};
+
+/**
+ * Switches the session to another of the user's companies. A navigation, not
+ * a fetcher: the shell's `shouldRevalidate` re-runs only after a mutation, and
+ * a fetcher's redirect reaches it as a plain GET, so the page kept showing the
+ * old company until a reload.
+ */
+export function useSwitchCompany() {
+  const submit = useSubmit();
+  return (companyId: string) => {
+    const form = new FormData();
+    form.append("companyId", companyId);
+    submit(form, {
+      method: "post",
+      action: path.to.switchCompany(companyId)
+    });
+  };
+}
+
+/** The user menu's state and actions, shared by the rail menu and the phone More sheet. */
+export function useUserNav({
+  consoleMode,
+  location,
+  pinnedInUser
+}: Pick<UserNavProps, "consoleMode" | "location" | "pinnedInUser">) {
   const user = useUser();
   const stationName = `${user.firstName} ${user.lastName}`;
-  const { isMobile } = useSidebar();
 
   const mode = useMode();
   const modePreference = useModePreference();
-
-  const consoleSubmitRef = useRef<HTMLButtonElement>(null);
 
   const fetcher = useFetcher<typeof action>();
 
@@ -94,6 +103,18 @@ export function UserNav({
     fetcher.submit(formData, { method: "POST", action: path.to.location });
   };
 
+  const switchCompany = useSwitchCompany();
+
+  const switchOperator = () => {
+    fetcher.submit(null, { method: "POST", action: path.to.consolePinOut });
+  };
+
+  const toggleConsoleMode = () => {
+    const formData = new FormData();
+    formData.append("consoleMode", consoleMode ? "false" : "true");
+    fetcher.submit(formData, { method: "post", action: path.to.consoleToggle });
+  };
+
   const optimisticLocation =
     (fetcher.formData?.get("location") as string | undefined) ?? location;
 
@@ -104,16 +125,60 @@ export function UserNav({
     path.to.authenticatedRoot
   );
   const sessionUserId = routeData?.user?.id;
-  const isOperatorPinnedIn =
+  const isOperatorPinnedIn = Boolean(
     consoleMode &&
-    pinnedInUser &&
-    sessionUserId &&
-    pinnedInUser.userId !== sessionUserId;
-  const showingOperator = consoleMode && pinnedInUser;
-  const displayName = showingOperator ? pinnedInUser.name : stationName;
+      pinnedInUser &&
+      sessionUserId &&
+      pinnedInUser.userId !== sessionUserId
+  );
+  const showingOperator = consoleMode && pinnedInUser ? pinnedInUser : null;
+  const displayName = showingOperator ? showingOperator.name : stationName;
   const displayAvatar = showingOperator
-    ? pinnedInUser.avatarUrl
+    ? showingOperator.avatarUrl
     : user.avatarUrl;
+
+  return {
+    stationName,
+    mode,
+    modePreference,
+    onModeChange,
+    updateLocation,
+    switchCompany,
+    switchOperator,
+    toggleConsoleMode,
+    optimisticLocation,
+    itarDisclosure,
+    isOperatorPinnedIn,
+    showingOperator,
+    displayName,
+    displayAvatar
+  };
+}
+
+export function UserNav({
+  consoleEnabled,
+  consoleMode,
+  location,
+  locations,
+  pinnedInUser
+}: UserNavProps) {
+  const { isMobile } = useSidebar();
+  const openAccountSettings = useAccountSettings((s) => s.open);
+  const {
+    stationName,
+    mode,
+    modePreference,
+    onModeChange,
+    updateLocation,
+    switchOperator,
+    toggleConsoleMode,
+    optimisticLocation,
+    itarDisclosure,
+    isOperatorPinnedIn,
+    showingOperator,
+    displayName,
+    displayAvatar
+  } = useUserNav({ consoleMode, location, pinnedInUser });
 
   return (
     <>
@@ -140,16 +205,9 @@ export function UserNav({
           {/* Console mode with pinned-in operator: simplified menu */}
           {showingOperator ? (
             <>
-              <DropdownMenuLabel>{pinnedInUser.name}</DropdownMenuLabel>
+              <DropdownMenuLabel>{showingOperator.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => {
-                  fetcher.submit(null, {
-                    method: "POST",
-                    action: path.to.consolePinOut
-                  });
-                }}
-              >
+              <DropdownMenuItem onSelect={switchOperator}>
                 <DropdownMenuIcon icon={<LuUsers />} />
                 <Trans>Switch Operator</Trans>
               </DropdownMenuItem>
@@ -164,52 +222,12 @@ export function UserNav({
                 <Trans>Signed in as {stationName}</Trans>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to={path.to.accountSettings}>
-                  <DropdownMenuIcon icon={<LuUser />} />
-                  <Trans>Account Settings</Trans>
-                </Link>
+              <DropdownMenuItem onClick={() => openAccountSettings()}>
+                <DropdownMenuIcon icon={<LuUser />} />
+                <Trans>Account Settings</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
 
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <DropdownMenuIcon icon={<LuBuilding />} />
-                  <Trans>Company</Trans>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup value={company.companyId!}>
-                    {companies.map((c) => {
-                      const logo =
-                        mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                      return (
-                        <DropdownMenuRadioItem
-                          key={c.companyId}
-                          value={c.companyId!}
-                          onSelect={() => {
-                            const form = new FormData();
-                            form.append("companyId", c.companyId!);
-                            fetcher.submit(form, {
-                              method: "post",
-                              action: path.to.switchCompany(c.companyId!)
-                            });
-                          }}
-                        >
-                          <HStack>
-                            <Avatar
-                              size="xs"
-                              name={c.name ?? undefined}
-                              src={logo ?? undefined}
-                            />
-                            <span>{c.name}</span>
-                          </HStack>
-                        </DropdownMenuRadioItem>
-                      );
-                    })}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
               {locations.length > 1 ? (
                 <>
                   <DropdownMenuSub>
@@ -283,30 +301,10 @@ export function UserNav({
                       <DropdownMenuIcon icon={<LuMonitor />} />
                       <Trans>Console Mode</Trans>
                     </div>
-                    <div>
-                      <Switch
-                        checked={consoleMode}
-                        onCheckedChange={() =>
-                          consoleSubmitRef.current?.click()
-                        }
-                      />
-                      <fetcher.Form
-                        action={path.to.consoleToggle}
-                        method="post"
-                        className="sr-only"
-                      >
-                        <input
-                          type="hidden"
-                          name="consoleMode"
-                          value={consoleMode ? "false" : "true"}
-                        />
-                        <button
-                          ref={consoleSubmitRef}
-                          className="sr-only"
-                          type="submit"
-                        />
-                      </fetcher.Form>
-                    </div>
+                    <Switch
+                      checked={consoleMode}
+                      onCheckedChange={toggleConsoleMode}
+                    />
                   </div>
                 </DropdownMenuItem>
               )}

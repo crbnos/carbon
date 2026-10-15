@@ -152,6 +152,31 @@ export async function fetchAllRecords<T extends object>(
   };
 }
 
+// Ids per request. `.in()` writes every id into the URL, and the gateway
+// rejects a request line it cannot buffer (HTTP 431); 100 ids is about 3 kB.
+const IN_FILTER_BATCH_SIZE = 100;
+
+/**
+ * Reads every row for an id list. Walks the ids in groups of 100, so each
+ * `.in()` fits in the request URL, and pages each group past the row cap with
+ * `fetchAllRecords`. The factory gets one group and must order its query, so
+ * the pages of a group are stable. A failed group fails the whole read: a
+ * partial list would read as "no rows" for the ids it dropped.
+ */
+export async function fetchAllByIds<T extends object>(
+  ids: readonly string[],
+  buildQuery: (batch: string[]) => PageQuery<T>
+): Promise<PaginatedResult<T>> {
+  const rows: T[] = [];
+  for (let start = 0; start < ids.length; start += IN_FILTER_BATCH_SIZE) {
+    const batch = ids.slice(start, start + IN_FILTER_BATCH_SIZE);
+    const result = await fetchAllRecords(() => buildQuery(batch));
+    if (result.error) return { data: null, count: null, error: result.error };
+    rows.push(...result.data);
+  }
+  return { data: rows, count: rows.length, error: null };
+}
+
 /**
  * Helper function for simple table queries that need all records
  */

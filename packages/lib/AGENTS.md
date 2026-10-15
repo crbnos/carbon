@@ -7,6 +7,7 @@ Shared server utilities — event system, Inngest client, trigger dispatch, SMTP
 - **Use `trigger(taskId, payload)` for dispatching background jobs** — typed helper that maps task IDs to Inngest event names; drop-in replacement for old `tasks.trigger()`
 - **Add new events to the `Events` type in `events.ts`** — every Inngest event needs a typed payload here
 - **Add new task mappings to `taskToEvent` in `trigger.ts`** — maps human-readable task IDs to `carbon/*` event names
+- **`carbon/send-push` has no task on purpose** — only the `notify` job sends it (`step.sendEvent`), because browser push mirrors the in-app row; app code never pushes directly
 - **Guard external calls** — `email.server.ts` no-ops when no SMTP config is set (`SMTP_*`, with a legacy `RESEND_API_KEY` fallback via smtp.resend.com); `slack.server.ts` skips sends on localhost
 - **Add new work events to `src/telemetry/events.ts`** — the `WorkEvents` type map is the contract; `captureWorkEvent` is typed off it, so an unlisted name will not compile
 

@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import "@tanstack/react-table";
-import type { ReactElement } from "react";
+import type { CellContext } from "@tanstack/react-table";
+import type { ReactElement, ReactNode } from "react";
 import type { ColumnFilterData } from "./components/Filter/types";
 
 declare module "@tanstack/react-table" {
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   interface ColumnMeta<TData extends unknown, TValue> {
     filter?: ColumnFilterData;
     // Filter dropdown/chip label when `header` is JSX instead of a string.
@@ -42,6 +42,18 @@ declare module "@tanstack/react-table" {
     // field than its accessor (e.g. accessor `supplierTypeId`, sort by `type`).
     // Must name a real column on the view.
     sortBy?: string;
+    // Phone list priority: P1 = identity (line 1), P2 = trailing metric
+    // or status pill, P3 = context (line 2); P4 or unset = not in the row.
+    // "action" = the row's one trailing button (e.g. "Make 90"), hidden in
+    // selection mode. See Table/components/Compact/resolveSlots.ts.
+    mobile?: "P1" | "P2" | "P3" | "P4" | "action";
+    /** Phones: show this P2 column as a status pill on line 3 (a status column without a static filter). */
+    mobilePill?: boolean;
+    /** Phones: lead this column's value with its (string) header, since a
+     *  list row shows no column headers. */
+    mobileLabel?: boolean;
+    /** Phones: renders this column in the list row instead of `cell`. */
+    mobileCell?: (context: CellContext<TData, TValue>) => ReactNode;
   }
 }
 
