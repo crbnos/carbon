@@ -94,6 +94,35 @@ const normalizeOperationType = (value: string): string =>
       ? "Outside Processing"
       : value;
 
+/**
+ * The order to write a file's part groups in: each part after the parts of the
+ * same file it uses as a material or tool, so a component's PART row may come
+ * after the assembly that uses it. Otherwise file order. A part that uses
+ * itself through others (A in B, B in A) is written in file order, and its
+ * missing component then fails the row as before.
+ */
+export function componentsFirst(
+  keys: string[],
+  usesOf: (key: string) => string[]
+): string[] {
+  const inFile = new Set(keys);
+  const placed = new Set<string>();
+  const visiting = new Set<string>();
+  const order: string[] = [];
+  const visit = (k: string) => {
+    if (placed.has(k) || visiting.has(k)) return;
+    visiting.add(k);
+    for (const used of usesOf(k)) {
+      if (used !== k && inFile.has(used)) visit(used);
+    }
+    visiting.delete(k);
+    placed.add(k);
+    order.push(k);
+  };
+  for (const k of keys) visit(k);
+  return order;
+}
+
 // The `row` reported on each error: the 0-based index of the data row. This must
 // match how the results modal keys errors to rows (by array index into the parsed
 // rows) and the standard importer in index.ts — NOT a human CSV line number.
@@ -314,8 +343,22 @@ export async function importMethods(
     if (g.partRow) fileCreatedParts.add(key(g.readableId, g.revision));
   }
 
-  // 3 + 4. validate and write each part group ------------------------------
-  for (const g of groups.values()) {
+  // 3 + 4. validate and write each part group, components first ------------
+  const writeOrder = componentsFirst([...groups.keys()], (k) => {
+    const uses: string[] = [];
+    for (const bucket of groups.get(k)!.versions.values()) {
+      for (const e of bucket.bom) {
+        uses.push(
+          key(text(e.record.componentId), text(e.record.componentRevision))
+        );
+      }
+      for (const e of bucket.tool) {
+        uses.push(key(text(e.record.toolId), text(e.record.toolRevision)));
+      }
+    }
+    return uses;
+  });
+  for (const g of writeOrder.map((k) => groups.get(k)!)) {
     const partLabel = `${g.readableId} rev ${g.revision}`;
     const errors = validateGroup(g, {
       itemMap,

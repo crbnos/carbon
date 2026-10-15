@@ -137,7 +137,11 @@ already has materials or operations is left alone. `partWithMethod` is in
 that passed `rejectForeignReferences`, each with its file row number. Every row
 is counted once: a PART row as inserted (new item, `xmax = 0`) or updated, each
 BOM, BOP, STEP, TOOL and PARAM row written as inserted, and each row of a
-version that already had content as skipped.
+version that already had content as skipped. Part groups are written in
+`componentsFirst` order: a part after the parts of the same file it uses as a
+material or tool, otherwise file order. So an assembly may come before the PART
+rows of its new components; before this, its BOM failed with "Item … not found".
+A part that uses itself through others keeps file order.
 
 ### Work center processes
 
