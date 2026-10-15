@@ -64,7 +64,9 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_createSalesReturnOrderCredit: {
     module: "invoicing",
     actions: ["create"]
-  }
+  },
+  // Creates a shipment: its route requires inventory_create.
+  sales_order_line_ship: { module: "inventory", actions: ["create"] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

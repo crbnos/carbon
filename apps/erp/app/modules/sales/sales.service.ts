@@ -6542,7 +6542,7 @@ export async function upsertSalesOrderShipment(
     .single();
 }
 
-/** @mcp upsert */
+/** Not published: `sales.order.line.create` / `update` also refuse a locked order. */
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:

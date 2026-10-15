@@ -3,18 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  acceptDigitalQuote,
   attachQuoteFile,
   attachSalesRfqFile,
   configureQuoteLine,
+  confirmSalesOrder,
   convertQuote,
   convertSalesRfq,
   createQuoteLine,
+  createSalesOrderLine,
   createSalesRfq,
   finalizeAndSendQuote,
   mapSalesRfqLines,
+  rejectDigitalQuote,
   setSalesRfqStatus,
+  shipSalesOrderLine,
   updateQuoteField,
   updateQuoteLine,
+  updateSalesOrderField,
+  updateSalesOrderLine,
   updateSalesRfqField
 } from "./sales.server";
 
@@ -37,6 +44,16 @@ export const sales = {
       create: createQuoteLine,
       update: updateQuoteLine,
       configure: configureQuoteLine
+    },
+    digital: { accept: acceptDigitalQuote, reject: rejectDigitalQuote }
+  },
+  order: {
+    updateField: updateSalesOrderField,
+    confirm: confirmSalesOrder,
+    line: {
+      create: createSalesOrderLine,
+      update: updateSalesOrderLine,
+      ship: shipSalesOrderLine
     }
   }
 };

@@ -4,6 +4,7 @@
 
 import { openai } from "@ai-sdk/openai";
 import { hasPermission } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
@@ -14,11 +15,18 @@ import {
   dedupeViolations,
   evaluateSalesRuleLines,
   evaluateSalesRulesForSalesDocument,
-  isBlocked
+  isBlocked,
+  resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
+import {
+  safeStorageFileName,
+  storage,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
+import { redis } from "@carbon/kv";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ServerFnInput } from "@carbon/server-functions";
@@ -33,6 +41,7 @@ import {
   breakQuantities,
   datetime,
   getErrorMessage,
+  getSalesOrderStatus,
   round,
   suggestContractType,
   unchecked
@@ -51,8 +60,11 @@ import {
   resolveItemIdFromExtractedText,
   upsertPart
 } from "~/modules/items";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+import { runMRP } from "~/modules/production/production.service";
 import {
   type CarbonError,
+  createServiceContext,
   defineServiceFn,
   type ServiceContext
 } from "~/modules/service-fn.server";
@@ -63,6 +75,7 @@ import {
   requireCompanyRecord,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -73,8 +86,10 @@ import {
   contractEndDate,
   type createContractFromSalesOrderValidator,
   isQuoteLocked,
+  isSalesOrderLocked,
   isSalesRfqLocked,
   quoteLineValidator,
+  salesOrderLineValidator,
   salesRFQStatusType,
   salesRfqDragValidator,
   salesRfqValidator,
@@ -92,6 +107,8 @@ import {
   getCustomerContact,
   getQuote,
   getSalesOrder,
+  getSalesOrderLine,
+  getSalesOrderLines,
   getSalesRFQ,
   insertSalesRFQ,
   type QuoteLinePriceRow,
@@ -101,6 +118,7 @@ import {
   updateSalesRFQStatus,
   upsertQuoteLine,
   upsertQuoteLineMethod,
+  upsertSalesOrderLine,
   upsertSalesRFQLine
 } from "./sales.service";
 import { reconcileQuantityBreaks } from "./sales.utils";
@@ -3310,3 +3328,755 @@ async function createQuoteLineForFile(
   }
   return { lineId: line.data.id, partId };
 }
+
+// --- Digital quotes (the customer's share link) ------------------------------
+
+/**
+ * The context a quote's share link acts in. The link is the only credential,
+ * so it runs as the system, in the quote's company, on behalf of the quote's
+ * creator. Null when the company cannot be read.
+ */
+export async function shareLinkContext(quote: {
+  companyId: string;
+  createdBy: string;
+}): Promise<ServiceContext | null> {
+  const company = await getCarbonServiceRole()
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", quote.companyId)
+    .single();
+  if (!company.data?.companyGroupId) return null;
+  return createServiceContext({
+    actor: { type: "system", onBehalfOf: quote.createdBy },
+    company: { id: quote.companyId, groupId: company.data.companyGroupId },
+    caller: getCarbonServiceRole(),
+    system: getCarbonServiceRole,
+    pg: getDatabaseClient,
+    kv: () => redis
+  });
+}
+
+const digitalQuoteClosed = "This quote is no longer available for a response.";
+
+/** The quote a share link answers, while it still awaits a response. */
+async function sentQuote(ctx: ServiceContext, quoteId: string) {
+  const quote = await ctx.asSystem.supabase
+    .from("quote")
+    .select("*")
+    .eq("id", quoteId)
+    .eq("companyId", ctx.company.id)
+    .single();
+  if (quote.error) return ctx.error("notFound", "Quote not found", quote.error);
+  // Without this a replayed link creates duplicate orders, or flips an
+  // ordered quote back to Lost.
+  if (quote.data.status !== "Sent")
+    return ctx.error("rule", digitalQuoteClosed);
+  return quote.data;
+}
+
+/** Tell the company's digital-quote group that a customer answered. */
+async function notifyDigitalQuoteResponse(
+  ctx: ServiceContext,
+  quoteId: string
+): Promise<CarbonError | null> {
+  const settings = await getCompanySettings(
+    ctx.asSystem.supabase,
+    ctx.company.id
+  );
+  if (settings.error) {
+    return ctx.error("internal", "Failed to send notification", settings.error);
+  }
+  const groupIds = settings.data?.digitalQuoteNotificationGroup ?? [];
+  if (groupIds.length === 0) return null;
+  try {
+    await trigger("notify", {
+      companyId: ctx.company.id,
+      documentId: quoteId,
+      event: NotificationEvent.DigitalQuoteResponse,
+      recipient: { type: "group", groupIds }
+    });
+    return null;
+  } catch (err) {
+    return ctx.error("internal", "Failed to send notification", err);
+  }
+}
+
+/**
+ * The customer accepts a sent quote from its share link.
+ *
+ * @remarks
+ * Only while the quote is Sent, with at least one line selected. A sales
+ * rule error on a selected line refuses with a neutral message (the customer
+ * must never read internal compliance text) and is recorded for the seller;
+ * warnings are logged and the order proceeds. The quote converts to a sales
+ * order with the customer's name and email, its PDF is filed, the company's
+ * digital-quote group is notified, and an attached purchase order file is
+ * stored on the opportunity (its name, without `.pdf`, is the PO number).
+ */
+export const acceptDigitalQuote = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    selectedLines: selectedLinesValidator,
+    acceptedBy: z.string(),
+    acceptedByEmail: z.string(),
+    purchaseOrderFile: z.instanceof(File).optional()
+  }),
+  permission: "system",
+
+  async run(
+    ctx,
+    { quoteId, selectedLines, purchaseOrderFile: file, ...input }
+  ) {
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const quote = await sentQuote(ctx, quoteId);
+    if (quote instanceof Error) return quote;
+
+    const accepted = convertingLineIds(selectedLines);
+    if (accepted.size === 0) {
+      return ctx.error("rule", "Select at least one item to accept the quote.");
+    }
+
+    // The name becomes a storage key segment on an unauthenticated endpoint.
+    const uploadFileName = file ? safeStorageFileName(file.name) : null;
+    if (file && !uploadFileName) {
+      logger.error("Rejected digital quote upload file name", {
+        quoteId,
+        companyId,
+        fileName: file.name
+      });
+      return ctx.error("validation", "Invalid file name");
+    }
+    const purchaseOrderNumber =
+      file && file.name.toLowerCase().endsWith(".pdf")
+        ? file.name.replace(/\.pdf$/i, "")
+        : "";
+
+    // Nobody here may acknowledge a warning: errors refuse, warnings pass.
+    const gate = await salesDocumentGate(ctx, {
+      documentType: "quote",
+      documentId: quoteId,
+      acknowledged: true,
+      lineIds: accepted
+    });
+    if (gate.blocked) {
+      logger.error("Digital quote acceptance blocked by sales rules", {
+        quoteId,
+        companyId,
+        violations: gate.blocked.violations
+      });
+      return ctx.error(
+        "rule",
+        "This quote can no longer be accepted online. Please contact your sales representative."
+      );
+    }
+    if (gate.check.violations.length > 0) {
+      logger.warn("Digital quote accepted with sales rule warnings", {
+        quoteId,
+        companyId,
+        violations: gate.check.violations
+      });
+    }
+
+    const convert = await convertQuoteToOrder(serviceRole, ctx.asSystem.pg, {
+      id: quoteId,
+      companyId,
+      userId: ctx.auditUserId,
+      selectedLines,
+      digitalQuoteAcceptedBy: input.acceptedBy,
+      digitalQuoteAcceptedByEmail: input.acceptedByEmail,
+      purchaseOrderNumber
+    });
+    if (convert.error) {
+      return ctx.error(
+        "internal",
+        "Failed to convert quote to order",
+        convert.error
+      );
+    }
+
+    const salesOrderId = convert.data?.convertedId;
+    if (salesOrderId) {
+      // The order stands without its PDF.
+      const pdf = await attachSalesOrderPdf(ctx, {
+        salesOrderId,
+        locale: "en-US"
+      }).catch((err: unknown) => err);
+      if (pdf instanceof Error) {
+        logger.error("Failed to generate PDF after digital quote acceptance", {
+          companyId,
+          salesOrderId,
+          error: pdf
+        });
+      }
+    }
+
+    const notified = await notifyDigitalQuoteResponse(ctx, quoteId);
+    if (notified) return notified;
+
+    if (file && uploadFileName) {
+      const purchaseOrderDocumentPath = `${companyId}/opportunity/${quote.opportunityId}/${uploadFileName}`;
+      const upload = await storage(serviceRole)
+        .company(companyId)
+        .upload(purchaseOrderDocumentPath, file);
+      if (upload.error) {
+        return ctx.error("internal", "Failed to upload file", upload.error);
+      }
+      const opportunity = await serviceRole
+        .from("opportunity")
+        .update({ purchaseOrderDocumentPath })
+        .eq("id", quote.opportunityId!)
+        .eq("companyId", companyId);
+      if (opportunity.error) {
+        logger.error("Failed to update opportunity", {
+          companyId,
+          error: opportunity.error
+        });
+      }
+    }
+
+    return { salesOrderId: salesOrderId ?? null };
+  }
+});
+
+/**
+ * The customer rejects a sent quote from its share link.
+ *
+ * @remarks
+ * Only while the quote is Sent: it becomes Lost with the customer's name and
+ * email, and the company's digital-quote group is notified.
+ */
+export const rejectDigitalQuote = defineServiceFn({
+  input: z.object({
+    quoteId: z.string(),
+    rejectedBy: z.string(),
+    rejectedByEmail: z.string()
+  }),
+  permission: "system",
+
+  async run(ctx, { quoteId, rejectedBy, rejectedByEmail }) {
+    const quote = await sentQuote(ctx, quoteId);
+    if (quote instanceof Error) return quote;
+
+    const rejected = await ctx.asSystem.supabase
+      .from("quote")
+      .update({
+        status: "Lost",
+        digitalQuoteRejectedBy: rejectedBy,
+        digitalQuoteRejectedByEmail: rejectedByEmail
+      })
+      .eq("id", quoteId)
+      .eq("companyId", ctx.company.id);
+    if (rejected.error) {
+      return ctx.error("internal", "Failed to reject quote", rejected.error);
+    }
+
+    const notified = await notifyDigitalQuoteResponse(ctx, quoteId);
+    if (notified) return notified;
+    return { quoteId };
+  }
+});
+
+// --- Sales orders -------------------------------------------------------------
+
+const salesOrderFields = [
+  "customerId",
+  "currencyCode",
+  "customerContactId",
+  "customerEngineeringContactId",
+  "customerLocationId",
+  "customerReference",
+  "exchangeRate",
+  "expirationDate",
+  "locationId",
+  "orderDate",
+  "salesPersonId",
+  "receiptPromisedDate",
+  "receiptRequestedDate"
+] as const;
+
+/**
+ * Set one field on one or more sales orders.
+ *
+ * @remarks
+ * Refused once any of the orders is confirmed. A new customer on a single
+ * order brings its currency and today's exchange rate; so does a new
+ * currency. The requested and promised dates are the shipment's. An empty
+ * value clears the field.
+ */
+export const updateSalesOrderField = defineServiceFn({
+  input: fieldUpdate(salesOrderFields),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const orders = await client
+      .from("salesOrder")
+      .select("status")
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (orders.error) {
+      return ctx.error("internal", "Failed to load the orders", orders.error);
+    }
+    if (orders.data.some((order) => isSalesOrderLocked(order.status))) {
+      return ctx.error("rule", "Cannot modify a confirmed sales order.");
+    }
+
+    const audit = {
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    };
+    const withRate = async (currencyCode: string) => {
+      const rate = await getExchangeRate(client, companyId, currencyCode);
+      return rate.error
+        ? ctx.error("internal", "Failed to get the exchange rate", rate.error)
+        : { currencyCode, exchangeRate: rate.data };
+    };
+
+    let table: "salesOrder" | "salesOrderShipment" = "salesOrder";
+    let changes: Record<string, unknown> = { [field]: value || null };
+    if (field === "customerId") {
+      changes = { customerId: value ?? undefined };
+      if (value && ids.length === 1) {
+        const customer = await client
+          .from("customer")
+          .select("currencyCode")
+          .eq("id", value)
+          .single();
+        if (customer.data?.currencyCode) {
+          const currency = await withRate(customer.data.currencyCode);
+          if (currency instanceof Error) return currency;
+          changes = { ...changes, ...currency };
+        }
+      }
+    } else if (field === "currencyCode" && value) {
+      const currency = await withRate(value);
+      if (currency instanceof Error) return currency;
+      changes = currency;
+    } else if (
+      field === "receiptPromisedDate" ||
+      field === "receiptRequestedDate"
+    ) {
+      table = "salesOrderShipment";
+    }
+
+    const update = await client
+      .from(table)
+      .update(unchecked({ ...changes, ...audit }))
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error("internal", "Failed to update the orders", update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Confirm a sales order.
+ *
+ * @remarks
+ * In order: the customer must have a reachable contact when the company
+ * requires one; the sales-rule gate re-checks every line (an error, or a
+ * warning not `acknowledged`, returns `violations` and confirms nothing);
+ * the order's PDF is filed; with `notification` Email it is sent to
+ * `customerContact` (and `cc`). Only then does the order take its status
+ * from its lines, with today as the order date when it had none. MRP then
+ * plans it. A failed PDF or email leaves the order unconfirmed.
+ *
+ * @mcp
+ */
+export const confirmSalesOrder = defineServiceFn({
+  input: z.object({
+    salesOrderId: z.string(),
+    acknowledged: z.boolean().default(false),
+    ...documentNotification,
+    locale: z.string().default("en-US")
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    const { salesOrderId, notification, customerContact } = input;
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const refused = await refuseUnlessOwned(ctx, "salesOrder", {
+      id: salesOrderId
+    });
+    if (refused) return refused;
+    const order = await getSalesOrder(serviceRole, salesOrderId);
+    if (order.error) {
+      return ctx.error("internal", "Failed to get sales order", order.error);
+    }
+
+    // Off by default: only for a company that asked for the policy.
+    const contactRequired = await checkPartyContactRequirement(
+      client,
+      companyId,
+      { kind: "customer", id: order.data.customerId }
+    );
+    if (contactRequired) return ctx.error("rule", contactRequired);
+
+    // Before the PDF, so a blocked order does not get one.
+    const gate = await salesDocumentGate(ctx, {
+      documentType: "salesOrder",
+      documentId: salesOrderId,
+      acknowledged: input.acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const pdf = await attachSalesOrderPdf(ctx, {
+      salesOrderId,
+      locale: input.locale
+    }).catch((err: unknown) =>
+      ctx.error("internal", "Failed to generate PDF", err)
+    );
+    if (pdf instanceof Error) {
+      return ctx.error("internal", "Failed to generate PDF", pdf);
+    }
+
+    if (notification === "Email") {
+      if (!customerContact) {
+        return ctx.error("validation", "Customer contact is required");
+      }
+      const sent = await sendSalesOrderEmail({
+        salesOrderId,
+        companyId,
+        companyGroupId: ctx.company.groupId,
+        userId,
+        customerContactId: customerContact,
+        cc: input.cc,
+        documentFilePath: pdf.documentFilePath,
+        fileName: pdf.fileName,
+        serviceRole,
+        locales: [input.locale]
+      }).catch((err: unknown) => ({
+        success: false,
+        message: undefined,
+        error: err
+      }));
+      if (!sent.success) {
+        return ctx.error("internal", sent.message ?? "Failed to send email");
+      }
+    }
+
+    const lines = await getSalesOrderLines(serviceRole, salesOrderId);
+    const { status } = getSalesOrderStatus(lines.data || []);
+    const confirmed = await client
+      .from("salesOrder")
+      .update({
+        status,
+        orderDate:
+          order.data.orderDate ??
+          datetime
+            .today(await getCompanyTimeZone(client, companyId))
+            .toString(),
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", salesOrderId);
+    if (confirmed.error) {
+      return ctx.error(
+        "internal",
+        "Failed to confirm sales order",
+        confirmed.error
+      );
+    }
+
+    // Evidence only once the confirm has committed.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: salesOrderId,
+      outcome: "acknowledged",
+      ...gate.check
+    });
+
+    await runMRP(serviceRole, ctx.asSystem.pg, {
+      type: "salesOrder",
+      id: salesOrderId,
+      companyId,
+      userId
+    });
+
+    trackWorkEvent("sales_order_confirmed", {
+      companyId,
+      userId,
+      salesOrderId,
+      lineCount: lines.data?.length ?? 0,
+      derivedStatus: status,
+      emailed: notification === "Email"
+    });
+    return { salesOrderId, status };
+  }
+});
+
+/** A sales order line keeps only the target its type uses. */
+function withLineTarget<
+  L extends {
+    salesOrderLineType: string;
+    accountId?: string;
+    assetId?: string;
+    itemId?: string;
+  }
+>(line: L): L {
+  if (line.salesOrderLineType === "Comment") {
+    return {
+      ...line,
+      accountId: undefined,
+      assetId: undefined,
+      itemId: undefined
+    };
+  }
+  if (line.salesOrderLineType === "Fixed Asset") {
+    return { ...line, accountId: undefined, itemId: undefined };
+  }
+  return { ...line, accountId: undefined, assetId: undefined };
+}
+
+/** An unlocked sales order this company owns, or why it cannot be changed. */
+async function unlockedSalesOrder(
+  ctx: ServiceContext,
+  salesOrderId: string,
+  message: string
+) {
+  const refused = await refuseUnlessOwned(ctx, "salesOrder", {
+    id: salesOrderId
+  });
+  if (refused) return refused;
+  const order = await getSalesOrder(ctx.asCaller.supabase, salesOrderId);
+  if (isSalesOrderLocked(order.data?.status)) return ctx.error("rule", message);
+  return null;
+}
+
+/**
+ * Check a sales order line's item against the sales rules, at the order's
+ * ship-to (the drop-ship location for a drop shipment). A line with no item
+ * (a comment, a fixed asset) is not checked.
+ */
+async function salesOrderLineGate(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    lineId: string | null;
+    itemId?: string;
+    quantity?: number;
+    acknowledged: boolean;
+  }
+) {
+  if (!args.itemId) {
+    return { blocked: null, check: { violations: [], ruleNames: {} } };
+  }
+  const shipTo = await resolveSalesOrderShipTo(
+    ctx.asSystem.supabase,
+    args.salesOrderId,
+    ctx.company.id
+  );
+  return salesLineGate(ctx, {
+    surface: "salesOrderLine",
+    documentType: "salesOrder",
+    documentId: args.salesOrderId,
+    lineId: args.lineId,
+    itemId: args.itemId,
+    quantities: [args.quantity ?? 1],
+    customerId: shipTo.customerId,
+    customerLocationId: shipTo.customerLocationId,
+    acknowledged: args.acknowledged
+  });
+}
+
+const salesOrderLineInput = salesOrderLineValidator.safeExtend({
+  customFields: customFieldValues.optional(),
+  acknowledged: z.boolean().default(false)
+});
+
+/**
+ * Add a line to a sales order.
+ *
+ * @remarks
+ * Refused while the order is locked, and for an item a change notice still
+ * holds (an unreleased revision cannot be ordered). A line with an item is
+ * first checked against the sales rules at the order's ship-to: an error,
+ * or a warning not `acknowledged`, returns `violations` and adds nothing.
+ *
+ * @mcp
+ */
+export const createSalesOrderLine = defineServiceFn({
+  input: salesOrderLineInput,
+  permission: { create: "sales" },
+
+  async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
+    const companyId = ctx.company.id;
+    const line = withLineTarget(input);
+    const locked = await unlockedSalesOrder(
+      ctx,
+      line.salesOrderId,
+      "Cannot add lines to a locked sales order. Reopen it first."
+    );
+    if (locked) return locked;
+
+    // Checked here rather than only in the picker: the API reaches this too.
+    if (line.itemId) {
+      const unreleased = await getUnreleasedChangeOrderIssue(
+        ctx.asSystem.supabase,
+        { itemId: line.itemId, companyId }
+      );
+      if (unreleased) {
+        return ctx.error("rule", `${unreleased} It cannot be ordered.`);
+      }
+    }
+
+    const gate = await salesOrderLineGate(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: null,
+      itemId: line.itemId,
+      quantity: line.saleQuantity,
+      acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const created = await upsertSalesOrderLine(ctx.asCaller.supabase, {
+      ...line,
+      companyId,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (created.error) {
+      return ctx.error(
+        "internal",
+        "Failed to create sales order line.",
+        created.error
+      );
+    }
+
+    await recordSalesLineOutcome(
+      ctx,
+      {
+        documentType: "salesOrder",
+        documentId: line.salesOrderId,
+        lineId: created.data.id,
+        itemId: line.itemId ?? null
+      },
+      "acknowledged",
+      gate.check
+    );
+    return { salesOrderLineId: created.data.id };
+  }
+});
+
+/**
+ * Change a sales order line.
+ *
+ * @remarks
+ * Refused while the order is locked. A line with an item is first checked
+ * against the sales rules (see `createSalesOrderLine`).
+ *
+ * @mcp
+ */
+export const updateSalesOrderLine = defineServiceFn({
+  input: salesOrderLineInput.safeExtend({ id: z.string() }),
+  permission: { create: "sales" },
+
+  async run(ctx, { id, acknowledged, customFields, ...input }) {
+    const line = withLineTarget(input);
+    // The line must be on the order whose lock state is checked.
+    const refused = await refuseUnlessOwned(ctx, "salesOrderLine", {
+      id,
+      salesOrderId: line.salesOrderId
+    });
+    if (refused) return refused;
+    const locked = await unlockedSalesOrder(
+      ctx,
+      line.salesOrderId,
+      "Cannot modify a locked sales order. Reopen it first."
+    );
+    if (locked) return locked;
+
+    const gate = await salesOrderLineGate(ctx, {
+      salesOrderId: line.salesOrderId,
+      lineId: id,
+      itemId: line.itemId,
+      quantity: line.saleQuantity,
+      acknowledged
+    });
+    if (gate.blocked) return gate.blocked;
+
+    const updated = await upsertSalesOrderLine(ctx.asCaller.supabase, {
+      id,
+      ...line,
+      updatedBy: ctx.auditUserId,
+      customFields
+    });
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update sales order line",
+        updated.error
+      );
+    }
+
+    await recordSalesLineOutcome(
+      ctx,
+      {
+        documentType: "salesOrder",
+        documentId: line.salesOrderId,
+        lineId: id,
+        itemId: line.itemId ?? null
+      },
+      "acknowledged",
+      gate.check
+    );
+    return { salesOrderLineId: id };
+  }
+});
+
+/**
+ * Create a shipment for one sales order line.
+ *
+ * @remarks
+ * The line needs a location; the shipment is created there through the
+ * `create` server function.
+ *
+ * @mcp
+ */
+export const shipSalesOrderLine = defineServiceFn({
+  input: z.object({ salesOrderLineId: z.string() }),
+  permission: { create: "inventory" },
+
+  async run(ctx, { salesOrderLineId }) {
+    const companyId = ctx.company.id;
+    const line = await getSalesOrderLine(
+      ctx.asSystem.supabase,
+      salesOrderLineId
+    );
+    if (line.error || line.data.companyId !== companyId) {
+      return ctx.error(
+        "notFound",
+        "Failed to get sales order line",
+        line.error
+      );
+    }
+    if (!line.data.locationId) {
+      return ctx.error(
+        "rule",
+        "Set a location on this sales order line before creating a shipment"
+      );
+    }
+
+    const shipment = await serverFns
+      .system({ db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId })
+      .invoke("create", {
+        type: "shipmentFromSalesOrderLine",
+        locationId: line.data.locationId,
+        salesOrderLineId
+      });
+    if (!shipment.data || shipment.error) {
+      return ctx.error("internal", "Failed to create shipment", shipment.error);
+    }
+    return { shipmentId: shipment.data.id };
+  }
+});
