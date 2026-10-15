@@ -7874,7 +7874,8 @@ async function invalidateAssemblyPlanCache(
  * convert can run. This is the user-facing escape hatch for stale caches
  * (e.g. after a geometry-service upgrade that changes nodeIds); routine
  * instruction deletion uses the narrower invalidateAssemblyPlanCache instead.
- * @mcp action destructive
+ *
+ * Not published: `production.assembly.reconvertModel` also converts the model again.
  */
 export async function invalidateAssemblyModelCache(
   client: SupabaseClient<Database>,
@@ -8141,7 +8142,7 @@ export async function updateAssemblyStepMotion(
 // Autosave target for the Details panel's Add/remove component controls: patches
 // only the step's assigned components, leaving the title/typed fields and motion
 // untouched.
-/** @mcp update */
+/** Not published: `production.assembly.setStepComponents` also adds the new components' materials. */
 export async function updateAssemblyStepComponents(
   client: SupabaseClient<Database>,
   data: {
@@ -8583,7 +8584,7 @@ export async function deleteAssemblySubAssembly(
 // ends up on exactly the target. `remove` (no target) strips them from EVERY
 // step, unassigning them entirely. One transaction: a half-applied move (added
 // to target but not removed from the source, or vice versa) would be a real bug.
-/** @mcp action destructive */
+/** Not published: `production.assembly.reassignComponents` also adds the target step's materials. */
 export async function reassignAssemblyStepComponents(
   db: Kysely<KyselyDatabase>,
   data: {
@@ -9352,7 +9353,8 @@ export async function getLatestAssemblyPlanJob(
  * it to Processing; without this the row only exists after event pickup, and
  * the post-action revalidation lands in that gap — nothing polls, and the run
  * (and its finished motions) never surface without a manual reload.
- * @mcp create
+ *
+ * The job row only; `production.assembly.replan` and `.generateSteps` start a plan.
  */
 export async function createAssemblyPlanJob(
   client: SupabaseClient<Database>,
@@ -9422,7 +9424,7 @@ export async function getAssemblyComponentMappings(
     .eq("modelUploadId", modelUploadId);
 }
 
-/** @mcp upsert */
+/** Not published: `production.assembly.mapComponent` also adds the item to the steps. */
 export async function upsertAssemblyComponentMapping(
   client: SupabaseClient<Database>,
   data: {
@@ -9546,7 +9548,8 @@ export type AutoMatchResult = {
  * strong name matches first (greedy, best score wins), then unique
  * quantity matches (a component appearing N times matched to the only BOM line
  * with quantity N) as low-confidence fallbacks. Existing mappings are kept.
- * @mcp action
+ *
+ * Not published: `production.assembly.matchBom` also backfills the steps' materials.
  */
 export async function autoMatchAssemblyComponents(
   client: SupabaseClient<Database>,
@@ -9932,7 +9935,7 @@ export function buildAssemblyToolStepLinks(
   return rows;
 }
 
-/** @mcp update destructive */
+/** Not published: `production.assembly.syncToOperation` also refuses a locked job. */
 export async function syncAssemblyInstructionToOperation(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -10412,7 +10415,8 @@ export async function syncAssemblyInstructionToOperation(
  * with motion "none" plus a `warnings` payload — the viewer fades them in
  * rather than animating a fabricated colliding path. The author
  * validates/edits the drafts instead of authoring motions by hand.
- * @mcp create destructive
+ *
+ * Not published: `production.assembly.generateSteps` also starts a missing plan.
  */
 export async function generateAssemblyStepsFromPlan(
   client: SupabaseClient<Database>,

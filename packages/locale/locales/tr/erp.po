@@ -152,6 +152,10 @@ msgstr "{0} varlık"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} amortisman yapılacak kıymet · {amount}"
 
+#. placeholder {0}: unmatched.length
+msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} hâlâ {where} tarafından kullanıldığı için silinemez. Önce bu kayıtları farklı bir ölçü birimine değiştirin."
@@ -297,6 +301,10 @@ msgstr "{0} işlem · {1} adet"
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
+
+#. placeholder {0}: data.partsUnmatched
+msgid "{0} part links had no matching BOM line on the operation"
+msgstr ""
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
@@ -695,6 +703,9 @@ msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış 
 
 msgid "{unitCount} units"
 msgstr "{unitCount} adet"
+
+msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
+msgstr ""
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Önce kalan # gerekli hesabı eşleyin.} other {Önce kalan # gerekli hesabı eşleyin.}}"
@@ -2220,6 +2231,10 @@ msgstr "Eklendi"
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
 msgstr "Eklenen {0} satır"
+
+#. placeholder {0}: data.materialsCreated
+msgid "added {0} step materials"
+msgstr ""
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "Eklendi {name} · {quantity} × {rate}"
@@ -10468,6 +10483,9 @@ msgstr "Malzemenin özelliklerine göre malzeme kimlikleri ve açıklamaları ol
 msgid "Generate Picking List"
 msgstr "Toplama listesi oluştur"
 
+msgid "Generated {created} steps from the motion plan"
+msgstr ""
+
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Bir kira sözleşmesinden oluşturuldu. Bu satırı değiştirmek için sözleşmeyi değiştirin."
 
@@ -13082,6 +13100,11 @@ msgstr "Hesap planınızı sağlayıcının hesap planına eşleyin. Muhasebele�
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
 
+#. placeholder {0}: data.mapped
+#. placeholder {1}: data.totalComponents
+msgid "Mapped {0} of {1} components to the bill of materials"
+msgstr ""
+
 msgid "Mapped devices"
 msgstr "Eşlenen cihazlar"
 
@@ -13526,6 +13549,12 @@ msgstr "Cep Telefonu"
 msgid "Mode"
 msgstr "Mod"
 
+msgid "Model cache invalidated; re-converting from the source file"
+msgstr ""
+
+msgid "Model conversion started"
+msgstr ""
+
 msgid "Model Number"
 msgstr "Model Numarası"
 
@@ -13655,6 +13684,9 @@ msgstr "Çoğu şey burada yakalanır ve çözülür. Açıkça adlandırın."
 
 msgid "Motion"
 msgstr "Hareket"
+
+msgid "Motion planning started — steps generate when it finishes"
+msgstr ""
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount bu tanımlayıcıya sahip {matches} kayıt içeriyor. Fazlasını Mount'ta silin veya birleştirin, sonra yeniden gönderin."
@@ -14890,6 +14922,9 @@ msgstr "Burada satır yok."
 
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
+
+msgid "No running job to cancel"
+msgstr ""
 
 msgid "No schedule lines."
 msgstr "Çizelge satırı yok."
@@ -17806,6 +17841,12 @@ msgstr "İlk açık güne yeniden tarihlendir"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
 
+msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
+msgstr ""
+
+msgid "Re-planning motions in the current step order — steps update when it finishes"
+msgstr ""
+
 msgid "Re-send"
 msgstr "Yeniden gönder"
 
@@ -18158,6 +18199,9 @@ msgstr "Bu lokasyon için çizelgeyi şimdi yeniden oluşturun. Son çizelgeleme
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D modelinden Küçük resim yeniden oluştur"
+
+msgid "Regenerated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "Küçük resim yenileniyor…"
@@ -21833,6 +21877,14 @@ msgstr "Senkronizasyon Uyumu"
 
 msgid "Synced"
 msgstr "Eşitlendi"
+
+#. placeholder {0}: data.created
+#. placeholder {1}: data.updated
+#. placeholder {2}: data.deleted
+#. placeholder {3}: data.slidesSynced
+#. placeholder {4}: data.toolsLinked
+msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
+msgstr ""
 
 msgid "System"
 msgstr "Sistem"

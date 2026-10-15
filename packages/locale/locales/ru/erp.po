@@ -152,6 +152,10 @@ msgstr "{0} активов"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} активов к амортизации · {amount}"
 
+#. placeholder {0}: unmatched.length
+msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} нельзя удалить, так как она всё ещё используется: {where}. Сначала измените эти записи на другую единицу измерения."
@@ -297,6 +301,10 @@ msgstr "{0} опер. · {1} шт"
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
+
+#. placeholder {0}: data.partsUnmatched
+msgid "{0} part links had no matching BOM line on the operation"
+msgstr ""
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
@@ -695,6 +703,9 @@ msgstr "{uncounted, plural, one {# непосчитанная строка} othe
 
 msgid "{unitCount} units"
 msgstr "{unitCount} единиц"
+
+msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
+msgstr ""
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Сначала сопоставьте # оставшийся требуемый счет.} other {Сначала сопоставьте # оставшиеся требуемые счета.}}"
@@ -2220,6 +2231,10 @@ msgstr "Добавлено"
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
 msgstr "Добавлено строк: {0}"
+
+#. placeholder {0}: data.materialsCreated
+msgid "added {0} step materials"
+msgstr ""
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "Добавлено {name} · {quantity} × {rate}"
@@ -10468,6 +10483,9 @@ msgstr "Генерируйте идентификаторы материалов
 msgid "Generate Picking List"
 msgstr "Создать лист отбора"
 
+msgid "Generated {created} steps from the motion plan"
+msgstr ""
+
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Создано из соглашения аренды. Измените соглашение, чтобы изменить эту строку."
 
@@ -13082,6 +13100,11 @@ msgstr "Сопоставьте ваш план счетов с планом сч
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
 
+#. placeholder {0}: data.mapped
+#. placeholder {1}: data.totalComponents
+msgid "Mapped {0} of {1} components to the bill of materials"
+msgstr ""
+
 msgid "Mapped devices"
 msgstr "Сопоставленные устройства"
 
@@ -13526,6 +13549,12 @@ msgstr "Мобильный телефон"
 msgid "Mode"
 msgstr "Режим"
 
+msgid "Model cache invalidated; re-converting from the source file"
+msgstr ""
+
+msgid "Model conversion started"
+msgstr ""
+
 msgid "Model Number"
 msgstr "Номер модели"
 
@@ -13655,6 +13684,9 @@ msgstr "Большинство проблем выявляются и решаю
 
 msgid "Motion"
 msgstr "Движение"
+
+msgid "Motion planning started — steps generate when it finishes"
+msgstr ""
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount содержит {matches} записей с этим идентификатором. Удалите или объедините лишние в Mount, затем отправьте снова."
@@ -14890,6 +14922,9 @@ msgstr "Нет строк здесь."
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
+
+msgid "No running job to cancel"
+msgstr ""
 
 msgid "No schedule lines."
 msgstr "Нет строк графика."
@@ -17806,6 +17841,12 @@ msgstr "Перенести дату на первый открытый день"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
 
+msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
+msgstr ""
+
+msgid "Re-planning motions in the current step order — steps update when it finishes"
+msgstr ""
+
 msgid "Re-send"
 msgstr "Отправить снова"
 
@@ -18158,6 +18199,9 @@ msgstr "Пересчитать график для этой площадки с�
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Восстановить миниатюру из 3D модели"
+
+msgid "Regenerated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "Создание миниатюры…"
@@ -21833,6 +21877,14 @@ msgstr "Проверка синхронизации"
 
 msgid "Synced"
 msgstr "Синхронизировано"
+
+#. placeholder {0}: data.created
+#. placeholder {1}: data.updated
+#. placeholder {2}: data.deleted
+#. placeholder {3}: data.slidesSynced
+#. placeholder {4}: data.toolsLinked
+msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
+msgstr ""
 
 msgid "System"
 msgstr "Система"

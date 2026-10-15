@@ -152,6 +152,10 @@ msgstr "{0} actifs"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} actifs à amortir · {amount}"
 
+#. placeholder {0}: unmatched.length
+msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} ne peut pas être supprimé car il est encore utilisé par {where}. Modifiez d'abord ces enregistrements vers une autre unité de mesure."
@@ -297,6 +301,10 @@ msgstr "{0} opérations · {1} pièces"
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} commandes"
+
+#. placeholder {0}: data.partsUnmatched
+msgid "{0} part links had no matching BOM line on the operation"
+msgstr ""
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
@@ -695,6 +703,9 @@ msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non
 
 msgid "{unitCount} units"
 msgstr "{unitCount} unités"
+
+msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
+msgstr ""
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Mapper d'abord le # compte requis restant.} other {Mapper d'abord les # comptes requis restants.}}"
@@ -2220,6 +2231,10 @@ msgstr "Ajouté"
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
 msgstr "Ajout de {0} lignes"
+
+#. placeholder {0}: data.materialsCreated
+msgid "added {0} step materials"
+msgstr ""
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "Ajouté {name} · {quantity} × {rate}"
@@ -10468,6 +10483,9 @@ msgstr "Générer les IDs de matériaux et les descriptions en fonction des prop
 msgid "Generate Picking List"
 msgstr "Générer la liste de prélèvement"
 
+msgid "Generated {created} steps from the motion plan"
+msgstr ""
+
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Généré à partir d'un accord de location. Modifiez l'accord pour modifier cette ligne."
 
@@ -13082,6 +13100,11 @@ msgstr "Mappez votre plan comptable au plan comptable du fournisseur. Les compte
 msgid "Map your current process, systems, and data"
 msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
 
+#. placeholder {0}: data.mapped
+#. placeholder {1}: data.totalComponents
+msgid "Mapped {0} of {1} components to the bill of materials"
+msgstr ""
+
 msgid "Mapped devices"
 msgstr "Appareils associés"
 
@@ -13526,6 +13549,12 @@ msgstr "Téléphone Mobile"
 msgid "Mode"
 msgstr "Mode"
 
+msgid "Model cache invalidated; re-converting from the source file"
+msgstr ""
+
+msgid "Model conversion started"
+msgstr ""
+
 msgid "Model Number"
 msgstr "Numéro de modèle"
 
@@ -13655,6 +13684,9 @@ msgstr "La plupart des choses sont détectées et résolues ici. Nommez-les clai
 
 msgid "Motion"
 msgstr "Motion"
+
+msgid "Motion planning started — steps generate when it finishes"
+msgstr ""
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount a {matches} enregistrements avec cet identifiant. Supprimez ou fusionnez les doublons dans Mount, puis envoyez à nouveau."
@@ -14890,6 +14922,9 @@ msgstr "Pas de lignes ici."
 
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
+
+msgid "No running job to cancel"
+msgstr ""
 
 msgid "No schedule lines."
 msgstr "Aucune ligne d'échéancier."
@@ -17806,6 +17841,12 @@ msgstr "Redater au premier jour ouvert"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Ressaisie entre les devis, l'atelier et la finance"
 
+msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
+msgstr ""
+
+msgid "Re-planning motions in the current step order — steps update when it finishes"
+msgstr ""
+
 msgid "Re-send"
 msgstr "Renvoyer"
 
@@ -18158,6 +18199,9 @@ msgstr "Régénérez le planning pour ce site maintenant. Il s'exécute égaleme
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Régénérer la miniature à partir du modèle 3D"
+
+msgid "Regenerated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "Régénération de la miniature en cours…"
@@ -21833,6 +21877,14 @@ msgstr "Rapprochement de synchronisation"
 
 msgid "Synced"
 msgstr "Synchronisé"
+
+#. placeholder {0}: data.created
+#. placeholder {1}: data.updated
+#. placeholder {2}: data.deleted
+#. placeholder {3}: data.slidesSynced
+#. placeholder {4}: data.toolsLinked
+msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
+msgstr ""
 
 msgid "System"
 msgstr "Système"

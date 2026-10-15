@@ -152,6 +152,10 @@ msgstr "{0} 자산"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0}개의 감가상각 자산 · {amount}"
 
+#. placeholder {0}: unmatched.length
+msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0}은(는) {where}에서 아직 사용 중이므로 삭제할 수 없습니다. 먼저 해당 레코드를 다른 단위로 변경하세요."
@@ -297,6 +301,10 @@ msgstr "{0} 작업 · {1} 개"
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
+
+#. placeholder {0}: data.partsUnmatched
+msgid "{0} part links had no matching BOM line on the operation"
+msgstr ""
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
@@ -695,6 +703,9 @@ msgstr "미실사 라인 {uncounted}개"
 
 msgid "{unitCount} units"
 msgstr "{unitCount}개"
+
+msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
+msgstr ""
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 매핑하세요.} other {먼저 # 남은 필수 계정을 매핑하세요.}}"
@@ -2220,6 +2231,10 @@ msgstr "추가됨"
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
 msgstr "{0}개 라인이 추가되었습니다"
+
+#. placeholder {0}: data.materialsCreated
+msgid "added {0} step materials"
+msgstr ""
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "{name} · {quantity} × {rate} 추가됨"
@@ -10468,6 +10483,9 @@ msgstr "자재 속성을 기반으로 자재 ID와 설명을 생성합니다."
 msgid "Generate Picking List"
 msgstr "피킹 리스트 생성"
 
+msgid "Generated {created} steps from the motion plan"
+msgstr ""
+
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "렌탈 계약에서 생성되었습니다. 이 라인을 변경하려면 계약을 변경하세요."
 
@@ -13082,6 +13100,11 @@ msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비�
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 
+#. placeholder {0}: data.mapped
+#. placeholder {1}: data.totalComponents
+msgid "Mapped {0} of {1} components to the bill of materials"
+msgstr ""
+
 msgid "Mapped devices"
 msgstr "매핑된 장치"
 
@@ -13526,6 +13549,12 @@ msgstr "휴대전화"
 msgid "Mode"
 msgstr "모드"
 
+msgid "Model cache invalidated; re-converting from the source file"
+msgstr ""
+
+msgid "Model conversion started"
+msgstr ""
+
 msgid "Model Number"
 msgstr "모델 번호"
 
@@ -13655,6 +13684,9 @@ msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하
 
 msgid "Motion"
 msgstr "모션"
+
+msgid "Motion planning started — steps generate when it finishes"
+msgstr ""
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount에 이 식별자를 가진 {matches} 기록이 있습니다. Mount에서 추가 기록을 삭제하거나 병합한 후 다시 푸시하세요."
@@ -14890,6 +14922,9 @@ msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
+
+msgid "No running job to cancel"
+msgstr ""
 
 msgid "No schedule lines."
 msgstr "일정 라인이 없습니다."
@@ -17806,6 +17841,12 @@ msgstr "첫 개설 날짜로 다시 설정"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
+msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
+msgstr ""
+
+msgid "Re-planning motions in the current step order — steps update when it finishes"
+msgstr ""
+
 msgid "Re-send"
 msgstr "다시 보내기"
 
@@ -18158,6 +18199,9 @@ msgstr "이 사업장의 일정을 지금 다시 생성하세요. 마지막 일�
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
+
+msgid "Regenerated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "썸네일 재생성 중…"
@@ -21833,6 +21877,14 @@ msgstr "동기화 일치"
 
 msgid "Synced"
 msgstr "동기화됨"
+
+#. placeholder {0}: data.created
+#. placeholder {1}: data.updated
+#. placeholder {2}: data.deleted
+#. placeholder {3}: data.slidesSynced
+#. placeholder {4}: data.toolsLinked
+msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
+msgstr ""
 
 msgid "System"
 msgstr "시스템"

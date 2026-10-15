@@ -167,6 +167,7 @@ import {
   operationTypes,
   procedureStepType
 } from "~/modules/shared";
+import type { action as syncAssemblyAction } from "~/routes/x+/assembly+/$id.sync-bop";
 import type { action as updateOperationAction } from "~/routes/x+/job+/methods+/$jobId.operation.$id";
 import type { action as createOperationAction } from "~/routes/x+/job+/methods+/$jobId.operation.new";
 import type { action as editJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.$id";
@@ -3798,8 +3799,20 @@ function AssemblyStepsSyncModal({
   assemblyInstructionId: string;
   onClose: () => void;
 }) {
-  const fetcher = useAction<typeof syncProcedureAction>({
-    onSuccess: onClose
+  const { t } = useLingui();
+  const fetcher = useAction<typeof syncAssemblyAction>({
+    onSuccess: ({ data }) => {
+      if (data) {
+        const synced = data.created + data.updated;
+        const summary = t`Synced ${synced} steps to the BOP (${data.created} new, ${data.updated} updated, ${data.deleted} removed, ${data.slidesSynced} slides, ${data.toolsLinked} tool links)`;
+        toast.success(
+          data.partsUnmatched > 0
+            ? `${summary} — ${t`${data.partsUnmatched} part links had no matching BOM line on the operation`}`
+            : summary
+        );
+      }
+      onClose();
+    }
   });
   return (
     <Modal

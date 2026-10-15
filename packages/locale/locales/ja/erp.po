@@ -152,6 +152,10 @@ msgstr "{0}個の資産"
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0}件の減価償却対象資産 · {amount}"
 
+#. placeholder {0}: unmatched.length
+msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0}は{where}でまだ使用されているため削除できません。先にそれらのレコードを別の単位に変更してください。"
@@ -297,6 +301,10 @@ msgstr "{0} 作業 · {1} 個"
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
+
+#. placeholder {0}: data.partsUnmatched
+msgid "{0} part links had no matching BOM line on the operation"
+msgstr ""
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
@@ -695,6 +703,9 @@ msgstr "{uncounted, plural, one {# 未計数行} other {# 未計数行}}"
 
 msgid "{unitCount} units"
 msgstr "{unitCount}個"
+
+msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
+msgstr ""
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {残りの # 個の必須勘定科目をまずマップしてください。} other {残りの # 個の必須勘定科目をまずマップしてください。}}"
@@ -2220,6 +2231,10 @@ msgstr "追加済み"
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
 msgstr "{0}行を追加しました"
+
+#. placeholder {0}: data.materialsCreated
+msgid "added {0} step materials"
+msgstr ""
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "{name} を追加しました · {quantity} × {rate}"
@@ -10468,6 +10483,9 @@ msgstr "材料のプロパティに基づいて材料IDと説明を生成しま�
 msgid "Generate Picking List"
 msgstr "ピッキングリストを生成"
 
+msgid "Generated {created} steps from the motion plan"
+msgstr ""
+
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "レンタル契約から生成されています。この明細を変更するには、契約を変更してください。"
 
@@ -13082,6 +13100,11 @@ msgstr "勘定科目表をプロバイダーの表にマップしてください
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
 
+#. placeholder {0}: data.mapped
+#. placeholder {1}: data.totalComponents
+msgid "Mapped {0} of {1} components to the bill of materials"
+msgstr ""
+
 msgid "Mapped devices"
 msgstr "マッピング済みのデバイス"
 
@@ -13526,6 +13549,12 @@ msgstr "携帯電話"
 msgid "Mode"
 msgstr "モード"
 
+msgid "Model cache invalidated; re-converting from the source file"
+msgstr ""
+
+msgid "Model conversion started"
+msgstr ""
+
 msgid "Model Number"
 msgstr "型番"
 
@@ -13655,6 +13684,9 @@ msgstr "ほとんどのことはここで発見され、解決されます。明
 
 msgid "Motion"
 msgstr "モーション"
+
+msgid "Motion planning started — steps generate when it finishes"
+msgstr ""
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount に {matches} 件のこの識別子を持つレコードがあります。Mount の余分なレコードを削除するか統合してからもう一度プッシュしてください。"
@@ -14890,6 +14922,9 @@ msgstr "ここに行はありません。"
 
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
+
+msgid "No running job to cancel"
+msgstr ""
 
 msgid "No schedule lines."
 msgstr "スケジュール明細がありません。"
@@ -17806,6 +17841,12 @@ msgstr "最初の営業日に再日付け"
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
+msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
+msgstr ""
+
+msgid "Re-planning motions in the current step order — steps update when it finishes"
+msgstr ""
+
 msgid "Re-send"
 msgstr "再送信"
 
@@ -18158,6 +18199,9 @@ msgstr "この拠点のスケジュールを今すぐ再生成してください
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3Dモデルからサムネイルを再生成"
+
+msgid "Regenerated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "サムネイルを再生成中…"
@@ -21833,6 +21877,14 @@ msgstr "同期一致"
 
 msgid "Synced"
 msgstr "同期済み"
+
+#. placeholder {0}: data.created
+#. placeholder {1}: data.updated
+#. placeholder {2}: data.deleted
+#. placeholder {3}: data.slidesSynced
+#. placeholder {4}: data.toolsLinked
+msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
+msgstr ""
 
 msgid "System"
 msgstr "システム"

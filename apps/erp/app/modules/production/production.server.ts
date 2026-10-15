@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Json } from "@carbon/database";
-import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
@@ -36,11 +36,15 @@ import { methodItemType, methodType } from "~/modules/shared/shared.models";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import {
+  type AssemblyModelState,
+  assemblyStepComponentsReassignValidator,
   bulkJobValidator,
   copyPeopleBoardValidator,
   copyPeopleWeekValidator,
   deadlineTypes,
+  getAssemblyModelState,
   getDueDateForColumn,
+  isAssemblyPlanRunning,
   isJobEditableFromPlanning,
   isJobLocked,
   JOB_LOCKED_STATUSES,
@@ -71,22 +75,29 @@ import {
   applyProductionPlanningDateActions,
   assignPeopleWeek,
   assignPlanningActions,
+  autoMatchAssemblyComponents,
   calculateJobPriority,
   clearPeopleAbsence,
   copyPeopleBoard,
   copyPeopleWeek,
+  createAssemblyPlanJob,
   createJobOperationBatch,
   deletePeopleAssignment,
   dismissPlanningActions,
+  generateAssemblyStepsFromPlan,
   getBatchOutputLots,
   getJobReleaseReadiness,
+  getLatestAssemblyPlanJob,
+  getModelForItem,
   getPlanningActionsByIds,
   insertJob,
+  invalidateAssemblyModelCache,
   markPlanningActionsActioned,
   movePeopleAssignment,
   movePeopleWeek,
   notifyScheduleInputsChanged,
   pullJobMaterialMakeMethod,
+  reassignAssemblyStepComponents,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
   recalculateJobRequirements,
@@ -102,12 +113,17 @@ import {
   setPeopleDay,
   setPeopleOvertimeBulk,
   settleNewSupplyPlanningActions,
+  syncAssemblyInstructionToOperation,
+  syncAssemblyStepMaterialsFromMappings,
   unassignPeopleWeek,
   unreleaseJobOperationBatch,
+  updateAssemblyStepComponents,
   updateJob,
   updateJobOperationBatch,
   updateJobStatus,
   updatePlanningJob,
+  upsertAssemblyComponentMapping,
+  upsertAssemblyInstruction,
   upsertJobMaterial,
   upsertJobMaterialMakeMethod,
   upsertJobMethod,
@@ -5057,5 +5073,707 @@ export const setProcedureFields = defineServiceFn({
       return ctx.error("internal", update.error.message, update.error);
     }
     return { ids };
+  }
+});
+
+// --- Assembly instructions -------------------------------------------------
+
+/** The instruction's model id, `notFound` unless it is this company's. */
+async function readInstructionModel(ctx: ServiceContext, id: string) {
+  const instruction = await ctx.asCaller.supabase
+    .from("assemblyInstruction")
+    .select(
+      "modelUploadId, modelUpload(id, processingStatus, glbPath, graphPath, modelPath)"
+    )
+    .eq("id", id)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (instruction.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the instruction",
+      instruction.error
+    );
+  }
+  if (!instruction.data) return ctx.error("notFound", "Instruction not found");
+  if (!instruction.data.modelUploadId) {
+    return ctx.error("rule", "This instruction has no model");
+  }
+  return {
+    modelUploadId: instruction.data.modelUploadId,
+    modelUpload: instruction.data.modelUpload
+  };
+}
+
+/** The geometry service is down: no conversion or planning can start. */
+const geometryServiceDown = (ctx: ServiceContext, work: string) =>
+  ctx.error(
+    "unavailable",
+    `The geometry service is unavailable — ${work} can't run right now.`
+  );
+
+/**
+ * Start motion planning for a model: the job row first, so the page shows
+ * the run on its next load (the worker adopts it via `planJobId`; it inserts
+ * its own row when this insert fails), then the event.
+ */
+async function startAssemblyPlan(
+  ctx: ServiceContext,
+  modelUploadId: string,
+  options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
+) {
+  const created = await createAssemblyPlanJob(ctx.asCaller.supabase, {
+    modelUploadId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+  await trigger("assembly-plan", {
+    modelUploadId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    ...(created.data?.id ? { planJobId: created.data.id } : {}),
+    ...options
+  });
+}
+
+/**
+ * Create an assembly instruction for an item from its 3D model.
+ *
+ * @remarks
+ * The model is `modelUploadId` when it is this company's and usable, else
+ * the item's own. Refused when there is no usable model, and when the model
+ * still needs converting while the geometry service is down. Then the
+ * instruction is created, and the model converted when it is not yet, or
+ * motion planning started when it is converted and has no plan. `autogen`
+ * says the page should generate the steps once the plan is ready.
+ *
+ * @mcp
+ */
+export const createAssemblyInstruction = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    modelUploadId: z.string().optional()
+  }),
+  permission: { create: "production" },
+
+  async run(ctx, { itemId, modelUploadId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    // An explicit model (e.g. from the part details page) wins when usable.
+    let model: { id: string } | null = null;
+    let modelState: AssemblyModelState = "none";
+    if (modelUploadId) {
+      const explicit = await client
+        .from("modelUpload")
+        .select("id, processingStatus, glbPath, graphPath, modelPath")
+        .eq("id", modelUploadId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      const explicitState = getAssemblyModelState(explicit.data ?? null);
+      if (explicit.data && explicitState !== "none") {
+        model = explicit.data;
+        modelState = explicitState;
+      }
+    }
+
+    const derived = await getModelForItem(client, itemId, companyId);
+    if (!derived.item) {
+      return ctx.error("notFound", "Failed to load the selected item");
+    }
+    if (!model && derived.model && derived.modelState !== "none") {
+      model = derived.model;
+      modelState = derived.modelState;
+    }
+    if (!model) {
+      return ctx.error(
+        "rule",
+        "The selected item has no 3D model. Upload a STEP file on the item's Model tab first."
+      );
+    }
+
+    // A model that still needs converting can't become a usable instruction
+    // while the geometry service is down: refuse rather than strand a record.
+    const needsConversion =
+      modelState === "convertible" || modelState === "failed";
+    const assemblerHealthy = await isAssemblerServiceHealthy();
+    if (needsConversion && !assemblerHealthy) {
+      return geometryServiceDown(ctx, "model conversion");
+    }
+
+    const create = await upsertAssemblyInstruction(client, {
+      name: derived.item.name || "Assembly",
+      modelUploadId: model.id,
+      itemId,
+      companyId,
+      createdBy: userId
+    });
+    if (create.error || !create.data?.id) {
+      return ctx.error(
+        "internal",
+        "Failed to create assembly instruction",
+        create.error
+      );
+    }
+
+    // Lazy conversion: only a model used in an assembly is converted.
+    if (needsConversion) {
+      await trigger("assembly-convert", {
+        companyId,
+        modelUploadId: model.id,
+        userId
+      });
+    } else if (modelState === "converted" && assemblerHealthy) {
+      // A model converted before this instruction existed may have no plan
+      // yet: start it, so it is ready by the time the steps are generated.
+      const planJob = await getLatestAssemblyPlanJob(client, model.id);
+      const planStatus = planJob.data?.status;
+      if (
+        planStatus !== "Success" &&
+        planStatus !== "Processing" &&
+        planStatus !== "Queued"
+      ) {
+        await startAssemblyPlan(ctx, model.id);
+      }
+    }
+
+    return { id: create.data.id, autogen: modelState !== "none" };
+  }
+});
+
+/**
+ * Re-run motion planning for an instruction's model.
+ *
+ * @remarks
+ * The model must be converted, the geometry service up and no plan running.
+ * A stale Queued or Processing plan row (its event lost, or its worker gone)
+ * is failed first so it can't shadow the new run. With steps, the plan keeps
+ * their order and re-plans the motions; `fresh` (Regenerate Steps) plans from
+ * scratch, re-detecting grouping, and is refused while a step is manually
+ * authored or Done. `mode` says which run started.
+ *
+ * @mcp
+ */
+export const replanAssembly = defineServiceFn({
+  input: z.object({ id: z.string(), fresh: z.boolean().default(false) }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, fresh }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const instruction = await readInstructionModel(ctx, id);
+    if (instruction instanceof CarbonError) return instruction;
+    const { modelUploadId } = instruction;
+
+    if (instruction.modelUpload?.processingStatus !== "Success") {
+      return ctx.error(
+        "rule",
+        "The model must finish converting before planning"
+      );
+    }
+    if (!(await isAssemblerServiceHealthy())) {
+      return geometryServiceDown(ctx, "motion planning");
+    }
+
+    const planJob = await getLatestAssemblyPlanJob(client, modelUploadId);
+    if (isAssemblyPlanRunning(planJob.data)) {
+      return ctx.error("conflict", "Motion planning is already running");
+    }
+    if (
+      planJob.data?.status === "Queued" ||
+      planJob.data?.status === "Processing"
+    ) {
+      // Ruled non-live above: a Queued event never picked up, or a Processing
+      // run whose worker is gone.
+      await client
+        .from("assemblyPlanJob")
+        .update({
+          status: "Failed",
+          error:
+            planJob.data.status === "Queued"
+              ? "Planning never started — the job event was lost"
+              : "Planning run was lost (worker restarted mid-run)",
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", planJob.data.id)
+        .eq("companyId", companyId);
+    }
+
+    const stepCount = await client
+      .from("assemblyInstructionStep")
+      .select("id", { count: "exact", head: true })
+      .eq("assemblyInstructionId", id)
+      .eq("companyId", companyId);
+    const steps = stepCount.count ?? 0;
+
+    // A regenerate replaces every step once the plan lands: refuse now,
+    // rather than run the planner and only then fail.
+    if (fresh && steps > 0) {
+      const locked = await client
+        .from("assemblyInstructionStep")
+        .select("id", { count: "exact", head: true })
+        .eq("assemblyInstructionId", id)
+        .eq("companyId", companyId)
+        .or("planConfidence.eq.manual,status.eq.Done");
+      if ((locked.count ?? 0) > 0) {
+        return ctx.error(
+          "rule",
+          "Some steps are manually authored or Done — reset or delete them before regenerating"
+        );
+      }
+    }
+
+    // `fresh` re-derives the auto-detected units too (the worker omits them
+    // for this run); step generation swaps their rows once the plan lands.
+    const keepsOrder = !fresh && steps > 0;
+    await startAssemblyPlan(ctx, modelUploadId, {
+      ...(keepsOrder ? { reMotionFor: id } : {}),
+      ...(fresh ? { reDetectUnits: true } : {})
+    });
+    return {
+      mode: keepsOrder ? "remotion" : fresh ? "fresh" : "plan"
+    } as const;
+  }
+});
+
+/**
+ * Generate an instruction's steps from its model's motion plan.
+ *
+ * @remarks
+ * `generate` needs an instruction with no steps; `regenerate` replaces them
+ * and is refused while a step is manually authored or Done. With no plan yet
+ * this starts one (planning is lazy) unless the model is still converting or a
+ * plan is already running, and answers `planning: true`: the page polls and
+ * submits again when the plan lands. Steps are seeded with the BOM items the
+ * components map to; `unmappedComponentCount` is the components with none.
+ *
+ * @mcp destructive
+ */
+export const generateAssemblySteps = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    mode: z.enum(["generate", "regenerate"]).default("generate")
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, mode }) {
+    // The service role: the auto-detected units it materializes need create
+    // and delete under RLS, which an update-authorized caller may lack. Every
+    // read and write is scoped to the company.
+    const result = await generateAssemblyStepsFromPlan(ctx.asSystem.supabase, {
+      assemblyInstructionId: id,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      mode
+    });
+    if (result.ok) {
+      return {
+        planning: false,
+        created: result.created,
+        unmappedComponentCount: result.unmappedComponentCount ?? 0
+      };
+    }
+
+    if (result.reason === "no-plan" && result.modelUploadId) {
+      if (!(await isAssemblerServiceHealthy())) {
+        return geometryServiceDown(ctx, "motion planning");
+      }
+      const [model, planJob] = await Promise.all([
+        ctx.asSystem.supabase
+          .from("modelUpload")
+          .select("processingStatus")
+          .eq("id", result.modelUploadId)
+          .eq("companyId", ctx.company.id)
+          .maybeSingle(),
+        getLatestAssemblyPlanJob(ctx.asSystem.supabase, result.modelUploadId)
+      ]);
+      const isConverting =
+        model.data?.processingStatus === "Queued" ||
+        model.data?.processingStatus === "Processing";
+      if (!isConverting && !isAssemblyPlanRunning(planJob.data)) {
+        await startAssemblyPlan(ctx, result.modelUploadId);
+      }
+      return { planning: true, created: 0, unmappedComponentCount: 0 };
+    }
+
+    return ctx.error(
+      "rule",
+      result.reason === "steps-exist"
+        ? "Steps already exist — delete them before generating from the plan"
+        : result.reason === "steps-locked"
+          ? (result.message ?? "Some steps are locked — cannot regenerate")
+          : result.reason === "no-model"
+            ? "This instruction has no processed model"
+            : (result.message ?? "Failed to generate steps")
+    );
+  }
+});
+
+/**
+ * Cancel an instruction's running model conversion or motion plan.
+ *
+ * @remarks
+ * Fails the Processing job rows of that `kind`, then tells the geometry
+ * service to stop them (best effort: without it, a finishing job would bring
+ * the run back). Cancelling a conversion fails the model's conversion too.
+ * `cancelled` is how many jobs were running.
+ *
+ * @mcp destructive
+ */
+export const cancelAssemblyJob = defineServiceFn({
+  input: z.object({ id: z.string(), kind: z.enum(["convert", "plan"]) }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, kind }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const instruction = await readInstructionModel(ctx, id);
+    if (instruction instanceof CarbonError) return instruction;
+    const { modelUploadId } = instruction;
+
+    const cancelled = await client
+      .from("assemblyPlanJob")
+      .update({
+        status: "Failed",
+        error: "Cancelled by user",
+        updatedAt: datetime.timestamp()
+      })
+      .eq("modelUploadId", modelUploadId)
+      .eq("companyId", companyId)
+      .eq("kind", kind)
+      .eq("status", "Processing")
+      .select("id");
+    if (cancelled.error) {
+      return ctx.error("internal", "Could not cancel the job", cancelled.error);
+    }
+
+    if (ASSEMBLER_SERVICE_URL && cancelled.data.length > 0) {
+      await Promise.allSettled(
+        cancelled.data.map((job) =>
+          fetch(`${ASSEMBLER_SERVICE_URL}/v1/jobs/${job.id}/cancel`, {
+            method: "POST",
+            headers: ASSEMBLER_SERVICE_API_KEY
+              ? { Authorization: `Bearer ${ASSEMBLER_SERVICE_API_KEY}` }
+              : {},
+            signal: AbortSignal.timeout(5000)
+          })
+        )
+      );
+    }
+
+    if (kind === "convert") {
+      await client
+        .from("modelUpload")
+        .update({
+          processingStatus: "Failed",
+          processingError: "Cancelled by user"
+        })
+        .eq("id", modelUploadId)
+        .eq("companyId", companyId)
+        .in("processingStatus", ["Queued", "Processing"]);
+    }
+    return { cancelled: cancelled.data.length };
+  }
+});
+
+/**
+ * Throw away an instruction's converted model and plans, and convert it
+ * again from the source file.
+ *
+ * @mcp destructive
+ */
+export const reconvertAssemblyModel = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "production" },
+
+  async run(ctx, { id }) {
+    const instruction = await readInstructionModel(ctx, id);
+    if (instruction instanceof CarbonError) return instruction;
+    const invalidated = await invalidateAssemblyModelCache(
+      ctx.asCaller.supabase,
+      instruction.modelUploadId
+    );
+    if (invalidated.error) {
+      return ctx.error(
+        "internal",
+        "Could not invalidate the model cache",
+        invalidated.error
+      );
+    }
+    await trigger("assembly-convert", {
+      companyId: ctx.company.id,
+      modelUploadId: instruction.modelUploadId,
+      userId: ctx.auditUserId
+    });
+    return { modelUploadId: instruction.modelUploadId };
+  }
+});
+
+/**
+ * Convert an instruction's model that has not been converted, or whose last
+ * conversion failed.
+ *
+ * @remarks
+ * Refused while a conversion is running, for a converted model, for a format
+ * the geometry service cannot convert (only STEP), and while the service is
+ * down.
+ *
+ * @mcp
+ */
+export const convertAssemblyModel = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "production" },
+
+  async run(ctx, { id }) {
+    const instruction = await readInstructionModel(ctx, id);
+    if (instruction instanceof CarbonError) return instruction;
+    if (!instruction.modelUpload) {
+      return ctx.error("notFound", "Could not find the instruction's model");
+    }
+    const modelState = getAssemblyModelState(instruction.modelUpload);
+    if (modelState !== "convertible" && modelState !== "failed") {
+      return ctx.error(
+        "rule",
+        modelState === "processing"
+          ? "Model conversion is already in progress"
+          : modelState === "converted"
+            ? "The model is already converted"
+            : "This model cannot be converted (only STEP files are supported)"
+      );
+    }
+    if (!(await isAssemblerServiceHealthy())) {
+      return geometryServiceDown(ctx, "model conversion");
+    }
+    await trigger("assembly-convert", {
+      companyId: ctx.company.id,
+      modelUploadId: instruction.modelUpload.id,
+      userId: ctx.auditUserId
+    });
+    return { modelUploadId: instruction.modelUpload.id };
+  }
+});
+
+/**
+ * Match an instruction's model components to its item's bill of materials.
+ *
+ * @remarks
+ * Strong name matches first, then unique quantity matches as low-confidence
+ * fallbacks; existing mappings are kept. Then every step's materials are
+ * backfilled from the full mapping set (additive: manual edits survive).
+ * Returns how many components were mapped, the BOM lines left unmatched and
+ * the step materials added.
+ *
+ * @mcp
+ */
+export const matchAssemblyBom = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "production" },
+
+  async run(ctx, { id }) {
+    const args = {
+      assemblyInstructionId: id,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    };
+    const result = await autoMatchAssemblyComponents(
+      ctx.asCaller.supabase,
+      args
+    );
+    if ("error" in result) return ctx.error("rule", result.error);
+    const materials = await syncAssemblyStepMaterialsFromMappings(
+      ctx.asCaller.supabase,
+      args
+    );
+    return { ...result, materialsCreated: materials.created };
+  }
+});
+
+/**
+ * Map one model component (by geometry) to a BOM item.
+ *
+ * @remarks
+ * A human-confirmed (high-confidence) mapping. The item flows onto every step
+ * of the instruction that installs the component (additive).
+ *
+ * @mcp
+ */
+export const mapAssemblyComponent = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    modelUploadId: z.string().min(1),
+    geometryHash: z.string().min(1),
+    itemId: z.string().min(1)
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, modelUploadId, geometryHash, itemId }) {
+    const owned = await requireOwnRecords(ctx, [
+      ["modelUpload", modelUploadId, "model"],
+      ["item", itemId, "item"]
+    ]);
+    if (owned) return owned;
+    const upsert = await upsertAssemblyComponentMapping(ctx.asCaller.supabase, {
+      modelUploadId,
+      geometryHash,
+      itemId,
+      confidence: "high",
+      companyId: ctx.company.id,
+      createdBy: ctx.auditUserId
+    });
+    if (upsert.error) {
+      return ctx.error("internal", "Failed to map part", upsert.error);
+    }
+    await syncAssemblyStepMaterialsFromMappings(ctx.asCaller.supabase, {
+      assemblyInstructionId: id,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      geometryHashes: [geometryHash]
+    });
+    return { geometryHash };
+  }
+});
+
+/**
+ * Move, copy or remove model components between an instruction's steps.
+ *
+ * @remarks
+ * `move` takes them off every other step, `duplicate` adds them to the target
+ * and keeps them where they are, `remove` takes them off every step. One
+ * transaction. The target step then gets the BOM items those components map
+ * to.
+ *
+ * @mcp destructive
+ */
+export const reassignAssemblyComponents = defineServiceFn({
+  input: assemblyStepComponentsReassignValidator.safeExtend({ id: z.string() }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, targetStepId, componentNodeIds, mode }) {
+    const moved = await attempt(ctx, "Failed to assign components", () =>
+      reassignAssemblyStepComponents(ctx.asSystem.pg, {
+        assemblyInstructionId: id,
+        companyId: ctx.company.id,
+        targetStepId,
+        componentNodeIds,
+        mode,
+        updatedBy: ctx.auditUserId
+      })
+    );
+    if (moved instanceof CarbonError) return moved;
+    if (targetStepId) {
+      await syncAssemblyStepMaterialsFromMappings(ctx.asCaller.supabase, {
+        assemblyInstructionId: id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        stepIds: [targetStepId],
+        onlyComponentNodeIds: componentNodeIds
+      });
+    }
+    return { id };
+  }
+});
+
+/**
+ * Set the model components a step installs.
+ *
+ * @remarks
+ * The components added pull their mapped BOM items onto the step's materials
+ * (additive: a removal or a manual material edit is left alone).
+ *
+ * @mcp
+ */
+export const setAssemblyStepComponents = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    stepId: z.string(),
+    componentNodeIds: z.array(z.string())
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, stepId, componentNodeIds }) {
+    const client = ctx.asCaller.supabase;
+    const previous = await client
+      .from("assemblyInstructionStep")
+      .select("componentNodeIds")
+      .eq("id", stepId)
+      .eq("assemblyInstructionId", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (previous.error) {
+      return ctx.error("internal", "Failed to read the step", previous.error);
+    }
+    if (!previous.data) return ctx.error("notFound", "Step not found");
+
+    const update = await updateAssemblyStepComponents(client, {
+      id: stepId,
+      componentNodeIds,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error("internal", "Failed to update components", update.error);
+    }
+
+    const before = new Set(previous.data.componentNodeIds ?? []);
+    const added = componentNodeIds.filter((nodeId) => !before.has(nodeId));
+    if (added.length > 0) {
+      await syncAssemblyStepMaterialsFromMappings(client, {
+        assemblyInstructionId: id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        stepIds: [stepId],
+        onlyComponentNodeIds: added
+      });
+    }
+    return { stepId };
+  }
+});
+
+/**
+ * Copy an instruction's steps into a job operation.
+ *
+ * @remarks
+ * Refused when the operation's job is locked. Steps are matched by the
+ * instruction step they came from: updated, inserted, or deleted when gone;
+ * the operation's own steps are untouched. Each synced step's BOM parts,
+ * slides and tools are linked from the operation's materials and tools.
+ * Returns the counts, and the parts that had no matching material.
+ *
+ * @mcp destructive
+ */
+export const syncAssemblyToOperation = defineServiceFn({
+  input: z.object({ id: z.string(), operationId: z.string().min(1) }),
+  permission: { update: "production" },
+
+  async run(ctx, { id, operationId }) {
+    const operation = await ctx.asCaller.supabase
+      .from("jobOperation")
+      .select("id, job(status)")
+      .eq("id", operationId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (operation.error || !operation.data) {
+      return ctx.error("notFound", "Operation not found", operation.error);
+    }
+    if (isJobLocked(operation.data.job?.status)) {
+      return ctx.error(
+        "rule",
+        "This job is locked — steps can't be synced to it"
+      );
+    }
+    try {
+      return await syncAssemblyInstructionToOperation(ctx.asSystem.pg, {
+        assemblyInstructionId: id,
+        operationId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Failed to sync assembly to BOP",
+        err
+      );
+    }
   }
 });

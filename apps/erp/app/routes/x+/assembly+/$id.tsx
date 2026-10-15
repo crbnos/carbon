@@ -6,11 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   ClientOnly,
   Spinner,
+  toast,
   useInterval,
   useMode,
   useViewport
@@ -64,6 +65,9 @@ import { SUB_ASSEMBLY_PARAM } from "~/modules/production/ui/Assemblies/AssemblyS
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
 import { useBuildOrientation } from "~/modules/production/ui/Assemblies/useBuildOrientation";
 import { useStepMotionEditor } from "~/modules/production/ui/Assemblies/useStepMotionEditor";
+import type { action as cancelJobAction } from "~/routes/x+/assembly+/$id.jobs.cancel";
+import type { action as convertModelAction } from "~/routes/x+/assembly+/$id.model.convert";
+import type { action as setComponentsAction } from "~/routes/x+/assembly+/$id.steps.components.$stepId";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -282,7 +286,7 @@ export default function AssemblyInstructionRoute() {
   // Autosave the active step's components (Add/remove in the Details panel) via a
   // partial-update route, mirroring the motion-path autosave — never touching
   // the title/typed fields.
-  const componentsFetcher = useFetcher<{ success: boolean }>();
+  const componentsFetcher = useAction<typeof setComponentsAction>();
   const saveComponentNodeIds = useCallback(
     (stepId: string, componentNodeIds: string[]) => {
       const formData = new FormData();
@@ -624,8 +628,15 @@ export default function AssemblyInstructionRoute() {
     () => revalidator.revalidate(),
     isActivelyConverting ? 2000 : isAwaitingPickup ? 5000 : null
   );
-  const cancelPlanFetcher = useFetcher<{ success: boolean }>();
-  const retryFetcher = useFetcher<{}>();
+  const cancelPlanFetcher = useAction<typeof cancelJobAction>({
+    onSuccess: ({ data }) =>
+      toast.success(
+        data?.cancelled ? t`Job cancelled` : t`No running job to cancel`
+      )
+  });
+  const retryFetcher = useAction<typeof convertModelAction>({
+    onSuccess: () => toast.success(t`Model conversion started`)
+  });
 
   return (
     <PanelProvider key={id}>
