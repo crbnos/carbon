@@ -6074,6 +6074,9 @@ msgstr "Couldn't save the Onshape Government connection"
 msgid "Couldn't save the Ramp connection"
 msgstr "Couldn't save the Ramp connection"
 
+msgid "Couldn't start the authorization."
+msgstr "Couldn't start the authorization."
+
 msgid "Count"
 msgstr "Count"
 

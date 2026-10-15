@@ -6074,6 +6074,9 @@ msgstr "Onshape Government bağlantısı kaydedilemedi"
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp bağlantısı kaydedilemedi"
 
+msgid "Couldn't start the authorization."
+msgstr ""
+
 msgid "Count"
 msgstr "Adet"
 

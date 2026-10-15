@@ -6074,6 +6074,9 @@ msgstr "Onshape Government接続を保存できませんでした"
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 接続を保存できませんでした"
 
+msgid "Couldn't start the authorization."
+msgstr ""
+
 msgid "Count"
 msgstr "数"
 

@@ -20,7 +20,7 @@ export const config = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -43,7 +43,15 @@ export async function action({ request }: ActionFunctionArgs) {
         await flash(request, error(null, "A connection needs a name"))
       );
     }
-    const update = await renameConnection(client, companyId, id, name, userId);
+    // The table is read-only to API roles, so every write goes through the service
+    // role, scoped by the companyId this request already authorized.
+    const update = await renameConnection(
+      getCarbonServiceRole(),
+      companyId,
+      id,
+      name,
+      userId
+    );
     if (update.error) {
       return data(
         { success: false },

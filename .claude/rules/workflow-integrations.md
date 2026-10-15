@@ -136,8 +136,12 @@ their own table.
 `integrationConnection` (`20261013031247_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
-`(companyId, pieceName, name)`. RLS is the `companyIntegration` shape: `settings_view` to
-read, `settings_{create,update,delete}` to write.
+`(companyId, pieceName, name)`. RLS is `settings_view` to read and NO API-role writes
+(`20261015164232`): a user-written row could claim another company's Slack `team_id` or
+point `secretRef` anywhere. Every write — create, rename, disconnect, revoke — goes
+through the service role after the route's `requirePermissions`, scoped by `companyId`.
+`get_connection_secret` reads the vault by name (`connection:<companyId>:<id>`), never by
+`secretRef` (`20261015164237`).
 
 **The existing vault RPCs could not be reused** — `upsert_integration_secret` and friends
 are hard-wired to `companyIntegration` and the `'integration:'` name prefix. The migration

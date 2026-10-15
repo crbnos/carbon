@@ -6074,6 +6074,9 @@ msgstr "Onshape Government 연동을 저장할 수 없습니다."
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 연결을 저장할 수 없습니다"
 
+msgid "Couldn't start the authorization."
+msgstr ""
+
 msgid "Count"
 msgstr "실사"
 

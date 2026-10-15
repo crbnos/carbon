@@ -6074,6 +6074,9 @@ msgstr "Onshape Government कनेक्शन को सहेजा नह�
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp कनेक्शन को सहेजा नहीं जा सका"
 
+msgid "Couldn't start the authorization."
+msgstr ""
+
 msgid "Count"
 msgstr "गिनती"
 
