@@ -89,18 +89,32 @@ client build can tree-shake the server graph):
 
 ```ts
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
+import { scopesFromPermissions } from "./v1+/lib/base.server";
 import { callOperation } from "./v1+/lib/call.server";
 
-setWorkflowDispatch((name, context, args) =>
-  callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
+setWorkflowDispatch((name, { permissions, ...context }, args) =>
+  callOperation(
+    name,
+    {
+      ...context,
+      authKind: "session",
+      scopes: scopesFromPermissions(permissions, context.companyId)
+    },
+    args
+  )
 );
 ```
 
 `callOperation` is the Carbon API's canonical entry point (the same one MCP
 `call_tool` uses) — it runs the operation through the real
 oRPC procedure. `authKind: "session"` marks the workflow engine as an
-already-authorized in-process caller, so the per-operation API-key scope gate
-does not apply; the owner-scoped client's RLS still does. `WorkflowDispatch` is
+in-process caller acting as the owner. The per-operation gate checks the
+operation's own permission against the owner's permissions, which
+`execute.ts` reads once per run (`readOwnerPermissions`) and passes through
+`createWorkflowServices` into `DispatchContext.permissions`. That is on top of
+the engine's own check of the node's catalog permission, and of RLS on the
+owner-scoped client. A step whose owner lacks the operation's permission fails
+with "The workflow's owner does not have the required permission: …". `WorkflowDispatch` is
 **structurally** satisfied by the wrapper, so nothing in `@carbon/jobs` names an
 app type. An unfilled slot is not a crash: `runAction` returns
 `"This step is not available in this environment."`

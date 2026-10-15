@@ -198,11 +198,28 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("skips the scope gate for in-process session callers", async () => {
+  // A workflow runs as its owner and is gated on the owner's permissions, like
+  // a connector. Before this it skipped the gate, so a create step ran an
+  // operation whose own permission the owner did not hold.
+  it("403s a session (workflow) caller whose owner lacks the permission", async () => {
+    await expect(
+      call(router.parts.getParts, {}, { context: ctx({ authKind: "session" }) })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message:
+        "The workflow's owner does not have the required permission: parts_view"
+    });
+  });
+
+  it("allows a session caller whose owner holds the permission", async () => {
+    const scopes = scopesFromPermissions(
+      { parts: { view: ["c1"], create: [], update: [], delete: [] } },
+      "c1"
+    );
     const result = await call(
       router.parts.getParts,
       {},
-      { context: ctx({ authKind: "session" }) }
+      { context: ctx({ authKind: "session", scopes }) }
     );
     expect(result).toEqual({ data: "ok" });
   });
