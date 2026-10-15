@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} iş emirleri"
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Dikkat: {0} tarihinde hesabınız erp.try.carbon.ms adresine taşınacak"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 

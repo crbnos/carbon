@@ -44,12 +44,14 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  formatDate,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -396,6 +398,18 @@ export default function AuthenticatedRoute() {
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
     path.to.api.systemStatus
   );
+  const { locale } = useLocale();
+  const moveDate = systemStatus.data?.accountMoveDate;
+  // The account move outranks the deployment-wide announcement, and cannot
+  // be dismissed: it stays until the date is cleared on the company.
+  const announcement = moveDate
+    ? {
+        id: `account-move:${moveDate}`,
+        severity: "warning" as const,
+        message: t`🚨 Heads up: on ${formatDate(moveDate, { dateStyle: "long" }, locale)} your account will be moved to erp.try.carbon.ms`,
+        dismissible: false
+      }
+    : systemStatus.data?.announcement;
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
@@ -551,7 +565,7 @@ export default function AuthenticatedRoute() {
                     {isPhone && <MobileAppBar />}
                     <Topbar />
                     <AnnouncementBar
-                      announcement={systemStatus.data?.announcement}
+                      announcement={announcement}
                       userId={user?.id ?? ""}
                       dismissLabel={t`Dismiss`}
                       defaultLinkLabel={t`Learn more`}

@@ -728,6 +728,10 @@ msgstr "<0>Dodaj część dostawcy</0> do tego artykułu, aby ustawić preferowa
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Uwaga: {0} Twoje konto zostanie przeniesione na erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0 operacji"
 

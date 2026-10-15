@@ -728,6 +728,10 @@ msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0个工序"
 

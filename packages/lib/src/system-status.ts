@@ -62,3 +62,15 @@ export async function fetchSystemStatus(
     return null;
   }
 }
+
+const accountMoveValidator = z.object({ migrationDate: z.iso.date() });
+
+/**
+ * The day this company's account moves to another Carbon instance, read from
+ * `company.dimensions.migrationDate` (`YYYY-MM-DD`). Null when it is absent or
+ * not a date, so a typo set by hand shows nothing rather than "Invalid Date".
+ */
+export function accountMoveDate(dimensions: unknown): string | null {
+  const parsed = accountMoveValidator.safeParse(dimensions);
+  return parsed.success ? parsed.data.migrationDate : null;
+}

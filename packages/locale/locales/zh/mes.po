@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} 个工单"
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 

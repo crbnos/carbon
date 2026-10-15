@@ -728,6 +728,10 @@ msgstr "<0>この商品の仕入先部品を追加</0>して、優先仕入先�
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 お知らせ：{0}にアカウントが erp.try.carbon.ms に移行されます"
+
 msgid "0 operations"
 msgstr "0 件の工程"
 

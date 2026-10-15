@@ -728,6 +728,10 @@ msgstr "<0>Ajoutez une pièce fournisseur</0> pour cet article pour définir un 
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Attention : le {0}, votre compte sera transféré vers erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0 opération"
 

@@ -3,15 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { accountMoveDate } from "@carbon/lib/system-status";
 import { getSystemStatus } from "@carbon/lib/system-status.server";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 
-// The deployment's status document (latest version, announcement), or null
-// when SYSTEM_STATUS_URL is unset. The same for every company.
+// The deployment's status document (latest version, announcement; empty when
+// SYSTEM_STATUS_URL is unset), plus the day the signed-in company's account
+// moves to another instance, if one is set on it.
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {});
-  return await getSystemStatus();
+  const { client, companyId } = await requirePermissions(request, {});
+  const [status, company] = await Promise.all([
+    getSystemStatus(),
+    client.from("company").select("dimensions").eq("id", companyId).single()
+  ]);
+  return {
+    announcement: status?.announcement ?? null,
+    latestVersion: status?.latestVersion ?? null,
+    accountMoveDate: accountMoveDate(company.data?.dimensions)
+  };
 }
 
 export const clientLoader = cachedClientLoader<typeof loader>({

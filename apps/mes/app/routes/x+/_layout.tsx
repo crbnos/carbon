@@ -46,12 +46,14 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  formatDate,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect, useState } from "react";
@@ -409,6 +411,18 @@ export default function AuthenticatedRoute() {
   const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
     path.to.api.systemStatus
   );
+  const { locale } = useLocale();
+  const moveDate = systemStatus.data?.accountMoveDate;
+  // The account move outranks the deployment-wide announcement, and cannot
+  // be dismissed: it stays until the date is cleared on the company.
+  const announcement = moveDate
+    ? {
+        id: `account-move:${moveDate}`,
+        severity: "warning" as const,
+        message: t`🚨 Heads up: on ${formatDate(moveDate, { dateStyle: "long" }, locale)} your account will be moved to erp.try.carbon.ms`,
+        dismissible: false
+      }
+    : systemStatus.data?.announcement;
   const userEmail = user?.email;
   const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
   const companyId = company?.companyId;
@@ -553,7 +567,7 @@ export default function AuthenticatedRoute() {
                         keeps its state, so a form still held the previous company's
                         values and saving wrote them to the new one. */}
                     <AnnouncementBar
-                      announcement={systemStatus.data?.announcement}
+                      announcement={announcement}
                       // The pinned-in operator on a console, so one
                       // operator's dismissal is not everyone's.
                       userId={loaderData.effectiveUserId ?? user?.id ?? ""}
