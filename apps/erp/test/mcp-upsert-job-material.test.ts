@@ -164,14 +164,6 @@ describe("MCP upsertJobMaterial orchestration", () => {
     expect(recalculateJobOperationDependencies).toHaveBeenCalledOnce();
   });
 
-  it("refuses a user without the production permission", async () => {
-    await expect(
-      upsertJobMaterial(makeClient({}), {
-        ...base,
-        companyId: "other-company",
-        createdBy: "u1"
-      })
-    ).rejects.toThrow(/permission/);
-    expect(upsertJobMaterialRow).not.toHaveBeenCalled();
-  });
+  // The production permission is the API gate's, for every caller: see
+  // "403s … whose user lacks the permission" in orpc-mechanics.test.ts.
 });
