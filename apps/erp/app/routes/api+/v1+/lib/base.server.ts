@@ -21,15 +21,14 @@ export interface AuthedContext {
   userId: string;
   companyId: string;
   companyGroupId: string;
-  /** `"api-key"` and `"oauth"` (MCP connector) both run the per-operation scope
-   *  gate. RLS alone does not bound an OAuth caller: a service handed `db` writes
+  /** How the caller authenticated. Every kind runs the per-operation scope gate:
+   *  RLS alone does not bound a caller, because a service handed `db` writes
    *  through the direct connection, which bypasses it. `"session"` is an
-   *  already-authorized in-process caller (the workflow engine acting as the
-   *  workflow's owner) — not "oauth" because that names a wire protocol, not a
-   *  trust decision. */
+   *  in-process caller acting as a user (the workflow engine acting as the
+   *  workflow's owner) — not "oauth" because that names a wire protocol. */
   authKind: "api-key" | "oauth" | "session";
-  /** `{ "<module>_<action>": [companyId, …] }` — the API key's scopes, or for an
-   *  OAuth caller the user's own permissions in the token's company
+  /** `{ "<module>_<action>": [companyId, …] }` — the API key's scopes, or for a
+   *  user (OAuth, a workflow's owner) the user's own permissions in the company
    *  (`scopesFromPermissions`). */
   scopes: Record<string, string[]>;
 }
@@ -37,16 +36,17 @@ export interface AuthedContext {
 export const base = os.$context<AuthedContext>();
 
 /**
- * Enforce that an API-key caller holds the operation's permission. `module: null`
- * gates only on a valid key of the company (today's MCP behavior for account/shared);
- * otherwise every action in the permission must be scoped to the active company.
- * The exact-companyId check (no `"0"` wildcard) matches requirePermissions' key path.
+ * Enforce that the caller holds the operation's permission. `module: null` gates
+ * only on an authenticated caller of the company (today's MCP behavior for
+ * account/shared); otherwise every action in the permission must be scoped to the
+ * active company. The exact-companyId check (no `"0"` wildcard) matches
+ * requirePermissions' key path.
  */
 export function assertScopes(
   scopes: Record<string, string[]>,
   companyId: string,
   permission: ToolPermission,
-  authKind: Exclude<AuthedContext["authKind"], "session">
+  authKind: AuthedContext["authKind"]
 ): void {
   if (permission.module === null) return;
   for (const action of permission.actions) {
@@ -56,7 +56,9 @@ export function assertScopes(
         message:
           authKind === "api-key"
             ? `API key lacks the required scope: ${key}`
-            : `You do not have the required permission: ${key}`
+            : authKind === "session"
+              ? `The workflow's owner does not have the required permission: ${key}`
+              : `You do not have the required permission: ${key}`
       });
     }
   }
@@ -83,22 +85,19 @@ export function scopesFromPermissions(
   return scopes;
 }
 
-/** Per-operation gate middleware — runs the scope check for API-key and OAuth
- *  callers.
+/** Per-operation gate middleware — runs the scope check for every caller.
  *  The blocked-name guard is belt-and-braces: blocked tools are already excluded
  *  from the manifest at generation time, so this only fires if that exclusion
  *  ever regresses — the surface stays closed instead of silently opening. */
 export const gate = (meta: ManifestEntry) =>
   base.middleware(async ({ context, next }) => {
     if (isMcpBlockedTool(meta.name)) throw new ORPCError("NOT_FOUND");
-    if (context.authKind !== "session") {
-      assertScopes(
-        context.scopes,
-        context.companyId,
-        meta.permission,
-        context.authKind
-      );
-    }
+    assertScopes(
+      context.scopes,
+      context.companyId,
+      meta.permission,
+      context.authKind
+    );
     return next();
   });
 

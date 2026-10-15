@@ -68011,6 +68011,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.companyPlan.apiRateLimit"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -68106,6 +68109,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.companyPlan.apiRateLimit"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -68153,6 +68159,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companyPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companyPlan.apiRateLimit"
           },
           {
             $ref: "#/parameters/body.companyPlan"
@@ -149849,6 +149858,12 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string"
+        },
+        apiRateLimit: {
+          description:
+            "Requests per minute across all of the company's API keys. NULL is the platform default (60).",
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -203449,6 +203464,14 @@ export default {
     },
     "rowFilter.companyPlan.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companyPlan.apiRateLimit": {
+      name: "apiRateLimit",
+      description:
+        "Requests per minute across all of the company's API keys. NULL is the platform default (60).",
       required: false,
       in: "query",
       type: "string"

@@ -144,13 +144,24 @@ import {
 import { router } from "./router.server";
 import { specOptions } from "./spec-options.server";
 
+// A caller holding every permission the manifest names, so the gate passes and
+// these tests pin dispatch alone. The gate itself is in orpc-mechanics.test.ts.
+const ALL_SCOPES = Object.fromEntries(
+  OPERATIONS.flatMap(({ permission }) =>
+    permission.actions.map((action) => [
+      `${permission.module}_${action}`,
+      ["c1"]
+    ])
+  )
+);
+
 const ctx: AuthedContext = {
   client: spies.FAKE_CLIENT as unknown as AuthedContext["client"],
   companyId: "c1",
   companyGroupId: "g1",
   userId: "u1",
   authKind: "session",
-  scopes: {}
+  scopes: ALL_SCOPES
 };
 
 type Spy = ReturnType<typeof vi.fn>;

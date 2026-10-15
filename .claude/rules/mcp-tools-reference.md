@@ -261,8 +261,11 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   company (`scopesFromPermissions`, `base.server.ts`). RLS cannot bound it: a
   service handed `db` writes through the direct connection, which bypasses RLS,
   so before this a connector token for a user with no accounting permission
-  could write GL journals. Only the in-process workflow engine
-  (`authKind: "session"`) skips the gate.
+  could write GL journals. The in-process workflow engine
+  (`authKind: "session"`) is gated too, on scopes built from the workflow
+  owner's permissions, which the engine reads fresh for each run
+  (`readOwnerPermissions`) and passes in the dispatch context. Every caller
+  runs the gate; none skips it.
 - The service registry lives at `api+/v1+/lib/registry.server.ts` (the 15 module
   namespaces); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
 - **Input is validated** against the operation's own schema before dispatch.

@@ -8233,6 +8233,7 @@ export type Database = {
       companyPlan: {
         Row: {
           aiTokensLimit: number
+          apiRateLimit: number | null
           createdAt: string
           id: string
           planId: string
@@ -8247,6 +8248,7 @@ export type Database = {
         }
         Insert: {
           aiTokensLimit?: number
+          apiRateLimit?: number | null
           createdAt?: string
           id?: string
           planId: string
@@ -8261,6 +8263,7 @@ export type Database = {
         }
         Update: {
           aiTokensLimit?: number
+          apiRateLimit?: number | null
           createdAt?: string
           id?: string
           planId?: string

@@ -159,6 +159,7 @@ async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
       companyId: payload.companyId,
       companyGroupId: args.companyGroupId,
       ownerId: payload.ownerId,
+      permissions: args.permissions,
       runId: payload.runId,
       workflowId: payload.workflowId
     })

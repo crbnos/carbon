@@ -28,10 +28,10 @@ import {
 // `scripts/generate-mcp.ts` + the Carbon API registry
 // (`api+/v1+/lib/registry.server.ts`), which run server-side only.
 //
-// The MCP executor injects companyId/userId from the OAuth token but performs no
-// per-tool permission check, and some of these writes reach privileged paths (a
-// SECURITY DEFINER RPC, an Inngest trigger) that bypass RLS — so the ERP route's
-// permission gate is re-applied inline via `hasPermission` on the caller's claims.
+// Some of these writes reach privileged paths (a SECURITY DEFINER RPC, an
+// Inngest trigger) that bypass RLS. The API gate (`gate` in
+// `api+/v1+/lib/base.server.ts`) checks each published tool's permission for
+// every caller: API keys, OAuth connectors and workflows.
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.
@@ -159,11 +159,10 @@ export async function completeJob(
  * Forecast-first scheduling is a single forward-ASAP pass, so there are no
  * `mode`/`direction` knobs to validate.
  *
- * The scheduling path has no gate of its own — every ERP route that reschedules
- * does `requirePermissions({ update: "production" })` first — so the same
- * `production` update gate is re-applied here (the MCP executor performs no
- * per-tool check). `client` MUST stay named `client` and first — the MCP executor
- * injects it positionally by that exact name; renaming breaks the tool.
+ * The scheduling path has no gate of its own: the API gate checks the tool's
+ * `production` update permission for every caller. `client` MUST stay named
+ * `client` and first — the MCP executor injects it positionally by that exact
+ * name; renaming breaks the tool.
  * @mcp action
  */
 export async function scheduleJob(
@@ -174,12 +173,6 @@ export async function scheduleJob(
     jobId: string;
   }
 ) {
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "production", "update", companyId)) {
-    throw new Error(
-      "You do not have permission to schedule jobs (production update)."
-    );
-  }
   return recalculateJobOperationDependencies(client, getDatabaseClient(), {
     jobId: args.jobId,
     companyId,
@@ -231,16 +224,6 @@ export async function upsertJobMaterial(
   const isUpdate = "updatedBy" in jobMaterial;
   const userId = isUpdate ? jobMaterial.updatedBy : jobMaterial.createdBy;
   const { companyId, jobId } = jobMaterial;
-
-  // The dependency recalc reaches the scheduling engine over Kysely (no RLS),
-  // so the routes' production gate is re-applied here, like scheduleJob.
-  const action = isUpdate ? ("update" as const) : ("create" as const);
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "production", action, companyId)) {
-    throw new Error(
-      `You do not have permission to ${action} job materials (production ${action}).`
-    );
-  }
 
   // Capture the previous methodType BEFORE the write — the make-method pull
   // runs only on the transition INTO "Make to Order".
