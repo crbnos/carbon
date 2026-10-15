@@ -33,7 +33,7 @@ A user can belong to multiple companies and switch between them with the company
 `companySettings` is a single row per company, edited across the **Settings → Modules** pages. These are the real column names:
 
 <FieldTable>
-  <Field name="accountingCutoverDate" type="date">The first day the company keeps its books in Carbon. Empty until accounting is set up: every posting then writes a *Provisional* journal that no report counts. Set once by the [accounting setup](/docs/reference/accounting#setting-up-accounting), with `accountingActivatedAt` and `accountingActivatedBy`, and never changed after. A new company gets the first day of its current month.</Field>
+  <Field name="accountingCutoverDate" type="date">The first day the company keeps its books in Carbon. Empty until accounting is set up: every posting then writes a *Provisional* journal that no report counts. Set once by the [accounting setup](/docs/reference/accounting#setting-up-accounting), with `accountingActivatedAt` and `accountingActivatedBy`, and never changed after.</Field>
   <Field name="accountingEnabled" type="boolean">Retired. The column still exists, but nothing reads it.</Field>
   <Field name="timeCardEnabled" type="boolean">Turns on shop-floor time cards.</Field>
   <Field name="consoleEnabled" type="boolean">Enables MES console (shared-station) mode, where operators pin in with a 4-digit PIN. Business plan; toggled from **Settings → People** by someone with `settings_update`, and only through that screen — the API refuses a direct write to this column. See [console mode](/docs/reference/mes#console-shared-station-mode).</Field>

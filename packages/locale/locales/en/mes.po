@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} jobs"
 msgid "+{overflow} more"
 msgstr "+{overflow} more"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
@@ -399,6 +403,9 @@ msgstr "Close"
 msgid "Collapse characteristics table"
 msgstr "Collapse characteristics table"
 
+msgid "Collapse navigation"
+msgstr "Collapse navigation"
+
 msgid "Collapse panel"
 msgstr "Collapse panel"
 
@@ -421,6 +428,9 @@ msgstr "Column: {0}"
 
 msgid "Columns"
 msgstr "Columns"
+
+msgid "Companies"
+msgstr "Companies"
 
 msgid "Company"
 msgstr "Company"
@@ -538,6 +548,9 @@ msgstr "Description"
 
 msgid "Details"
 msgstr "Details"
+
+msgid "Dismiss"
+msgstr "Dismiss"
 
 msgid "Dispatch not found"
 msgstr "Dispatch not found"
@@ -814,6 +827,9 @@ msgstr "I'm Still Working"
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideas, suggestions or problems?"
 
+msgid "Idle"
+msgstr "Idle"
+
 msgid "Idle for"
 msgstr "Idle for"
 
@@ -905,6 +921,9 @@ msgstr "Job Traveler"
 msgid "Jobs"
 msgstr "Jobs"
 
+msgid "Keep navigation open"
+msgstr "Keep navigation open"
+
 msgid "Keep picking"
 msgstr "Keep picking"
 
@@ -955,6 +974,9 @@ msgstr "List view"
 
 msgid "Load list"
 msgstr "Load list"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Loaded: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
@@ -1277,6 +1299,9 @@ msgstr "OEM Required"
 msgid "of {0}"
 msgstr "of {0}"
 
+msgid "Offline"
+msgstr "Offline"
+
 msgid "Oldest first"
 msgstr "Oldest first"
 
@@ -1307,6 +1332,9 @@ msgstr "Open a job in this batch"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
+
+msgid "Open ERP"
+msgstr "Open ERP"
 
 msgid "Open Jobs"
 msgstr "Open Jobs"

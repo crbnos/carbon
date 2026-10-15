@@ -217,7 +217,7 @@ export type IntegrationConfig = {
    * Email and Stripe Connect declare no role and are never in conflict with
    * anything.
    */
-  providerRole?: "accounting" | "spend";
+  providerRole?: "accounting" | "spend" | "oee";
   /** Logo component for the integration */
   logo: React.FC<React.ComponentProps<"svg">>;
   /** Brief one-liner description */

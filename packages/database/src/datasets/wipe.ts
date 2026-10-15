@@ -98,6 +98,14 @@ const MODEL_SLIDE_TABLES = [
   "quoteOperationStepSlide"
 ];
 
+// Other tables whose CHECK needs one of several nullable FKs to stay set, so
+// the FK-nulling pass would empty all of them and trip the CHECK. A new table
+// with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
+const PARENT_CHECK_TABLES = [
+  // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
+  "customerContractInvoiceLine"
+];
+
 type ForeignKey = {
   child: string;
   parent: string;
@@ -383,7 +391,11 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // Deleting outright is safe for a dataset apply: MRP regenerates these on
   // its next run (the planner's dismissals and assignments on planningAction
   // go with the rest of the company's data, as the apply intends).
-  for (const t of [...TRANSIENT_MRP_TABLES, ...MODEL_SLIDE_TABLES]) {
+  for (const t of [
+    ...TRANSIENT_MRP_TABLES,
+    ...MODEL_SLIDE_TABLES,
+    ...PARENT_CHECK_TABLES
+  ]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
         companyId

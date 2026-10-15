@@ -158,7 +158,10 @@ export function SalesOrderLineJobs({
                       index === jobs.length - 1 && "border-b-0"
                     )}
                   >
-                    <SalesOrderJobItem job={job as SalesOrderJob} />
+                    <SalesOrderJobItem
+                      job={job as SalesOrderJob}
+                      isService={line.salesOrderLineType === "Service"}
+                    />
                   </div>
                 ))}
             </div>
@@ -285,7 +288,14 @@ export function SalesOrderLineJobs({
   );
 }
 
-export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
+export function SalesOrderJobItem({
+  job,
+  isService = false
+}: {
+  job: SalesOrderJob;
+  // A Service job's output is never shipped, so it has no shipped count.
+  isService?: boolean;
+}) {
   const disclosure = useDisclosure();
   const permissions = usePermissions();
   const releaseModal = useDisclosure();
@@ -336,12 +346,14 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
               {job.quantityComplete ?? 0}/{job.quantity ?? 0}
             </p>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Shipped</label>
-            <p className="text-sm">
-              {job.quantityShipped ?? 0}/{job.quantity ?? 0}
-            </p>
-          </div>
+          {!isService && (
+            <div>
+              <label className="text-xs text-muted-foreground">Shipped</label>
+              <p className="text-sm">
+                {job.quantityShipped ?? 0}/{job.quantity ?? 0}
+              </p>
+            </div>
+          )}
         </HStack>
         <HStack>
           <Button

@@ -61,7 +61,7 @@ function useCurrentStep(): ActivationStep {
       return step;
     }
   }
-  return "readiness";
+  return "chart";
 }
 
 export default function AccountingActivationRoute() {

@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} जॉब्स"
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 ध्यान दें: {0} को आपका खाता erp.try.carbon.ms पर स्थानांतरित कर दिया जाएगा"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
@@ -399,6 +403,9 @@ msgstr "बंद करें"
 msgid "Collapse characteristics table"
 msgstr "विशेषताएं तालिका संपीड़ित करें"
 
+msgid "Collapse navigation"
+msgstr "नेविगेशन संक्षिप्त करें"
+
 msgid "Collapse panel"
 msgstr "पैनल संक्षिप्त करें"
 
@@ -421,6 +428,9 @@ msgstr "कॉलम: {0}"
 
 msgid "Columns"
 msgstr "कॉलम"
+
+msgid "Companies"
+msgstr "कंपनियां"
 
 msgid "Company"
 msgstr "कंपनी"
@@ -538,6 +548,9 @@ msgstr "विवरण"
 
 msgid "Details"
 msgstr "विवरण"
+
+msgid "Dismiss"
+msgstr "खारिज करें"
 
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
@@ -814,6 +827,9 @@ msgstr "मैं अभी भी काम कर रहा हूँ"
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
+msgid "Idle"
+msgstr "निष्क्रिय"
+
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
 
@@ -905,6 +921,9 @@ msgstr "जॉब ट्रैवलर"
 msgid "Jobs"
 msgstr "जॉब"
 
+msgid "Keep navigation open"
+msgstr "नेविगेशन खुला रखें"
+
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
 
@@ -955,6 +974,9 @@ msgstr "सूची दृश्य"
 
 msgid "Load list"
 msgstr "सूची लोड करें"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
@@ -1277,6 +1299,9 @@ msgstr "OEM आवश्यक"
 msgid "of {0}"
 msgstr "का {0}"
 
+msgid "Offline"
+msgstr "ऑफलाइन"
+
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
 
@@ -1307,6 +1332,9 @@ msgstr "इस बैच में एक जॉब खोलें"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
+
+msgid "Open ERP"
+msgstr "ERP खोलें"
 
 msgid "Open Jobs"
 msgstr "खुले जॉब"

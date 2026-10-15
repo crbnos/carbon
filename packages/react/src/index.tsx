@@ -22,6 +22,7 @@ import { ActionMenu } from "./ActionMenu";
 import type { ActionPresentation } from "./ActionPresentation";
 import { ActionPresentationProvider } from "./ActionPresentation";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
+import { AnnouncementBar } from "./AnnouncementBar";
 import { AutodeskProvider, AutodeskViewer } from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
 import {
@@ -273,11 +274,11 @@ import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
 import {
   NavRail,
-  NavRailBrand,
   NavRailDivider,
   NavRailGroup,
   NavRailItem,
   NavRailLink,
+  NavRailSwitcher,
   navRailItemClasses
 } from "./NavRail";
 import type { NumberFieldProps } from "./Number";
@@ -433,6 +434,7 @@ export {
   Alert,
   AlertDescription,
   AlertTitle,
+  AnnouncementBar,
   AutodeskProvider,
   AutodeskViewer,
   Avatar,
@@ -621,11 +623,11 @@ export {
   NumberField,
   NumberIncrementStepper,
   NavRail,
-  NavRailBrand,
   NavRailDivider,
   NavRailGroup,
   NavRailItem,
   NavRailLink,
+  NavRailSwitcher,
   navRailItemClasses,
   NumberInput,
   NumberInputGroup,

@@ -56,7 +56,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
       {
         key: "chart-of-accounts",
         object: msg`Chart of Accounts`,
-        detail: msg`Your general-ledger accounts and their structure`,
+        detail: msg`Import your chart of accounts from a spreadsheet`,
         moduleTags: ["acc"]
       },
       {

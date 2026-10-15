@@ -296,7 +296,7 @@ export default function AssignedRoute() {
   return (
     // Phones: the page takes the screen above the tab bar, so the list and
     // the board scroll inside it (see Schedule).
-    <div className="flex flex-col flex-1 min-h-0 min-w-0 max-md:h-[calc(100dvh-var(--mes-tab-bar-h))] max-md:flex-none">
+    <div className="flex flex-col flex-1 min-h-0 min-w-0 max-md:h-[calc(100dvh-var(--mes-tab-bar-h)-var(--announcement-height,0px))] max-md:flex-none">
       <MesAppBar
         title={<Trans>Assigned</Trans>}
         actions={

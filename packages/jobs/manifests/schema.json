@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261013004700",
+  "schemaVersion": "20261014030025",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-12T23:12:49.551Z",
+  "exportedAt": "2026-10-14T03:20:40.736Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -108,6 +108,19 @@
         "variableLeaseExpenseAccount",
         "rightOfUseAmortizationExpenseAccount",
         "leaseInterestExpenseAccount"
+      ]
+    },
+    {
+      "name": "accountingCutoverIgnoredInvoice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "invoiceId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2270,26 +2283,6 @@
       ]
     },
     {
-      "name": "stockTransfer",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "locationId",
-        "status",
-        "completedAt",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "notes",
-        "assignee",
-        "customFields",
-        "tags"
-      ]
-    },
-    {
       "name": "storageType",
       "rows": 0,
       "columns": [
@@ -2630,7 +2623,8 @@
         "rootStepId",
         "hiddenComponentNodeIds",
         "usedInStepId",
-        "isSubAssembly"
+        "isSubAssembly",
+        "orientation"
       ]
     },
     {
@@ -3575,6 +3569,20 @@
       ]
     },
     {
+      "name": "machineStateChange",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterDeviceId",
+        "workCenterId",
+        "externalEventId",
+        "state",
+        "changedAt",
+        "createdAt"
+      ]
+    },
+    {
       "name": "maintenanceSchedule",
       "rows": 0,
       "columns": [
@@ -3819,6 +3827,21 @@
       ]
     },
     {
+      "name": "unattributedMachineTime",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "startTime",
+        "endTime",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "warehouseTransferLine",
       "rows": 0,
       "columns": [
@@ -3840,6 +3863,45 @@
         "updatedBy",
         "updatedAt",
         "customFields"
+      ]
+    },
+    {
+      "name": "workCenterDevice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "integration",
+        "externalDeviceId",
+        "externalSiteId",
+        "siteTimezone",
+        "deviceName",
+        "currentState",
+        "currentStateAt",
+        "appliedThrough",
+        "lastEventAt",
+        "lastManualChangeAt",
+        "lastSyncedAt",
+        "lastSyncError",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "unplannedPressAt"
+      ]
+    },
+    {
+      "name": "workCenterLoad",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "jobOperationId",
+        "loadedAt",
+        "unloadedAt",
+        "createdAt"
       ]
     },
     {
@@ -5363,29 +5425,6 @@
       ]
     },
     {
-      "name": "stockTransferLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "jobId",
-        "jobMaterialId",
-        "itemId",
-        "fromStorageUnitId",
-        "toStorageUnitId",
-        "quantity",
-        "pickedQuantity",
-        "trackedEntityId",
-        "requiresBatchTracking",
-        "requiresSerialTracking",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
       "name": "jobMaterialStep",
       "rows": 0,
       "columns": ["jobMaterialId", "jobOperationStepId", "quantity"]
@@ -5703,7 +5742,52 @@
         "autoStartJob",
         "completedBarcodeOverride",
         "jobId",
-        "fromStorageUnitId"
+        "fromStorageUnitId",
+        "replenishmentLevel"
+      ]
+    },
+    {
+      "name": "stockTransfer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "locationId",
+        "status",
+        "completedAt",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "notes",
+        "assignee",
+        "customFields",
+        "tags",
+        "kanbanId"
+      ]
+    },
+    {
+      "name": "stockTransferLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "jobId",
+        "jobMaterialId",
+        "itemId",
+        "fromStorageUnitId",
+        "toStorageUnitId",
+        "quantity",
+        "pickedQuantity",
+        "trackedEntityId",
+        "requiresBatchTracking",
+        "requiresSerialTracking",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
       ]
     },
     {

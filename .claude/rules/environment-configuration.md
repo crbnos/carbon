@@ -152,6 +152,24 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
+**Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`
+makes `maintenanceMiddleware` (`@carbon/auth/middleware/maintenance.server`, in
+every app's root `middleware`, after `security`) answer every request with a 503:
+a page renders the root ErrorBoundary's 503 screen, an open tab gets the same
+screen on its next navigation, and a resource route (API, MCP, webhooks,
+`/api/inngest`) returns a bare 503 with `Retry-After: 300` so the caller retries.
+`/health` answers 200 `{ status: "maintenance" }` without probing the database,
+so the load balancer keeps the tasks. The flag is read at start: changing it
+needs a restart or redeploy. `SYSTEM_STATUS_URL` is a JSON document the app
+reads for `{ latestVersion?, announcement? }` (`systemStatusValidator`,
+`@carbon/lib/system-status`); unset means no request is made, on any edition.
+`getSystemStatus()` caches it in Redis for 5 minutes (a failure for 1), each
+app serves it at `api+/system-status`, and the shell shows the announcement
+with `AnnouncementBar` (`@carbon/react`). `latestVersion` is returned but not
+shown — Carbon has no version to compare it with. Neither variable is on the
+`workspaces` row, so `ci/src/deploy.ts` does not set them; `sst.config.ts`
+forwards them from the deploying process's environment.
+
 **Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
 the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or
 `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) turns server tracing on,

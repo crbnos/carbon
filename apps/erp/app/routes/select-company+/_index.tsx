@@ -64,7 +64,7 @@ export default function SelectCompany() {
   const [query, setQuery] = useState("");
 
   // A group name only tells the companies apart when more than one of the
-  // user's companies shares it — mirrors the top-bar CompanySwitcher.
+  // user's companies shares it — mirrors the navigation rail's CompanySwitcher.
   const sharedGroupNames = useMemo(() => {
     const counts = new Map<string, number>();
     for (const c of companies) {

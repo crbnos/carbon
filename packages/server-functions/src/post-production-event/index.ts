@@ -4,6 +4,7 @@
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -24,7 +25,7 @@ import { credit, datetime, debit, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError, NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError, ServerFnError } from "../errors";
 import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
@@ -43,6 +44,45 @@ export const postProductionEventInput = z.object({
  * its own decision.
  */
 export type PostProductionEventResult = { success: boolean; reason?: string };
+
+export const PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR =
+  "This production event was just posted by another process.";
+
+/** The net amount posted for one event so far, per account. */
+async function readPostedNet(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  eventReference: string
+) {
+  const lines = await db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .select([
+      "journalLine.accountId",
+      "journalLine.accountDefaultRole",
+      (eb) => eb.fn.sum("journalLine.amount").as("amount")
+    ])
+    .where("journalLine.documentLineReference", "=", eventReference)
+    .where("journalLine.companyId", "=", companyId)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .groupBy(["journalLine.accountId", "journalLine.accountDefaultRole"])
+    .execute();
+  return lines.filter((line) => Math.abs(Number(line.amount)) >= 0.000001);
+}
+
+/** A posted net as one comparable value, independent of row order. */
+const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
+  lines
+    .map(
+      (line) =>
+        `${line.accountId}|${line.accountDefaultRole ?? ""}|${round(Number(line.amount))}`
+    )
+    .sort()
+    .join(";");
 
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 const postProductionEvent = defineServerFn({
@@ -224,28 +264,9 @@ const postProductionEvent = defineServerFn({
         throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
       }
     }
-    const priorLines = event.postedToGL
-      ? await db
-          .selectFrom("journalLine")
-          .innerJoin("journal", (join) =>
-            join
-              .onRef("journal.id", "=", "journalLine.journalId")
-              .onRef("journal.companyId", "=", "journalLine.companyId")
-          )
-          .select([
-            "journalLine.accountId",
-            "journalLine.accountDefaultRole",
-            (eb) => eb.fn.sum("journalLine.amount").as("amount")
-          ])
-          .where("journalLine.documentLineReference", "=", eventReference)
-          .where("journalLine.companyId", "=", companyId)
-          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-          .groupBy(["journalLine.accountId", "journalLine.accountDefaultRole"])
-          .execute()
+    const reversalLines = event.postedToGL
+      ? await readPostedNet(db, companyId, eventReference)
       : [];
-    const reversalLines = priorLines.filter(
-      (line) => Math.abs(Number(line.amount)) >= 0.000001
-    );
 
     // Did this event's job post any production-event lines under the old
     // job-tagged scheme (documentLineReference = job:...)? Those can't be
@@ -436,6 +457,32 @@ const postProductionEvent = defineServerFn({
 
     await db.transaction().execute(async (trx) => {
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // Several callers post an event as it ends: a press, the OEE sync, an
+      // operation finish, an edit's repost. Under the row lock, a second
+      // caller that read the event before the first committed sees what the
+      // first wrote and stops, instead of posting the cost or the adjustment
+      // twice: the flag for a first post, the net already posted for a
+      // repost (the flag stays true across reposts).
+      const locked = await trx
+        .selectFrom("productionEvent")
+        .select("postedToGL")
+        .where("id", "=", productionEventId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (
+        !locked ||
+        locked.postedToGL !== event.postedToGL ||
+        (locked.postedToGL &&
+          postedNetKey(await readPostedNet(trx, companyId, eventReference)) !==
+            postedNetKey(reversalLines))
+      ) {
+        throw new ServerFnError(
+          PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR,
+          409
+        );
+      }
 
       const journalEntryId = await getNextSequence(
         trx,

@@ -33,7 +33,7 @@ import { path } from "~/utils/path";
 import {
   useCompanyGroups,
   useCompanySwitchRedirect
-} from "../Topbar/CompanySwitcher";
+} from "../Navigation/CompanySwitcher";
 import { NotificationsPanel } from "../Topbar/Notifications";
 import { SheetRowButton, SheetRowContent, SheetRowGroup } from "./SheetRow";
 

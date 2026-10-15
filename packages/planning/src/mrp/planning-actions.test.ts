@@ -1454,6 +1454,68 @@ describe("projectionsWithExpedites", () => {
   });
 });
 
+// Raising what MRP suggests must not earn a Defer on the next run. A
+// Demand-Based Reorder order split into batches was dated all in the window's
+// first week, while the reschedule check dates each PO line by the first
+// demand it covers — the later batches were deferred as soon as they existed.
+describe("Demand-Based Reorder batches raised as suggested", () => {
+  it("get no Defer from the reschedule check", () => {
+    const periods = [
+      { id: "w1", startDate: "2026-10-11" },
+      { id: "w2", startDate: "2026-10-18" },
+      { id: "w3", startDate: "2026-10-25" },
+      { id: "w4", startDate: "2026-11-01" },
+      { id: "w5", startDate: "2026-11-08" }
+    ];
+    const demand = [25, 25, 25, 25, 0];
+    let balance = 0;
+    const projections = demand.map((quantity) => (balance -= quantity));
+    const suggestions = computePlanningOrders({
+      reorderingPolicy: "Demand-Based Reorder",
+      periods,
+      projections,
+      todayDate: "2026-10-11",
+      params: {
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        minimumOrderQuantity: 0,
+        maximumOrderQuantity: 0,
+        orderMultiple: 0,
+        lotSize: 25,
+        maximumInventoryQuantity: 0,
+        demandAccumulationPeriod: 4,
+        demandAccumulationSafetyStock: 0,
+        leadTime: 0
+      }
+    });
+    expect(suggestions).toHaveLength(4);
+
+    const actions = deriveChangeActions({
+      onHand: 0,
+      demandPeriods: periods
+        .map((p, i) => ({
+          periodId: p.id,
+          startDate: p.startDate,
+          quantity: demand[i]!
+        }))
+        .filter((d) => d.quantity > 0),
+      // the Order button writes each suggestion's due date as the line's
+      // required date, which is its arrival date until a supplier promises one
+      openOrders: suggestions.map((s, i) => ({
+        purchaseOrderLineId: `line-${i + 1}`,
+        quantity: s.quantity,
+        dueDate: s.dueDate,
+        requiresManualAction: false
+      })),
+      periods,
+      policyFloor: 0,
+      toleranceDays: TOLERANCE,
+      todayDate: "2026-10-11"
+    });
+    expect(actions).toEqual([]);
+  });
+});
+
 // The whole new-supply path for one item, as generatePlanningActions runs it:
 // the change actions, then sizing on the adjusted projection, then the fold
 // into an open order.

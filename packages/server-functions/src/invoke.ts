@@ -14,6 +14,7 @@ import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
   "activate-accounting": () => import("./activate-accounting"),
+  "apply-account-import": () => import("./apply-account-import"),
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
@@ -29,6 +30,7 @@ const registry = {
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
   "journal-legacy-documents": () => import("./journal-legacy-documents"),
+  "kanban-replenish": () => import("./kanban-replenish"),
   "post-asset-transfer": () => import("./post-asset-transfer"),
   "post-charge": () => import("./post-charge"),
   "post-customer-contract": () => import("./post-customer-contract"),

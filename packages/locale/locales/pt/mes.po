@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} ordens de produção"
 msgid "+{overflow} more"
 msgstr "+{overflow} mais"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Atenção: em {0}, sua conta será transferida para erp.try.carbon.ms"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Uma conclusão anterior não foi concluída. Tentar novamente retoma as etapas restantes — as quantidades não são contadas duas vezes."
 
@@ -399,6 +403,9 @@ msgstr "Fechar"
 msgid "Collapse characteristics table"
 msgstr "Recolher tabela de características"
 
+msgid "Collapse navigation"
+msgstr "Recolher navegação"
+
 msgid "Collapse panel"
 msgstr "Recolher painel"
 
@@ -421,6 +428,9 @@ msgstr "Coluna: {0}"
 
 msgid "Columns"
 msgstr "Colunas"
+
+msgid "Companies"
+msgstr "Empresas"
 
 msgid "Company"
 msgstr "Empresa"
@@ -538,6 +548,9 @@ msgstr "Descrição"
 
 msgid "Details"
 msgstr "Detalhes"
+
+msgid "Dismiss"
+msgstr "Descartar"
 
 msgid "Dispatch not found"
 msgstr "Ordem de manutenção não encontrada"
@@ -814,6 +827,9 @@ msgstr "Ainda Estou Trabalhando"
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideias, sugestões ou problemas?"
 
+msgid "Idle"
+msgstr "Ocioso"
+
 msgid "Idle for"
 msgstr "Inativo por"
 
@@ -905,6 +921,9 @@ msgstr "Ficha de acompanhamento"
 msgid "Jobs"
 msgstr "Ordens de produção"
 
+msgid "Keep navigation open"
+msgstr "Manter navegação aberta"
+
 msgid "Keep picking"
 msgstr "Continuar separação"
 
@@ -955,6 +974,9 @@ msgstr "Visualização em lista"
 
 msgid "Load list"
 msgstr "Carregar lista"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Carregado: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Carregando detalhes do item..."
@@ -1277,6 +1299,9 @@ msgstr "OEM Necessário"
 msgid "of {0}"
 msgstr "de {0}"
 
+msgid "Offline"
+msgstr "Desconectado"
+
 msgid "Oldest first"
 msgstr "Mais antigo primeiro"
 
@@ -1307,6 +1332,9 @@ msgstr "Abrir uma ordem de produção neste lote de produção"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir um NCR para disposição MRB"
+
+msgid "Open ERP"
+msgstr "Abrir ERP"
 
 msgid "Open Jobs"
 msgstr "Ordens de Produção Abertas"

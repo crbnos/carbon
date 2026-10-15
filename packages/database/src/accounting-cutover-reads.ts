@@ -51,11 +51,13 @@ export {
   type CutoverDb
 } from "./accounting-cutover/shared";
 export {
+  applyCarbonToOpeningTrialBalance,
   type CutoverOpeningInputs,
   getCutoverOpeningInputs,
   getMigrationClearing,
   getOpeningTrialBalance,
-  saveOpeningTrialBalance
+  saveOpeningTrialBalance,
+  setCutoverInvoiceIgnored
 } from "./accounting-cutover/trial-balance";
 export {
   type LegacyDocumentCounts,

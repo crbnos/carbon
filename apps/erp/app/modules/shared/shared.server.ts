@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
 import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import { actionTaskEntities } from "@carbon/ee/action-task-entity";
+import { SESSION_SECRET } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
@@ -868,6 +869,7 @@ const onboardingDraftStorage = createCookieSessionStorage({
   cookie: {
     name: ONBOARDING_DRAFT_KEY,
     path: "/",
+    secrets: [SESSION_SECRET!],
     secure: false,
     httpOnly: true,
     sameSite: "lax",
