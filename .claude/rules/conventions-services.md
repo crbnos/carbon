@@ -41,9 +41,9 @@ apps/erp/app/modules/{module}/
 The ERP is moving every operation a route, the API or MCP can run into one
 `defineServiceFn` const (`apps/erp/app/modules/service-fn.server.ts`), so a
 tool does exactly what the button does. Plan:
-`.ai/plans/2026-10-15-service-function-migration.md`. Migrated so far:
-`production.server.ts`. The functions below this section are the building
-blocks an operation calls.
+`.ai/plans/2026-10-15-service-function-migration.md`. Migrated so far: the
+production, purchasing, inventory and sales `*.server.ts`. The functions below
+this section are the building blocks an operation calls.
 
 ```ts
 /**
@@ -73,13 +73,19 @@ export const cancelJob = defineServiceFn({
   `run` is not checked again.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
   `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
-  `ctx.auditUserId` for `createdBy` / `updatedBy`.
+  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required)` checks
+  a permission the data decides (a posting mode, reopening a completed
+  transfer). Before an RLS-bypassing write keyed on an id the caller sent,
+  `refuseUnlessOwned(ctx, table, match)` (`shared/shared.server.ts`) returns
+  a refusal unless the row is the company's.
 - **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
   returned `CarbonError` rolls back; a nested call joins the open
   transaction; `tx.asCaller` throws, because that client is outside it.
 - **Routes**: build the context with `serviceContext(auth)`
-  (`service-context.server.ts`) from what `requirePermissions` returned, or
-  call through `carbon(request)` (`carbon.server.ts`):
+  (`service-context.server.ts`) from what `requirePermissions` returned,
+  `systemContext({ companyId, companyGroupId, onBehalfOf })` for a caller with
+  no session (a public share link), or call through `carbon(request)`
+  (`carbon.server.ts`):
   `api.production.job.cancel(input)` returns the result with the error as a
   plain `{ category, message, status }`. Each module lists its operations in
   `{module}/index.server.ts`; `router.server.ts` combines them.

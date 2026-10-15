@@ -47,10 +47,10 @@ type GateContext = { companyId: string; userId: string };
 const LINE_WRITE_OPERATIONS: Record<
   string,
   {
-    surface: "quoteLine" | "salesOrderLine" | "salesInvoiceLine";
+    surface: "quoteLine" | "salesInvoiceLine";
     param: string;
     documentKey: string;
-    documentType: "quote" | "salesOrder" | "salesInvoice";
+    documentType: "quote" | "salesInvoice";
   }
 > = {
   sales_upsertQuoteLine: {
@@ -58,12 +58,6 @@ const LINE_WRITE_OPERATIONS: Record<
     param: "quotationLine",
     documentKey: "quoteId",
     documentType: "quote"
-  },
-  sales_upsertSalesOrderLine: {
-    surface: "salesOrderLine",
-    param: "salesOrderLine",
-    documentKey: "salesOrderId",
-    documentType: "salesOrder"
   },
   invoicing_upsertSalesInvoiceLine: {
     surface: "salesInvoiceLine",
@@ -126,53 +120,47 @@ async function checkLineWrite(
   const lineId = typeof payload.id === "string" ? payload.id : "new";
 
   const shipTo =
-    op.surface === "salesOrderLine"
-      ? await resolveSalesOrderShipTo(
-          serviceRole,
-          documentId,
-          context.companyId
-        )
-      : op.surface === "salesInvoiceLine"
-        ? await (async () => {
-            // An invoice line converted from a sales order resolves its
-            // ship-to through that order; a standalone line uses the
-            // invoice's own ship-to. None may be invented (the bill-to is a
-            // different address), so with no ship-to set a null location
-            // lets a destination rule fail closed via the engine's
-            // required-field semantics.
-            if (lineId !== "new") {
-              const existing = await serviceRole
-                .from("salesInvoiceLine")
-                .select("salesOrderId")
-                .eq("id", lineId)
-                .eq("companyId", context.companyId)
-                .maybeSingle();
-              if (existing.data?.salesOrderId) {
-                return resolveSalesOrderShipTo(
-                  serviceRole,
-                  existing.data.salesOrderId,
-                  context.companyId
-                );
-              }
-            }
-            return resolveSalesInvoiceShipTo(
-              serviceRole,
-              documentId,
-              context.companyId
-            );
-          })()
-        : await (async () => {
-            const { data } = await serviceRole
-              .from("quote")
-              .select("customerId, customerLocationId")
-              .eq("id", documentId)
+    op.surface === "salesInvoiceLine"
+      ? await (async () => {
+          // An invoice line converted from a sales order resolves its
+          // ship-to through that order; a standalone line uses the
+          // invoice's own ship-to. None may be invented (the bill-to is a
+          // different address), so with no ship-to set a null location
+          // lets a destination rule fail closed via the engine's
+          // required-field semantics.
+          if (lineId !== "new") {
+            const existing = await serviceRole
+              .from("salesInvoiceLine")
+              .select("salesOrderId")
+              .eq("id", lineId)
               .eq("companyId", context.companyId)
               .maybeSingle();
-            return {
-              customerId: data?.customerId ?? null,
-              customerLocationId: data?.customerLocationId ?? null
-            };
-          })();
+            if (existing.data?.salesOrderId) {
+              return resolveSalesOrderShipTo(
+                serviceRole,
+                existing.data.salesOrderId,
+                context.companyId
+              );
+            }
+          }
+          return resolveSalesInvoiceShipTo(
+            serviceRole,
+            documentId,
+            context.companyId
+          );
+        })()
+      : await (async () => {
+          const { data } = await serviceRole
+            .from("quote")
+            .select("customerId, customerLocationId")
+            .eq("id", documentId)
+            .eq("companyId", context.companyId)
+            .maybeSingle();
+          return {
+            customerId: data?.customerId ?? null,
+            customerLocationId: data?.customerLocationId ?? null
+          };
+        })();
 
   // A quote line carries a break array — evaluate every break (min-quantity
   // rules fire on the smallest, max-quantity on the largest); the other
@@ -310,33 +298,9 @@ async function checkDocumentTransition(
   context: GateContext,
   functionArgs: unknown[]
 ): Promise<string | null> {
-  let documentType: SalesDocumentType | null =
-    meta.name === "sales_finalizeQuote" ||
-    meta.name === "sales_convertQuoteToOrder"
-      ? "quote"
-      : meta.name === "sales_convertSalesRfqToQuote"
-        ? "salesRfq"
-        : null;
-
-  // `finalizeQuote` addresses the quote by a scalar `quoteId` param; the two
-  // convert functions take a `payload` object whose document id is `id`.
-  const scalarId = resolvedParam(meta, functionArgs, "quoteId");
-  const payload = resolvedParam(meta, functionArgs, "payload");
-  let documentId =
-    typeof scalarId === "string"
-      ? scalarId
-      : payload && typeof payload === "object" && !Array.isArray(payload)
-        ? typeof (payload as Record<string, unknown>).id === "string"
-          ? ((payload as Record<string, unknown>).id as string)
-          : null
-        : null;
-
-  if (!documentType || !documentId) {
-    const statusTarget = statusTransitionTarget(meta, functionArgs);
-    if (!statusTarget) return null;
-    documentType = statusTarget.documentType;
-    documentId = statusTarget.documentId;
-  }
+  const target = statusTransitionTarget(meta, functionArgs);
+  if (!target) return null;
+  const { documentType, documentId } = target;
 
   const serviceRole = getCarbonServiceRole();
   const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({

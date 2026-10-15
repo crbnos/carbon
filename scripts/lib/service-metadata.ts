@@ -111,11 +111,6 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Update an existing sales order - handles exchange rate updates when currency changes, syncs customer to opportunity",
   production_insertJob:
     "Create a new job with all business logic - generates sequence, resolves location, copies method from item, recalculates requirements. LLM can create a job with just itemId and quantity.",
-  production_updateJob:
-    "Update an existing job - handles priority recalculation when deadline changes",
-  inventory_insertStockTransfer:
-    "Create a stock transfer with lines. Generates sequence ID automatically.",
-  inventory_updateStockTransfer: "Update an existing stock transfer",
   inventory_insertWarehouseTransfer:
     "Create a warehouse transfer between locations. Generates sequence ID automatically.",
   inventory_updateWarehouseTransfer: "Update an existing warehouse transfer",
