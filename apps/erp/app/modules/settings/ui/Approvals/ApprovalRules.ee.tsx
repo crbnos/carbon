@@ -110,11 +110,11 @@ const ApprovalRules = memo(
                 <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
-                      <Trans>Quality Documents</Trans>
+                      <Trans>Quality Papers</Trans>
                     </CardTitle>
                     <CardDescription className="text-sm">
                       <Trans>
-                        Require approval for quality documents in your workflow
+                        Require approval for quality papers in your workflow
                       </Trans>
                     </CardDescription>
                   </div>

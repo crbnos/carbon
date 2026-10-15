@@ -18,12 +18,12 @@ export default function useDocumentsSubmodules() {
 
   const documentsRoutes: Route[] = [
     {
-      name: t`All Documents`,
+      name: t`All Papers`,
       to: path.to.documents,
       icon: <LuFolder />
     },
     {
-      name: t`My Documents`,
+      name: t`My Papers`,
       to: path.to.documents,
       q: "my",
       icon: <LuFolderHeart />

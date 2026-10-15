@@ -427,7 +427,7 @@ export default function PurchasingSettingsRoute() {
         </SettingsPageHeading>
 
         <SettingsSectionHeader>
-          <Trans>Documents</Trans>
+          <Trans>Papers</Trans>
         </SettingsSectionHeader>
 
         <CompanyDefaultAttachmentsCard

@@ -73,7 +73,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       icon: <LuLandmark />
     },
     {
-      name: t`Documents`,
+      name: t`Papers`,
       to: path.to.customerDocuments(customerId),
       role: ["employee"],
       icon: <LuFiles />

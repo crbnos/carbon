@@ -287,7 +287,7 @@ export default function SalesSettingsRoute() {
         </SettingsPageHeading>
 
         <SettingsSectionHeader>
-          <Trans>Documents</Trans>
+          <Trans>Papers</Trans>
         </SettingsSectionHeader>
 
         <Card>

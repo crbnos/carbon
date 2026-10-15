@@ -258,7 +258,7 @@ const QualityDocumentsTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          title={t`Quality Documents`}
+          title={t`Quality Papers`}
           table="qualityDocument"
           withSavedView
         />

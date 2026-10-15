@@ -87,7 +87,7 @@ export default function useQualitySubmodules() {
       name: t`Document Control`,
       routes: [
         {
-          name: t`Quality Documents`,
+          name: t`Quality Papers`,
           to: path.to.qualityDocuments,
           icon: <LuFileText />,
           table: "qualityDocument"

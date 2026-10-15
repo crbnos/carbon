@@ -111,7 +111,7 @@ const RecordDocuments = ({
       <HStack className="justify-between items-start">
         <CardHeader>
           <CardTitle>
-            <Trans>Documents</Trans>
+            <Trans>Papers</Trans>
           </CardTitle>
         </CardHeader>
         <CardAction>

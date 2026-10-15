@@ -41,7 +41,7 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
     return (
       <div className="flex flex-col h-full min-h-0">
         <h2 className="shrink-0 px-4 pt-5 pb-3 text-sm font-medium">
-          <Trans>Documents</Trans>
+          <Trans>Papers</Trans>
         </h2>
         <div className="flex flex-col gap-6 min-h-0 overflow-y-auto px-4 pb-8">
           {documents}
@@ -59,7 +59,7 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
       <div className="flex items-center shrink-0 px-4 pt-5 pb-3">
         <TabsList className="w-full">
           <TabsTrigger value="documents" className="flex-1">
-            <Trans>Documents</Trans>
+            <Trans>Papers</Trans>
           </TabsTrigger>
           <TabsTrigger value="activity" className="flex-1">
             <Trans>Activity</Trans>

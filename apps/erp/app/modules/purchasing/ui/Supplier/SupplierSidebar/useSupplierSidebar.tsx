@@ -95,7 +95,7 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
       icon: <LuPackage />
     },
     {
-      name: t`Documents`,
+      name: t`Papers`,
       to: path.to.supplierDocuments(supplierId),
       role: ["employee"],
       icon: <LuFiles />

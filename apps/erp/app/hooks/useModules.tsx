@@ -61,7 +61,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "documents",
       permission: "documents",
-      name: t`Documents`,
+      name: t`Papers`,
       to: path.to.documents,
       icon: LuFiles
     },

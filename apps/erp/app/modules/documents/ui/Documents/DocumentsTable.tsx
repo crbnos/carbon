@@ -518,7 +518,7 @@ const DocumentsTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          title={t`Documents`}
+          title={t`Papers`}
         />
 
         {selectedDocument && selectedDocument.id && (

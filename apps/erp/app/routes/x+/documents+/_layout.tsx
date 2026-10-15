@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Documents" }];
+  return [{ title: "Carbon | Papers" }];
 };
 
 function DocumentsSidebar() {
@@ -23,7 +23,7 @@ function DocumentsSidebar() {
 }
 
 export const handle: Handle = {
-  breadcrumb: msg`Documents`,
+  breadcrumb: msg`Papers`,
   to: path.to.documents,
   module: "documents",
   sidebar: DocumentsSidebar
