@@ -29,4 +29,4 @@
 
 ## Outcome
 
-- Committed and pushed on the user's request (2026-10-15), PR opened. The branch was fast-forwarded to origin/main first; the migration moved to `20261015122149_strict-backflush.sql` so it is newer than main's latest. Translations filled by `/translate` (120 strings + 14 re-translated where the glossary term was dropped).
+- Committed and pushed on the user's request (2026-10-15), PR opened. The branch was fast-forwarded to origin/main first; the migration moved to `20261015151804_strict-backflush.sql` so it is newer than main's latest. Translations filled by `/translate` (120 strings + 14 re-translated where the glossary term was dropped).
