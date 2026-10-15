@@ -1,5 +1,5 @@
 {
-  "totalTools": 1574,
+  "totalTools": 1580,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -955,6 +955,12 @@
     {"name":"purchasing_leaseLine_purchase","classification":"WRITE","paramCount":1,"schema":"38acf7de6118","response":"bb4487ea3e25","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.leaseLine.purchase"},
     {"name":"purchasing_leaseLine_removeClassificationOverride","classification":"WRITE","paramCount":1,"schema":"bb4487ea3e25","response":"58ef28d4f5cf","injectAuth":"none","permission":"accounting:update","paginates":false,"serviceFn":"purchasing.leaseLine.removeClassificationOverride"},
     {"name":"purchasing_leaseLine_terminate","classification":"DESTRUCTIVE","paramCount":1,"schema":"cb77a6b7f416","response":"bb4487ea3e25","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.leaseLine.terminate"},
+    {"name":"purchasing_planning_apply","classification":"WRITE","paramCount":1,"schema":"97c5a5a85a8d","response":"1fcb7549b33d","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.planning.apply"},
+    {"name":"purchasing_planning_assign","classification":"WRITE","paramCount":1,"schema":"a18b4088f112","response":"fb4223d67640","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.planning.assign"},
+    {"name":"purchasing_planning_dismiss","classification":"WRITE","paramCount":1,"schema":"8c0c1ffe0fab","response":"fb4223d67640","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.planning.dismiss"},
+    {"name":"purchasing_planning_order","classification":"WRITE","paramCount":1,"schema":"075bf940d96b","response":"783cfed7484c","injectAuth":"none","permission":"purchasing:create","paginates":false,"serviceFn":"purchasing.planning.order"},
+    {"name":"purchasing_planning_reopen","classification":"WRITE","paramCount":1,"schema":"8c0c1ffe0fab","response":"fb4223d67640","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.planning.reopen"},
+    {"name":"purchasing_planning_updateLine","classification":"WRITE","paramCount":1,"schema":"f9f036f80ca3","response":"2d9389fd413d","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.planning.updateLine"},
     {"name":"purchasing_purchaseOrder_close","classification":"DESTRUCTIVE","paramCount":1,"schema":"28cffcd9d6e8","response":"28cffcd9d6e8","injectAuth":"none","permission":"purchasing:delete","paginates":false,"serviceFn":"purchasing.purchaseOrder.close"},
     {"name":"purchasing_purchaseOrder_decideApproval","classification":"WRITE","paramCount":1,"schema":"03b37ea9315e","response":"5d541df0c1a6","injectAuth":"none","permission":"purchasing:update","paginates":false,"serviceFn":"purchasing.purchaseOrder.decideApproval"},
     {"name":"purchasing_purchaseOrder_delete","classification":"DESTRUCTIVE","paramCount":1,"schema":"56451bca9438","response":"56451bca9438","injectAuth":"none","permission":"purchasing:delete","paginates":false,"serviceFn":"purchasing.purchaseOrder.delete"},

@@ -9,7 +9,10 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 
-import { reopenPurchaseOrder } from "../app/modules/purchasing/purchasing.server";
+import {
+  orderPlannedPurchases,
+  reopenPurchaseOrder
+} from "../app/modules/purchasing/purchasing.server";
 import { createServiceContext } from "../app/modules/service-fn.server";
 
 type Claims = Record<
@@ -32,12 +35,15 @@ const unreachable = () => {
   throw new Error("must not be reached");
 };
 
+// A client with no methods: any read through it fails the test.
+const noClient = () => ({}) as any;
+
 function contextFor(client: any, permissions: Claims) {
   return createServiceContext({
     actor: { type: "user", userId: "user-1", permissions },
     company: { id: "company-1", groupId: "group-1" },
     caller: client,
-    system: unreachable,
+    system: noClient,
     pg: unreachable,
     kv: unreachable
   });
@@ -76,6 +82,38 @@ describe("reopenPurchaseOrder", () => {
     expect(result.error).toMatchObject({
       category: "rule",
       message: "Only a released purchase order can be revised"
+    });
+  });
+});
+
+describe("orderPlannedPurchases", () => {
+  // An existing line is changed through updateLine or Apply, which carry the
+  // status and promised-date guards: ordering it again would duplicate it.
+  it("refuses an order that names an existing line, before reading anything", async () => {
+    const result = await orderPlannedPurchases(
+      contextFor(noClient(), purchasing({ create: ["company-1"] })),
+      {
+        locationId: "loc-1",
+        items: [
+          {
+            id: "item-1",
+            orders: [
+              {
+                startDate: null,
+                dueDate: "2026-11-02",
+                periodId: "period-1",
+                quantity: 5,
+                supplierId: "supplier-1",
+                existingLineId: "pol-1"
+              }
+            ]
+          }
+        ]
+      }
+    );
+    expect(result.error).toMatchObject({
+      category: "validation",
+      message: "Existing orders are changed from the Open Orders list"
     });
   });
 });

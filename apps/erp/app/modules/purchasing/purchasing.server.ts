@@ -6,6 +6,10 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  convertUnitPrice,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
@@ -43,10 +47,13 @@ import {
   type RequiredPermissions
 } from "@carbon/server-functions/permissions";
 import {
+  applyRate,
   async,
   datetime,
   openEndedLeaseHorizon,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
+  SCALE,
+  taxableBase,
   tiptapToHTML,
   unchecked
 } from "@carbon/utils";
@@ -61,7 +68,14 @@ import {
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
-import { runMRP } from "~/modules/production/production.service";
+import {
+  assignPlanningActions,
+  dismissPlanningActions,
+  getPlanningActionsByIds,
+  reopenDismissedPlanningActions,
+  runMRP,
+  settleNewSupplyPlanningActions
+} from "~/modules/production/production.service";
 import {
   CarbonError,
   defineServiceFn,
@@ -73,13 +87,19 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import {
+  isActiveCompanyEmployee,
+  requireCompanyRecord
+} from "~/modules/shared/shared.server";
 import { upsertExternalLink } from "~/modules/shared/shared.service";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { ERP_URL, path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import {
   canCreatePurchaseOrderRevision,
+  findPlanningPurchaseOrder,
+  isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
   isPurchaseReturnOrderLocked,
   isRfqLocked,
@@ -96,17 +116,21 @@ import {
   type leaseValidator,
   lockedReturnLineField,
   PURCHASE_ORDER_REOPEN_STATUSES,
+  plannedOrderValidator,
+  planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
-  supplierQuoteFinalizeValidator
+  supplierQuoteFinalizeValidator,
+  taxPairForQuantity
 } from "./purchasing.models";
 import {
   renderPurchaseOrderPdf,
   renderPurchaseReturnOrderPdf
 } from "./purchasing.pdf.server";
 import {
+  applyPurchasingPlanningActions,
   cancelPurchaseReturnOrder,
   confirmPurchaseReturnOrder,
   finalizePurchaseOrder,
@@ -126,13 +150,16 @@ import {
   getSupplierInteractionLineAttachments,
   getSupplierQuote,
   getSupplierQuoteLines,
+  insertPurchaseOrder,
   insertPurchasingRFQ,
   reopenPurchaseOrderAsRevision,
   reopenPurchaseReturnOrder,
   sendSupplierQuote,
   setPurchaseReturnOrderLineTrackedEntities,
+  updatePurchaseOrderLineSchedule,
   updatePurchaseOrderStatus,
   updatePurchasingRFQStatus,
+  upsertPurchaseOrderLine,
   upsertPurchaseReturnOrderLine,
   upsertPurchasingRFQSuppliers
 } from "./purchasing.service";
@@ -3454,5 +3481,1107 @@ export const confirmReturnOrder = defineServiceFn({
       };
     }
     return { purchaseReturnOrderId, warning: null };
+  }
+});
+
+// ── Purchasing planning ─────────────────────────────────────────────────────
+
+/**
+ * The date the supplier promised for a PO line: the line's own, else its
+ * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
+ * gives MRP. MRP dates the line by this ahead of the required date, so a
+ * planning date change (which writes the required date) cannot move it.
+ */
+function promisedDateOf(line: {
+  promisedDate: string | null;
+  receiptPromisedDate: string | null | undefined;
+}): string | null {
+  return line.promisedDate ?? line.receiptPromisedDate ?? null;
+}
+
+/** Sums forecasts that land on the same (item, location, period). */
+function deduplicateForecasts<
+  T extends {
+    itemId: string;
+    locationId: string;
+    periodId: string;
+    forecastQuantity: number;
+  }
+>(forecasts: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const forecast of forecasts) {
+    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.forecastQuantity += forecast.forecastQuantity;
+    } else {
+      map.set(key, { ...forecast });
+    }
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Order purchasing suggestions at a location.
+ *
+ * @remarks
+ * The purchasing planning page's Order. Each suggested order with a supplier
+ * and a period becomes a line on a Planned purchase order: one order per
+ * supplier per week (`planningPurchaseOrderWeek`), reusing the supplier's open
+ * Draft / Planned order at the location that covers only that week in the
+ * supplier's currency, else a new one. An order for an item the purchase
+ * order already has on the same date adds to that line. The quantity is
+ * raised to the supplier part's minimum; the price is the supplier part's,
+ * converted at today's rate (refused for a currency with no rate); the tax is
+ * the supplier's. An item whose purchasing is blocked is skipped. The orders
+ * raised keep their planning approval bypass, the supply forecast is
+ * recorded, and the Order suggestions they answer are settled.
+ *
+ * Existing lines are changed with `purchasing_planning_updateLine` or
+ * `purchasing_planning_apply`, never here. Refused when nothing could be
+ * ordered; otherwise the problems are listed in `errors`.
+ *
+ * @mcp
+ */
+export const orderPlannedPurchases = defineServiceFn({
+  input: z.object({
+    locationId: z.string(),
+    items: z
+      .array(
+        z.object({ id: z.string(), orders: z.array(plannedOrderValidator) })
+      )
+      .min(1, "No items were provided to create purchase orders")
+  }),
+  permission: { create: "purchasing" },
+
+  async run(ctx, { locationId, items: itemsToOrder }) {
+    const client = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const companyGroupId = ctx.company.groupId;
+    const userId = ctx.auditUserId;
+
+    // `order` only creates PO lines. An existing line is changed through
+    // `updateLine` or Apply, which carry the status, promised-date and
+    // tax-pair guards; a stale client naming one here would get a duplicate.
+    if (
+      itemsToOrder.some((item) =>
+        item.orders.some((o) => o.existingLineId || o.existingId)
+      )
+    ) {
+      return ctx.error(
+        "validation",
+        "Existing orders are changed from the Open Orders list"
+      );
+    }
+
+    const supplierIds = new Set<string>();
+    const itemIds = new Set<string>();
+    const periodIds = new Set<string>();
+    const allSupplyForecasts: Array<{
+      itemId: string;
+      locationId: string;
+      sourceType: "Purchase Order";
+      forecastQuantity: number;
+      periodId: string;
+      companyId: string;
+      createdBy: string;
+      updatedBy: string;
+    }> = [];
+
+    // Group new orders by supplier; below, each supplier's orders are split
+    // again by week, so a supplier gets one PO per week.
+    type OrderEntry = {
+      itemId: string;
+      order: (typeof itemsToOrder)[0]["orders"][0];
+    };
+    const ordersBySupplier = new Map<string, OrderEntry[]>();
+    const errors: string[] = [];
+    // The (item, week) of every order that became a PO line, so the Order
+    // suggestions it answers leave the worklist now, not at the next run.
+    const ordered: { itemId: string; periodId: string }[] = [];
+
+    for (const item of itemsToOrder) {
+      itemIds.add(item.id);
+      let itemHasUsableOrder = false;
+      for (const order of item.orders) {
+        if (order.supplierId) supplierIds.add(order.supplierId);
+        if (order.periodId) periodIds.add(order.periodId);
+        if (order.supplierId && order.periodId) {
+          ordersBySupplier.set(order.supplierId, [
+            ...(ordersBySupplier.get(order.supplierId) ?? []),
+            { itemId: item.id, order }
+          ]);
+          itemHasUsableOrder = true;
+        }
+      }
+      if (!itemHasUsableOrder) {
+        errors.push(
+          `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
+        );
+      }
+    }
+
+    // Every id comes from the caller and the writes bypass RLS: the location
+    // and items must be this company's (supplyForecast upserts on
+    // (itemId, locationId, periodId) alone).
+    const location = await recordInCompany(ctx, "location", { id: locationId });
+    if (location) return location;
+    const ownedItems = await client
+      .from("item")
+      .select("id")
+      .in("id", Array.from(itemIds))
+      .eq("companyId", companyId);
+    if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
+      logger.error("Planning order references records outside company", {
+        companyId,
+        userId,
+        locationId,
+        itemIds: Array.from(itemIds),
+        error: ownedItems.error
+      });
+      return ctx.error("notFound", "Item not found");
+    }
+
+    const [suppliers, supplierParts, company, currencies, exchangeRates] =
+      await Promise.all([
+        client
+          .from("supplier")
+          .select("id, name, taxPercent, currencyCode")
+          .in("id", Array.from(supplierIds))
+          .eq("companyId", companyId),
+        client
+          .from("supplierPart")
+          .select("*")
+          .in("itemId", Array.from(itemIds))
+          .eq("companyId", companyId),
+        client
+          .from("company")
+          .select("id, baseCurrencyCode")
+          .eq("id", companyId)
+          .single(),
+        client
+          .from("currencies")
+          .select("code, decimalPlaces")
+          .eq("companyGroupId", companyGroupId),
+        // Today's rate for each currency a supplier part is priced in.
+        client.rpc("get_exchange_rates", { p_company_id: companyId })
+      ]);
+    if (suppliers.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve supplier information from database",
+        suppliers.error
+      );
+    }
+    if (supplierParts.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve supplier part information from database",
+        supplierParts.error
+      );
+    }
+    if (company.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve company information from database",
+        company.error
+      );
+    }
+
+    const suppliersById = new Map(
+      suppliers.data.map((supplier) => [supplier.id, supplier])
+    );
+    const baseCurrencyCode = company.data.baseCurrencyCode ?? "USD";
+    const exchangeRateByCurrency = new Map(
+      (exchangeRates.data ?? []).map((rate) => [rate.currencyCode, rate.rate])
+    );
+    // Settlement amounts round at the currency's own decimals, so the planned
+    // order carries a real money value rather than a raw product.
+    const currencyDecimals = new Map(
+      currencies.data?.map((c) => [c.code, c.decimalPlaces]) ?? []
+    );
+
+    let processedItems = 0;
+    // Readable ids too, so the client can present a clickable toast.
+    const poCache = new Map<string, { id: string; readableId: string }>();
+
+    // Whether purchasing is blocked, for every item ordered, in one read.
+    const purchasingRows = await client
+      .from("itemReplenishment")
+      .select("itemId, purchasingBlocked")
+      .in("itemId", Array.from(itemIds))
+      .eq("companyId", companyId);
+    const purchasingByItem = new Map(
+      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+    );
+
+    // Weeks are counted from the location's today, as the planning grid's are.
+    const asOf = datetime.today(
+      await getLocationTimeZone(client, locationId, companyId)
+    );
+
+    // Every open PO an order may join, with its lines, in one read: the
+    // suppliers' Draft / Planned purchase orders at this location, oldest
+    // first. The lines tell which weeks a PO already covers, and which line a
+    // same-item, same-date order adds its quantity to.
+    const openPurchaseOrders = await client
+      .from("purchaseOrder")
+      .select(
+        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+      )
+      .eq("companyId", companyId)
+      .in("supplierId", Array.from(ordersBySupplier.keys()))
+      .eq("purchaseOrderType", "Purchase")
+      .in("status", ["Draft", "Planned"])
+      .eq("purchaseOrderDelivery.locationId", locationId)
+      .order("createdAt", { ascending: true });
+    if (openPurchaseOrders.error) {
+      return ctx.error(
+        "internal",
+        "Failed to retrieve open purchase orders from database",
+        openPurchaseOrders.error
+      );
+    }
+
+    const candidatePurchaseOrders = openPurchaseOrders.data.map((po) => ({
+      id: po.id,
+      purchaseOrderId: po.purchaseOrderId,
+      supplierId: po.supplierId,
+      currencyCode: po.currencyCode,
+      exchangeRate: po.exchangeRate ?? 1,
+      createdFromPlanning: po.createdFromPlanning,
+      purchaseOrderLine: po.purchaseOrderLine ?? []
+    }));
+
+    // The POs this call raised, and the planning POs it added to: their
+    // approval bypass (`createdFromPlanning`) is restored once their lines are
+    // written, since the shared line writer clears it on any change. A Draft /
+    // Planned PO someone created by hand stays unflagged.
+    const planningPurchaseOrderIds = new Set<string>();
+
+    for (const [supplierId, ordersForSupplier] of ordersBySupplier) {
+      const supplier = suppliersById.get(supplierId);
+      if (!supplier) {
+        errors.push(`Supplier ${supplierId} not found`);
+        continue;
+      }
+
+      const currencyCode = supplier.currencyCode ?? baseCurrencyCode;
+      const decimals = currencyDecimals.get(currencyCode) ?? SCALE;
+
+      // One PO per supplier per week, so each week's PO is finalized and sent
+      // on its own and the later weeks stay Planned, where MRP can still move,
+      // resize or cancel them.
+      const ordersByWeek = new Map<string, OrderEntry[]>();
+      for (const entry of ordersForSupplier) {
+        const week = planningPurchaseOrderWeek(entry.order.dueDate, asOf);
+        ordersByWeek.set(week, [...(ordersByWeek.get(week) ?? []), entry]);
+      }
+
+      for (const [week, ordersInGroup] of ordersByWeek) {
+        let purchaseOrder = findPlanningPurchaseOrder(
+          candidatePurchaseOrders,
+          { supplierId, currencyCode, week },
+          asOf
+        );
+
+        if (purchaseOrder) {
+          if (purchaseOrder.createdFromPlanning) {
+            planningPurchaseOrderIds.add(purchaseOrder.id);
+          }
+        } else {
+          const createPO = await insertPurchaseOrder(client, {
+            status: "Planned",
+            supplierId,
+            purchaseOrderType: "Purchase",
+            currencyCode,
+            locationId,
+            companyId,
+            companyGroupId,
+            createdBy: userId
+          });
+          if (createPO.error || !createPO.data) {
+            logger.error("Failed to create PO for supplier", {
+              companyId,
+              locationId,
+              supplierId,
+              week,
+              error: createPO.error
+            });
+            errors.push(
+              `Failed to create PO for supplier ${supplierId}: ${createPO.error?.message ?? "no data returned"}`
+            );
+            continue;
+          }
+          purchaseOrder = {
+            id: createPO.data.id,
+            purchaseOrderId: createPO.data.purchaseOrderId,
+            supplierId,
+            currencyCode,
+            exchangeRate: createPO.data.exchangeRate,
+            createdFromPlanning: true,
+            purchaseOrderLine: []
+          };
+          planningPurchaseOrderIds.add(createPO.data.id);
+          candidatePurchaseOrders.push(purchaseOrder);
+        }
+
+        const purchaseOrderId = purchaseOrder.id;
+        poCache.set(`${supplierId}:${week}`, {
+          id: purchaseOrderId,
+          readableId: purchaseOrder.purchaseOrderId ?? purchaseOrderId
+        });
+
+        for (const { itemId, order } of ordersInGroup) {
+          const supplierPart = supplierParts.data.find(
+            (sp) => sp.itemId === itemId && sp.supplierId === supplierId
+          );
+
+          const purchasingError =
+            purchasingRows.error ??
+            (purchasingByItem.has(itemId)
+              ? null
+              : { message: "No replenishment record" });
+          if (purchasingError) {
+            errors.push(
+              `Failed to retrieve purchasing data for item ${itemId}: ${purchasingError.message}`
+            );
+            continue;
+          }
+          if (purchasingByItem.get(itemId)?.purchasingBlocked) {
+            errors.push(`Purchasing is blocked for item ${itemId}`);
+            continue;
+          }
+
+          const minimumOrderQuantity = supplierPart?.minimumOrderQuantity ?? 0;
+          const adjustedQuantity =
+            minimumOrderQuantity > 0 && order.quantity < minimumOrderQuantity
+              ? minimumOrderQuantity
+              : order.quantity;
+
+          // An order for an item the PO already has on the same date adds to
+          // that line. Orders for different dates stay on separate lines so
+          // each keeps its own required date.
+          const requiredDate = order.dueDate ?? null;
+          const existing = purchaseOrder.purchaseOrderLine.find(
+            (line) =>
+              line.itemId === itemId && line.requiredDate === requiredDate
+          );
+
+          if (existing) {
+            const purchaseQuantity =
+              (existing.purchaseQuantity ?? 0) + adjustedQuantity;
+            // The extended price follows the quantity on its own; the tax
+            // amount is stored, so it is restated at the line's rate.
+            const tax = taxPairForQuantity(
+              existing,
+              purchaseQuantity,
+              decimals
+            );
+            const updateLine = await client
+              .from("purchaseOrderLine")
+              .update({
+                purchaseQuantity,
+                taxPercent: tax.percent,
+                supplierTaxAmount: tax.amount,
+                updatedBy: userId
+              })
+              .eq("id", existing.id)
+              .eq("companyId", companyId);
+            if (updateLine.error) {
+              errors.push(
+                `Failed to update PO line for item ${itemId}: ${updateLine.error.message}`
+              );
+              continue;
+            }
+            existing.purchaseQuantity = purchaseQuantity;
+            existing.taxPercent = tax.percent;
+            existing.supplierTaxAmount = tax.amount;
+          } else {
+            // The supplier part's price is in its own currency; the line holds
+            // the order's, converted at today's rate.
+            const partCurrency = supplierPartCurrency(
+              supplierPart?.currencyCode,
+              baseCurrencyCode
+            );
+            // Base is always 1, whether or not the group lists it.
+            const partRate =
+              partCurrency === baseCurrencyCode
+                ? 1
+                : exchangeRateByCurrency.get(partCurrency);
+            if (
+              supplierPart?.supplierUnitPrice != null &&
+              partCurrency !== currencyCode &&
+              !partRate
+            ) {
+              errors.push(
+                `No exchange rate for ${partCurrency}: set one in Accounting → Exchange Rates`
+              );
+              continue;
+            }
+            const supplierUnitPrice =
+              supplierPart?.supplierUnitPrice != null
+                ? convertUnitPrice(
+                    supplierPart.supplierUnitPrice,
+                    { currencyCode: partCurrency, exchangeRate: partRate ?? 1 },
+                    { currencyCode, exchangeRate: purchaseOrder.exchangeRate }
+                  )
+                : 0;
+            const taxPercent = supplier.taxPercent ?? 0;
+            // supplier.taxPercent is a 0..1 fraction; the amount follows the
+            // canonical denominator. Shipping is 0 on this path.
+            const supplierTaxAmount = applyRate(
+              taxableBase(supplierUnitPrice, adjustedQuantity, 0),
+              taxPercent,
+              decimals
+            );
+            const createLine = await upsertPurchaseOrderLine(client, {
+              purchaseOrderId,
+              itemId,
+              description: order.description,
+              purchaseOrderLineType: "Part",
+              purchaseQuantity: adjustedQuantity,
+              purchaseUnitOfMeasureCode:
+                supplierPart?.supplierUnitOfMeasureCode ??
+                order.unitOfMeasureCode,
+              inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
+              conversionFactor: supplierPart?.conversionFactor ?? 1,
+              supplierUnitPrice,
+              exchangeRate: purchaseOrder.exchangeRate,
+              taxPercent,
+              supplierTaxAmount,
+              supplierShippingCost: 0,
+              requiredDate: order.dueDate ?? undefined,
+              locationId,
+              companyId,
+              createdBy: userId
+            });
+            if (createLine.error) {
+              errors.push(
+                `Failed to create PO line for item ${itemId}: ${createLine.error.message}`
+              );
+              continue;
+            }
+            purchaseOrder.purchaseOrderLine.push({
+              id: createLine.data.id,
+              itemId,
+              requiredDate,
+              purchaseQuantity: adjustedQuantity,
+              supplierUnitPrice,
+              supplierShippingCost: 0,
+              taxPercent,
+              supplierTaxAmount
+            });
+          }
+
+          processedItems++;
+          ordered.push({ itemId, periodId: order.periodId });
+          allSupplyForecasts.push({
+            itemId,
+            locationId,
+            sourceType: "Purchase Order",
+            forecastQuantity:
+              order.quantity * (supplierPart?.conversionFactor ?? 1),
+            periodId: order.periodId,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId
+          });
+        }
+      }
+    }
+
+    if (allSupplyForecasts.length > 0) {
+      const forecasts = await client
+        .from("supplyForecast")
+        .upsert(deduplicateForecasts(allSupplyForecasts), {
+          onConflict: "itemId,locationId,periodId",
+          ignoreDuplicates: false
+        });
+      if (forecasts.error) {
+        const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
+        logger.error(message, { companyId, locationId });
+        errors.push(message);
+      }
+    }
+
+    if (planningPurchaseOrderIds.size > 0) {
+      const flagged = await client
+        .from("purchaseOrder")
+        .update({ createdFromPlanning: true })
+        .in("id", [...planningPurchaseOrderIds])
+        .eq("companyId", companyId);
+      if (flagged.error) {
+        // The orders stand; they go through approval like any other PO.
+        logger.error("Failed to mark planning purchase orders", {
+          companyId,
+          purchaseOrderIds: [...planningPurchaseOrderIds],
+          error: flagged.error
+        });
+      }
+    }
+
+    const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
+      companyId,
+      locationId,
+      userId,
+      type: "Order",
+      ordered
+    });
+    if (settled.error) {
+      // The PO lines stand; the suggestions clear on the next MRP run.
+      logger.error("Failed to settle ordered planning actions", {
+        companyId,
+        locationId,
+        error: settled.error
+      });
+    }
+
+    if (errors.length > 0 && processedItems === 0) {
+      logger.error("Failed to process any planning orders", {
+        companyId,
+        locationId,
+        itemIds: Array.from(itemIds),
+        supplierIds: Array.from(supplierIds),
+        periodIds: Array.from(periodIds),
+        errors
+      });
+      return ctx.error(
+        "rule",
+        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
+          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+        }`
+      );
+    }
+
+    return {
+      message:
+        processedItems === itemsToOrder.length
+          ? `Successfully processed all ${processedItems} items`
+          : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
+              errors.length
+            } errors occurred: ${errors.slice(0, 2).join("; ")}${
+              errors.length > 2 ? "..." : ""
+            }`,
+      processedItems,
+      totalItems: itemsToOrder.length,
+      // Each supplier week has its own PO; the dedupe is only a guard.
+      purchaseOrders: Array.from(
+        new Map(Array.from(poCache.values()).map((po) => [po.id, po])).values()
+      ),
+      errors: errors.length > 0 ? errors : undefined
+    };
+  }
+});
+
+/**
+ * Change the quantity or due date of a purchase order line from planning.
+ *
+ * @remarks
+ * The planning drawer's Open Orders cell. Only a line at `locationId`, on a
+ * Draft or Planned order (not in approval, not sent), and for a due date only
+ * when the supplier has promised none. The tax pair is restated with the
+ * quantity.
+ *
+ * @mcp
+ */
+export const updatePlanningPurchaseOrderLine = defineServiceFn({
+  input: z.object({
+    locationId: z.string(),
+    line: z.discriminatedUnion("field", [
+      z.object({
+        id: z.string().min(1),
+        field: z.literal("quantity"),
+        value: z.number().positive()
+      }),
+      z.object({
+        id: z.string().min(1),
+        field: z.literal("dueDate"),
+        value: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+      })
+    ])
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { locationId, line }) {
+    const companyId = ctx.company.id;
+    const committed = () =>
+      ctx.error(
+        "conflict",
+        "This purchase order is in approval or has been sent to the supplier. Change it on the order."
+      );
+
+    const target = await ctx.asSystem.supabase
+      .from("purchaseOrderLine")
+      .select(
+        "id, locationId, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
+      )
+      .eq("id", line.id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (target.error || !target.data) {
+      return ctx.error(
+        "notFound",
+        "Purchase order line not found",
+        target.error
+      );
+    }
+    // The drawer lists one location's orders; a request for another
+    // location's line did not come from it.
+    if (target.data.locationId !== locationId) {
+      return ctx.error(
+        "conflict",
+        "This purchase order line is for another location."
+      );
+    }
+    if (
+      !isPurchaseOrderEditableFromPlanning(target.data.purchaseOrder?.status)
+    ) {
+      return committed();
+    }
+    if (
+      line.field === "dueDate" &&
+      promisedDateOf({
+        promisedDate: target.data.promisedDate,
+        receiptPromisedDate:
+          target.data.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate
+      }) !== null
+    ) {
+      return ctx.error(
+        "conflict",
+        "The supplier has promised a date for this line. Change it on the order."
+      );
+    }
+
+    const saved = await updatePurchaseOrderLineSchedule(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        lineId: target.data.id,
+        companyId,
+        companyGroupId: ctx.company.groupId,
+        userId: ctx.auditUserId,
+        ...(line.field === "quantity"
+          ? { purchaseQuantity: line.value }
+          : { requiredDate: line.value })
+      }
+    );
+    if (saved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update purchase order line",
+        saved.error
+      );
+    }
+    // Sent or put in approval after the status check above.
+    if (!saved.updated) return committed();
+    return { message: "Updated purchase order line" };
+  }
+});
+
+const PLANNING_ACTION_TYPE_OF: Record<string, string> = {
+  expedite: "Expedite",
+  defer: "Defer",
+  increase: "Increase",
+  decrease: "Decrease",
+  cancel: "Cancel"
+};
+const PLANNING_CHANGE_TYPES = new Set(Object.values(PLANNING_ACTION_TYPE_OF));
+
+/** A planning worklist's ids: one each, at least one. */
+const planningActionIds = z
+  .array(z.string().min(1))
+  .min(1)
+  .transform((ids) => [...new Set(ids)]);
+
+type PlanningLine = {
+  id: string;
+  purchaseOrderId: string;
+  conversionFactor: number | null;
+  promisedDate: string | null;
+  purchaseOrderStatus:
+    | Database["public"]["Enums"]["purchaseOrderStatus"]
+    | null;
+  receiptPromisedDate: string | null;
+};
+
+/**
+ * Apply MRP's suggestions to their purchase order lines.
+ *
+ * @remarks
+ * Each Open planning action is applied as it was suggested (the type, line,
+ * quantity and date come from the stored action, never the caller):
+ * Expedite and Defer move the line's required date, Increase and Decrease
+ * its quantity, Cancel deletes the line (needs `delete: purchasing`). `type`
+ * `apply` takes any of them; the others only their own. An action whose
+ * order is in approval or sent, or whose date the supplier promised, is
+ * listed in `requiresManualAction` to review on the order. Everything is
+ * written in one transaction. `success` is false when an action failed or
+ * nothing could be applied.
+ *
+ * @mcp
+ */
+export const applyPlanningActions = defineServiceFn({
+  input: z.object({
+    planningActionIds,
+    type: z.enum([
+      "apply",
+      "expedite",
+      "defer",
+      "increase",
+      "decrease",
+      "cancel"
+    ])
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { planningActionIds: ids, type }) {
+    const db = ctx.asSystem.pg;
+    const companyId = ctx.company.id;
+    const applied: string[] = [];
+    const requiresManualAction: {
+      id: string;
+      purchaseOrderId: string | null;
+    }[] = [];
+    const errors: string[] = [];
+
+    // Two reads for the whole batch decide what is eligible, then ONE
+    // transaction applies all of it.
+    const actionRows = await getPlanningActionsByIds(db, { ids, companyId });
+    if (actionRows.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read planning actions",
+        actionRows.error
+      );
+    }
+    const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
+
+    const eligible: {
+      planningActionId: string;
+      row: (typeof actionRows.data)[number];
+    }[] = [];
+    for (const planningActionId of ids) {
+      const row = rowById.get(planningActionId);
+      if (!row) {
+        errors.push(`Planning action ${planningActionId} not found`);
+        continue;
+      }
+      if (row.status !== "Open") {
+        errors.push(`Planning action ${planningActionId} is not open`);
+        continue;
+      }
+      if (
+        type === "apply"
+          ? !PLANNING_CHANGE_TYPES.has(row.type)
+          : PLANNING_ACTION_TYPE_OF[type] !== row.type
+      ) {
+        errors.push(
+          type === "apply"
+            ? `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+            : `Planning action ${planningActionId} is a ${row.type}, not ${PLANNING_ACTION_TYPE_OF[type]}`
+        );
+        continue;
+      }
+      if (!row.purchaseOrderLineId) {
+        errors.push(
+          `Planning action ${planningActionId} does not target a purchase order line`
+        );
+        continue;
+      }
+      eligible.push({ planningActionId, row });
+    }
+
+    // One statement: the id list goes to Postgres as a parameter, never into
+    // a PostgREST URL.
+    const lineIds = [
+      ...new Set(eligible.map(({ row }) => row.purchaseOrderLineId!))
+    ];
+    let lineById: Map<string, PlanningLine>;
+    try {
+      const lines =
+        lineIds.length > 0
+          ? await db
+              .selectFrom("purchaseOrderLine as pol")
+              .innerJoin("purchaseOrder as po", (join) =>
+                join
+                  .onRef("po.id", "=", "pol.purchaseOrderId")
+                  .on("po.companyId", "=", companyId)
+              )
+              .leftJoin("purchaseOrderDelivery as pod", "pod.id", "po.id")
+              .select([
+                "pol.id",
+                "pol.purchaseOrderId",
+                "pol.conversionFactor",
+                "pol.promisedDate",
+                "po.status as purchaseOrderStatus",
+                "pod.receiptPromisedDate"
+              ])
+              .where("pol.id", "in", lineIds)
+              .where("pol.companyId", "=", companyId)
+              .execute()
+          : [];
+      lineById = new Map(lines.map((line) => [line.id, line]));
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        "Failed to read the planning actions' purchase order lines",
+        err
+      );
+    }
+
+    const mayDeleteLines = callerHolds(ctx, { delete: "purchasing" });
+    const toClaim: {
+      planningActionId: string;
+      row: (typeof eligible)[number]["row"];
+      line: PlanningLine;
+    }[] = [];
+    for (const { planningActionId, row } of eligible) {
+      const line = lineById.get(row.purchaseOrderLineId!);
+      if (!line) {
+        errors.push(
+          `Purchase order line for planning action ${planningActionId} not found`
+        );
+        continue;
+      }
+      const datePromised =
+        (row.type === "Expedite" || row.type === "Defer") &&
+        promisedDateOf(line) !== null;
+      if (
+        !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
+        datePromised
+      ) {
+        // In approval or sent, or a date the supplier promised (which the
+        // required date cannot move): review on the order instead.
+        requiresManualAction.push({
+          id: planningActionId,
+          purchaseOrderId: line.purchaseOrderId
+        });
+        continue;
+      }
+      if (row.type === "Cancel" && !mayDeleteLines) {
+        errors.push(
+          `Planning action ${planningActionId} deletes a purchase order line, which needs delete permission`
+        );
+        continue;
+      }
+      toClaim.push({ planningActionId, row, line });
+    }
+
+    let outcome: Awaited<ReturnType<typeof applyPurchasingPlanningActions>>;
+    try {
+      outcome = await applyPurchasingPlanningActions(db, {
+        companyId,
+        companyGroupId: ctx.company.groupId,
+        userId: ctx.auditUserId,
+        actions: toClaim.map(({ planningActionId, row, line }) => ({
+          planningActionId,
+          type: row.type as
+            | "Expedite"
+            | "Defer"
+            | "Increase"
+            | "Decrease"
+            | "Cancel",
+          lineId: line.id,
+          purchaseOrderId: line.purchaseOrderId,
+          suggestedDate: row.suggestedDate ?? null,
+          suggestedQuantity:
+            row.suggestedQuantity === null ||
+            row.suggestedQuantity === undefined
+              ? null
+              : Number(row.suggestedQuantity)
+        }))
+      });
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        `Failed to apply planning actions: ${
+          err instanceof Error ? err.message : "unknown error"
+        }`,
+        err
+      );
+    }
+    applied.push(...outcome.applied);
+    requiresManualAction.push(...outcome.refused);
+    for (const id of outcome.alreadyApplied) {
+      errors.push(`Planning action ${id} was already applied`);
+    }
+    for (const failure of outcome.failed) {
+      errors.push(`Planning action ${failure.id}: ${failure.message}`);
+    }
+
+    // Committed targets are not failures, but "Applied 0" as a success is a
+    // lie: name the manual-review count, and report success only when
+    // something was applied (or nothing needed review).
+    const manualCount = requiresManualAction.length;
+    const messageParts = [
+      `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
+    ];
+    if (manualCount > 0) {
+      messageParts.push(
+        `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
+      );
+    }
+    if (errors.length > 0) messageParts.push(`${errors.length} failed`);
+    return {
+      success:
+        errors.length === 0 && !(applied.length === 0 && manualCount > 0),
+      message: messageParts.join("; "),
+      applied,
+      requiresManualAction,
+      errors: errors.length > 0 ? errors : undefined
+    };
+  }
+});
+
+/** How many of `requested` worklist rows a dismiss, reopen or assign changed,
+ *  as the message; a refusal when none did. */
+function worklistChange(
+  ctx: ServiceContext,
+  verb: "Dismissed" | "Reopened" | "Assigned",
+  changed: number,
+  requested: number
+) {
+  if (changed === 0) {
+    const what = {
+      Dismissed: "dismiss",
+      Reopened: "reopen",
+      Assigned: "assign"
+    }[verb];
+    return ctx.error(
+      "conflict",
+      `Nothing to ${what} — these actions changed since the page loaded`
+    );
+  }
+  return {
+    changed,
+    message: `${verb} ${changed} planning action${changed === 1 ? "" : "s"}${
+      changed < requested
+        ? `; ${requested - changed} changed since the page loaded`
+        : ""
+    }`
+  };
+}
+
+/**
+ * Dismiss purchasing suggestions.
+ *
+ * @remarks
+ * Hides Open Buy planning actions from the worklist until their need changes
+ * materially. An action applied or changed since it was read is skipped;
+ * refused when none changed.
+ *
+ * @mcp
+ */
+export const dismissPurchasingPlanningActions = defineServiceFn({
+  input: z.object({ planningActionIds }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { planningActionIds: ids }) {
+    const result = await dismissPlanningActions(ctx.asSystem.pg, {
+      ids,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      kind: "Buy"
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to dismiss planning actions",
+        result.error
+      );
+    }
+    return worklistChange(
+      ctx,
+      "Dismissed",
+      result.data?.length ?? 0,
+      ids.length
+    );
+  }
+});
+
+/**
+ * Reopen dismissed purchasing suggestions.
+ *
+ * @remarks
+ * Puts dismissed Buy planning actions back on the worklist. An action that
+ * changed since it was read is skipped; refused when none changed.
+ *
+ * @mcp
+ */
+export const reopenPurchasingPlanningActions = defineServiceFn({
+  input: z.object({ planningActionIds }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { planningActionIds: ids }) {
+    const result = await reopenDismissedPlanningActions(ctx.asSystem.pg, {
+      ids,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      kind: "Buy"
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to reopen planning actions",
+        result.error
+      );
+    }
+    return worklistChange(
+      ctx,
+      "Reopened",
+      result.data?.length ?? 0,
+      ids.length
+    );
+  }
+});
+
+/**
+ * Assign purchasing suggestions to a person.
+ *
+ * @remarks
+ * Sets the owner of Buy planning actions, which MRP then keeps; no
+ * `assignee` clears it. The assignee must be an active employee of the
+ * company. An action that changed since it was read is skipped; refused when
+ * none changed.
+ *
+ * @mcp
+ */
+export const assignPurchasingPlanningActions = defineServiceFn({
+  input: z.object({ planningActionIds, assignee: z.string().optional() }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { planningActionIds: ids, assignee }) {
+    const companyId = ctx.company.id;
+    if (
+      assignee &&
+      !(await isActiveCompanyEmployee(
+        ctx.asSystem.supabase,
+        companyId,
+        assignee
+      ))
+    ) {
+      return ctx.error("validation", "Choose an employee of this company");
+    }
+    const result = await assignPlanningActions(ctx.asSystem.pg, {
+      ids,
+      companyId,
+      assignee: assignee || null,
+      userId: ctx.auditUserId,
+      kind: "Buy"
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to assign planning actions",
+        result.error
+      );
+    }
+    return worklistChange(
+      ctx,
+      "Assigned",
+      result.data?.length ?? 0,
+      ids.length
+    );
   }
 });
