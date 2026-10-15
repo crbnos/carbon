@@ -12,6 +12,7 @@ import { lockIssueDispositions } from "@carbon/database/quality";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
@@ -25,7 +26,8 @@ import {
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
-import { trigger } from "@carbon/jobs";
+import { validator } from "@carbon/form";
+import { batchTrigger, trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
@@ -37,6 +39,16 @@ import type {
   DraftedRentalCreditMemo,
   DraftedRentalInvoice
 } from "@carbon/server-functions/create-rental-invoices";
+import {
+  hasPermissions,
+  type RequiredPermissions
+} from "@carbon/server-functions/permissions";
+import type {
+  ContractAmendmentPreview,
+  ContractCancellationPreview,
+  ContractCancellationResult
+} from "@carbon/server-functions/post-customer-contract";
+import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import type { Violation } from "@carbon/utils";
 import {
   breakQuantities,
@@ -45,6 +57,7 @@ import {
   getSalesOrderStatus,
   round,
   suggestContractType,
+  textToTiptap,
   unchecked
 } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
@@ -56,6 +69,8 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { getExchangeRate } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
+import { linkStripeCustomerForBilling } from "~/modules/invoicing/stripe-customer.server";
 import {
   getSupplierPriceBreaksForItems,
   resolveItemIdFromExtractedText,
@@ -70,7 +85,11 @@ import {
   defineServiceFn,
   type ServiceContext
 } from "~/modules/service-fn.server";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import {
+  getCompany,
+  getCompanySettings,
+  getNextSequence as getNextSequenceNumber
+} from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { resolveBuyUnitCost, upsertExternalLink } from "~/modules/shared";
 import {
@@ -92,8 +111,13 @@ import {
   renderSalesReturnOrderPdf
 } from "./sales.documents.server";
 import {
+  contractAmendmentChangeValidator,
   contractEndDate,
   type createContractFromSalesOrderValidator,
+  customerContractAmendmentValidator,
+  customerContractTypes,
+  customerContractValidator,
+  invoiceAutomations,
   isQuoteLocked,
   isSalesOrderLocked,
   isSalesReturnOrderLocked,
@@ -101,6 +125,8 @@ import {
   quoteLineValidator,
   quoteMaterialValidator,
   quoteOperationValidator,
+  rentalAgreementLineClassificationValidator,
+  rentalAgreementValidator,
   salesOrderLineValidator,
   salesReturnOrderLineValidator,
   salesRFQStatusType,
@@ -119,9 +145,13 @@ import {
   copyQuoteLine,
   deleteQuoteMaterial,
   finalizeQuote,
+  getContract,
   getCustomer,
   getCustomerContact,
+  getCustomerContractStatuses,
   getQuote,
+  getRentalAgreement,
+  getRentalAgreementLine,
   getSalesOrder,
   getSalesOrderLine,
   getSalesOrderLines,
@@ -129,23 +159,33 @@ import {
   getSalesReturnOrderLine,
   getSalesReturnOrderLineTrackedEntities,
   getSalesRFQ,
+  insertContract,
+  insertRentalAgreement,
   insertSalesRFQ,
   type QuoteLinePriceRow,
   recalculateQuoteLinePrices,
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices,
   setSalesReturnOrderLineDisposition,
+  updateContract,
+  updateContractInvoiceAutomation,
+  updateContractNotes,
+  updateContractType,
+  updateRentalAgreement,
+  updateRentalAgreementInvoiceAutomation,
   updateSalesRFQStatus,
   upsertQuoteLine,
   upsertQuoteLineMethod,
   upsertQuoteMaterial,
   upsertQuoteMaterialMakeMethod,
   upsertQuoteOperation,
+  upsertRentalAgreementLine,
   upsertSalesOrderLine,
   upsertSalesReturnOrderLine,
   upsertSalesRFQLine
 } from "./sales.service";
 import { reconcileQuantityBreaks } from "./sales.utils";
+import { contractDurationOf } from "./ui/Contracts/useContractLabels";
 
 const logger = getLogger("erp", "sales-server");
 
@@ -5329,5 +5369,1574 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
     }
     if (operation.data) await repriceQuoteLine(ctx, operation.data);
     return { id };
+  }
+});
+
+// --- Contracts --------------------------------------------------------------
+
+/**
+ * Whether the caller also holds `required`, for a permission that depends on
+ * the data (a posting invoicing mode, a credit memo). The function's own
+ * permission was checked at entry; this is the extra the data asks for.
+ */
+function callerHolds(ctx: ServiceContext, required: RequiredPermissions) {
+  const { actor } = ctx;
+  if (actor.type === "system") return true;
+  return hasPermissions(
+    actor.type === "user" ? actor.permissions : actor.scopes,
+    ctx.company.id,
+    required
+  );
+}
+
+const forbidden = (ctx: ServiceContext) =>
+  ctx.error("forbidden", "You do not have permission to do this");
+
+/** Today in the company's timezone: the date a contract or rental acts on. */
+async function companyToday(ctx: ServiceContext) {
+  return datetime
+    .today(await getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id))
+    .toString();
+}
+
+/** The contract lifecycle server function, run as the caller. */
+function postContract(
+  ctx: ServiceContext,
+  input: ServerFnInput<"post-customer-contract">
+) {
+  return runContractAction(
+    {
+      client: ctx.asCaller.supabase,
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    },
+    input
+  );
+}
+
+/**
+ * Create a Draft contract.
+ *
+ * @remarks
+ * The contract type, when not sent, is suggested from the customer's other
+ * contracts. The bill-to, invoice contact and address, ship-to and payment
+ * terms the input leaves out come from the customer's invoicing and shipping
+ * defaults. The exchange rate is today's for the currency. The contract is
+ * then set up from its products step.
+ *
+ * @mcp
+ */
+export const createContract = defineServiceFn({
+  input: customerContractValidator.safeExtend({
+    customFields: customFieldValues.optional()
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const {
+      id: _id,
+      customerContractId: _customerContractId,
+      customFields,
+      ...data
+    } = input;
+
+    let contractType = data.contractType;
+    if (!contractType) {
+      const previous = await getCustomerContractStatuses(
+        client,
+        companyId,
+        data.customerId
+      );
+      if (previous.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the customer's contracts",
+          previous.error
+        );
+      }
+      contractType = suggestContractType(previous.data ?? []);
+    }
+
+    const defaults = await contractInvoicingDefaults(
+      client,
+      companyId,
+      data.customerId
+    );
+    const sequence = await getNextSequenceNumber(
+      client,
+      "customerContract",
+      companyId
+    );
+    if (sequence.error || !sequence.data) {
+      return ctx.error(
+        "internal",
+        "Failed to get the next contract number",
+        sequence.error
+      );
+    }
+    // Looked up, never assumed 1.
+    const exchangeRate = await getExchangeRate(
+      client,
+      companyId,
+      data.currencyCode
+    );
+    if (exchangeRate.error || !exchangeRate.data) {
+      return ctx.error(
+        "internal",
+        "Failed to get the exchange rate",
+        exchangeRate.error
+      );
+    }
+
+    const contract = await insertContract(client, {
+      ...data,
+      invoiceCustomerId: data.invoiceCustomerId ?? defaults.invoiceCustomerId,
+      invoiceCustomerContactId:
+        data.invoiceCustomerContactId ?? defaults.invoiceCustomerContactId,
+      invoiceCustomerLocationId:
+        data.invoiceCustomerLocationId ?? defaults.invoiceCustomerLocationId,
+      shipToCustomerLocationId:
+        data.shipToCustomerLocationId ?? defaults.shipToCustomerLocationId,
+      paymentTermId: data.paymentTermId ?? defaults.paymentTermId,
+      exchangeRate: Number(exchangeRate.data),
+      contractType,
+      customerContractId: sequence.data,
+      companyId,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (contract.error || !contract.data) {
+      return ctx.error("internal", "Failed to create contract", contract.error);
+    }
+    return { id: contract.data.id };
+  }
+});
+
+/**
+ * Save a Draft contract's terms from its setup.
+ *
+ * @remarks
+ * Refused once the contract is not a Draft. A new customer brings its own
+ * bill-to, invoice contact and address, ship-to and payment terms; a new
+ * currency brings today's exchange rate. Custom fields the input leaves out
+ * are kept.
+ *
+ * @mcp
+ */
+export const updateContractTerms = defineServiceFn({
+  input: customerContractValidator.safeExtend({
+    id: z.string(),
+    customFields: customFieldValues.optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const {
+      id,
+      customerContractId: _customerContractId,
+      customFields,
+      ...data
+    } = input;
+
+    const current = await getContract(client, id, companyId);
+    if (current.error || current.data?.companyId !== companyId) {
+      return ctx.error("notFound", "Contract not found", current.error);
+    }
+
+    const invoicing = await contractCustomerChange(client, companyId, {
+      from: current.data.customerId,
+      to: data.customerId
+    });
+
+    let exchangeRate: number | undefined;
+    if (data.currencyCode !== current.data.currencyCode) {
+      const rate = await getExchangeRate(client, companyId, data.currencyCode);
+      if (rate.error || !rate.data) {
+        return ctx.error(
+          "internal",
+          "Failed to get the exchange rate",
+          rate.error
+        );
+      }
+      exchangeRate = Number(rate.data);
+    }
+
+    // Refuses a contract that is no longer a Draft.
+    const update = await updateContract(client, {
+      ...data,
+      ...(invoicing ?? {}),
+      ...(exchangeRate !== undefined ? { exchangeRate } : {}),
+      id,
+      updatedBy: ctx.auditUserId,
+      customFields: {
+        ...((current.data.customFields ?? {}) as Record<string, unknown>),
+        ...customFields
+      } as Json
+    });
+    if (update.error) {
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update contract",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/** The terms one contract field can change from its properties panel. */
+const contractTermFields = [
+  "name",
+  "customerId",
+  "invoiceCustomerId",
+  "invoiceCustomerContactId",
+  "invoiceCustomerLocationId",
+  "shipToCustomerLocationId",
+  "salesPersonId",
+  "projectId",
+  "customerReference",
+  "closeDate",
+  "startDate",
+  "duration",
+  "endDate",
+  "renewal",
+  "renewalUplift",
+  "billingFrequency",
+  "billingAlignment",
+  "billingTiming",
+  "firstInvoiceDate",
+  "billedThrough",
+  "recognizeRevenueFrom",
+  "paymentTermId",
+  "currencyCode",
+  "notes"
+] as const;
+
+/**
+ * Set one term of a contract.
+ *
+ * @remarks
+ * A Draft's terms are checked as a whole (an end date on or after the start,
+ * a custom duration needs an end date), so the stored terms are read, the
+ * one field is swapped in and the whole set is validated and saved. A new
+ * customer brings its own invoicing defaults; a new bill-to clears the
+ * invoice contact and address; an end date makes the term custom; a new
+ * currency brings today's rate. `notes` is plain text. An Active contract
+ * changes its terms with Amend: only its notes are set here.
+ *
+ * @mcp
+ */
+export const setContractTerm = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    field: z.enum(contractTermFields),
+    value: z.string().nullish()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const current = await getContract(client, id, companyId);
+    if (current.error || current.data?.companyId !== companyId) {
+      logger.error("contract not found for update", {
+        companyId,
+        id,
+        error: current.error
+      });
+      return ctx.error("notFound", "Contract not found");
+    }
+    const contract = current.data;
+    const notesDoc = value ? textToTiptap(value) : null;
+
+    if (contract.status !== "Draft") {
+      if (field !== "notes") {
+        return ctx.error(
+          "rule",
+          "Only a Draft contract's terms can be edited — use Amend"
+        );
+      }
+      // Notes are not a term: they stay editable after Confirm.
+      const update = await updateContractNotes(client, {
+        id,
+        companyId,
+        notes: notesDoc,
+        updatedBy: userId
+      });
+      if (update.error) {
+        return ctx.error(
+          "rule",
+          update.error.message || "Failed to update notes",
+          update.error
+        );
+      }
+      return { id };
+    }
+
+    const terms: Record<(typeof contractTermFields)[number], unknown> = {
+      name: contract.name,
+      customerId: contract.customerId,
+      invoiceCustomerId: contract.invoiceCustomerId,
+      invoiceCustomerContactId: contract.invoiceCustomerContactId,
+      invoiceCustomerLocationId: contract.invoiceCustomerLocationId,
+      shipToCustomerLocationId: contract.shipToCustomerLocationId,
+      salesPersonId: contract.salesPersonId,
+      projectId: contract.projectId,
+      customerReference: contract.customerReference,
+      closeDate: contract.closeDate,
+      startDate: contract.startDate,
+      duration: contractDurationOf({
+        endDate: contract.endDate,
+        termMonths: contract.termMonths
+      }),
+      endDate: contract.endDate,
+      renewal: contract.renewal,
+      // Stored as a fraction; the terms speak percent points.
+      renewalUplift: round(Number(contract.renewalUplift ?? 0) * 100),
+      billingFrequency: contract.billingFrequency,
+      billingAlignment: contract.billingAlignment,
+      billingTiming: contract.billingTiming,
+      firstInvoiceDate: contract.firstInvoiceDate,
+      billedThrough: contract.billedThrough,
+      recognizeRevenueFrom: contract.recognizeRevenueFrom,
+      paymentTermId: contract.paymentTermId,
+      currencyCode: contract.currencyCode,
+      // The stored document, re-encoded so the validator keeps it as is.
+      notes: contract.notes ? JSON.stringify(contract.notes) : null
+    };
+    terms[field] =
+      field === "notes"
+        ? notesDoc
+          ? JSON.stringify(notesDoc)
+          : null
+        : value || null;
+    if (field === "endDate") terms.duration = "custom";
+    if (field === "customerId") {
+      const invoicing = await contractCustomerChange(client, companyId, {
+        from: contract.customerId,
+        to: value ?? null
+      });
+      if (invoicing) Object.assign(terms, invoicing);
+    }
+    if (field === "invoiceCustomerId" && value !== contract.invoiceCustomerId) {
+      terms.invoiceCustomerContactId = null;
+      terms.invoiceCustomerLocationId = null;
+    }
+
+    // The same form the new contract form posts, so the same coercion runs.
+    const merged = new FormData();
+    for (const key of contractTermFields) {
+      const term = terms[key];
+      if (term !== null && term !== undefined && term !== "") {
+        merged.append(key, String(term));
+      }
+    }
+    // Not a term, but the terms service writes it: carried so saving a term
+    // never resets the contract to the company's invoicing setting.
+    if (contract.invoiceAutomation) {
+      merged.append("invoiceAutomation", contract.invoiceAutomation);
+    }
+    if (field === "currencyCode" && value && value !== contract.currencyCode) {
+      const rate = await getExchangeRate(client, companyId, value);
+      if (rate.error) {
+        return ctx.error(
+          "internal",
+          "Failed to get the exchange rate",
+          rate.error
+        );
+      }
+      merged.append("exchangeRate", String(rate.data));
+    }
+
+    const validation = await validator(customerContractValidator).validate(
+      merged
+    );
+    if (validation.error) {
+      return ctx.error(
+        "validation",
+        Object.values(validation.error.fieldErrors)[0] ??
+          "These terms are not valid"
+      );
+    }
+    const {
+      id: _id,
+      customerContractId: _customerContractId,
+      ...data
+    } = validation.data;
+
+    const update = await updateContract(client, {
+      ...data,
+      // Not a term: an omitted type is kept.
+      contractType: undefined,
+      id,
+      updatedBy: userId,
+      customFields: contract.customFields ?? undefined
+    });
+    if (update.error) {
+      logger.error("contract term update failed", {
+        companyId,
+        id,
+        field,
+        error: update.error
+      });
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update contract",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Set a contract's type.
+ *
+ * @remarks
+ * Stays editable while the contract is Active.
+ *
+ * @mcp
+ */
+export const setContractType = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    contractType: z.enum(customerContractTypes)
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, contractType }) {
+    const update = await updateContractType(ctx.asCaller.supabase, {
+      id,
+      companyId: ctx.company.id,
+      contractType,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update contract type",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Set how a contract's invoices are posted and sent.
+ *
+ * @remarks
+ * Null is the company's setting. Stripe needs Stripe connected. On a
+ * confirmed contract, a mode that posts (anything but Draft Only, the
+ * company's setting included) needs the invoicing create permission as well,
+ * as confirming does. Post and Email needs an invoice contact email.
+ *
+ * @mcp
+ */
+export const setContractInvoiceAutomation = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    invoiceAutomation: z.enum(invoiceAutomations).nullable()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, invoiceAutomation }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    if (
+      invoiceAutomation === "Post and Send via Stripe" &&
+      !(await getStripeConnectAccountId(ctx.asSystem.supabase, companyId))
+    ) {
+      return ctx.error("rule", "Connect Stripe in Integrations first");
+    }
+
+    if (invoiceAutomation !== "Draft Only") {
+      const current = await getContract(client, id, companyId);
+      if (current.error || current.data?.companyId !== companyId) {
+        return ctx.error("notFound", "Contract not found");
+      }
+      if (current.data.status !== "Draft") {
+        // An unreadable company setting is treated as posting.
+        const effective =
+          invoiceAutomation ??
+          (await getCompanySettings(client, companyId)).data?.invoiceAutomation;
+        if (
+          effective !== "Draft Only" &&
+          !callerHolds(ctx, { update: "sales", create: "invoicing" })
+        ) {
+          return forbidden(ctx);
+        }
+      }
+    }
+
+    const update = await updateContractInvoiceAutomation(client, {
+      id,
+      companyId,
+      invoiceAutomation,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update invoicing",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Confirm a Draft contract.
+ *
+ * @remarks
+ * A contract whose invoices post on their own (any mode but Draft Only)
+ * needs the invoicing create permission as well. Under Post and Send via
+ * Stripe a billing customer with no Stripe customer is linked first, as
+ * `stripeCustomerAction` says. The `post-customer-contract` server function
+ * then checks the lines, fixes the invoice schedule and revenue plan and
+ * makes the contract Active.
+ *
+ * @mcp
+ */
+export const confirmContract = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    stripeCustomerAction: z.enum(stripeCustomerActions).optional(),
+    stripeCustomerId: z.string().optional(),
+    stripeContactEmail: z.string().email().optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, stripeCustomerAction, ...stripe }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const contract = await getContract(client, id, companyId);
+    if (contract.error || contract.data?.companyId !== companyId) {
+      return ctx.error("notFound", "Contract not found", contract.error);
+    }
+    if (contract.data.status !== "Draft") {
+      return ctx.error("conflict", "Only a Draft contract can be confirmed");
+    }
+    const mode = contract.data.effectiveInvoiceAutomation;
+    if (
+      mode !== "Draft Only" &&
+      !callerHolds(ctx, { update: "sales", create: "invoicing" })
+    ) {
+      return forbidden(ctx);
+    }
+
+    // The server function re-checks the mapping inside its transaction.
+    const billingCustomerId =
+      contract.data.invoiceCustomerId ?? contract.data.customerId;
+    if (
+      mode === "Post and Send via Stripe" &&
+      stripeCustomerAction &&
+      billingCustomerId
+    ) {
+      let message: string | null = null;
+      try {
+        const linked = await linkStripeCustomerForBilling({
+          serviceRole: ctx.asSystem.supabase,
+          companyId,
+          userId: ctx.auditUserId,
+          billingCustomerId,
+          customerContactId: contract.data.invoiceCustomerContactId,
+          action: stripeCustomerAction,
+          stripeCustomerId: stripe.stripeCustomerId,
+          contactEmail: stripe.stripeContactEmail
+        });
+        if (!linked.ok) message = linked.message;
+      } catch (err) {
+        logger.error("Failed to link the Stripe customer", {
+          companyId,
+          customerContractId: id,
+          billingCustomerId,
+          error: err
+        });
+        message = getErrorMessage(
+          err,
+          "the Stripe customer could not be linked"
+        );
+      }
+      if (message) {
+        return ctx.error("rule", `Contract not confirmed — ${message}`);
+      }
+    }
+
+    const result = await postContract(ctx, {
+      type: "confirm",
+      customerContractId: id,
+      asOf: await companyToday(ctx)
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to confirm the contract"),
+        result.error
+      );
+    }
+    return { id };
+  }
+});
+
+const contractAmendment = customerContractAmendmentValidator.extend({
+  changes: z
+    .array(contractAmendmentChangeValidator)
+    .min(1, { message: "Change at least one line" })
+});
+
+/**
+ * Preview an amendment to an Active contract.
+ *
+ * @remarks
+ * Runs the amendment the way `sales.contract.amend` would and rolls it
+ * back: the adjustments, the next two invoices and the suggested contract
+ * type.
+ *
+ * @mcp
+ */
+export const previewContractAmendment = defineServiceFn({
+  input: contractAmendment.omit({ reason: true, contractType: true }),
+  permission: { update: "sales" },
+
+  async run(ctx, { customerContractId, amendmentDate, effect, changes }) {
+    const result = await postContract(ctx, {
+      type: "amend",
+      customerContractId,
+      asOf: await companyToday(ctx),
+      amendmentDate,
+      effect,
+      // Neither changes what the amendment does; both are recorded only.
+      contractType: "Existing",
+      reason: "Preview",
+      changes,
+      preview: true
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to preview the amendment"),
+        result.error
+      );
+    }
+    return result.data as ContractAmendmentPreview;
+  }
+});
+
+/**
+ * Amend an Active contract.
+ *
+ * @remarks
+ * Changes, adds or ends lines from `amendmentDate`, recorded with its type
+ * and reason. The `post-customer-contract` server function owns every guard
+ * and re-plans the schedule and revenue from the effective date; its
+ * refusal is the message.
+ *
+ * @mcp
+ */
+export const amendContract = defineServiceFn({
+  input: contractAmendment,
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const result = await postContract(ctx, {
+      type: "amend",
+      asOf: await companyToday(ctx),
+      ...input
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to amend the contract"),
+        result.error
+      );
+    }
+    return { id: input.customerContractId };
+  }
+});
+
+/**
+ * Preview cancelling an Active contract.
+ *
+ * @remarks
+ * Runs the cancellation and rolls it back: the credit available for the
+ * unused time after `endDate`.
+ *
+ * @mcp
+ */
+export const previewContractCancellation = defineServiceFn({
+  input: z.object({ customerContractId: z.string(), endDate: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { customerContractId, endDate }) {
+    const result = await postContract(ctx, {
+      type: "cancel",
+      customerContractId,
+      asOf: await companyToday(ctx),
+      endDate,
+      // Recorded only; the preview's credit does not depend on either.
+      reason: "Preview",
+      creditUnusedTime: false,
+      preview: true
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to preview the cancellation"),
+        result.error
+      );
+    }
+    return result.data as ContractCancellationPreview;
+  }
+});
+
+/**
+ * Cancel an Active contract.
+ *
+ * @remarks
+ * Ends it at `endDate`. With `creditUnusedTime` a Draft credit memo is
+ * drafted for the unused time, which needs the invoicing create permission
+ * as well; `memoReadableId` names it.
+ *
+ * @mcp
+ */
+export const cancelContract = defineServiceFn({
+  input: z.object({
+    customerContractId: z.string(),
+    endDate: z.string(),
+    reason: z.string().trim().min(1),
+    creditUnusedTime: z.boolean().default(false)
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    if (
+      input.creditUnusedTime &&
+      !callerHolds(ctx, { update: "sales", create: "invoicing" })
+    ) {
+      return forbidden(ctx);
+    }
+    const result = await postContract(ctx, {
+      type: "cancel",
+      asOf: await companyToday(ctx),
+      ...input
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to cancel the contract"),
+        result.error
+      );
+    }
+    const cancelled = result.data as Partial<ContractCancellationResult> | null;
+    return {
+      id: input.customerContractId,
+      memoReadableId: cancelled?.memoReadableId ?? null
+    };
+  }
+});
+
+/**
+ * Revert a contract's cancellation.
+ *
+ * @remarks
+ * Restores the lines, end date and renewal it changed. When the
+ * cancellation drafted a credit memo, it is deleted, which needs the
+ * invoicing delete permission as well (a failed check for one asks for it).
+ *
+ * @mcp
+ */
+export const revertContractCancellation = defineServiceFn({
+  input: z.object({ customerContractId: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { customerContractId }) {
+    const memoRows = await ctx.asCaller.supabase
+      .from("customerContractInvoiceLine")
+      .select("id")
+      .eq("customerContractId", customerContractId)
+      .eq("companyId", ctx.company.id)
+      .not("memoId", "is", null)
+      .limit(1);
+    if (
+      (memoRows.error || memoRows.data.length > 0) &&
+      !callerHolds(ctx, { update: "sales", delete: "invoicing" })
+    ) {
+      return forbidden(ctx);
+    }
+
+    const result = await postContract(ctx, {
+      type: "revert-cancellation",
+      customerContractId,
+      asOf: await companyToday(ctx)
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to revert the cancellation"),
+        result.error
+      );
+    }
+    return { id: customerContractId };
+  }
+});
+
+// --- Rental agreements ------------------------------------------------------
+
+/** The rental lifecycle server function, run as the system for the caller. */
+function postRentalAgreement(
+  ctx: ServiceContext,
+  input: ServerFnInput<"post-rental-agreement">
+) {
+  return serverFns
+    .system({
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    })
+    .invoke("post-rental-agreement", input);
+}
+
+/** A rental agreement of this company, or why not. */
+async function ownRentalAgreement(ctx: ServiceContext, id: string) {
+  const agreement = await getRentalAgreement(
+    ctx.asCaller.supabase,
+    id,
+    ctx.company.id
+  );
+  if (agreement.error || agreement.data?.companyId !== ctx.company.id) {
+    return ctx.error("notFound", "Rental agreement not found", agreement.error);
+  }
+  return agreement.data;
+}
+
+const rentalAgreementInput = rentalAgreementValidator.safeExtend({
+  ownershipTransfers: z.boolean().default(false),
+  specializedAsset: z.boolean().default(false),
+  purchaseOptionReasonablyCertain: z.boolean().default(false),
+  customFields: customFieldValues.optional()
+});
+
+/**
+ * Create a Draft rental agreement.
+ *
+ * @remarks
+ * Takes the next agreement number. With `fixedAssetId` (the fleet's Rent)
+ * the unit is added at its monthly rate on file; when that fails the
+ * agreement is kept and `warning` says so. The agreement is then set up
+ * from its units step.
+ *
+ * @mcp
+ */
+export const createRentalAgreement = defineServiceFn({
+  input: rentalAgreementInput.safeExtend({
+    fixedAssetId: z.string().optional()
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const {
+      id: _id,
+      rentalAgreementId: _rentalAgreementId,
+      fixedAssetId,
+      customFields,
+      ...data
+    } = input;
+
+    const sequence = await getNextSequenceNumber(
+      client,
+      "rentalAgreement",
+      companyId
+    );
+    if (sequence.error || !sequence.data) {
+      return ctx.error(
+        "internal",
+        "Failed to get the next rental agreement number",
+        sequence.error
+      );
+    }
+    const agreement = await insertRentalAgreement(client, {
+      ...data,
+      rentalAgreementId: sequence.data,
+      companyId,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (agreement.error || !agreement.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create rental agreement",
+        agreement.error
+      );
+    }
+    const id = agreement.data.id;
+
+    if (fixedAssetId) {
+      const line = await upsertRentalAgreementLine(client, {
+        rentalAgreementId: id,
+        fixedAssetId,
+        // The planner can change the frequency and rate on the unit.
+        rateUnit: "Month",
+        companyId,
+        createdBy: ctx.auditUserId
+      });
+      if (line.error) {
+        logger.error("Failed to add the unit to a new rental agreement", {
+          companyId,
+          rentalAgreementId: id,
+          error: line.error
+        });
+        return {
+          id,
+          warning: "Agreement created, but the unit could not be added"
+        };
+      }
+    }
+    return { id, warning: null };
+  }
+});
+
+const rentalTermFields = [
+  "customerId",
+  "customerLocationId",
+  "customerContactId",
+  "salesPersonId",
+  "locationId",
+  "startDate",
+  "endDate",
+  "billingCycle",
+  "billingTiming",
+  "paymentTermId",
+  "currencyCode",
+  "depositAmount",
+  "taxPercent",
+  "discountRate",
+  "ownershipTransfers",
+  "specializedAsset",
+  "purchaseOptionAmount",
+  "purchaseOptionReasonablyCertain",
+  "notes"
+] as const;
+
+const rentalBooleanTerms = new Set<string>([
+  "ownershipTransfers",
+  "specializedAsset",
+  "purchaseOptionReasonablyCertain"
+]);
+
+/**
+ * Set one term of a Draft rental agreement.
+ *
+ * @remarks
+ * The terms are checked as a whole (an end date after the start, a purchase
+ * option reasonably certain needs an end date), so the stored terms are
+ * read, the one field is swapped in and the whole set is validated and
+ * saved. A new customer clears the site and contact; a new currency brings
+ * today's rate. The yes/no terms take `true` or `on`.
+ *
+ * @mcp
+ */
+export const setRentalAgreementTerm = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    field: z.enum(rentalTermFields),
+    value: z.string().nullish()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const agreement = await ownRentalAgreement(ctx, id);
+    if (agreement instanceof Error) return agreement;
+    if (agreement.status !== "Draft") {
+      return ctx.error(
+        "rule",
+        "Only a Draft rental agreement's terms can be edited"
+      );
+    }
+
+    const terms: Record<(typeof rentalTermFields)[number], unknown> = {
+      customerId: agreement.customerId,
+      customerLocationId: agreement.customerLocationId,
+      customerContactId: agreement.customerContactId,
+      salesPersonId: agreement.salesPersonId,
+      locationId: agreement.locationId,
+      startDate: agreement.startDate,
+      endDate: agreement.endDate,
+      billingCycle: agreement.billingCycle,
+      billingTiming: agreement.billingTiming,
+      paymentTermId: agreement.paymentTermId,
+      currencyCode: agreement.currencyCode,
+      depositAmount: agreement.depositAmount,
+      taxPercent: agreement.taxPercent,
+      discountRate: agreement.discountRate,
+      ownershipTransfers: agreement.ownershipTransfers,
+      specializedAsset: agreement.specializedAsset,
+      purchaseOptionAmount: agreement.purchaseOptionAmount,
+      purchaseOptionReasonablyCertain:
+        agreement.purchaseOptionReasonablyCertain,
+      notes: agreement.notes
+    };
+    terms[field] = rentalBooleanTerms.has(field)
+      ? value === "on" || value === "true"
+      : value || null;
+    // A site and contact belong to one customer.
+    if (field === "customerId" && value !== agreement.customerId) {
+      terms.customerLocationId = null;
+      terms.customerContactId = null;
+    }
+
+    // The same form the terms form posts, so the same coercion runs.
+    const merged = new FormData();
+    for (const key of rentalTermFields) {
+      const term = terms[key];
+      if (rentalBooleanTerms.has(key)) {
+        if (term) merged.append(key, "on");
+      } else if (term !== null && term !== undefined && term !== "") {
+        merged.append(key, String(term));
+      }
+    }
+    if (field === "currencyCode" && value && value !== agreement.currencyCode) {
+      const rate = await getExchangeRate(client, companyId, value);
+      if (rate.error) {
+        return ctx.error(
+          "internal",
+          "Failed to get the exchange rate",
+          rate.error
+        );
+      }
+      merged.append("exchangeRate", String(rate.data));
+    }
+
+    const validation = await validator(rentalAgreementValidator).validate(
+      merged
+    );
+    if (validation.error) {
+      return ctx.error(
+        "validation",
+        Object.values(validation.error.fieldErrors)[0] ??
+          "These terms are not valid"
+      );
+    }
+    const {
+      id: _id,
+      rentalAgreementId: _rentalAgreementId,
+      ...data
+    } = validation.data;
+
+    const update = await updateRentalAgreement(client, {
+      ...data,
+      id,
+      companyId,
+      updatedBy: ctx.auditUserId,
+      customFields: agreement.customFields ?? undefined
+    });
+    if (update.error) {
+      logger.error("rental agreement term update failed", {
+        companyId,
+        id,
+        field,
+        error: update.error
+      });
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update rental agreement",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Set how a rental agreement's invoices are posted and sent.
+ *
+ * @remarks
+ * Null is the company's setting. Stays editable while the agreement is
+ * Active. Stripe needs Stripe connected; Post and Email needs a contact
+ * email.
+ *
+ * @mcp
+ */
+export const setRentalInvoiceAutomation = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    invoiceAutomation: z.enum(invoiceAutomations).nullable()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, invoiceAutomation }) {
+    if (
+      invoiceAutomation === "Post and Send via Stripe" &&
+      !(await getStripeConnectAccountId(ctx.asSystem.supabase, ctx.company.id))
+    ) {
+      return ctx.error("rule", "Connect Stripe in Integrations first");
+    }
+    const update = await updateRentalAgreementInvoiceAutomation(
+      ctx.asCaller.supabase,
+      {
+        id,
+        companyId: ctx.company.id,
+        invoiceAutomation,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (update.error) {
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update invoicing",
+        update.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Activate a Draft rental agreement.
+ *
+ * @remarks
+ * Needs at least one unit. The `post-rental-agreement` server function then
+ * checks every unit, classifies each line (rental or sale), books a sale's
+ * commencement and cuts the first billing periods, in one transaction; its
+ * refusal is the message.
+ *
+ * @mcp
+ */
+export const activateRentalAgreement = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id }) {
+    const agreement = await ownRentalAgreement(ctx, id);
+    if (agreement instanceof Error) return agreement;
+    if (agreement.status !== "Draft") {
+      return ctx.error(
+        "conflict",
+        "Only a Draft rental agreement can be activated"
+      );
+    }
+    if (!agreement.lineCount) {
+      return ctx.error("rule", "Add a unit before activating");
+    }
+
+    const result = await postRentalAgreement(ctx, {
+      type: "activate",
+      rentalAgreementId: id
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to activate rental agreement"),
+        result.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Close or cancel a rental agreement.
+ *
+ * @remarks
+ * Close needs every unit back and every period and charge invoiced, and no
+ * open rental shipment or receipt. Cancel needs nothing on rent, sold,
+ * invoiced or recognized, and deletes the Pending lines. The
+ * `post-rental-agreement` server function owns the checks; its refusal is
+ * the message.
+ *
+ * @mcp
+ */
+export const setRentalAgreementStatus = defineServiceFn({
+  input: z.object({ id: z.string(), intent: z.enum(["close", "cancel"]) }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, intent }) {
+    const agreement = await ownRentalAgreement(ctx, id);
+    if (agreement instanceof Error) return agreement;
+
+    const result = await postRentalAgreement(ctx, {
+      type: intent,
+      rentalAgreementId: id
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(
+          result.error,
+          intent === "close"
+            ? "Failed to close rental agreement"
+            : "Failed to cancel rental agreement"
+        ),
+        result.error
+      );
+    }
+    return { id, intent };
+  }
+});
+
+/**
+ * Release a Pending unit that never left the yard.
+ *
+ * @remarks
+ * Its billing stops at `returnedAt` and the line is Returned. Refused for a
+ * future date, a line that is not Pending, a unit treated as a sale, and a
+ * unit on an open rental shipment or receipt.
+ *
+ * @mcp
+ */
+export const releaseRentalUnit = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string(),
+    returnedAt: z.string().min(1)
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const result = await postRentalAgreement(ctx, {
+      type: "release",
+      ...input
+    });
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to release the unit"),
+        result.error
+      );
+    }
+    return { rentalAgreementLineId: input.rentalAgreementLineId };
+  }
+});
+
+/**
+ * Put a rental unit on a shipment to deliver it.
+ *
+ * @remarks
+ * Adds the unit to the agreement's Draft rental shipment (or creates one);
+ * the shipment is posted from inventory. Only on an Active agreement.
+ *
+ * @mcp
+ */
+export const deliverRentalUnit = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string()
+  }),
+  permission: { update: "sales", create: "inventory" },
+
+  async run(ctx, input) {
+    const result = await serverFns
+      .system({
+        db: ctx.asSystem.pg,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+      .invoke("create", { type: "shipmentFromRentalAgreement", ...input });
+    if (result.error || !result.data) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to create the shipment"),
+        result.error
+      );
+    }
+    return { shipmentId: result.data.id };
+  }
+});
+
+/**
+ * Put a rental unit on a receipt to return it.
+ *
+ * @remarks
+ * Adds the unit to the agreement's Draft rental receipt (or creates one);
+ * the receipt is posted from inventory. Only on an Active agreement.
+ *
+ * @mcp
+ */
+export const returnRentalUnit = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string()
+  }),
+  permission: { update: "sales", create: "inventory" },
+
+  async run(ctx, input) {
+    const result = await serverFns
+      .system({
+        db: ctx.asSystem.pg,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+      .invoke("create", { type: "receiptFromRentalAgreement", ...input });
+    if (result.error || !result.data) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to create the receipt"),
+        result.error
+      );
+    }
+    return { receiptId: result.data.id };
+  }
+});
+
+/**
+ * Override how a Draft rental agreement's unit is accounted for.
+ *
+ * @remarks
+ * Rental or Sale, with a reason, while the agreement is Draft (activation
+ * fixes the treatment). Read and written with the service role, since an
+ * accountant may not see sales; an audit entry is written best-effort.
+ *
+ * @mcp
+ */
+export const classifyRentalUnit = defineServiceFn({
+  input: rentalAgreementLineClassificationValidator.extend({
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string()
+  }),
+  permission: { update: "accounting" },
+
+  async run(
+    ctx,
+    {
+      rentalAgreementId: id,
+      rentalAgreementLineId: lineId,
+      classification,
+      reason
+    }
+  ) {
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const fixed = "The classification is fixed once the agreement is activated";
+
+    const [agreement, line] = await Promise.all([
+      serviceRole
+        .from("rentalAgreement")
+        .select("id, status")
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      serviceRole
+        .from("rentalAgreementLine")
+        .select(
+          "id, lessorClassification, classificationOverride, classificationOverrideReason"
+        )
+        .eq("id", lineId)
+        .eq("rentalAgreementId", id)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (agreement.error || !agreement.data || line.error || !line.data) {
+      return ctx.error(
+        "notFound",
+        "This unit does not belong to this rental agreement",
+        agreement.error ?? line.error
+      );
+    }
+    if (agreement.data.status !== "Draft") return ctx.error("rule", fixed);
+
+    // Activation stamps `classificationInputs`: an agreement activated since
+    // the read above matches no row.
+    const update = await serviceRole
+      .from("rentalAgreementLine")
+      .update({
+        lessorClassification: classification,
+        classificationOverride: true,
+        classificationOverrideReason: reason,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .is("classificationInputs", null)
+      .select("id")
+      .maybeSingle();
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to override the classification",
+        update.error
+      );
+    }
+    if (!update.data) return ctx.error("conflict", fixed);
+
+    // Best-effort: a failed audit write never undoes the override.
+    try {
+      await insertAuditLogEntries(serviceRole, companyId, [
+        {
+          tableName: "rentalAgreementLine",
+          entityType: "rentalAgreement",
+          entityId: id,
+          recordId: lineId,
+          operation: "UPDATE",
+          actorId: ctx.auditUserId,
+          diff: {
+            lessorClassification: {
+              old: line.data.lessorClassification,
+              new: classification
+            },
+            classificationOverride: {
+              old: line.data.classificationOverride,
+              new: true
+            },
+            classificationOverrideReason: {
+              old: line.data.classificationOverrideReason,
+              new: reason
+            }
+          },
+          metadata: { origin: "web" }
+        }
+      ]);
+    } catch (err) {
+      logger.warn("audit write skipped for a classification override", {
+        error: err
+      });
+    }
+    return { rentalAgreementLineId: lineId, classification };
+  }
+});
+
+/**
+ * Sell a rental unit to its customer: exercise the purchase option.
+ *
+ * @remarks
+ * Only for a unit treated as a sale, on rent under an Active agreement with
+ * a purchase option, once per unit, and not before the end of the term
+ * (ending a sale early is a manual journal). Bills the option as a Purchase
+ * Option charge dated today and drafts its invoice; posting that invoice
+ * transfers the unit. An invoice the automation may post is queued for it.
+ *
+ * @mcp
+ */
+export const sellRentalUnit = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    rentalAgreementLineId: z.string()
+  }),
+  permission: { create: ["sales", "invoicing"], update: "sales" },
+
+  async run(ctx, { rentalAgreementId: id, rentalAgreementLineId: lineId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const [agreement, line] = await Promise.all([
+      getRentalAgreement(client, id, companyId),
+      getRentalAgreementLine(client, lineId, companyId)
+    ]);
+    if (
+      agreement.error ||
+      agreement.data?.companyId !== companyId ||
+      line.error ||
+      line.data.rentalAgreementId !== id
+    ) {
+      return ctx.error(
+        "notFound",
+        "This unit does not belong to this rental agreement"
+      );
+    }
+
+    const amount = agreement.data.purchaseOptionAmount;
+    if (
+      agreement.data.status !== "Active" ||
+      line.data.lessorClassification !== "Sale" ||
+      line.data.status !== "On Rent" ||
+      !amount
+    ) {
+      return ctx.error(
+        "rule",
+        "Only a unit treated as a sale, on rent under an agreement with a purchase option, can be sold"
+      );
+    }
+
+    const billed = "The purchase option has already been billed";
+    const existing = await client
+      .from("rentalAgreementCharge")
+      .select("id")
+      .eq("rentalAgreementLineId", lineId)
+      .eq("companyId", companyId)
+      .eq("chargeType", "Purchase Option")
+      .limit(1);
+    if (existing.error) {
+      return ctx.error(
+        "internal",
+        "Failed to check the purchase option",
+        existing.error
+      );
+    }
+    if (existing.data.length > 0) return ctx.error("conflict", billed);
+
+    const today = await companyToday(ctx);
+    // The schedule and the remaining rent run to the end date.
+    const endDate = agreement.data.endDate;
+    if (endDate && today < endDate) {
+      return ctx.error(
+        "rule",
+        `The purchase option is exercised at the end of the term (${endDate}); ending a rental treated as a sale early is a manual journal`
+      );
+    }
+
+    const charge = await insertRentalPurchaseOptionCharge(client, {
+      rentalAgreementLineId: lineId,
+      amount,
+      chargeDate: today,
+      description: "Purchase option exercised",
+      taxPercent: agreement.data.taxPercent ?? 0,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (charge.error) {
+      // 23505: a concurrent request billed it first.
+      return charge.error.code === "23505"
+        ? ctx.error("conflict", billed)
+        : ctx.error(
+            "internal",
+            "Failed to bill the purchase option",
+            charge.error
+          );
+    }
+
+    let invoices: DraftedRentalInvoice[];
+    try {
+      ({ invoices } = await generateRentalInvoicesNow(ctx.asSystem.pg, {
+        companyId,
+        asOf: today,
+        rentalAgreementId: id,
+        userId: ctx.auditUserId
+      }));
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        err instanceof Error
+          ? `The purchase option was billed but its invoice was not drafted: ${err.message}`
+          : "The purchase option was billed but its invoice was not drafted",
+        err
+      );
+    }
+
+    // Normally on a held charges invoice; anything automatable posts in the
+    // background.
+    const toAutomate = invoices.filter(
+      (invoice) => invoice.mode !== "Draft Only" && !invoice.holdReason
+    );
+    if (toAutomate.length > 0) {
+      await batchTrigger(
+        "invoice-automate",
+        toAutomate.map((invoice) => ({
+          payload: { companyId, invoiceId: invoice.invoiceId }
+        }))
+      );
+    }
+    return { invoiceIds: invoices.map((invoice) => invoice.invoiceId) };
   }
 });
