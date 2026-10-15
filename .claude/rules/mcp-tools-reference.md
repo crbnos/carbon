@@ -245,6 +245,38 @@ Three fixes from letting a real MCP agent drive the server; all pinned by
   boolean-for-string mistakes are caught at validation with a self-correcting
   message instead of surfacing as a Postgres 23502.
 
+## Service-function operations (`defineServiceFn`)
+
+The ERP is moving its operations into `defineServiceFn` consts that routes,
+the API and MCP all call (`.ai/plans/2026-10-15-service-function-migration.md`).
+These are published from the ERP router, not from a `*.service.ts`:
+
+- **Source**: `apps/erp/app/modules/router.server.ts` combines each module's
+  `{module}/index.server.ts` namespace (`production.job.release`). The
+  generator (`scripts/lib/service-fn-metadata.ts`) walks it with the same
+  ts-morph project the legacy tools use.
+- **Published** when the leaf's TSDoc carries `@mcp` (`@mcp destructive` for
+  DESTRUCTIVE). The summary line is the `title` (OpenAPI summary), the summary
+  plus `@remarks` the `description`. Classification otherwise comes from the
+  permission: `view` only is READ, `delete` is DESTRUCTIVE, anything else WRITE.
+- **Named** by the router path: tool `production_job_release`, HTTP
+  `POST /api/v1/production/job/release` (`operationPath`). A name that a
+  `*.service.ts` tool already has fails generation.
+- **Permission**: one module → the API gate checks it; several modules →
+  `module: null` at the gate and the function's own gate decides. `"system"`,
+  `{}` and a keyed rule cannot be published.
+- **Schemas** come from the leaf's TYPE: input from `z.input` (an optional
+  field is left out of `required`, never published as nullable), response from
+  the result's `data`. Enum values are sorted, since the checker's order moves
+  with the program.
+- **Dispatch**: the procedure calls the function with `contextFromAuthed`
+  (`api+/v1+/lib/service-fn.server.ts`): an API key is the `apiKey` actor with
+  its scopes, an OAuth or workflow caller the `user` actor. A refusal is an
+  `ORPCError` with the category's status and `data.category`; `callOperation`
+  returns its message as an `execution` error.
+- `generate:mcp` and `check:manifest` build the manifest through one function
+  (`withServiceFnTools`), so the digest they compare cannot differ.
+
 ## How `call_tool` actually runs a tool (the canonical oRPC dispatch)
 
 `call_tool` does **not** go back through the MCP protocol — it calls

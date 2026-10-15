@@ -24,25 +24,22 @@ export function useJobPlanningRelease(): {
 } {
   const { t } = useLingui();
   const releaseFetcher = useAction<typeof releaseAction>({
-    onSuccess: (result) => {
-      if (!result.success) return;
-      if (result.released) toast.success(t`Job released`);
-      for (const warning of result.warnings) {
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.released.length) toast.success(t`Job released`);
+      for (const warning of data.warnings) {
         toast.error(
           t`${warning.readableId} was released with a problem: ${warning.message}`
         );
       }
-      for (const failure of result.failed) {
+      for (const failure of data.failed) {
         toast.error(
           t`Could not release ${failure.readableId}: ${failure.message}`
         );
       }
-      if (!result.scheduled) {
+      if (!data.scheduled) {
         toast.error(t`The schedule could not be updated after the release`);
       }
-    },
-    onError: (result) => {
-      if (!result.success) toast.error(result.message);
     }
   });
 

@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
@@ -74,43 +73,18 @@ vi.mock("~/modules/production", () => ({
     "Closed",
     "Cancelled"
   ],
-  getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
 }));
-// The Release dialog goes through the shared releaseJobs path; delegate its
-// status flip to the mocked updateJobStatus so the ordering guard still sees it.
-vi.mock("~/modules/production/production.server", async () => {
-  const production = await import("~/modules/production");
-  return {
-    // Cancel is delegated whole; its steps live in cancelJob.
-    cancelJob: vi.fn(async () => ({ data: { jobId: "job-1" }, error: null })),
-    releaseJobs: vi.fn(async (ctx, { jobIds }) => {
-      for (const id of jobIds) {
-        await production.updateJobStatus({} as any, {
-          id,
-          companyId: ctx.company.id,
-          status: "Ready",
-          updatedBy: ctx.auditUserId
-        });
-      }
-      return {
-        data: {
-          failure: null,
-          purchaseOrdersBySupplierId: {},
-          releasedJobIds: jobIds
-        },
-        error: null
-      };
-    })
-  };
-});
+vi.mock("~/modules/production/production.server", () => ({
+  // Cancel is delegated whole; its steps live in cancelJob.
+  cancelJob: vi.fn(async () => ({ data: { jobId: "job-1" }, error: null }))
+}));
 
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
-  getJobReleaseReadiness,
   returnPickedRemaindersForJob,
   updateJobStatus
 } from "~/modules/production";
@@ -166,23 +140,6 @@ function setup() {
     events.push("updateJobStatus");
     return { data: { id: "job-1" }, error: null } as any;
   });
-  vi.mocked(getJobReleaseReadiness).mockResolvedValue({
-    data: {
-      jobs: [
-        {
-          id: "job-1",
-          jobId: "J000001",
-          status: "Draft",
-          manufacturingBlocked: false,
-          missingAssemblies: [],
-          outsideOperationsWithoutSupplier: [],
-          supplierIds: []
-        }
-      ],
-      suppliers: []
-    },
-    error: null
-  });
   vi.mocked(runLocationSchedule).mockImplementation(async () => {
     events.push("runLocationSchedule");
     return undefined as any;
@@ -208,79 +165,9 @@ function cancelRequest() {
   });
 }
 
-function releaseRequest() {
-  const body = new FormData();
-  body.set("status", "Ready");
-  body.set("selectedPurchaseOrdersBySupplierId", "{}");
-  // The "Release Job" dialog posts status=Ready with ?schedule=1.
-  return new Request("http://localhost/x/job/job-1/status?schedule=1", {
-    method: "POST",
-    body
-  });
-}
-
-async function runRelease() {
-  return action({
-    request: releaseRequest(),
-    params: { jobId: "job-1" },
-    context: {}
-  } as any);
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
   setup();
-});
-
-describe("Job release status action", () => {
-  it("commits the Ready status before invoking the scheduler", async () => {
-    // On success the action ends by throwing a redirect Response.
-    await expect(runRelease()).rejects.toBeInstanceOf(Response);
-
-    // The redirect must be the SUCCESS one. Without this, a scheduler that
-    // throws still redirects (the catch flashes "Failed to schedule job"), and
-    // the ordering assertion below would pass on the failure path.
-    expect(success).toHaveBeenCalledWith("Updated job status");
-    expect(error).not.toHaveBeenCalled();
-
-    expect(updateJobStatus).toHaveBeenCalledOnce();
-    expect(events).toContain("updateJobStatus");
-    expect(events).toContain("runLocationSchedule");
-    // Ready/In Progress/Paused. If the status is committed AFTER the scheduler
-    // runs, the freshly released job is filtered out of its own schedule run and
-    // never lands in capacityReservation / the forecast.
-    expect(events.indexOf("updateJobStatus")).toBeLessThan(
-      events.indexOf("runLocationSchedule")
-    );
-  });
-
-  it("refuses release when an assembly has no operations", async () => {
-    vi.mocked(getJobReleaseReadiness).mockResolvedValue({
-      data: {
-        jobs: [
-          {
-            id: "job-1",
-            jobId: "J000001",
-            status: "Draft",
-            manufacturingBlocked: false,
-            missingAssemblies: [
-              { makeMethodId: "mm-2", description: "Bracket" }
-            ],
-            outsideOperationsWithoutSupplier: [],
-            supplierIds: []
-          }
-        ],
-        suppliers: []
-      },
-      error: null
-    });
-
-    await expect(runRelease()).rejects.toBeInstanceOf(Response);
-
-    expect(updateJobStatus).not.toHaveBeenCalled();
-    expect(runLocationSchedule).not.toHaveBeenCalled();
-    expect(success).not.toHaveBeenCalled();
-  });
 });
 
 describe("Job status tenancy", () => {
@@ -291,7 +178,11 @@ describe("Job status tenancy", () => {
       new Response("Not found", { status: 404 })
     );
 
-    const thrown = await runRelease().catch((e) => e);
+    const thrown = await action({
+      request: cancelRequest(),
+      params: { jobId: "job-1" },
+      context: {}
+    } as any).catch((e) => e);
 
     expect(thrown).toBeInstanceOf(Response);
     expect((thrown as Response).status).toBe(404);

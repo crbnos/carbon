@@ -109,6 +109,7 @@ import {
   isJobOrderStatusHidden,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
+  makeToAssetReleaseError,
   motionSchema,
   orientationSchema,
   PLANNING_EDITABLE_JOB_STATUSES,
@@ -2960,6 +2961,10 @@ export type JobReleaseReadiness = {
     jobId: string;
     status: (typeof jobStatus)[number] | null;
     manufacturingBlocked: boolean;
+    // Quantity and scrap are both 0: the job page disables Release for it.
+    nothingToMake: boolean;
+    // A Make to Asset job that cannot complete to its asset.
+    makeToAssetError: string | null;
     missingAssemblies: { makeMethodId: string; description: string }[];
     // Outside operations release cannot put on a PO: the process has no
     // supplier, or several and none chosen on the operation.
@@ -2996,7 +3001,7 @@ export async function getJobReleaseReadiness(
       client
         .from("job")
         .select(
-          "id, jobId, status, item(itemReplenishment(manufacturingBlocked))"
+          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
         )
         .in("id", batch)
         .eq("companyId", companyId)
@@ -3156,6 +3161,13 @@ export async function getJobReleaseReadiness(
         status: job.status,
         manufacturingBlocked:
           job.item?.itemReplenishment?.manufacturingBlocked === true,
+        nothingToMake:
+          Number(job.quantity ?? 0) === 0 &&
+          Number(job.scrapQuantity ?? 0) === 0,
+        makeToAssetError: makeToAssetReleaseError({
+          ...job,
+          itemTrackingType: job.item?.itemTrackingType
+        }),
         missingAssemblies: makeMethodsMissingOperations(
           rootByJob.get(job.id) ?? null,
           materialsByJob[job.id] ?? [],
@@ -3195,7 +3207,11 @@ export async function getJobReleaseReadiness(
   };
 }
 
-/** @mcp update */
+/**
+ * Set a job's status, and nothing else. Not published: a release, a cancel or
+ * a close does more than the status write (requirements, MRP, purchase
+ * orders, picked material). The API's `production.job.*` operations do it.
+ */
 export async function updateJobStatus(
   client: SupabaseClient<Database>,
   params: {
@@ -7264,7 +7280,10 @@ export async function updateJobOperationBatch(
     .invoke("batch-operations", input as ServerFnInput<"batch-operations">);
 }
 
-/** @mcp update */
+/**
+ * Flip a batch to Active. Not published: it does not release the member jobs;
+ * `production.batch.release` does both.
+ */
 export async function releaseJobOperationBatch(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

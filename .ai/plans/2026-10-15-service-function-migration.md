@@ -3,9 +3,9 @@
 ## Progress
 
 - [x] Phase 0 — Foundation (`refactor/service-functions`)
-- [ ] Phase 1 — One gate for every caller (own PR from main)
-- [ ] Phase 2 — Pipeline: the manifest from service functions
-- [ ] Phase 3 — Pilot: the production job lifecycle
+- [x] Phase 1 — One gate for every caller (`fix/gate-every-caller`, merged into this branch)
+- [x] Phase 2 — Pipeline: the manifest from service functions
+- [x] Phase 3 — Pilot: the production job lifecycle (review gate before Phase 4)
 - [ ] Phase 4 — Module waves
 - [ ] Phase 5 — Dissolve `packages/server-functions`
 - [ ] Phase 6 — MES calls ERP's API (auth design needs approval first)
@@ -18,6 +18,9 @@ Deviations from the approved plan, with the reason:
 - `replanAfterItemChange` permission: `"system"` → `{ update: "parts" }`. Six item routes call it as the user, so the gate would have refused every replan.
 - The gate checks the entry call only. A call from inside another service function's `run` is not checked again, so `"system"` functions can be steps of user operations.
 - `useAction` shows a default toast only for a service function's error (`{ error: { category, message } }`). Older `{ success: false }` results still flash from the action, and a second toast would double them.
+- Phase 1: the in-app agent calls no operations (docs and navigation tools only), so only the workflow dispatch changed. The changelog line waits for the release's entry.
+- Phase 2: a refusal uses oRPC's own error body with `data.category`, not a new `{ error }` envelope, so every v1 error has one shape. Input schemas come from the leaf's TypeScript type, like the legacy tools, not from `z.toJSONSchema`. The generator does not drop legacy tools by itself: a module's migration removes `@mcp` from the primitives it replaces.
+- Phase 3: release is one operation for the job page, bulk release, planning and the API (`production.job.release`), with every check inside; batch release likewise (`production.batch.release`). The Make to Asset and "nothing to make" rules moved into `getJobReleaseReadiness`, so batch release now applies them too. The status route lost its release branch and a dead plan-and-schedule branch. `planDraftJob` stays unpublished: its checks depend on the planning drawer's location.
 
 ## Context
 

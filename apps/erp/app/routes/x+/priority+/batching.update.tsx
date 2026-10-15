@@ -14,12 +14,14 @@ import {
   createJobOperationBatchValidator,
   getBatchOutputLots,
   notifyScheduleInputsChanged,
-  releaseJobOperationBatch,
   unreleaseJobOperationBatch,
   updateJobOperationBatch,
   updateJobOperationBatchValidator
 } from "~/modules/production";
-import { releaseBatchMemberJobs } from "~/modules/production/production.server";
+import {
+  releaseBatches,
+  releaseBatchMemberJobs
+} from "~/modules/production/production.server";
 import { serviceContext } from "~/modules/service-context.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -212,74 +214,56 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { intent: type, ...rest } = validation.data;
 
-  if (type === "release" || type === "unrelease") {
+  if (type === "release") {
+    // The member jobs through the job page's checks, then the batch, then the
+    // scheduler: the same operation the batches table and the API run.
+    const released = await releaseBatches(ctx, {
+      batchIds: [rest.batchId],
+      purchaseOrdersBySupplierId: parsePurchaseOrderChoice(formData)
+    });
+    if (released.error) {
+      return { success: false, message: released.error.message };
+    }
+    const [failure] = released.data.failed;
+    const [skipped] = released.data.skipped;
+    if (failure) return { success: false, message: failure.message };
+    if (skipped) {
+      return {
+        success: false,
+        message: `The batch is ${skipped.status}, not Planned`
+      };
+    }
+    return { success: true };
+  }
+
+  if (type === "unrelease") {
     const batch = await client
       .from("jobOperationBatch")
       .select("workCenterId")
       .eq("id", rest.batchId)
       .eq("companyId", companyId)
       .maybeSingle();
-
-    if (type === "release") {
-      const members = await client
-        .from("jobOperation")
-        .select("jobId")
-        .eq("jobOperationBatchId", rest.batchId)
-        .eq("companyId", companyId);
-      if (members.error) {
-        return { success: false, message: "Failed to load the batch members" };
+    const unreleased = await unreleaseJobOperationBatch(
+      client,
+      getDatabaseClient(),
+      {
+        batchId: rest.batchId,
+        companyId,
+        userId
       }
-      // Member jobs release BEFORE the batch flips, through the job page's
-      // release path; an invalid job refuses the whole batch untouched.
-      const releasedJobs = await releaseBatchMemberJobs(ctx, {
-        jobIds: (members.data ?? []).map((op) => op.jobId),
-        purchaseOrdersBySupplierId: parsePurchaseOrderChoice(formData)
-      });
-      if (releasedJobs.error) {
-        return { success: false, message: releasedJobs.error.message };
-      }
-
-      const released = await releaseJobOperationBatch(
-        client,
-        getDatabaseClient(),
-        {
-          batchId: rest.batchId,
-          companyId,
-          userId
-        }
-      );
-      if (released.error) {
-        return {
-          success: false,
-          message: getErrorMessage(released.error, "Failed to release batch")
-        };
-      }
-    } else {
-      const unreleased = await unreleaseJobOperationBatch(
-        client,
-        getDatabaseClient(),
-        {
-          batchId: rest.batchId,
-          companyId,
-          userId
-        }
-      );
-      if (unreleased.error) {
-        return {
-          success: false,
-          message: getErrorMessage(
-            unreleased.error,
-            "Failed to unrelease batch"
-          )
-        };
-      }
+    );
+    if (unreleased.error) {
+      return {
+        success: false,
+        message: getErrorMessage(unreleased.error, "Failed to unrelease batch")
+      };
     }
 
     // After the status flip is persisted — the wave must see the new state.
     await notifyScheduleInputsChanged(
       companyId,
       "work-center",
-      type === "release" ? "batch released" : "batch unreleased",
+      "batch unreleased",
       batch.data?.workCenterId ?? undefined
     );
     return { success: true };

@@ -7,19 +7,17 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getJobReleaseReadiness,
   jobStatus,
   makeToAssetItemError,
   recalculateJobRequirements,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
-import { cancelJob, releaseJobs } from "~/modules/production/production.server";
+import { cancelJob } from "~/modules/production/production.server";
 import { serviceContext } from "~/modules/service-context.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -42,17 +40,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // with the service role or Kysely and keys on the URL job id.
   await requireCompanyRecord(getCarbonServiceRole(), "job", companyId, { id });
 
-  const url = new URL(request.url);
-  const shouldSchedule = url.searchParams.get("schedule") === "1";
-
   const formData = await request.formData();
   const status = formData.get("status") as (typeof jobStatus)[number];
-  const selectedPurchaseOrdersBySupplierId = formData.get(
-    "selectedPurchaseOrdersBySupplierId"
-  ) as string | null;
-  const selectedSupplierProcessByOperationId = formData.get(
-    "selectedSupplierProcessByOperationId"
-  ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
     throw redirect(
@@ -77,10 +66,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    // Make to Asset gate, checked here so every path to Ready (the release
-    // dialog and the plain status post) refuses before releaseJobs runs. The
-    // item rule is `makeToAssetItemError`; a job on a sales order line is a
-    // sale, not a capitalisation.
+    // Make to Asset gate for a plain post to Ready (Resume). A release runs
+    // the same rule in `releaseJobs` (`makeToAssetReleaseError`). The item
+    // rule is `makeToAssetItemError`; a job on a sales order line is a sale,
+    // not a capitalisation.
     if (data?.fixedAssetClassId || data?.fixedAssetId) {
       const itemError = makeToAssetItemError({
         fixedAssetClassId: data.fixedAssetClassId,
@@ -107,81 +96,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
     }
-  }
-
-  // The Release dialog: the shared release path (also run by batch release),
-  // re-checking what the dialog checked, then one schedule run for the location.
-  if (status === "Ready" && shouldSchedule) {
-    const readiness = await getJobReleaseReadiness(client, [id], companyId);
-    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
-    if (readiness.error || missing.length > 0) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(
-            readiness.error,
-            readiness.error
-              ? "Failed to validate job"
-              : `Assign an operation to each assembly before releasing: ${missing
-                  .map((m) => m.description)
-                  .join(", ")}`
-          )
-        )
-      );
-    }
-
-    try {
-      await stampSupplierChoices({
-        jobId: id,
-        companyId,
-        userId,
-        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
-      });
-    } catch (err) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(err, "Failed to save the supplier choice"))
-      );
-    }
-
-    const released = await releaseJobs(ctx, {
-      jobIds: [id],
-      purchaseOrdersBySupplierId: JSON.parse(
-        selectedPurchaseOrdersBySupplierId ?? "{}"
-      )
-    });
-    const failure = released.error ?? released.data.failure;
-    if (failure) {
-      // The job is Ready when it came back released (its purchase orders
-      // failed after the flip): schedule it, then say what failed.
-      if (released.data?.releasedJobIds.includes(id)) {
-        try {
-          await scheduleJobLocation({ id, companyId, userId });
-        } catch (err) {
-          logger.error("Error", { error: err });
-        }
-      }
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(null, failure.message))
-      );
-    }
-
-    try {
-      await scheduleJobLocation({ id, companyId, userId });
-    } catch (err) {
-      logger.error("Error", { error: err });
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(err, "Failed to schedule job"))
-      );
-    }
-
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(id),
-      await flash(request, success("Updated job status"))
-    );
   }
 
   if (["Planned", "Ready"].includes(status)) {
@@ -233,37 +147,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  if (status === "Planned" && shouldSchedule) {
-    try {
-      const purchaseOrdersBySupplierId = JSON.parse(
-        selectedPurchaseOrdersBySupplierId ?? "{}"
-      );
-      await stampSupplierChoices({
-        jobId: id,
-        companyId,
-        userId,
-        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
-      });
-      // Regenerate the whole location in parallel with PO creation.
-      await Promise.all([
-        scheduleJobLocation({ id, companyId, userId }),
-        serverFns
-          .system({ db: getDatabaseClient(), companyId, userId })
-          .invoke("create", {
-            type: "purchaseOrderFromJob",
-            jobId: id,
-            purchaseOrdersBySupplierId
-          })
-      ]);
-    } catch (err) {
-      logger.error("Error", { error: err });
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(request, error(err, "Failed to schedule job"))
-      );
-    }
-  }
-
   if (status === "Closed") {
     const closed = await serverFns
       .system({ db: getDatabaseClient(), companyId, userId })
@@ -289,119 +172,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     requestReferrer(request) ?? path.to.job(id),
     await flash(request, success("Updated job status"))
   );
-}
-
-// Forecast-first scheduling regenerates the whole location the job is in,
-// in-process (Node). Throws on failure.
-async function scheduleJobLocation({
-  id,
-  companyId,
-  userId
-}: {
-  id: string;
-  companyId: string;
-  userId: string;
-}) {
-  const serviceRole = getCarbonServiceRole();
-  const { data: jobLocation } = await serviceRole
-    .from("job")
-    .select("locationId")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-  if (!jobLocation?.locationId) {
-    throw new Error("Job has no location to schedule");
-  }
-  await runLocationSchedule({
-    db: getDatabaseClient(),
-    client: serviceRole,
-    locationId: jobLocation.locationId,
-    companyId,
-    userId
-  });
-}
-
-// The release dialog's supplier pick for an outside operation whose process has
-// several suppliers, stamped on the operation so purchaseOrderFromJob resolves
-// it. Must land BEFORE the purchase orders are created.
-async function stampSupplierChoices({
-  jobId,
-  companyId,
-  userId,
-  choices
-}: {
-  jobId: string;
-  companyId: string;
-  userId: string;
-  choices: Record<string, string>;
-}) {
-  const serviceRole = getCarbonServiceRole();
-  const operationSupplierChoices = Object.entries(choices);
-  if (operationSupplierChoices.length > 0) {
-    // Both ids come from the form and drive a service-role (RLS-bypassing)
-    // write that purchaseOrderFromJob later consumes, so validate them before
-    // persisting: the operation must belong to THIS job, and the chosen
-    // supplier process must belong to that operation's own process. Otherwise
-    // a crafted submit could retarget another job or create a PO for an
-    // unrelated supplier.
-    const operationIds = operationSupplierChoices.map(
-      ([operationId]) => operationId
-    );
-    const supplierProcessIds = operationSupplierChoices.map(([, sp]) => sp);
-
-    const [
-      { data: jobOperations, error: jobOperationsError },
-      { data: supplierProcesses, error: supplierProcessesError }
-    ] = await Promise.all([
-      serviceRole
-        .from("jobOperation")
-        .select("id, processId")
-        .eq("jobId", jobId)
-        .eq("companyId", companyId)
-        .in("id", operationIds),
-      serviceRole
-        .from("supplierProcess")
-        .select("id, processId")
-        .eq("companyId", companyId)
-        .in("id", supplierProcessIds)
-    ]);
-    if (jobOperationsError) throw new Error(jobOperationsError.message);
-    if (supplierProcessesError) throw new Error(supplierProcessesError.message);
-
-    const operationProcessById = new Map(
-      (jobOperations ?? []).map((op) => [op.id, op.processId])
-    );
-    const supplierProcessProcessById = new Map(
-      (supplierProcesses ?? []).map((sp) => [sp.id, sp.processId])
-    );
-
-    for (const [operationId, supplierProcessId] of operationSupplierChoices) {
-      const operationProcessId = operationProcessById.get(operationId);
-      if (!operationProcessId) {
-        throw new Error(`Operation ${operationId} does not belong to this job`);
-      }
-      if (
-        supplierProcessProcessById.get(supplierProcessId) !== operationProcessId
-      ) {
-        throw new Error(
-          "Selected supplier does not belong to the operation's process"
-        );
-      }
-    }
-
-    const updateResults = await Promise.all(
-      operationSupplierChoices.map(([operationId, supplierProcessId]) =>
-        serviceRole
-          .from("jobOperation")
-          .update({
-            operationSupplierProcessId: supplierProcessId,
-            updatedBy: userId
-          })
-          .eq("id", operationId)
-          .eq("companyId", companyId)
-      )
-    );
-    const failedUpdate = updateResults.find((result) => result.error);
-    if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
-  }
 }

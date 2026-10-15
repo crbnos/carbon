@@ -5,7 +5,7 @@
 import {
   cancelJob,
   planDraftJob,
-  releaseBatchMemberJobs,
+  releaseBatches,
   releaseJobs,
   reorderScheduleOperations,
   replanAfterItemChange
@@ -13,8 +13,8 @@ import {
 
 /** The production module's operations, by entity. */
 export const production = {
-  job: { cancel: cancelJob, plan: planDraftJob, release: releaseJobs },
-  batch: { releaseMemberJobs: releaseBatchMemberJobs },
+  job: { release: releaseJobs, cancel: cancelJob, plan: planDraftJob },
+  batch: { release: releaseBatches },
   schedule: { reorder: reorderScheduleOperations },
   planning: { replanItem: replanAfterItemChange }
 };

@@ -232,6 +232,11 @@ msgstr "{0}개 재고 있음; 나머지 {1}개는 {2}로 피킹할 예정"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
 
+#. placeholder {0}: skipped.readableId
+#. placeholder {1}: skipped.status
+msgid "{0} is {1}, not Draft or Planned"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
@@ -6045,12 +6050,10 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
-#. placeholder {0}: d.failed.length
+#. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
-#. placeholder {0}: result.failed.length
-#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 #. placeholder {1}: failure.message
-#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "{0}을 릴리스할 수 없음: {1}"
 
@@ -11978,6 +11981,9 @@ msgstr "작업"
 
 msgid "Job · {itemReadableId}"
 msgstr "작업 지시 · {itemReadableId}"
+
+msgid "Job cancelled"
+msgstr ""
 
 msgid "Job completions"
 msgstr "작업 지시 완료"
@@ -18210,7 +18216,7 @@ msgstr "릴리스된 리비전"
 msgid "Released revision is locked"
 msgstr "릴리스된 리비전은 잠김입니다."
 
-#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+#. placeholder {0}: data.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
 msgid "Released with problems: {0}"
 msgstr "릴리스됨 (문제 있음): {0}"
 

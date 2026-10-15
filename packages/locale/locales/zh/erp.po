@@ -232,6 +232,11 @@ msgstr "{0}库存；剩余的{1}将按{2}拣货"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
 
+#. placeholder {0}: skipped.readableId
+#. placeholder {1}: skipped.status
+msgid "{0} is {1}, not Draft or Planned"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
@@ -6045,12 +6050,10 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
-#. placeholder {0}: d.failed.length
+#. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
-#. placeholder {0}: result.failed.length
-#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 #. placeholder {1}: failure.message
-#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "无法下达{0}：{1}"
 
@@ -11978,6 +11981,9 @@ msgstr "工作"
 
 msgid "Job · {itemReadableId}"
 msgstr "工单 · {itemReadableId}"
+
+msgid "Job cancelled"
+msgstr ""
 
 msgid "Job completions"
 msgstr "工单完成"
@@ -18210,7 +18216,7 @@ msgstr "已下达修订版"
 msgid "Released revision is locked"
 msgstr "已下达修订版已锁定"
 
-#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+#. placeholder {0}: data.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
 msgid "Released with problems: {0}"
 msgstr "已下达，存在问题：{0}"
 

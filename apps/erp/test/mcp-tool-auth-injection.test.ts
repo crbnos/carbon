@@ -117,7 +117,6 @@ describe("payload userId injection", () => {
     for (const name of [
       "production_createJobOperationBatch",
       "production_updateJobOperationBatch",
-      "production_releaseJobOperationBatch",
       "production_unreleaseJobOperationBatch"
     ]) {
       const tool = tools.find((t) => t.name === name);

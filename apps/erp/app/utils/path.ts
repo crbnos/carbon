@@ -1468,6 +1468,7 @@ export const path = {
     itemsSettings: `${x}/settings/items`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobBatchNumber: (id: string) => generatePath(`${x}/job/${id}/batch`),
+    jobCancel: (id: string) => generatePath(`${x}/job/${id}/cancel`),
     jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),
     jobConfigure: (id: string) => generatePath(`${x}/job/${id}/configure`),
     jobDag: (id: string) => generatePath(`${x}/job/${id}/dag`),

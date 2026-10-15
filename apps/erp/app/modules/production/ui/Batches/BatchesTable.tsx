@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -36,6 +37,7 @@ import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import type { action as releaseBatchesAction } from "~/routes/x+/production+/batches.release";
 import { path } from "~/utils/path";
 import type { JobOperationBatch } from "../../types";
 import { BatchReleaseModal } from "./BatchReleaseModal";
@@ -240,42 +242,21 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   // Planned → Active flip; Active/Completing/Completed batches are already on or
   // off the floor). Posts the ids to the release action, which recalcs member
   // jobs, releases each, and notifies the scheduler; we toast the summary.
-  const releaseBatchesFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-    released?: number;
-    failed?: { readableId: string; message: string }[];
-  }>();
-  const wasReleasingBatches = useRef(false);
-  useEffect(() => {
-    if (releaseBatchesFetcher.state !== "idle") {
-      wasReleasingBatches.current = true;
-      return;
+  const releaseBatchesFetcher = useAction<typeof releaseBatchesAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.released.length) {
+        toast.success(countMessages.released(data.released.length));
+      }
+      if (data.failed.length) {
+        toast.error(
+          t`Could not release ${data.failed.length}: ${data.failed
+            .map((f) => `${f.readableId} (${f.message})`)
+            .join(", ")}`
+        );
+      }
     }
-    if (!wasReleasingBatches.current) return;
-    wasReleasingBatches.current = false;
-    const d = releaseBatchesFetcher.data;
-    if (!d) return;
-    if (d.success === false && d.message) {
-      toast.error(d.message);
-      return;
-    }
-    if (d.released) {
-      toast.success(countMessages.released(d.released));
-    }
-    if (d.failed?.length) {
-      toast.error(
-        t`Could not release ${d.failed.length}: ${d.failed
-          .map((f) => f.readableId)
-          .join(", ")}`
-      );
-    }
-  }, [
-    releaseBatchesFetcher.state,
-    releaseBatchesFetcher.data,
-    t,
-    countMessages
-  ]);
+  });
 
   const renderActions = useCallback(
     (selectedRows: JobOperationBatch[]) => {

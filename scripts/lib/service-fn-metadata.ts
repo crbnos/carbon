@@ -238,6 +238,29 @@ function classify(
     : "WRITE";
 }
 
+/**
+ * The checker orders a union's members by its own type ids, which move when
+ * the program's files change, so an unrelated edit reordered an enum and
+ * changed the schema's digest. JSON Schema gives `enum` no order: sort it.
+ */
+function sortEnums(schema: JsonSchema): JsonSchema {
+  const out: JsonSchema = {};
+  for (const [key, value] of Object.entries(schema)) {
+    if (key === "enum" && Array.isArray(value)) {
+      out[key] = [...value].sort();
+    } else if (Array.isArray(value)) {
+      out[key] = value.map((item) =>
+        item && typeof item === "object" ? sortEnums(item as JsonSchema) : item
+      );
+    } else if (value && typeof value === "object") {
+      out[key] = sortEnums(value as JsonSchema);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 function schemasOf(leaf: ServiceFnLeaf): {
   input: JsonSchema;
   response?: JsonSchema;
@@ -260,8 +283,10 @@ function schemasOf(leaf: ServiceFnLeaf): {
     at
   );
   return {
-    input: Object.keys(input).length > 0 ? input : { type: "object" },
-    ...(Object.keys(response).length > 0 ? { response } : {})
+    input: Object.keys(input).length > 0 ? sortEnums(input) : { type: "object" },
+    ...(Object.keys(response).length > 0
+      ? { response: sortEnums(response) }
+      : {})
   };
 }
 

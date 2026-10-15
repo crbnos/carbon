@@ -4,12 +4,17 @@
 
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
+import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
-import { datetime, getErrorMessage } from "@carbon/utils";
+import { chunkArray, datetime, getErrorMessage, groupBy } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
-import { type CarbonError, defineServiceFn } from "~/modules/service-fn.server";
+import {
+  type CarbonError,
+  defineServiceFn,
+  type ServiceContext
+} from "~/modules/service-fn.server";
 import {
   isJobLocked,
   jobStatus,
@@ -17,7 +22,9 @@ import {
 } from "./production.models";
 import {
   getJobReleaseReadiness,
+  notifyScheduleInputsChanged,
   recalculateJobRequirements,
+  releaseJobOperationBatch,
   returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
@@ -181,9 +188,10 @@ export const planDraftJob = defineServiceFn({
 });
 
 /**
- * Release jobs to the floor: the one path the job page and batch release share.
+ * Release jobs that have been checked.
  *
  * @remarks
+ * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
  * Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
  * operations on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
@@ -199,7 +207,7 @@ export const planDraftJob = defineServiceFn({
  * failure past the status flip (purchase orders, release date) the job is
  * released, and the caller must still schedule it and say so.
  */
-export const releaseJobs = defineServiceFn({
+export const releaseCheckedJobs = defineServiceFn({
   input: z.object({
     jobIds: z.array(z.string()),
     purchaseOrdersBySupplierId: z.record(z.string(), z.string())
@@ -320,6 +328,276 @@ export const releaseJobs = defineServiceFn({
     return report(null);
   }
 });
+
+type JobRef = { jobId: string; readableId: string };
+
+/**
+ * Release jobs to the floor.
+ *
+ * @remarks
+ * What the Release dialog, the jobs table's Release Jobs and an API caller
+ * all run. Each Draft / Planned job is checked on its own: nothing to make,
+ * manufacturing blocked, an assembly with no operations, an outside operation
+ * with no supplier (or several and none chosen), a Make to Asset job that
+ * cannot complete to its asset, and a supplier with Draft purchase orders when
+ * no choice was sent. A job with a problem is named in `failed`; the rest are
+ * released, then each location they are at is scheduled once.
+ *
+ * `supplierProcessByOperationId` picks the supplier for an outside operation;
+ * it is saved on the operation first. `purchaseOrdersBySupplierId` maps a
+ * supplier to `new` or one of its Draft purchase orders.
+ *
+ * A job that is not Draft or Planned is listed in `skipped`. A job released
+ * whose purchase orders then failed is in `released` and in `warnings`.
+ *
+ * @mcp
+ */
+export const releaseJobs = defineServiceFn({
+  input: z.object({
+    jobIds: z.array(z.string()).min(1),
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
+    supplierProcessByOperationId: z.record(z.string(), z.string()).default({})
+  }),
+  permission: { update: "production" },
+
+  async run(
+    ctx,
+    { jobIds, purchaseOrdersBySupplierId, supplierProcessByOperationId }
+  ) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const jobs: {
+      id: string;
+      jobId: string;
+      status: (typeof jobStatus)[number] | null;
+      locationId: string | null;
+    }[] = [];
+    // An `in` filter rides in the request URL, so ids are read in groups.
+    for (const batch of chunkArray([...new Set(jobIds)], 100)) {
+      const page = await client
+        .from("job")
+        .select("id, jobId, status, locationId")
+        .in("id", batch)
+        .eq("companyId", companyId);
+      if (page.error) {
+        return ctx.error("internal", "Failed to load the jobs", page.error);
+      }
+      jobs.push(...page.data);
+    }
+
+    const found = new Set(jobs.map((job) => job.id));
+    const failed: (JobRef & { message: string })[] = jobIds
+      .filter((id) => !found.has(id))
+      .map((id) => ({ jobId: id, readableId: id, message: "not found" }));
+    const skipped: (JobRef & { status: string | null })[] = [];
+    const releasable = jobs
+      .filter((job) => {
+        if (job.status === "Draft" || job.status === "Planned") return true;
+        skipped.push({
+          jobId: job.id,
+          readableId: job.jobId,
+          status: job.status
+        });
+        return false;
+      })
+      .sort((a, b) => a.jobId.localeCompare(b.jobId));
+
+    const stamped = await stampSupplierChoices(ctx, {
+      jobIds: releasable.map((job) => job.id),
+      choices: supplierProcessByOperationId
+    });
+    if (stamped) return stamped;
+
+    const readiness = await getJobReleaseReadiness(
+      client,
+      releasable.map((job) => job.id),
+      companyId
+    );
+    if (readiness.error || !readiness.data) {
+      return ctx.error(
+        "internal",
+        "Failed to validate the jobs",
+        readiness.error
+      );
+    }
+    const readinessByJobId = new Map(
+      readiness.data.jobs.map((job) => [job.id, job] as const)
+    );
+    const draftPurchaseOrdersBySupplier = new Map(
+      readiness.data.suppliers.map(
+        (supplier) =>
+          [
+            supplier.supplierId,
+            new Set(supplier.draftPurchaseOrders.map((po) => po.id))
+          ] as const
+      )
+    );
+    // Only a Draft PO of that supplier is a valid target; anything else is
+    // "new". A supplier's first new PO is reused by the jobs after it.
+    let purchaseOrders: Record<string, string> = Object.fromEntries(
+      readiness.data.suppliers.map((supplier) => {
+        const picked = purchaseOrdersBySupplierId?.[supplier.supplierId];
+        return [
+          supplier.supplierId,
+          picked &&
+          draftPurchaseOrdersBySupplier.get(supplier.supplierId)?.has(picked)
+            ? picked
+            : "new"
+        ];
+      })
+    );
+
+    const released: JobRef[] = [];
+    const warnings: (JobRef & { message: string })[] = [];
+    const locationIds = new Set<string>();
+    for (const job of releasable) {
+      const ref = { jobId: job.id, readableId: job.jobId };
+      const ready = readinessByJobId.get(job.id);
+      const problems = ready
+        ? [
+            ...jobReleaseProblems(ready),
+            // With no choice sent there is no dialog to make one in.
+            ...(!purchaseOrdersBySupplierId &&
+            ready.supplierIds.some(
+              (id) => (draftPurchaseOrdersBySupplier.get(id)?.size ?? 0) > 0
+            )
+              ? [
+                  "choose a purchase order for its outside operations on the job"
+                ]
+              : [])
+          ]
+        : ["could not be validated"];
+      if (problems.length > 0) {
+        failed.push({ ...ref, message: problems.join("; ") });
+        continue;
+      }
+
+      const result = await releaseCheckedJobs(ctx, {
+        jobIds: [job.id],
+        purchaseOrdersBySupplierId: purchaseOrders
+      });
+      const failure = result.error ?? result.data.failure;
+      if (result.data) purchaseOrders = result.data.purchaseOrdersBySupplierId;
+      // A job whose id came back released IS Ready, error or not: it must be
+      // scheduled and counted, whatever failed after.
+      if (!result.data?.releasedJobIds.includes(job.id)) {
+        failed.push({ ...ref, message: failure?.message ?? "" });
+        continue;
+      }
+      if (failure) warnings.push({ ...ref, message: failure.message });
+      if (job.locationId) locationIds.add(job.locationId);
+      released.push(ref);
+    }
+
+    // After every status flip is persisted: the scheduler only places jobs
+    // that are already released. One run per location.
+    let scheduled = true;
+    for (const locationId of locationIds) {
+      try {
+        await runLocationSchedule({
+          db: ctx.asSystem.pg,
+          client: ctx.asSystem.supabase,
+          locationId,
+          companyId,
+          userId: ctx.auditUserId
+        });
+      } catch (error) {
+        logger.error("Failed to schedule released jobs", {
+          companyId,
+          locationId,
+          error
+        });
+        scheduled = false;
+      }
+    }
+
+    return { released, warnings, failed, skipped, scheduled };
+  }
+});
+
+/**
+ * Save the release dialog's supplier for outside operations whose process has
+ * several, so `purchaseOrderFromJob` resolves it. Runs before the purchase
+ * orders are created. Both ids come from the caller and drive an RLS-bypassing
+ * write, so the operation must belong to one of `jobIds` and the supplier
+ * process to the operation's own process.
+ */
+async function stampSupplierChoices(
+  ctx: ServiceContext,
+  { jobIds, choices }: { jobIds: string[]; choices: Record<string, string> }
+): Promise<CarbonError | null> {
+  const entries = Object.entries(choices);
+  if (entries.length === 0) return null;
+  const companyId = ctx.company.id;
+  const system = ctx.asSystem.supabase;
+
+  const [operations, supplierProcesses] = await Promise.all([
+    system
+      .from("jobOperation")
+      .select("id, processId")
+      .in("jobId", jobIds)
+      .eq("companyId", companyId)
+      .in(
+        "id",
+        entries.map(([operationId]) => operationId)
+      ),
+    system
+      .from("supplierProcess")
+      .select("id, processId")
+      .eq("companyId", companyId)
+      .in(
+        "id",
+        entries.map(([, supplierProcessId]) => supplierProcessId)
+      )
+  ]);
+  if (operations.error || supplierProcesses.error) {
+    return ctx.error(
+      "internal",
+      "Failed to save the supplier choice",
+      operations.error ?? supplierProcesses.error
+    );
+  }
+
+  const processOfOperation = new Map(
+    operations.data.map((op) => [op.id, op.processId])
+  );
+  const processOfSupplierProcess = new Map(
+    supplierProcesses.data.map((sp) => [sp.id, sp.processId])
+  );
+  for (const [operationId, supplierProcessId] of entries) {
+    const processId = processOfOperation.get(operationId);
+    if (!processId) {
+      return ctx.error(
+        "validation",
+        `Operation ${operationId} does not belong to these jobs`
+      );
+    }
+    if (processOfSupplierProcess.get(supplierProcessId) !== processId) {
+      return ctx.error(
+        "validation",
+        "Selected supplier does not belong to the operation's process"
+      );
+    }
+  }
+
+  const updates = await Promise.all(
+    entries.map(([operationId, supplierProcessId]) =>
+      system
+        .from("jobOperation")
+        .update({
+          operationSupplierProcessId: supplierProcessId,
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", operationId)
+        .eq("companyId", companyId)
+    )
+  );
+  const failed = updates.find((update) => update.error)?.error;
+  return failed
+    ? ctx.error("internal", "Failed to save the supplier choice", failed)
+    : null;
+}
 
 /**
  * Cancel a job.
@@ -501,13 +779,124 @@ export const releaseBatchMemberJobs = defineServiceFn({
       })
     );
 
-    const released = await releaseJobs(ctx, {
+    const released = await releaseCheckedJobs(ctx, {
       jobIds: toRelease,
       purchaseOrdersBySupplierId: purchaseOrders
     });
     if (released.error) return released.error;
     if (released.data.failure) return released.data.failure;
     return { releasedJobIds: released.data.releasedJobIds };
+  }
+});
+
+/**
+ * Release operation batches.
+ *
+ * @remarks
+ * What the batch drawer's Release and the batches table's Release run. Per
+ * Planned batch, in order: release its Draft / Planned member jobs through
+ * the job page's checks (any problem refuses the batch untouched), put the
+ * batch on the floor, then tell the scheduler. A batch that is not Planned is
+ * listed in `skipped`. `purchaseOrdersBySupplierId` is the release dialog's
+ * choice; without one, a batch whose suppliers have Draft purchase orders is
+ * refused.
+ *
+ * @mcp
+ */
+export const releaseBatches = defineServiceFn({
+  input: z.object({
+    batchIds: z.array(z.string()).min(1),
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { batchIds, purchaseOrdersBySupplierId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const ids = [...new Set(batchIds)];
+
+    const batches = await client
+      .from("jobOperationBatch")
+      .select("id, readableId, status, workCenterId")
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (batches.error) {
+      return ctx.error("internal", "Failed to load the batches", batches.error);
+    }
+
+    type BatchRef = { batchId: string; readableId: string };
+    const found = new Set(batches.data.map((batch) => batch.id));
+    const failed: (BatchRef & { message: string })[] = ids
+      .filter((id) => !found.has(id))
+      .map((id) => ({ batchId: id, readableId: id, message: "not found" }));
+    const skipped: (BatchRef & { status: string })[] = [];
+    const planned = batches.data.filter((batch) => {
+      if (batch.status === "Planned") return true;
+      skipped.push({
+        batchId: batch.id,
+        readableId: batch.readableId,
+        status: batch.status
+      });
+      return false;
+    });
+    if (planned.length === 0) return { released: [], failed, skipped };
+
+    const members = await client
+      .from("jobOperation")
+      .select("jobId, jobOperationBatchId")
+      .in(
+        "jobOperationBatchId",
+        planned.map((batch) => batch.id)
+      )
+      .eq("companyId", companyId);
+    if (members.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the batch members",
+        members.error
+      );
+    }
+    const jobIdsByBatch = groupBy(
+      members.data,
+      (op) => op.jobOperationBatchId ?? ""
+    );
+
+    const released: BatchRef[] = [];
+    for (const batch of planned) {
+      const ref = { batchId: batch.id, readableId: batch.readableId };
+      const jobs = await releaseBatchMemberJobs(ctx, {
+        jobIds: (jobIdsByBatch[batch.id] ?? []).map((op) => op.jobId),
+        purchaseOrdersBySupplierId
+      });
+      if (jobs.error) {
+        failed.push({ ...ref, message: jobs.error.message });
+        continue;
+      }
+
+      const result = await releaseJobOperationBatch(client, ctx.asSystem.pg, {
+        batchId: batch.id,
+        companyId,
+        userId: ctx.auditUserId
+      });
+      if (result.error) {
+        failed.push({
+          ...ref,
+          message: getErrorMessage(result.error, "Failed to release")
+        });
+        continue;
+      }
+
+      // After the status flip is persisted: the wave must see the new state.
+      await notifyScheduleInputsChanged(
+        companyId,
+        "work-center",
+        "batch released",
+        batch.workCenterId ?? undefined
+      );
+      released.push(ref);
+    }
+
+    return { released, failed, skipped };
   }
 });
 
@@ -520,6 +909,8 @@ export const releaseBatchMemberJobs = defineServiceFn({
  * update's, made once for the set: every operation exists and is open, its job
  * is unlocked and at the work center's location, and the work center runs its
  * process.
+ *
+ * @mcp
  */
 export const reorderScheduleOperations = defineServiceFn({
   input: scheduleOperationReorderValidator,

@@ -10,6 +10,9 @@ import { actionOutcome, serviceErrorMessage } from "./action-outcome";
 export { actionOutcome, serviceErrorMessage };
 
 type ActionData<T> = NonNullable<ReturnType<typeof useFetcher<T>>["data"]>;
+/** What `onSuccess` / `onError` can receive: never a 422 with field errors,
+ *  which the form shows itself. */
+type ActionResult<T> = Exclude<ActionData<T>, { fieldErrors: unknown }>;
 
 /**
  * A fetcher for a mutation, with the result delivered to a callback instead of
@@ -32,8 +35,8 @@ type ActionData<T> = NonNullable<ReturnType<typeof useFetcher<T>>["data"]>;
 export function useAction<T = any>(
   options: {
     key?: string;
-    onSuccess?: (data: ActionData<T>) => void;
-    onError?: (data: ActionData<T>) => void;
+    onSuccess?: (data: ActionResult<T>) => void;
+    onError?: (data: ActionResult<T>) => void;
     /** Runs whenever a submission finishes, before `onSuccess` / `onError`. */
     onSettled?: (data: ActionData<T> | undefined) => void;
   } = {}
@@ -55,10 +58,10 @@ export function useAction<T = any>(
     const outcome = actionOutcome(data);
     callbacks.current.onSettled?.((data ?? undefined) as ActionData<T>);
     if (outcome === "success") {
-      callbacks.current.onSuccess?.(data as ActionData<T>);
+      callbacks.current.onSuccess?.(data as ActionResult<T>);
     } else if (outcome === "error") {
       if (callbacks.current.onError) {
-        callbacks.current.onError(data as ActionData<T>);
+        callbacks.current.onError(data as ActionResult<T>);
       } else {
         const message = serviceErrorMessage(data);
         if (message) toast.error(message);

@@ -232,6 +232,11 @@ msgstr "{0} en stock ; les {1} restants seront prélevés comme {2}"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} factures ont été facturées dans votre système précédent et ne sont pas créées à nouveau."
 
+#. placeholder {0}: skipped.readableId
+#. placeholder {1}: skipped.status
+msgid "{0} is {1}, not Draft or Planned"
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} ordres de fabrication créés"
@@ -6045,12 +6050,10 @@ msgstr "Impossible de préparer l'image de la région pour l'analyse"
 msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
-#. placeholder {0}: d.failed.length
+#. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
-#. placeholder {0}: result.failed.length
-#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 #. placeholder {1}: failure.message
-#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Impossible de lancer {0} : {1}"
 
@@ -11978,6 +11981,9 @@ msgstr "Tâche"
 
 msgid "Job · {itemReadableId}"
 msgstr "Ordre de fabrication · {itemReadableId}"
+
+msgid "Job cancelled"
+msgstr ""
 
 msgid "Job completions"
 msgstr "Achèvement des ordres de fabrication"
@@ -18210,7 +18216,7 @@ msgstr "Révision publiée"
 msgid "Released revision is locked"
 msgstr "La révision publiée est verrouillée"
 
-#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+#. placeholder {0}: data.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
 msgid "Released with problems: {0}"
 msgstr "Lancé avec des problèmes : {0}"
 
