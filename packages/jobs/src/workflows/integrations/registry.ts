@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+/// <reference path="./pieces.d.ts" />
+import type { ActivepiecesPiece } from "@carbon/ee/integrations/pieces";
 import { allowlistEntry } from "./allowlist";
 import type { OAuth2AuthDeclaration, Piece, PieceAction } from "./types";
 
@@ -30,6 +32,18 @@ export class UnsupportedPieceAuthError extends Error {
   }
 }
 
+// Literal specifiers, not `import(entry.package)`: Vercel only copies into the
+// serverless function the packages it can see imported, and a specifier held in a
+// variable is invisible to it.
+const PIECE_LOADERS: Record<
+  ActivepiecesPiece,
+  () => Promise<Record<string, unknown>>
+> = {
+  gmail: () => import("@activepieces/piece-gmail"),
+  "google-calendar": () => import("@activepieces/piece-google-calendar"),
+  slack: () => import("@activepieces/piece-slack")
+};
+
 const loaded = new Map<string, Piece>();
 
 function looksLikeAPiece(value: unknown): value is Piece {
@@ -48,7 +62,7 @@ export async function loadPiece(name: string): Promise<Piece> {
   const entry = allowlistEntry(name);
   if (entry === undefined) throw new UnknownPieceError(name);
 
-  const module: Record<string, unknown> = await import(entry.package);
+  const module = await PIECE_LOADERS[name as ActivepiecesPiece]();
   // Find the piece by shape, not by export name — a future piece may name it differently.
   const piece = Object.values(module).find(looksLikeAPiece);
   if (piece === undefined) {
