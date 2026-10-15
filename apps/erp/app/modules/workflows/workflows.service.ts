@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import { fetchAllByIds } from "@carbon/database";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -98,11 +99,14 @@ export async function getWorkflowVersionNumbers(
   versionIds: string[],
   companyId: string
 ) {
-  return client
-    .from("workflowVersion")
-    .select("id, versionNumber")
-    .in("id", versionIds)
-    .eq("companyId", companyId);
+  return fetchAllByIds(versionIds, (batch) =>
+    client
+      .from("workflowVersion")
+      .select("id, versionNumber")
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
 }
 
 export async function getWorkflowVersion(
@@ -380,12 +384,14 @@ export async function getWorkflowLastRuns(
   workflowIds: string[],
   companyId: string
 ) {
-  if (workflowIds.length === 0) return { data: [], error: null };
-  return client
-    .from("workflowLastRun")
-    .select("workflowId, runId, status, createdAt, completedAt, durationMs")
-    .in("workflowId", workflowIds)
-    .eq("companyId", companyId);
+  return fetchAllByIds(workflowIds, (batch) =>
+    client
+      .from("workflowLastRun")
+      .select("workflowId, runId, status, createdAt, completedAt, durationMs")
+      .in("workflowId", batch)
+      .eq("companyId", companyId)
+      .order("workflowId", { ascending: true })
+  );
 }
 
 /** Tables in `fkDisplayRegistry` that have no `companyId` column; the resolver

@@ -1094,31 +1094,40 @@ export async function getSupplierReportContacts(
   supplierIds: string[]
 ) {
   return Promise.all([
-    client
-      .from("supplier")
-      .select(
-        `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
-      )
-      .eq("companyId", companyId)
-      .in("id", supplierIds),
-    client
-      .from("supplierPayment")
-      .select(
-        `supplierId,
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplier")
+        .select(
+          `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierPayment")
+        .select(
+          `supplierId,
          invoiceContact:supplierContact!supplierPayment_invoiceSupplierContactId_fkey(contact(fullName, email, workPhone)),
          invoiceLocation:supplierLocation!supplierPayment_invoiceSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds),
-    client
-      .from("supplierShipping")
-      .select(
-        `supplierId,
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierShipping")
+        .select(
+          `supplierId,
          shippingContact:supplierContact!supplierShipping_shippingSupplierContactId_fkey(contact(fullName, email, workPhone)),
          shippingLocation:supplierLocation!supplierShipping_shippingSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds)
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    )
   ]);
 }
 

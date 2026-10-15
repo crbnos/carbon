@@ -85,6 +85,11 @@ export async function withSupplierReportContacts<
   const supplierIds = pluckUnique(suppliers, (s) => s.id);
   const [purchasingRes, paymentRes, shippingRes] =
     await getSupplierReportContacts(client, companyId, supplierIds);
+  // A failed lookup fails the page: a blank contact column would read as
+  // "none".
+  for (const result of [purchasingRes, paymentRes, shippingRes]) {
+    if (result.error) throw result.error;
+  }
 
   const purchasingBySupplierId = indexByMapped(
     purchasingRes.data,

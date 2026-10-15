@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { fetchAllByIds } from "@carbon/database";
 import {
   ASSEMBLY_INSTRUCTIONS_PAGING,
   getAssemblyInstructionsPage,
@@ -34,22 +35,28 @@ export async function withJobListExtras<
   const [batchedOps, trackedEntities] = await Promise.all([
     // The jobs view carries no batch column (batching is per operation),
     // so one lookup finds the live (Active/Completing) batches of each job.
-    jobIds.length > 0
-      ? client
-          .from("jobOperation")
-          .select("jobId, jobOperationBatch(id, readableId, status)")
-          .in("jobId", jobIds)
-          .eq("companyId", companyId)
-          .not("jobOperationBatchId", "is", null)
-      : { data: [] },
-    makeMethodIds.length > 0
-      ? client
-          .from("trackedEntity")
-          .select("readableId, attributes")
-          .in("attributes->>Job Make Method", makeMethodIds)
-          .eq("companyId", companyId)
-      : { data: [] }
+    fetchAllByIds(jobIds, (batch) =>
+      client
+        .from("jobOperation")
+        .select("jobId, jobOperationBatch(id, readableId, status)")
+        .in("jobId", batch)
+        .eq("companyId", companyId)
+        .not("jobOperationBatchId", "is", null)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(makeMethodIds, (batch) =>
+      client
+        .from("trackedEntity")
+        .select("readableId, attributes")
+        .in("attributes->>Job Make Method", batch)
+        .eq("companyId", companyId)
+        .order("id", { ascending: true })
+    )
   ]);
+  // A failed lookup fails the page: a blank Batches or Tracking column would
+  // read as "none".
+  if (batchedOps.error) throw batchedOps.error;
+  if (trackedEntities.error) throw trackedEntities.error;
 
   const batchesByJobId: Record<string, string[]> = {};
   for (const op of batchedOps.data ?? []) {

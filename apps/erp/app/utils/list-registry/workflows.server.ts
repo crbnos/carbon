@@ -36,6 +36,10 @@ export async function withWorkflowListExtras<
       ? getWorkflowLastRuns(client, workflowIds, companyId)
       : null
   ]);
+  // A failed lookup fails the page: a blank Version or Last Run column would
+  // read as "none".
+  if (versions?.error) throw versions.error;
+  if (runs?.error) throw runs.error;
 
   const versionNumbers = new Map(
     (versions?.data ?? []).map((version) => [version.id, version.versionNumber])
