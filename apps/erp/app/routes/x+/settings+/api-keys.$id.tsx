@@ -10,13 +10,31 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
-import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { ApiKeyForm, apiKeyValidator, getApiKey } from "~/modules/settings";
 import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
 import { getParams, path } from "~/utils/path";
+
+// The list holds only the rows scrolled so far, so the drawer reads its own key.
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    update: "users"
+  });
+
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  const apiKey = await getApiKey(client, id, companyId);
+  if (apiKey.error) {
+    throw redirect(
+      `${path.to.apiKeys}?${getParams(request)}`,
+      await flash(request, error(apiKey.error, "Failed to load API key"))
+    );
+  }
+
+  return { apiKey: apiKey.data, companyId };
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -75,26 +93,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditApiKeyRoute() {
   const closeRoute = useCloseRoute();
-  const params = useParams();
-  const routeData = useRouteData<{ apiKeys: ApiKey[]; companyId: string }>(
-    path.to.apiKeys
-  );
-
-  const apiKey = routeData?.apiKeys.find((apiKey) => apiKey.id === params.id);
-  if (!apiKey) throw new Error("API key not found");
+  const { apiKey, companyId } = useLoaderData<typeof loader>();
 
   const initialValues = {
-    id: apiKey?.id ?? undefined,
-    name: apiKey?.name ?? "",
-    expiresAt: (apiKey as any)?.expiresAt ?? undefined
+    id: apiKey.id,
+    name: apiKey.name,
+    expiresAt: apiKey.expiresAt ?? undefined
   };
 
   return (
     <ApiKeyForm
       key={initialValues.id}
       initialValues={initialValues}
-      companyId={routeData?.companyId}
-      existingScopes={(apiKey as any)?.scopes ?? null}
+      companyId={companyId}
+      existingScopes={apiKey.scopes as Record<string, string[]> | null}
       onClose={() => closeRoute()}
     />
   );

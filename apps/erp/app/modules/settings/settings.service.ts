@@ -101,6 +101,22 @@ export async function deleteSubsidiary(
   return client.from("company").delete().eq("id", companyId);
 }
 
+// The key hash never leaves the server.
+export async function getApiKey(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("apiKey")
+    .select(
+      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export const API_KEYS_PAGING: Paging = {
   defaultSorts: [{ column: "createdAt", ascending: true }]
 };
