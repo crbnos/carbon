@@ -64,6 +64,16 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_createSalesReturnOrderCredit: {
     module: "invoicing",
     actions: ["create"]
+  },
+  // A leased asset's classification is an accounting decision: its route
+  // requires accounting_update, not the lease's purchasing permission.
+  purchasing_leaseLine_overrideClassification: {
+    module: "accounting",
+    actions: ["update"]
+  },
+  purchasing_leaseLine_removeClassificationOverride: {
+    module: "accounting",
+    actions: ["update"]
   }
 };
 

@@ -10,6 +10,11 @@ import { readFileSync } from "node:fs";
 import { sql } from "kysely";
 import { expect, it, vi } from "vitest";
 
+// purchasing.server's operations reach modules whose `msg` macros only run
+// compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
