@@ -132,43 +132,63 @@ export async function loadListPage<
   await options.guard?.(context);
   if (options.params) context.params = options.params(context);
 
-  const [page, extra] = await Promise.all([
-    fetchListPage(
-      list,
-      auth.client,
-      auth.companyId,
-      context.params,
-      undefined,
-      { companyGroupId: auth.companyGroupId }
-    ),
-    after ? undefined : options.firstPage?.(context)
-  ]);
+  const loadPage = async () => {
+    const [page, extra] = await Promise.all([
+      fetchListPage(
+        list,
+        auth.client,
+        auth.companyId,
+        context.params,
+        undefined,
+        { companyGroupId: auth.companyGroupId }
+      ),
+      after ? undefined : options.firstPage?.(context)
+    ]);
 
-  if (page.error) {
+    if (page.error) {
+      logger.error("Failed to load a page of the list {listKey}", {
+        listKey: list.key,
+        companyId: auth.companyId,
+        laterPage: Boolean(after),
+        error: page.error
+      });
+      if (after) return listErrorPage(options.dataKey);
+      if (options.onError) {
+        throw redirect(
+          options.onError.redirectTo,
+          await flash(request, error(page.error, options.onError.message))
+        );
+      }
+    }
+
+    const rows =
+      options.mapRows && !page.error
+        ? await options.mapRows(page.rows, context)
+        : page.rows;
+
+    return {
+      ...extra,
+      [options.dataKey]: rows,
+      count: page.count,
+      nextCursor: page.nextCursor
+    } as ListLoaderData<TKey, TOut> & TExtra;
+  };
+
+  if (!after) return loadPage();
+  // A later page is read by the Table's fetcher, and a fetcher whose loader
+  // throws replaces the whole list with the route's error screen. So any
+  // error becomes `listError` ("Couldn't load more rows" with Retry). A thrown
+  // Response (a redirect, a refusal) is the router's to handle.
+  try {
+    return await loadPage();
+  } catch (thrown) {
+    if (thrown instanceof Response) throw thrown;
     logger.error("Failed to load a page of the list {listKey}", {
       listKey: list.key,
       companyId: auth.companyId,
-      laterPage: Boolean(after),
-      error: page.error
+      laterPage: true,
+      error: thrown
     });
-    if (after) return listErrorPage(options.dataKey);
-    if (options.onError) {
-      throw redirect(
-        options.onError.redirectTo,
-        await flash(request, error(page.error, options.onError.message))
-      );
-    }
+    return listErrorPage(options.dataKey);
   }
-
-  const rows =
-    options.mapRows && !page.error
-      ? await options.mapRows(page.rows, context)
-      : page.rows;
-
-  return {
-    ...extra,
-    [options.dataKey]: rows,
-    count: page.count,
-    nextCursor: page.nextCursor
-  } as ListLoaderData<TKey, TOut> & TExtra;
 }

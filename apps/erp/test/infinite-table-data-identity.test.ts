@@ -4,6 +4,7 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -16,6 +17,8 @@ import { describe, expect, it } from "vitest";
 
 const APP = join(__dirname, "..", "app");
 
+const COPY_METHODS = new Set(["map", "filter", "slice", "concat", "toSorted"]);
+
 function tsxFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -24,24 +27,93 @@ function tsxFiles(dir: string): string[] {
   });
 }
 
-/** The identifier passed as `data={…}` on a JSX element that has `infinite=`. */
-function infiniteDataNames(source: string): string[] {
-  const names: string[] = [];
-  for (const match of source.matchAll(/<Table\b[^>]*?>/gs)) {
-    const element = match[0];
-    if (!/\binfinite=\{/.test(element)) continue;
-    const data = /\bdata=\{\s*([A-Za-z_$][\w$]*)\s*\}/.exec(element);
-    if (data) names.push(data[1]);
+function parse(source: string) {
+  return ts.createSourceFile(
+    "file.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  );
+}
+
+function unwrap(node: ts.Expression): ts.Expression {
+  let current = node;
+  while (
+    ts.isParenthesizedExpression(current) ||
+    ts.isAsExpression(current) ||
+    ts.isNonNullExpression(current) ||
+    ts.isSatisfiesExpression(current)
+  ) {
+    current = current.expression;
   }
+  return current;
+}
+
+/** A new array on every evaluation: `x.map(…)` and the like, or `[...x]`. */
+function isArrayCopy(node: ts.Expression): boolean {
+  const expression = unwrap(node);
+  if (ts.isArrayLiteralExpression(expression)) {
+    return expression.elements.some(ts.isSpreadElement);
+  }
+  return (
+    ts.isCallExpression(expression) &&
+    ts.isPropertyAccessExpression(expression.expression) &&
+    COPY_METHODS.has(expression.expression.name.text)
+  );
+}
+
+function visit(node: ts.Node, onNode: (node: ts.Node) => void) {
+  onNode(node);
+  ts.forEachChild(node, (child) => visit(child, onNode));
+}
+
+/** The `data={…}` expression of every `<Table>` element that has `infinite`. */
+function infiniteDataExpressions(file: ts.SourceFile): ts.Expression[] {
+  const expressions: ts.Expression[] = [];
+  visit(file, (node) => {
+    if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) {
+      return;
+    }
+    if (node.tagName.getText(file) !== "Table") return;
+    const attribute = (name: string) =>
+      node.attributes.properties.find(
+        (property): property is ts.JsxAttribute =>
+          ts.isJsxAttribute(property) && property.name.getText(file) === name
+      );
+    const data = attribute("data")?.initializer;
+    if (!attribute("infinite") || !data || !ts.isJsxExpression(data)) return;
+    if (data.expression) expressions.push(data.expression);
+  });
+  return expressions;
+}
+
+/** The names of the variables in the file that hold a render-body copy. */
+function renderCopyNames(file: ts.SourceFile): Set<string> {
+  const names = new Set<string>();
+  visit(file, (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      isArrayCopy(node.initializer)
+    ) {
+      names.add(node.name.text);
+    }
+  });
   return names;
 }
 
-/** True when `name` is built in the render body by copying an array. */
-function isRenderCopy(source: string, name: string): boolean {
-  const copy = new RegExp(
-    String.raw`const\s+${name}\s*=\s*(?:[\w$.?]+\s*\.\s*(?:map|filter|slice|concat|toSorted)\s*\(|\[\s*\.\.\.)`
-  );
-  return copy.test(source);
+/** How each infinite table's `data` is written that copies during render. */
+function renderCopies(source: string): string[] {
+  const file = parse(source);
+  const copies = renderCopyNames(file);
+  return infiniteDataExpressions(file).flatMap((expression) => {
+    const data = unwrap(expression);
+    if (isArrayCopy(data)) return [data.getText(file)];
+    if (ts.isIdentifier(data) && copies.has(data.text)) return [data.text];
+    return [];
+  });
 }
 
 describe("infinite tables pass a stable data array", () => {
@@ -49,34 +121,63 @@ describe("infinite tables pass a stable data array", () => {
     readFileSync(file, "utf8").includes("infinite={")
   );
 
-  it("finds the infinite tables", () => {
-    expect(files.length).toBeGreaterThan(50);
+  it("reads the data of every infinite table", () => {
+    const tables = files.reduce(
+      (total, file) =>
+        total + infiniteDataExpressions(parse(readFileSync(file, "utf8"))).length,
+      0
+    );
+    // Most files with `infinite={` render one infinite `<Table>`.
+    expect(tables).toBeGreaterThan(100);
   });
 
   it("never passes an array copied during render", () => {
-    const offenders = files.flatMap((file) => {
-      const source = readFileSync(file, "utf8");
-      return infiniteDataNames(source)
-        .filter((name) => isRenderCopy(source, name))
-        .map((name) => `${relative(APP, file)}: data={${name}}`);
-    });
+    const offenders = files.flatMap((file) =>
+      renderCopies(readFileSync(file, "utf8")).map(
+        (data) => `${relative(APP, file)}: data={${data}}`
+      )
+    );
     expect(offenders).toEqual([]);
   });
 
-  it("detects a copy built with .map", () => {
+  it("detects a copy built with .map, behind props that contain =>", () => {
     const source = `
       const rows = data.map((row) => ({ ...row }));
-      return <Table data={rows} infinite={{ dataKey: "x", nextCursor }} />;
+      return (
+        <Table<Row>
+          onRowClick={(row) => navigate(row.id)}
+          data={rows}
+          infinite={{ dataKey: "x", nextCursor }}
+        />
+      );
     `;
-    expect(infiniteDataNames(source)).toEqual(["rows"]);
-    expect(isRenderCopy(source, "rows")).toBe(true);
+    expect(renderCopies(source)).toEqual(["rows"]);
   });
 
-  it("accepts a memoized array", () => {
+  it("detects a copy written inline and a spread copy", () => {
+    expect(
+      renderCopies(
+        `<Table data={data.filter((r) => r.ok)} infinite={{ dataKey: "x" }} />`
+      )
+    ).toEqual(["data.filter((r) => r.ok)"]);
+    expect(
+      renderCopies(`
+        const rows = [...data];
+        <Table data={rows} infinite={{ dataKey: "x" }}></Table>
+      `)
+    ).toEqual(["rows"]);
+  });
+
+  it("accepts a memoized array and the loader's own array", () => {
     const source = `
       const rows = useMemo(() => data.map((row) => ({ ...row })), [data]);
-      return <Table data={rows} infinite={{ dataKey: "x", nextCursor }} />;
+      <Table data={rows} infinite={{ dataKey: "x", nextCursor }} />;
+      <Table data={data} infinite={{ dataKey: "y", nextCursor }} />;
     `;
-    expect(isRenderCopy(source, "rows")).toBe(false);
+    expect(renderCopies(source)).toEqual([]);
+  });
+
+  it("ignores a table without infinite", () => {
+    expect(renderCopies(`<Table data={data.map((r) => r)} />`)).toEqual([]);
   });
 });

@@ -258,6 +258,51 @@ describe("setGenericQueryFilters paging", () => {
     expect(query.limit).toHaveBeenCalledWith(101);
   });
 
+  it("breaks ties by the id after the list's order", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, { limit: 100, cursor: null }, sorts);
+    expect(query.order.mock.calls).toEqual([
+      ["createdAt", { ascending: false, foreignTable: undefined }],
+      ["id", { ascending: true }]
+    ]);
+  });
+
+  it("breaks ties by the list's own id column", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(
+      query as never,
+      { sorts: [{ sortBy: "name", sortAsc: true }], limit: 50, offset: 0 },
+      { defaultSorts: sorts, idColumn: "itemId" }
+    );
+    expect(query.order.mock.calls).toEqual([
+      ["name", { ascending: true, foreignTable: undefined }],
+      ["itemId", { ascending: true }]
+    ]);
+  });
+
+  it("adds no second id order when the order already ends with the id", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, { limit: 100, cursor: null }, [
+      { column: "id", ascending: false }
+    ]);
+    expect(query.order.mock.calls).toEqual([
+      ["id", { ascending: false, foreignTable: undefined }]
+    ]);
+  });
+
+  it("orders by the id alone when a cursor list has no sorts", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, { limit: 100, cursor: null });
+    expect(query.order.mock.calls).toEqual([["id", { ascending: true }]]);
+  });
+
+  it("leaves a query nothing orders in its own order (an RPC's ORDER BY)", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, { limit: 1000, offset: 0 });
+    expect(query.order).not.toHaveBeenCalled();
+    expect(query.range).toHaveBeenCalledWith(0, 999);
+  });
+
   it("does not page at all without a limit", () => {
     const query = createQueryStub();
     setGenericQueryFilters(query as never, {}, sorts);

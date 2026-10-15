@@ -8,6 +8,7 @@ import { MAX_EXPORT_ROWS } from "../../../table-jobs/csv";
 import {
   composeExport,
   type ExportDeps,
+  removeExportParts,
   writeExportPart
 } from "../../../table-jobs/export-run";
 import {
@@ -162,11 +163,13 @@ export const tableExportFunction = inngest.createFunction(
       if (!cursor) break;
     }
 
+    const exportKey = tableExportStorageKey(companyId, userId, exportId);
     await step.run("compose", () =>
-      composeExport(deps(), {
-        partKeys,
-        key: tableExportStorageKey(companyId, userId, exportId)
-      })
+      composeExport(deps(), { partKeys, key: exportKey })
+    );
+    // Its own step: a compose retried after the parts were gone would fail.
+    await step.run("remove-parts", () =>
+      removeExportParts(deps(), { partKeys, key: exportKey })
     );
 
     await step.run("notify", () =>

@@ -158,7 +158,8 @@ list and re-read every loaded page. The steps:
    If `trigger` fails, the route deletes the lock.
 5. Step `check-permission`: the job reads the user's claims again
    (`canReadList`, `utils/table-jobs.server.ts`). If the user lost the list's
-   permission, it notifies "Your export did not run" in-app and stops.
+   permission, it notifies "Your export did not run" in-app and stops. A
+   failed claims read throws, so the step retries instead.
 6. Steps `write-part-0`, `write-part-1`, …: each step extends the lock, then
    reads at most 20 pages of 500 rows (`TABLE_JOB_ROWS_PER_STEP`, 10,000,
    `table-jobs/paging.ts`) as the user (`getUserScopedClient`, `fetchListPage`).
@@ -168,11 +169,12 @@ list and re-read every loaded page. The steps:
 7. The parts stop at the end of the list, at 100,000 rows (`MAX_EXPORT_ROWS`),
    or after the page that passes 200 MB (`MAX_EXPORT_BYTES`, `table-jobs/csv.ts`).
 8. Step `compose` uploads one `ReadableStream` that downloads the parts one at
-   a time (`composeExport`, `concatParts`). Only one part is in memory. Then
-   it deletes the parts.
-9. Step `notify` sends `NotificationEvent.TableExport`. The title says "first
-   N rows" when the export stopped at a limit.
-10. Step `release-lock` deletes the lock.
+   a time (`composeExport`, `concatParts`). Only one part is in memory.
+9. Step `remove-parts` deletes the parts (`removeExportParts`). It is its own
+   step so a retried `compose` still finds them.
+10. Step `notify` sends `NotificationEvent.TableExport`. The title says "first
+    N rows" when the export stopped at a limit.
+11. Step `release-lock` deletes the lock.
 
 | File | Key (`table-jobs/storage.ts`, bucket `temp-staging`) |
 |---|---|

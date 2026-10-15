@@ -204,7 +204,9 @@ export type PageResult<T> =
 /**
  * Reads one fetched page from the fetcher's data. It is an error when:
  * - the data is still the object seen before the request (a loader that
- *   threw leaves no new data: the router drops the fetcher),
+ *   threw leaves no new data: the router drops the fetcher and shows the
+ *   route's error screen, so `loadListPage` turns a later page's throw into
+ *   `listError`),
  * - the loader returned `listError` (`InfiniteListError`),
  * - the data has no rows array.
  *

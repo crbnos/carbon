@@ -237,7 +237,10 @@ export function setGenericQueryFilters<
   });
 
   // The id breaks ties, so the order is total and every row has one place.
-  if (keyset[keyset.length - 1]?.column !== idColumn) {
+  // A query nothing orders keeps its own order (an RPC's ORDER BY), unless
+  // it pages by cursor, which needs the id order.
+  const ordered = orders.length > 0 || args.cursor !== undefined;
+  if (ordered && keyset[keyset.length - 1]?.column !== idColumn) {
     query = query.order(idColumn, { ascending: true });
   }
 

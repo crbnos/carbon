@@ -116,17 +116,26 @@ export function concatParts(
   });
 }
 
-/** Streams the parts into the export file, then deletes the parts. A part
- *  that cannot be deleted is logged; the nightly cleanup removes it. */
+/** Streams the parts into the export file. The parts stay, so a retried
+ *  compose writes the same file again; `removeExportParts` deletes them in
+ *  the step after it. */
 export async function composeExport(
   deps: Pick<ExportDeps, "storage">,
   args: { partKeys: string[]; key: string }
-): Promise<{ partsRemoved: boolean }> {
+): Promise<void> {
   await deps.storage.upload(
     args.key,
     concatParts(deps.storage, args.partKeys),
     CSV_CONTENT_TYPE
   );
+}
+
+/** Deletes the parts of a composed export. A part that cannot be deleted is
+ *  logged; the nightly cleanup removes it. */
+export async function removeExportParts(
+  deps: Pick<ExportDeps, "storage">,
+  args: { partKeys: string[]; key: string }
+): Promise<{ partsRemoved: boolean }> {
   try {
     await deps.storage.remove(args.partKeys);
     return { partsRemoved: true };

@@ -6,7 +6,11 @@ import { describe, expect, it } from "vitest";
 import { planIdSlices } from "./bulk";
 import { applyIdSlice, collectIds, storeSelectedIds } from "./bulk-run";
 import { MAX_EXPORT_ROWS } from "./csv";
-import { composeExport, writeExportPart } from "./export-run";
+import {
+  composeExport,
+  removeExportParts,
+  writeExportPart
+} from "./export-run";
 import type {
   TableBulkActionCounts,
   TableJobHandlers,
@@ -177,6 +181,7 @@ describe("the export steps", () => {
       if (!cursor) break;
     }
     await composeExport({ storage }, { partKeys, key: "export.csv" });
+    await removeExportParts({ storage }, { partKeys, key: "export.csv" });
     return { files, text, partKeys, rows };
   }
 
@@ -193,6 +198,18 @@ describe("the export steps", () => {
     expect(lines[total]).toBe(`row_${total - 1},Row ${total - 1}`);
     // The parts are deleted once the export is written.
     expect([...files.keys()]).toEqual(["export.csv"]);
+  });
+
+  it("writes the same file when compose runs again before the parts are removed", async () => {
+    const { storage, text } = memoryStorage();
+    const partKeys = ["parts/0.csv", "parts/1.csv"];
+    await storage.upload(partKeys[0]!, "Part,Name\r\nrow_0,Row 0", "text/csv");
+    await storage.upload(partKeys[1]!, "\r\nrow_1,Row 1", "text/csv");
+
+    await composeExport({ storage }, { partKeys, key: "export.csv" });
+    await composeExport({ storage }, { partKeys, key: "export.csv" });
+
+    expect(text("export.csv")).toBe("Part,Name\r\nrow_0,Row 0\r\nrow_1,Row 1");
   });
 
   it("writes the header alone for an empty list", async () => {

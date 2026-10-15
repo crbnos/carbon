@@ -72,6 +72,9 @@ search the query reads. On an error:
 
 - A later page logs it and returns `{ [dataKey]: [], nextCursor: null, listError }`
   (`InfiniteListError`). The Table shows "Couldn't load more rows" with Retry.
+  A later page that throws (not a `Response`) is caught and answered the same
+  way: a fetcher whose loader throws replaces the list with the route's error
+  screen.
 - Page 1 throws `redirect(onError.redirectTo)` with an error flash, or shows no
   rows without `onError`.
 
@@ -108,9 +111,10 @@ infinite={{ dataKey: "customers", nextCursor, listKey: "customers" }}
 - 🛑 Pass the loader's `data` array to `<Table infinite>`, or a memoized one.
   `useInfiniteRows` reads a new array as a revalidation and re-reads every
   loaded page. A copy built in the render body (`data.map(…)`) re-reads them
-  on every render. `test/infinite-table-data-identity.test.ts` checks this, but
-  its regex reads only the `<Table …>` elements with no `>` inside: most
-  tables slip past it (open, see the 2026-10-14 review).
+  on every render. `test/infinite-table-data-identity.test.ts` checks this: it
+  parses every `.tsx` with the TypeScript compiler and fails on an infinite
+  `<Table>` whose `data` is a `.map`/`.filter`/`.slice`/`.concat`/`.toSorted`
+  call or a `[...x]` spread, inline or in a variable.
 - Column widths: only the rows in view are rendered (`useVirtualRows`, 10
   rows of overscan), so table layout alone would narrow and widen a column as
   rows scroll by. `useGrowOnlyColumnWidths` holds each column at its widest so
