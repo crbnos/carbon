@@ -124,6 +124,9 @@ vi.mock("./sales-rules-gate.server", () => ({
   checkSalesRulesForOperation: vi.fn(async () => null)
 }));
 vi.mock("~/modules/shared/shared.service", () => ({}));
+// The ERP router reaches every module's operations, and through them the same
+// server-only graphs. These tests pin the legacy tools, which never touch it.
+vi.mock("~/modules/router.server", () => ({ router: {} }));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => spies.FAKE_DB

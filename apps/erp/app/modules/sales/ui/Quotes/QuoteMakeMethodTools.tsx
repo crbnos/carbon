@@ -71,11 +71,13 @@ const QuoteMakeMethodTools = () => {
   const { quoteId, lineId, methodId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
-  const fetcher = useAction<{ error: string | null }>({
+  // Get Method answers with a service result, Save Method with an error
+  // string.
+  const fetcher = useAction<{ error: string | { message: string } | null }>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error);
-      }
+      const error = data?.error;
+      const message = typeof error === "string" ? error : error?.message;
+      if (message) toast.error(message);
     }
   });
   const routeData = useRouteData<{

@@ -162,7 +162,7 @@ export async function closeSalesOrder(
     .single();
 }
 
-/** @mcp update */
+/** Not published: `sales.rfq.convert` gates and prices the quote too. */
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -179,7 +179,7 @@ export async function convertSalesRfqToQuote(
   });
 }
 
-/** @mcp update */
+/** Not published: `sales.quote.convert` also gates and files the PDF. */
 export async function convertQuoteToOrder(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -2234,7 +2234,7 @@ export async function insertSalesOrderLines(
   return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
 }
 
-/** @mcp update */
+/** Not published: `sales.quote.finalize` also gates, links and files the PDF. */
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -3587,7 +3587,7 @@ export async function updateQuoteFavorite(
   }
 }
 
-/** @mcp update */
+/** Not published: `sales.rfq.setStatus` also sends the Ready for Quote notification. */
 export async function updateSalesRFQStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -6542,7 +6542,7 @@ export async function upsertSalesOrderShipment(
     .single();
 }
 
-/** @mcp upsert */
+/** Not published: `sales.order.line.create` / `update` also refuse a locked order. */
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:
@@ -7346,7 +7346,7 @@ export async function updateSalesReturnOrder(
     .single();
 }
 
-/** @mcp upsert */
+/** Not published: `sales.returnOrder.line.create` refuses a non-Draft RMA. */
 export async function upsertSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   line:
@@ -7462,7 +7462,7 @@ export async function getSalesReturnOrderIssues(
  * the governing SOURCE rows (shipment/SO/invoice lines) are row-locked so two
  * concurrent confirms against the same source line serialize, and the
  * aggregates are re-read under that lock (replaceInvoiceSettlements pattern).
- * @mcp action
+ * Not published: `sales.returnOrder.confirm` also files the PDF.
  */
 export async function confirmSalesReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -8720,7 +8720,7 @@ function rentalAgreementTerms(
   };
 }
 
-/** @mcp create */
+/** Not published: `sales.rentalAgreement.create` numbers it. */
 export async function insertRentalAgreement(
   client: SupabaseClient<Database>,
   rentalAgreement: Omit<z.infer<typeof rentalAgreementValidator>, "id"> & {
@@ -8756,7 +8756,8 @@ function rentalRefusal(code: string, message: string) {
 }
 
 /** Billing periods and the lease classification are cut from the terms at
- *  activation, so only a Draft agreement's terms can change. * @mcp update
+ *  activation, so only a Draft agreement's terms can change.
+ * Not published: `sales.rentalAgreement.setTerm` brings the rate and checks the whole terms.
  */
 export async function updateRentalAgreement(
   client: SupabaseClient<Database>,
@@ -9875,9 +9876,9 @@ function customerContractTerms(
 
 /**
  * Creates a Draft contract; its end date and term come from the duration.
- * `customerContractId` (the readable CON number) comes from the caller — the
- * route draws it from the sequence.
- * @mcp create
+ * `customerContractId` (the readable CON number) comes from the caller.
+ * Not published: `sales.contract.create` draws the number and fills the
+ * invoicing defaults.
  */
 export async function insertContract(
   client: SupabaseClient<Database>,
@@ -9905,7 +9906,7 @@ export async function insertContract(
 
 /**
  * Updates a Draft contract's terms; an Active contract is changed with Amend.
- * @mcp update
+ * Not published: `sales.contract.updateTerms` / `setTerm` bring the customer defaults and rate.
  */
 export async function updateContract(
   client: SupabaseClient<Database>,
@@ -9949,7 +9950,7 @@ export async function updateContract(
 
 /**
  * Sets a contract's type (New Sales, Expansion, …) in any status — a reporting classification, not a term.
- * @mcp update
+ * Not published: `sales.contract.setType` is the same write.
  */
 export async function updateContractType(
   client: SupabaseClient<Database>,
@@ -9976,7 +9977,7 @@ export async function updateContractType(
 /**
  * Sets a contract's notes in any status: notes are not a term, so they stay
  * editable after Confirm.
- * @mcp update
+ * Not published: `sales.contract.setTerm` writes notes on any contract.
  */
 export async function updateContractNotes(
   client: SupabaseClient<Database>,

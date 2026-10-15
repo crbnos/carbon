@@ -74,6 +74,22 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   purchasing_leaseLine_removeClassificationOverride: {
     module: "accounting",
     actions: ["update"]
+  },
+  // Creates a shipment: its route requires inventory_create.
+  sales_order_line_ship: { module: "inventory", actions: ["create"] },
+  // Opens a quality Issue from an RMA line: quality_create AND sales_update,
+  // which the API cannot name as one module, so its own gate checks both.
+  sales_returnOrder_line_escalate: { module: null, actions: [] },
+  // A rental unit on a shipment or receipt: sales_update AND
+  // inventory_create. Selling it: sales and invoicing create.
+  sales_rentalAgreement_unit_deliver: { module: null, actions: [] },
+  sales_rentalAgreement_unit_return: { module: null, actions: [] },
+  sales_rentalAgreement_unit_sell: { module: null, actions: [] },
+  // The classification override is an accounting decision: its route
+  // requires accounting_update.
+  sales_rentalAgreement_unit_classify: {
+    module: "accounting",
+    actions: ["update"]
   }
 };
 
