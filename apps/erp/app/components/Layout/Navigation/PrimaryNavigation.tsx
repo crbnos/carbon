@@ -61,11 +61,12 @@ const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 // accent hover instead of the active-tinted one module links use.
 const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
 
-// Expanded, Search reads as a field: an inset hairline rather than a border,
-// which would push its icon a pixel off the rail's icon column. Collapsed, it
-// is an icon like the rest.
-const SEARCH_BORDER =
-  "group-data-[state=expanded]:shadow-[inset_0_0_0_1px_hsl(var(--border))]";
+// Expanded, Search reads as a field: a card-coloured fill (white in light
+// themes) and an inset hairline rather than a border, which would push its
+// icon a pixel off the rail's icon column. Collapsed, it is an icon like the
+// rest.
+const SEARCH_FIELD =
+  "group-data-[state=expanded]:bg-card group-data-[state=expanded]:shadow-[inset_0_0_0_1px_hsl(var(--border))]";
 
 // Only modules have a g-then-letter key; pass it for those.
 const renderLink = (
@@ -279,7 +280,7 @@ const NavigationSearchButton = () => {
         setOpenMobile(false);
         openSearchModal();
       }}
-      className={cn(ACTION_HOVER, SEARCH_BORDER)}
+      className={cn(ACTION_HOVER, SEARCH_FIELD)}
       data-hover-tone="accent"
       trailing={
         <ShortcutKey
