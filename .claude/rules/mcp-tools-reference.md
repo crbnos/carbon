@@ -719,6 +719,10 @@ rolled-back transaction and returns the same report. `shared_getCsvImportFields`
 table's columns, defaults and allowed values. Both live in `shared.service.ts`; the
 mapping, enum and Unique ID rules are in `csv-import-system.md`. `shared_importCsv` (by
 storage `filePath`) predates them and has none of the header mapping or enum defaults.
+The server instructions carry a BULK DATA block (`BULK_DATA_INSTRUCTIONS` in
+`packages/ee/src/mcp/instructions.ts`): use the CSV import for more than a few records
+without asking or explaining, and offer to read a CSV or Excel file when the user has
+many records. `describe-format.test.ts` fails when a tool it names leaves the catalog.
 
 ## File uploads (two-step, signed-URL)
 

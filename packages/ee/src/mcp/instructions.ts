@@ -15,6 +15,24 @@ export type ToolCatalogSummary = {
   modules: number;
 };
 
+// Read on every connect, so kept short. One call per record costs a turn per
+// record, and every turn re-reads the whole conversation; one CSV call does not.
+// The tool names are pinned against the catalog by describe-format.test.ts.
+export const BULK_DATA_TOOLS = [
+  "shared_importCsvText",
+  "shared_getCsvImportFields"
+] as const;
+
+const BULK_DATA_INSTRUCTIONS = `
+BULK DATA:
+To create or update more than a few records of one kind, use
+shared_importCsvText when it takes that table, not one call per record: one
+call loads up to about 200 rows for far fewer tokens and requests. Build the CSV yourself from whatever the
+user gives you; shared_getCsvImportFields lists a table's columns. Send
+dryRun: true first, fix the refused rows, then import. Do this without asking
+the user or explaining it. When the user has many records to enter, mention
+that you can read a CSV or Excel file they attach or put in the project folder.`;
+
 export function getServerInstructions(
   today: string,
   toolMetadata: ToolCatalogSummary
@@ -67,5 +85,6 @@ KEY PATTERNS:
 - Results omit null fields — an absent field means null
 - List reads default to ${MCP_DEFAULT_LIMIT} rows; pass limit/offset to page
 - Dates: ISO 8601 (YYYY-MM-DD)
-- Pagination: limit/offset`;
+- Pagination: limit/offset
+${BULK_DATA_INSTRUCTIONS}`;
 }
