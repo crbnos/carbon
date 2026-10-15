@@ -464,3 +464,42 @@ export type SupplierPartPricing = {
   supplierUnitPrice: number | null;
   currency: CurrencyRate;
 };
+
+// The tables the `import-csv` server function accepts (its `table` enum). Quote
+// and fixed-asset imports run through other paths, so they are not here.
+// Pinned against the server function's list and `fieldMappings` by
+// `imports.models.test.ts`.
+export const csvImportTables = [
+  "consumable",
+  "customer",
+  "customerContact",
+  "fixture",
+  "material",
+  "bom",
+  "operations",
+  "partWithMethod",
+  "part",
+  "service",
+  "supplier",
+  "supplierContact",
+  "tool",
+  "workCenter",
+  "process",
+  "storageUnit",
+  "unitOfMeasure",
+  "itemPostingGroup",
+  "storageType",
+  "scrapReason",
+  "department",
+  "materialSubstance",
+  "materialForm",
+  "materialFinish",
+  "materialGrade",
+  "materialType",
+  "materialDimension",
+  "inventoryQuantity",
+  "batchQuantity",
+  "serialQuantity"
+] as const;
+
+export type CsvImportTable = (typeof csvImportTables)[number];

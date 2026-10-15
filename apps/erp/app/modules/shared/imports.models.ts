@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
+  type CsvImportTable,
   incoterms,
   operationTypes,
   procedureStepType,
@@ -3045,3 +3046,65 @@ export const importSchemas: Record<
     ...stockImportCommentSchema
   })
 } as const;
+
+/** The header cells of a CSV's first row: quote-aware, trimmed, BOM removed. */
+export function parseCsvHeader(csv: string): string[] {
+  const text = csv.replace(/^﻿/, "");
+  const cells: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (quoted) {
+      if (char === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        cell += char;
+      }
+    } else if (char === '"') {
+      quoted = true;
+    } else if (char === ",") {
+      cells.push(cell.trim());
+      cell = "";
+    } else if (char === "\n" || char === "\r") {
+      break;
+    } else {
+      cell += char;
+    }
+  }
+  cells.push(cell.trim());
+  return cells.filter((header) => header.length > 0);
+}
+
+/**
+ * Column mappings for a CSV whose headers name the table's fields, by key
+ * (`readableId`) or by label (`Part Number`, any case). Headers that match no
+ * field are returned rather than dropped, so the caller can refuse them
+ * instead of silently losing a column.
+ */
+export function columnMappingsFromHeaders(
+  table: CsvImportTable,
+  headers: string[]
+) {
+  const fields = fieldMappings[table] as Record<string, { label: string }>;
+  const byLabel = new Map(
+    Object.entries(fields).map(([key, field]) => [
+      field.label.toLowerCase(),
+      key
+    ])
+  );
+  const columnMappings: Record<string, string> = {};
+  const unknownHeaders: string[] = [];
+  for (const header of headers) {
+    const key = header in fields ? header : byLabel.get(header.toLowerCase());
+    if (key) {
+      columnMappings[key] = header;
+    } else {
+      unknownHeaders.push(header);
+    }
+  }
+  return { columnMappings, unknownHeaders };
+}

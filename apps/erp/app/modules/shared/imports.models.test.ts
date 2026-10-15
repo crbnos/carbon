@@ -2,8 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { importCsvInput } from "@carbon/server-functions/import-csv";
 import { describe, expect, it } from "vitest";
-import { fieldMappings, importSchemas } from "./imports.models";
+import {
+  columnMappingsFromHeaders,
+  fieldMappings,
+  importSchemas,
+  parseCsvHeader
+} from "./imports.models";
+import { csvImportTables } from "./shared.models";
 
 // The import route builds `columnMappings` from `validator(importSchemas[table]
 // .extend({...})).validate(formData)`, and a zod object strips keys it does not
@@ -45,5 +52,51 @@ describe("item revision survives route validation", () => {
     });
 
     expect(parsed).toHaveProperty("revision", "B");
+  });
+});
+
+describe("CSV text import", () => {
+  // A table added on one side only would either be refused by the importer or
+  // never offered over MCP.
+  it("offers exactly the tables the import-csv server function accepts", () => {
+    expect([...csvImportTables].sort()).toEqual(
+      [...importCsvInput.shape.table.options].sort()
+    );
+  });
+
+  it("describes every table it offers", () => {
+    for (const table of csvImportTables) {
+      expect(fieldMappings, table).toHaveProperty(table);
+    }
+  });
+
+  it("reads a header row, quotes and all", () => {
+    expect(parseCsvHeader("id,readableId,name\nP-1,P-1,Frame")).toEqual([
+      "id",
+      "readableId",
+      "name"
+    ]);
+    expect(
+      parseCsvHeader('﻿"Part Number", "Description, long" ,"Say ""hi"""\r\nx')
+    ).toEqual(["Part Number", "Description, long", 'Say "hi"']);
+    expect(parseCsvHeader("id,,name")).toEqual(["id", "name"]);
+  });
+
+  it("maps headers by field key or label and reports the rest", () => {
+    expect(
+      columnMappingsFromHeaders("part", [
+        "id",
+        "part number",
+        "Description",
+        "Colour"
+      ])
+    ).toEqual({
+      columnMappings: {
+        id: "id",
+        readableId: "part number",
+        name: "Description"
+      },
+      unknownHeaders: ["Colour"]
+    });
   });
 });

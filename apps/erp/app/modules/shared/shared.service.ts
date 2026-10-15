@@ -24,7 +24,15 @@ import type {
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { ruleError } from "~/utils/supabase";
+import {
+  columnMappingsFromHeaders,
+  fieldMappings,
+  importSchemas,
+  parseCsvHeader
+} from "./imports.models";
 import type {
+  CsvImportTable,
   PriceBreak,
   SupplierPartPricing,
   SupplierPriceMap
@@ -127,6 +135,98 @@ export async function getTimezoneNames(client: SupabaseClient<Database>) {
 }
 
 export { getDocumentType } from "@carbon/files";
+
+// How rows of the method files refer to each other (`import-csv/method-import.ts`).
+const METHOD_IMPORT_TABLES: ReadonlySet<CsvImportTable> = new Set([
+  "partWithMethod",
+  "bom",
+  "operations"
+]);
+const METHOD_IMPORT_NOTES = [
+  "One row per record, told apart by `rowType`. PART rows create or update a part (its Part Number in `readableId`).",
+  "BOM rows add a component to the part named in `parentId` (a Part Number); `componentId` is the component's Part Number. A component must already exist or be a PART row in the same file.",
+  "BOP rows add an operation to the part in `parentId`, numbered by `opNo` (unique per part). STEP, TOOL and PARAM rows attach to an operation by its `opNo`.",
+  "`process` and `workCenter` are matched by name and must already exist. In-house operations (anything but Outside Processing) need setup, labor and machine units."
+];
+
+type ImportFieldDefinition = {
+  label: string;
+  required: boolean;
+  type: string;
+  default?: string;
+  enumData?: {
+    description?: string;
+    options?: readonly string[];
+    default?: string;
+    fetcher?: (
+      client: SupabaseClient<Database>,
+      companyId: string
+    ) => Promise<{ data: { id: string; name: string }[] | null }>;
+  };
+};
+
+/**
+ * Get the columns a CSV import accepts for one table: each field's key, label, whether it is required, its type, default and allowed values.
+ *
+ * Allowed values that come from company data (units of measure, locations,
+ * material substances and forms) are read live. Use the keys or labels as CSV
+ * headers for `importCsvText`.
+ * @mcp read
+ */
+export async function getCsvImportFields(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  table: CsvImportTable
+) {
+  const fields = Object.entries(
+    fieldMappings[table] as Record<string, ImportFieldDefinition>
+  );
+
+  // One read per distinct fetcher, not per field.
+  const fetchers = [
+    ...new Set(
+      fields.flatMap(([, field]) =>
+        field.enumData?.fetcher ? [field.enumData.fetcher] : []
+      )
+    )
+  ];
+  const fetched = new Map(
+    await Promise.all(
+      fetchers.map(
+        async (fetcher) => [fetcher, await fetcher(client, companyId)] as const
+      )
+    )
+  );
+
+  return {
+    data: {
+      table,
+      notes: [
+        "Unique ID (`id`) is the key rows are matched on: use a stable value such as the part number, so sending a row again updates it.",
+        "Headers may be field keys or labels. Leave optional cells blank to take the default.",
+        ...(METHOD_IMPORT_TABLES.has(table) ? METHOD_IMPORT_NOTES : [])
+      ],
+      fields: fields.map(([key, field]) => {
+        const enumData = field.enumData;
+        const fetchedValues = enumData?.fetcher
+          ? fetched.get(enumData.fetcher)?.data
+          : undefined;
+        return {
+          key,
+          label: field.label,
+          required: field.required,
+          type: field.type,
+          default: field.default ?? enumData?.default,
+          description: enumData?.description,
+          options: fetchedValues
+            ? fetchedValues.map((option) => option.id)
+            : enumData?.options
+        };
+      })
+    },
+    error: null
+  };
+}
 
 /**
  * The item's CAD model in the same shape the line views expose it, so it drops
@@ -248,6 +348,73 @@ export async function importCsv(
   return serverFns
     .as({ client, db, companyId: args.companyId, userId: args.userId })
     .invoke("import-csv", args as unknown as ServerFnInput<"import-csv">);
+}
+
+/**
+ * Import many records from CSV text in one call: parts with their bill of materials and routing, materials, tools, customers, suppliers, work centers, processes, opening stock and more.
+ *
+ * For callers that cannot upload a file, such as an agent over MCP. Without
+ * `columnMappings`, the CSV's headers must name the table's fields by key or
+ * label (see `getCsvImportFields`), and a header that matches no field is
+ * refused rather than dropped. The mapping is validated against the table's
+ * import schema, as the app's import route does. Returns the importer's
+ * report: rows inserted and updated, and each failed or skipped row with its
+ * reason. Rows are matched on their Unique ID, so sending a row again updates
+ * it rather than duplicating it.
+ * @mcp action
+ */
+export async function importCsvText(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    table: CsvImportTable;
+    csv: string;
+    columnMappings?: Record<string, string>;
+    enumMappings?: Record<string, Record<string, string>>;
+    companyId: string;
+    userId: string;
+  }
+) {
+  let columnMappings = args.columnMappings;
+  if (!columnMappings) {
+    const fromHeaders = columnMappingsFromHeaders(
+      args.table,
+      parseCsvHeader(args.csv)
+    );
+    if (fromHeaders.unknownHeaders.length > 0) {
+      return {
+        data: null,
+        error: ruleError(
+          `Columns not recognized for ${args.table}: ${fromHeaders.unknownHeaders.join(", ")}. Rename them to field keys listed by shared_getCsvImportFields, remove them, or pass columnMappings.`
+        )
+      };
+    }
+    columnMappings = fromHeaders.columnMappings;
+  }
+
+  const mapping = importSchemas[args.table].safeParse(columnMappings);
+  if (!mapping.success) {
+    const fields = [
+      ...new Set(mapping.error.issues.map((issue) => issue.path.join(".")))
+    ];
+    return {
+      data: null,
+      error: ruleError(
+        `Missing or invalid columns for ${args.table}: ${fields.join(", ")}`
+      )
+    };
+  }
+
+  // Send the validated mapping, as the app's import route does: the schema
+  // drops keys it does not declare.
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("import-csv", {
+      table: args.table,
+      csv: args.csv,
+      columnMappings: mapping.data as Record<string, string>,
+      enumMappings: args.enumMappings
+    });
 }
 
 /** @mcp create */

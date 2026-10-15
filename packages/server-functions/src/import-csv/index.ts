@@ -21,45 +21,59 @@ import { importStockQuantities } from "./stock-quantity-import";
 
 const logger = getLogger("server-functions", "import-csv");
 
-export const importCsvInput = z.object({
-  table: z.enum([
-    "consumable",
-    "customer",
-    "customerContact",
-    "fixture",
-    "material",
-    "bom",
-    "operations",
-    "partWithMethod",
-    "part",
-    "service",
-    "supplier",
-    "supplierContact",
-    "tool",
-    "workCenter",
-    "process",
-    "storageUnit",
-    "unitOfMeasure",
-    "itemPostingGroup",
-    "storageType",
-    "scrapReason",
-    "department",
-    "materialSubstance",
-    "materialForm",
-    "materialFinish",
-    "materialGrade",
-    "materialType",
-    "materialDimension",
-    "inventoryQuantity",
-    "batchQuantity",
-    "serialQuantity"
-  ]),
-  filePath: z.string(),
-  columnMappings: z.record(z.string(), z.string()),
-  enumMappings: z
-    .record(z.string(), z.record(z.string(), z.string()))
-    .optional()
-});
+// Inline CSV text is capped so one request stays small; larger loads go in
+// several calls.
+const MAX_CSV_TEXT_LENGTH = 1_000_000;
+
+export const importCsvInput = z
+  .object({
+    table: z.enum([
+      "consumable",
+      "customer",
+      "customerContact",
+      "fixture",
+      "material",
+      "bom",
+      "operations",
+      "partWithMethod",
+      "part",
+      "service",
+      "supplier",
+      "supplierContact",
+      "tool",
+      "workCenter",
+      "process",
+      "storageUnit",
+      "unitOfMeasure",
+      "itemPostingGroup",
+      "storageType",
+      "scrapReason",
+      "department",
+      "materialSubstance",
+      "materialForm",
+      "materialFinish",
+      "materialGrade",
+      "materialType",
+      "materialDimension",
+      "inventoryQuantity",
+      "batchQuantity",
+      "serialQuantity"
+    ]),
+    // The CSV either sits in the company's storage (the app's upload flow) or
+    // arrives as text in the request (callers that cannot upload a file, such as
+    // an agent over MCP). Exactly one of the two.
+    filePath: z.string().optional(),
+    csv: z.string().max(MAX_CSV_TEXT_LENGTH).optional(),
+    columnMappings: z.record(z.string(), z.string()),
+    enumMappings: z
+      .record(z.string(), z.record(z.string(), z.string()))
+      .optional()
+  })
+  .refine(
+    (payload) =>
+      (payload.filePath === undefined) !== (payload.csv === undefined),
+    { message: "Pass exactly one of filePath or csv" }
+  );
 
 const EXTERNAL_ID_KEY = "csv";
 
@@ -1224,17 +1238,21 @@ async function upsertTaxIdentifiers(
   );
 }
 
-/** Imports an uploaded CSV into `table`, per the caller's column and enum mappings. */
+/**
+ * Imports a CSV into `table`, per the caller's column and enum mappings. The CSV
+ * is an uploaded file (`filePath`) or inline text (`csv`).
+ */
 const importCsv = defineServerFn({
   name: "import-csv",
   input: importCsvInput,
   permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
-  async run(ctx, { table, filePath, columnMappings, enumMappings = {} }) {
+  async run(ctx, { table, filePath, csv, columnMappings, enumMappings = {} }) {
     const { db, companyId, userId } = ctx;
 
     logger.info({
       table,
       filePath,
+      csvLength: csv?.length,
       columnMappings,
       enumMappings,
       companyId,
@@ -1243,25 +1261,32 @@ const importCsv = defineServerFn({
 
     const client = await ctx.supabase();
 
-    // The client is service-role and the legacy bucket is shared across
-    // tenants, so the `${companyId}/` key prefix is the tenant boundary on the
-    // caller-supplied path — refuse anything outside it.
-    if (!filePath.startsWith(`${companyId}/`)) {
-      throw new Error("File path is outside the company's storage prefix");
-    }
+    let csvText: string;
+    if (csv !== undefined) {
+      csvText = csv;
+    } else {
+      const path = filePath as string;
 
-    // Try the company bucket first; fall back to the legacy shared bucket
-    // for files uploaded before the per-company bucket migration.
-    let csvFile = await client.storage.from(companyId).download(filePath);
-    if (csvFile.error || !csvFile.data) {
-      csvFile = await client.storage.from("private").download(filePath);
+      // The client is service-role and the legacy bucket is shared across
+      // tenants, so the `${companyId}/` key prefix is the tenant boundary on
+      // the caller-supplied path — refuse anything outside it.
+      if (!path.startsWith(`${companyId}/`)) {
+        throw new Error("File path is outside the company's storage prefix");
+      }
+
+      // Try the company bucket first; fall back to the legacy shared bucket
+      // for files uploaded before the per-company bucket migration.
+      let csvFile = await client.storage.from(companyId).download(path);
+      if (csvFile.error || !csvFile.data) {
+        csvFile = await client.storage.from("private").download(path);
+      }
+      if (!csvFile.data) {
+        throw new Error("Failed to download file");
+      }
+      csvText = new TextDecoder().decode(
+        new Uint8Array(await csvFile.data.arrayBuffer())
+      );
     }
-    if (!csvFile.data) {
-      throw new Error("Failed to download file");
-    }
-    const csvText = new TextDecoder().decode(
-      new Uint8Array(await csvFile.data.arrayBuffer())
-    );
     // A row whose field count disagrees with the header falls back to the
     // permissive parser for real-world CSVs with quoting/comma issues.
     const strict = parseCsv<Record<string, string>>(csvText);

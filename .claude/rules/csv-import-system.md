@@ -265,16 +265,33 @@ Action only (no loader). Steps:
 it lazily imports `@carbon/server-functions/import-csv` and calls
 `serverFns.as({ client, db, companyId, userId }).invoke("import-csv", args)`.
 
+## CSV text import (MCP and other callers that cannot upload)
+
+`importCsvText` (`shared.service.ts`, MCP tool `shared_importCsvText`) sends the CSV as
+text instead of a storage path, for callers with no upload step, such as an agent over
+MCP. Without `columnMappings` it builds them from the headers with
+`columnMappingsFromHeaders` (field key or label, any case) and refuses a header that
+matches no field rather than dropping the column. It validates the mapping with
+`importSchemas[table]` and sends the validated (stripped) mapping, as the route does.
+It invokes the server function with `serverFns.as` on the caller's own client, so the
+function's permission check runs against the caller's credential (user or API key).
+Tables are limited to `csvImportTables` (`shared.models.ts`), which
+`imports.models.test.ts` pins to the server function's `table` enum.
+`getCsvImportFields` (`shared_getCsvImportFields`) lists a table's columns from
+`fieldMappings`, reading fetcher-backed enum values live (one read per distinct
+fetcher), plus notes on how method-file rows link.
+
 ## Server function (`packages/server-functions/src/import-csv/index.ts`)
 
-Built with `defineServerFn`; input validated by `importCsvInput` (table enum, `filePath`,
-`columnMappings`, optional `enumMappings`).
+Built with `defineServerFn`; input validated by `importCsvInput` (table enum, exactly one
+of `filePath` or `csv`, `columnMappings`, optional `enumMappings`).
 
 - Checks the caller via `permissions: { by: "table", rules }`: `update` on
   `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
   models, so a new import type adds its table to both sides.
-- Refuses a `filePath` outside the `${companyId}/` prefix, then downloads it from the
-  company bucket, falling back to the legacy `private` bucket.
+- Reads the CSV from `csv` (text in the request, capped at `MAX_CSV_TEXT_LENGTH`, 1 MB)
+  or downloads `filePath` from the company bucket, falling back to the legacy `private`
+  bucket; a path outside `${companyId}/` is refused.
 - Parses with `parseCsv` (`@carbon/files/csv`, PapaParse), falling back to a custom
   `parsePermissiveCsv()` when a row's field count disagrees with the header.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);
