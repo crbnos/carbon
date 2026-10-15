@@ -7346,7 +7346,7 @@ export async function updateSalesReturnOrder(
     .single();
 }
 
-/** @mcp upsert */
+/** Not published: `sales.returnOrder.line.create` refuses a non-Draft RMA. */
 export async function upsertSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   line:
@@ -7462,7 +7462,7 @@ export async function getSalesReturnOrderIssues(
  * the governing SOURCE rows (shipment/SO/invoice lines) are row-locked so two
  * concurrent confirms against the same source line serialize, and the
  * aggregates are re-read under that lock (replaceInvoiceSettlements pattern).
- * @mcp action
+ * Not published: `sales.returnOrder.confirm` also files the PDF.
  */
 export async function confirmSalesReturnOrder(
   db: Kysely<KyselyDatabase>,

@@ -66,7 +66,10 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     actions: ["create"]
   },
   // Creates a shipment: its route requires inventory_create.
-  sales_order_line_ship: { module: "inventory", actions: ["create"] }
+  sales_order_line_ship: { module: "inventory", actions: ["create"] },
+  // Opens a quality Issue from an RMA line: quality_create AND sales_update,
+  // which the API cannot name as one module, so its own gate checks both.
+  sales_returnOrder_line_escalate: { module: null, actions: [] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

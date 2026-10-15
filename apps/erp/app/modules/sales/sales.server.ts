@@ -8,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -62,6 +63,7 @@ import {
 } from "~/modules/items";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { runMRP } from "~/modules/production/production.service";
+import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
 import {
   type CarbonError,
   createServiceContext,
@@ -75,21 +77,30 @@ import {
   requireCompanyRecord,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getUser } from "~/modules/users/users.server";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "~/modules/shared/timezone.server";
+import { getUser, getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import { renderQuotePdf, renderSalesOrderPdf } from "./sales.documents.server";
+import {
+  renderQuotePdf,
+  renderSalesOrderPdf,
+  renderSalesReturnOrderPdf
+} from "./sales.documents.server";
 import {
   contractEndDate,
   type createContractFromSalesOrderValidator,
   isQuoteLocked,
   isSalesOrderLocked,
+  isSalesReturnOrderLocked,
   isSalesRfqLocked,
   quoteLineValidator,
   salesOrderLineValidator,
+  salesReturnOrderLineValidator,
   salesRFQStatusType,
   salesRfqDragValidator,
   salesRfqValidator,
@@ -100,6 +111,7 @@ import {
   buildPullFromInventoryPriceRows,
   buildPurchaseToOrderPriceRows,
   calculatePricesForQuantities,
+  confirmSalesReturnOrder,
   convertQuoteToOrder,
   convertSalesRfqToQuote,
   finalizeQuote,
@@ -109,16 +121,21 @@ import {
   getSalesOrder,
   getSalesOrderLine,
   getSalesOrderLines,
+  getSalesReturnOrder,
+  getSalesReturnOrderLine,
+  getSalesReturnOrderLineTrackedEntities,
   getSalesRFQ,
   insertSalesRFQ,
   type QuoteLinePriceRow,
   recalculateQuoteLinePrices,
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices,
+  setSalesReturnOrderLineDisposition,
   updateSalesRFQStatus,
   upsertQuoteLine,
   upsertQuoteLineMethod,
   upsertSalesOrderLine,
+  upsertSalesReturnOrderLine,
   upsertSalesRFQLine
 } from "./sales.service";
 import { reconcileQuantityBreaks } from "./sales.utils";
@@ -4078,5 +4095,733 @@ export const shipSalesOrderLine = defineServiceFn({
       return ctx.error("internal", "Failed to create shipment", shipment.error);
     }
     return { shipmentId: shipment.data.id };
+  }
+});
+
+// --- Sales return orders (RMAs) ---------------------------------------------------
+
+const salesReturnOrderFields = [
+  "customerId",
+  "currencyCode",
+  "salesOrderId",
+  "customerContactId",
+  "customerLocationId",
+  "customerReference",
+  "expirationDate",
+  "locationId",
+  "orderDate"
+] as const;
+
+/**
+ * Set one field on one or more sales return orders.
+ *
+ * @remarks
+ * Refused when any of them is completed or cancelled. A new customer on a
+ * single return order brings its currency and today's exchange rate; so does
+ * a new currency (a missing rate refuses rather than writing a stale one). An
+ * empty value clears the field.
+ */
+export const updateSalesReturnOrderField = defineServiceFn({
+  input: fieldUpdate(salesReturnOrderFields),
+  permission: { update: "sales" },
+
+  async run(ctx, { ids, field, value }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const orders = await client
+      .from("salesReturnOrder")
+      .select("status")
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (orders.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the return orders",
+        orders.error
+      );
+    }
+    if (orders.data.some((order) => isSalesReturnOrderLocked(order.status))) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a completed or cancelled return order."
+      );
+    }
+
+    const withRate = async (currencyCode: string) => {
+      const rate = await getExchangeRate(client, companyId, currencyCode);
+      return rate.error
+        ? ctx.error("internal", "Failed to get the exchange rate", rate.error)
+        : { currencyCode, exchangeRate: rate.data };
+    };
+
+    let changes: Record<string, unknown> = { [field]: value || null };
+    if (field === "customerId") {
+      changes = { customerId: value ?? undefined };
+      if (value && ids.length === 1) {
+        const customer = await client
+          .from("customer")
+          .select("currencyCode")
+          .eq("id", value)
+          .single();
+        if (customer.data?.currencyCode) {
+          const currency = await withRate(customer.data.currencyCode);
+          if (currency instanceof Error) return currency;
+          changes = { ...changes, ...currency };
+        }
+      }
+    } else if (field === "currencyCode" && value) {
+      const currency = await withRate(value);
+      if (currency instanceof Error) return currency;
+      changes = currency;
+    }
+
+    const update = await client
+      .from("salesReturnOrder")
+      .update(
+        unchecked({
+          ...changes,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the return orders",
+        update.error
+      );
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Confirm a sales return order (RMA).
+ *
+ * @remarks
+ * Authorizes the customer to return the goods on its lines: each line's
+ * quantity is checked, under row locks, against what its source document can
+ * still take back, and a line over that refuses the whole confirm. Then the
+ * RMA's PDF is filed on it; when that fails the RMA is still confirmed and
+ * `warning` says so. `locale` formats the PDF.
+ *
+ * @mcp
+ */
+export const confirmReturnOrder = defineServiceFn({
+  input: z.object({
+    salesReturnOrderId: z.string(),
+    locale: z.string().default("en-US")
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { salesReturnOrderId: id, locale }) {
+    const companyId = ctx.company.id;
+    const order = await getSalesReturnOrder(ctx.asSystem.supabase, id);
+    if (order.error || !order.data) {
+      return ctx.error(
+        "internal",
+        "Failed to load sales return order",
+        order.error
+      );
+    }
+    if (order.data.companyId !== companyId) {
+      return ctx.error(
+        "forbidden",
+        "You are not authorized to confirm this return order"
+      );
+    }
+
+    try {
+      await confirmSalesReturnOrder(
+        ctx.asSystem.pg,
+        { id, companyId },
+        ctx.auditUserId
+      );
+    } catch (err) {
+      // Its refusals (a quantity over the source's cap) are thrown.
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Failed to confirm return order",
+        err
+      );
+    }
+
+    // The RMA is confirmed: a failed PDF does not undo it.
+    const pdf = await attachDocumentPdf(ctx, {
+      pdf: await renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
+        id,
+        companyId,
+        companyGroupId: ctx.company.groupId,
+        locale
+      }),
+      identifier: order.data.salesReturnOrderId ?? "",
+      folder: `sales-return-order/${id}`,
+      sourceDocument: "Sales Return Order",
+      sourceDocumentId: id
+    }).catch((err: unknown) =>
+      ctx.error("internal", "Failed to generate PDF", err)
+    );
+    if (pdf instanceof Error) {
+      logger.error("Failed to file the confirmed RMA's PDF", {
+        companyId,
+        salesReturnOrderId: id,
+        error: pdf
+      });
+      return {
+        salesReturnOrderId: id,
+        warning: "Return order confirmed, but the PDF could not be generated"
+      };
+    }
+    return { salesReturnOrderId: id, warning: null };
+  }
+});
+
+/**
+ * Add a line to a sales return order (RMA).
+ *
+ * @remarks
+ * Only while the RMA is Draft: its quantities are checked against their
+ * sources at Confirm, so a later line would skip that check. A line from a
+ * sales order links the RMA to that order when it has none yet (the first
+ * line's order wins; a link someone set is never replaced).
+ *
+ * @mcp
+ */
+export const createReturnOrderLine = defineServiceFn({
+  input: salesReturnOrderLineValidator.extend({
+    customFields: customFieldValues.optional()
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, { id: _id, customFields, ...line }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const orderId = line.salesReturnOrderId;
+
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: orderId
+    });
+    if (refused) return refused;
+    const order = await getSalesReturnOrder(client, orderId);
+    if (isSalesReturnOrderLocked(order.data?.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot add lines to a completed or cancelled return order."
+      );
+    }
+    if (order.data?.status !== "Draft") {
+      return ctx.error(
+        "rule",
+        "Lines can only be added while the return order is Draft"
+      );
+    }
+
+    const created = await upsertSalesReturnOrderLine(client, {
+      ...line,
+      companyId,
+      createdBy: ctx.auditUserId,
+      customFields
+    });
+    if (created.error || !created.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create return order line",
+        created.error
+      );
+    }
+
+    // Best-effort: a failure leaves the manual link available.
+    if (!order.data?.salesOrderId && line.salesOrderLineId) {
+      const salesOrderLine = await client
+        .from("salesOrderLine")
+        .select("salesOrderId")
+        .eq("id", line.salesOrderLineId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (salesOrderLine.data?.salesOrderId) {
+        await client
+          .from("salesReturnOrder")
+          .update({
+            salesOrderId: salesOrderLine.data.salesOrderId,
+            updatedBy: ctx.auditUserId
+          })
+          .eq("id", orderId)
+          .eq("companyId", companyId);
+      }
+    }
+    return { salesReturnOrderLineId: created.data.id };
+  }
+});
+
+/**
+ * Escalate a sales return order line to a quality Issue.
+ *
+ * @remarks
+ * Scrap and Rework are quality decisions, so the line gets an Issue for its
+ * received quantity, linked to the line and to its returned entities still
+ * On Hold (expected serials or batches, and those received blind against the
+ * line), and the line records the disposition. Needs a received quantity, an
+ * Issue Type and a location (the RMA's, else the user's). When the line has
+ * an open Issue already, only the disposition changes and that Issue is
+ * returned (`created` false), so changing the choice never opens a second
+ * Issue for the same goods. A failure after the Issue is created deletes it
+ * again; a failed disposition write keeps it and `warning` says so.
+ *
+ * @mcp
+ */
+export const escalateReturnOrderLine = defineServiceFn({
+  input: z.object({
+    salesReturnOrderId: z.string(),
+    lineId: z.string(),
+    disposition: z.enum(["Scrap", "Rework"])
+  }),
+  permission: { create: "quality", update: "sales" },
+
+  async run(ctx, { salesReturnOrderId: id, lineId, disposition }) {
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const [order, line] = await Promise.all([
+      getSalesReturnOrder(client, id),
+      getSalesReturnOrderLine(client, lineId)
+    ]);
+    if (order.error || !order.data) {
+      return ctx.error("internal", "Failed to load return order", order.error);
+    }
+    if (line.error || !line.data) {
+      return ctx.error(
+        "internal",
+        "Failed to load return order line",
+        line.error
+      );
+    }
+    if (
+      line.data.salesReturnOrderId !== id ||
+      order.data.companyId !== companyId
+    ) {
+      return ctx.error(
+        "notFound",
+        "This line does not belong to this return order"
+      );
+    }
+    const quantityReceived = Number(line.data.quantityReceived ?? 0);
+    if (quantityReceived <= 0) {
+      return ctx.error(
+        "rule",
+        "Cannot set a disposition before any quantity is received"
+      );
+    }
+
+    const entityIds = await returnedOnHoldEntityIds(ctx, { id, lineId });
+
+    const [userDefaults, issueTypes, item, returnReason] = await Promise.all([
+      getUserDefaults(client, userId, companyId),
+      getIssueTypesList(client, companyId),
+      client
+        .from("item")
+        .select("readableIdWithRevision")
+        .eq("id", line.data.itemId)
+        .eq("companyId", companyId)
+        .single(),
+      line.data.returnReasonId
+        ? client
+            .from("returnReason")
+            .select("name")
+            .eq("id", line.data.returnReasonId)
+            .single()
+        : Promise.resolve({ data: null, error: null })
+    ]);
+    const issueType = issueTypes.data?.[0];
+    const locationId =
+      order.data.locationId ?? userDefaults.data?.locationId ?? null;
+    if (!issueType || !locationId) {
+      return ctx.error(
+        "rule",
+        "Configure at least one Issue Type and a location to escalate this line to an Issue"
+      );
+    }
+
+    // The disposition select posts on every change: without this, Scrap ->
+    // Rework -> Scrap left several open Issues each carrying the full
+    // received quantity, written off once per Issue.
+    const existingLink = await serviceRole
+      .from("nonConformanceSalesReturnOrderLine")
+      .select("nonConformanceId, nonConformance(id, nonConformanceId, status)")
+      .eq("salesReturnOrderLineId", lineId)
+      .eq("companyId", companyId);
+    if (existingLink.error) {
+      return ctx.error(
+        "internal",
+        "Failed to check for an existing Issue",
+        existingLink.error
+      );
+    }
+    const openLink = existingLink.data.find((row) => {
+      const nc = row.nonConformance as { status?: string | null } | null;
+      return nc && nc.status !== "Closed";
+    });
+    if (openLink) {
+      await serviceRole
+        .from("salesReturnOrderLine")
+        .update({
+          disposition,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", lineId)
+        .eq("companyId", companyId);
+      return {
+        issueId: openLink.nonConformanceId,
+        created: false,
+        warning: null
+      };
+    }
+
+    const rmaReadableId = order.data.salesReturnOrderId ?? "";
+    const itemReadableId =
+      item.data?.readableIdWithRevision ?? line.data.itemId;
+    const created = await insertIssue(serviceRole, {
+      name: [
+        "Returned goods",
+        rmaReadableId,
+        itemReadableId && `— ${itemReadableId}`
+      ]
+        .filter(Boolean)
+        .join(" "),
+      description: [
+        `Auto-created from sales return order ${rmaReadableId} line ${line.data.lineNumber}.`,
+        `Requested disposition: ${disposition}.`,
+        returnReason.data?.name
+          ? `Return reason: ${returnReason.data.name}.`
+          : null
+      ]
+        .filter(Boolean)
+        .join(" "),
+      priority: "Medium",
+      source: "Internal",
+      locationId,
+      nonConformanceTypeId: issueType.id,
+      openDate: datetime
+        .today(await getLocationTimeZone(client, locationId, companyId))
+        .toString(),
+      quantity: quantityReceived,
+      items: [line.data.itemId],
+      companyId,
+      createdBy: userId
+    });
+    if (created.error || !created.data) {
+      return ctx.error("internal", "Failed to create Issue", created.error);
+    }
+    const issueId = created.data.id;
+
+    // From here a failure deletes the Issue again: an orphan with no RMA
+    // link and a line still Pending is worse than a clean retry.
+    const linked = await linkIssueToReturnLine(ctx, {
+      issueId,
+      salesReturnOrderId: id,
+      rmaReadableId,
+      lineId,
+      itemId: line.data.itemId,
+      entityIds,
+      quantityReceived,
+      disposition
+    });
+    if (linked) {
+      await deleteIssue(serviceRole, issueId);
+      return linked;
+    }
+
+    const tasks = await serverFns
+      .system({ db: ctx.asSystem.pg, companyId, userId })
+      .invoke("create", { type: "nonConformanceTasks", id: issueId });
+    if (tasks.error) {
+      await deleteIssue(serviceRole, issueId);
+      return ctx.error("internal", "Failed to create Issue tasks", tasks.error);
+    }
+
+    const recorded = await setSalesReturnOrderLineDisposition(
+      client,
+      ctx.asSystem.pg,
+      { lineId, companyId, disposition, userId }
+    );
+    return {
+      issueId,
+      created: true,
+      warning: recorded.error
+        ? "Issue created, but failed to update the line's disposition"
+        : null
+    };
+  }
+});
+
+/**
+ * A return line's goods still On Hold: its expected serials and batches,
+ * plus entities received blind against the line's receipt lines.
+ */
+async function returnedOnHoldEntityIds(
+  ctx: ServiceContext,
+  { id, lineId }: { id: string; lineId: string }
+): Promise<string[]> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const linked = await getSalesReturnOrderLineTrackedEntities(client, [lineId]);
+  const ids = (linked.data ?? [])
+    .filter((row) => row.trackedEntity?.status === "On Hold")
+    .map((row) => row.trackedEntityId);
+
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("sourceDocumentId", id)
+    .eq("companyId", companyId);
+  const receiptIds = (receipts.data ?? []).map((receipt) => receipt.id);
+  if (receiptIds.length > 0) {
+    const receiptLines = await client
+      .from("receiptLine")
+      .select("id")
+      .in("receiptId", receiptIds)
+      .eq("lineId", lineId)
+      .eq("companyId", companyId);
+    const receiptLineIds = (receiptLines.data ?? []).map((row) => row.id);
+    if (receiptLineIds.length > 0) {
+      const blind = await client
+        .from("trackedEntity")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("status", "On Hold")
+        .in("attributes ->> Receipt Line", receiptLineIds);
+      ids.push(...(blind.data ?? []).map((entity) => entity.id));
+    }
+  }
+  return [...new Set(ids)];
+}
+
+/**
+ * Link a new Issue to the return line and its returned entities, and set
+ * its item to the line's received quantity and disposition with the
+ * entities split out (under the lock every disposition writer takes).
+ */
+async function linkIssueToReturnLine(
+  ctx: ServiceContext,
+  args: {
+    issueId: string;
+    salesReturnOrderId: string;
+    rmaReadableId: string;
+    lineId: string;
+    itemId: string;
+    entityIds: string[];
+    quantityReceived: number;
+    disposition: "Scrap" | "Rework";
+  }
+): Promise<CarbonError | null> {
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { issueId } = args;
+
+  const lineLink = await serviceRole
+    .from("nonConformanceSalesReturnOrderLine")
+    .insert({
+      nonConformanceId: issueId,
+      salesReturnOrderLineId: args.lineId,
+      salesReturnOrderId: args.salesReturnOrderId,
+      salesReturnOrderReadableId: args.rmaReadableId,
+      companyId,
+      createdBy: userId
+    });
+  if (lineLink.error) {
+    return ctx.error(
+      "internal",
+      "Failed to link the Issue to the RMA",
+      lineLink.error
+    );
+  }
+
+  let entityRows: { id: string; quantity: number }[] = [];
+  if (args.entityIds.length > 0) {
+    const entityLinks = await serviceRole
+      .from("nonConformanceTrackedEntity")
+      .insert(
+        args.entityIds.map((trackedEntityId) => ({
+          nonConformanceId: issueId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      );
+    if (entityLinks.error) {
+      return ctx.error(
+        "internal",
+        "Failed to link the returned entities to the Issue",
+        entityLinks.error
+      );
+    }
+    const quantities = await serviceRole
+      .from("trackedEntity")
+      .select("id, quantity")
+      .in("id", args.entityIds)
+      .eq("companyId", companyId);
+    if (quantities.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the returned entities for the Issue",
+        quantities.error
+      );
+    }
+    entityRows = quantities.data.map((entity) => ({
+      id: entity.id,
+      quantity: Number(entity.quantity ?? 1)
+    }));
+  }
+
+  try {
+    // The lock helper takes a Kysely transaction itself.
+    await ctx.asSystem.pg.transaction().execute(async (trx) => {
+      await lockIssueDispositions(trx, {
+        nonConformanceId: issueId,
+        companyId
+      });
+      const itemRow = await trx
+        .updateTable("nonConformanceItem")
+        .set({
+          quantity: args.quantityReceived,
+          disposition: args.disposition,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("nonConformanceId", "=", issueId)
+        .where("itemId", "=", args.itemId)
+        .where("companyId", "=", companyId)
+        .returning(["id"])
+        .executeTakeFirst();
+      if (itemRow && entityRows.length > 0) {
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values(
+            entityRows.map((entity) => ({
+              nonConformanceItemId: itemRow.id,
+              nonConformanceId: issueId,
+              trackedEntityId: entity.id,
+              quantity: entity.quantity,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+    });
+    return null;
+  } catch (err) {
+    return ctx.error("internal", "Failed to set the Issue's item", err);
+  }
+}
+
+/**
+ * Change a sales return order (RMA) line.
+ *
+ * @remarks
+ * Refused when the RMA is completed or cancelled, and for a line of another
+ * RMA. Once the RMA is confirmed, its quantity, item, unit price, restocking
+ * fee, unit of measure and source links are locked: they were checked
+ * against their sources at Confirm. A field that is sent unchanged, or not
+ * sent, is no change.
+ *
+ * @mcp
+ */
+export const updateReturnOrderLine = defineServiceFn({
+  input: salesReturnOrderLineValidator.extend({
+    id: z.string(),
+    customFields: customFieldValues.optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id: lineId, customFields, ...line }) {
+    const client = ctx.asCaller.supabase;
+    const orderId = line.salesReturnOrderId;
+
+    const order = await getSalesReturnOrder(client, orderId);
+    if (isSalesReturnOrderLocked(order.data?.status)) {
+      return ctx.error(
+        "rule",
+        "Cannot modify a completed or cancelled return order."
+      );
+    }
+
+    const existing = await client
+      .from("salesReturnOrderLine")
+      .select(
+        "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId"
+      )
+      .eq("id", lineId)
+      .eq("companyId", ctx.company.id)
+      .single();
+    if (existing.error || existing.data.salesReturnOrderId !== orderId) {
+      return ctx.error(
+        "notFound",
+        "This line does not belong to this return order"
+      );
+    }
+
+    if (order.data?.status !== "Draft") {
+      const current = existing.data;
+      const locked: [string, unknown, unknown][] = [
+        ["Quantity", Number(line.quantity), Number(current.quantity)],
+        ["Item", line.itemId, current.itemId],
+        ["Unit price", Number(line.unitPrice), Number(current.unitPrice)],
+        [
+          "Restocking fee",
+          line.restockFeePercent === undefined
+            ? undefined
+            : Number(line.restockFeePercent),
+          Number(current.restockFeePercent)
+        ],
+        [
+          "Unit of measure",
+          line.unitOfMeasureCode,
+          current.unitOfMeasureCode ?? undefined
+        ],
+        [
+          "Sales order line link",
+          line.salesOrderLineId,
+          current.salesOrderLineId ?? undefined
+        ],
+        [
+          "Shipment line link",
+          line.shipmentLineId,
+          current.shipmentLineId ?? undefined
+        ],
+        [
+          "Invoice line link",
+          line.salesInvoiceLineId,
+          current.salesInvoiceLineId ?? undefined
+        ]
+      ];
+      const changed = locked.find(
+        ([, next, now]) => next !== undefined && next !== now
+      );
+      if (changed) {
+        return ctx.error("rule", `${changed[0]} is locked after confirmation`);
+      }
+    }
+
+    const updated = await upsertSalesReturnOrderLine(client, {
+      ...line,
+      id: lineId,
+      updatedBy: ctx.auditUserId,
+      customFields
+    });
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update return order line",
+        updated.error
+      );
+    }
+    return { salesReturnOrderLineId: lineId };
   }
 });

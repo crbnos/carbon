@@ -7,12 +7,15 @@ import {
   attachQuoteFile,
   attachSalesRfqFile,
   configureQuoteLine,
+  confirmReturnOrder,
   confirmSalesOrder,
   convertQuote,
   convertSalesRfq,
   createQuoteLine,
+  createReturnOrderLine,
   createSalesOrderLine,
   createSalesRfq,
+  escalateReturnOrderLine,
   finalizeAndSendQuote,
   mapSalesRfqLines,
   rejectDigitalQuote,
@@ -20,8 +23,10 @@ import {
   shipSalesOrderLine,
   updateQuoteField,
   updateQuoteLine,
+  updateReturnOrderLine,
   updateSalesOrderField,
   updateSalesOrderLine,
+  updateSalesReturnOrderField,
   updateSalesRfqField
 } from "./sales.server";
 
@@ -54,6 +59,15 @@ export const sales = {
       create: createSalesOrderLine,
       update: updateSalesOrderLine,
       ship: shipSalesOrderLine
+    }
+  },
+  returnOrder: {
+    updateField: updateSalesReturnOrderField,
+    confirm: confirmReturnOrder,
+    line: {
+      create: createReturnOrderLine,
+      update: updateReturnOrderLine,
+      escalate: escalateReturnOrderLine
     }
   }
 };
