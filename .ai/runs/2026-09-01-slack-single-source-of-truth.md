@@ -7,11 +7,11 @@ Branch: `feat/active-pieces-integration` · Executed 2026-09-01 · Committed in 
 
 | | before | after |
 |---|---|---|
-| `companyIntegration.slack.metadata` | team_id `T0BFDGXDQMQ`, team_name `anshul`, channel `#new-channel`, channel_id `C0BFA82K8QM`, webhook url, bot_user_id | `{}` |
+| `companyIntegration.slack.metadata` | team_id `T0000000000`, team_name `acme-dev`, channel `#new-channel`, channel_id `C0000000000`, webhook url, bot_user_id | `{}` |
 | `companyIntegration.slack.secretRef` | set | `NULL`; `get_integration_secret(...)` → null |
-| `integrationConnection` (piece `slack`) | 0 rows | 1 row, Active, `accountLabel = anshul`, `metadata` = team/channel/bot/scopes (webhook keys stripped after review), `get_connection_secret ? 'accessToken'` = true |
+| `integrationConnection` (piece `slack`) | 0 rows | 1 row, Active, `accountLabel = acme-dev`, `metadata` = team/channel/bot/scopes (webhook keys stripped after review), `get_connection_secret ? 'accessToken'` = true |
 
-Token verified against Slack afterwards: `auth.test` → team **anshul**, bot `message_mover`; `conversations.info` on the stored channel → `new-channel`. The hardened migration was re-run in a `BEGIN…ROLLBACK` transaction without error.
+Token verified against Slack afterwards: `auth.test` → team **acme-dev**, bot `carbon-test-bot`; `conversations.info` on the stored channel → `new-channel`. The hardened migration was re-run in a `BEGIN…ROLLBACK` transaction without error.
 
 ## Gates (final, after thermo-nuclear remediation)
 

@@ -33,7 +33,7 @@ Backfilled Slack workspace: 10 granted scopes → `missingScopes` = `channels:re
 
 ## Browser criteria (spec AC 4–6) — UNVERIFIED, user-driven
 
-Needs the Slack app manifest to carry the connections redirect URL and the 16 bot scopes first. Then: Settings → Integrations → Slack → Accounts → **Reconnect** on "anshul" → approve → badge clears, card Healthy, builder lists the account, step runs (AC 5). Reconnect on a Revoked row revives it (AC 6).
+Needs the Slack app manifest to carry the connections redirect URL and the 16 bot scopes first. Then: Settings → Integrations → Slack → Accounts → **Reconnect** on "acme-dev" → approve → badge clears, card Healthy, builder lists the account, step runs (AC 5). Reconnect on a Revoked row revives it (AC 6).
 
 ## Deviations from plan
 
