@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel}承認ルール"
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 
@@ -546,6 +549,9 @@ msgstr "キューに{load}件"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（リースの拠点）"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{totalCount} 件中 {mappedCount} 件をマッピング済み"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} 明細"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} に同期"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# 日} other {# 日}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -805,6 +817,9 @@ msgstr "1 購入 = {conversionFactor} 在庫管理"
 
 msgid "1 suggested batch"
 msgstr "推奨バッチ 1 個"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 個"
@@ -2761,6 +2776,12 @@ msgstr "外観"
 msgid "Applied"
 msgstr "適用"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
 
@@ -3582,8 +3603,14 @@ msgstr "自分に割り当てる"
 msgid "Assigned"
 msgstr "割り当て済み"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName}を1週間の{targetName}に配置しました"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "私に割り当てられた"
@@ -7835,6 +7862,12 @@ msgstr "閉じる"
 
 msgid "Dismissed"
 msgstr "却下済"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "保全指示"
@@ -18472,6 +18505,12 @@ msgstr "リビジョンとして再オープン"
 msgid "Reopen Training"
 msgstr "教育訓練を再オープン"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "並び替え"
 
@@ -20897,6 +20936,9 @@ msgstr "一部のシフト"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"

@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel} правило утверждения"
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
 
@@ -546,6 +549,9 @@ msgstr "{load} в очереди"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (площадка аренды)"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "Сопоставлено {mappedCount} из {totalCount}"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} строк"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · синхронизировано {syncedAgo}"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# день} few {# дня} many {# дней} other 
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}год"
@@ -805,6 +817,9 @@ msgstr "1 Покупка = {conversionFactor} Запасы"
 
 msgid "1 suggested batch"
 msgstr "1 предложенная серия"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 единица"
@@ -2761,6 +2776,12 @@ msgstr "Внешний вид"
 msgid "Applied"
 msgstr "Применено"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
 
@@ -3582,8 +3603,14 @@ msgstr "Назначить мне"
 msgid "Assigned"
 msgstr "Назначено"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Назначен {employeeName} на {targetName} на неделю"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "Назначено мне"
@@ -7835,6 +7862,12 @@ msgstr "Отклонить"
 
 msgid "Dismissed"
 msgstr "Отклонено"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "Заявка на техобслуживание"
@@ -18472,6 +18505,12 @@ msgstr "Открыть заново как ревизию"
 msgid "Reopen Training"
 msgstr "Открыть заново обучение"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "Переупорядочить"
 
@@ -20897,6 +20936,9 @@ msgstr "Некоторые смены"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."

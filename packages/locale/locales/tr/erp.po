@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel} onay kuralı"
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
@@ -546,6 +549,9 @@ msgstr "{load} kuyruğunda"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (kiralamanın)"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{totalCount} cihazdan {mappedCount} eşlendi"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} satır"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} eşitlendi"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# gün} other {# gün}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# satır beklenen miktardan farklıdır} other {# satır beklenen miktardan farklıdır}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -805,6 +817,9 @@ msgstr "1 Satın Alma = {conversionFactor} Envanter"
 
 msgid "1 suggested batch"
 msgstr "1 önerilen parti"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 adet"
@@ -2761,6 +2776,12 @@ msgstr "Görünüm"
 msgid "Applied"
 msgstr "Uygulandı"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Uygulanan tutarlar şirket temel para birimindedir ({baseCurrency})."
 
@@ -3582,8 +3603,14 @@ msgstr "Bana Ata"
 msgid "Assigned"
 msgstr "Atanmış"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} öğesi hafta boyunca {targetName} için atandı"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
@@ -7835,6 +7862,12 @@ msgstr "Kapat"
 
 msgid "Dismissed"
 msgstr "Reddedildi"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "Bakım emri"
@@ -18472,6 +18505,12 @@ msgstr "Revizyon olarak yeniden aç"
 msgid "Reopen Training"
 msgstr "Eğitimi Yeniden Aç"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "Yeniden Sırala"
 
@@ -20897,6 +20936,9 @@ msgstr "Bazı Vardiyalar"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."

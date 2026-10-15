@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel} règle d'approbation"
 msgid "{done} of {total} phases complete"
 msgstr "{done} sur {total} phases terminées"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# ligne exclue} other {# lignes exclues}}"
 
@@ -546,6 +549,9 @@ msgstr "{load} en attente"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (de la location)"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{mappedCount} sur {totalCount} associés"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} lignes"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} sélectionnés"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · synchronisé {syncedAgo}"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# jour} other {# jours}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# ligne diffère de la quantité attendue} other {# lignes diffèrent de la quantité attendue}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}an"
@@ -805,6 +817,9 @@ msgstr "1 Achat = {conversionFactor} Stocks"
 
 msgid "1 suggested batch"
 msgstr "1 lot de production suggéré"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 unité"
@@ -2761,6 +2776,12 @@ msgstr "Apparence"
 msgid "Applied"
 msgstr "Appliqué"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Les montants appliqués sont dans la devise de base de la société ({baseCurrency})."
 
@@ -3582,8 +3603,14 @@ msgstr "M'attribuer"
 msgid "Assigned"
 msgstr "Assigné"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} assigné à {targetName} pour la semaine"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "Assigné à moi"
@@ -7835,6 +7862,12 @@ msgstr "Fermer"
 
 msgid "Dismissed"
 msgstr "Écartée"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "Intervention de maintenance"
@@ -18472,6 +18505,12 @@ msgstr "Rouvrir comme Révision"
 msgid "Reopen Training"
 msgstr "Rouvrir Formation"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "Réorganiser"
 
@@ -20897,6 +20936,9 @@ msgstr "Certaines équipes"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Quelqu'un qui peut mettre à jour la comptabilité doit entrer le coût de fabrication avant qu'il puisse être capitalisé."
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Quelque chose s'est mal passé. Veuillez réessayer."

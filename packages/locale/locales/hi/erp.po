@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel} अनुमोदन नियम"
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# पंक्ति बाहर रखी गई} other {# पंक्तियाँ बाहर रखी गईं}}"
 
@@ -546,6 +549,9 @@ msgstr "{load} कतार में"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (पट्टे का)"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{totalCount} में से {mappedCount} मैप किए गए"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} पंक्तियाँ"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} सिंक हुआ"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# दिन} other {# दिन}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# पंक्ति अपेक्षित मात्रा से भिन्न है} other {# पंक्तियां अपेक्षित मात्रा से भिन्न हैं}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}वर्ष"
@@ -805,6 +817,9 @@ msgstr "1 खरीद = {conversionFactor} इन्वेंटरी"
 
 msgid "1 suggested batch"
 msgstr "1 सुझाया गया बैच"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 इकाई"
@@ -2761,6 +2776,12 @@ msgstr "उपस्थिति"
 msgid "Applied"
 msgstr "लागू"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "लागू की गई राशि कंपनी की आधार मुद्रा ({baseCurrency}) में है।"
 
@@ -3582,8 +3603,14 @@ msgstr "मुझे असाइन करें"
 msgid "Assigned"
 msgstr "नियुक्त"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} को सप्ताह के लिए {targetName} पर असाइन किया"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "मुझे असाइन किया गया"
@@ -7835,6 +7862,12 @@ msgstr "खारिज करें"
 
 msgid "Dismissed"
 msgstr "खारिज किया गया"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "रखरखाव कार्य"
@@ -18472,6 +18505,12 @@ msgstr "रिवीजन के रूप में फिर से खोल
 msgid "Reopen Training"
 msgstr "प्रशिक्षण फिर से खोलें"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "पुनः क्रमित करें"
 
@@ -20897,6 +20936,9 @@ msgstr "कुछ शिफ्ट"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "जो कोई भी लेखांकन को अपडेट कर सकता है, उसे इसे पूंजीकृत करने से पहले इसे बनाने की लागत दर्ज करनी होगी।"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"

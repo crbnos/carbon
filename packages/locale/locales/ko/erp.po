@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel} 승인 규칙"
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
@@ -546,6 +549,9 @@ msgstr "큐에 {load}개 대기 중"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (리스의 사업장)"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{totalCount}개 중 {mappedCount}개 매핑됨"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} 라인"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} 동기화됨"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# 일} other {# 일}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 라인이 예상 수량과 다릅니다} other {# 라인이 예상 수량과 다릅니다}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}년"
@@ -805,6 +817,9 @@ msgstr "1 구매 = {conversionFactor} 재고 관리"
 
 msgid "1 suggested batch"
 msgstr "제안된 배치 1개"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1개"
@@ -2761,6 +2776,12 @@ msgstr "모양"
 msgid "Applied"
 msgstr "적용됨"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "적용 금액은 회사 기본 통화({baseCurrency})입니다."
 
@@ -3582,8 +3603,14 @@ msgstr "나에게 할당"
 msgid "Assigned"
 msgstr "배정됨"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName}을(를) 주간으로 {targetName}에 배정"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "나에게 배정됨"
@@ -7835,6 +7862,12 @@ msgstr "닫기"
 
 msgid "Dismissed"
 msgstr "무시됨"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "유지보수 지시"
@@ -18472,6 +18505,12 @@ msgstr "리비전으로 다시 열기"
 msgid "Reopen Training"
 msgstr "교육 다시 열기"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "재주문"
 
@@ -20897,6 +20936,9 @@ msgstr "일부 교대조"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "회계를 업데이트할 수 있는 사용자가 자산을 자본화하기 전에 사내 생산 원가를 입력해야 합니다."
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "문제가 발생했습니다. 다시 시도해 주세요."

@@ -10,6 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
 import {
+  async,
   chunkArray,
   datetime,
   getErrorMessage,
@@ -32,6 +33,7 @@ import {
   type ServiceContext
 } from "~/modules/service-fn.server";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
+import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import {
   bulkJobValidator,
@@ -39,6 +41,7 @@ import {
   copyPeopleWeekValidator,
   deadlineTypes,
   getDueDateForColumn,
+  isJobEditableFromPlanning,
   isJobLocked,
   JOB_LOCKED_STATUSES,
   jobOperationStatus,
@@ -46,6 +49,7 @@ import {
   jobStatus,
   jobValidator,
   makeToAssetItemError,
+  PLANNING_EDITABLE_JOB_STATUSES,
   peopleAbsenceRangeValidator,
   peopleAbsenceValidator,
   peopleAssignmentValidator,
@@ -57,20 +61,26 @@ import {
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
   productionEventValidator,
+  productionOrderValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator
 } from "./production.models";
 import {
+  applyProductionPlanningDateActions,
   assignPeopleWeek,
+  assignPlanningActions,
   calculateJobPriority,
   clearPeopleAbsence,
   copyPeopleBoard,
   copyPeopleWeek,
   createJobOperationBatch,
   deletePeopleAssignment,
+  dismissPlanningActions,
   getBatchOutputLots,
   getJobReleaseReadiness,
+  getPlanningActionsByIds,
   insertJob,
+  markPlanningActionsActioned,
   movePeopleAssignment,
   movePeopleWeek,
   notifyScheduleInputsChanged,
@@ -79,6 +89,8 @@ import {
   recalculateJobOperationDependencies,
   recalculateJobRequirements,
   releaseJobOperationBatch,
+  releasePlanningActionClaim,
+  reopenDismissedPlanningActions,
   returnPickedRemaindersForJob,
   returnPickedRemaindersForOperation,
   runMRP,
@@ -87,11 +99,13 @@ import {
   setPeopleAssignmentHours,
   setPeopleDay,
   setPeopleOvertimeBulk,
+  settleNewSupplyPlanningActions,
   unassignPeopleWeek,
   unreleaseJobOperationBatch,
   updateJob,
   updateJobOperationBatch,
   updateJobStatus,
+  updatePlanningJob,
   upsertJobMaterial,
   upsertJobMaterialMakeMethod,
   upsertJobMethod,
@@ -3488,8 +3502,8 @@ async function notifyForEmployeeDate(
   );
 }
 
-/** A board write that throws on failure, as a `CarbonError` with `message`. */
-async function boardWrite<T>(
+/** A write that throws on failure, as an `internal` error with `message`. */
+async function attempt<T>(
   ctx: ServiceContext,
   message: string,
   write: () => Promise<T>
@@ -3525,16 +3539,13 @@ export const assignPerson = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await boardWrite(
-      ctx,
-      "Failed to assign people member",
-      () =>
-        upsertPeopleAssignment(ctx.asSystem.pg, {
-          ...assignment,
-          companyId: ctx.company.id,
-          shiftId: assignment.shiftId || null,
-          createdBy: ctx.auditUserId
-        })
+    const written = await attempt(ctx, "Failed to assign people member", () =>
+      upsertPeopleAssignment(ctx.asSystem.pg, {
+        ...assignment,
+        companyId: ctx.company.id,
+        shiftId: assignment.shiftId || null,
+        createdBy: ctx.auditUserId
+      })
     );
     if (written instanceof CarbonError) return written;
     await notifyPeopleChange(ctx, "People assignment changed", [
@@ -3671,7 +3682,7 @@ export const movePerson = defineServiceFn({
     });
     if (refused) return refused;
 
-    const moved = await boardWrite(ctx, "Failed to move assignment", () =>
+    const moved = await attempt(ctx, "Failed to move assignment", () =>
       movePeopleAssignment(ctx.asSystem.pg, {
         id,
         companyId: ctx.company.id,
@@ -3711,7 +3722,7 @@ export const setPersonDay = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await boardWrite(ctx, "Failed to save working hours", () =>
+    const written = await attempt(ctx, "Failed to save working hours", () =>
       setPeopleDay(ctx.asSystem.pg, ctx.auditUserId, {
         ...day,
         companyId: ctx.company.id,
@@ -3782,7 +3793,7 @@ export const setPeopleOvertime = defineServiceFn({
     });
     if (refused) return refused;
 
-    const rows = await boardWrite(ctx, "Failed to set overtime", () =>
+    const rows = await attempt(ctx, "Failed to set overtime", () =>
       setPeopleOvertimeBulk(ctx.asSystem.pg, {
         ...overtime,
         companyId: ctx.company.id,
@@ -3822,7 +3833,7 @@ export const copyPeopleDay = defineServiceFn({
     });
     if (refused) return refused;
 
-    const result = await boardWrite(ctx, "Failed to copy people board", () =>
+    const result = await attempt(ctx, "Failed to copy people board", () =>
       copyPeopleBoard(ctx.asSystem.pg, {
         ...copy,
         companyId: ctx.company.id,
@@ -3858,7 +3869,7 @@ export const assignPersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await boardWrite(ctx, "Failed to assign week", () =>
+    const written = await attempt(ctx, "Failed to assign week", () =>
       assignPeopleWeek(ctx.asSystem.pg, ctx.auditUserId, {
         ...week,
         companyId: ctx.company.id,
@@ -3893,7 +3904,7 @@ export const unassignPersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await boardWrite(ctx, "Failed to unassign week", () =>
+    const written = await attempt(ctx, "Failed to unassign week", () =>
       unassignPeopleWeek(ctx.asSystem.pg, {
         ...week,
         companyId: ctx.company.id,
@@ -3928,7 +3939,7 @@ export const movePersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await boardWrite(ctx, "Failed to move week", () =>
+    const written = await attempt(ctx, "Failed to move week", () =>
       movePeopleWeek(ctx.asSystem.pg, {
         ...week,
         companyId: ctx.company.id,
@@ -3961,7 +3972,7 @@ export const copyPeopleWeekBoard = defineServiceFn({
     });
     if (refused) return refused;
 
-    const result = await boardWrite(ctx, "Failed to copy people week", () =>
+    const result = await attempt(ctx, "Failed to copy people week", () =>
       copyPeopleWeek(ctx.asSystem.pg, {
         ...copy,
         companyId: ctx.company.id,
@@ -3995,7 +4006,7 @@ export const markPersonAbsentRange = defineServiceFn({
     });
     if (refused) return refused;
 
-    const result = await boardWrite(ctx, "Failed to set absence range", () =>
+    const result = await attempt(ctx, "Failed to set absence range", () =>
       setPeopleAbsenceRange(ctx.asSystem.pg, ctx.auditUserId, {
         ...range,
         companyId: ctx.company.id,
@@ -4005,5 +4016,902 @@ export const markPersonAbsentRange = defineServiceFn({
     if (result instanceof CarbonError) return result;
     await notifyPeopleChange(ctx, "People absence range set");
     return result;
+  }
+});
+
+// --- Production planning --------------------------------------------------
+
+/**
+ * Create planned jobs for planning's suggested Make orders.
+ *
+ * @remarks
+ * `items` are the parts being ordered, each with its orders (quantity, start
+ * and due date, the planning week). Only new jobs: an order naming an
+ * existing job is refused, since an existing job is changed through
+ * `production.planning.updateJob` or Apply. The location and every item must
+ * be this company's. Per item: one whose manufacturing is blocked or needs
+ * configuration is skipped and named in `errors`; each order becomes a
+ * Planned job (ASAP or Soft Deadline) at the location with the item's method.
+ * Then the Make suggestions those orders answer are settled, the jobs' supply
+ * is recorded per week (`supplyForecast`) and their requirements are
+ * recalculated. An item with no orders is counted as already planned (it has
+ * an open job) or as needing nothing. When not one item could be ordered the
+ * call fails with the first errors.
+ *
+ * @mcp
+ */
+export const orderPlannedJobs = defineServiceFn({
+  input: z.object({
+    locationId: z.string(),
+    items: z
+      .array(
+        z.object({ id: z.string(), orders: z.array(productionOrderValidator) })
+      )
+      .min(1, "No items were provided to create production orders")
+  }),
+  permission: { create: "production" },
+
+  async run(ctx, { locationId, items }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const client = ctx.asSystem.supabase;
+    const db = ctx.asSystem.pg;
+
+    if (items.some((item) => item.orders.some((o) => o.existingId))) {
+      return ctx.error(
+        "validation",
+        "Existing jobs are changed from the Open Jobs list"
+      );
+    }
+
+    // Every id comes from the caller and the writes use the service role.
+    const itemIds = [...new Set(items.map((item) => item.id))];
+    const [ownedLocation, ownedItems] = await Promise.all([
+      client
+        .from("location")
+        .select("id")
+        .eq("id", locationId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("item")
+        .select("id")
+        .in("id", itemIds)
+        .eq("companyId", companyId)
+    ]);
+    if (
+      ownedLocation.error ||
+      !ownedLocation.data ||
+      ownedItems.error ||
+      ownedItems.data.length !== itemIds.length
+    ) {
+      logger.error("Planning order references records outside the company", {
+        companyId,
+        locationId,
+        itemIds,
+        error: ownedLocation.error ?? ownedItems.error
+      });
+      return ctx.error("notFound", "Not found");
+    }
+
+    const createdJobs: { id: string; readableId: string }[] = [];
+    const itemsWithoutOrders: string[] = [];
+    const supplyByKey = new Map<
+      string,
+      {
+        itemId: string;
+        locationId: string;
+        sourceType: "Production Order";
+        forecastQuantity: number;
+        periodId: string;
+        companyId: string;
+        createdBy: string;
+        updatedBy: string;
+      }
+    >();
+    // The (item, week) of every order that became a job, so the Make
+    // suggestions it answers leave the worklist now, not at the next run.
+    const ordered: { itemId: string; periodId: string }[] = [];
+    const errors: string[] = [];
+    let processedItems = 0;
+
+    const manufacturingRows = await client
+      .from("itemReplenishment")
+      .select("itemId, manufacturingBlocked, requiresConfiguration")
+      .in(
+        "itemId",
+        items.flatMap((item) => (item.orders.length > 0 ? [item.id] : []))
+      )
+      .eq("companyId", companyId);
+    const manufacturingByItem = new Map(
+      (manufacturingRows.data ?? []).map((row) => [row.itemId, row])
+    );
+
+    for (const item of items) {
+      if (item.orders.length === 0) {
+        // Nothing to make: existing supply already covers demand.
+        itemsWithoutOrders.push(item.id);
+        continue;
+      }
+
+      const manufacturing = manufacturingByItem.get(item.id);
+      if (manufacturingRows.error || !manufacturing) {
+        errors.push(
+          `Failed to retrieve manufacturing data for item ${item.id}: ${
+            manufacturingRows.error?.message ?? "No replenishment record"
+          }`
+        );
+        continue;
+      }
+      if (manufacturing.manufacturingBlocked) {
+        errors.push(`Manufacturing is blocked for item ${item.id}`);
+        continue;
+      }
+      if (manufacturing.requiresConfiguration) {
+        errors.push(`Manufacturing requires configuration for item ${item.id}`);
+        continue;
+      }
+
+      let itemProcessed = false;
+      for (const order of item.orders) {
+        const created = await insertJob(
+          client,
+          db,
+          {
+            itemId: item.id,
+            quantity: order.quantity,
+            startDate: order.startDate ?? undefined,
+            dueDate: order.dueDate ?? undefined,
+            deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
+            status: "Planned",
+            locationId,
+            companyId,
+            createdBy: userId,
+            unitOfMeasureCode: "EA"
+          },
+          { skipMethod: true, skipRecalculate: true, source: "mrp" }
+        );
+        if (created.error || !created.data?.id) {
+          errors.push(
+            created.error
+              ? `Failed to create job for item ${item.id}: ${created.error.message}`
+              : `Job was not returned after creation for item ${item.id}`
+          );
+          continue;
+        }
+        const id = created.data.id;
+
+        const method = await upsertJobMethod(client, db, "itemToJob", {
+          sourceId: item.id,
+          targetId: id,
+          companyId,
+          userId
+        });
+        if (method.error) {
+          errors.push(
+            `Failed to create job method for item ${item.id}: ${method.error.message}`
+          );
+          continue;
+        }
+
+        createdJobs.push({ id, readableId: created.data.jobId ?? "" });
+        itemProcessed = true;
+        ordered.push({ itemId: item.id, periodId: order.periodId });
+        const key = `${item.id}\u001f${order.periodId}`;
+        const supply = supplyByKey.get(key);
+        if (supply) supply.forecastQuantity += order.quantity;
+        else {
+          supplyByKey.set(key, {
+            itemId: item.id,
+            locationId,
+            sourceType: "Production Order",
+            forecastQuantity: order.quantity,
+            periodId: order.periodId,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId
+          });
+        }
+      }
+      if (itemProcessed) processedItems++;
+    }
+    for (const error of errors) logger.error(error, { companyId, locationId });
+
+    const settled = await settleNewSupplyPlanningActions(db, {
+      companyId,
+      locationId,
+      userId,
+      type: "Make",
+      ordered
+    });
+    if (settled.error) {
+      // The jobs stand; the suggestions clear on the next MRP run.
+      logger.error("Failed to settle ordered planning actions", {
+        companyId,
+        locationId,
+        error: settled.error
+      });
+    }
+
+    if (supplyByKey.size > 0) {
+      const forecasts = await client
+        .from("supplyForecast")
+        .upsert([...supplyByKey.values()], {
+          onConflict: "itemId,locationId,periodId",
+          ignoreDuplicates: false
+        });
+      if (forecasts.error) {
+        errors.push(
+          `Failed to insert supply forecasts: ${forecasts.error.message}`
+        );
+      }
+    }
+
+    for (const job of createdJobs) {
+      const recalc = await recalculateJobRequirements(client, db, {
+        id: job.id,
+        companyId,
+        userId
+      });
+      if (recalc.error) {
+        logger.error("Failed to recalculate a planned job", {
+          companyId,
+          jobId: job.id,
+          error: recalc.error
+        });
+        errors.push(
+          `Created job ${job.id}, but its requirements could not be recalculated`
+        );
+      }
+    }
+
+    // A skipped item: a job already covers it, or there is nothing to make.
+    const alreadyPlannedItemIds = new Set<string>();
+    if (itemsWithoutOrders.length > 0) {
+      const openJobs = await client
+        .from("job")
+        .select("itemId")
+        .eq("companyId", companyId)
+        .eq("locationId", locationId)
+        .in("itemId", itemsWithoutOrders)
+        .in("status", ["Draft", "Planned", "Ready", "In Progress", "Paused"]);
+      for (const job of openJobs.data ?? []) {
+        if (job.itemId) alreadyPlannedItemIds.add(job.itemId);
+      }
+    }
+
+    if (errors.length > 0 && processedItems === 0) {
+      return ctx.error(
+        "rule",
+        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
+          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+        }`
+      );
+    }
+
+    return {
+      jobs: createdJobs,
+      alreadyPlannedItemCount: alreadyPlannedItemIds.size,
+      noDemandItemCount: itemsWithoutOrders.length - alreadyPlannedItemIds.size,
+      processedItems,
+      totalItems: items.length,
+      errors
+    };
+  }
+});
+
+/** A Draft or Planned job of this company at `locationId`, for planning. */
+async function readPlanningJob(
+  ctx: ServiceContext,
+  jobId: string,
+  locationId: string
+) {
+  const target = await ctx.asSystem.supabase
+    .from("job")
+    .select("id, status, locationId, salesOrderId, salesOrderLineId")
+    .eq("id", jobId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (target.error || !target.data) {
+    return ctx.error("notFound", "Job not found", target.error);
+  }
+  // The drawer lists one location's jobs.
+  if (target.data.locationId !== locationId) {
+    return ctx.error("conflict", "This job is for another location.");
+  }
+  return target.data;
+}
+
+const notEditableFromPlanning =
+  "This job is no longer Draft or Planned. Change it on the job.";
+
+/**
+ * Change a planned job's quantity or due date from the planning drawer.
+ *
+ * @remarks
+ * Only a Draft or Planned job at `locationId` (`isJobEditableFromPlanning`,
+ * checked again in the UPDATE itself), so a job released to the floor is
+ * never edited from planning; a quantity change restates the scrap. Then a
+ * new quantity recalculates the job's requirements, a new date tells the
+ * scheduler. A failure there leaves the edit saved and is returned as
+ * `warning`.
+ *
+ * @mcp
+ */
+export const updatePlannedJob = defineServiceFn({
+  input: z.object({
+    locationId: z.string(),
+    job: z.discriminatedUnion("field", [
+      z.object({
+        id: z.string().min(1),
+        field: z.literal("quantity"),
+        value: z.number().positive()
+      }),
+      z.object({
+        id: z.string().min(1),
+        field: z.literal("dueDate"),
+        value: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+      })
+    ])
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { locationId, job }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const target = await readPlanningJob(ctx, job.id, locationId);
+    if (target instanceof CarbonError) return target;
+    if (!isJobEditableFromPlanning(target.status)) {
+      return ctx.error("conflict", notEditableFromPlanning);
+    }
+
+    const saved = await updatePlanningJob(ctx.asSystem.supabase, {
+      id: target.id,
+      companyId,
+      updatedBy: userId,
+      ...(job.field === "quantity"
+        ? { quantity: job.value }
+        : { dueDate: job.value })
+    });
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update job", saved.error);
+    }
+    // Released (or finished) after the status check above.
+    if (!saved.updated) return ctx.error("conflict", notEditableFromPlanning);
+
+    // Saved from here on: a failure below is a warning on a saved edit.
+    if (job.field === "quantity") {
+      const recalc = await recalculateJobRequirements(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { id: target.id, companyId, userId }
+      );
+      if (recalc.error) {
+        logger.error("Failed to recalculate job requirements from planning", {
+          companyId,
+          jobId: target.id,
+          error: recalc.error
+        });
+        return {
+          id: target.id,
+          warning:
+            "The quantity is saved, but the job's materials and operations were not recalculated. Recalculate the job."
+        };
+      }
+      return { id: target.id, warning: null };
+    }
+
+    const notified = await notifyPlanningScheduleChange(
+      ctx,
+      "Planning changed a job's due date",
+      target.id
+    );
+    return {
+      id: target.id,
+      warning: notified
+        ? null
+        : "The due date is saved, but the schedule was not refreshed. Reschedule the location."
+    };
+  }
+});
+
+/**
+ * Tell the scheduler after a planning write. A follow-up to a write that
+ * already landed, so a failure is logged and reported, never thrown.
+ */
+async function notifyPlanningScheduleChange(
+  ctx: ServiceContext,
+  reason: string,
+  jobId?: string
+): Promise<boolean> {
+  try {
+    await notifyScheduleInputsChanged(ctx.company.id, "reorder", reason, jobId);
+    return true;
+  } catch (error) {
+    logger.error("Failed to notify the scheduler from planning", {
+      companyId: ctx.company.id,
+      jobId,
+      reason,
+      error
+    });
+    return false;
+  }
+}
+
+/**
+ * Plan a Draft job from the planning drawer.
+ *
+ * @remarks
+ * Only this location's make-to-stock Draft jobs: a job a sales order owns is
+ * that order's, not planning's. Then `production.job.plan`: the requirements
+ * recalculation, Draft → Planned, and MRP, so the job counts as supply and
+ * the Make suggestion shrinks by it. `warning` is set when MRP did not run.
+ *
+ * @mcp
+ */
+export const planJobFromPlanning = defineServiceFn({
+  input: z.object({ locationId: z.string(), jobId: z.string().min(1) }),
+  permission: { update: "production" },
+
+  async run(ctx, { locationId, jobId }) {
+    const target = await readPlanningJob(ctx, jobId, locationId);
+    if (target instanceof CarbonError) return target;
+    if (target.salesOrderId || target.salesOrderLineId) {
+      return ctx.error(
+        "conflict",
+        "This job is for a sales order. Plan it on the job."
+      );
+    }
+    if (target.status !== "Draft") {
+      return ctx.error("conflict", "Only a Draft job can be planned.");
+    }
+    const planned = await planDraftJob(ctx, { jobId: target.id });
+    if (planned.error) return planned.error;
+    return { id: target.id, warning: planned.data.warning };
+  }
+});
+
+const planningActionIdsInput = z
+  .array(z.string().min(1))
+  .min(1)
+  .transform((ids) => [...new Set(ids)]);
+
+type PlanningActionRow = NonNullable<
+  Awaited<ReturnType<typeof getPlanningActionsByIds>>["data"]
+>[number];
+
+const CHANGE_ACTION_TYPES = [
+  "Expedite",
+  "Defer",
+  "Increase",
+  "Decrease",
+  "Cancel"
+] as const;
+
+/**
+ * Apply MRP's change suggestions to their jobs.
+ *
+ * @remarks
+ * Every id is read from the persisted worklist (only an Open change action on
+ * a job; the type, job and suggested value come from the row, never the
+ * caller); `type` keeps only actions of that type. A job that is not Draft or
+ * Planned is never edited from planning: its action is listed in
+ * `requiresManualAction`. Expedite / Defer move the jobs' due dates in one
+ * transaction, then the scheduler is told once. Increase / Decrease set the
+ * job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
+ * it; Cancel runs `production.job.cancel` from Draft / Planned. Each of those
+ * is claimed right before its change, three jobs at a time, and a failed one
+ * gives its claim back. Returns what was `applied`, what needs review,
+ * `warnings` (applied, with a follow-up step that failed) and `errors`.
+ *
+ * @mcp
+ */
+export const applyPlanningActions = defineServiceFn({
+  input: z.object({
+    planningActionIds: planningActionIdsInput,
+    type: z.enum(CHANGE_ACTION_TYPES).optional()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { planningActionIds, type }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const client = ctx.asSystem.supabase;
+    const db = ctx.asSystem.pg;
+    const applied: string[] = [];
+    const requiresManualAction: { id: string; jobId: string | null }[] = [];
+    const errors: string[] = [];
+    // Applied, but a follow-up step failed: reported, never rolled back.
+    const warnings: string[] = [];
+
+    // A claim that is not given back leaves the action Actioned with nothing
+    // applied, so a failed release is reported, never swallowed.
+    const releaseClaim = async (planningActionId: string) => {
+      const released = await releasePlanningActionClaim(client, {
+        id: planningActionId,
+        companyId,
+        userId
+      });
+      if (released.error) {
+        logger.error("Failed to release a planning action claim", {
+          companyId,
+          planningActionId,
+          error: released.error
+        });
+        errors.push(
+          `Planning action ${planningActionId} could not be reopened: ${released.error}`
+        );
+      }
+    };
+
+    const actionRows = await getPlanningActionsByIds(db, {
+      ids: planningActionIds,
+      companyId
+    });
+    if (actionRows.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read planning actions",
+        actionRows.error
+      );
+    }
+    const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
+
+    const eligible: { planningActionId: string; row: PlanningActionRow }[] = [];
+    for (const planningActionId of planningActionIds) {
+      const row = rowById.get(planningActionId);
+      if (!row) {
+        errors.push(`Planning action ${planningActionId} not found`);
+        continue;
+      }
+      if (row.status !== "Open") {
+        errors.push(`Planning action ${planningActionId} is not open`);
+        continue;
+      }
+      if (
+        type
+          ? row.type !== type
+          : !(CHANGE_ACTION_TYPES as readonly string[]).includes(row.type)
+      ) {
+        errors.push(
+          type
+            ? `Planning action ${planningActionId} is a ${row.type}, not ${type}`
+            : `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+        );
+        continue;
+      }
+      if (!row.jobId) {
+        errors.push(
+          `Planning action ${planningActionId} does not target a job`
+        );
+        continue;
+      }
+      eligible.push({ planningActionId, row });
+    }
+
+    // One statement: the id list is a parameter, never a PostgREST URL.
+    const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
+    const jobs = await attempt(
+      ctx,
+      "Failed to read the planning actions' jobs",
+      async () =>
+        jobIds.length > 0
+          ? db
+              .selectFrom("job")
+              .select(["id", "status"])
+              .where("id", "in", jobIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : []
+    );
+    if (jobs instanceof CarbonError) return jobs;
+    const jobStatusById = new Map(jobs.map((job) => [job.id, job.status]));
+
+    const toClaim: typeof eligible = [];
+    for (const target of eligible) {
+      const jobId = target.row.jobId!;
+      const status = jobStatusById.get(jobId);
+      if (status === undefined) {
+        errors.push(
+          `Job for planning action ${target.planningActionId} not found`
+        );
+        continue;
+      }
+      if (!isJobEditableFromPlanning(status)) {
+        // On the floor, finished, closed or cancelled since MRP ran.
+        requiresManualAction.push({ id: target.planningActionId, jobId });
+        continue;
+      }
+      toClaim.push(target);
+    }
+
+    // Dates: ONE transaction for every Expedite / Defer, then ONE scheduler
+    // event (a "reorder" event re-stamps the whole company whatever its job).
+    const dateActions = toClaim.filter(
+      ({ row }) =>
+        (row.type === "Expedite" || row.type === "Defer") && row.suggestedDate
+    );
+    if (dateActions.length > 0) {
+      let outcome: Awaited<
+        ReturnType<typeof applyProductionPlanningDateActions>
+      >;
+      try {
+        outcome = await applyProductionPlanningDateActions(db, {
+          companyId,
+          userId,
+          actions: dateActions.map(({ planningActionId, row }) => ({
+            planningActionId,
+            jobId: row.jobId!,
+            suggestedDate: row.suggestedDate
+          }))
+        });
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          `Failed to reschedule jobs: ${getErrorMessage(err, "unknown error")}`,
+          err
+        );
+      }
+      applied.push(...outcome.applied);
+      requiresManualAction.push(...outcome.refused);
+      for (const id of outcome.alreadyApplied) {
+        errors.push(`Planning action ${id} was already applied`);
+      }
+      if (outcome.applied.length > 0) {
+        const notified = await notifyPlanningScheduleChange(
+          ctx,
+          `Planning rescheduled ${outcome.applied.length} job(s)`
+        );
+        if (!notified) {
+          warnings.push(
+            `${outcome.applied.length} due date(s) are saved, but the schedule was not refreshed`
+          );
+        }
+      }
+    }
+
+    // Each action is claimed right before its own change: a request that dies
+    // here strands at most the actions in flight, which the next MRP run
+    // re-emits as fresh Open actions. Resolves to the claimed suggestion.
+    const claim = async (planningActionId: string) => {
+      const claimed = await markPlanningActionsActioned(db, {
+        ids: [planningActionId],
+        companyId,
+        userId
+      });
+      if (claimed.error) {
+        logger.error("Failed to claim a planning action", {
+          companyId,
+          planningActionId,
+          error: claimed.error
+        });
+        errors.push(
+          `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
+        );
+        return null;
+      }
+      const [row] = claimed.data;
+      if (!row) {
+        errors.push(`Planning action ${planningActionId} was already applied`);
+        return null;
+      }
+      return {
+        suggestedQuantity:
+          row.suggestedQuantity === null || row.suggestedQuantity === undefined
+            ? null
+            : Number(row.suggestedQuantity)
+      };
+    };
+
+    // Two actions on one job (an Increase and a Cancel) must not run at once:
+    // group by job, run the groups three at a time, each group in order.
+    const byJob = groupBy(
+      toClaim.filter(
+        ({ row }) =>
+          row.type === "Cancel" ||
+          row.type === "Increase" ||
+          row.type === "Decrease"
+      ),
+      ({ row }) => row.jobId!
+    );
+    await async.map(
+      Object.values(byJob),
+      async (group) => {
+        for (const { planningActionId, row } of group) {
+          const claimedRow = await claim(planningActionId);
+          if (!claimedRow) continue;
+          const jobId = row.jobId!;
+
+          if (row.type === "Cancel") {
+            const cancelled = await cancelJob(ctx, {
+              jobId,
+              // Read Draft / Planned above; released since, it goes to
+              // review instead of losing its picks.
+              fromStatuses: [...PLANNING_EDITABLE_JOB_STATUSES]
+            });
+            if (cancelled.error) {
+              await releaseClaim(planningActionId);
+              if (cancelled.error.category === "conflict") {
+                requiresManualAction.push({ id: planningActionId, jobId });
+              } else {
+                errors.push(
+                  `Failed to cancel job for planning action ${planningActionId}: ${cancelled.error.message}`
+                );
+              }
+              continue;
+            }
+          } else {
+            const update = await updatePlanningJob(client, {
+              id: jobId,
+              companyId,
+              updatedBy: userId,
+              quantity: Number(
+                claimedRow.suggestedQuantity ?? row.suggestedQuantity
+              )
+            });
+            if (update.error) {
+              await releaseClaim(planningActionId);
+              errors.push(
+                `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
+              );
+              continue;
+            }
+            if (!update.updated) {
+              // Released (or finished) since it was read.
+              await releaseClaim(planningActionId);
+              requiresManualAction.push({ id: planningActionId, jobId });
+              continue;
+            }
+            const recalc = await recalculateJobRequirements(client, db, {
+              id: jobId,
+              companyId,
+              userId
+            });
+            if (recalc.error) {
+              // The quantity change stands, and the action stays Actioned.
+              logger.error(
+                "Failed to recalculate job requirements after a planning action",
+                { companyId, jobId, planningActionId, error: recalc.error }
+              );
+              warnings.push(
+                `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
+              );
+            }
+          }
+          applied.push(planningActionId);
+        }
+      },
+      { concurrency: 3 }
+    );
+
+    return { applied, requiresManualAction, warnings, errors };
+  }
+});
+
+/**
+ * Report how many of the requested worklist rows changed; none is a conflict
+ * (each one was applied or changed since the page loaded).
+ */
+function changedPlanningActions(
+  ctx: ServiceContext,
+  result: { data: unknown[] | null; error: unknown },
+  requested: number,
+  verb: "dismiss" | "reopen" | "assign"
+) {
+  if (result.error) {
+    return ctx.error(
+      "internal",
+      `Failed to ${verb} planning actions`,
+      result.error
+    );
+  }
+  const changed = result.data?.length ?? 0;
+  if (changed === 0) {
+    return ctx.error(
+      "conflict",
+      `Nothing to ${verb} — these actions changed since the page loaded`
+    );
+  }
+  return { changed, requested };
+}
+
+/**
+ * Dismiss production planning suggestions.
+ *
+ * @remarks
+ * Only Open Make-side actions change; a dismissed one stays dismissed until
+ * its need changes materially. Returns how many changed.
+ *
+ * @mcp
+ */
+export const dismissProductionPlanningActions = defineServiceFn({
+  input: z.object({ planningActionIds: planningActionIdsInput }),
+  permission: { update: "production" },
+
+  async run(ctx, { planningActionIds }) {
+    const result = await dismissPlanningActions(ctx.asSystem.pg, {
+      ids: planningActionIds,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      kind: "Make"
+    });
+    return changedPlanningActions(
+      ctx,
+      result,
+      planningActionIds.length,
+      "dismiss"
+    );
+  }
+});
+
+/**
+ * Reopen dismissed production planning suggestions.
+ *
+ * @remarks
+ * Only Dismissed Make-side actions change. Returns how many changed.
+ *
+ * @mcp
+ */
+export const reopenProductionPlanningActions = defineServiceFn({
+  input: z.object({ planningActionIds: planningActionIdsInput }),
+  permission: { update: "production" },
+
+  async run(ctx, { planningActionIds }) {
+    const result = await reopenDismissedPlanningActions(ctx.asSystem.pg, {
+      ids: planningActionIds,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      kind: "Make"
+    });
+    return changedPlanningActions(
+      ctx,
+      result,
+      planningActionIds.length,
+      "reopen"
+    );
+  }
+});
+
+/**
+ * Assign production planning suggestions to an employee, or unassign them.
+ *
+ * @remarks
+ * The assignee must be an active employee of this company; none unassigns.
+ * The assignment overrides the owner MRP would resolve on its next run. Only
+ * Open and Dismissed Make-side actions change. Returns how many changed.
+ *
+ * @mcp
+ */
+export const assignProductionPlanningActions = defineServiceFn({
+  input: z.object({
+    planningActionIds: planningActionIdsInput,
+    assignee: z.string().optional()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { planningActionIds, assignee }) {
+    if (
+      assignee &&
+      !(await isActiveCompanyEmployee(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        assignee
+      ))
+    ) {
+      return ctx.error("validation", "Choose an employee of this company");
+    }
+    const result = await assignPlanningActions(ctx.asSystem.pg, {
+      ids: planningActionIds,
+      companyId: ctx.company.id,
+      assignee: assignee || null,
+      userId: ctx.auditUserId,
+      kind: "Make"
+    });
+    return changedPlanningActions(
+      ctx,
+      result,
+      planningActionIds.length,
+      "assign"
+    );
   }
 });

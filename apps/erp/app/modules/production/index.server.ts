@@ -3,8 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  applyPlanningActions,
   assignPerson,
   assignPersonWeek,
+  assignProductionPlanningActions,
   cancelJob,
   clearPersonAbsence,
   closeJob,
@@ -22,17 +24,21 @@ import {
   deleteJobMaterial,
   deleteJobOperation,
   deleteJobs,
+  dismissProductionPlanningActions,
   markPersonAbsent,
   markPersonAbsentRange,
   mergeBatchOutputs,
   movePerson,
   movePersonWeek,
   moveScheduleJob,
+  orderPlannedJobs,
   pauseJob,
   planDraftJob,
+  planJobFromPlanning,
   releaseBatches,
   releaseJobs,
   reopenJob,
+  reopenProductionPlanningActions,
   reorderJobOperations,
   reorderScheduleOperations,
   replanAfterItemChange,
@@ -56,6 +62,7 @@ import {
   updateJobDetails,
   updateJobMaterial,
   updateJobOperation,
+  updatePlannedJob,
   updateProductionEvent
 } from "./production.server";
 
@@ -121,5 +128,14 @@ export const production = {
     moveWeek: movePersonWeek,
     copyWeek: copyPeopleWeekBoard
   },
-  planning: { replanItem: replanAfterItemChange }
+  planning: {
+    replanItem: replanAfterItemChange,
+    order: orderPlannedJobs,
+    updateJob: updatePlannedJob,
+    planJob: planJobFromPlanning,
+    apply: applyPlanningActions,
+    dismiss: dismissProductionPlanningActions,
+    reopen: reopenProductionPlanningActions,
+    assign: assignProductionPlanningActions
+  }
 };

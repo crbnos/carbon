@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel} approval rule"
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
 
+msgid "{errors} failed"
+msgstr "{errors} failed"
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 
@@ -546,6 +549,9 @@ msgstr "{load} in queue"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (the lease's)"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr "{manual} targets are committed — review on the order"
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "{mappedCount} of {totalCount} mapped"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} lines"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
 
+msgid "{stale} changed since the page loaded"
+msgstr "{stale} changed since the page loaded"
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · synced {syncedAgo}"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# day} other {# days}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
+
+msgid "{warnings} need a follow-up"
+msgstr "{warnings} need a follow-up"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -805,6 +817,9 @@ msgstr "1 Purchase = {conversionFactor} Inventory"
 
 msgid "1 suggested batch"
 msgstr "1 suggested batch"
+
+msgid "1 target is committed — review on the order"
+msgstr "1 target is committed — review on the order"
 
 msgid "1 unit"
 msgstr "1 unit"
@@ -2761,6 +2776,12 @@ msgstr "Appearance"
 msgid "Applied"
 msgstr "Applied"
 
+msgid "Applied {applied} planning actions"
+msgstr "Applied {applied} planning actions"
+
+msgid "Applied 1 planning action"
+msgstr "Applied 1 planning action"
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Applied amounts are in company base currency ({baseCurrency})."
 
@@ -3582,8 +3603,14 @@ msgstr "Assign to Me"
 msgid "Assigned"
 msgstr "Assigned"
 
+msgid "Assigned {changed} planning actions"
+msgstr "Assigned {changed} planning actions"
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Assigned {employeeName} to {targetName} for the week"
+
+msgid "Assigned 1 planning action"
+msgstr "Assigned 1 planning action"
 
 msgid "Assigned to Me"
 msgstr "Assigned to Me"
@@ -7835,6 +7862,12 @@ msgstr "Dismiss"
 
 msgid "Dismissed"
 msgstr "Dismissed"
+
+msgid "Dismissed {changed} planning actions"
+msgstr "Dismissed {changed} planning actions"
+
+msgid "Dismissed 1 planning action"
+msgstr "Dismissed 1 planning action"
 
 msgid "Dispatch"
 msgstr "Dispatch"
@@ -18472,6 +18505,12 @@ msgstr "Reopen as Revision"
 msgid "Reopen Training"
 msgstr "Reopen Training"
 
+msgid "Reopened {changed} planning actions"
+msgstr "Reopened {changed} planning actions"
+
+msgid "Reopened 1 planning action"
+msgstr "Reopened 1 planning action"
+
 msgid "Reorder"
 msgstr "Reorder"
 
@@ -20897,6 +20936,9 @@ msgstr "Some Shifts"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
+
+msgid "Something went wrong"
+msgstr "Something went wrong"
 
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."

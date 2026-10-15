@@ -509,6 +509,9 @@ msgstr "{documentTypeLabel}审批规则"
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
@@ -546,6 +549,9 @@ msgstr "{load} 在队列中"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（该租赁的地点）"
+
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
 
 msgid "{mappedCount} of {totalCount} mapped"
 msgstr "已映射 {mappedCount} / {totalCount}"
@@ -651,6 +657,9 @@ msgstr "{sectionLineCount} 行"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
 
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} 已同步"
 
@@ -704,6 +713,9 @@ msgstr "{value, plural, one {# 天} other {# 天}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {#行与预期数量不同} other {#行与预期数量不同}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -805,6 +817,9 @@ msgstr "1 采购 = {conversionFactor} 库存管理"
 
 msgid "1 suggested batch"
 msgstr "1 个建议生产批次"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 件"
@@ -2761,6 +2776,12 @@ msgstr "外观"
 msgid "Applied"
 msgstr "已应用"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
 
@@ -3582,8 +3603,14 @@ msgstr "分配给我"
 msgid "Assigned"
 msgstr "已分配"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "将 {employeeName} 分配给 {targetName}，为期一周"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "已分配给我"
@@ -7835,6 +7862,12 @@ msgstr "关闭"
 
 msgid "Dismissed"
 msgstr "已忽略"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "维护工单"
@@ -18472,6 +18505,12 @@ msgstr "作为修订版重新打开"
 msgid "Reopen Training"
 msgstr "重新打开培训"
 
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "重新排序"
 
@@ -20897,6 +20936,9 @@ msgstr "某些班次"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "能够更新会计的人员必须先输入该资产的制造成本，才能将其资本化。"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"

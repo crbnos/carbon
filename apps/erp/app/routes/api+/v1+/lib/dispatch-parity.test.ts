@@ -46,6 +46,12 @@ const spies = vi.hoisted(() => ({
   FAKE_CLIENT: { __supabase: true }
 }));
 
+// The router's operations reach the onboarding content, whose `msg` macro
+// only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
+
 // The registry imports every module's service namespace; mock them all so the test
 // never drags real app code (glossary/lingui/server-only graphs) into vitest. The
 // exemplar modules export recording spies; the rest are empty namespaces.

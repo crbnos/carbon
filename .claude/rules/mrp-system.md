@@ -753,7 +753,7 @@ never offered a Cancel, Defer or Expedite.
     revert — the edit stands.
     A Draft job (listed, editable, charted as new supply, but NOT MRP supply)
     shows a **Plan** button when no action targets it (`renderRowCommand`):
-    `planning.update` `planJob` checks the location, that no sales order owns
+    `production.planning.planJob` checks the location, that no sales order owns
     it and that it is Draft, then `planDraftJob` (`production.server.ts`) recalculates
     its requirements (a failure leaves it Draft, as `releaseJobs` does), flips
     it to Planned (`updateJobStatus` `fromStatuses: ["Draft"]`) and runs MRP —
@@ -830,7 +830,7 @@ never offered a Cancel, Defer or Expedite.
   mismatch) until then. Generated types mark every RPC column non-null; the new
   ones are not (`PlanningGridColumns` in `production/types.ts`).
 - **Create planned orders** — `planning.update.tsx` in each module:
-  - production (`create: "production"`, role `employee`): inserts jobs +
+  - production (`production.planning.order`, `create: "production"`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then
     `recalculateJobRequirements()`.
   - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier

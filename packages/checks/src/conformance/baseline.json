@@ -806,7 +806,6 @@
   "route-action-shape::apps/erp/app/routes/x+/payments+/$paymentId.void.tsx::serverFns.system(",
   "route-action-shape::apps/erp/app/routes/x+/person+/$personId.timecard.tsx::.from(\"timeCardEntry\").insert(",
   "route-action-shape::apps/erp/app/routes/x+/procedure+/update.tsx::.from(\"procedure\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/production+/planning.update.tsx::.from(\"supplyForecast\").upsert(",
   "route-action-shape::apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.post.tsx::.from(\"purchaseInvoice\").update(",
   "route-action-shape::apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.post.tsx::serverFns.system(",
   "route-action-shape::apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.void.tsx::serverFns.system(",
