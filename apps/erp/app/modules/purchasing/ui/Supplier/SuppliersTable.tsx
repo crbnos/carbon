@@ -482,6 +482,10 @@ const SuppliersTable = memo(function SuppliersTable({
           {
             table: "supplierContact",
             label: t`Contacts`
+          },
+          {
+            table: "supplierLocation",
+            label: t`Supplier Locations`
           }
         ]}
         primaryAction={

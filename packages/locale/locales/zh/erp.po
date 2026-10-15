@@ -6636,6 +6636,9 @@ msgstr "客户位置"
 msgid "Customer Location"
 msgstr "客户位置"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "客户概览"
 
@@ -6647,6 +6650,9 @@ msgstr "客户料号"
 
 msgid "Customer Part Number"
 msgstr "客户零件号"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "客户零件修订版"
@@ -11942,6 +11948,12 @@ msgstr "物料名称"
 
 msgid "Item pages"
 msgstr "物料页面"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "物品范围"
@@ -21559,6 +21571,9 @@ msgstr "供应商位置"
 msgid "Supplier Location"
 msgstr "供应商位置"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "供应商订单号"
 
@@ -21591,6 +21606,9 @@ msgstr "供应商付款折扣（默认）"
 
 msgid "Supplier Prepayments"
 msgstr "供应商预付款"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "供应商工艺"

@@ -63,6 +63,50 @@ export const creatableFormPermissions: Record<
   shippingMethod: "inventory"
 };
 
+const supplierFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  const { data, error } = await client
+    .from("supplier")
+    .select("id, name, readableId")
+    .eq("companyId", companyId)
+    .order("name");
+  if (error) return { data: null, error };
+  // Return name and readableId as separate fields. FieldMappings chooses
+  // the display label per the showSupplierReadableId company setting and
+  // auto-matches on BOTH name and readableId — so a CSV that references
+  // suppliers by name still resolves when readable IDs are hidden.
+  return {
+    data: data.map((s) => ({
+      id: s.id,
+      name: s.name,
+      readableId: s.readableId ?? undefined
+    }))
+  };
+};
+
+// The customer counterpart of `supplierFetcher`: matched by name or
+// readableId.
+const customerFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  const { data, error } = await client
+    .from("customer")
+    .select("id, name, readableId")
+    .eq("companyId", companyId)
+    .order("name");
+  if (error) return { data: null, error };
+  return {
+    data: data.map((c) => ({
+      id: c.id,
+      name: c.name,
+      readableId: c.readableId ?? undefined
+    }))
+  };
+};
+
 // Shared supplier-part import fields. Spread into every item-type entry
 // (part / material / tool / fixture / consumable) so a single CSV row can
 // optionally create a supplierPart link alongside the item itself. All
@@ -75,25 +119,7 @@ const supplierPartImportFields = {
     enumData: {
       description:
         "Optional — link this item to a supplier (match by Supplier ID or name)",
-      fetcher: async (client: SupabaseClient<Database>, companyId: string) => {
-        const { data, error } = await client
-          .from("supplier")
-          .select("id, name, readableId")
-          .eq("companyId", companyId)
-          .order("name");
-        if (error) return { data: null, error };
-        // Return name and readableId as separate fields. FieldMappings chooses
-        // the display label per the showSupplierReadableId company setting and
-        // auto-matches on BOTH name and readableId — so a CSV that references
-        // suppliers by name still resolves when readable IDs are hidden.
-        return {
-          data: data.map((s) => ({
-            id: s.id,
-            name: s.name,
-            readableId: s.readableId ?? undefined
-          }))
-        };
-      }
+      fetcher: supplierFetcher
     }
   },
   supplierPartId: {
@@ -219,9 +245,9 @@ const locationFetcher = async (
     .order("name");
 };
 
-// Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
-// Additive only: every row posts one Positive Adjmt. for an existing item.
-const stockImportItemFields = {
+// The item an import attaches data to, by Part Number + Revision: the
+// opening-stock imports and the price, planning and customer-part imports.
+const existingItemImportFields = {
   readableId: {
     label: "Part Number",
     required: true,
@@ -234,6 +260,9 @@ const stockImportItemFields = {
     default: "0"
   }
 } as const;
+
+// Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
+// Additive only: every row posts one Positive Adjmt. for an existing item.
 const stockImportPlacementFields = {
   locationId: {
     label: "Location",
@@ -739,6 +768,38 @@ const supplierShippingImportFields = {
   },
   incotermLocation: {
     label: "Incoterm Location",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// The item planning form's reordering policies, restated here like
+// `methodType` above; `imports.models.test.ts` pins them to the items module.
+const itemReorderingPolicies = [
+  "Manual Reorder",
+  "Demand-Based Reorder",
+  "Fixed Reorder Quantity",
+  "Maximum Quantity"
+] as const;
+
+// A customer or supplier location: the location drawer's name and address
+// fields. The address columns are the customer and supplier imports' own
+// (`partnerLocationImportFields`, so the same CSV headers work), plus the
+// phone and fax the drawer also has.
+const partnerLocationRecordFields = {
+  ...partnerLocationImportFields,
+  locationName: {
+    label: "Location Name",
+    required: true,
+    type: "string"
+  },
+  phone: {
+    label: "Phone",
+    required: false,
+    type: "string"
+  },
+  fax: {
+    label: "Fax",
     required: false,
     type: "string"
   }
@@ -2017,13 +2078,13 @@ export const fieldMappings = {
     }
   },
   inventoryQuantity: {
-    ...stockImportItemFields,
+    ...existingItemImportFields,
     ...stockImportPlacementFields,
     ...stockImportQuantityField,
     ...stockImportCommentField
   },
   batchQuantity: {
-    ...stockImportItemFields,
+    ...existingItemImportFields,
     ...stockImportPlacementFields,
     batchNumber: {
       label: "Batch Number",
@@ -2035,7 +2096,7 @@ export const fieldMappings = {
     ...stockImportCommentField
   },
   serialQuantity: {
-    ...stockImportItemFields,
+    ...existingItemImportFields,
     ...stockImportPlacementFields,
     serialNumber: {
       label: "Serial Number",
@@ -2044,6 +2105,158 @@ export const fieldMappings = {
     },
     ...stockImportExpirationField,
     ...stockImportCommentField
+  },
+  supplierPartPrice: {
+    ...existingItemImportFields,
+    supplierId: {
+      label: "Supplier",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The supplier the price breaks are from — match by Supplier ID or name",
+        fetcher: supplierFetcher
+      }
+    },
+    quantity: {
+      label: "Quantity",
+      required: true,
+      type: "number"
+    },
+    unitPrice: {
+      label: "Unit Price",
+      required: true,
+      type: "number"
+    },
+    leadTime: {
+      label: "Lead Time (Days)",
+      required: false,
+      type: "number",
+      default: "0"
+    }
+  },
+  itemUnitSalePrice: {
+    ...existingItemImportFields,
+    unitSalePrice: {
+      label: "Unit Sale Price",
+      required: true,
+      type: "number"
+    }
+  },
+  itemPlanning: {
+    ...existingItemImportFields,
+    locationId: {
+      label: "Location",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The location the planning settings apply to — match by location name",
+        fetcher: locationFetcher
+      }
+    },
+    reorderingPolicy: {
+      label: "Reordering Policy",
+      required: false,
+      type: "enum",
+      enumData: {
+        default: "",
+        description:
+          "How the item is replenished — one of: Manual Reorder, Demand-Based Reorder, Fixed Reorder Quantity, Maximum Quantity. Blank keeps the current policy",
+        options: itemReorderingPolicies
+      }
+    },
+    reorderPoint: {
+      label: "Reorder Point",
+      required: false,
+      type: "number"
+    },
+    reorderQuantity: {
+      label: "Reorder Quantity",
+      required: false,
+      type: "number"
+    },
+    demandAccumulationPeriod: {
+      label: "Accumulation Period (Weeks)",
+      required: false,
+      type: "number"
+    },
+    demandAccumulationSafetyStock: {
+      label: "Safety Stock",
+      required: false,
+      type: "number"
+    },
+    minimumOrderQuantity: {
+      label: "Minimum Order Quantity",
+      required: false,
+      type: "number"
+    },
+    maximumOrderQuantity: {
+      label: "Maximum Order Quantity",
+      required: false,
+      type: "number"
+    },
+    orderMultiple: {
+      label: "Order Multiple",
+      required: false,
+      type: "number"
+    },
+    maximumInventoryQuantity: {
+      label: "Maximum Inventory Quantity",
+      required: false,
+      type: "number"
+    },
+    planningHorizonDays: {
+      label: "Planning Horizon (Days)",
+      required: false,
+      type: "number"
+    }
+  },
+  customerPartToItem: {
+    ...existingItemImportFields,
+    customerId: {
+      label: "Customer",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The customer — match by Customer ID or name",
+        fetcher: customerFetcher
+      }
+    },
+    customerPartId: {
+      label: "Customer Part Number",
+      required: true,
+      type: "string"
+    },
+    customerPartRevision: {
+      label: "Customer Part Revision",
+      required: false,
+      type: "string"
+    }
+  },
+  customerLocation: {
+    customerId: {
+      label: "Customer",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The customer — match by Customer ID or name",
+        fetcher: customerFetcher
+      }
+    },
+    ...partnerLocationRecordFields
+  },
+  supplierLocation: {
+    supplierId: {
+      label: "Supplier",
+      required: true,
+      type: "enum",
+      enumData: {
+        description: "The supplier — match by Supplier ID or name",
+        fetcher: supplierFetcher
+      }
+    },
+    ...partnerLocationRecordFields
   }
 } as const;
 
@@ -2081,15 +2294,30 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   quoteWithLines: "sales",
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
-  serialQuantity: "inventory"
+  serialQuantity: "inventory",
+  supplierPartPrice: "parts",
+  itemUnitSalePrice: "parts",
+  itemPlanning: "parts",
+  customerPartToItem: "parts",
+  customerLocation: "sales",
+  supplierLocation: "purchasing"
 };
 
-// Imports that post stock also require `create` on their module: the
-// single-record inventory adjustment route requires `create: inventory`, and
-// its Save button requires `update: inventory`, so an import of the same rows
-// requires both.
+// Imports that create records also require `create` on their module, as the
+// single-record routes they mirror do: the inventory adjustment route
+// requires `create: inventory` (and its Save button `update: inventory`);
+// the new supplier part, customer part and location routes require
+// `create` on parts, sales or purchasing.
 export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
-  new Set(["inventoryQuantity", "batchQuantity", "serialQuantity"]);
+  new Set([
+    "inventoryQuantity",
+    "batchQuantity",
+    "serialQuantity",
+    "supplierPartPrice",
+    "customerPartToItem",
+    "customerLocation",
+    "supplierLocation"
+  ]);
 
 // Quote import validation is intentionally permissive at the mapping layer (every
 // cell an optional string); the app-side importer (`sales.import.server.ts`) does
@@ -2185,15 +2413,35 @@ const methodPartSchema = {
   unitCost: z.string().optional()
 };
 
-// Zod fragments for the opening-stock imports. The mapping layer only checks a
-// column is mapped; the import-csv server function does the per-row validation
-// (item resolution, tracking type, positive quantity, ISO dates, duplicates).
-const stockImportItemSchema = {
+// Zod fragments for the imports onto existing items (opening stock, prices,
+// planning, customer parts) and partner locations. The mapping layer only
+// checks a column is mapped; the import-csv server function does the per-row
+// validation (item resolution, numbers, ISO dates, duplicates).
+const existingItemImportSchema = {
   readableId: z
     .string()
     .min(1, { message: "Part Number is required" })
     .describe("The part number of an existing item"),
   revision: z.string().optional().describe("The item revision (defaults to 0)")
+};
+const partnerLocationRecordSchema = {
+  locationName: z
+    .string()
+    .min(1, { message: "Location Name is required" })
+    .describe(
+      "The location's name; a location of the same name is updated, ignoring case"
+    ),
+  addressLine1: z.string().optional().describe("Address line 1"),
+  addressLine2: z.string().optional().describe("Address line 2"),
+  city: z.string().optional().describe("City"),
+  state: z.string().optional().describe("State, province or region"),
+  postalCode: z.string().optional().describe("Postal code"),
+  countryCode: z
+    .string()
+    .optional()
+    .describe("The country, as its ISO 3166-1 alpha-2 code"),
+  phone: z.string().optional().describe("The location's phone number"),
+  fax: z.string().optional().describe("The location's fax number")
 };
 const stockImportPlacementSchema = {
   locationId: z
@@ -3032,13 +3280,13 @@ export const importSchemas: Record<
   quoteLine: z.object(quoteImportSchemaFields),
   quoteWithLines: z.object(quoteImportSchemaFields),
   inventoryQuantity: z.object({
-    ...stockImportItemSchema,
+    ...existingItemImportSchema,
     ...stockImportPlacementSchema,
     ...stockImportQuantitySchema,
     ...stockImportCommentSchema
   }),
   batchQuantity: z.object({
-    ...stockImportItemSchema,
+    ...existingItemImportSchema,
     ...stockImportPlacementSchema,
     batchNumber: z
       .string()
@@ -3049,7 +3297,7 @@ export const importSchemas: Record<
     ...stockImportCommentSchema
   }),
   serialQuantity: z.object({
-    ...stockImportItemSchema,
+    ...existingItemImportSchema,
     ...stockImportPlacementSchema,
     serialNumber: z
       .string()
@@ -3057,6 +3305,110 @@ export const importSchemas: Record<
       .describe("The serial number of the unit; each row is one unit"),
     ...stockImportExpirationSchema,
     ...stockImportCommentSchema
+  }),
+  supplierPartPrice: z.object({
+    ...existingItemImportSchema,
+    supplierId: z
+      .string()
+      .min(1, { message: "Supplier is required" })
+      .describe("The supplier the price breaks are from"),
+    quantity: z
+      .string()
+      .min(1, { message: "Quantity is required" })
+      .describe(
+        "The quantity the price applies from — greater than 0, once per item and supplier"
+      ),
+    unitPrice: z
+      .string()
+      .min(1, { message: "Unit Price is required" })
+      .describe("The unit price at that quantity — greater than 0"),
+    leadTime: z
+      .string()
+      .optional()
+      .describe("The lead time in days at that quantity (defaults to 0)")
+  }),
+  itemUnitSalePrice: z.object({
+    ...existingItemImportSchema,
+    unitSalePrice: z
+      .string()
+      .min(1, { message: "Unit Sale Price is required" })
+      .describe("The item's unit sale price — 0 or more")
+  }),
+  itemPlanning: z.object({
+    ...existingItemImportSchema,
+    locationId: z
+      .string()
+      .min(1, { message: "Location is required" })
+      .describe("The location the planning settings apply to"),
+    reorderingPolicy: z
+      .string()
+      .optional()
+      .describe("The reordering policy (blank keeps the current one)"),
+    reorderPoint: z
+      .string()
+      .optional()
+      .describe("Reorder point, a whole number"),
+    reorderQuantity: z
+      .string()
+      .optional()
+      .describe("Reorder quantity, a whole number"),
+    demandAccumulationPeriod: z
+      .string()
+      .optional()
+      .describe("Demand accumulation period in weeks, 1 or more"),
+    demandAccumulationSafetyStock: z
+      .string()
+      .optional()
+      .describe("Safety stock quantity"),
+    minimumOrderQuantity: z
+      .string()
+      .optional()
+      .describe("Minimum order quantity, a whole number"),
+    maximumOrderQuantity: z
+      .string()
+      .optional()
+      .describe("Maximum order quantity, a whole number"),
+    orderMultiple: z
+      .string()
+      .optional()
+      .describe("Order multiple, a whole number of 1 or more"),
+    maximumInventoryQuantity: z
+      .string()
+      .optional()
+      .describe("Maximum inventory quantity"),
+    planningHorizonDays: z
+      .string()
+      .optional()
+      .describe("Planning horizon in days, a whole number")
+  }),
+  customerPartToItem: z.object({
+    ...existingItemImportSchema,
+    customerId: z
+      .string()
+      .min(1, { message: "Customer is required" })
+      .describe("The customer"),
+    customerPartId: z
+      .string()
+      .min(1, { message: "Customer Part Number is required" })
+      .describe("The customer's part number for the item"),
+    customerPartRevision: z
+      .string()
+      .optional()
+      .describe("The customer's revision of that part number (optional)")
+  }),
+  customerLocation: z.object({
+    customerId: z
+      .string()
+      .min(1, { message: "Customer is required" })
+      .describe("The customer the location belongs to"),
+    ...partnerLocationRecordSchema
+  }),
+  supplierLocation: z.object({
+    supplierId: z
+      .string()
+      .min(1, { message: "Supplier is required" })
+      .describe("The supplier the location belongs to"),
+    ...partnerLocationRecordSchema
   })
 } as const;
 

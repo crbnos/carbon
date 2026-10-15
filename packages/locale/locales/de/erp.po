@@ -6636,6 +6636,9 @@ msgstr "Kundenstandort"
 msgid "Customer Location"
 msgstr "Kundenstandort"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "Kundenübersicht"
 
@@ -6647,6 +6650,9 @@ msgstr "Kundenartikelnummer"
 
 msgid "Customer Part Number"
 msgstr "Kundenteilenummer"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "Kundenteils-Revision"
@@ -11942,6 +11948,12 @@ msgstr "Artikelname"
 
 msgid "Item pages"
 msgstr "Artikel-Seiten"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "Artikelbereich"
@@ -21559,6 +21571,9 @@ msgstr "Lieferantenstandort"
 msgid "Supplier Location"
 msgstr "Lieferantenstandort"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "Lieferantennummer"
 
@@ -21591,6 +21606,9 @@ msgstr "Lieferanten-Zahlungsrabatte (Standard)"
 
 msgid "Supplier Prepayments"
 msgstr "Lieferantenanzahlungen"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "Lieferantenverfahren"

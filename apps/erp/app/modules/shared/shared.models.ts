@@ -499,7 +499,13 @@ export const csvImportTables = [
   "materialDimension",
   "inventoryQuantity",
   "batchQuantity",
-  "serialQuantity"
+  "serialQuantity",
+  "supplierPartPrice",
+  "itemUnitSalePrice",
+  "itemPlanning",
+  "customerPartToItem",
+  "customerLocation",
+  "supplierLocation"
 ] as const;
 
 export type CsvImportTable = (typeof csvImportTables)[number];

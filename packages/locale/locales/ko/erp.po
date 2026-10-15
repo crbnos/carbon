@@ -6636,6 +6636,9 @@ msgstr "고객 위치"
 msgid "Customer Location"
 msgstr "고객 위치"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "고객 개요"
 
@@ -6647,6 +6650,9 @@ msgstr "고객 품번"
 
 msgid "Customer Part Number"
 msgstr "고객 부품 번호"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "고객 부품 리비전"
@@ -11942,6 +11948,12 @@ msgstr "품목명"
 
 msgid "Item pages"
 msgstr "품목 페이지"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "품목 범위"
@@ -21559,6 +21571,9 @@ msgstr "공급업체 위치"
 msgid "Supplier Location"
 msgstr "공급업체 위치"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "공급업체 주문 번호"
 
@@ -21591,6 +21606,9 @@ msgstr "공급업체 지불 할인 (기본값)"
 
 msgid "Supplier Prepayments"
 msgstr "공급업체 선급금"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "공급업체 공법"

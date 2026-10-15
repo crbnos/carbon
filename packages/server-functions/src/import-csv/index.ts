@@ -16,14 +16,19 @@ import type { ServerFnContext } from "../server-fn-context";
 import { inChunks } from "./chunks";
 import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";
+import { importCustomerParts } from "./customer-part-import";
 import {
   collectItemExtras,
   emptyItemExtras,
   writeItemExtras
 } from "./item-extras";
+import { importItemPlanning } from "./item-planning-import";
+import { importItemSalePrices } from "./item-sale-price-import";
 import { importMaterialProperties } from "./material-property-import";
 import { importMethods } from "./method-import";
+import { importPartnerLocations } from "./partner-location-import";
 import { importStockQuantities } from "./stock-quantity-import";
+import { importSupplierPrices } from "./supplier-price-import";
 import { inTransaction } from "./transaction";
 import { processIdsByName, resolveProcessNames } from "./work-center-processes";
 
@@ -65,7 +70,13 @@ export const importCsvInput = z
       "materialDimension",
       "inventoryQuantity",
       "batchQuantity",
-      "serialQuantity"
+      "serialQuantity",
+      "supplierPartPrice",
+      "itemUnitSalePrice",
+      "itemPlanning",
+      "customerPartToItem",
+      "customerLocation",
+      "supplierLocation"
     ]),
     // The CSV either sits in the company's storage (the app's upload flow) or
     // arrives as text in the request (callers that cannot upload a file, such as
@@ -121,7 +132,13 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
   materialDimension: "parts",
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
-  serialQuantity: "inventory"
+  serialQuantity: "inventory",
+  supplierPartPrice: "parts",
+  itemUnitSalePrice: "parts",
+  itemPlanning: "parts",
+  customerPartToItem: "parts",
+  customerLocation: "sales",
+  supplierLocation: "purchasing"
 };
 
 // Imports that post new records also need `create`, as the ERP's import route
@@ -129,7 +146,11 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
 const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
   "inventoryQuantity",
   "batchQuantity",
-  "serialQuantity"
+  "serialQuantity",
+  "supplierPartPrice",
+  "customerPartToItem",
+  "customerLocation",
+  "supplierLocation"
 ]);
 
 const IMPORT_PERMISSION_RULES = Object.fromEntries(
@@ -217,6 +238,7 @@ function pickColumns<
 // system rows (companyId IS NULL) that every company may use.
 type ReferencedTable =
   | "employee"
+  | "customer"
   | "customerStatus"
   | "customerType"
   | "supplierType"
@@ -240,9 +262,18 @@ const GLOBAL_REFERENCED_TABLES = new Set<ReferencedTable>([
 
 type ReferenceSpec = { column: string; table: ReferencedTable; label: string };
 
-const itemReferences: ReferenceSpec[] = [
-  { column: "supplierId", table: "supplier", label: "Supplier" }
-];
+const supplierReference: ReferenceSpec = {
+  column: "supplierId",
+  table: "supplier",
+  label: "Supplier"
+};
+const customerReference: ReferenceSpec = {
+  column: "customerId",
+  table: "customer",
+  label: "Customer"
+};
+
+const itemReferences: ReferenceSpec[] = [supplierReference];
 
 // Id-valued columns per import. The wizard resolves these through
 // company-scoped fetchers, but the ids arrive in the request body, so each is
@@ -283,7 +314,14 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     { column: "dimensionId", table: "materialDimension", label: "Dimensions" }
   ],
   workCenter: [{ column: "locationId", table: "location", label: "Location" }],
-  storageUnit: [{ column: "locationId", table: "location", label: "Location" }]
+  storageUnit: [{ column: "locationId", table: "location", label: "Location" }],
+  supplierPartPrice: [supplierReference],
+  itemPlanning: [
+    { column: "locationId", table: "location", label: "Location" }
+  ],
+  customerPartToItem: [customerReference],
+  customerLocation: [customerReference],
+  supplierLocation: [supplierReference]
 };
 
 type CsvRecord = Record<string, string>;
@@ -3160,6 +3198,51 @@ const importer = {
           mappedRecords,
           companyId,
           userId,
+          summary
+        });
+        break;
+      }
+      case "supplierPartPrice": {
+        await importSupplierPrices(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary
+        });
+        break;
+      }
+      case "itemUnitSalePrice": {
+        await importItemSalePrices(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary
+        });
+        break;
+      }
+      case "itemPlanning": {
+        await importItemPlanning(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary
+        });
+        break;
+      }
+      case "customerPartToItem": {
+        await importCustomerParts(db, {
+          rows: acceptedRows,
+          companyId,
+          summary
+        });
+        break;
+      }
+      case "customerLocation":
+      case "supplierLocation": {
+        await importPartnerLocations(db, {
+          table,
+          rows: acceptedRows,
+          companyId,
           summary
         });
         break;

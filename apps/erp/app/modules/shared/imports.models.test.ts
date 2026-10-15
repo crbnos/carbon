@@ -2,12 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { importCsvInput } from "@carbon/server-functions/import-csv";
+import importCsv, { importCsvInput } from "@carbon/server-functions/import-csv";
 import { describe, expect, it } from "vitest";
+import { itemReorderingPolicies } from "../items/items.models";
 import {
   columnMappingsFromHeaders,
   enumDefault,
   fieldMappings,
+  importPermissions,
+  importRequiresCreate,
   importSchemas,
   parseCsvHeader
 } from "./imports.models";
@@ -71,6 +74,25 @@ describe("CSV text import", () => {
     }
   });
 
+  // The route checks `importPermissions` / `importRequiresCreate`; the server
+  // function checks its own copy. A table added to one side only is either
+  // refused by the importer or checked against a different permission.
+  it("asks the same permissions as the import-csv server function", () => {
+    const rules = (
+      importCsv.permissions as {
+        rules: Record<string, Record<string, string>>;
+      }
+    ).rules;
+    for (const table of csvImportTables) {
+      expect(rules[table], table).toEqual({
+        update: importPermissions[table],
+        ...(importRequiresCreate.has(table)
+          ? { create: importPermissions[table] }
+          : {})
+      });
+    }
+  });
+
   it("reads a header row, quotes and all", () => {
     expect(parseCsvHeader("id,readableId,name\nP-1,P-1,Frame")).toEqual([
       "id",
@@ -106,6 +128,16 @@ describe("CSV text import", () => {
 // a default the importer rejects fails every such row. The Default Method
 // defaults read "Make" after the method types were renamed to "Make to Order"
 // and its siblings, and every part imported without that column failed.
+describe("item planning import", () => {
+  // The models restate the planning form's policies to avoid importing the
+  // items module; this keeps the copy honest.
+  it("offers the planning form's reordering policies", () => {
+    expect(
+      fieldMappings.itemPlanning.reorderingPolicy.enumData.options
+    ).toEqual(itemReorderingPolicies);
+  });
+});
+
 describe("enum defaults", () => {
   const tables = Object.keys(fieldMappings) as (keyof typeof fieldMappings)[];
 
