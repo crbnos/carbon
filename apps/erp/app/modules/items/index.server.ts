@@ -5,12 +5,16 @@
 import {
   addItemPredecessor,
   copyMethod,
+  createChangeNotice,
+  createChangeNoticeForItem,
   createMethodVersion,
   createPart,
   createSupplierPart,
+  decideChangeNoticeApproval,
   deleteMethodOperation,
   recalculateItemCost,
   renameService,
+  setChangeNoticeStatus,
   setItemActive,
   setItemFields,
   setItemPostingGroup,
@@ -49,5 +53,11 @@ export const items = {
   supplierPart: { create: createSupplierPart, update: updateSupplierPart },
   cost: { recalculate: recalculateItemCost },
   method: { copy: copyMethod, createVersion: createMethodVersion },
-  methodOperation: { delete: deleteMethodOperation }
+  methodOperation: { delete: deleteMethodOperation },
+  changeNotice: {
+    create: createChangeNotice,
+    createForItem: createChangeNoticeForItem,
+    setStatus: setChangeNoticeStatus,
+    decideApproval: decideChangeNoticeApproval
+  }
 };

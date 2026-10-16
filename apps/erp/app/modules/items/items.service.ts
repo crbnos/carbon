@@ -6894,7 +6894,7 @@ export async function getChangeNotices(
 // -----------------------------------------------------------------------------
 // Header CRUD
 // -----------------------------------------------------------------------------
-/** @mcp create */
+/** The header insert only; `items.changeNotice.create` also dates it and adds its parts. */
 export async function insertChangeNotice(
   client: SupabaseClient<Database>,
   input: {
@@ -7047,7 +7047,7 @@ export async function deleteChangeNotice(
 // Stage transition — the single guarded writer (G8), a compare-and-swap (G2).
 // Forward-only (isAllowedChangeNoticeTransition).
 // -----------------------------------------------------------------------------
-/** @mcp update */
+/** The guarded write only; `items.changeNotice.setStatus` also gates approval, releases and notifies. */
 export async function updateChangeNoticeStatus(
   client: SupabaseClient<Database>,
   update: {

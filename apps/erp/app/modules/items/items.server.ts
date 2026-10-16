@@ -5,8 +5,14 @@
 import { error } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { type Database, fetchAllByIds } from "@carbon/database";
+import { type Database, fetchAllByIds, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { approvalDecisionValidator } from "@carbon/ee/approvals";
+import {
+  cancelPendingApprovals,
+  decideApprovalRequest,
+  openApprovalRequests
+} from "@carbon/ee/approvals/document.server";
 import { hasPendingApproval } from "@carbon/ee/approvals.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -24,7 +30,11 @@ import {
 } from "~/modules/service-fn.server";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { methodType, sourcingType } from "~/modules/shared/shared.models";
-import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
+import {
+  isActiveCompanyEmployee,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.server";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import {
   type BomOperation,
   calculateMadePartCosts,
@@ -37,8 +47,12 @@ import {
   canEditChangeNoticeEngineering,
   canEditChangeNoticeWorkflow,
   changeNoticeAwaitingApprovalMessage,
+  changeNoticeChangeTypes,
   changeNoticeLockedMessage,
+  changeNoticeNotifyStages,
   changeNoticeOpenStatuses,
+  changeNoticeStatusValidator,
+  changeNoticeValidator,
   deriveItemMethodUpdate,
   getMethodValidator,
   itemManufacturingValidator,
@@ -56,17 +70,21 @@ import {
 } from "./items.models";
 import {
   activateMethodVersion,
+  addChangeNoticeAffectedItem,
   cascadeItemTrackingType,
   copyItem,
   copyMakeMethod,
   findChangeNoticesForItem,
   getChangeNoticeTypesList,
+  getItem,
   getItemSupersededBy,
   getItemSupersession,
   getMakeMethodById,
   getMakeMethods,
   getMethodTree,
+  insertChangeNotice,
   SUPERSESSION_CYCLE_CODE,
+  updateChangeNoticeStatus,
   updateItemMethodAndSourcing,
   updateMaterialProperties,
   updateServiceName,
@@ -2127,5 +2145,404 @@ export const recalculateItemCost = defineServiceFn({
       return ctx.error("internal", "Failed to update item cost", update.error);
     }
     return { itemId, unitCost };
+  }
+});
+
+// ── Change notices ──────────────────────────────────────────────────────────
+
+// Reason and description arrive as plain text; the columns are tiptap JSON, so
+// non-empty text becomes a one-paragraph doc the detail page's editor can edit.
+function toRichText(value: string | undefined): Json | undefined {
+  if (!value) return undefined;
+  return {
+    type: "doc",
+    content: [{ type: "paragraph", content: [{ type: "text", text: value }] }]
+  } as unknown as Json;
+}
+
+/**
+ * Create a change notice, with the parts it changes.
+ *
+ * @remarks
+ * The number comes from the change notice sequence unless `changeOrderId` is
+ * given; the open date defaults to today in the company's timezone. Each of
+ * `affectedItemIds` that is one of the company's parts is added as a Version
+ * change (`addChangeNoticeAffectedItem`, which makes a bought part a Revision
+ * and creates the notice's draft method). Anything that is not a part is
+ * skipped. The notice stays when an item cannot be added: `warning` says so.
+ *
+ * @mcp
+ */
+export const createChangeNotice = defineServiceFn({
+  input: changeNoticeValidator.omit({ id: true, type: true }).extend({
+    openDate: z.string().optional(),
+    customFields: customFieldsInput
+  }),
+  permission: { create: "parts" },
+
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const created = await insertChangeNotice(client, {
+      changeNoticeId: input.changeOrderId || undefined,
+      name: input.name,
+      reasonForChange: toRichText(input.reasonForChange),
+      description: toRichText(input.description),
+      priority: input.priority,
+      changeNoticeTypeId: input.changeOrderTypeId || undefined,
+      nonConformanceId: input.nonConformanceId || undefined,
+      openDate:
+        input.openDate ||
+        datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
+      dueDate: input.dueDate || undefined,
+      assignee: input.assignee || undefined,
+      companyId,
+      createdBy: userId,
+      customFields: input.customFields
+    });
+    if (created.error || !created.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create change notice",
+        created.error
+      );
+    }
+    const id = created.data.id;
+
+    // Change notices change parts only; the create modal opens from tool
+    // pages too.
+    const submitted = [...new Set(input.affectedItemIds ?? [])];
+    const items = submitted.length
+      ? await client
+          .from("item")
+          .select("id, type")
+          .in("id", submitted)
+          .eq("companyId", companyId)
+      : null;
+    const partIds = (items?.data ?? [])
+      .filter((item) => item.type === "Part")
+      .map((item) => item.id);
+
+    let failed = !!items?.error;
+    for (const itemId of partIds) {
+      const added = await addChangeNoticeAffectedItem(client, ctx.asSystem.pg, {
+        changeNoticeId: id,
+        itemId,
+        changeType: "Version",
+        companyId,
+        userId
+      });
+      if (added.error) {
+        logger.error("Failed to add an affected item to a new change notice", {
+          companyId,
+          changeNoticeId: id,
+          itemId,
+          error: added.error
+        });
+        failed = true;
+      }
+    }
+
+    const warning = failed
+      ? "Change notice created, but some items could not be added"
+      : partIds.length < submitted.length
+        ? "Change notice created. Change notices support Parts only, so non-Part items were skipped"
+        : undefined;
+    return { id, warning };
+  }
+});
+
+/**
+ * Create a change notice for one item.
+ *
+ * @remarks
+ * Named "Change for" the item, opened today in the company's timezone, with
+ * the item as its first affected item (`addChangeNoticeAffectedItem`, a
+ * Version change unless `changeType` says otherwise; `revision` names a
+ * Revision's new revision). The notice stays when the item cannot be added:
+ * `warning` says so.
+ *
+ * @mcp
+ */
+export const createChangeNoticeForItem = defineServiceFn({
+  input: z.object({
+    itemId: z.string(),
+    changeType: z.enum(changeNoticeChangeTypes).default("Version"),
+    revision: z.string().optional()
+  }),
+  permission: { create: "parts" },
+
+  async run(ctx, { itemId, changeType, revision }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const owned = await refuseUnlessOwned(ctx, "item", { id: itemId });
+    if (owned) return owned;
+
+    const item = await getItem(client, itemId);
+    const label =
+      item.data?.readableIdWithRevision ?? item.data?.readableId ?? itemId;
+
+    const created = await insertChangeNotice(client, {
+      companyId,
+      createdBy: userId,
+      name: `Change for ${label}`,
+      openDate: datetime
+        .today(await getCompanyTimeZone(client, companyId))
+        .toString()
+    });
+    if (created.error || !created.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create change notice",
+        created.error
+      );
+    }
+    const id = created.data.id;
+
+    const added = await addChangeNoticeAffectedItem(client, ctx.asSystem.pg, {
+      changeNoticeId: id,
+      itemId,
+      changeType,
+      revision,
+      companyId,
+      userId
+    });
+    if (added.error) {
+      logger.error("Failed to add the item to its new change notice", {
+        companyId,
+        changeNoticeId: id,
+        itemId,
+        error: added.error
+      });
+      return {
+        id,
+        warning: "Change notice created, but the item could not be added"
+      };
+    }
+    return { id, warning: undefined };
+  }
+});
+
+/**
+ * Move a change notice to another stage.
+ *
+ * @remarks
+ * `fromStatus` is the stage the caller saw: the move is a compare-and-swap on
+ * it, and only the transitions `changeNoticeStatusTransitions` allows are
+ * taken. With an approval rule, Engineering Complete → Implementation opens an
+ * approval request and notifies the approvers instead of moving
+ * (`approvalRequested`); approving it moves the notice. Implementation → Done
+ * is the release (`applyChangeNotice`): it activates each affected item's
+ * draft method, reveals new revisions and parts, and writes their
+ * supersessions. Cancelling, or advancing past the gate after the rule was
+ * turned off, withdraws a pending request. Entering Start, Implementation or
+ * Done notifies the assignee and the action-task assignees.
+ *
+ * @mcp
+ */
+export const setChangeNoticeStatus = defineServiceFn({
+  input: changeNoticeStatusValidator,
+  permission: { update: "parts" },
+
+  async run(ctx, { id, fromStatus, status, assignee }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const isGatedAdvance =
+      fromStatus === "Engineering Complete" && status === "Implementation";
+    if (isGatedAdvance) {
+      // A stale page must not open a request for a notice that has moved on.
+      const current = await client
+        .from("changeOrder")
+        .select("status")
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (current.data?.status !== fromStatus) {
+        return ctx.error(
+          "conflict",
+          "The change notice was updated by someone else. Refresh and try again.",
+          current.error
+        );
+      }
+
+      const opened = await openApprovalRequests(ctx.asSystem.supabase, {
+        documentType: "changeOrder",
+        documentIds: [id],
+        companyId,
+        userId
+      });
+      if (opened.status === "opened" && opened.approverIds.length > 0) {
+        await trigger("notify", {
+          event: NotificationEvent.ApprovalRequested,
+          companyId,
+          documentId: id,
+          documentType: "changeOrder",
+          recipient: { type: "users", userIds: opened.approverIds },
+          from: userId
+        }).catch((e) =>
+          logger.error("Failed to notify change notice approvers", {
+            companyId,
+            changeNoticeId: id,
+            error: e
+          })
+        );
+      }
+      if (opened.status === "failed") {
+        return ctx.error("internal", "Failed to submit for approval");
+      }
+      if (opened.status === "opened") {
+        if (opened.requested.length === 0) {
+          return ctx.error(
+            "conflict",
+            "This change notice is already waiting for approval"
+          );
+        }
+        return { id, status: fromStatus, approvalRequested: true };
+      }
+    }
+
+    if (status === "Done") {
+      const applied = await applyChangeNotice(client, ctx.asSystem.pg, {
+        changeNoticeId: id,
+        userId,
+        companyId
+      });
+      if (applied.error || !applied.data) {
+        return ctx.error(
+          "internal",
+          "Failed to apply change notice",
+          applied.error
+        );
+      }
+    } else {
+      const update = await updateChangeNoticeStatus(client, {
+        id,
+        companyId,
+        fromStatus,
+        toStatus: status,
+        assignee,
+        updatedBy: userId
+      });
+      if (update.error || !update.data) {
+        return ctx.error(
+          "internal",
+          "Failed to update change notice status",
+          update.error
+        );
+      }
+    }
+
+    if (status === "Cancelled" || isGatedAdvance) {
+      const cancelled = await cancelPendingApprovals(ctx.asSystem.supabase, {
+        documentType: "changeOrder",
+        documentIds: [id],
+        companyId,
+        userId
+      });
+      if (cancelled.error) {
+        logger.error("Failed to cancel change notice approval requests", {
+          companyId,
+          changeNoticeId: id,
+          error: cancelled.error
+        });
+      }
+    }
+
+    if (changeNoticeNotifyStages.includes(status)) {
+      await notifyChangeNoticeTransition({
+        client,
+        event: changeNoticeStageEvent[status],
+        changeNoticeId: id,
+        companyId,
+        userId
+      });
+    }
+    return { id, status, approvalRequested: false };
+  }
+});
+
+/**
+ * Approve or reject a change notice's pending approval request.
+ *
+ * @remarks
+ * Approving moves the notice from Engineering Complete to Implementation, in
+ * the decision's transaction, and notifies the notice's assignee and
+ * action-task assignees as an advance would. Rejecting leaves the stage. The
+ * requester is told either way, unless they decided it themselves.
+ *
+ * @mcp
+ */
+export const decideChangeNoticeApproval = defineServiceFn({
+  input: approvalDecisionValidator.extend({ changeNoticeId: z.string() }),
+  permission: { update: "parts" },
+
+  async run(ctx, { changeNoticeId, approvalRequestId, decision, notes }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const owned = await refuseUnlessOwned(ctx, "changeOrder", {
+      id: changeNoticeId
+    });
+    if (owned) return owned;
+
+    const result = await decideApprovalRequest(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        documentType: "changeOrder",
+        documentId: changeNoticeId,
+        companyId,
+        userId,
+        approvalRequestId,
+        decision,
+        notes
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        result.error.code === "not-found"
+          ? "notFound"
+          : result.error.code === "forbidden"
+            ? "forbidden"
+            : "internal",
+        result.error.message,
+        result.error
+      );
+    }
+
+    if (result.requestedBy !== userId) {
+      await trigger("notify", {
+        event:
+          decision === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+        companyId,
+        documentId: changeNoticeId,
+        documentType: "changeOrder",
+        recipient: { type: "user", userId: result.requestedBy },
+        from: userId
+      }).catch((e) =>
+        logger.error("Failed to notify the approval requester", {
+          companyId,
+          changeNoticeId,
+          error: e
+        })
+      );
+    }
+
+    if (decision === "Approved") {
+      await notifyChangeNoticeTransition({
+        client: ctx.asCaller.supabase,
+        event: changeNoticeStageEvent.Implementation,
+        changeNoticeId,
+        companyId,
+        userId
+      });
+    }
+    return { changeNoticeId, decision };
   }
 });

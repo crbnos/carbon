@@ -13,22 +13,36 @@ vi.mock("@carbon/logger", () => ({
 }));
 const { trigger } = vi.hoisted(() => ({ trigger: vi.fn() }));
 vi.mock("@carbon/jobs", () => ({ trigger }));
+vi.mock("@carbon/ee/approvals/document.server", () => ({
+  openApprovalRequests: vi.fn(),
+  cancelPendingApprovals: vi.fn(),
+  decideApprovalRequest: vi.fn()
+}));
 vi.mock("../app/modules/items/items.service", () => ({
+  addChangeNoticeAffectedItem: vi.fn(),
   getItemSupersession: vi.fn(),
+  insertChangeNotice: vi.fn(),
+  updateChangeNoticeStatus: vi.fn(),
   updateItemMethodAndSourcing: vi.fn(),
   upsertItemPlanning: vi.fn(),
   upsertItemSupersession: vi.fn()
 }));
 
+import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import {
   addItemPredecessor,
+  createChangeNotice,
+  setChangeNoticeStatus,
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
   updateItemPlanning
 } from "../app/modules/items/items.server";
 import {
+  addChangeNoticeAffectedItem,
   getItemSupersession,
+  insertChangeNotice,
+  updateChangeNoticeStatus,
   updateItemMethodAndSourcing,
   upsertItemPlanning,
   upsertItemSupersession
@@ -196,6 +210,100 @@ describe("setItemActive", () => {
 
     expect(result.error).toBeNull();
     expect(writes).toMatchObject([{ op: "update", values: { active: false } }]);
+  });
+});
+
+describe("setChangeNoticeStatus", () => {
+  const gated = {
+    id: "co-1",
+    fromStatus: "Engineering Complete",
+    status: "Implementation"
+  } as const;
+
+  it("opens no approval request for a notice that moved on", async () => {
+    const { client } = fakeClient({ changeOrder: { status: "Implementation" } });
+
+    const result = await setChangeNoticeStatus(contextFor(client), gated);
+
+    expect(result.error).toMatchObject({ category: "conflict" });
+    expect(openApprovalRequests).not.toHaveBeenCalled();
+  });
+
+  it("submits for approval instead of moving when a rule gates the step", async () => {
+    const { client } = fakeClient({
+      changeOrder: { status: "Engineering Complete" }
+    });
+    vi.mocked(openApprovalRequests).mockResolvedValue({
+      status: "opened",
+      requested: ["co-1"],
+      alreadyPending: [],
+      approverIds: ["approver-1"]
+    });
+
+    const result = await setChangeNoticeStatus(
+      contextFor(client, { system: () => ({}) }),
+      gated
+    );
+
+    expect(result.data).toMatchObject({ approvalRequested: true });
+    expect(updateChangeNoticeStatus).not.toHaveBeenCalled();
+  });
+
+  it("refuses a second request while one is pending", async () => {
+    const { client } = fakeClient({
+      changeOrder: { status: "Engineering Complete" }
+    });
+    vi.mocked(openApprovalRequests).mockResolvedValue({
+      status: "opened",
+      requested: [],
+      alreadyPending: ["co-1"],
+      approverIds: []
+    });
+
+    const result = await setChangeNoticeStatus(
+      contextFor(client, { system: () => ({}) }),
+      gated
+    );
+
+    expect(result.error).toMatchObject({ category: "conflict" });
+    expect(updateChangeNoticeStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe("createChangeNotice", () => {
+  it("adds only the company's parts, and says when it skipped the rest", async () => {
+    const { client } = fakeClient({
+      item: [
+        { id: "part-1", type: "Part" },
+        { id: "tool-1", type: "Tool" }
+      ]
+    });
+    vi.mocked(insertChangeNotice).mockResolvedValue({
+      data: { id: "co-1", changeNoticeId: "ECO-1" },
+      error: null
+    });
+    vi.mocked(addChangeNoticeAffectedItem).mockResolvedValue({
+      data: { id: "affected-1", draftMakeMethodId: null },
+      error: null
+    });
+
+    const result = await createChangeNotice(contextFor(client), {
+      name: "Rework",
+      openDate: "2026-10-16",
+      affectedItemIds: ["part-1", "tool-1", "elsewhere-1"]
+    });
+
+    expect(addChangeNoticeAffectedItem).toHaveBeenCalledTimes(1);
+    expect(addChangeNoticeAffectedItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ itemId: "part-1", changeType: "Version" })
+    );
+    expect(result.data).toEqual({
+      id: "co-1",
+      warning:
+        "Change notice created. Change notices support Parts only, so non-Part items were skipped"
+    });
   });
 });
 
