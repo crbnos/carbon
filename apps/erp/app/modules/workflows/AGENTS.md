@@ -72,6 +72,15 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - `updateWorkflowNodePositions` (service) — the positions-only writer behind `$id.positions.tsx`
 - `publishWorkflowVersion` / `unpublishWorkflow` (server) — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
 
+## Operations (`workflows.server.ts`)
+
+Each is a `defineServiceFn` listed in `index.server.ts`; the route calls it through `carbon(request)`. Neither is published.
+
+- `workflow.create` (`x+/workflows+/new.tsx`) — inserts the workflow (the creator is its owner) and version 1 with one trigger node; the New Workflow modal opens the builder on the returned `id`.
+- `workflow.delete` (`x+/workflows+/delete.$id.tsx`) — deletes the workflow, then `syncAfterWorkflowDelete` reconciles the company's event subscriptions.
+
+Both refuse with `entitlement` when the company's plan has no `WORKFLOWS` (`companyHasFeature`), the check the routes' `requireFeature` used to make.
+
 ## Builder Notes
 
 - One zustand store per builder instance, vanilla `createStore` in a ref behind a context — the `DocumentTemplateEditor` idiom. React Flow keeps viewport and interaction state.

@@ -2,9 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import type { CompanyLock, WorkflowIssue } from "@carbon/ee/workflows";
 import {
+  CURRENT_DEFINITION_FORMAT_VERSION,
   createWorkflowCatalog,
   readWorkflowVersion,
   syncWorkflowTriggers,
@@ -16,10 +20,19 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
 import {
+  defineServiceFn,
+  type ServiceContext
+} from "~/modules/service-fn.server";
+import { getDatabaseClient } from "~/services/database.server";
+import { createNode, TRIGGER_POSITION } from "./ui/Builder/graph";
+import {
+  deleteWorkflow as deleteWorkflowRow,
   getWorkflowVersion,
-  getWorkflowVersionOwnership
+  getWorkflowVersionOwnership,
+  insertWorkflow,
+  insertWorkflowVersion
 } from "./workflows.service";
 
 const logger = getLogger("erp", "workflows");
@@ -196,16 +209,12 @@ export async function unpublishWorkflow(
  * next publish or unpublish in the company reconciles it away.
  */
 export async function syncAfterWorkflowDelete(
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   workflowId: string
 ): Promise<void> {
   try {
-    await syncWorkflowTriggers(
-      getDatabaseClient(),
-      companyId,
-      workflowId,
-      lockCompany
-    );
+    await syncWorkflowTriggers(db, companyId, workflowId, lockCompany);
   } catch (err) {
     logger.error("Failed to reconcile subscriptions after workflow delete", {
       companyId,
@@ -214,3 +223,103 @@ export async function syncAfterWorkflowDelete(
     });
   }
 }
+
+/** A refusal unless the company's plan includes workflows. */
+async function refuseUnlessWorkflowsEnabled(ctx: ServiceContext) {
+  const enabled = await companyHasFeature(
+    ctx.asCaller.supabase,
+    ctx.company.id,
+    { feature: "WORKFLOWS" }
+  );
+  if (enabled) return null;
+  return ctx.error(
+    "entitlement",
+    defaultUpgradeMessage(resolveRequirement({ feature: "WORKFLOWS" }))
+  );
+}
+
+/**
+ * Create a workflow, with a first version holding only its trigger.
+ *
+ * @remarks
+ * Needs a plan that includes workflows. The creator becomes its owner, so it
+ * runs with the creator's permissions. Version 1 is seeded with one trigger
+ * node, so the builder's canvas is never empty. The workflow is a draft:
+ * nothing fires until a version is published.
+ */
+export const createWorkflow = defineServiceFn({
+  input: z.object({
+    name: z.string().trim().min(1),
+    description: z.string().optional()
+  }),
+  permission: { create: "workflows" },
+
+  async run(ctx, { name, description }) {
+    const gated = await refuseUnlessWorkflowsEnabled(ctx);
+    if (gated) return gated;
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    const created = await insertWorkflow(client, {
+      name,
+      description,
+      companyId,
+      createdBy: userId
+    });
+    if (created.error || !created.data) {
+      return ctx.error("internal", "Failed to create workflow", created.error);
+    }
+
+    const version = await insertWorkflowVersion(client, {
+      workflowId: created.data.id,
+      companyId,
+      versionNumber: 1,
+      nodes: [createNode("trigger", TRIGGER_POSITION)] as unknown as Json,
+      edges: [] as unknown as Json,
+      formatVersion: CURRENT_DEFINITION_FORMAT_VERSION,
+      createdBy: userId
+    });
+    if (version.error) {
+      return ctx.error(
+        "internal",
+        "Failed to create the first workflow version",
+        version.error
+      );
+    }
+
+    return { id: created.data.id };
+  }
+});
+
+/**
+ * Delete a workflow, with its versions and run history.
+ *
+ * @remarks
+ * Needs a plan that includes workflows. The cascade takes the workflow's
+ * trigger rows; the company's event subscriptions are then reconciled, so a
+ * table no workflow watches any more stops queueing events. A failed
+ * reconcile is logged and does not fail the delete: the next publish or
+ * unpublish reconciles it.
+ */
+export const deleteWorkflow = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { delete: "workflows" },
+
+  async run(ctx, { id }) {
+    const gated = await refuseUnlessWorkflowsEnabled(ctx);
+    if (gated) return gated;
+
+    const deleted = await deleteWorkflowRow(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (deleted.error) {
+      return ctx.error("internal", "Failed to delete workflow", deleted.error);
+    }
+
+    await syncAfterWorkflowDelete(ctx.asSystem.pg, ctx.company.id, id);
+    return { id };
+  }
+});
