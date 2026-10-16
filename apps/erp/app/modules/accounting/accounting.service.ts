@@ -311,6 +311,7 @@ import {
   diffJournalLines,
   hasAccountingCutover,
   isFutureRunPeriod,
+  LOCK_PERIOD_TASK_NAME,
   monthEndOf,
   runPostingTargets,
   usageKey
@@ -4027,13 +4028,6 @@ export function checklistTasksToCreate<T extends { id: string }>(
 // close. An Auto task is Done when its evaluator passes (or has none), Open
 // when it fails; a manual Skip is preserved. Close is allowed only when every
 // required task resolves to Done/Skipped and no Blocker auto-check is failing.
-// The "Lock the period" checklist step is an Action task whose completion IS the
-// Open -> Locked transition. Its status is derived from the period's closeStatus
-// (Locked/Closed => Done) rather than a stored task status, and its button drives
-// lock/unlock instead of a generic "Mark Done". Identified by name (a stable,
-// non-deletable system definition).
-export const LOCK_PERIOD_TASK_NAME = "Lock the period";
-
 export function evaluateCloseChecklist(
   tasks: PeriodCloseTaskRow[],
   checks: PeriodReadinessCheck[],

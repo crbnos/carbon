@@ -1105,3 +1105,10 @@ function isCalendarDateString(value: string): boolean {
     return false;
   }
 }
+
+// The "Lock the period" checklist step is an Action task whose completion IS the
+// Open -> Locked transition. Its status is derived from the period's closeStatus
+// (Locked/Closed => Done) rather than a stored task status, and its button drives
+// lock/unlock instead of a generic "Mark Done". Identified by name (a stable,
+// non-deletable system definition).
+export const LOCK_PERIOD_TASK_NAME = "Lock the period";

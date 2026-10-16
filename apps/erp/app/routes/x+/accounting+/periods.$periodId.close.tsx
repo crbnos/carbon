@@ -56,9 +56,9 @@ import { useCurrencyFormatter } from "~/hooks";
 import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
   getAccountingPeriods,
-  getPeriodCloseChecklist,
-  LOCK_PERIOD_TASK_NAME
+  getPeriodCloseChecklist
 } from "~/modules/accounting/accounting.service";
+import { LOCK_PERIOD_TASK_NAME } from "~/modules/accounting/accounting.utils";
 import type { PeriodCloseStatus } from "~/modules/accounting/types";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
 import { getDatabaseClient } from "~/services/database.server";

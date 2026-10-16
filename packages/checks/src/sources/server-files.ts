@@ -104,10 +104,11 @@ export function maskClientCode(contents: string): string {
     }
     if (inClientRegion) {
       kept[i] = "";
-      // `}`/`};` closes a block body; a bare `)`/`);` closes a paren-wrapped
-      // expression body. A `) {`-style line is a multi-line SIGNATURE closer —
+      // `}`/`};`/`});` closes a block body; a bare `)`/`);` closes a
+      // paren-wrapped expression body. A `) {`, `}: {` or `}) {` line closes a
+      // multi-line SIGNATURE (a destructured props parameter and its type) —
       // the body is still ahead, so it must not end the region.
-      if (line.startsWith("}") || /^\)\s*;?\s*$/.test(line)) {
+      if (/^[})]+;?\s*$/.test(line)) {
         inClientRegion = false;
       }
     }

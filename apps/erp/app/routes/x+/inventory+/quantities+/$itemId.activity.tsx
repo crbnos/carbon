@@ -13,10 +13,8 @@ import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
-import {
-  getItemLedgerActivity,
-  getItemLedgerBalance
-} from "~/modules/inventory/inventory.service";
+import { getItemLedgerBalance } from "~/modules/inventory/inventory.service";
+import { getItemLedgerActivity } from "~/modules/inventory/inventory.utils";
 import type { ItemLedger } from "~/modules/inventory/types";
 import type {
   BalanceAnchor,

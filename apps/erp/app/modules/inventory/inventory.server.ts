@@ -3743,7 +3743,7 @@ export const getItemLedgerActivity = defineServiceFn({
   async run(ctx, input) {
     return envelope(
       ctx,
-      await service.getItemLedgerActivity(
+      await utils.getItemLedgerActivity(
         ctx.asCaller.supabase,
         stamp(ctx, input, ["companyId"]) as never
       )

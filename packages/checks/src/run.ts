@@ -63,6 +63,10 @@ import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { routeActionShape } from "./conformance/route-action-shape";
 import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 import { serviceFnFile } from "./conformance/service-fn-file";
+import {
+  findUndeclaredSideEffectImports,
+  SIDE_EFFECT_IMPORT_DECLARED
+} from "./conformance/side-effect-import-declared";
 import { spdxLicenseHeader } from "./conformance/spdx-license-header";
 import {
   findStampColumnMismatches,
@@ -82,6 +86,7 @@ import {
   modulesDir
 } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
+import { loadSideEffectPackages } from "./sources/side-effect-packages";
 import {
   loadTypescriptFiles,
   REQUEST_HANDLING_ROOTS,
@@ -228,7 +233,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findStampColumnMismatches(
       loadModuleServerFiles(root),
       loadDbTableColumns(root)
-    ).map((violation) => ({ checkId: STAMP_MATCHES_COLUMNS, violation }))
+    ).map((violation) => ({ checkId: STAMP_MATCHES_COLUMNS, violation })),
+    ...findUndeclaredSideEffectImports(loadSideEffectPackages(root)).map(
+      (violation) => ({ checkId: SIDE_EFFECT_IMPORT_DECLARED, violation })
+    )
   ];
 }
 

@@ -184,5 +184,8 @@
     "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./app/modules/carbon.server.ts",
+    "./app/zod.client.ts"
+  ]
 }
