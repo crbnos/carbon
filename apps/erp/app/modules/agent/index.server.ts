@@ -2,5 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  createAgentThread,
+  deleteAgentThread,
+  startAgentTurn
+} from "./agent.server";
+
 /** The agent module's operations, by entity. */
-export const agent = {};
+export const agent = {
+  thread: { create: createAgentThread, delete: deleteAgentThread },
+  turn: { start: startAgentTurn }
+};
