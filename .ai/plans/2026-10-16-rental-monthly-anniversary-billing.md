@@ -61,10 +61,10 @@ rentals persist `rentalBillingPeriod` rows per unit.
 
 ## Tasks
 
-- [ ] **1. Migration.** `pnpm db:migrate:new rental-monthly-billing-cycle` →
+- [x] **1. Migration.** `pnpm db:migrate:new rental-monthly-billing-cycle` →
   `ALTER TYPE "rentalBillingCycle" ADD VALUE IF NOT EXISTS 'Monthly';`. Then run
   `pnpm db:migrate` and `pnpm run generate:types`.
-- [ ] **2. Billing math (TDD).** In `packages/utils/src/rental-periods.ts`:
+- [x] **2. Billing math (TDD).** In `packages/utils/src/rental-periods.ts`:
   `RentalBillingCycle` gets `"Monthly"`. Add `anniversaryPeriodEnd(startDate, from)`,
   which computes from the start date. `naturalEnd`, `billingHorizon` and
   `periodCharge` get the new branch: a Monthly unit's charge is the rate × days ÷

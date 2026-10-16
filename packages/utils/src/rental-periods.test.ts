@@ -4,10 +4,12 @@
 
 import { expect, it } from "vitest";
 import {
+  billingHorizon,
   calendarMonthCharge,
   defaultRentalRates,
   type ExistingBillingPeriod,
   generateRentalBillingPeriods,
+  monthlyCharge,
   type PeriodSpec,
   type RateLadder,
   type RateUnit,
@@ -546,6 +548,142 @@ it("Calendar Month: a Daily unit bills the days, a Weekly unit the whole weeks",
     period("2026-10-15", "2026-10-31", 17, 1500, "Week", "2026-10-15"),
     period("2026-11-01", "2026-11-30", 30, 2500, "Week", "2026-11-01")
   ]);
+});
+
+it("Monthly: periods run from the start day to the day before it, each the month rate", () => {
+  const plan = generate({
+    cycle: "Monthly",
+    startDate: "2026-10-07",
+    through: "2026-10-20"
+  });
+  expect(plan.create).toEqual([
+    period("2026-10-07", "2026-11-06", 31, 1500, "Month", "2026-10-07"),
+    period("2026-11-07", "2026-12-06", 30, 1500, "Month", "2026-11-07")
+  ]);
+  // A year is twelve periods, each invoiced on the 7th for the same amount.
+  const year = generate({
+    cycle: "Monthly",
+    startDate: "2026-10-07",
+    endDate: "2027-10-06",
+    through: "2026-10-07"
+  });
+  expect(year.create.length).toEqual(12);
+  expect(
+    year.create.every(
+      (row) => row.periodStart.endsWith("-07") && row.amount === 1500
+    )
+  ).toEqual(true);
+  expect(year.create[11]?.periodEnd).toEqual("2027-10-06");
+});
+
+it("Monthly: a start on the 31st clamps to a short month and returns to the 31st", () => {
+  const plan = generate({
+    cycle: "Monthly",
+    startDate: "2027-01-31",
+    endDate: "2027-04-29",
+    through: "2027-01-31"
+  });
+  // Each start is added from the agreement's start: 31 Jan + 3 months is
+  // 30 Apr, so March's period ends on 29 Apr.
+  expect(plan.create).toEqual([
+    period("2027-01-31", "2027-02-27", 28, 1500, "Month", "2027-01-31"),
+    period("2027-02-28", "2027-03-30", 31, 1500, "Month", "2027-02-28"),
+    period("2027-03-31", "2027-04-29", 30, 1500, "Month", "2027-03-31")
+  ]);
+});
+
+it("Monthly: dueOn is the period end in arrears", () => {
+  const plan = generate({
+    cycle: "Monthly",
+    timing: "Arrears",
+    startDate: "2026-10-07",
+    endDate: "2026-12-06",
+    through: "2026-10-07"
+  });
+  expect(plan.create.map((row) => row.dueOn)).toEqual([
+    "2026-11-06",
+    "2026-12-06"
+  ]);
+});
+
+it("Monthly: a part period is the month rate by the days of the period it belongs to", () => {
+  // 7 Nov – 6 Dec is 30 days; a return on 20 Nov used 14 of them.
+  const returned = generate({
+    cycle: "Monthly",
+    startDate: "2026-10-07",
+    returnedAt: "2026-11-20",
+    through: "2026-11-20"
+  });
+  expect(returned.create).toEqual([
+    period("2026-10-07", "2026-11-06", 31, 1500, "Month", "2026-10-07"),
+    period("2026-11-07", "2026-11-20", 14, 700, "Month", "2026-11-07")
+  ]);
+  // A mid-period end date is a hard cut: the holdover runs to the next
+  // anniversary, and the two halves add up to the month.
+  const holdover = generate({
+    cycle: "Monthly",
+    startDate: "2026-10-07",
+    endDate: "2026-11-20",
+    through: "2026-11-25"
+  });
+  expect(
+    holdover.create.map((row) => [row.periodStart, row.periodEnd, row.amount])
+  ).toEqual([
+    ["2026-10-07", "2026-11-06", 1500],
+    ["2026-11-07", "2026-11-20", 700],
+    ["2026-11-21", "2026-12-06", 800]
+  ]);
+});
+
+it("Monthly: an advance-billed period is credited for the unused days", () => {
+  const plan = generate({
+    cycle: "Monthly",
+    startDate: "2026-10-07",
+    endDate: "2027-10-06",
+    returnedAt: "2026-10-16",
+    through: "2026-10-16",
+    existing: [invoiced("2026-10-07", "2026-11-06", 1500)]
+  });
+  // 10 of the period's 31 days used: 483.87.
+  expect(plan.adjustments.map((row) => [row.days, row.amount])).toEqual([
+    [10, -1016.13]
+  ]);
+});
+
+it("Monthly: a Daily unit bills the days, a Weekly unit the whole weeks", () => {
+  const terms = {
+    cycle: "Monthly",
+    startDate: "2026-10-07",
+    endDate: "2026-12-06",
+    through: "2026-10-07"
+  } as const;
+  expect(generate({ ...terms, ...DAILY }).create).toEqual([
+    period("2026-10-07", "2026-11-06", 31, 3100, "Day", "2026-10-07"),
+    period("2026-11-07", "2026-12-06", 30, 3000, "Day", "2026-11-07")
+  ]);
+  expect(generate({ ...terms, ...WEEKLY }).create).toEqual([
+    period("2026-10-07", "2026-11-06", 31, 2500, "Week", "2026-10-07"),
+    period("2026-11-07", "2026-12-06", 30, 2500, "Week", "2026-11-07")
+  ]);
+});
+
+it("monthlyCharge prorates the month rate by the days of its period, inside one period", () => {
+  expect(
+    monthlyCharge("2026-10-07", "2026-11-07", "2026-11-20", 1500, DECIMALS)
+  ).toEqual(700);
+  expect(
+    monthlyCharge("2026-10-07", "2026-10-07", "2026-11-06", 1500, DECIMALS)
+  ).toEqual(1500);
+  expect(() =>
+    monthlyCharge("2026-10-07", "2026-10-20", "2026-11-10", 1500, DECIMALS)
+  ).toThrow("one billing period");
+});
+
+it("billingHorizon: one cycle ahead of today", () => {
+  expect(billingHorizon("Monthly", "2026-10-16")).toEqual("2026-11-16");
+  expect(billingHorizon("Monthly", "2027-01-31")).toEqual("2027-02-28");
+  expect(billingHorizon("Calendar Month", "2026-10-16")).toEqual("2026-11-30");
+  expect(billingHorizon("28 Days", "2026-10-16")).toEqual("2026-11-13");
 });
 
 it("a fixed term is generated in full up front, whatever `through` is", () => {
