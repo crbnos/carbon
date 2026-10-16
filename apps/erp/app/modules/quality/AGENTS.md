@@ -57,20 +57,42 @@ pnpm --filter @carbon/erp test
 | `qualityDocument` / `qualityDocumentStep` | Versioned SOPs. The document body is the editor content; `qualityDocumentStep` rows remain in the schema but have no authoring UI (the steps sidebar was removed) |
 | `riskRegister` / `riskRegisters` (view) | Risk/opportunity tracking by source |
 
+## Operations (`quality.server.ts`)
+
+Each operation is one `defineServiceFn` const in `quality.server.ts`, listed in `index.server.ts`. A route calls it through `carbon(request)` as `api.quality.<entity>.<verb>(input)` and makes no other write; the API and MCP publish it as `quality_<entity>_<verb>`. Every check the route used to make is in the function.
+
+| Operation | Route | What it holds |
+|---|---|---|
+| `issue.create` | `x+/issue+/new.tsx` | Every referenced record must be the company's; tracked entities from the query string are linked; a job-operation issue links the operation's lot to its disposition row; tasks are created (a failure deletes the issue); integrations are told; `changeOrderId` links the issue onto the change notice (a failed link is `warning`) |
+| `issue.updateField` | `x+/issue+/update.tsx` | Refused on a closed issue; `requiredActionIds` / `approvalRequirements` reconcile the tasks |
+| `issue.setStatus` / `issue.close` | `$id.status.tsx`, `$id.close.tsx` | Start and reopen only (reopen refused once the dispositions posted inventory); close is `closeIssue`, which posts the dispositions |
+| `issue.draftSupplierReturn` | `$id.supplier-return.tsx` | `purchasing` create; idempotent per covered quantity, deletes the draft on a part-way failure |
+| `issue.association.create` | `$id.association.new.tsx` | Refused on a closed issue; an inspection links its whole lot under the issue lock |
+| `issue.item.updateField` | `item+/update.tsx` | Disposition from the picker's subset; quantity is a compare-and-set |
+| `issue.task.setStatus` / `.setSupplier`, `issue.action.setDueDate` / `.reorder` | `task.$id.status.tsx`, `task.supplier.tsx`, `action.$id.due-date.tsx`, `action-tasks.order.tsx` | The supplier must be the company's |
+| `inspection.reject` | `x+/inspection+/$id.reject.tsx` | Receipt lots only; the non-tracked write-off posts before any issue opens; the issue's disposition row takes the lot as Scrap |
+| `inspectionDocument.save` / `.setDrawingNumber` | `x+/inspection-document+/$id.save.tsx`, `$id.update-name.tsx` | Legacy balloons need anchors; the default sampling rule is saved before the atomic RPC |
+| `qualityDocument.updateField` / `.decideApproval` / `.seed` | `x+/quality-document+/update.tsx`, `$id.tsx`, `api+/quality.documents.seed.ts` | Activating opens approval requests when a rule applies; Archived / Draft withdraw a pending one |
+| `risk.create` / `risk.update` | `x+/quality+/risks.new.tsx`, `risks.$id.tsx` | The assignee is notified; create is gated on company membership (the table's RLS limits it to employees) and is not published |
+| `scar.setTaskStatus` / `.updateTaskNotes` | `share+/scar.$id.tsx` | `system` only: the route builds the context from the share link (`scarLinkContext`); the issue must be open and the task the supplier's |
+| `issueWorkflow.updateField` | `x+/issue-workflow+/update.tsx` | Gated on `production` update, as the route was; not published |
+
+The primitives they replaced are no longer published: `updateIssueStatus`, `updateIssueTaskStatus`, `upsertRisk`. `insertIssue` stays published because a workflow action calls it.
+
 ## Key Service Functions
 
 - `getIssue` / `getIssues` — NCR reads; `getIssues` reads `issues` view with computed `containmentStatus`
 - `getIssueAssociations` / `getIssueItems` / `getIssueReviewers` — NCR details and associations
 - `getIssueWorkflow` / `getIssueActionTasks` / `getIssueApprovalTasks` — workflow state
-- `updateIssueStatus` / `updateIssueTaskStatus` — status transitions
-- `closeIssue` (quality-disposition.server.ts, NOT quality.server.ts) — blocked while a linked supplier return is open; the 'Return to Supplier' write-off is reduced by shipped-via-return coverage, and return-shipped entities stay Consumed (not flipped Rejected). The `x+/issue+/$id.supplier-return.tsx` action drafts the linked `purchaseReturnOrder` (idempotent, supplier auto-resolution)
+- `updateIssueStatus` / `updateIssueTaskStatus` — the bare status writes under `quality.issue.setStatus` / `quality.issue.task.setStatus`
+- `closeIssue` (quality-disposition.server.ts) — blocked while a linked supplier return is open; the 'Return to Supplier' write-off is reduced by shipped-via-return coverage, and return-shipped entities stay Consumed (not flipped Rejected). `quality.issue.draftSupplierReturn` drafts the linked `purchaseReturnOrder` (idempotent, supplier auto-resolution)
 - `getInspectionDocument` / `getBalloons` / `getInspectionFeatures` / `getInspectionPlan` — drawing-inspection reads (plan authoring: `getInspectionDocuments`, `upsertInspectionDocument`, `deleteInspectionDocument`, `saveInspectionDocumentAtomic`; editor UI in `ui/InspectionDocument/`, list at `/x/quality/inspection-plans`; the editor autosaves — merge logic in `ui/InspectionDocument/autosave.ts`)
 - `getInspection` / `getInspections` (status + source filters) / `getInspectionTrackedEntities` — inspections
 - `getInspectionSamplingPlans` / `getInspectionMeasurements` — per-inspection feature plans and grid readings
 - `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` — Receipt-usage document assignment
 - `upsertInspectionMeasurement` / `reconcileInspectionSamplingPlans` / `changeInspectionDocument` / `valuateMeasurement` (quality.server.ts) — measurement recording, lazy plan resolution, document swap, pure valuation. The transactional engine lives in `@carbon/database/quality` (shared with the MES inspection routes); quality.server.ts curries the ERP Kysely singleton into those engine calls, and also holds the plan editor's server-only helpers (legacy save-payload translation, the balloon-region vision call)
 - `getGauge` / `getGauges` / `getGaugeCalibrationRecords` — gauge management
-- `getRisk` / `getRisks` / `upsertRisk` / `updateRiskStatus` — risk register
+- `getRisk` / `getRisks` / `upsertRisk` / `updateRiskStatus` — risk register (`upsertRisk` is the bare write under `quality.risk.create` / `.update`)
 - `getQualityDocument` / `getQualityDocumentSteps` — versioned SOPs
 - `getQualityActions` — corrective/preventive action reads
 
