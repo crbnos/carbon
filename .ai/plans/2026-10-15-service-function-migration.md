@@ -7,6 +7,11 @@
 - [x] Phase 2 — Pipeline: the manifest from service functions
 - [x] Phase 3 — Pilot: the production job lifecycle (review gate before Phase 4)
 - [ ] Phase 4 — Module waves
+  - [x] Wave 1: production, purchasing, inventory, sales (agents, merged)
+  - [x] Wave 2: items, quality, invoicing, accounting (agents, merged)
+  - [ ] Wave 3: resources (merged); settings, users/account/people, shared/documents/workflows/integrations (agents running)
+  - [x] Publish only what routes use: 201 legacy tools that no route calls are unpublished
+  - [ ] Single-function tools: a codemod turns each route-called legacy tool into a leaf (below)
 - [ ] Phase 5 — Dissolve `packages/server-functions`
 - [ ] Phase 6 — MES calls ERP's API (auth design needs approval first)
 - [ ] Phase 7 — Clean up
@@ -21,6 +26,10 @@ Deviations from the approved plan, with the reason:
 - Phase 1: the in-app agent calls no operations (docs and navigation tools only), so only the workflow dispatch changed. The changelog line waits for the release's entry.
 - Phase 2: a refusal uses oRPC's own error body with `data.category`, not a new `{ error }` envelope, so every v1 error has one shape. Input schemas come from the leaf's TypeScript type, like the legacy tools, not from `z.toJSONSchema`. The generator does not drop legacy tools by itself: a module's migration removes `@mcp` from the primitives it replaces.
 - Phase 3: release is one operation for the job page, bulk release, planning and the API (`production.job.release`), with every check inside; batch release likewise (`production.batch.release`). The Make to Asset and "nothing to make" rules moved into `getJobReleaseReadiness`, so batch release now applies them too. The status route lost its release branch and a dead plan-and-schedule branch. `planDraftJob` stays unpublished: its checks depend on the planning drawer's location.
+- Phase 4: the waves moved the composed route actions (two or more writes) only. A route that makes one service call keeps it; its function stays a legacy tool until the codemod converts it.
+- Phase 4: the codemod (`legacy-to-leaves.mjs`, scratchpad) writes `<module>.tools.server.ts`. Each leaf has a zod input from the published schema, the same permission, a typed positional call, the auth stamping (`stamp`) and the result reader (`envelope`, `paged`, `plain`, `envelopes`, `flag`) in `service-tools.server.ts`. An upsert with an id rule splits into `create` and `update`. Names are mechanical: `getCustomers` becomes `sales_customers_get`.
+- Phase 4: the dispatcher's sales-rule gate is deleted. Every tool it checked is unpublished; `sales.quote.setStatus` and `sales.order.setStatus` hold the gate for every caller now.
+- Phase 4: an operation called through the API, MCP or a workflow gets the company-scoped client the dispatcher used (`scopedToCompany`).
 
 ## Context
 
@@ -57,6 +66,7 @@ Already built on `refactor/service-functions` (worktree `.claude/worktrees/servi
 | Home | Module code stays in `apps/erp/app/modules`. The shared helper lives in the modules folder. `packages/server-functions` dissolves into the modules |
 | MES | MES calls ERP's API for operations it does not own |
 | Idempotency | Spec only, no build |
+| Legacy tools | Publish only what routes use. An operation, or a legacy function a route calls directly, is published. A function only an operation calls is not. Exceptions: the file-upload pair, and tools the workflow catalog names |
 
 ## End state
 
