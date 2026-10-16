@@ -15,7 +15,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { Password, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
-import { accountPasswordValidator } from "../../account.models";
+import { accountPasswordValidator } from "../../users.models";
 
 const PasswordForm = () => {
   const { t } = useLingui();

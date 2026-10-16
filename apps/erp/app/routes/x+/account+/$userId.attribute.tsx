@@ -14,7 +14,7 @@ import {
   attributeSupplierValidator,
   attributeTextValidator,
   attributeUserValidator
-} from "~/modules/account/account.models";
+} from "~/modules/users/users.models";
 
 /** The value's form, by the attribute's data type. */
 const attributeValueForm = z.discriminatedUnion("type", [
@@ -35,7 +35,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.account.upsertAttributeValue({
+  return api.users.upsertAttributeValue({
     ...input.data,
     userId: input.params.userId
   });

@@ -81,8 +81,6 @@ import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { getCachedChangelogPanelEntry } from "~/modules/account/account.service";
-import AccountSettings from "~/modules/account/ui/AccountSettings";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people/people.service";
 import {
@@ -94,7 +92,11 @@ import {
   getCustomFieldsSchemas,
   getImplementationSignals
 } from "~/modules/shared/shared.service";
-import { getItarCertificationStatus } from "~/modules/users/users.service";
+import AccountSettings from "~/modules/users/ui/AccountSettings";
+import {
+  getCachedChangelogPanelEntry,
+  getItarCertificationStatus
+} from "~/modules/users/users.service";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 

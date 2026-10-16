@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import * as account from "./account/account.server";
 import * as accounting from "./accounting/accounting.server";
 import * as agent from "./agent/agent.server";
 import * as documents from "./documents/documents.server";
@@ -25,7 +24,6 @@ import * as workflows from "./workflows/workflows.server";
  * API and MCP publish the ones tagged `@mcp`.
  */
 export const router = {
-  account,
   accounting,
   agent,
   documents,

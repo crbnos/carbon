@@ -65,7 +65,7 @@ export async function action(args: ActionFunctionArgs) {
         userAgent
       });
     case "flag": {
-      const result = await api.account.setOwnFlag({
+      const result = await api.users.setOwnFlag({
         flag: form.flag,
         value: form.value
       });

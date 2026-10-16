@@ -130,6 +130,20 @@ describe("permission overrides", () => {
   );
 });
 
+// The caller's own account (`users.server.ts`): any member may read and edit
+// their own, so these gate on membership alone.
+const OWN_ACCOUNT = new Set([
+  "users_getAccount",
+  "users_getAllAttributeCategories",
+  "users_getAttributeCategoryWithValues",
+  "users_getCurrentUser",
+  "users_getNotificationPreferences",
+  "users_updatePublicAccount",
+  "users_upsertNotificationPreference"
+]);
+const membershipModule = (t: Tool) =>
+  t.module === "shared" || OWN_ACCOUNT.has(t.name);
+
 describe("permission module mapping", () => {
   it("maps items_* to the 'parts' permission module", () => {
     for (const t of tools.filter((t) => t.module === "items")) {
@@ -137,17 +151,15 @@ describe("permission module mapping", () => {
     }
   });
 
-  it("maps account_* and shared_* to null (valid-key-of-company gate only)", () => {
-    for (const t of tools.filter(
-      (t) => t.module === "account" || t.module === "shared"
-    )) {
+  it("maps own-account and shared_* tools to null (valid-key-of-company gate only)", () => {
+    for (const t of tools.filter(membershipModule)) {
       expect(t.permission.module, t.name).toBeNull();
     }
   });
 
   it("maps every other module to itself", () => {
     for (const t of tools.filter(
-      (t) => !["items", "account", "shared"].includes(t.module)
+      (t) => t.module !== "items" && !membershipModule(t)
     )) {
       expect(t.permission.module, t.name).toBe(t.module);
     }
@@ -169,9 +181,9 @@ describe("permission actions in the manifest", () => {
     }
   });
 
-  it("only account and shared tools gate on membership alone", () => {
+  it("only own-account and shared tools gate on membership alone", () => {
     for (const t of tools.filter(membershipOnly)) {
-      expect(["account", "shared"], t.name).toContain(t.module);
+      expect(membershipModule(t), t.name).toBe(true);
     }
   });
 

@@ -40,6 +40,7 @@ import SupplierAvatar from "~/components/SupplierAvatar";
 import { usePermissions, useUser } from "~/hooks";
 import { DataType } from "~/modules/shared/types";
 import { getPrivateUrl, path } from "~/utils/path";
+import type { PublicAttributes } from "../../types";
 import {
   attributeBooleanValidator,
   attributeCustomerValidator,
@@ -49,8 +50,7 @@ import {
   attributeTextValidator,
   attributeUserValidator,
   deleteUserAttributeValueValidator
-} from "../../account.models";
-import type { PublicAttributes } from "../../types";
+} from "../../users.models";
 
 type UserAttributesFormProps = {
   attributeCategory?: PublicAttributes;

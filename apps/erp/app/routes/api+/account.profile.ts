@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AccountProfileData } from "@carbon/account";
+import { accountProfileValidator } from "@carbon/account";
 import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
@@ -12,11 +13,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { accountProfileValidator } from "~/modules/account/account.models";
-import {
-  getAccount,
-  updatePublicAccount
-} from "~/modules/account/account.service";
+import { getAccount, updatePublicAccount } from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "account-profile");
 
@@ -44,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
 
   if (form.intent === "photo") {
     const api = await carbon(args.request);
-    return api.account.updateOwnAvatar({ path: form.path });
+    return api.users.updateOwnAvatar({ path: form.path });
   }
 
   const { request } = args;

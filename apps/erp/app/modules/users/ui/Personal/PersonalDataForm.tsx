@@ -7,8 +7,8 @@ import { VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { Submit } from "~/components/Form";
 import { path } from "~/utils/path";
-import { accountPersonalDataValidator } from "../../account.models";
 import type { PersonalData } from "../../types";
+import { accountPersonalDataValidator } from "../../users.models";
 
 type PersonalDataFormProps = {
   personalData: PersonalData;

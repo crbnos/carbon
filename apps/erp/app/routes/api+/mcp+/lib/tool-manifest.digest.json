@@ -1,14 +1,7 @@
 {
   "totalTools": 1608,
-  "modules": 15,
+  "modules": 14,
   "tools": [
-    {"name":"account_getAccount","classification":"READ","schema":"7f8214d1083f","response":"8adb0e14ee10","permission":"none","paginates":false},
-    {"name":"account_getAllAttributeCategories","classification":"READ","schema":"31b84d65b2ac","response":"e93d76f694fe","permission":"none","paginates":false},
-    {"name":"account_getAttributeCategoryWithValues","classification":"READ","schema":"ac8b9e1ae260","response":"32112b6759f8","permission":"none","paginates":false},
-    {"name":"account_getCurrentUser","classification":"READ","schema":"31b84d65b2ac","response":"ddc730821e71","permission":"none","paginates":false},
-    {"name":"account_getNotificationPreferences","classification":"READ","schema":"31b84d65b2ac","response":"0486649779fc","permission":"none","paginates":false},
-    {"name":"account_updatePublicAccount","classification":"WRITE","schema":"1ce670a17890","response":"bcde375ebd4c","permission":"none","paginates":false},
-    {"name":"account_upsertNotificationPreference","classification":"WRITE","schema":"537337e9e9aa","response":"bcde375ebd4c","permission":"none","paginates":false},
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
     {"name":"accounting_closeTaskComplete","classification":"WRITE","schema":"5d2e9a90637b","response":"48f7f6d71e5b","permission":"accounting:update","paginates":false},
     {"name":"accounting_closeTaskSkip","classification":"WRITE","schema":"8d4ab2b60f5f","response":"d53c8b4f27a6","permission":"accounting:update","paginates":false},
@@ -1587,7 +1580,11 @@
     {"name":"shared_updateSavedViewOrder","classification":"WRITE","schema":"33fd534d3ffe","response":"646de62ab761","permission":"none","paginates":false},
     {"name":"shared_upsertSavedView","classification":"WRITE","schema":"0bfaff189d21","response":"3797626bd17e","permission":"none","paginates":false},
     {"name":"users_deleteGroup","classification":"DESTRUCTIVE","schema":"6624f3863074","response":"bcde375ebd4c","permission":"users:delete","paginates":false},
+    {"name":"users_getAccount","classification":"READ","schema":"7f8214d1083f","response":"8adb0e14ee10","permission":"none","paginates":false},
+    {"name":"users_getAllAttributeCategories","classification":"READ","schema":"31b84d65b2ac","response":"e93d76f694fe","permission":"none","paginates":false},
+    {"name":"users_getAttributeCategoryWithValues","classification":"READ","schema":"ac8b9e1ae260","response":"32112b6759f8","permission":"none","paginates":false},
     {"name":"users_getConsoleOperators","classification":"READ","schema":"e2389bb135b5","response":"9823b01639fc","permission":"users:view","paginates":true},
+    {"name":"users_getCurrentUser","classification":"READ","schema":"31b84d65b2ac","response":"ddc730821e71","permission":"none","paginates":false},
     {"name":"users_getCustomers","classification":"READ","schema":"e2389bb135b5","response":"01865d2b41ff","permission":"users:view","paginates":true},
     {"name":"users_getEmployee","classification":"READ","schema":"7f8214d1083f","response":"fddbdf17260d","permission":"users:view","paginates":false},
     {"name":"users_getEmployees","classification":"READ","schema":"e2389bb135b5","response":"9823b01639fc","permission":"users:view","paginates":true},
@@ -1602,6 +1599,7 @@
     {"name":"users_getItarCertificationStatus","classification":"READ","schema":"31b84d65b2ac","response":"6afd62a22e82","permission":"users:view","paginates":false},
     {"name":"users_getItarEntityCertification","classification":"READ","schema":"31b84d65b2ac","response":"c5ae95ca48db","permission":"users:view","paginates":false},
     {"name":"users_getModules","classification":"READ","schema":"31b84d65b2ac","response":"df0e311a0baf","permission":"users:view","paginates":false},
+    {"name":"users_getNotificationPreferences","classification":"READ","schema":"31b84d65b2ac","response":"0486649779fc","permission":"none","paginates":false},
     {"name":"users_getPermissionsByEmployeeType","classification":"READ","schema":"6e5e68777065","response":"9273cec17683","permission":"users:view","paginates":false},
     {"name":"users_getSuppliers","classification":"READ","schema":"e2389bb135b5","response":"92e8a9c9df02","permission":"users:view","paginates":true},
     {"name":"users_getUnrevokedInviteEmails","classification":"READ","schema":"31b84d65b2ac","response":"a6b0124b4410","permission":"users:view","paginates":false},
@@ -1609,6 +1607,8 @@
     {"name":"users_getUserSelectGroups","classification":"READ","schema":"f802932716af","response":"51b54791b40a","permission":"users:view","paginates":false},
     {"name":"users_getUsersWithVerifiedMfa","classification":"READ","schema":"31b84d65b2ac","response":"4c1fdc714231","permission":"users:view","paginates":false},
     {"name":"users_resolveUserSelectIds","classification":"WRITE","schema":"1ddda22ecba8","response":"7fdfa4c9e77e","permission":"users:update","paginates":false},
-    {"name":"users_searchUsersForSelect","classification":"READ","schema":"b9c0b50026a7","response":"c9c1df9c3e28","permission":"users:view","paginates":false}
+    {"name":"users_searchUsersForSelect","classification":"READ","schema":"b9c0b50026a7","response":"c9c1df9c3e28","permission":"users:view","paginates":false},
+    {"name":"users_updatePublicAccount","classification":"WRITE","schema":"1ce670a17890","response":"bcde375ebd4c","permission":"none","paginates":false},
+    {"name":"users_upsertNotificationPreference","classification":"WRITE","schema":"537337e9e9aa","response":"bcde375ebd4c","permission":"none","paginates":false}
   ]
 }

@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteUserAttributeValueValidator } from "~/modules/account/account.models";
+import { deleteUserAttributeValueValidator } from "~/modules/users/users.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(deleteUserAttributeValueValidator).request(
@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.account.deleteAttributeValue({
+  return api.users.deleteAttributeValue({
     ...input.data,
     userId: input.params.userId
   });

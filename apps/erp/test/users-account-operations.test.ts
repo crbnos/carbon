@@ -8,7 +8,7 @@ vi.mock("@lingui/core/macro", () => ({ msg: (value: unknown) => value }));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() })
 }));
-vi.mock("../app/modules/account/account.service", async (importOriginal) => ({
+vi.mock("../app/modules/users/users.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   deleteUserAttributeValue: vi.fn(),
   getChangelogPanelEntry: vi.fn(),
@@ -26,13 +26,13 @@ import {
   deleteAttributeValue,
   updateOwnAvatar,
   upsertAttributeValue
-} from "../app/modules/account/account.server";
+} from "../app/modules/users/users.server";
 import {
   deleteUserAttributeValue,
   getCurrentUser,
   updateAvatar,
   upsertUserAttributeValue
-} from "../app/modules/account/account.service";
+} from "../app/modules/users/users.service";
 import { getAttribute } from "../app/modules/people/people.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 

@@ -12,13 +12,13 @@ import { data } from "react-router";
 import {
   pushSubscriptionEndpointValidator,
   pushSubscriptionValidator
-} from "~/modules/account/account.models";
+} from "~/modules/users/users.models";
 import {
   deleteBrowserPushSubscriptions,
   deletePushSubscription,
   getPushSubscription,
   upsertPushSubscription
-} from "~/modules/account/account.service";
+} from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "push-subscription");
 

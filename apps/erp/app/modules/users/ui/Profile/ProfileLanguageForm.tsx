@@ -18,7 +18,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
-import { accountLanguageValidator } from "../../account.models";
+import { accountLanguageValidator } from "../../users.models";
 
 const ProfileLanguageForm = ({ locale }: { locale: string }) => {
   const { t } = useLingui();
