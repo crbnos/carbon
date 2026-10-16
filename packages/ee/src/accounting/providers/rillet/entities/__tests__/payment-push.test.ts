@@ -11,8 +11,6 @@ import { RilletPaymentSyncer } from "../payment";
 
 // Posting imports the post-payment operation lazily; stub it so these tests
 // never reach the database or server env.
-vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
-
 // The mapping link runs inside withTriggersDisabled (a real Kysely transaction
 // with a `SET LOCAL` statement). Stub it to invoke the callback with a capturing
 // tx so the link's insert is observable without a live DB — `txLinkSink` records

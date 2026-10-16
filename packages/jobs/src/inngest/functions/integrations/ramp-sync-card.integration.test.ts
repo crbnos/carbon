@@ -18,12 +18,11 @@ const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
 
 // Only the posting operation is substituted; everything else is real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const bind = (actor: string) => (fields: object) => ({
-    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
-  });
-  return { serverFns: { system: bind("system"), as: bind("caller") } };
-});
+// A posting with a client runs as the caller behind it, else as the system.
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, handles: { client?: unknown }, input: unknown) =>
+    post({ ...handles, actor: handles.client ? "caller" : "system" }, input)
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/ramp.server")>()),

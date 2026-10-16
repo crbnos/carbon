@@ -16,8 +16,8 @@
   - [x] The pattern: a function's body becomes a building block in `<module>.service.ts`; `settle` or `invokePosting` runs it with the function's own error rules (`.claude/rules/module-files.md`)
   - [x] 18 functions ported: `close-job`, `assign-serial-numbers`, `preview-serial-unit-costs`, `recost-serial-unit`, `post-asset-transfer`, `preview-asset-capitalization`, `seed-company`, `finalize-supplier-quote`, `finalize-purchasing-rfq`, `post-inventory-count`, `post-nonconformance`, `apply-account-import`, `post-stock-transfer`, `import-csv`, `correct-stock-movement`, `sync`, `get-method`, `convert`
   - [x] Their live tests run from `apps/erp/test/database/`
-  - [ ] 22 functions that only the ERP and jobs call: step 1, then the jobs seam (step 2). They import each other, so they move in dependency order
-  - [ ] The callers in `packages/ee` (step 3)
+  - [ ] 21 functions left (the 12 postings among them). They import each other, so they move in dependency order. A ported posting replaces its `fromPackage` entry in `postings.server.ts`
+  - [x] The seam for jobs and ee (steps 2 and 3): `@carbon/api/postings.server`. The ERP registers 12 postings at start; jobs and ee call `posting(name, handles, input)`
   - [ ] The shared `lib` helpers (step 4)
   - [ ] The 10 functions of the MES closure stay until Phase 6 (step 5)
   - [ ] Retire `server-fn-authorizes-caller` and the `serverFns` pattern of `route-action-shape`
@@ -35,6 +35,7 @@ Deviations from the approved plan, with the reason:
 - Phase 0 step 1: `module-shape.ts` needs no change. `loadModules` reads module folders only, so loose files in `apps/erp/app/modules/` pass.
 - Phase 0 step 12: `route-action-shape` matches only patterns that are certainly writes (a `.from(...)` write, Kysely writes, `serverFns`). A route that calls two write functions is not detected: the check cannot tell a write function from a read by its name. It baselines 237 hits in 161 route files.
 - `replanAfterItemChange` permission: `"system"` → `{ update: "parts" }`. Six item routes call it as the user, so the gate would have refused every replan.
+- Phase 5 steps 2 and 3: jobs and ee get the postings, not the router. They call a posting's body (post an invoice, draft the recurring invoices), never the operation a route calls, which does more (sales rules, emails). The contract in `@carbon/api/postings.server` types each input and the result its callers read, because neither package can see the ERP's types.
 - The gate checks the entry call only. A call from inside another service function's `run` is not checked again, so `"system"` functions can be steps of user operations.
 - `useAction` shows a default toast only for a service function's error (`{ error: { category, message } }`). Older `{ success: false }` results still flash from the action, and a second toast would double them.
 - Phase 1: the in-app agent calls no operations (docs and navigation tools only), so only the workflow dispatch changed. The changelog line waits for the release's entry.

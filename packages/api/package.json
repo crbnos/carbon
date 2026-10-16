@@ -10,7 +10,8 @@
     "./service-fn.server": "./src/service-fn.server.ts",
     "./service-tools.server": "./src/service-tools.server.ts",
     "./errors": "./src/errors.ts",
-    "./permissions": "./src/permissions.ts"
+    "./permissions": "./src/permissions.ts",
+    "./postings.server": "./src/postings.server.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
