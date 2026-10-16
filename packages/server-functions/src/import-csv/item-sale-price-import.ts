@@ -38,6 +38,7 @@ export type SalePriceRowDecision =
   | { action: "update"; itemId: string; unitSalePrice: number }
   | { action: "error"; reason: string };
 
+/** One row of the file, checked against the Sales tab's sale price rules. */
 export function classifySalePriceRow(params: {
   record: ImportRecord;
   itemIndex: Map<string, ItemCandidate[]>;
@@ -77,6 +78,7 @@ export function classifySalePriceRow(params: {
   return { action: "update", itemId: item.itemId, unitSalePrice };
 }
 
+/** Updates the sale price of each row's item, in one transaction. */
 export async function importItemSalePrices(
   db: Kysely<KyselyDatabase>,
   args: {

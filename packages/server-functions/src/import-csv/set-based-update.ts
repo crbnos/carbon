@@ -25,6 +25,10 @@ export type KeyedUpdate = {
   set: Record<string, unknown>;
 };
 
+/**
+ * Updates `rows` of `table`, one statement per chunk and scoped by company.
+ * Each row names itself by `keys` and writes only the columns in its `set`.
+ */
 export async function updateRowsByKey(
   trx: Kysely<KyselyDatabase>,
   args: {

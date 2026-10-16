@@ -176,6 +176,7 @@ export function readPlanningUpdate(
   return { update };
 }
 
+/** The key of a planning row: one per item and location. */
 export const planningKey = (itemId: string, locationId: string) =>
   `${itemId}::${locationId}`;
 
@@ -188,6 +189,10 @@ export type PlanningRowDecision =
     }
   | { action: "skip"; reason: string; category: "error" | "skipped" };
 
+/**
+ * One row of the file: the item and location it names and the columns it sets,
+ * checked against the Planning tab's rules.
+ */
 export function classifyPlanningRow(params: {
   record: ImportRecord;
   itemIndex: Map<string, ItemCandidate[]>;
@@ -243,6 +248,10 @@ export function classifyPlanningRow(params: {
   };
 }
 
+/**
+ * Updates the planning of each row's item at its location, in one transaction.
+ * MRP is not run.
+ */
 export async function importItemPlanning(
   db: Kysely<KyselyDatabase>,
   args: {

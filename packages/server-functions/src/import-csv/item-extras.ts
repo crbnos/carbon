@@ -44,6 +44,10 @@ type ItemPlanningOrderMultiple = {
   orderMultiple: string;
 };
 
+/**
+ * Writes each queued supplier part: an update of the item and supplier's
+ * existing one, else an insert.
+ */
 async function writeSupplierPartLinks(
   trx: Kysely<KyselyDatabase>,
   links: SupplierPartImportLink[],
@@ -120,12 +124,14 @@ async function writeSupplierPartLinks(
   }
 }
 
-// Set the item-level purchasing lead time (the "Purchasing" tab field).
-// The itemReplenishment row is created by the create_item_related_records
-// AFTER INSERT trigger on item (default leadTime 7, per migration
-// 20250610000433_demand-planning.sql which renamed purchasingLeadTime →
-// leadTime), so within this transaction the row already exists for every
-// item we just upserted — we only need to UPDATE it.
+/**
+ * Set the item-level purchasing lead time (the "Purchasing" tab field).
+ * The itemReplenishment row is created by the create_item_related_records
+ * AFTER INSERT trigger on item (default leadTime 7, per migration
+ * 20250610000433_demand-planning.sql which renamed purchasingLeadTime →
+ * leadTime), so within this transaction the row already exists for every
+ * item we just upserted — we only need to UPDATE it.
+ */
 async function writeItemPurchasingLeadTimes(
   trx: Kysely<KyselyDatabase>,
   entries: ItemPurchasingLeadTime[],
@@ -150,10 +156,12 @@ async function writeItemPurchasingLeadTimes(
   }
 }
 
-// Set the item-level unit cost (the "Costing" tab field). The itemCost row is
-// created by the create_item_related_records AFTER INSERT trigger on item, so
-// within this transaction the row already exists for every item we upserted —
-// we only need to UPDATE it. Non-numeric/blank values are skipped.
+/**
+ * Set the item-level unit cost (the "Costing" tab field). The itemCost row is
+ * created by the create_item_related_records AFTER INSERT trigger on item, so
+ * within this transaction the row already exists for every item we upserted —
+ * we only need to UPDATE it. Non-numeric/blank values are skipped.
+ */
 async function writeItemUnitCosts(
   trx: Kysely<KyselyDatabase>,
   entries: ItemUnitCost[],
@@ -178,15 +186,17 @@ async function writeItemUnitCosts(
   }
 }
 
-// Set the item-level planning order multiple. itemPlanning has one row per
-// (item, location) pair, all created by create_item_related_records at item
-// insert time (SELECT FROM location WHERE companyId = ...). A single UPDATE
-// scoped by itemId + companyId therefore covers every location row for that
-// item — matching the "order multiple is unique across every location"
-// expectation. Mirrors the same CSV value already written to
-// supplierPart.orderMultiple in writeSupplierPartLinks; both are intentionally
-// kept in sync at import time even though they're structurally distinct
-// fields (supplier case-pack vs MRP preferred multiple).
+/**
+ * Set the item-level planning order multiple. itemPlanning has one row per
+ * (item, location) pair, all created by create_item_related_records at item
+ * insert time (SELECT FROM location WHERE companyId = ...). A single UPDATE
+ * scoped by itemId + companyId therefore covers every location row for that
+ * item — matching the "order multiple is unique across every location"
+ * expectation. Mirrors the same CSV value already written to
+ * supplierPart.orderMultiple in writeSupplierPartLinks; both are intentionally
+ * kept in sync at import time even though they're structurally distinct
+ * fields (supplier case-pack vs MRP preferred multiple).
+ */
 async function writeItemPlanningOrderMultiples(
   trx: Kysely<KyselyDatabase>,
   entries: ItemPlanningOrderMultiple[],
@@ -219,6 +229,7 @@ export type ItemExtras = {
   planningOrderMultiples: ItemPlanningOrderMultiple[];
 };
 
+/** No extras queued yet. */
 export function emptyItemExtras(): ItemExtras {
   return {
     supplierPartLinks: [],

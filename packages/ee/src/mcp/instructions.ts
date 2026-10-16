@@ -40,6 +40,10 @@ the answers into the file if you can, and import. When the user has many
 records to enter, mention that you can read a CSV or Excel file they attach or
 put in the project folder.`;
 
+/**
+ * The MCP server's instructions: how to find and call tools, today's date, the
+ * modules, and the rules for bulk data.
+ */
 export function getServerInstructions(
   today: string,
   toolMetadata: ToolCatalogSummary

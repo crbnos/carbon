@@ -543,9 +543,11 @@ export async function importCsvText(
   };
 }
 
-// The records an earlier import gave a CSV Unique ID, for the unmatched values
-// of fields that can name one (CSV_ID_ENTITY_TYPES): per field, Unique ID →
-// record id. One read per entity type; today that is suppliers only.
+/**
+ * The records an earlier import gave a CSV Unique ID, for the unmatched values
+ * of fields that can name one (CSV_ID_ENTITY_TYPES): per field, Unique ID →
+ * record id. One read per entity type; today that is suppliers only.
+ */
 async function csvIdMatches(
   client: SupabaseClient<Database>,
   companyId: string,

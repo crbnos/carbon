@@ -63,6 +63,10 @@ export const creatableFormPermissions: Record<
   shippingMethod: "inventory"
 };
 
+/**
+ * The company's suppliers for the Supplier column, matched by name or Supplier
+ * ID.
+ */
 const supplierFetcher = async (
   client: SupabaseClient<Database>,
   companyId: string
@@ -86,8 +90,10 @@ const supplierFetcher = async (
   };
 };
 
-// The customer counterpart of `supplierFetcher`: matched by name or
-// readableId.
+/**
+ * The customer counterpart of `supplierFetcher`: matched by name or
+ * readableId.
+ */
 const customerFetcher = async (
   client: SupabaseClient<Database>,
   companyId: string

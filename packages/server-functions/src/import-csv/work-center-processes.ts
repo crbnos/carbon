@@ -8,6 +8,10 @@
 
 export type ProcessIdsByName = Map<string, string[]>;
 
+/**
+ * Process ids by name, trimmed and lowercased; a name that several processes
+ * share lists each id.
+ */
 export function processIdsByName(
   processes: Array<{ id: string; name: string }>
 ): ProcessIdsByName {

@@ -132,11 +132,13 @@ const loadExisting = async (
   return rows as Array<{ id: string; name: string | null; code?: string }>;
 };
 
-// Parents are applied AFTER every insert, as individual UPDATEs outside the
-// insert transaction, so a parent defined further down the same file still
-// resolves and an unresolved or self-referencing parent reports one row error
-// instead of rolling the whole import back. Mirrors the storage-unit parent
-// pass in `index.ts`.
+/**
+ * Parents are applied AFTER every insert, as individual UPDATEs outside the
+ * insert transaction, so a parent defined further down the same file still
+ * resolves and an unresolved or self-referencing parent reports one row error
+ * instead of rolling the whole import back. Mirrors the storage-unit parent
+ * pass in `index.ts`.
+ */
 const applyParents = async (
   db: Kysely<KyselyDatabase>,
   table: ConfigLookupTable,
@@ -187,6 +189,11 @@ const applyParents = async (
   }
 };
 
+/**
+ * Imports one configuration lookup table (units of measure, posting groups,
+ * storage types, scrap reasons, departments). Create-only: a row matching an
+ * existing entry is skipped.
+ */
 export async function importConfigLookups(
   db: Kysely<KyselyDatabase>,
   {

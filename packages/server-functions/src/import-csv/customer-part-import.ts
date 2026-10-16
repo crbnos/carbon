@@ -29,6 +29,7 @@ const logger = getLogger("server-functions", "import-csv");
 // Only a part's Sales tab has customer part numbers.
 export const CUSTOMER_PART_ITEM_TYPES = ["Part"] as const;
 
+/** The key of a customer part number: one per customer and item. */
 export const customerPartKey = (customerId: string, itemId: string) =>
   `${customerId}::${itemId}`;
 
@@ -43,6 +44,9 @@ export type CustomerPartRowDecision =
   | { action: "upsert"; row: CustomerPartRow }
   | { action: "error"; reason: string };
 
+/**
+ * One row of the file, checked against the New Customer Part drawer's rules.
+ */
 export function classifyCustomerPartRow(params: {
   record: ImportRecord;
   itemIndex: Map<string, ItemCandidate[]>;
@@ -82,6 +86,10 @@ export function classifyCustomerPartRow(params: {
   };
 }
 
+/**
+ * Adds or updates the customer part number of each row's customer and part, in
+ * one transaction.
+ */
 export async function importCustomerParts(
   db: Kysely<KyselyDatabase>,
   args: {

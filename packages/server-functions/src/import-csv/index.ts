@@ -825,6 +825,7 @@ const ADDRESS_FIELDS = [
   "countryCode"
 ] as const;
 
+/** Whether a partner row fills any address cell. */
 function hasAddressCells(ext: PartnerExtensionData): boolean {
   return ADDRESS_FIELDS.some((field) => !!ext[field]?.trim());
 }
@@ -881,6 +882,7 @@ function writesAddress(
   return existingAddressId ? hasAddressCells(ext) : hasAnyAddressField(ext);
 }
 
+/** The fields that are not null, so an update leaves the others as they are. */
 function withoutNulls<T extends Record<string, unknown>>(
   fields: T
 ): Partial<T> {
@@ -926,6 +928,10 @@ async function preloadPrimaryLocationAddressIds(
   return map;
 }
 
+/**
+ * Writes a supplier row's side tables: its primary location's address, its
+ * payment terms and its shipping terms.
+ */
 async function writeSupplierExtensions(
   trx: Kysely<KyselyDatabase>,
   supplierId: string,
@@ -1035,6 +1041,10 @@ async function writeSupplierExtensions(
   }
 }
 
+/**
+ * Writes a customer row's side tables: its primary location's address, its
+ * payment terms and its tax ID.
+ */
 async function writeCustomerExtensions(
   trx: Kysely<KyselyDatabase>,
   customerId: string,
@@ -1163,6 +1173,10 @@ async function upsertTaxIdentifiers(
 // The import itself. `db` is the context's database, or the transaction a dry
 // run rolls back.
 const importer = {
+  /**
+   * Runs the import on `db`, the database or a dry run's transaction, and
+   * returns the report.
+   */
   async run(
     ctx: ServerFnContext,
     db: Kysely<KyselyDatabase>,
@@ -1300,8 +1314,10 @@ const importer = {
           )
         )
     );
-    // Every update payload built from a row passes through here, which is
-    // also where the report learns the row named an existing record.
+    /**
+     * Every update payload built from a row passes through here, which is
+     * also where the report learns the row named an existing record.
+     */
     const keepSavedValues = <T extends Record<string, unknown>>(
       data: T,
       rowIndex: number,
@@ -3449,10 +3465,12 @@ const importer = {
       }
     }
 
-    // Attach each failed/skipped row's original CSV cells (keyed by the user's
-    // headers) so the results UI renders the exact rows the server parsed — no
-    // dependence on a second, client-side parse. The importers report `row` as
-    // the 0-based index into parsedCsv; the report gives the file row.
+    /**
+     * Attach each failed/skipped row's original CSV cells (keyed by the user's
+     * headers) so the results UI renders the exact rows the server parsed — no
+     * dependence on a second, client-side parse. The importers report `row` as
+     * the 0-based index into parsedCsv; the report gives the file row.
+     */
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
       issues.map((issue) => {
         const fileRow = keptRows[issue.row] ?? issue.row;
@@ -3482,6 +3500,10 @@ const importCsv = defineServerFn({
   name: "import-csv",
   input: importCsvInput,
   permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
+  /**
+   * Runs the import, or with `dryRun` runs it in a transaction that is always
+   * rolled back.
+   */
   async run(ctx, input) {
     if (!input.dryRun) return importer.run(ctx, ctx.db, input);
 
