@@ -12,7 +12,8 @@
 // Re-importing matches a location by partner and name, ignoring case and
 // surrounding spaces, and updates that location's address as the edit drawer
 // does (`updateCustomerLocation` / `updateSupplierLocation` replace the
-// address fields, a blank one with NULL). A column the file does not map is
+// address fields, a blank one with NULL; with `keepSavedValues`, the MCP
+// import, a blank one is left as it is). A column the file does not map is
 // left as it is. The name is never changed, and the customer and supplier
 // imports' own primary-location address handling is untouched.
 
@@ -179,9 +180,11 @@ export async function importPartnerLocations(
     rows: Array<[number, ImportRecord]>;
     companyId: string;
     summary: ImportSummary;
+    /** An update leaves a blank cell's field as it is instead of clearing it. */
+    keepSavedValues?: boolean;
   }
 ): Promise<void> {
-  const { table, rows, companyId, summary } = args;
+  const { table, rows, companyId, summary, keepSavedValues = false } = args;
   const { partnerField } = PARTNER_LOCATION_CONFIG[table];
 
   const partnerIds = [
@@ -244,12 +247,21 @@ export async function importPartnerLocations(
   await inTransaction(db, async (trx) => {
     for (const write of writes) {
       if (write.action === "update") {
-        await trx
-          .updateTable("address")
-          .set(write.address)
-          .where("id", "=", write.addressId)
-          .where("companyId", "=", companyId)
-          .execute();
+        const address = keepSavedValues
+          ? Object.fromEntries(
+              Object.entries(write.address).filter(
+                ([, value]) => value !== null
+              )
+            )
+          : write.address;
+        if (Object.keys(address).length > 0) {
+          await trx
+            .updateTable("address")
+            .set(address)
+            .where("id", "=", write.addressId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
         summary.updated += 1;
         continue;
       }

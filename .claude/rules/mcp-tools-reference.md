@@ -714,8 +714,11 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 
 `shared_importCsvText` loads many records in one call: the CSV travels as text in
 `call_tool.arguments` (at most 1 MB) and runs through the `import-csv` server function
-the import wizard uses, on the caller's credential. `dryRun: true` runs the import in a
-rolled-back transaction and returns the same report. `shared_getCsvImportFields` lists a
+the import wizard uses, on the caller's credential. Unlike the wizard, an update keeps
+every saved value the CSV does not hold, and a value that matches no option refuses only
+its row. The report lists refused rows as `missing` (a required value is empty) or
+`mismatched`. `dryRun: true` runs the import in a rolled-back transaction and returns the
+same report. `shared_getCsvImportFields` lists a
 table's columns, defaults and allowed values. Both live in `shared.service.ts`; the
 mapping, enum and Unique ID rules are in `csv-import-system.md`. `shared_importCsv` (by
 storage `filePath`) predates them and has none of the header mapping or enum defaults.

@@ -439,6 +439,16 @@ option match, so a Unique ID that equals another record's name changes
 nothing, and an id whose record is gone is not used (`withCsvIdMatches`). The
 wizard does not do this.
 
+A value that matches no option is not refused for the whole call: it goes to the server
+function as `refusedValues` (per field, its label and the values), so only the rows
+holding one are refused, as a row naming an unknown record is. The call also sets
+`keepSavedValues` (below). The reply is the importer's report with its `errors` split by
+`splitRefusedRows` (`import-report.ts`) into `missing` (the reason says a required value
+is empty: "Missing required …", "… is required") and `mismatched` (everything else: no
+matching option or record, wrong form). The server instructions tell the agent to ask
+the user for missing values before importing, and to correct a mismatched value itself
+only when the right one is clear.
+
 `dryRun: true` runs the import and rolls it back (below); the reply is the same
 report, with `dryRun: true`.
 `getCsvImportFields` (`shared_getCsvImportFields`) lists a table's columns from
@@ -448,14 +458,31 @@ label the matcher tries first (`fetchedImportOption`: a name, or an employee's e
 not its id, and a fetched default likewise; ids are still accepted. A field without an
 `enumData.description` takes its `importSchemas` description, which is where
 instructions such as the Processes separator live. The Unique ID notes appear only on
-tables with an `id` field. One of them states the update rule the server function
-applies: an enum column missing or blank takes its `Default` on every row, updates
-included.
+tables with an `id` field. One of them states the update rule `keepSavedValues` gives
+this path: an empty cell or a missing column keeps the saved value, and cannot clear it.
 
 ## Server function (`packages/server-functions/src/import-csv/index.ts`)
 
 Built with `defineServerFn`; input validated by `importCsvInput` (table enum, exactly one
-of `filePath` or `csv`, `columnMappings`, optional `enumMappings`, optional `dryRun`).
+of `filePath` or `csv`, `columnMappings`, optional `enumMappings`, optional `dryRun`,
+optional `keepSavedValues`, optional `refusedValues`).
+
+- **`keepSavedValues`** (set by `importCsvText`, never by the wizard). Each row records
+  the fields it holds: a non-empty cell that did not come from an enum's `Default`. An
+  update writes only those, through `withSavedValuesKept` (`saved-values.ts`) at every
+  update site that builds its payload from the row: items, contacts, work centers,
+  processes, storage units. Customer and supplier location imports get it as an
+  argument and leave a blank address cell as it is instead of clearing it. So a missing column or an empty cell keeps the saved value
+  instead of resetting it (Replenishment System to its default, Active to true, work
+  center rates to 0, Complete All On Scan to false). Inserts still take the defaults.
+  Customers and suppliers already kept blanks (`nullifyEmptyStrings`), and their enum
+  fields have no default. In the wizard the Default still applies to every row,
+  updates included.
+- **`refusedValues`** (set by `importCsvText`). `rowsWithoutRefusedValues`
+  (`refused-values.ts`) takes out every row holding one of a field's refused values
+  (compared trimmed) before the records are built, and reports it as
+  `{Label} "{value}" matches no option`. The importers see only the kept rows;
+  the report maps their row numbers back to file rows (`keptRows`).
 
 - **Dry run.** The body is `importer.run(ctx, db, input)`. With `dryRun` the server
   function opens one `ControlledTransaction`, runs the import on it and always rolls

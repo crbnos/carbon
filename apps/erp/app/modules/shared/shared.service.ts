@@ -32,6 +32,7 @@ import {
   fetchedImportOption,
   withCsvIdMatches
 } from "./import-enum-mappings";
+import { splitRefusedRows } from "./import-report";
 import {
   columnMappingsFromHeaders,
   enumDefault,
@@ -220,10 +221,10 @@ export async function getCsvImportFields(
         ...(fields.some(([key]) => key === "id")
           ? [
               "Unique ID (`id`) is the key rows are matched on: use a stable value such as the part number, so sending a row again updates it.",
-              "An update writes every enum field: one whose column is missing or blank is set to its default, so send the current value to keep it."
+              "An update writes only the cells a row holds: an empty cell or a missing column keeps the saved value, and cannot clear it."
             ]
           : []),
-        "Headers may be field keys or labels. Leave optional cells blank to take the default.",
+        "Headers may be field keys or labels. On a new record, a blank optional cell takes the default.",
         ...(METHOD_IMPORT_TABLES.has(table) ? METHOD_IMPORT_NOTES : [])
       ],
       fields: fields.map(([key, field]) => {
@@ -383,17 +384,19 @@ export async function importCsv(
  * label (see `getCsvImportFields`), and a header that matches no field is
  * refused rather than dropped. The mapping is validated against the table's
  * import schema, as the app's import route does. Returns the importer's
- * report: rows inserted and updated, and each failed or skipped row with its
- * reason. Rows are matched on their Unique ID, so sending a row again updates
- * it rather than duplicating it. Like the app's import wizard, an empty or
- * missing enum cell takes the field's default, and a value is matched to an
- * option by its label or id in any case; a value that matches no option is
- * refused unless `enumMappings` maps it. A supplier may also be named by the
- * Unique ID it was imported with. As in the wizard, an enum column left
- * out takes its default on every row, existing rows included: when updating
- * records, send their enum columns too. With `dryRun`, the import runs and
- * rolls back: the report shows what it would insert, update, skip and refuse,
- * and nothing is written.
+ * report: rows inserted, updated and skipped, and the refused rows in two
+ * lists, each row with its reason and cells: `missing` (a required value is
+ * empty) and `mismatched` (a value that matches no option or record, or has
+ * the wrong form). Rows are matched on their Unique ID, so sending a row again
+ * updates it rather than duplicating it. On a new record an empty or missing
+ * enum cell takes the field's default; on an update, an empty cell or a
+ * missing column keeps the saved value, so a row needs only the columns that
+ * change. A value is matched to an option by its label or id in any case; a
+ * row holding a value that matches no option is refused as mismatched unless
+ * `enumMappings` maps the value. A supplier may also be named by the Unique ID
+ * it was imported with. With
+ * `dryRun`, the import runs and rolls back: the report shows what it would
+ * insert, update, skip and refuse, and nothing is written.
  * @mcp action
  */
 export async function importCsvText(
@@ -493,27 +496,37 @@ export async function importCsvText(
     await csvIdMatches(client, args.companyId, byOption.unmatched),
     optionsByField
   );
-  const unmatchedFields = Object.entries(unmatched);
-  if (unmatchedFields.length > 0) {
-    return {
-      data: null,
-      error: ruleError(
-        `Values not recognized: ${unmatchedFields.map(([key, values]) => `${key} (${values.join(", ")})`).join("; ")}. Use the options shared_getCsvImportFields lists, or map each value with enumMappings.`
-      )
-    };
-  }
+  // A value that matches no option refuses its row, not the whole file: the
+  // report lists it as mismatched beside the rows that are missing values.
+  const tableFields = fieldMappings[args.table] as Record<
+    string,
+    ImportFieldDefinition
+  >;
+  const refusedValues = Object.fromEntries(
+    Object.entries(unmatched).map(([key, values]) => [
+      key,
+      { label: tableFields[key]?.label ?? key, values }
+    ])
+  );
 
   // Send the validated mapping, as the app's import route does: the schema
-  // drops keys it does not declare.
-  return serverFns
+  // drops keys it does not declare. Unlike the wizard, an update keeps every
+  // value the CSV does not hold: an agent sends only what changes.
+  const result = await serverFns
     .as({ client, db, companyId: args.companyId, userId: args.userId })
     .invoke("import-csv", {
       table: args.table,
       csv: args.csv,
       columnMappings: validMappings,
       enumMappings,
-      dryRun: args.dryRun
+      dryRun: args.dryRun,
+      keepSavedValues: true,
+      refusedValues
     });
+  return {
+    data: result.data ? splitRefusedRows(result.data) : null,
+    error: result.error
+  };
 }
 
 // The records an earlier import gave a CSV Unique ID, for the unmatched values

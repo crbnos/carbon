@@ -27,6 +27,8 @@ import { importItemSalePrices } from "./item-sale-price-import";
 import { importMaterialProperties } from "./material-property-import";
 import { importMethods } from "./method-import";
 import { importPartnerLocations } from "./partner-location-import";
+import { rowsWithoutRefusedValues } from "./refused-values";
+import { withSavedValuesKept } from "./saved-values";
 import { importStockQuantities } from "./stock-quantity-import";
 import { importSupplierPrices } from "./supplier-price-import";
 import { inTransaction } from "./transaction";
@@ -88,7 +90,19 @@ export const importCsvInput = z
       .record(z.string(), z.record(z.string(), z.string()))
       .optional(),
     // Run the import and report what it would do without writing anything.
-    dryRun: z.boolean().optional()
+    dryRun: z.boolean().optional(),
+    // An update writes only the values the row holds (see keepSavedValues).
+    // Off for the import wizard, which applies its Default to every row.
+    keepSavedValues: z.boolean().optional(),
+    // Per field, cell values the caller could not match to an option (the
+    // wizard maps every value instead). A row holding one is reported as an
+    // error and not written, as a row naming an unknown record is.
+    refusedValues: z
+      .record(
+        z.string(),
+        z.object({ label: z.string(), values: z.array(z.string()) })
+      )
+      .optional()
   })
   .refine(
     (payload) =>
@@ -1103,7 +1117,9 @@ const importer = {
       filePath,
       csv,
       columnMappings,
-      enumMappings = {}
+      enumMappings = {},
+      keepSavedValues: keepSaved = false,
+      refusedValues
     }: z.infer<typeof importCsvInput>
   ) {
     const { companyId, userId } = ctx;
@@ -1149,14 +1165,36 @@ const importer = {
     // A row whose field count disagrees with the header falls back to the
     // permissive parser for real-world CSVs with quoting/comma issues.
     const strict = parseCsv<Record<string, string>>(csvText);
-    const parsedCsv: Record<string, string>[] = strict.errors.some(
+    const fileRows: Record<string, string>[] = strict.errors.some(
       (e) => e.type === "FieldMismatch"
     )
       ? parsePermissiveCsv(csvText)
       : strict.rows;
+    // The rows to import; `keptRows[i]` is the file row of parsedCsv[i].
+    const { kept: keptRows, refused: refusedRows } = rowsWithoutRefusedValues(
+      fileRows,
+      columnMappings,
+      refusedValues
+    );
+    const parsedCsv = keptRows.map((fileRow) => fileRows[fileRow]!);
+    if (parsedCsv.length === 0) {
+      return {
+        success: true,
+        inserted: 0,
+        updated: 0,
+        errors: refusedRows.map((issue) => ({
+          ...issue,
+          values: fileRows[issue.row] ?? {}
+        })),
+        skipped: []
+      };
+    }
 
+    // The fields each row took from an enum's Default rather than its cell.
+    const defaultedByRow: Set<string>[] = [];
     let mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
+      const defaulted = new Set<string>();
       for (const [key, value] of Object.entries(columnMappings)) {
         if (key in enumMappings) {
           const enumMapping = enumMappings[key];
@@ -1165,11 +1203,13 @@ const importer = {
             record[key] = enumMapping![csvValue!]!;
           } else {
             record[key] = enumMapping!["Default"]!;
+            defaulted.add(key);
           }
         } else if (value && value !== "N/A") {
           record[key] = row[value] || "";
         }
       }
+      defaultedByRow.push(defaulted);
       return record;
     });
 
@@ -1187,7 +1227,32 @@ const importer = {
 
         return processedRecord;
       });
+      for (const defaulted of defaultedByRow) {
+        for (const key of missingEnumKeys) defaulted.add(key);
+      }
     }
+
+    // What each row holds: a field with a non-empty cell that did not come
+    // from a Default. keepSavedValues writes only these on an update.
+    const heldByRow = mappedRecords.map(
+      (record, rowIndex) =>
+        new Set(
+          Object.keys(record).filter(
+            (key) =>
+              record[key] !== undefined &&
+              record[key] !== "" &&
+              !defaultedByRow[rowIndex]!.has(key)
+          )
+        )
+    );
+    const keepSavedValues = <T extends Record<string, unknown>>(
+      data: T,
+      rowIndex: number,
+      sources: Record<string, string> = {}
+    ): T =>
+      keepSaved
+        ? withSavedValuesKept(data, heldByRow[rowIndex], sources)
+        : data;
 
     const summary = {
       inserted: 0,
@@ -1932,17 +1997,20 @@ const importer = {
               }
               itemUpdates.push({
                 id: existingEntityId,
-                data: {
-                  ...rest,
-                  revision,
-                  active: rest.active?.toLowerCase() !== "false",
-                  unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
-                  description: rest.description || undefined,
-                  replenishmentSystem: rest.replenishmentSystem || undefined,
-                  defaultMethodType: rest.defaultMethodType || undefined,
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                }
+                data: keepSavedValues(
+                  {
+                    ...rest,
+                    revision,
+                    active: rest.active?.toLowerCase() !== "false",
+                    unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
+                    description: rest.description || undefined,
+                    replenishmentSystem: rest.replenishmentSystem || undefined,
+                    defaultMethodType: rest.defaultMethodType || undefined,
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  },
+                  rowIndex
+                )
               });
 
               // Existing item: we already know its id, so its extras can be
@@ -2280,9 +2348,7 @@ const importer = {
               if (isContactValid(contactData)) {
                 contactUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...contactData
-                  }
+                  data: keepSavedValues({ ...contactData }, rowIndex)
                 });
               }
             } else if (
@@ -2407,9 +2473,7 @@ const importer = {
               if (isContactValid(contactData)) {
                 contactUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...contactData
-                  }
+                  data: keepSavedValues({ ...contactData }, rowIndex)
                 });
               }
             } else if (
@@ -2557,18 +2621,23 @@ const importer = {
                 }
                 workCenterUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...pickColumns("workCenter", rest, WORK_CENTER_COLUMNS),
-                    laborRate: rest.laborRate ? parseFloat(rest.laborRate) : 0,
-                    machineRate: rest.machineRate
-                      ? parseFloat(rest.machineRate)
-                      : 0,
-                    overheadRate: rest.overheadRate
-                      ? parseFloat(rest.overheadRate)
-                      : 0,
-                    updatedAt: datetime.timestamp(),
-                    updatedBy: userId
-                  }
+                  data: keepSavedValues(
+                    {
+                      ...pickColumns("workCenter", rest, WORK_CENTER_COLUMNS),
+                      laborRate: rest.laborRate
+                        ? parseFloat(rest.laborRate)
+                        : 0,
+                      machineRate: rest.machineRate
+                        ? parseFloat(rest.machineRate)
+                        : 0,
+                      overheadRate: rest.overheadRate
+                        ? parseFloat(rest.overheadRate)
+                        : 0,
+                      updatedAt: datetime.timestamp(),
+                      updatedBy: userId
+                    },
+                    rowIndex
+                  )
                 });
               }
             } else if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
@@ -2708,7 +2777,7 @@ const importer = {
             );
           };
 
-          for (const record of mappedRecords) {
+          for (const [rowIndex, record] of mappedRecords.entries()) {
             const { id, ...rest } = record;
             if (externalIdMap.has(id!)) {
               const existingEntityId = externalIdMap.get(id!)!;
@@ -2716,14 +2785,17 @@ const importer = {
                 processIds.add(id);
                 processUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...pickColumns("process", rest, PROCESS_COLUMNS),
-                    processType: normalizeProcessType(rest.processType),
-                    completeAllOnScan:
-                      rest.completeAllOnScan?.toLowerCase() === "true",
-                    updatedAt: datetime.timestamp(),
-                    updatedBy: userId
-                  }
+                  data: keepSavedValues(
+                    {
+                      ...pickColumns("process", rest, PROCESS_COLUMNS),
+                      processType: normalizeProcessType(rest.processType),
+                      completeAllOnScan:
+                        rest.completeAllOnScan?.toLowerCase() === "true",
+                      updatedAt: datetime.timestamp(),
+                      updatedBy: userId
+                    },
+                    rowIndex
+                  )
                 });
               }
             } else if (isProcessValid(rest) && !processIds.has(id)) {
@@ -3010,13 +3082,17 @@ const importer = {
               // to avoid the "cannot move a unit with children" interceptor.
               updates.push({
                 id: existingEntityId,
-                data: {
-                  name,
-                  storageTypeIds,
-                  active,
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                }
+                data: keepSavedValues(
+                  {
+                    name,
+                    storageTypeIds,
+                    active,
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  },
+                  rowIndex,
+                  { storageTypeIds: "storageTypeNames" }
+                )
               });
               if (
                 matchedByCsvId === undefined &&
@@ -3243,7 +3319,8 @@ const importer = {
           table,
           rows: acceptedRows,
           companyId,
-          summary
+          summary,
+          keepSavedValues: keepSaved
         });
         break;
       }
@@ -3254,16 +3331,25 @@ const importer = {
 
     // Attach each failed/skipped row's original CSV cells (keyed by the user's
     // headers) so the results UI renders the exact rows the server parsed — no
-    // dependence on a second, client-side parse. `row` is the 0-based index into
-    // parsedCsv for both the standard and method importers.
+    // dependence on a second, client-side parse. The importers report `row` as
+    // the 0-based index into parsedCsv; the report gives the file row.
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
-      issues.map((issue) => ({ ...issue, values: parsedCsv[issue.row] ?? {} }));
+      issues.map((issue) => {
+        const fileRow = keptRows[issue.row] ?? issue.row;
+        return { ...issue, row: fileRow, values: fileRows[fileRow] ?? {} };
+      });
 
     return {
       success: true,
       inserted: summary.inserted,
       updated: summary.updated,
-      errors: withValues(summary.errors),
+      errors: [
+        ...refusedRows.map((issue) => ({
+          ...issue,
+          values: fileRows[issue.row] ?? {}
+        })),
+        ...withValues(summary.errors)
+      ].sort((a, b) => a.row - b.row),
       skipped: withValues(summary.skipped)
     };
   }
