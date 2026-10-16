@@ -6,15 +6,21 @@
 - [x] Phase 1 — One gate for every caller (`fix/gate-every-caller`, merged into this branch)
 - [x] Phase 2 — Pipeline: the manifest from service functions
 - [x] Phase 3 — Pilot: the production job lifecycle (review gate before Phase 4)
-- [ ] Phase 4 — Module waves
+- [x] Phase 4 — Module waves
   - [x] Wave 1: production, purchasing, inventory, sales (agents, merged)
   - [x] Wave 2: items, quality, invoicing, accounting (agents, merged)
-  - [ ] Wave 3: resources (merged); settings, users/account/people, shared/documents/workflows/integrations (agents running)
+  - [x] Wave 3: resources, settings, users/account/people, shared/documents/workflows/integrations (merged)
   - [x] Publish only what routes use: 201 legacy tools that no route calls are unpublished
-  - [ ] Single-function tools: a codemod turns each route-called legacy tool into a leaf (below)
+  - [x] Single-function tools: a codemod turns each route-called legacy tool into a leaf (below)
 - [ ] Phase 5 — Dissolve `packages/server-functions`
 - [ ] Phase 6 — MES calls ERP's API (auth design needs approval first)
 - [ ] Phase 7 — Clean up
+  - [x] Module layout: `<module>.server.ts` operations, `<module>.service.ts` building blocks, no barrels; flat names `<module>_<function>`; `account` merged into `users`
+  - [x] Legacy pipeline deleted (dispatcher, registry, service-file parser, validator registry, `sql-effects`, blocked/exposure lists, aliases)
+  - [x] Docs and rules rewritten; lessons added
+  - [x] #1842 fixes: paged lists, flat inputs (`args` and single-object wrappers), stamped columns (`stamp-matches-columns` check)
+  - [ ] `serviceContext` still built directly by two routes (kanban scan, agent chat) and `carbon.server.ts`; `assertIsPost` / `flash` / `bypassRls` sweep not done
+  - [ ] Changelog entry: draft kept, not written until the user asks
 
 Deviations from the approved plan, with the reason:
 
