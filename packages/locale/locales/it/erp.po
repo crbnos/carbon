@@ -9848,10 +9848,6 @@ msgstr "Impossibile caricare le tariffe di noleggio"
 msgid "Failed to load tracked entities"
 msgstr "Impossibile caricare le entità tracciate"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Impossibile spostare il conto: {0}"
-
 msgid "Failed to plan job"
 msgstr "Impossibile pianificare l'ordine di produzione"
 
@@ -16478,8 +16474,14 @@ msgstr "Fine Periodo"
 msgid "Period lock policy"
 msgstr "Politica di blocco del periodo"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Inizio del periodo"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Spesa di ammortamento periodico per i cespiti"
@@ -22037,6 +22039,12 @@ msgstr "Versione di destinazione"
 
 msgid "Task"
 msgstr "Attività"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "attività"

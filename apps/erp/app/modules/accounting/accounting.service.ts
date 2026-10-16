@@ -2267,7 +2267,7 @@ export async function getExchangeRates(
   });
 }
 
-/** @mcp upsert */
+/** Not published: `accounting_exchangeRate_override` pins a rate, and refuses the base currency this accepts. */
 export async function upsertExchangeRateOverride(
   client: SupabaseClient<Database>,
   override: {
@@ -2327,7 +2327,7 @@ export async function upsertExchangeRateOverride(
   return insert;
 }
 
-/** @mcp delete */
+/** Not published: `accounting_exchangeRate_reset` runs it. */
 export async function deleteExchangeRateOverride(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2701,7 +2701,7 @@ export async function getFiscalCalendarCommitted(
   };
 }
 
-/** @mcp action */
+/** Not published: `accounting_period_lock` runs it. */
 export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2739,7 +2739,7 @@ export async function lockAccountingPeriod(
     .single();
 }
 
-/** @mcp action */
+/** Not published: `accounting_period_unlock` runs it. */
 export async function unlockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2934,7 +2934,7 @@ export async function closeAccountingPeriod(
 // checklist-aware close is exactly that call with the argument shape the route
 // action passes. Kept as a distinct named export so the route imports intent,
 // not the lower-level lifecycle primitive.
-/** @mcp update */
+/** Not published: `accounting_period_close` runs it. */
 export async function closePeriodWithChecklist(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4048,7 +4048,7 @@ async function getPeriodCloseTaskById(
   }>;
 }
 
-/** @mcp action */
+/** Not published: `accounting_closeTask_complete` runs it. */
 export async function completeCloseTask(
   client: SupabaseClient<Database>,
   args: { taskId: string; companyId: string; userId: string; notes?: string }
@@ -4089,7 +4089,7 @@ export async function completeCloseTask(
     .single();
 }
 
-/** @mcp action */
+/** Not published: `accounting_closeTask_skip` runs it. */
 export async function skipCloseTask(
   client: SupabaseClient<Database>,
   args: {
@@ -6292,7 +6292,7 @@ export async function getJournalEntryRelatedItems(
   };
 }
 
-/** @mcp create */
+/** Not published: it takes the entry number from the caller. `accounting_journalEntry_create` numbers it from the sequence. */
 export async function createJournalEntry(
   client: SupabaseClient<Database>,
   data: z.infer<typeof journalEntryValidator> & {
@@ -6403,7 +6403,7 @@ export async function deleteJournalEntryLine(
   return client.from("journalLine").delete().eq("id", id);
 }
 
-/** @mcp action destructive */
+/** Not published: `accounting_journalEntry_save` saves, with the one-sided line rule this skips. */
 export async function saveJournalEntryWithLines(
   client: SupabaseClient<Database>,
   data: {
@@ -7051,7 +7051,7 @@ export async function deleteFixedAsset(
   return client.from("fixedAsset").delete().eq("id", id).eq("status", "Draft");
 }
 
-/** @mcp create destructive */
+/** Not published: it takes the lines from the caller. `accounting_depreciationRun_create` calculates them. */
 export async function insertDepreciationRun(
   client: SupabaseClient<Database>,
   input: {
@@ -8764,7 +8764,7 @@ export async function getWorkCenterCapitalCost(
   };
 }
 
-/** @mcp update */
+/** Not published: `accounting_fixedAsset_takeOutOfService` runs it, with the on-rent and disposed checks this skips. */
 export async function setFixedAssetOutOfService(
   client: SupabaseClient<Database>,
   {
@@ -8800,7 +8800,7 @@ export async function setFixedAssetOutOfService(
   );
 }
 
-/** @mcp update */
+/** Not published: `accounting_fixedAsset_returnToService` runs it. */
 export async function returnFixedAssetToService(
   client: SupabaseClient<Database>,
   {

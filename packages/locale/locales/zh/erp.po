@@ -9848,10 +9848,6 @@ msgstr "加载租赁费率失败"
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "移动账户失败: {0}"
-
 msgid "Failed to plan job"
 msgstr "规划工单失败"
 
@@ -16478,8 +16474,14 @@ msgstr "期末"
 msgid "Period lock policy"
 msgstr "期间锁定政策"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "期间开始"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定资产的定期折旧费用"
@@ -22037,6 +22039,12 @@ msgstr "目标版本"
 
 msgid "Task"
 msgstr "任务"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "任务"

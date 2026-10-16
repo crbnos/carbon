@@ -12,6 +12,9 @@ import { expect, it, vi } from "vitest";
 // accounting.service (imported by accounting.server) reaches the settings
 // barrel and the glossary, whose Lingui `msg` macros vitest does not
 // transform. Nothing under test uses them.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",

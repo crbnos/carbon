@@ -9848,10 +9848,6 @@ msgstr "レンタル料金の読み込みに失敗しました"
 msgid "Failed to load tracked entities"
 msgstr "追跡対象エンティティの読み込みに失敗しました"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "勘定科目の移動に失敗しました: {0}"
-
 msgid "Failed to plan job"
 msgstr "製造指図を計画できませんでした"
 
@@ -16478,8 +16474,14 @@ msgstr "期間終了"
 msgid "Period lock policy"
 msgstr "期間ロックポリシー"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "期間開始"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定資産の定期的な減価償却費用"
@@ -22037,6 +22039,12 @@ msgstr "ターゲットバージョン"
 
 msgid "Task"
 msgstr "タスク"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "タスク"

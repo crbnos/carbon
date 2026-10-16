@@ -9848,10 +9848,6 @@ msgstr "Failed to load the rental rates"
 msgid "Failed to load tracked entities"
 msgstr "Failed to load tracked entities"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Failed to move account: {0}"
-
 msgid "Failed to plan job"
 msgstr "Failed to plan job"
 
@@ -16478,8 +16474,14 @@ msgstr "Period End"
 msgid "Period lock policy"
 msgstr "Period lock policy"
 
+msgid "Period locked"
+msgstr "Period locked"
+
 msgid "Period Start"
 msgstr "Period Start"
+
+msgid "Period unlocked"
+msgstr "Period unlocked"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodic depreciation expense for fixed assets"
@@ -22037,6 +22039,12 @@ msgstr "Target Version"
 
 msgid "Task"
 msgstr "Task"
+
+msgid "Task marked done"
+msgstr "Task marked done"
+
+msgid "Task skipped"
+msgstr "Task skipped"
 
 msgid "tasks"
 msgstr "tasks"

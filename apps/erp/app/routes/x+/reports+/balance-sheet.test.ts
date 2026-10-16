@@ -79,6 +79,10 @@ vi.mock("~/modules/accounting", async () => ({
   getFinancialStatementBalances: vi.fn(),
   getFiscalYearSettings: vi.fn()
 }));
+// accounting.server's operations reach these modules; no report uses them.
+vi.mock("~/modules/sales/sales.service", () => ({}));
+vi.mock("~/modules/purchasing/purchasing.service", () => ({}));
+vi.mock("~/modules/users/users.server", () => ({}));
 vi.mock("~/modules/accounting/accounting.server", async () => ({
   ...(await vi.importActual("~/modules/accounting/accounting.server")),
   getConsolidatedPeriodSeriesForReport: vi.fn()

@@ -9848,10 +9848,6 @@ msgstr "Échec du chargement des tarifs de location"
 msgid "Failed to load tracked entities"
 msgstr "Impossible de charger les entités suivies"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Impossible de déplacer le compte : {0}"
-
 msgid "Failed to plan job"
 msgstr "Impossible de planifier l'ordre de fabrication"
 
@@ -16478,8 +16474,14 @@ msgstr "Fin de période"
 msgid "Period lock policy"
 msgstr "Politique de verrouillage des périodes"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Début de période"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Charge d'amortissement périodique des immobilisations"
@@ -22037,6 +22039,12 @@ msgstr "Version cible"
 
 msgid "Task"
 msgstr "Tâche"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "tâches"

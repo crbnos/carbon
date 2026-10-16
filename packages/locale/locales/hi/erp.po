@@ -9848,10 +9848,6 @@ msgstr "किराया दरें लोड करने में वि�
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "खाता स्थानांतरित करने में विफल: {0}"
-
 msgid "Failed to plan job"
 msgstr "जॉब को प्लान करने में विफल"
 
@@ -16478,8 +16474,14 @@ msgstr "अवधि का अंत"
 msgid "Period lock policy"
 msgstr "अवधि लॉक नीति"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "अवधि शुरुआत"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "अचल संपत्ति के लिए आवधिक मूल्यह्रास व्यय"
@@ -22037,6 +22039,12 @@ msgstr "लक्ष्य संस्करण"
 
 msgid "Task"
 msgstr "कार्य"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "कार्य"
