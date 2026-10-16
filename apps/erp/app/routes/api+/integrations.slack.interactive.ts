@@ -3,29 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { ERP_URL, SLACK_SIGNING_SECRET } from "@carbon/auth";
+import { SLACK_SIGNING_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
-  createIssueSlackThread,
   createSlackWebClient,
-  getCarbonEmployeeFromSlackId,
   getSlackIntegrationByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
   getIssueTypesList,
-  getIssueWorkflowsList,
-  insertIssue
+  getIssueWorkflowsList
 } from "~/modules/quality/quality.service";
-import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { shareLinkContext } from "~/modules/service-context.server";
+import { createIssueFromSlack } from "~/modules/shared/shared.server";
 
 // nodejs runtime: the Slack signature check uses node:crypto.
 export const config = { runtime: "nodejs" };
@@ -193,13 +189,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return handleBlockActions(payload.data, companyId, slackToken);
 
       case "view_submission":
-        return handleViewSubmission(
-          payload.data,
-          companyId,
-          slackToken,
-          serviceRole,
-          integration.data?.[0]
-        );
+        return handleViewSubmission(payload.data, companyId);
 
       case "view_closed":
         return { ok: true };
@@ -442,10 +432,7 @@ async function handleCreateNcrShortcut(
 
 async function handleViewSubmission(
   payload: z.infer<typeof slackInteractivePayloadSchema>,
-  companyId: string,
-  slackToken: string,
-  serviceRole: SupabaseClient<Database>,
-  integration: Database["public"]["Tables"]["companyIntegration"]["Row"]
+  companyId: string
 ) {
   const view = payload.view;
 
@@ -453,95 +440,35 @@ async function handleViewSubmission(
     return { ok: true };
   }
 
+  const failed = {
+    response_action: "errors",
+    errors: {
+      title_block: "Failed to create Issue. Please try again."
+    }
+  };
+
   try {
     const values = view.state.values;
-    const title = values.title_block.title.value;
-    const description = values.description_block?.description?.value || "";
-    const typeId = values.type_block.type.selected_option?.value;
-    const workflowId = values.workflow_block?.workflow?.selected_option?.value;
-    const severity =
-      values.severity_block?.severity?.selected_option?.value || "Medium";
+    const { user_id } = JSON.parse(view.private_metadata);
 
-    const modalMetadata = JSON.parse(view.private_metadata);
-    const { user_id } = modalMetadata;
+    // The verified signature is the only credential: the workspace's company
+    // is the one acted in.
+    const ctx = await shareLinkContext({ companyId, createdBy: "system" });
+    if (!ctx) throw new Error("Failed to read the company");
 
-    // Use the configured channel from integration metadata, not the trigger channel
-    const integrationMetadata = integration.metadata as any;
-    const configuredChannelId = integrationMetadata?.channel_id;
-
-    if (!configuredChannelId) {
-      throw new Error("No channel configured for Slack integration");
-    }
-
-    const employee = await getCarbonEmployeeFromSlackId(
-      serviceRole,
-      slackToken,
-      user_id,
-      companyId
-    );
-
-    if (employee.error || !employee.data) {
-      logger.error("Failed to get employee", { error: employee.error });
-      throw new Error("Failed to get employee");
-    }
-
-    const createResult = await insertIssue(serviceRole, {
-      companyId,
-      createdBy: employee.data?.id,
-      description,
-      locationId: employee.data?.locationId || "",
-      name: title,
-      nonConformanceTypeId: typeId,
-      nonConformanceWorkflowId: workflowId,
-      openDate: new Date().toISOString(),
-      priority: severity,
-      source: "Internal"
+    const created = await createIssueFromSlack(ctx, {
+      slackUserId: user_id,
+      title: values.title_block.title.value,
+      description: values.description_block?.description?.value || "",
+      nonConformanceTypeId: values.type_block.type.selected_option?.value,
+      nonConformanceWorkflowId:
+        values.workflow_block?.workflow?.selected_option?.value,
+      priority:
+        values.severity_block?.severity?.selected_option?.value || "Medium"
     });
-
-    if (createResult.error || !createResult.data) {
-      logger.error("Failed to create issue", { error: createResult.error });
-      throw new Error("Failed to create issue");
-    }
-
-    const ncrId = createResult.data.id;
-
-    const [threadResult, tasksResult] = await Promise.all([
-      createIssueSlackThread(
-        serviceRole,
-        {
-          carbonUrl: `${ERP_URL}${path.to.issue(ncrId)}`,
-          companyId,
-          description,
-          id: ncrId,
-          nonConformanceId: createResult.data.nonConformanceId,
-          severity,
-          title,
-          userId: employee.data?.id
-        },
-        {
-          slackToken,
-          slackUserId: user_id,
-          channelId: configuredChannelId
-        }
-      ),
-      serverFns
-        .system({
-          db: getDatabaseClient(),
-          companyId,
-          userId: employee.data?.id ?? "system"
-        })
-        .invoke("create", {
-          type: "nonConformanceTasks",
-          id: ncrId
-        })
-    ]);
-
-    if (tasksResult.error) {
-      logger.error("Error creating tasks", { error: tasksResult.error });
-    }
-
-    if (threadResult.error) {
-      logger.error("Error creating thread", { error: threadResult.error });
+    if (created.error) {
+      logger.error("Error creating Issue", { error: created.error });
+      return failed;
     }
 
     return {
@@ -549,12 +476,6 @@ async function handleViewSubmission(
     };
   } catch (error) {
     logger.error("Error creating Issue", { error });
-
-    return {
-      response_action: "errors",
-      errors: {
-        title_block: "Failed to create Issue. Please try again."
-      }
-    };
+    return failed;
   }
 }

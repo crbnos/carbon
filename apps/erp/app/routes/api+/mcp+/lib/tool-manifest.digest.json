@@ -1527,7 +1527,7 @@
     {"name":"shared_getModelByItemId","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"none","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_getNotes","classification":"READ","paramCount":1,"schema":"e7617eb689c8","response":"1a052a4417b5","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_getTagsList","classification":"READ","paramCount":1,"schema":"43c92414cb2f","response":"b837740e18f4","injectAuth":"companyId","permission":"none","paginates":false},
-    {"name":"shared_importCsv","classification":"WRITE","paramCount":4,"schema":"8f2d77f74ffb","response":"fe3f36b94f53","injectAuth":"companyId+userId","permission":"none","paginates":false},
+    {"name":"shared_implementationHub_enroll","classification":"WRITE","paramCount":1,"schema":"31b84d65b2ac","response":"a8f082a96841","injectAuth":"none","permission":"settings:update","paginates":false,"serviceFn":"shared.implementationHub.enroll"},
     {"name":"shared_insertNote","classification":"WRITE","paramCount":2,"schema":"260839f76e18","response":"c2fb0e5225f8","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_insertTag","classification":"WRITE","paramCount":1,"schema":"11926edb131b","response":"27f67ae1958c","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_updateSavedViewOrder","classification":"WRITE","paramCount":1,"schema":"d19d08f2d129","response":"646de62ab761","injectAuth":"companyId+updatedBy","permission":"none","paginates":false,"result":"envelopes"},

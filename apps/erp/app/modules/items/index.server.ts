@@ -23,6 +23,7 @@ import {
   setItemSupersession,
   setItemTrackingType,
   setMaterialProperties,
+  syncOnshapeMethod,
   updateItemManufacturing,
   updateItemPlanning,
   updatePart,
@@ -52,7 +53,11 @@ export const items = {
   },
   supplierPart: { create: createSupplierPart, update: updateSupplierPart },
   cost: { recalculate: recalculateItemCost },
-  method: { copy: copyMethod, createVersion: createMethodVersion },
+  method: {
+    copy: copyMethod,
+    createVersion: createMethodVersion,
+    syncOnshape: syncOnshapeMethod
+  },
   methodOperation: { delete: deleteMethodOperation },
   changeNotice: {
     create: createChangeNotice,

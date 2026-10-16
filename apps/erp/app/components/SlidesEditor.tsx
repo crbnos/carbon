@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { serviceErrorMessage } from "@carbon/query";
 import {
   Button,
   cn,
@@ -65,7 +66,7 @@ export async function uploadStepSlideModel(
     method: "POST",
     body: formData
   });
-  if (!response.ok) return null;
+  if (!response.ok || serviceErrorMessage(await response.json())) return null;
   return modelUploadId;
 }
 

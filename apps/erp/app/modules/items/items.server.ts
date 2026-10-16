@@ -14,10 +14,12 @@ import {
   openApprovalRequests
 } from "@carbon/ee/approvals/document.server";
 import { hasPendingApproval } from "@carbon/ee/approvals.server";
+import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
 import { NotificationEvent } from "@carbon/notifications";
+import { serverFns } from "@carbon/server-functions";
 import { datetime, isUniqueViolation, pluckUnique } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
@@ -1981,6 +1983,83 @@ export const createMethodVersion = defineServiceFn({
       return ctx.error("internal", "Failed to copy make method", copy.error);
     }
     return { id: version.id, itemId: version.itemId, type: version.type };
+  }
+});
+
+/**
+ * Replace a make method's bill of materials with an Onshape assembly's.
+ *
+ * @remarks
+ * The make method must be the company's. `rows` is the assembly's bill of
+ * materials as the Onshape panel reads it; the sync server function creates
+ * or updates the parts it names and rewrites the method's materials. The
+ * method's item is then mapped to the Onshape document, version and element
+ * (replacing its earlier mapping), stamped with the sync time.
+ */
+export const syncOnshapeMethod = defineServiceFn({
+  input: z.object({
+    makeMethodId: z.string().min(1),
+    documentId: z.string(),
+    versionId: z.string(),
+    elementId: z.string(),
+    rows: onShapeDataValidator
+  }),
+  permission: { update: "parts" },
+
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const method = await ctx.asCaller.supabase
+      .from("makeMethod")
+      .select("itemId, companyId")
+      .eq("id", input.makeMethodId)
+      .maybeSingle();
+    if (method.data?.companyId !== companyId) {
+      return ctx.error("notFound", "Invalid make method id");
+    }
+    const { itemId } = method.data;
+
+    const synced = await serverFns
+      .system({ db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId })
+      .invoke("sync", {
+        type: "onshape",
+        makeMethodId: input.makeMethodId,
+        data: input.rows
+      });
+    if (synced.error) {
+      return ctx.error("internal", "Failed to sync onshape data", synced.error);
+    }
+
+    const cleared = await ctx.asSystem.supabase
+      .from("externalIntegrationMapping")
+      .delete()
+      .eq("entityType", "item")
+      .eq("entityId", itemId)
+      .eq("integration", "onshape")
+      .eq("companyId", companyId);
+    const mapped = cleared.error
+      ? cleared
+      : await ctx.asCaller.supabase.from("externalIntegrationMapping").insert({
+          entityType: "item",
+          entityId: itemId,
+          integration: "onshape",
+          metadata: {
+            documentId: input.documentId,
+            versionId: input.versionId,
+            elementId: input.elementId
+          },
+          lastSyncedAt: datetime.timestamp(),
+          companyId
+        });
+    if (mapped.error) {
+      // The bill of materials is synced; only the panel's link is stale.
+      logger.error("Failed to map the item to its Onshape document", {
+        companyId,
+        itemId,
+        error: mapped.error
+      });
+    }
+
+    return { itemId };
   }
 });
 

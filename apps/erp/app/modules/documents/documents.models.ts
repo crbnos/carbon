@@ -49,6 +49,13 @@ export const documentLabelsValidator = z.object({
   labels: z.array(z.string().min(1).max(50)).optional()
 });
 
+/** A viewer camera direction: model towards camera, in the model's axes (Z up). */
+export const modelViewDirection = z
+  .tuple([z.number(), z.number(), z.number()])
+  .refine((direction) => direction.some((n) => n !== 0), {
+    message: "A view direction cannot be zero"
+  });
+
 export {
   buildDocumentUploadPath,
   buildStagedUploadPath,

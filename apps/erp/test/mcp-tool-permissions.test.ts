@@ -107,7 +107,10 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   accounting_fixedAsset_sell: { module: "sales", actions: ["create"] },
   // A training's fields are edited on the people side: its route requires
   // people_update.
-  resources_training_updateField: { module: "people", actions: ["update"] }
+  resources_training_updateField: { module: "people", actions: ["update"] },
+  // Enrolling the company in the Implementation Hub: its route requires
+  // settings_update.
+  shared_implementationHub_enroll: { module: "settings", actions: ["update"] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

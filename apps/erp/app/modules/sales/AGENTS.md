@@ -64,7 +64,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 
 ## Key Service Functions
 
-- `importQuotes` (`sales.import.server.ts`) — app-side bulk CSV quote importer (modes `quote` / `quoteLine` / `quoteWithLines`); reuses `insertQuote` / `upsertQuoteLine` / `upsertQuoteLinePrices` so quote side effects are preserved. Wired from `routes/x+/shared+/import.$tableId.tsx`; config in `modules/shared/imports.models.ts`. Create-only idempotency via `externalIntegrationMapping` (integration `csv`).
+- `importQuotes` (`sales.import.server.ts`) — app-side bulk CSV quote importer (modes `quote` / `quoteLine` / `quoteWithLines`); reuses `insertQuote` / `upsertQuoteLine` / `upsertQuoteLinePrices` so quote side effects are preserved. Called by `shared.csvImport.run` (`modules/shared/shared.server.ts`, the `routes/x+/shared+/import.$tableId.tsx` action); config in `modules/shared/imports.models.ts`. Create-only idempotency via `externalIntegrationMapping` (integration `csv`).
 - `convertQuoteToOrder` / `convertSalesRfqToQuote` — lifecycle conversions via the `convert` server function
 - `copyQuoteLine` / `copyQuote` — duplication via the `get-method` server function (`@carbon/server-functions/get-method`)
 - `applyPriceRules` — applies matched discount/markup rules to a starting price

@@ -227,7 +227,10 @@ export async function getTagsList(
   return query.order("name");
 }
 
-/** @mcp action */
+/**
+ * One table's CSV import. Not published: `shared.csvImport.run` is the
+ * operation, and checks the table's permission and mappings first.
+ */
 export async function importCsv(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

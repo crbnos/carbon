@@ -251,15 +251,22 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
 ## Route (`apps/erp/app/routes/x+/shared+/import.$tableId.tsx`)
 
-Action only (no loader). Steps:
-1. `notFound` if `tableId` missing or not a key of `importPermissions`.
-2. `requirePermissions(request, { update: importPermissions[table] })`, plus `create` on the same module for tables in `importRequiresCreate` (the three stock imports, matching the single-record adjustment's `create: inventory` route gate and `update: inventory` Save button).
-3. Validate form against `importSchemas[table].extend({ filePath, enumMappings })`.
-   `enumMappings` arrives as a JSON **string** and is `JSON.parse`d before the service call.
-4. `columnMappings` = the remaining validated form fields after destructuring `filePath`
-   and `enumMappings` (`const { filePath, enumMappings, ...columnMappings } = validation.data`).
-5. Call `importCsv(serviceRole, getDatabaseClient(), { table, filePath, columnMappings, enumMappings, companyId, userId })` (quote tables go through `importQuotes` instead).
-6. Return `{ success, inserted, updated, skipped, errors }`.
+Action only (no loader). It validates the form (`filePath`, `enumMappings` as JSON;
+every other field is a column mapping) and calls `shared.csvImport.run`
+(`importCsvFile` in `apps/erp/app/modules/shared/shared.server.ts`), which:
+1. Refuses a `table` that is not a key of `importPermissions`.
+2. Gates on `{ by: "table" }`: `update` on `importPermissions[table]`, plus `create` on
+   the same module for tables in `importRequiresCreate` (the three stock imports, matching
+   the single-record adjustment's `create: inventory` route gate and `update: inventory`
+   Save button).
+3. Validates `columnMappings` against `importSchemas[table]` (required fields mapped).
+4. Calls `importCsv(serviceRole, db, { table, filePath, columnMappings, enumMappings, companyId, userId })`
+   (quote tables go through `importQuotes` instead).
+5. Returns `{ inserted, updated, skipped, errors }`; `ImportCSVModal` reads it from the
+   result's `data`.
+
+The lookup values an import creates on the fly (`api+/csv+/create-lookup.tsx`) are
+`shared.csvImport.createLookups`, gated on `create` of the lookup's module.
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
 it lazily imports `@carbon/server-functions/import-csv` and calls
