@@ -21571,6 +21571,9 @@ msgstr "見積書を正常にコピーしました"
 msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "後継品目有効日"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "正常に更新されました"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "アップグレード"

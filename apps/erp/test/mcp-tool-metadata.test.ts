@@ -212,7 +212,6 @@ describe("mcp tool-metadata generator", () => {
     expect(boolEnum(props(get("quality_upsertGaugeCalibrationRecord")).notes)).toBe(
       false
     );
-    expect(boolEnum(props(get("quality_upsertRisk")).notes)).toBe(false);
   });
 
   // A parenthesized discriminated-upsert union branch resolves instead of
@@ -285,10 +284,6 @@ describe("mcp tool-metadata generator", () => {
   // tools, so every status change had to send `assignee: null` and cleared it.
   it("does not require a field whose type admits undefined", () => {
     expect(get("sales_updateQuoteStatus").schema.required).toEqual([
-      "id",
-      "status"
-    ]);
-    expect(get("quality_updateIssueStatus").schema.required).toEqual([
       "id",
       "status"
     ]);

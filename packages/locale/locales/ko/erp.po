@@ -21571,6 +21571,9 @@ msgstr "견적이 복사되었습니다"
 msgid "Successfully created a new revision"
 msgstr "새 리비전이 생성되었습니다"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "후속 품목 유효 시점"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "업그레이드"

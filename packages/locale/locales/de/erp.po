@@ -21571,6 +21571,9 @@ msgstr "Angebot erfolgreich kopiert"
 msgid "Successfully created a new revision"
 msgstr "Neue Revision erfolgreich erstellt"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "Nachfolger-Gültigkeit"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "Erfolgreich aktualisiert"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Upgrade"

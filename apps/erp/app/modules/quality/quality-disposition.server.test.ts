@@ -114,9 +114,6 @@ vi.mock("~/services/database.server", () => ({
     })
   })
 }));
-vi.mock("./quality.server", () => ({
-  errResult: (message: string) => ({ data: null, error: { message } })
-}));
 
 import {
   linkEntitiesToIssueItemRow,

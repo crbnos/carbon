@@ -21571,6 +21571,9 @@ msgstr "Предложение успешно скопировано"
 msgid "Successfully created a new revision"
 msgstr "Ревизия успешно создана"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "Дата вступления в силу преемника"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "Успешно обновлено"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Обновить"

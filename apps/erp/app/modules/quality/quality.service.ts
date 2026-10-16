@@ -1353,7 +1353,7 @@ export async function updateIssueActionProcesses(
   }
 }
 
-/** @mcp update */
+/** The bare status write; starting, reopening and closing an issue is `quality.issue.setStatus` / `.close`. */
 export async function updateIssueStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1367,7 +1367,7 @@ export async function updateIssueStatus(
   return client.from("nonConformance").update(update).eq("id", update.id);
 }
 
-/** @mcp update */
+/** The bare status write; the operation is `quality.issue.task.setStatus`, which also tells the integrations. */
 export async function updateIssueTaskStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -2346,7 +2346,7 @@ export async function upsertQualityDocumentStep(
     .single();
 }
 
-/** @mcp upsert */
+/** The bare row write; the operations are `quality.risk.create` / `.update`, which notify the assignee. */
 export async function upsertRisk(
   client: SupabaseClient<Database>,
   risk:

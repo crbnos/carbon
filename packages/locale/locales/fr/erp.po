@@ -21571,6 +21571,9 @@ msgstr "Devis copié avec succès"
 msgid "Successfully created a new revision"
 msgstr "Révision créée avec succès"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "Date d'effet du successeur"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "Mise à jour réussie"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Mettre à niveau"

@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Count,
@@ -34,7 +35,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
@@ -56,7 +57,7 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { Customer, Item, Supplier } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
@@ -1201,17 +1202,7 @@ function NewAssociationModal({
   const { id } = useParams();
   if (!id) throw new Error("No issue ID found");
 
-  const fetcher = useFetcher<typeof associationAction>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    }
-
-    if (fetcher.data?.success === false && fetcher.data?.message) {
-      toast.error(fetcher?.data?.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success, onClose]);
+  const fetcher = useAction<typeof associationAction>({ onSuccess: onClose });
 
   function renderFields(type: IssueAssociationKey) {
     switch (type) {

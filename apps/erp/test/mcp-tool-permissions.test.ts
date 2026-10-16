@@ -77,6 +77,12 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   },
   // Creates a shipment: its route requires inventory_create.
   sales_order_line_ship: { module: "inventory", actions: ["create"] },
+  // Drafts a purchase return from an issue: its route requires
+  // purchasing_create.
+  quality_issue_draftSupplierReturn: {
+    module: "purchasing",
+    actions: ["create"]
+  },
   // Opens a quality Issue from an RMA line: quality_create AND sales_update,
   // which the API cannot name as one module, so its own gate checks both.
   sales_returnOrder_line_escalate: { module: null, actions: [] },

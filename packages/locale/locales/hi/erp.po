@@ -21571,6 +21571,9 @@ msgstr "सफलतापूर्वक उद्धरण की प्रत
 msgid "Successfully created a new revision"
 msgstr "नया रिवीजन सफलतापूर्वक बनाया गया"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "उत्तराधिकारी प्रभावी तिथि"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "अपग्रेड करें"
