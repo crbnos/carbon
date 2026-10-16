@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { renderPurchaseOrderPdf } from "~/modules/purchasing/purchasing.pdf.server";
+import { renderPurchaseOrderPdf } from "~/modules/purchasing/purchasing.pdf";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(

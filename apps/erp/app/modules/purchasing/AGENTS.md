@@ -91,7 +91,7 @@ Each is a `defineServiceFn` listed in `index.server.ts`; the route, the API and 
 - `planning` — `order` (suggestions to Planned POs, one per supplier per week), `updateLine`, `apply`, `dismiss`, `reopen`, `assign`. The route answers `{ success, message }`, the shape `usePlanningActions` (production module, shared with production planning) reads.
 - `lease` / `leaseLine` — see Leases.
 
-The PO and return order PDFs render in `purchasing.pdf.server.tsx` (`renderPurchaseOrderPdf`, `renderPurchaseReturnOrderPdf`) from a client, so the `file+` routes and the operations that store them render one document. Email links use `ERP_URL` (`~/utils/path`), not the request's host. Import other modules' `*.service.ts` files directly here, never their barrels: a barrel re-exports its UI, which imports other barrels, and the router loads every `*.server.ts` early.
+The PO and return order PDFs render in `purchasing.pdf.tsx` (`renderPurchaseOrderPdf`, `renderPurchaseReturnOrderPdf`) from a client, so the `file+` routes and the operations that store them render one document. Email links use `ERP_URL` (`~/utils/path`), not the request's host. Import other modules' `*.service.ts` files directly here, never their barrels: a barrel re-exports its UI, which imports other barrels, and the router loads every `*.server.ts` early.
 
 ## Key Exports
 

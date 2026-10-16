@@ -30,7 +30,7 @@ vi.mock("@carbon/ee/rules.server", async () => ({
   resolveSalesOrderShipTo: vi.fn()
 }));
 // The packing slip renders a PDF through module barrels nothing here needs.
-vi.mock("../app/modules/inventory/packing-slip.server", () => ({
+vi.mock("../app/modules/inventory/packing-slip.pdf", () => ({
   renderPackingSlip: vi.fn()
 }));
 vi.mock("../app/modules/sales/sales.server", () => ({

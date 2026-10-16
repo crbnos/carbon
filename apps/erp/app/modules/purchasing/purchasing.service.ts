@@ -118,7 +118,7 @@ import {
   type PURCHASE_ORDER_REOPEN_STATUSES,
   taxPairForQuantity
 } from "./purchasing.models";
-import { renderPurchaseOrderPdf } from "./purchasing.pdf.server";
+import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
 
 const PURCHASE_ORDERS_LIST_COLUMNS =

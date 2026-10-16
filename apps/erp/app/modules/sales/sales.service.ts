@@ -105,7 +105,6 @@ import {
   upsertExternalLink
 } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
-import { renderSalesOrderPdf } from "./sales.documents.server";
 import type {
   customerAccountingValidator,
   customerBankAccountValidator,
@@ -158,6 +157,7 @@ import {
   isSalesOrderLocked,
   OPEN_SALES_ORDER_STATUSES
 } from "./sales.models";
+import { renderSalesOrderPdf } from "./sales.pdf";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   applyPriceRules,

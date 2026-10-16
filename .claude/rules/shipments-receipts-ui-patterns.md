@@ -127,7 +127,7 @@ rules (`@carbon/ee/rules.server`) over the relevant surfaces — a blocking rule
 `status: "Pending"`, then
 `serverFns.system({ db: ctx.asSystem.pg, companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
-save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.server.tsx`, the
+save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.pdf.tsx`, the
 same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
 `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
 

@@ -73,7 +73,7 @@ import {
   type receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials
 } from "./inventory.models";
-import { renderPackingSlip } from "./packing-slip.server";
+import { renderPackingSlip } from "./packing-slip.pdf";
 import {
   effectiveSuccessorId,
   type PickSupersession,

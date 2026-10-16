@@ -7,7 +7,8 @@ import type { ConformanceCheck, Violation } from "../check";
 /**
  * Code that runs in the browser — components, hooks, a module's `ui/`, and
  * the client-safe module files (`*.models.ts`, `*.utils.ts`, `types.ts`) —
- * never imports a module's `.service` or `.server` file. Both are server-only:
+ * never imports a module's `.service`, `.server` or `.pdf` file. All three are
+ * server-only (a `.pdf.tsx` renders with `@react-pdf/renderer` in Node):
  * a service file may import server-only packages, and React Router refuses a
  * `.server` module in the client graph only at build time. A function the UI
  * calls lives in `<module>.utils.ts`. Type-only imports are erased and allowed.
@@ -16,7 +17,7 @@ const CLIENT_FILE =
   /^apps\/erp\/app\/(?:components\/|hooks\/|stores\/|modules\/[a-z-]+\/(?:ui\/|[A-Za-z0-9.-]+\.(?:models|utils)\.tsx?$|types\.ts$))/;
 
 const SERVER_IMPORT =
-  /^(?:import|export)\s+(?!type\s)[^;]*?\sfrom\s+"([^"]+\.(?:service|server))";/gm;
+  /^(?:import|export)\s+(?!type\s)[^;]*?\sfrom\s+"([^"]+\.(?:service|server|pdf))";/gm;
 
 export const noServerCodeInClient: ConformanceCheck = {
   id: "no-server-code-in-client",

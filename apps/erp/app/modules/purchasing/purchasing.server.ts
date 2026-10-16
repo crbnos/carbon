@@ -91,7 +91,7 @@ import {
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
-import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf.server";
+import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf";
 import {
   applyPurchasingPlanningActions,
   attachPurchaseOrderPdf,

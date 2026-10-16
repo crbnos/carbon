@@ -65,10 +65,6 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
-  renderQuotePdf,
-  renderSalesReturnOrderPdf
-} from "./sales.documents.server";
-import {
   contractAmendmentChangeValidator,
   customerContractAmendmentValidator,
   customerContractTypes,
@@ -94,6 +90,7 @@ import {
   salesRfqValidator,
   selectedLinesValidator
 } from "./sales.models";
+import { renderQuotePdf, renderSalesReturnOrderPdf } from "./sales.pdf";
 import {
   advancingStatusRefusal,
   attachDocumentPdf,

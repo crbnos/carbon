@@ -118,7 +118,7 @@ How they behave:
 - A permission the data asks for (invoicing, when a confirmed contract's mode
   posts or a cancellation drafts a credit memo) is checked inside the
   operation with `callerHolds`.
-- The quote, order and RMA PDFs render from `sales.documents.server.tsx` with
+- The quote, order and RMA PDFs render from `sales.pdf.tsx` with
   the caller's client; the `file+` routes call the same renderers.
 
 ## Key Exports

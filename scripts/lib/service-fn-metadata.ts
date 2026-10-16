@@ -99,6 +99,29 @@ export function routerLeaves(
         walk(value, path);
         continue;
       }
+      // `import * as sales from "./sales/sales.server"`: the module's API is
+      // every service function the file exports, under its own name.
+      const aliased = symbol?.isAlias() ? symbol.getAliasedSymbol() : symbol;
+      const moduleFile = aliased?.getDeclarations().find(Node.isSourceFile);
+      if (moduleFile) {
+        for (const [name, declarations] of moduleFile.getExportedDeclarations()) {
+          const declaration = declarations.find(Node.isVariableDeclaration);
+          if (!declaration) {
+            if (declarations.some((d) => Node.isTypeAliasDeclaration(d) || Node.isInterfaceDeclaration(d))) continue;
+            throw new Error(
+              `${moduleFile.getFilePath()}: export ${name} is not a defineServiceFn (a server file exports only service functions)`
+            );
+          }
+          const call = defineCall(declaration);
+          if (!call) {
+            throw new Error(
+              `${moduleFile.getFilePath()}: export ${name} is not a defineServiceFn (a server file exports only service functions)`
+            );
+          }
+          leaves.push({ path: [...path, name], declaration, call });
+        }
+        continue;
+      }
       const declaration = variableOf(symbol);
       const init = declaration?.getInitializer();
       if (!declaration || !init) {
