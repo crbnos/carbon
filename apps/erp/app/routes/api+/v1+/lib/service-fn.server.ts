@@ -17,6 +17,8 @@ import type {
   ServiceFn
 } from "~/modules/service-fn.server";
 import type { AuthedContext } from "./base.server";
+import { scopedToCompany } from "./company-scope.server";
+import { COMPANY_TABLES } from "./operations.server";
 
 /** The oRPC code each refusal goes out as; its status is the category's own. */
 const CODES: Record<ErrorCategory, string> = {
@@ -41,7 +43,12 @@ function serviceFnAt(path: string[]): ServiceFn<z.ZodType, unknown> {
   return node as ServiceFn<z.ZodType, unknown>;
 }
 
-/** The service context for an authenticated API, MCP or workflow caller. */
+/**
+ * The service context for an authenticated API, MCP or workflow caller. Its
+ * client filters every update and delete on a company table by the caller's
+ * company (`scopedToCompany`): row-level security lets a user reach every
+ * company they belong to, and an id from another one must match nothing.
+ */
 export function contextFromAuthed(context: AuthedContext): ServiceContext {
   return contextFor({
     kind: context.authKind === "api-key" ? "apiKey" : "user",
@@ -50,7 +57,7 @@ export function contextFromAuthed(context: AuthedContext): ServiceContext {
     permissions: permissionsFromClaims(context.scopes),
     companyId: context.companyId,
     companyGroupId: context.companyGroupId,
-    client: context.client
+    client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES)
   });
 }
 

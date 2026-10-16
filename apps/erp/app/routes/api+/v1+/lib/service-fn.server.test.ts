@@ -32,6 +32,20 @@ vi.mock("~/modules/router.server", async () => {
               }
               return { jobId, actor: ctx.actor.type, by: ctx.auditUserId };
             }
+          }),
+          // Records the filters an update on the caller's client carries.
+          touch: defineServiceFn({
+            input: z.object({ jobId: z.string() }),
+            permission: { update: "production" },
+            async run(ctx, { jobId }) {
+              const client = ctx.asCaller.supabase as unknown as {
+                from(table: string): {
+                  update(row: object): { eq(c: string, v: string): unknown };
+                };
+              };
+              client.from("job").update({ name: "x" }).eq("id", jobId);
+              return { jobId };
+            }
           })
         }
       }
@@ -90,5 +104,34 @@ describe("runServiceFn", () => {
         jobId: "j1"
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
+  });
+});
+
+describe("an API caller's client", () => {
+  it("filters an update on a company table by the caller's company", async () => {
+    const filters: [string, string][] = [];
+    const builder = {
+      update: () => builder,
+      eq: (column: string, value: string) => {
+        filters.push([column, value]);
+        return builder;
+      }
+    };
+    const context = {
+      ...caller("session"),
+      client: { from: () => builder } as unknown as AuthedContext["client"]
+    };
+    await runServiceFn(
+      {
+        name: "production_job_touch",
+        serviceFn: { path: ["production", "job", "touch"] }
+      } as ManifestEntry,
+      context,
+      { jobId: "j1" }
+    );
+    expect(filters).toEqual([
+      ["companyId", "c1"],
+      ["id", "j1"]
+    ]);
   });
 });
