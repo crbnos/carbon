@@ -400,7 +400,7 @@ describe("published defaults", () => {
   it("an upsert that branches on its id has a rule, like one that branches on an audit field", () => {
     // `"id" in line`: without a rule both audit fields were stamped on every call.
     expect(get("purchasing_upsertPurchaseOrderLine").upsert).toEqual({ keys: ["id"] });
-    expect(get("invoicing_upsertSalesInvoiceLine").upsert).toEqual({ keys: ["id"] });
+    expect(get("invoicing_upsertPurchaseInvoiceLine").upsert).toEqual({ keys: ["id"] });
     // Its row is made with the invoice and shares its id: `id` was required in
     // both shapes, so the insert branch never ran. It is an update, and says so.
     const delivery = get("invoicing_upsertPurchaseInvoiceDelivery");

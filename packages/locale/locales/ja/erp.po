@@ -11747,6 +11747,9 @@ msgstr "今すぐ請求する"
 msgid "Invoice Number"
 msgstr "請求書番号"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
+
 msgid "Invoice Rate"
 msgstr "請求書の為替レート"
 
@@ -17368,6 +17371,9 @@ msgstr "仕入先請求書金額"
 msgid "Purchase Invoice Line"
 msgstr "仕入先請求書明細"
 
+msgid "Purchase invoice voided"
+msgstr ""
+
 msgid "Purchase invoices"
 msgstr "仕入先請求書"
 
@@ -19492,11 +19498,17 @@ msgstr "売上請求書"
 msgid "Sales Invoice"
 msgstr "売上請求書"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "売上請求書明細"
 
 msgid "Sales Invoice Line"
 msgstr "売上請求書行"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "売上請求書"
@@ -20247,6 +20259,9 @@ msgstr "経由で送信"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "不良ユニットをスクラップするのではなく、以前の操作に戻して修正する。"
+
+msgid "Sending invoice"
+msgstr ""
 
 msgid "Sends this document for approval before it can go active."
 msgstr "この文書を有効にする前に承認用に送信します。"

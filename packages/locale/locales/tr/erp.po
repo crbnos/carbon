@@ -11747,6 +11747,9 @@ msgstr "Şimdi Fatura Oluştur"
 msgid "Invoice Number"
 msgstr "Fatura Numarası"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
+
 msgid "Invoice Rate"
 msgstr "Fatura döviz kuru"
 
@@ -17368,6 +17371,9 @@ msgstr "Alış faturası tutarı"
 msgid "Purchase Invoice Line"
 msgstr "Alış faturası satırı"
 
+msgid "Purchase invoice voided"
+msgstr ""
+
 msgid "Purchase invoices"
 msgstr "Alış faturaları"
 
@@ -19492,11 +19498,17 @@ msgstr "Satış faturası"
 msgid "Sales Invoice"
 msgstr "Satış Faturası"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "Satış faturası satırı"
 
 msgid "Sales Invoice Line"
 msgstr "Satış Faturası Kalemi"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "Satış Faturaları"
@@ -20247,6 +20259,9 @@ msgstr "Gönderim Yolu"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
+
+msgid "Sending invoice"
+msgstr ""
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."

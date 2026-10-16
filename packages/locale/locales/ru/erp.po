@@ -11747,6 +11747,9 @@ msgstr "Выставить счет"
 msgid "Invoice Number"
 msgstr "Номер счета-фактуры"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
+
 msgid "Invoice Rate"
 msgstr "Валютный курс счета-фактуры"
 
@@ -17368,6 +17371,9 @@ msgstr "Сумма счета-фактуры полученной"
 msgid "Purchase Invoice Line"
 msgstr "Строка счета-фактуры полученной"
 
+msgid "Purchase invoice voided"
+msgstr ""
+
 msgid "Purchase invoices"
 msgstr "счета-фактуры полученные"
 
@@ -19492,11 +19498,17 @@ msgstr "счет-фактура выданный"
 msgid "Sales Invoice"
 msgstr "Счет-фактура выданный"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "Строка счета-фактуры выданной"
 
 msgid "Sales Invoice Line"
 msgstr "Строка счета-фактуры выданного"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "счета-фактуры выданные"
@@ -20247,6 +20259,9 @@ msgstr "Отправить через"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."
+
+msgid "Sending invoice"
+msgstr ""
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Отправляет этот документ на утверждение перед тем, как он сможет стать активным."

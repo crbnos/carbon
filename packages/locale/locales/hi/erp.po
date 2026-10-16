@@ -11747,6 +11747,9 @@ msgstr "अभी चालान करें"
 msgid "Invoice Number"
 msgstr "चालान संख्या"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
+
 msgid "Invoice Rate"
 msgstr "चालान विनिमय दर"
 
@@ -17368,6 +17371,9 @@ msgstr "क्रय चालान राशि"
 msgid "Purchase Invoice Line"
 msgstr "क्रय चालान पंक्ति"
 
+msgid "Purchase invoice voided"
+msgstr ""
+
 msgid "Purchase invoices"
 msgstr "क्रय चालान"
 
@@ -19492,11 +19498,17 @@ msgstr "विक्रय चालान"
 msgid "Sales Invoice"
 msgstr "विक्रय चालान"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "विक्रय चालान पंक्ति"
 
 msgid "Sales Invoice Line"
 msgstr "विक्रय चालान पंक्ति"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "विक्रय चालान"
@@ -20247,6 +20259,9 @@ msgstr "के माध्यम से भेजें"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"
+
+msgid "Sending invoice"
+msgstr ""
 
 msgid "Sends this document for approval before it can go active."
 msgstr "यह दस्तावेज़ सक्रिय होने से पहले अनुमोदन के लिए भेजता है।"

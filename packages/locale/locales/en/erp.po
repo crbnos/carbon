@@ -11747,6 +11747,9 @@ msgstr "Invoice Now"
 msgid "Invoice Number"
 msgstr "Invoice Number"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr "Invoice posted and sent via Stripe"
+
 msgid "Invoice Rate"
 msgstr "Invoice Rate"
 
@@ -17368,6 +17371,9 @@ msgstr "Purchase Invoice Amount"
 msgid "Purchase Invoice Line"
 msgstr "Purchase Invoice Line"
 
+msgid "Purchase invoice voided"
+msgstr "Purchase invoice voided"
+
 msgid "Purchase invoices"
 msgstr "Purchase invoices"
 
@@ -19492,11 +19498,17 @@ msgstr "Sales invoice"
 msgid "Sales Invoice"
 msgstr "Sales Invoice"
 
+msgid "Sales invoice confirmed"
+msgstr "Sales invoice confirmed"
+
 msgid "Sales invoice line"
 msgstr "Sales invoice line"
 
 msgid "Sales Invoice Line"
 msgstr "Sales Invoice Line"
+
+msgid "Sales invoice voided"
+msgstr "Sales invoice voided"
 
 msgid "Sales invoices"
 msgstr "Sales invoices"
@@ -20247,6 +20259,9 @@ msgstr "Send Via"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
+
+msgid "Sending invoice"
+msgstr "Sending invoice"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Sends this document for approval before it can go active."
