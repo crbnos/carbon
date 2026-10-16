@@ -7600,6 +7600,9 @@ msgstr "Удалить рабочий процесс"
 msgid "Deleted"
 msgstr "Удалено"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Доставить"
 
@@ -24776,6 +24779,12 @@ msgstr "Счет обновлен"
 
 msgid "Updated At"
 msgstr "Обновлено"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Обновлено"

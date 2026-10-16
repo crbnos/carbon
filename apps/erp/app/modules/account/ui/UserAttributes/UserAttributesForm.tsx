@@ -5,6 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -18,7 +19,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import { LuFile, LuPaperclip } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { type useFetcher, useParams } from "react-router";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import { DateTime } from "~/components/DateTime";
 import FileDropzone from "~/components/FileDropzone";
@@ -59,7 +60,15 @@ const UserAttributesForm = ({ attributeCategory }: UserAttributesFormProps) => {
   const { personId } = useParams();
   const permissions = usePermissions();
   const user = useUser();
-  const updateFetcher = useFetcher<{}>();
+  const { t } = useLingui();
+  const updateFetcher = useAction({
+    onSuccess: (data) =>
+      toast.success(
+        data.data?.deleted
+          ? t`Deleted attribute value`
+          : t`Updated attribute value`
+      )
+  });
   const [optimisticUpdates, setOptimisticUpdates] = useState<
     Record<string, boolean | string | number | undefined>
   >({});

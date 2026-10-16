@@ -7600,6 +7600,9 @@ msgstr "워크플로우 삭제"
 msgid "Deleted"
 msgstr "삭제됨"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "배송"
 
@@ -24776,6 +24779,12 @@ msgstr "계정이 업데이트됨"
 
 msgid "Updated At"
 msgstr "업데이트 일시"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "업데이트한 사람"

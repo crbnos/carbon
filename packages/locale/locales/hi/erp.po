@@ -7600,6 +7600,9 @@ msgstr "वर्कफ़्लो हटाएँ"
 msgid "Deleted"
 msgstr "हटाया गया"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "डिलीवर करें"
 
@@ -24776,6 +24779,12 @@ msgstr "खाता अपडेट किया गया"
 
 msgid "Updated At"
 msgstr "अपडेट किया गया"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "अपडेट किया गया"

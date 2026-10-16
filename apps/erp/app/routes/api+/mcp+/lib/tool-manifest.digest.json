@@ -1,17 +1,14 @@
 {
-  "totalTools": 1549,
+  "totalTools": 1546,
   "modules": 15,
   "tools": [
-    {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
     {"name":"account_getAccount","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"8adb0e14ee10","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getAllAttributeCategories","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"e93d76f694fe","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getAttributeCategoryWithValues","classification":"READ","paramCount":1,"schema":"34d65afdb82e","response":"32112b6759f8","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getCurrentUser","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"ddc730821e71","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getNotificationPreferences","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"0486649779fc","injectAuth":"companyId","permission":"none","paginates":false},
-    {"name":"account_updateAvatar","classification":"WRITE","paramCount":1,"schema":"a2f2d0de3049","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_updatePublicAccount","classification":"WRITE","paramCount":5,"schema":"1995f647bdcf","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_upsertNotificationPreference","classification":"WRITE","paramCount":3,"schema":"4bf056fb8af6","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
-    {"name":"account_upsertUserAttributeValue","classification":"WRITE","paramCount":4,"schema":"ed5ec8d6e08d","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"none","paginates":false},
     {"name":"accounting_account_move","classification":"WRITE","paramCount":1,"schema":"58f5301405fc","response":"ecb746f60913","injectAuth":"none","permission":"accounting:update","paginates":false,"serviceFn":"accounting.account.move"},
     {"name":"accounting_chartOfAccounts_import","classification":"DESTRUCTIVE","paramCount":1,"schema":"f5237fe6a321","response":"a2064c610fef","injectAuth":"none","permission":"accounting:update","paginates":false,"serviceFn":"accounting.chartOfAccounts.import"},
     {"name":"accounting_closeTask_complete","classification":"WRITE","paramCount":1,"schema":"5d2e9a90637b","response":"48f7f6d71e5b","injectAuth":"none","permission":"accounting:update","paginates":false,"serviceFn":"accounting.closeTask.complete"},

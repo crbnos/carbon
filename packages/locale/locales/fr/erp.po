@@ -7600,6 +7600,9 @@ msgstr "Supprimer le flux de travail"
 msgid "Deleted"
 msgstr "Supprimé"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Livrer"
 
@@ -24776,6 +24779,12 @@ msgstr "Compte mis à jour"
 
 msgid "Updated At"
 msgstr "Mis à jour le"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Mis à jour par"

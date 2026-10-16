@@ -7600,6 +7600,9 @@ msgstr "Workflow löschen"
 msgid "Deleted"
 msgstr "Gelöscht"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Liefern"
 
@@ -24776,6 +24779,12 @@ msgstr "Konto aktualisiert"
 
 msgid "Updated At"
 msgstr "Aktualisiert am"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Aktualisiert von"

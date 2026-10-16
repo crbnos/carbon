@@ -7600,6 +7600,9 @@ msgstr "ワークフローを削除"
 msgid "Deleted"
 msgstr "削除済み"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "配送"
 
@@ -24776,6 +24779,12 @@ msgstr "アカウントを更新しました"
 
 msgid "Updated At"
 msgstr "更新日時"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "更新者"

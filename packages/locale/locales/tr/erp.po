@@ -7600,6 +7600,9 @@ msgstr "İş Akışını Sil"
 msgid "Deleted"
 msgstr "Silindi"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Teslim Et"
 
@@ -24776,6 +24779,12 @@ msgstr "Hesap güncellendi"
 
 msgid "Updated At"
 msgstr "Güncellendi"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Güncellendiği Kişi"

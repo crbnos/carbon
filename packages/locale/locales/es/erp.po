@@ -7600,6 +7600,9 @@ msgstr "Eliminar flujo de trabajo"
 msgid "Deleted"
 msgstr "Eliminado"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Entregar"
 
@@ -24776,6 +24779,12 @@ msgstr "Cuenta actualizada"
 
 msgid "Updated At"
 msgstr "Actualizado en"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Actualizado por"
