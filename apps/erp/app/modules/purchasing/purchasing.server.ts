@@ -6680,20 +6680,19 @@ export const createSupplierInteractionDocumentUploadUrl = defineServiceFn({
  *
  * @mcp
  */
-export const createSupplierInteractionLineDocumentUploadUrlTool =
-  defineServiceFn({
-    input: z.looseObject({ lineId: z.string(), name: z.string() }),
-    permission: { create: "purchasing" },
-    async run(ctx, input) {
-      return envelope(
-        ctx,
-        await service.createSupplierInteractionLineDocumentUploadUrl(
-          ctx.asCaller.supabase,
-          stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
-        )
-      );
-    }
-  });
+export const createSupplierInteractionLineDocumentUploadUrl = defineServiceFn({
+  input: z.looseObject({ lineId: z.string(), name: z.string() }),
+  permission: { create: "purchasing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createSupplierInteractionLineDocumentUploadUrl(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
 
 /**
  * Get leases

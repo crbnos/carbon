@@ -900,7 +900,7 @@
     {"name":"purchasing_createSupplier","classification":"WRITE","schema":"3741922f8489","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createSupplierBankAccount","classification":"WRITE","schema":"efd1d70f5843","response":"3797626bd17e","permission":"accounting:create","paginates":false},
     {"name":"purchasing_createSupplierInteractionDocumentUploadUrl","classification":"WRITE","schema":"a1e758f60479","response":"4ad76afe0777","permission":"purchasing:create","paginates":false},
-    {"name":"purchasing_createSupplierInteractionLineDocumentUploadUrlTool","classification":"WRITE","schema":"89370e60a3e7","response":"4ad76afe0777","permission":"purchasing:create","paginates":false},
+    {"name":"purchasing_createSupplierInteractionLineDocumentUploadUrl","classification":"WRITE","schema":"89370e60a3e7","response":"4ad76afe0777","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createSupplierProcess","classification":"WRITE","schema":"6cc767af67ff","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createSupplierQuoteLine","classification":"WRITE","schema":"3c3ef5a7c489","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
     {"name":"purchasing_createSupplierType","classification":"WRITE","schema":"d73822329fe1","response":"3797626bd17e","permission":"purchasing:create","paginates":false},
