@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { isIssueLocked, splitIssueItemValidator } from "~/modules/quality";
-import { splitIssueItem } from "~/modules/quality/quality-disposition.server";
+import { splitIssueItem } from "~/modules/quality/quality.service";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {

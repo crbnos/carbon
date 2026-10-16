@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { unpublishWorkflow } from "~/modules/workflows/workflows.server";
+import { unpublishWorkflow } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 // The one route both the list row menu and the builder button post to, so there is

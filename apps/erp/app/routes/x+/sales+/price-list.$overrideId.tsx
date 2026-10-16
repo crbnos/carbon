@@ -18,7 +18,7 @@ import {
   upsertCustomerItemPriceOverride
 } from "~/modules/sales";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 

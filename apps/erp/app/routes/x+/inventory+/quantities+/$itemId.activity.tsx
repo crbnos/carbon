@@ -27,7 +27,7 @@ import {
 } from "~/modules/inventory";
 import { getItem } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

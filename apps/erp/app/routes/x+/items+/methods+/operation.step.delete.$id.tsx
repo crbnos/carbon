@@ -11,7 +11,7 @@ import {
   assertMethodOperationIsDraft,
   deleteMethodOperationStep
 } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { checkRevisionLock } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

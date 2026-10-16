@@ -18,7 +18,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter, useUrlParams } from "~/hooks";
 import type { DeferredRevenueWaterfallRow } from "~/modules/accounting";
 import { getDeferredRevenueWaterfall } from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

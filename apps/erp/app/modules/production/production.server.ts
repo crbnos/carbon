@@ -2,11 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  CarbonError,
-  defineServiceFn,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import type { Json } from "@carbon/database";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
@@ -23,7 +19,6 @@ import {
   scrapAllowance,
   unchecked
 } from "@carbon/utils";
-import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import {
@@ -31,11 +26,13 @@ import {
   getDefaultStorageUnitForJob,
   mergeTrackedEntities
 } from "~/modules/inventory/inventory.service";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
-import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getCompanyTimeZone,
+  isActiveCompanyEmployee
+} from "~/modules/shared/shared.service";
 import {
   type AssemblyModelState,
   assemblyStepComponentsReassignValidator,
@@ -76,35 +73,53 @@ import {
   applyProductionPlanningDateActions,
   assignPeopleWeek,
   assignPlanningActions,
+  attempt,
   autoMatchAssemblyComponents,
   calculateJobPriority,
+  changedPlanningActions,
   clearPeopleAbsence,
   copyPeopleBoard,
   copyPeopleWeek,
-  createAssemblyPlanJob,
   createJobOperationBatch,
   deletePeopleAssignment,
   dismissPlanningActions,
   generateAssemblyStepsFromPlan,
+  geometryServiceDown,
   getBatchOutputLots,
   getJobReleaseReadiness,
+  getJobToResume,
   getLatestAssemblyPlanJob,
   getModelForItem,
   getPlanningActionsByIds,
   insertJob,
   invalidateAssemblyModelCache,
+  isAssemblerServiceHealthy,
+  type JobStatus,
   markPlanningActionsActioned,
+  moveJobStatus,
   movePeopleAssignment,
   movePeopleWeek,
+  notifyForEmployeeDate,
+  notifyPeopleChange,
+  notifyPlanningScheduleChange,
   notifyScheduleInputsChanged,
+  parseConfiguration,
+  postEndedEvent,
   pullJobMaterialMakeMethod,
+  readInstructionModel,
+  readPlanningJob,
+  readUnlockedJobs,
   reassignAssemblyStepComponents,
-  recalculateJobMakeMethodRequirements,
-  recalculateJobOperationDependencies,
+  recalculateJob,
   recalculateJobRequirements,
+  recalculateMaterialMethod,
   releaseJobOperationBatch,
   releasePlanningActionClaim,
   reopenDismissedPlanningActions,
+  requireBoardReferences,
+  requireJob,
+  requireJobChildren,
+  requireOwnRecords,
   returnPickedRemaindersForJob,
   returnPickedRemaindersForOperation,
   runMRP,
@@ -114,6 +129,9 @@ import {
   setPeopleDay,
   setPeopleOvertimeBulk,
   settleNewSupplyPlanningActions,
+  spreadDueDates,
+  stampSupplierChoices,
+  startAssemblyPlan,
   syncAssemblyInstructionToOperation,
   syncAssemblyStepMaterialsFromMappings,
   unassignPeopleWeek,
@@ -147,45 +165,6 @@ const logger = getLogger("erp", "production");
 // read every cold service as down). Healthy sticks longer than unhealthy —
 // a failed probe usually WARMED the service (the request went through; we just
 // stopped waiting), so re-probe quickly instead of pinning "down" for 15s.
-const ASSEMBLER_HEALTHY_TTL_MS = 60_000;
-const ASSEMBLER_UNHEALTHY_TTL_MS = 5_000;
-const ASSEMBLER_HEALTH_TIMEOUT_MS = 10_000;
-let assemblerHealthCache: { healthy: boolean; expires: number } | null = null;
-
-export async function isAssemblerServiceHealthy(): Promise<boolean> {
-  if (!ASSEMBLER_SERVICE_URL) return false;
-
-  const now = Date.now();
-  if (assemblerHealthCache && assemblerHealthCache.expires > now) {
-    return assemblerHealthCache.healthy;
-  }
-
-  let healthy = false;
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    ASSEMBLER_HEALTH_TIMEOUT_MS
-  );
-  try {
-    const response = await fetch(`${ASSEMBLER_SERVICE_URL}/health`, {
-      method: "GET",
-      signal: controller.signal
-    });
-    healthy = response.ok;
-  } catch {
-    healthy = false;
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  assemblerHealthCache = {
-    healthy,
-    expires:
-      now + (healthy ? ASSEMBLER_HEALTHY_TTL_MS : ASSEMBLER_UNHEALTHY_TTL_MS)
-  };
-  return healthy;
-}
-
 /**
  * Re-plan after an item's planning inputs change.
  *
@@ -637,90 +616,6 @@ export const releaseJobs = defineServiceFn({
     return { released, warnings, failed, skipped, scheduled };
   }
 });
-
-/**
- * Save the release dialog's supplier for outside operations whose process has
- * several, so `purchaseOrderFromJob` resolves it. Runs before the purchase
- * orders are created. Both ids come from the caller and drive an RLS-bypassing
- * write, so the operation must belong to one of `jobIds` and the supplier
- * process to the operation's own process.
- */
-async function stampSupplierChoices(
-  ctx: ServiceContext,
-  { jobIds, choices }: { jobIds: string[]; choices: Record<string, string> }
-): Promise<CarbonError | null> {
-  const entries = Object.entries(choices);
-  if (entries.length === 0) return null;
-  const companyId = ctx.company.id;
-  const system = ctx.asSystem.supabase;
-
-  const [operations, supplierProcesses] = await Promise.all([
-    system
-      .from("jobOperation")
-      .select("id, processId")
-      .in("jobId", jobIds)
-      .eq("companyId", companyId)
-      .in(
-        "id",
-        entries.map(([operationId]) => operationId)
-      ),
-    system
-      .from("supplierProcess")
-      .select("id, processId")
-      .eq("companyId", companyId)
-      .in(
-        "id",
-        entries.map(([, supplierProcessId]) => supplierProcessId)
-      )
-  ]);
-  if (operations.error || supplierProcesses.error) {
-    return ctx.error(
-      "internal",
-      "Failed to save the supplier choice",
-      operations.error ?? supplierProcesses.error
-    );
-  }
-
-  const processOfOperation = new Map(
-    operations.data.map((op) => [op.id, op.processId])
-  );
-  const processOfSupplierProcess = new Map(
-    supplierProcesses.data.map((sp) => [sp.id, sp.processId])
-  );
-  for (const [operationId, supplierProcessId] of entries) {
-    const processId = processOfOperation.get(operationId);
-    if (!processId) {
-      return ctx.error(
-        "validation",
-        `Operation ${operationId} does not belong to these jobs`
-      );
-    }
-    if (processOfSupplierProcess.get(supplierProcessId) !== processId) {
-      return ctx.error(
-        "validation",
-        "Selected supplier does not belong to the operation's process"
-      );
-    }
-  }
-
-  const updates = await Promise.all(
-    entries.map(([operationId, supplierProcessId]) =>
-      system
-        .from("jobOperation")
-        .update({
-          operationSupplierProcessId: supplierProcessId,
-          updatedBy: ctx.auditUserId
-        })
-        .eq("id", operationId)
-        .eq("companyId", companyId)
-    )
-  );
-  const failed = updates.find((update) => update.error)?.error;
-  return failed
-    ? ctx.error("internal", "Failed to save the supplier choice", failed)
-    : null;
-}
-
 /**
  * Cancel a job.
  *
@@ -814,49 +709,6 @@ export const cancelJob = defineServiceFn({
     return { jobId };
   }
 });
-
-type JobStatus = (typeof jobStatus)[number];
-
-/**
- * Move a job from one of `from` to `to`, as one guarded UPDATE: the job must be
- * in `from` when it is read and still when it is written.
- */
-async function moveJobStatus(
-  ctx: ServiceContext,
-  jobId: string,
-  {
-    from,
-    to,
-    refusal
-  }: { from: readonly JobStatus[]; to: JobStatus; refusal: string }
-) {
-  const job = await ctx.asCaller.supabase
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (job.error)
-    return ctx.error("internal", "Failed to read the job", job.error);
-  if (!job.data) return ctx.error("notFound", "Job not found");
-  if (!from.includes(job.data.status)) return ctx.error("rule", refusal);
-
-  const update = await updateJobStatus(ctx.asCaller.supabase, {
-    id: jobId,
-    companyId: ctx.company.id,
-    status: to,
-    updatedBy: ctx.auditUserId,
-    fromStatuses: [...from]
-  });
-  if (update.error) {
-    return ctx.error("internal", "Failed to update job status", update.error);
-  }
-  if (!update.updated) {
-    return ctx.error("conflict", "The job's status changed; reload the job");
-  }
-  return { jobId, status: to };
-}
-
 /**
  * Pause a job on the floor.
  *
@@ -899,14 +751,7 @@ export const resumeJob = defineServiceFn({
   async run(ctx, { jobId }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const job = await ctx.asCaller.supabase
-      .from("job")
-      .select(
-        "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
-      )
-      .eq("id", jobId)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    const job = await getJobToResume(ctx.asCaller.supabase, jobId, companyId);
     if (job.error) {
       return ctx.error("internal", "Failed to read the job", job.error);
     }
@@ -1546,23 +1391,6 @@ export const moveScheduleJob = defineServiceFn({
     return { id };
   }
 });
-
-/** Post an ended event's time to the GL; a skip or failure is the reason, not an error. */
-async function postEndedEvent(ctx: ServiceContext, productionEventId: string) {
-  const posting = await serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("post-production-event", { productionEventId });
-  if (posting.error) return posting.error.message || "unknown error";
-  if (posting.data.success === false) {
-    return posting.data.reason ?? "unknown reason";
-  }
-  return null;
-}
-
 /**
  * Record a production event (labor, machine or setup time) on a job operation.
  *
@@ -1652,72 +1480,6 @@ export const updateProductionEvent = defineServiceFn({
     return { id, postingError };
   }
 });
-
-type OwnedTable =
-  | "item"
-  | "location"
-  | "customer"
-  | "modelUpload"
-  | "fixedAssetClass"
-  | "fixedAsset";
-
-/**
- * `notFound` unless every id is a row of this company. Ids from a form prove
- * nothing about tenancy, and the writes after this run with the service role.
- * Read with the service role, since a production user may not hold the
- * other module's view and RLS would read their own row as absent.
- */
-async function requireOwnRecords(
-  ctx: ServiceContext,
-  records: [table: OwnedTable, id: string | null | undefined, label: string][]
-): Promise<CarbonError | null> {
-  const checks = await Promise.all(
-    records
-      .filter(([, id]) => id)
-      .map(async ([table, id, label]) => {
-        const row = await ctx.asSystem.supabase
-          .from(table as "item")
-          .select("id")
-          .eq("id", id!)
-          .eq("companyId", ctx.company.id)
-          .maybeSingle();
-        if (row.error) {
-          return ctx.error(
-            "internal",
-            `Failed to verify the ${label}`,
-            row.error
-          );
-        }
-        return row.data
-          ? null
-          : ctx.error(
-              "notFound",
-              `The ${label} could not be found. It may have been deleted, or it belongs to another company.`
-            );
-      })
-  );
-  return checks.find((check) => check !== null) ?? null;
-}
-
-/**
- * The jobs, read as the caller, refusing the request when any is locked
- * (Completed, Closed or Cancelled). Ids of other companies are not returned.
- */
-async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
-  const jobs = await ctx.asCaller.supabase
-    .from("job")
-    .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
-    .in("id", ids)
-    .eq("companyId", ctx.company.id);
-  if (jobs.error) {
-    return ctx.error("internal", "Failed to read the jobs", jobs.error);
-  }
-  if (jobs.data.some((job) => isJobLocked(job.status))) {
-    return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
-  }
-  return jobs.data;
-}
-
 const jobIdsInput = z.array(z.string()).min(1);
 
 /**
@@ -2247,55 +2009,6 @@ export const configureJob = defineServiceFn({
     return { jobId };
   }
 });
-
-/**
- * Each job's due date when `count` jobs are spread from the first job's due
- * date to the last's: several jobs a day when there are more jobs than days,
- * several days a job otherwise. The last job is due on the last date.
- */
-function spreadDueDates(
-  count: number,
-  first: string | undefined,
-  last: string | undefined
-): (string | undefined)[] {
-  if (!first || !last) return Array.from({ length: count }, () => first);
-  const startDate = toCalendarDateTime(parseDateTime(first));
-  const endDate = toCalendarDateTime(parseDateTime(last));
-  const daysBetween = endDate.compare(startDate);
-  const jobsPerDay = (count - 1) / daysBetween;
-  const daysPerJob = daysBetween / (count - 1);
-
-  let cumulativeJobs = 0;
-  return Array.from({ length: count }, (_, i) => {
-    if (i === count - 1) return last;
-    if (jobsPerDay >= 1) {
-      cumulativeJobs += 1;
-      const dayOffset = Math.floor(cumulativeJobs / jobsPerDay);
-      return startDate.add({ days: dayOffset }).toString();
-    }
-    const dayOffset = Math.floor(i * daysPerJob);
-    return startDate.add({ days: dayOffset }).toString();
-  });
-}
-
-/**
- * A job's configuration: an object, or the JSON a form posts. Anything else
- * (invalid JSON) is no configuration.
- */
-function parseConfiguration(
-  value: unknown
-): Record<string, unknown> | undefined {
-  if (value && typeof value === "object") {
-    return value as Record<string, unknown>;
-  }
-  if (typeof value !== "string" || !value) return undefined;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return undefined;
-  }
-}
-
 /**
  * Create several jobs for one item, splitting a total quantity.
  *
@@ -2468,64 +2181,6 @@ const methodPartsInput = z.object({
   steps: z.boolean(),
   workInstructions: z.boolean()
 });
-
-/** `notFound` unless the job is this company's (read as the caller). */
-async function requireJob(ctx: ServiceContext, jobId: string) {
-  const job = await ctx.asCaller.supabase
-    .from("job")
-    .select("id, status")
-    .eq("id", jobId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (job.error)
-    return ctx.error("internal", "Failed to read the job", job.error);
-  if (!job.data) return ctx.error("notFound", "Job not found");
-  return job.data;
-}
-
-/**
- * Recalculate a job's requirements and operation dependencies (which also
- * reschedules its location). The first failure is returned.
- */
-async function recalculateJob(
-  ctx: ServiceContext,
-  jobId: string,
-  { requirements = true }: { requirements?: boolean } = {}
-): Promise<CarbonError | null> {
-  const params = { companyId: ctx.company.id, userId: ctx.auditUserId };
-  const [quantities, dependencies] = await Promise.all([
-    requirements
-      ? recalculateJobRequirements(ctx.asSystem.supabase, ctx.asSystem.pg, {
-          id: jobId,
-          ...params
-        })
-      : null,
-    recalculateJobOperationDependencies(
-      ctx.asSystem.supabase,
-      ctx.asSystem.pg,
-      {
-        jobId,
-        ...params
-      }
-    )
-  ]);
-  if (quantities?.error) {
-    return ctx.error(
-      "internal",
-      "Failed to calculate job quantities",
-      quantities.error
-    );
-  }
-  if (dependencies?.error) {
-    return ctx.error(
-      "internal",
-      "Failed to recalculate job operation dependencies",
-      dependencies.error
-    );
-  }
-  return null;
-}
-
 /**
  * Overwrite a job's method with another: an item's make method, a quote
  * line's method, or another job's.
@@ -2805,91 +2460,6 @@ export const updateJobMaterial = defineServiceFn({
     return { id, methodType: update.data.methodType };
   }
 });
-
-/** `notFound` unless the make method and operation given hang off this job. */
-async function requireJobChildren(
-  ctx: ServiceContext,
-  jobId: string,
-  {
-    jobMakeMethodId,
-    jobOperationId
-  }: { jobMakeMethodId?: string; jobOperationId?: string }
-): Promise<CarbonError | null> {
-  const system = ctx.asSystem.supabase;
-  const [method, operation] = await Promise.all([
-    jobMakeMethodId
-      ? system
-          .from("jobMakeMethod")
-          .select("id")
-          .eq("id", jobMakeMethodId)
-          .eq("jobId", jobId)
-          .eq("companyId", ctx.company.id)
-          .maybeSingle()
-      : null,
-    jobOperationId
-      ? system
-          .from("jobOperation")
-          .select("id")
-          .eq("id", jobOperationId)
-          .eq("jobId", jobId)
-          .eq("companyId", ctx.company.id)
-          .maybeSingle()
-      : null
-  ]);
-  const failed = method?.error ?? operation?.error;
-  if (failed) return ctx.error("internal", "Failed to read the job", failed);
-  if (method && !method.data)
-    return ctx.error("notFound", "Make method not found");
-  if (operation && !operation.data) {
-    return ctx.error("notFound", "Operation not found");
-  }
-  return null;
-}
-
-/** Recalculate one make method's requirements, and the job's dependencies. */
-async function recalculateMaterialMethod(
-  ctx: ServiceContext,
-  {
-    jobId,
-    jobMakeMethodId,
-    dependencies
-  }: { jobId: string; jobMakeMethodId: string; dependencies: boolean }
-): Promise<CarbonError | null> {
-  const params = { companyId: ctx.company.id, userId: ctx.auditUserId };
-  const [requirements, dependencyResult] = await Promise.all([
-    recalculateJobMakeMethodRequirements(
-      ctx.asSystem.supabase,
-      ctx.asSystem.pg,
-      {
-        id: jobMakeMethodId,
-        ...params
-      }
-    ),
-    dependencies
-      ? recalculateJobOperationDependencies(
-          ctx.asSystem.supabase,
-          ctx.asSystem.pg,
-          { jobId, ...params }
-        )
-      : null
-  ]);
-  if (requirements.error) {
-    return ctx.error(
-      "internal",
-      "Failed to recalculate job make method requirements",
-      requirements.error
-    );
-  }
-  if (dependencyResult?.error) {
-    return ctx.error(
-      "internal",
-      "Failed to recalculate job operation dependencies",
-      dependencyResult.error
-    );
-  }
-  return null;
-}
-
 /**
  * Remove a material from a job's method.
  *
@@ -3525,110 +3095,6 @@ export const updateBatch = defineServiceFn({
 });
 
 // --- People board ---------------------------------------------------------
-
-type BoardReferenceTable =
-  | "department"
-  | "employee"
-  | "location"
-  | "shift"
-  | "workCenter";
-
-/**
- * `notFound` unless every id given is this company's. Every board write puts
- * these ids into this company's rows through Kysely (no RLS), and their
- * single-column foreign keys accept another company's row. Empty values are
- * skipped, so optional fields stay optional.
- */
-async function requireBoardReferences(
-  ctx: ServiceContext,
-  refs: Partial<Record<BoardReferenceTable, (string | null | undefined)[]>>
-): Promise<CarbonError | null> {
-  const checks = await Promise.all(
-    (Object.entries(refs) as [BoardReferenceTable, unknown[]][]).map(
-      async ([table, values]) => {
-        const ids = [
-          ...new Set(
-            values.filter(
-              (value): value is string =>
-                typeof value === "string" && value.length > 0
-            )
-          )
-        ];
-        if (ids.length === 0) return true;
-        // Every table in the union has `id` + `companyId`; the cast only
-        // narrows the union so Kysely can type the builder.
-        const rows = await ctx.asSystem.pg
-          .selectFrom(table as "location")
-          .select("id")
-          .where("id", "in", ids)
-          .where("companyId", "=", ctx.company.id)
-          .execute();
-        return rows.length === ids.length;
-      }
-    )
-  );
-  if (checks.every(Boolean)) return null;
-  logger.error("People board reference is not in the caller's company", {
-    companyId: ctx.company.id,
-    refs
-  });
-  return ctx.error("notFound", "Not found");
-}
-
-/** Tell the scheduler once per work center; with none, once, unscoped. */
-async function notifyPeopleChange(
-  ctx: ServiceContext,
-  reason: string,
-  workCenterIds: (string | null | undefined)[] = []
-) {
-  const ids = [...new Set(workCenterIds.filter(Boolean))] as string[];
-  if (ids.length === 0) {
-    await notifyScheduleInputsChanged(ctx.company.id, "people", reason);
-    return;
-  }
-  for (const workCenterId of ids) {
-    await notifyScheduleInputsChanged(
-      ctx.company.id,
-      "people",
-      reason,
-      workCenterId
-    );
-  }
-}
-
-/** The work centers a person is assigned at on a date, for the notice. */
-async function notifyForEmployeeDate(
-  ctx: ServiceContext,
-  employeeId: string,
-  date: string,
-  reason: string
-) {
-  const assignments = await ctx.asCaller.supabase
-    .from("peopleAssignment")
-    .select("workCenterId")
-    .eq("companyId", ctx.company.id)
-    .eq("employeeId", employeeId)
-    .eq("date", date);
-  await notifyPeopleChange(
-    ctx,
-    reason,
-    (assignments.data ?? []).map((row) => row.workCenterId)
-  );
-}
-
-/** A write that throws on failure, as an `internal` error with `message`. */
-async function attempt<T>(
-  ctx: ServiceContext,
-  message: string,
-  write: () => Promise<T>
-): Promise<T | CarbonError<"internal">> {
-  try {
-    return await write();
-  } catch (err) {
-    return ctx.error("internal", message, err);
-  }
-}
-
 /**
  * Put a person at a work center for a date.
  *
@@ -4413,29 +3879,6 @@ export const orderPlannedJobs = defineServiceFn({
     };
   }
 });
-
-/** A Draft or Planned job of this company at `locationId`, for planning. */
-async function readPlanningJob(
-  ctx: ServiceContext,
-  jobId: string,
-  locationId: string
-) {
-  const target = await ctx.asSystem.supabase
-    .from("job")
-    .select("id, status, locationId, salesOrderId, salesOrderLineId")
-    .eq("id", jobId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (target.error || !target.data) {
-    return ctx.error("notFound", "Job not found", target.error);
-  }
-  // The drawer lists one location's jobs.
-  if (target.data.locationId !== locationId) {
-    return ctx.error("conflict", "This job is for another location.");
-  }
-  return target.data;
-}
-
 const notEditableFromPlanning =
   "This job is no longer Draft or Planned. Change it on the job.";
 
@@ -4528,30 +3971,6 @@ export const updatePlannedJob = defineServiceFn({
     };
   }
 });
-
-/**
- * Tell the scheduler after a planning write. A follow-up to a write that
- * already landed, so a failure is logged and reported, never thrown.
- */
-async function notifyPlanningScheduleChange(
-  ctx: ServiceContext,
-  reason: string,
-  jobId?: string
-): Promise<boolean> {
-  try {
-    await notifyScheduleInputsChanged(ctx.company.id, "reorder", reason, jobId);
-    return true;
-  } catch (error) {
-    logger.error("Failed to notify the scheduler from planning", {
-      companyId: ctx.company.id,
-      jobId,
-      reason,
-      error
-    });
-    return false;
-  }
-}
-
 /**
  * Plan a Draft job from the planning drawer.
  *
@@ -4901,34 +4320,6 @@ export const applyPlanningActions = defineServiceFn({
     return { applied, requiresManualAction, warnings, errors };
   }
 });
-
-/**
- * Report how many of the requested worklist rows changed; none is a conflict
- * (each one was applied or changed since the page loaded).
- */
-function changedPlanningActions(
-  ctx: ServiceContext,
-  result: { data: unknown[] | null; error: unknown },
-  requested: number,
-  verb: "dismiss" | "reopen" | "assign"
-) {
-  if (result.error) {
-    return ctx.error(
-      "internal",
-      `Failed to ${verb} planning actions`,
-      result.error
-    );
-  }
-  const changed = result.data?.length ?? 0;
-  if (changed === 0) {
-    return ctx.error(
-      "conflict",
-      `Nothing to ${verb} — these actions changed since the page loaded`
-    );
-  }
-  return { changed, requested };
-}
-
 /**
  * Dismiss production planning suggestions.
  *
@@ -5172,65 +4563,6 @@ export const setProcedureFields = defineServiceFn({
 });
 
 // --- Assembly instructions -------------------------------------------------
-
-/** The instruction's model id, `notFound` unless it is this company's. */
-async function readInstructionModel(ctx: ServiceContext, id: string) {
-  const instruction = await ctx.asCaller.supabase
-    .from("assemblyInstruction")
-    .select(
-      "modelUploadId, modelUpload(id, processingStatus, glbPath, graphPath, modelPath)"
-    )
-    .eq("id", id)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (instruction.error) {
-    return ctx.error(
-      "internal",
-      "Failed to read the instruction",
-      instruction.error
-    );
-  }
-  if (!instruction.data) return ctx.error("notFound", "Instruction not found");
-  if (!instruction.data.modelUploadId) {
-    return ctx.error("rule", "This instruction has no model");
-  }
-  return {
-    modelUploadId: instruction.data.modelUploadId,
-    modelUpload: instruction.data.modelUpload
-  };
-}
-
-/** The geometry service is down: no conversion or planning can start. */
-const geometryServiceDown = (ctx: ServiceContext, work: string) =>
-  ctx.error(
-    "unavailable",
-    `The geometry service is unavailable — ${work} can't run right now.`
-  );
-
-/**
- * Start motion planning for a model: the job row first, so the page shows
- * the run on its next load (the worker adopts it via `planJobId`; it inserts
- * its own row when this insert fails), then the event.
- */
-async function startAssemblyPlan(
-  ctx: ServiceContext,
-  modelUploadId: string,
-  options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
-) {
-  const created = await createAssemblyPlanJob(ctx.asCaller.supabase, {
-    modelUploadId,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId
-  });
-  await trigger("assembly-plan", {
-    modelUploadId,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId,
-    ...(created.data?.id ? { planJobId: created.data.id } : {}),
-    ...options
-  });
-}
-
 /**
  * Create an assembly instruction for an item from its 3D model.
  *

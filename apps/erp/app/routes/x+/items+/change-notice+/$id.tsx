@@ -36,7 +36,7 @@ import {
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+import { getRevisionLock } from "~/modules/items/items.service";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeExplorer,

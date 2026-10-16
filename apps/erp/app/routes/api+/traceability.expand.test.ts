@@ -4,8 +4,8 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchLineageSubgraph } from "~/modules/inventory/lineage.server";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { fetchLineageSubgraph } from "~/modules/inventory/inventory.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { loader } from "./traceability.expand";
 
 vi.mock("@carbon/auth/auth.server", () => ({

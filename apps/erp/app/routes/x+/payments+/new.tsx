@@ -29,9 +29,9 @@ import {
   getDepositDocuments,
   getSeedableOpenInvoices,
   getSeededDiscounts
-} from "~/modules/invoicing/invoicing.server";
+} from "~/modules/invoicing/invoicing.service";
 import { getCompany } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -18,7 +18,7 @@ import {
   leaseValidator,
   resolveLeaseDates
 } from "~/modules/purchasing";
-import { updateDraftLease } from "~/modules/purchasing/purchasing.server";
+import { updateDraftLease } from "~/modules/purchasing/purchasing.service";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import { LeaseDetailsForm } from "~/modules/purchasing/ui/Leases";
 import { getDatabaseClient } from "~/services/database.server";

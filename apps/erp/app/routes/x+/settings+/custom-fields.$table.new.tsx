@@ -13,7 +13,7 @@ import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldForm, customFieldValidator } from "~/modules/settings";
-import { upsertCustomField } from "~/modules/settings/settings.server";
+import { upsertCustomField } from "~/modules/settings/settings.service";
 import { DataType } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 

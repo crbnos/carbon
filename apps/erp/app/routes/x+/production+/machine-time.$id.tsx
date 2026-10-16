@@ -42,7 +42,7 @@ import { suggestMachineTimeOperations } from "~/modules/production/ui/MachineTim
 import {
   getCompanyTimeZone,
   getLocationTimeZone
-} from "~/modules/shared/timezone.server";
+} from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";

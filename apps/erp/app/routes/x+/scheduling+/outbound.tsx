@@ -18,8 +18,10 @@ import {
   OutboundTable
 } from "~/modules/production/ui/Schedule/OutboundTable";
 import { jobOperationValidator } from "~/modules/sales/ui/CustomerPortal";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

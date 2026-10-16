@@ -8,7 +8,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { originOf } from "~/modules/users/users.server";
+import { originOf } from "~/modules/users/users.service";
 
 const text = zfd.text(z.string().optional());
 

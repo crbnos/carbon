@@ -38,7 +38,7 @@ import {
   getEmployeeTypes,
   getPermissionsByEmployeeType
 } from "~/modules/users";
-import { getClaims, originOf } from "~/modules/users/users.server";
+import { getClaims, originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 // The per-user permissions editor is a modal over the accounts list; when the

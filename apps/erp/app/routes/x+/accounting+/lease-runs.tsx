@@ -4,7 +4,7 @@
 
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { loadPeriodRuns } from "~/modules/accounting/period-runs.server";
+import { loadPeriodRuns } from "~/modules/accounting/accounting.service";
 import { PeriodRunsPage } from "~/modules/accounting/ui/RevenueRecognition";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import type { Handle } from "~/utils/handle";

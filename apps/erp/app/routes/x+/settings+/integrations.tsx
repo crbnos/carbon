@@ -18,7 +18,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useSearchParams } from "react-router";
 import { IntegrationsList } from "~/modules/settings";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
-import { getIntegrationsWithHealth } from "~/modules/settings/settings.server";
+import { getIntegrationsWithHealth } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export const config = {

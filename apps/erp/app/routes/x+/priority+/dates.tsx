@@ -58,8 +58,10 @@ import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import { getTagsList } from "~/modules/shared";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

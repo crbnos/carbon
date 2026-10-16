@@ -2,12 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  CarbonError,
-  defineServiceFn,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
-import type { Database, Json } from "@carbon/database";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
+import type { Json } from "@carbon/database";
 import { isUnsafeStoragePath, storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
@@ -15,14 +11,14 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, unchecked } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { getCompany } from "~/modules/settings/settings.service";
-import { refuseUnlessOwned } from "~/modules/shared/shared.server";
-import { invalidateLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  invalidateLocationTimeZone,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.service";
 import {
   abilityValidator,
   employeeAbilityCellValidator,
@@ -35,24 +31,24 @@ import {
   maintenanceScheduleValidator,
   processValidator,
   trainingAssignmentValidator,
-  trainingCertificateKeyPrefix,
   trainingGuideKeyPrefix,
-  validateTrainingCertificate,
   workCenterValidator
 } from "./resources.models";
 import {
   activateWorkCenter,
+  DISPATCH_LOCKED,
   deleteAbility,
   deleteTrainingCompletion,
   deleteWorkCenter,
+  editableDispatch,
   ensureProcessAbility,
   getTrainingAssignment,
   getTrainingAssignments,
-  getTrainingGrantedAbilityId,
   insertMaintenanceDispatch,
-  insertTrainingCompletion,
-  resolveEmployeeAbilityExpiresAt,
-  upsertEmployeeAbilityCell,
+  notifyTrainingAssignment,
+  postMaintenanceLabor,
+  recordTrainingCompletion,
+  saveEmployeeAbility,
   upsertLocation,
   upsertMaintenanceDispatchEvent,
   upsertMaintenanceSchedule,
@@ -68,154 +64,10 @@ const logger = getLogger("erp", "resources");
 // change to a dispatch's entries or its completion). Returns the failure's
 // message, or null. System: the operation has already authorized the change,
 // and a delete-only user must still reverse its cost.
-async function postMaintenanceLabor(
-  ctx: ServiceContext,
-  maintenanceDispatchIds: string[]
-): Promise<string | null> {
-  if (maintenanceDispatchIds.length === 0) return null;
-
-  const posting = await serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("post-maintenance-event", { maintenanceDispatchIds });
-
-  if (posting.error) {
-    logger.error("Failed to post maintenance labor", {
-      companyId: ctx.company.id,
-      maintenanceDispatchIds,
-      error: posting.error
-    });
-    return posting.error.message || "Failed to post maintenance labor";
-  }
-  return null;
-}
-
-const trainingLogger = getLogger("erp", "training-completion");
-
 // An external assignment (no training) is always open and one-time.
-type AssignmentForCompletion = {
-  trainingId: string | null;
-  training: {
-    status: string;
-    frequency: Database["public"]["Enums"]["trainingFrequency"];
-  } | null;
-};
-
 // The only completion path (quiz, manager Mark Complete). An external
 // assignment may carry a certificate; the server builds its key, so a caller
 // cannot point a completion at another person's file.
-export async function recordTrainingCompletion(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    trainingAssignmentId: string;
-    employeeId: string;
-    completedBy: string;
-    assignment: AssignmentForCompletion;
-    certificate?: FormDataEntryValue | null;
-  }
-): Promise<{ error: null } | { error: string; status: 400 | 500 }> {
-  const { companyId, trainingAssignmentId, employeeId, completedBy } = args;
-  const isExternal = args.assignment.trainingId === null;
-  const training = args.assignment.training;
-
-  if (!isExternal && training?.status !== "Active") {
-    return { error: "This training is not currently active", status: 400 };
-  }
-
-  let certificatePath: string | null = null;
-  const hasCertificate =
-    args.certificate instanceof File && args.certificate.size > 0;
-  if (isExternal && hasCertificate) {
-    const certificate = await validateTrainingCertificate(
-      args.certificate ?? null
-    );
-    if (certificate.error !== null) {
-      return { error: certificate.error, status: 400 };
-    }
-    const key = `${trainingCertificateKeyPrefix(
-      companyId,
-      trainingAssignmentId,
-      employeeId
-    )}${nanoid()}.${certificate.extension}`;
-    const upload = await storage(client)
-      .company(companyId)
-      .upload(key, certificate.file);
-    if (upload.error) {
-      trainingLogger.error("Failed to upload training certificate", {
-        companyId,
-        trainingAssignmentId,
-        error: upload.error
-      });
-      return { error: "Failed to upload the certificate", status: 500 };
-    }
-    certificatePath = key;
-  }
-
-  const period = await client.rpc("get_current_training_period", {
-    frequency: training?.frequency ?? "Once"
-  });
-
-  const completion = await insertTrainingCompletion(client, {
-    trainingAssignmentId,
-    employeeId,
-    period: period.data ?? null,
-    companyId,
-    completedBy,
-    createdBy: completedBy,
-    certificatePath
-  });
-  if (completion.error) {
-    // The unique indexes allow one completion per employee and period: a
-    // second submit means it is already recorded, which is what was asked.
-    const alreadyRecorded = completion.error.code === "23505";
-    if (!alreadyRecorded) {
-      trainingLogger.error("Failed to record training completion", {
-        companyId,
-        trainingAssignmentId,
-        error: completion.error
-      });
-    }
-    // Nothing points at the new file now.
-    if (certificatePath) {
-      const removed = await storage(client)
-        .company(companyId)
-        .remove([certificatePath]);
-      if (removed.error) {
-        trainingLogger.error("Failed to remove orphaned certificate", {
-          companyId,
-          certificatePath,
-          error: removed.error
-        });
-      }
-    }
-    return alreadyRecorded
-      ? { error: null }
-      : { error: "Failed to record the training as complete", status: 500 };
-  }
-
-  // Completing a training that grants an ability adds a qualification (via the
-  // grant trigger) — restamp the scheduler for that ability's operator pool.
-  const grantedAbilityId = await getTrainingGrantedAbilityId(
-    client,
-    trainingAssignmentId,
-    companyId
-  );
-  if (grantedAbilityId) {
-    await notifyScheduleInputsChanged(
-      companyId,
-      "ability",
-      "Operator qualified via training",
-      grantedAbilityId
-    );
-  }
-
-  return { error: null };
-}
-
 /** The `custom-*` fields of a form, by field id (`setCustomFields`). */
 const customFieldsInput = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
@@ -310,44 +162,6 @@ export const deactivateAbility = defineServiceFn({
     return { id };
   }
 });
-
-/** Qualify an employee for an ability, then tell the scheduler. */
-async function saveEmployeeAbility(
-  ctx: ServiceContext,
-  input: z.output<typeof employeeAbilityCellValidator>,
-  { failure, reason }: { failure: string; reason: string }
-) {
-  const { employeeId, abilityId } = input;
-  const client = ctx.asCaller.supabase;
-  const refused = await refuseUnlessOwned(ctx, "ability", { id: abilityId });
-  if (refused) return refused;
-
-  const lastTrainingDate = input.lastTrainingDate ?? null;
-  const expiresAt = await resolveEmployeeAbilityExpiresAt(
-    client,
-    abilityId,
-    lastTrainingDate,
-    input.expiresAt ?? null
-  );
-
-  const upsert = await upsertEmployeeAbilityCell(client, {
-    employeeId,
-    abilityId,
-    companyId: ctx.company.id,
-    lastTrainingDate,
-    expiresAt
-  });
-  if (upsert.error) return ctx.error("internal", failure, upsert.error);
-
-  await notifyScheduleInputsChanged(
-    ctx.company.id,
-    "ability",
-    reason,
-    abilityId
-  );
-  return { id: upsert.data.id };
-}
-
 /**
  * Qualify an employee for an ability.
  *
@@ -867,27 +681,6 @@ export const updateMaintenanceSchedule = defineServiceFn({
 // ---------------------------------------------------------------------------
 // Maintenance dispatches
 // ---------------------------------------------------------------------------
-
-const DISPATCH_LOCKED = "Cannot modify a locked dispatch. Reopen it first.";
-
-/** The dispatch, when it is this company's and not Completed or Cancelled. */
-async function editableDispatch(ctx: ServiceContext, dispatchId: string) {
-  const dispatch = await ctx.asCaller.supabase
-    .from("maintenanceDispatch")
-    .select("id, status, workCenterId")
-    .eq("id", dispatchId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (dispatch.error) {
-    return ctx.error("internal", "Failed to load the dispatch", dispatch.error);
-  }
-  if (!dispatch.data) return ctx.error("notFound", "Dispatch not found");
-  if (isMaintenanceDispatchLocked(dispatch.data.status)) {
-    return ctx.error("rule", DISPATCH_LOCKED);
-  }
-  return dispatch.data;
-}
-
 /**
  * Create a maintenance dispatch.
  *
@@ -1650,30 +1443,6 @@ export const updateTrainingField = defineServiceFn({
     return { ids };
   }
 });
-
-/** Tell an internal assignment's groups they have a training to take. */
-async function notifyTrainingAssignment(
-  ctx: ServiceContext,
-  assignmentId: string,
-  groupIds: string[]
-) {
-  try {
-    await trigger("notify", {
-      companyId: ctx.company.id,
-      documentId: assignmentId,
-      event: NotificationEvent.TrainingAssignment,
-      recipient: { type: "group", groupIds },
-      from: ctx.auditUserId
-    });
-  } catch (err) {
-    logger.error("Failed to send training assignment notifications", {
-      companyId: ctx.company.id,
-      assignmentId,
-      error: err
-    });
-  }
-}
-
 /**
  * Assign a training to groups.
  *

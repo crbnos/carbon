@@ -21,7 +21,7 @@ import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { getLocationsList, getWorkCentersList } from "~/modules/resources";
 import { getCompanySettings, printerRouteValidator } from "~/modules/settings";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

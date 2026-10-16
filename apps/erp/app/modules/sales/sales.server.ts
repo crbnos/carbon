@@ -2,53 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { openai } from "@ai-sdk/openai";
-import {
-  CarbonError,
-  defineServiceFn,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database, Json } from "@carbon/database";
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { lockIssueDispositions } from "@carbon/database/quality";
-import { getNextSequence } from "@carbon/database/sequence";
-import { QuoteEmail } from "@carbon/documents/email";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
+import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import {
-  dedupeViolations,
-  evaluateSalesRuleLines,
-  evaluateSalesRulesForSalesDocument,
-  isBlocked,
-  resolveSalesOrderShipTo
-} from "@carbon/ee/rules.server";
-import {
-  safeStorageFileName,
-  storage,
-  TEMP_STAGING_BUCKET
-} from "@carbon/files";
+import { safeStorageFileName, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { validator } from "@carbon/form";
 import { batchTrigger, trigger } from "@carbon/jobs";
+import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import type { ServerFnInput } from "@carbon/server-functions";
 import { serverFns } from "@carbon/server-functions";
-import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
-import type {
-  DraftedRentalCreditMemo,
-  DraftedRentalInvoice
-} from "@carbon/server-functions/create-rental-invoices";
+import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import type {
   ContractAmendmentPreview,
   ContractCancellationPreview,
   ContractCancellationResult
 } from "@carbon/server-functions/post-customer-contract";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
-import type { Violation } from "@carbon/utils";
 import {
   breakQuantities,
   datetime,
@@ -59,20 +32,14 @@ import {
   textToTiptap,
   unchecked
 } from "@carbon/utils";
-import { renderAsync } from "@react-email/components";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateText, Output } from "ai";
-import { sql } from "kysely";
-import { nanoid } from "nanoid";
 import { z } from "zod";
-import { zfd } from "zod-form-data";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
-import { linkStripeCustomerForBilling } from "~/modules/invoicing/stripe-customer.server";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
+import { linkStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 import {
   getSupplierPriceBreaksForItems,
+  getUnreleasedChangeOrderIssue,
   resolveItemIdFromExtractedText,
   upsertPart
 } from "~/modules/items/items.service";
@@ -82,38 +49,27 @@ import {
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality/quality.service";
-import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import {
-  getCompany,
   getCompanySettings,
   getNextSequence as getNextSequenceNumber
 } from "~/modules/settings/settings.service";
 import {
+  getCompanyTimeZone,
+  getLocationTimeZone,
   refuseUnlessOwned,
-  sendSalesOrderEmail
-} from "~/modules/shared/shared.server";
-import {
   resolveBuyUnitCost,
+  sendSalesOrderEmail,
   upsertExternalLink
 } from "~/modules/shared/shared.service";
-import {
-  getCompanyTimeZone,
-  getLocationTimeZone
-} from "~/modules/shared/timezone.server";
-import { getUser, getUserDefaults } from "~/modules/users/users.server";
-import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   renderQuotePdf,
-  renderSalesOrderPdf,
   renderSalesReturnOrderPdf
 } from "./sales.documents.server";
 import {
   contractAmendmentChangeValidator,
-  contractEndDate,
-  type createContractFromSalesOrderValidator,
   customerContractAmendmentValidator,
   customerContractTypes,
   customerContractValidator,
@@ -139,20 +95,30 @@ import {
   selectedLinesValidator
 } from "./sales.models";
 import {
+  advancingStatusRefusal,
+  attachDocumentPdf,
+  attachSalesOrderPdf,
   buildMakeToOrderPriceRows,
   buildPullFromInventoryPriceRows,
   buildPurchaseToOrderPriceRows,
   calculatePricesForQuantities,
   cancelSalesOrder,
+  companyToday,
   confirmSalesReturnOrder,
+  contractCustomerChange,
+  contractInvoicingDefaults,
+  convertingLineIds,
   convertQuoteToOrder,
   convertSalesRfqToQuote,
   copyQuoteLine,
+  createQuoteLineForFile,
   deleteQuoteMaterial,
+  emailQuote,
+  fieldUpdate,
   finalizeQuote,
+  forbidden,
+  generateRentalInvoicesNow,
   getContract,
-  getCustomer,
-  getCustomerContact,
   getCustomerContractStatuses,
   getQuote,
   getRentalAgreement,
@@ -162,16 +128,36 @@ import {
   getSalesOrderLines,
   getSalesReturnOrder,
   getSalesReturnOrderLine,
-  getSalesReturnOrderLineTrackedEntities,
   getSalesRFQ,
   insertContract,
   insertRentalAgreement,
+  insertRentalPurchaseOptionCharge,
   insertSalesRFQ,
+  linkIssueToReturnLine,
+  notifyDigitalQuoteResponse,
+  ownRentalAgreement,
+  parseConfiguration,
+  placeDroppedFile,
+  postContract,
+  postRentalAgreement,
+  priceNewQuoteLine,
   type QuoteLinePriceRow,
-  recalculateQuoteLinePrices,
+  quoteLocked,
+  recordSalesLineOutcome,
+  recordSalesRuleOutcome,
+  refuseUnlessQuoteMethodRows,
+  repriceQuoteLine,
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices,
+  returnedOnHoldEntityIds,
+  salesDocumentGate,
+  salesLineGate,
+  salesOrderLineGate,
+  saveQuoteLineWithPrices,
+  sentQuote,
   setSalesReturnOrderLineDisposition,
+  unlockedQuote,
+  unlockedSalesOrder,
   updateContract,
   updateContractInvoiceAutomation,
   updateContractNotes,
@@ -191,1254 +177,22 @@ import {
   upsertRentalAgreementLine,
   upsertSalesOrderLine,
   upsertSalesReturnOrderLine,
-  upsertSalesRFQLine
+  upsertSalesRFQLine,
+  withLineTarget
 } from "./sales.service";
 import { reconcileQuantityBreaks } from "./sales.utils";
 import { contractDurationOf } from "./ui/Contracts/useContractLabels";
 
 const logger = getLogger("erp", "sales-server");
-
-type BreakRow = { quantity: number; overridePrice: number; active: boolean };
-
-export async function duplicatePriceOverrides(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string,
-  source: { customerId?: string; customerTypeId?: string },
-  target: { customerId?: string; customerTypeId?: string },
-  options?: {
-    overrideIds?: string[];
-    conflictStrategy?: "skip" | "overwrite";
-  }
-): Promise<{
-  duplicated: number;
-  skipped: number;
-  overwritten: number;
-  error: unknown;
-}> {
-  let query = client
-    .from("customerItemPriceOverride")
-    .select(
-      "id, itemId, notes, validFrom, validTo, active, applyRulesOnTop, breaks:customerItemPriceOverrideBreak(quantity, overridePrice, active)"
-    )
-    .eq("companyId", companyId);
-
-  if (source.customerId) {
-    query = query.eq("customerId", source.customerId);
-  } else if (source.customerTypeId) {
-    query = query.eq("customerTypeId", source.customerTypeId);
-  } else {
-    query = query.is("customerId", null).is("customerTypeId", null);
-  }
-
-  if (options?.overrideIds?.length) {
-    query = query.in("id", options.overrideIds);
-  }
-
-  const { data: sourceOverrides, error: fetchError } = await query;
-  if (fetchError || !sourceOverrides) {
-    return { duplicated: 0, skipped: 0, overwritten: 0, error: fetchError };
-  }
-
-  if (sourceOverrides.length === 0) {
-    return { duplicated: 0, skipped: 0, overwritten: 0, error: null };
-  }
-
-  const strategy = options?.conflictStrategy ?? "skip";
-
-  let existingLookup = client
-    .from("customerItemPriceOverride")
-    .select("id, itemId")
-    .eq("companyId", companyId)
-    .in(
-      "itemId",
-      sourceOverrides.map((s) => s.itemId)
-    );
-
-  existingLookup = target.customerId
-    ? existingLookup.eq("customerId", target.customerId)
-    : target.customerTypeId
-      ? existingLookup.eq("customerTypeId", target.customerTypeId)
-      : existingLookup.is("customerId", null).is("customerTypeId", null);
-
-  const { data: existingOverrides } = await existingLookup;
-  const existingByItemId = new Map(
-    (existingOverrides ?? []).map((e) => [e.itemId, e.id])
-  );
-
-  const db = getDatabaseClient();
-
-  try {
-    const result = await db.transaction().execute(async (trx) => {
-      let duplicated = 0;
-      let skipped = 0;
-      let overwritten = 0;
-
-      for (const src of sourceOverrides) {
-        const breaks = ((src.breaks as BreakRow[] | null) ?? []).map((b) => ({
-          quantity: b.quantity,
-          overridePrice: b.overridePrice,
-          active: b.active
-        }));
-
-        if (breaks.length === 0) {
-          skipped++;
-          continue;
-        }
-
-        const existingId = existingByItemId.get(src.itemId);
-
-        if (existingId && strategy === "skip") {
-          skipped++;
-          continue;
-        }
-
-        let parentId: string;
-
-        if (existingId) {
-          await trx
-            .updateTable("customerItemPriceOverride")
-            .set({
-              active: src.active,
-              applyRulesOnTop: src.applyRulesOnTop ?? true,
-              notes: src.notes ?? null,
-              validFrom: src.validFrom ?? null,
-              validTo: src.validTo ?? null,
-              customerId: target.customerId ?? null,
-              customerTypeId: target.customerTypeId ?? null,
-              itemId: src.itemId,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .where("id", "=", existingId)
-            .where("companyId", "=", companyId)
-            .execute();
-
-          await trx
-            .deleteFrom("customerItemPriceOverrideBreak")
-            .where("customerItemPriceOverrideId", "=", existingId)
-            .where("companyId", "=", companyId)
-            .execute();
-
-          parentId = existingId;
-          overwritten++;
-        } else {
-          const [row] = await trx
-            .insertInto("customerItemPriceOverride")
-            .values({
-              companyId,
-              createdBy: userId,
-              itemId: src.itemId,
-              customerId: target.customerId ?? null,
-              customerTypeId: target.customerTypeId ?? null,
-              active: src.active,
-              applyRulesOnTop: src.applyRulesOnTop ?? true,
-              notes: src.notes ?? null,
-              validFrom: src.validFrom ?? null,
-              validTo: src.validTo ?? null
-            })
-            .returning("id")
-            .execute();
-
-          parentId = row.id;
-          duplicated++;
-        }
-
-        await trx
-          .insertInto("customerItemPriceOverrideBreak")
-          .values(
-            breaks.map((b) => ({
-              customerItemPriceOverrideId: parentId,
-              companyId,
-              createdBy: userId,
-              quantity: b.quantity,
-              overridePrice: b.overridePrice,
-              active: b.active
-            }))
-          )
-          .execute();
-      }
-
-      return { duplicated, skipped, overwritten };
-    });
-
-    return { ...result, error: null };
-  } catch (e) {
-    return { duplicated: 0, skipped: 0, overwritten: 0, error: e };
-  }
-}
-
-/**
- * Save a quote line and reconcile its quantity-break prices atomically.
- *
- * These three writes have to land together. Previously the line update
- * committed first, then the prune, then the seed — so a resolver failure left
- * the line saved with its new breaks unpriced, and a failure after the prune
- * left it short rows it used to have. The user saw a flashed error but the data
- * was already half-applied.
- *
- * Price ROWS are computed by the caller beforehand (the resolvers only read),
- * so a pricing failure aborts before anything is written at all. Those reads
- * are outside the transaction, which is fine: none of them touch the rows being
- * written here.
- */
-export async function saveQuoteLineWithPrices(args: {
-  companyId: string;
-  quoteId: string;
-  lineId: string;
-  line: Record<string, unknown>;
-  removedQuantities: number[];
-  priceRows: Record<string, unknown>[];
-}): Promise<void> {
-  const { companyId, quoteId, lineId, line, removedQuantities, priceRows } =
-    args;
-  const db = getDatabaseClient();
-
-  await db.transaction().execute(async (trx) => {
-    // Kysely bypasses RLS and lineId/quoteId come from the URL: the line must
-    // belong to this company AND to the quote whose lock state the route
-    // checked, or nothing is written. The form's own quoteId is overridden so
-    // a line can't be re-parented onto another document.
-    const result = await trx
-      .updateTable("quoteLine")
-      .set({ ...line, quoteId } as never)
-      .where("id", "=", lineId)
-      .where("quoteId", "=", quoteId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (Number(result.numUpdatedRows) === 0) {
-      throw new Error(`Quote line ${lineId} not found`);
-    }
-
-    if (removedQuantities.length > 0) {
-      await trx
-        .deleteFrom("quoteLinePrice")
-        .where("quoteLineId", "=", lineId)
-        .where("companyId", "=", companyId)
-        .where("quantity", "in", removedQuantities)
-        .execute();
-    }
-
-    if (priceRows.length > 0) {
-      await trx
-        .insertInto("quoteLinePrice")
-        .values(
-          // Kysely sends a JS array as a Postgres array literal; jsonb needs
-          // JSON text.
-          priceRows.map((row) => ({
-            ...row,
-            priceTrace: row.priceTrace ? JSON.stringify(row.priceTrace) : null
-          })) as never
-        )
-        .execute();
-    }
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Sales-rule outcome evidence
 // ---------------------------------------------------------------------------
-
-/**
- * Persist sales-rule override/block evidence and notify the configured group.
- *
- * One `enforcementRuleAcknowledgment` row per deduped violation, plus one
- * `sales-rule-violation` notification. Both writes are best-effort: evidence
- * or notification failures are logged and must never break the submission
- * they describe. Callers pass the SERVICE-ROLE client — the acknowledgment
- * table's INSERT policy requires `sales_create`, but the documents these
- * gates protect (invoices, shipments) are legitimately posted by users
- * without it.
- *
- * Line actions pass `documentLineId`/`itemId` for the single line they wrote;
- * document gates leave them unset and each violation's own `lineId` (stamped
- * by the document evaluator) attributes the row instead.
- */
-export async function recordSalesRuleOutcome(
-  serviceRole: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    userId: string;
-    documentType: "quote" | "salesOrder" | "salesInvoice";
-    documentId: string;
-    outcome: "blocked" | "acknowledged";
-    violations: Violation[];
-    ruleNames: Record<string, string>;
-    documentLineId?: string | null;
-    itemId?: string | null;
-  }
-): Promise<void> {
-  const {
-    companyId,
-    userId,
-    documentType,
-    documentId,
-    outcome,
-    violations,
-    ruleNames
-  } = args;
-  if (violations.length === 0) return;
-
-  const acknowledgmentInsert = await serviceRole
-    .from("enforcementRuleAcknowledgment")
-    .insert(
-      violations.map((v) => ({
-        companyId,
-        ruleId: v.ruleId,
-        ruleName: ruleNames[v.ruleId] ?? null,
-        documentType,
-        documentId,
-        // A caller that evaluated a single line knows the real line id (or
-        // that none exists yet) and passes the key — the evaluator's stamp is
-        // a placeholder ("new") there. Document gates omit the key and the
-        // per-violation stamp is the attribution.
-        documentLineId:
-          "documentLineId" in args
-            ? (args.documentLineId ?? null)
-            : (v.lineId ?? null),
-        itemId: args.itemId ?? null,
-        severity: v.severity,
-        outcome,
-        message: v.message,
-        createdBy: userId
-      }))
-    );
-  if (acknowledgmentInsert.error) {
-    logger.error("Failed to record sales rule acknowledgments", {
-      error: acknowledgmentInsert.error
-    });
-  }
-
-  try {
-    const companySettings = await getCompanySettings(serviceRole, companyId);
-    if (companySettings.data?.salesRuleNotificationGroup?.length) {
-      await trigger("notify", {
-        companyId,
-        documentId: `${documentType}:${documentId}:${outcome}`,
-        event: NotificationEvent.SalesRuleViolation,
-        recipient: {
-          type: "group",
-          groupIds: companySettings.data.salesRuleNotificationGroup
-        },
-        from: userId
-      });
-    }
-  } catch (err) {
-    logger.error("Failed to trigger sales rule violation notification", {
-      error: err
-    });
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Rental invoices
 // ---------------------------------------------------------------------------
-
-/**
- * The `Purchase Option` charge Sell to Customer bills (`$id.$lineId.sell.tsx`,
- * which checks the agreement is Active, the line is a Sale unit On Rent
- * and the option is not already billed). Server-only on purpose: the
- * `sales.service.ts` charge writer is an MCP tool and only ever writes a
- * `Charge`, so no caller can name this charge type and skip those checks.
- */
-export async function insertRentalPurchaseOptionCharge(
-  client: SupabaseClient<Database>,
-  charge: {
-    rentalAgreementLineId: string;
-    chargeDate: string;
-    description: string;
-    amount: number;
-    taxPercent: number;
-    companyId: string;
-    createdBy: string;
-  }
-) {
-  return client
-    .from("rentalAgreementCharge")
-    .insert([{ ...charge, chargeType: "Purchase Option" as const }])
-    .select("id")
-    .single();
-}
-
-/** The agreement page's "Invoice" (and Sell to Customer): drafts the
- *  invoices for whatever the agreement has due, exactly as the daily job
- *  would — the `create-rental-invoices` server function. */
-export async function generateRentalInvoicesNow(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    /** `YYYY-MM-DD` in the company's timezone. */
-    asOf: string;
-    rentalAgreementId: string;
-  }
-): Promise<{
-  invoices: DraftedRentalInvoice[];
-  invoiceIds: string[];
-  /** Draft credit memos for early returns, one per agreement. */
-  creditMemos: DraftedRentalCreditMemo[];
-}> {
-  const { companyId, userId, asOf, rentalAgreementId } = args;
-  const { invoices, invoiceIds, creditMemos, failures } = await serverFns
-    .system({ db, companyId, userId })
-    .invokeOrThrow("create-rental-invoices", { asOf, rentalAgreementId });
-  // One agreement is billed here, so its failure is the action's failure.
-  if (failures.length > 0) {
-    throw new Error(failures.map((f) => f.error).join("; "));
-  }
-  return { invoices, invoiceIds, creditMemos };
-}
-
-/**
- * Releases what a Draft invoice (or some of its lines) billed, so the next
- * generation bills it again: rental billing periods and charges, and contract
- * schedule rows. Called in the same transaction as the delete:
- * `salesInvoiceLineId` has no foreign key, so a delete alone would leave the
- * rows stamped as billed by a line that no longer exists.
- *
- * A contract's planned invoice goes back to Planned only once none of its
- * rows is still stamped — deleting one contract line from a Draft leaves the
- * planned invoice Invoiced while its other lines are still on that Draft.
- * `voidedSalesInvoiceId` is left alone, so a re-bill hold stays (rental
- * decision 8).
- */
-async function releaseRecurringInvoiceStamps(
-  trx: KyselyTx,
-  args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
-): Promise<void> {
-  const { companyId, salesInvoiceLineIds, userId } = args;
-  if (salesInvoiceLineIds.length === 0) return;
-
-  await trx
-    .updateTable("rentalBillingPeriod")
-    .set({
-      status: "Pending",
-      salesInvoiceLineId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .execute();
-
-  await trx
-    .updateTable("rentalAgreementCharge")
-    .set({
-      salesInvoiceLineId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .execute();
-
-  const releasedRows = await trx
-    .updateTable("customerContractInvoiceLine")
-    .set({
-      salesInvoiceLineId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .returning("customerContractInvoiceId")
-    .execute();
-
-  const plannedInvoiceIds = [
-    ...new Set(
-      releasedRows.flatMap((row) =>
-        row.customerContractInvoiceId ? [row.customerContractInvoiceId] : []
-      )
-    )
-  ];
-  if (plannedInvoiceIds.length === 0) return;
-
-  await trx
-    .updateTable("customerContractInvoice")
-    .set({
-      status: "Planned",
-      salesInvoiceId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("id", "in", plannedInvoiceIds)
-    .where("status", "=", "Invoiced")
-    .where((eb) =>
-      eb.not(
-        eb.exists(
-          eb
-            .selectFrom("customerContractInvoiceLine as stamped")
-            .select(sql`1`.as("one"))
-            .whereRef(
-              "stamped.customerContractInvoiceId",
-              "=",
-              "customerContractInvoice.id"
-            )
-            .where("stamped.companyId", "=", companyId)
-            .where("stamped.salesInvoiceLineId", "is not", null)
-        )
-      )
-    )
-    .execute();
-}
-
-/**
- * Deletes a Draft sales invoice and, in the same transaction, releases the
- * rental billing periods and charges and the contract schedule rows it
- * billed, so the next generation bills them again. `salesInvoiceLineId` on
- * those rows has no foreign key, so a plain delete would leave them stamped
- * as billed forever. Throws on a missing or non-Draft invoice.
- */
-export async function deleteSalesInvoiceReleasingRentals(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
-): Promise<void> {
-  const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
-    const invoice = await trx
-      .selectFrom("salesInvoice")
-      .select(["id", "status"])
-      .where("id", "=", invoiceId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!invoice) throw new Error("Sales invoice not found");
-    if (invoice.status !== "Draft") {
-      throw new Error(
-        `Cannot delete sales invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
-      );
-    }
-
-    const lines = await trx
-      .selectFrom("salesInvoiceLine")
-      .select("id")
-      .where("invoiceId", "=", invoiceId)
-      .where("companyId", "=", companyId)
-      .where((eb) =>
-        eb.or([
-          eb("invoiceLineType", "=", "Rental"),
-          eb("customerContractInvoiceLineId", "is not", null)
-        ])
-      )
-      .execute();
-    await releaseRecurringInvoiceStamps(trx, {
-      companyId,
-      salesInvoiceLineIds: lines.map((line) => line.id),
-      userId
-    });
-
-    await trx
-      .deleteFrom("salesInvoice")
-      .where("id", "=", invoiceId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
-/**
- * Deletes a Draft rental early-return credit memo and returns the
- * adjustment periods it credits to Pending, in one transaction, so the next
- * invoice run credits them again. `rentalBillingPeriod.memoId` RESTRICTs a
- * plain delete for exactly this reason. Throws on a missing or non-Draft
- * memo, or one that credits no rental agreement.
- */
-export async function deleteRentalCreditMemoReleasingPeriods(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; memoId: string; userId: string }
-): Promise<void> {
-  const { companyId, memoId, userId } = args;
-  await db.transaction().execute(async (trx) => {
-    const memo = await trx
-      .selectFrom("memo")
-      .select(["id", "status", "rentalAgreementId"])
-      .where("id", "=", memoId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!memo) throw new Error("Memo not found");
-    if (!memo.rentalAgreementId) {
-      throw new Error("This memo does not credit a rental agreement");
-    }
-    if (memo.status !== "Draft") {
-      throw new Error(
-        `Cannot delete a ${memo.status} memo. Only Draft memos can be deleted.`
-      );
-    }
-    await trx
-      .updateTable("rentalBillingPeriod")
-      .set({
-        status: "Pending",
-        memoId: null,
-        updatedBy: userId,
-        updatedAt: sql`now()`
-      })
-      .where("companyId", "=", companyId)
-      .where("memoId", "=", memoId)
-      .execute();
-    await trx
-      .deleteFrom("memo")
-      .where("id", "=", memoId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
-/** One line of a Draft invoice, releasing the rental period or charge, or
- *  the contract schedule row, it billed (see
- *  `deleteSalesInvoiceReleasingRentals`). The line must belong
- *  to `invoiceId` and that invoice must be Draft — checked here, under a row
- *  lock, because releasing a POSTED line's stamps would bill its period
- *  again. Throws otherwise. */
-export async function deleteSalesInvoiceLineReleasingRentals(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    invoiceId: string;
-    salesInvoiceLineId: string;
-    userId: string;
-  }
-): Promise<void> {
-  const { companyId, invoiceId, salesInvoiceLineId, userId } = args;
-  await db.transaction().execute(async (trx) => {
-    const line = await trx
-      .selectFrom("salesInvoiceLine")
-      .innerJoin("salesInvoice", (join) =>
-        join
-          .onRef("salesInvoice.id", "=", "salesInvoiceLine.invoiceId")
-          .onRef("salesInvoice.companyId", "=", "salesInvoiceLine.companyId")
-      )
-      .select([
-        "salesInvoiceLine.invoiceId as invoiceId",
-        "salesInvoice.status as status"
-      ])
-      .where("salesInvoiceLine.id", "=", salesInvoiceLineId)
-      .where("salesInvoiceLine.companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!line || line.invoiceId !== invoiceId) {
-      throw new Error("Sales invoice line not found on this invoice");
-    }
-    if (line.status !== "Draft") {
-      throw new Error(
-        `Cannot delete a line of a sales invoice with status "${line.status}". Only Draft invoices can be edited.`
-      );
-    }
-
-    await releaseRecurringInvoiceStamps(trx, {
-      companyId,
-      salesInvoiceLineIds: [salesInvoiceLineId],
-      userId
-    });
-    await trx
-      .deleteFrom("salesInvoiceLine")
-      .where("id", "=", salesInvoiceLineId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Contracts
 // ---------------------------------------------------------------------------
-
-/** The contract page's "Invoice": drafts the invoices the contract has due,
- *  exactly as the daily job would — the `create-contract-invoices` server
- *  function. */
-export async function generateContractInvoicesNow(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    /** `YYYY-MM-DD` in the company's timezone. */
-    asOf: string;
-    customerContractId: string;
-  }
-): Promise<{ invoices: DraftedContractInvoice[]; invoiceIds: string[] }> {
-  const { companyId, userId, asOf, customerContractId } = args;
-  const { invoices, invoiceIds, failures } = await serverFns
-    .system({ db, companyId, userId })
-    .invokeOrThrow("create-contract-invoices", { asOf, customerContractId });
-  // One contract is billed here, so its failure is the action's failure.
-  if (failures.length > 0) {
-    throw new Error(failures.map((f) => f.error).join("; "));
-  }
-  return { invoices, invoiceIds };
-}
-
-/** A new contract's invoicing terms from its customer: the bill-to
- *  customer, invoice contact and address and payment terms (Customer →
- *  Payment), and the ship-to address (Customer → Shipping) when it is one of
- *  the customer's own locations. Each is undefined when the customer has
- *  none, or a read fails — a default left empty is filled on the Invoicing
- *  step. */
-export async function contractInvoicingDefaults(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  customerId: string
-): Promise<{
-  invoiceCustomerId: string | undefined;
-  invoiceCustomerContactId: string | undefined;
-  invoiceCustomerLocationId: string | undefined;
-  paymentTermId: string | undefined;
-  shipToCustomerLocationId: string | undefined;
-}> {
-  const [payment, shipping] = await Promise.all([
-    client
-      .from("customerPayment")
-      .select(
-        "invoiceCustomerId, invoiceCustomerContactId, invoiceCustomerLocationId, paymentTermId"
-      )
-      .eq("customerId", customerId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    client
-      .from("customerShipping")
-      .select("shippingCustomerId, shippingCustomerLocationId")
-      .eq("customerId", customerId)
-      .eq("companyId", companyId)
-      .maybeSingle()
-  ]);
-  if (payment.error || shipping.error) {
-    logger.error("Failed to read the customer's invoicing defaults", {
-      companyId,
-      customerId,
-      error: payment.error ?? shipping.error
-    });
-  }
-
-  const shipsToItself =
-    !shipping.data?.shippingCustomerId ||
-    shipping.data.shippingCustomerId === customerId;
-  return {
-    invoiceCustomerId: payment.data?.invoiceCustomerId ?? undefined,
-    invoiceCustomerContactId:
-      payment.data?.invoiceCustomerContactId ?? undefined,
-    invoiceCustomerLocationId:
-      payment.data?.invoiceCustomerLocationId ?? undefined,
-    paymentTermId: payment.data?.paymentTermId ?? undefined,
-    shipToCustomerLocationId: shipsToItself
-      ? (shipping.data?.shippingCustomerLocationId ?? undefined)
-      : undefined
-  };
-}
-
-/** The invoicing terms a Draft takes when its customer changes: the new
- *  customer's `contractInvoicingDefaults`, every one of them — the old
- *  customer's bill-to, contact, addresses and payment terms would be wrong,
- *  so a default the new customer lacks is cleared, not kept. Null when the
- *  customer did not change. Shared by setup step 1 and the properties
- *  panel, so both replace the same set. */
-export async function contractCustomerChange(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  change: { from: string | null; to: string | null }
-): Promise<Awaited<ReturnType<typeof contractInvoicingDefaults>> | null> {
-  if (!change.to || change.to === change.from) return null;
-  return contractInvoicingDefaults(client, companyId, change.to);
-}
-
-/** Confirm, schedule edits, amend, cancel and revert — the
- *  `post-customer-contract` server function, run as the signed-in user so
- *  its permission check applies. Never throws: `{ data, error }`. */
-export function runContractAction(
-  caller: {
-    client: SupabaseClient<Database>;
-    db: Kysely<KyselyDatabase>;
-    companyId: string;
-    userId: string;
-  },
-  input: ServerFnInput<"post-customer-contract">
-) {
-  return serverFns.as(caller).invoke("post-customer-contract", input);
-}
-
-type SalesOrderStatus = Database["public"]["Enums"]["salesOrderStatus"];
-
-/** The statuses the invoiced/shipped rollup sets. A Draft or unconfirmed
- *  order gets its status at Confirm (which derives it from the lines), and a
- *  Cancelled or Closed one keeps its own. */
-const ROLLUP_ORDER_STATUSES: SalesOrderStatus[] = [
-  "To Ship and Invoice",
-  "To Ship",
-  "To Invoice",
-  "Completed"
-];
-
-/** The order status the lines imply — the rollup in `post-sales-invoice`
- *  (copied, not imported: that file is a server function). Service lines are
- *  never shipped, so they never hold shipping open. */
-function salesOrderStatusFromLines(
-  lines: {
-    salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"];
-    invoicedComplete: boolean;
-    sentComplete: boolean;
-  }[]
-): { status: SalesOrderStatus; allInvoiced: boolean } {
-  const allInvoiced = lines.every(
-    (line) => line.salesOrderLineType === "Comment" || line.invoicedComplete
-  );
-  const allShipped = lines.every(
-    (line) =>
-      line.salesOrderLineType === "Comment" ||
-      line.salesOrderLineType === "Service" ||
-      line.sentComplete
-  );
-
-  let status: SalesOrderStatus = "To Ship and Invoice";
-  if (allInvoiced && allShipped) {
-    status = "Completed";
-  } else if (allInvoiced) {
-    status = "To Ship";
-  } else if (allShipped) {
-    status = "To Invoice";
-  }
-  return { status, allInvoiced };
-}
-
-/**
- * Creates a Draft contract from a sales order's Service lines (decision 7).
- * The lines taken are marked `invoicedComplete`, so `convert` never invoices
- * them and the order's rollup counts them as invoiced; when that leaves every
- * line invoiced, the order's status is recomputed. Deleting the Draft
- * contract, or one of its lines, releases them
- * (`deleteContractReleasingSalesOrderLines`). Returns the contract's id.
- */
-export async function createContractFromSalesOrder(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    /** `YYYY-MM-DD` in the company's timezone: the close date. */
-    asOf: string;
-    input: z.infer<typeof createContractFromSalesOrderValidator>;
-  }
-): Promise<string> {
-  const { companyId, userId, asOf, input } = args;
-
-  // Drawn before the transaction, as the contract form's route does: a
-  // refusal below costs a number, but the sequence row is not held locked
-  // while the order is.
-  const customerContractId = await db
-    .transaction()
-    .execute((trx) => getNextSequence(trx, "customerContract", companyId));
-
-  return db.transaction().execute(async (trx) => {
-    const order = await trx
-      .selectFrom("salesOrder")
-      .select([
-        "id",
-        "salesOrderId",
-        "status",
-        "customerId",
-        "customerReference",
-        "salesPersonId",
-        "currencyCode",
-        "exchangeRate"
-      ])
-      .where("id", "=", input.salesOrderId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!order) throw new Error("Sales order not found");
-    if (order.status === "Cancelled" || order.status === "Closed") {
-      throw new Error(
-        `Cannot create a contract from a ${order.status.toLowerCase()} sales order`
-      );
-    }
-
-    // Payment terms and the invoice party live on the order's payment row.
-    const payment = await trx
-      .selectFrom("salesOrderPayment")
-      .select([
-        "paymentTermId",
-        "invoiceCustomerId",
-        "invoiceCustomerContactId",
-        "invoiceCustomerLocationId"
-      ])
-      .where("id", "=", order.id)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-
-    // Every line is locked, not only the chosen ones: the status rollup
-    // below reads them all.
-    const orderLines = await trx
-      .selectFrom("salesOrderLine")
-      .select([
-        "id",
-        "salesOrderLineType",
-        "itemId",
-        "description",
-        "saleQuantity",
-        "unitPrice",
-        "convertedUnitPrice",
-        "taxPercent",
-        "invoicedComplete",
-        "quantityInvoiced",
-        "sentComplete"
-      ])
-      .where("salesOrderId", "=", order.id)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .execute();
-    const orderLineById = new Map(orderLines.map((line) => [line.id, line]));
-
-    const chosenIds = new Set(input.lines.map((line) => line.salesOrderLineId));
-    if (chosenIds.size !== input.lines.length) {
-      throw new Error("A sales order line was chosen more than once");
-    }
-
-    const chosen = input.lines.map((choice) => {
-      const line = orderLineById.get(choice.salesOrderLineId);
-      if (!line) throw new Error("A chosen line is not on this sales order");
-      if (line.salesOrderLineType !== "Service" || !line.itemId) {
-        throw new Error("Only Service lines can move to a contract");
-      }
-      if (line.invoicedComplete || Number(line.quantityInvoiced ?? 0) > 0) {
-        throw new Error(
-          "A line that is already invoiced cannot move to a contract"
-        );
-      }
-      const quantity = Number(line.saleQuantity ?? 0);
-      if (quantity <= 0) {
-        throw new Error("A line with no quantity cannot move to a contract");
-      }
-      // A contract line's rate is in the contract's currency, which is the
-      // order's: `unitPrice` is base, `convertedUnitPrice` (unitPrice ×
-      // exchangeRate) is what the customer was quoted.
-      const rate = round(
-        Number(line.convertedUnitPrice ?? line.unitPrice ?? 0)
-      );
-      if (rate < 0) {
-        throw new Error(
-          "A line with a negative price cannot move to a contract"
-        );
-      }
-      return { choice, line, itemId: line.itemId, quantity, rate };
-    });
-
-    const previousContracts = await trx
-      .selectFrom("customerContract")
-      .select("status")
-      .where("companyId", "=", companyId)
-      .where("customerId", "=", order.customerId)
-      .execute();
-
-    const { endDate, termMonths } = contractEndDate(
-      input.startDate,
-      input.duration,
-      input.endDate
-    );
-
-    const contract = await trx
-      .insertInto("customerContract")
-      .values({
-        companyId,
-        customerContractId,
-        name: input.name,
-        contractType: suggestContractType(previousContracts),
-        customerId: order.customerId,
-        invoiceCustomerId: payment?.invoiceCustomerId ?? null,
-        invoiceCustomerContactId: payment?.invoiceCustomerContactId ?? null,
-        invoiceCustomerLocationId: payment?.invoiceCustomerLocationId ?? null,
-        salesPersonId: order.salesPersonId,
-        salesOrderId: order.id,
-        customerReference: order.customerReference,
-        closeDate: asOf,
-        startDate: input.startDate,
-        endDate,
-        termMonths,
-        billingFrequency: input.billingFrequency,
-        billingAlignment: input.billingAlignment,
-        billingTiming: input.billingTiming,
-        paymentTermId: payment?.paymentTermId ?? null,
-        currencyCode: order.currencyCode,
-        exchangeRate: order.exchangeRate ?? 1,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-
-    await trx
-      .insertInto("customerContractLine")
-      .values(
-        chosen.map(({ choice, line, itemId, quantity, rate }) => ({
-          companyId,
-          customerContractId: contract.id,
-          revenueType: choice.revenueType,
-          itemId,
-          description: line.description,
-          quantity,
-          rate,
-          rateUnit:
-            choice.revenueType === "Recurring"
-              ? (choice.rateUnit ?? null)
-              : null,
-          taxPercent: line.taxPercent,
-          startDate: input.startDate,
-          salesOrderLineId: line.id,
-          createdBy: userId
-        }))
-      )
-      .execute();
-
-    await trx
-      .updateTable("salesOrderLine")
-      .set({
-        invoicedComplete: true,
-        updatedBy: userId,
-        updatedAt: sql`now()`
-      })
-      .where("companyId", "=", companyId)
-      .where("id", "in", [...chosenIds])
-      .execute();
-
-    const { status, allInvoiced } = salesOrderStatusFromLines(
-      orderLines.map((line) => ({
-        ...line,
-        invoicedComplete: line.invoicedComplete || chosenIds.has(line.id)
-      }))
-    );
-    if (allInvoiced && ROLLUP_ORDER_STATUSES.includes(order.status)) {
-      await trx
-        .updateTable("salesOrder")
-        .set({ status, updatedBy: userId, updatedAt: sql`now()` })
-        .where("id", "=", order.id)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
-
-    return contract.id;
-  });
-}
-
-/**
- * Hands sales-order lines back to their order when the Draft contract (or
- * contract line) that took them is deleted: `invoicedComplete` goes back to
- * false where the line is not fully invoiced, and an order the rollup had
- * settled is recomputed from its lines. Runs inside the delete's transaction.
- */
-async function releaseContractSalesOrderLines(
-  trx: KyselyTx,
-  args: { companyId: string; userId: string; salesOrderLineIds: string[] }
-): Promise<void> {
-  const { companyId, userId, salesOrderLineIds } = args;
-  if (salesOrderLineIds.length === 0) return;
-
-  const released = await trx
-    .updateTable("salesOrderLine")
-    .set({
-      invoicedComplete: false,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("id", "in", salesOrderLineIds)
-    .where("invoicedComplete", "=", true)
-    .where(
-      sql<boolean>`coalesce("quantityInvoiced", 0) < coalesce("saleQuantity", 0)`
-    )
-    .returning("salesOrderId")
-    .execute();
-
-  const salesOrderIds = [...new Set(released.map((line) => line.salesOrderId))];
-  if (salesOrderIds.length === 0) return;
-
-  const orders = await trx
-    .selectFrom("salesOrder")
-    .select(["id", "status"])
-    .where("companyId", "=", companyId)
-    .where("id", "in", salesOrderIds)
-    .forUpdate()
-    .execute();
-  const orderLines = await trx
-    .selectFrom("salesOrderLine")
-    .select([
-      "salesOrderId",
-      "salesOrderLineType",
-      "invoicedComplete",
-      "sentComplete"
-    ])
-    .where("companyId", "=", companyId)
-    .where("salesOrderId", "in", salesOrderIds)
-    .execute();
-
-  // Each order's new status, grouped so one UPDATE per status covers them
-  // (at most one per rollup status, however many orders).
-  const orderIdsByStatus = new Map<SalesOrderStatus, string[]>();
-  for (const order of orders) {
-    if (!ROLLUP_ORDER_STATUSES.includes(order.status)) continue;
-    const { status } = salesOrderStatusFromLines(
-      orderLines.filter((line) => line.salesOrderId === order.id)
-    );
-    if (status === order.status) continue;
-    orderIdsByStatus.set(status, [
-      ...(orderIdsByStatus.get(status) ?? []),
-      order.id
-    ]);
-  }
-
-  for (const [status, ids] of orderIdsByStatus) {
-    await trx
-      .updateTable("salesOrder")
-      .set({ status, updatedBy: userId, updatedAt: sql`now()` })
-      .where("companyId", "=", companyId)
-      .where("id", "in", ids)
-      .execute();
-  }
-}
-
-/** Locks a contract and refuses one that is missing or not a Draft. */
-async function lockDraftContract(
-  trx: KyselyTx,
-  args: { companyId: string; customerContractId: string; refusal: string }
-): Promise<void> {
-  const contract = await trx
-    .selectFrom("customerContract")
-    .select("status")
-    .where("id", "=", args.customerContractId)
-    .where("companyId", "=", args.companyId)
-    .forUpdate()
-    .executeTakeFirst();
-  if (!contract) throw new Error("Contract not found");
-  if (contract.status !== "Draft") throw new Error(args.refusal);
-}
-
-/**
- * Deletes a Draft contract and, in the same transaction, hands the
- * sales-order lines it took back to their order (decision 7) so they can be
- * invoiced again. Throws on a missing or non-Draft contract.
- */
-export async function deleteContractReleasingSalesOrderLines(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; userId: string; id: string }
-): Promise<void> {
-  const { companyId, userId, id } = args;
-  await db.transaction().execute(async (trx) => {
-    await lockDraftContract(trx, {
-      companyId,
-      customerContractId: id,
-      refusal: "Only a Draft contract can be deleted. Cancel it instead."
-    });
-
-    const lines = await trx
-      .selectFrom("customerContractLine")
-      .select("salesOrderLineId")
-      .where("customerContractId", "=", id)
-      .where("companyId", "=", companyId)
-      .where("salesOrderLineId", "is not", null)
-      .execute();
-    await releaseContractSalesOrderLines(trx, {
-      companyId,
-      userId,
-      salesOrderLineIds: lines.flatMap((line) =>
-        line.salesOrderLineId ? [line.salesOrderLineId] : []
-      )
-    });
-
-    await trx
-      .deleteFrom("customerContract")
-      .where("id", "=", id)
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Draft")
-      .execute();
-  });
-}
-
-/** One line of a Draft contract, handing its sales-order line back to the
- *  order (see `deleteContractReleasingSalesOrderLines`). The line must belong
- *  to `customerContractId`; throws otherwise. */
-export async function deleteContractLineReleasingSalesOrderLine(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    customerContractId: string;
-    customerContractLineId: string;
-  }
-): Promise<void> {
-  const { companyId, userId, customerContractId, customerContractLineId } =
-    args;
-  await db.transaction().execute(async (trx) => {
-    await lockDraftContract(trx, {
-      companyId,
-      customerContractId,
-      refusal: "Lines can only be removed from a Draft contract — use Amend"
-    });
-
-    const line = await trx
-      .selectFrom("customerContractLine")
-      .select(["customerContractId", "salesOrderLineId"])
-      .where("id", "=", customerContractLineId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!line || line.customerContractId !== customerContractId) {
-      throw new Error("This line does not belong to this contract");
-    }
-
-    await releaseContractSalesOrderLines(trx, {
-      companyId,
-      userId,
-      salesOrderLineIds: line.salesOrderLineId ? [line.salesOrderLineId] : []
-    });
-
-    await trx
-      .deleteFrom("customerContractLine")
-      .where("id", "=", customerContractLineId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
-/** Where a Draft contract opens: its setup wizard, for anyone who can edit
- *  it (the wizard needs `update: sales`). Null for a confirmed contract, or
- *  for a viewer who cannot edit — they get the contract page. */
-export async function draftContractSetupPath(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
-): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [contract, claims] = await Promise.all([
-    client
-      .from("customerContract")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (contract.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
-    return null;
-  }
-  return path.to.contractSetup(id, "products");
-}
-
-/** Where a Draft rental agreement opens: its setup wizard, for anyone who
- *  can edit it (the wizard needs `update: sales`). Null for an activated
- *  agreement, or for a viewer who cannot edit — they get the agreement page. */
-export async function draftRentalAgreementSetupPath(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
-): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [agreement, claims] = await Promise.all([
-    client
-      .from("rentalAgreement")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (agreement.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
-    return null;
-  }
-  return path.to.rentalAgreementSetup(id, "units");
-}
-
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
@@ -1448,100 +202,6 @@ const customFieldValues = z.record(
   z.string(),
   z.union([z.string(), z.number(), z.boolean()])
 );
-
-/**
- * One field set on several records, as a Properties panel posts it: `ids`
- * repeats in a form, and an empty `value` clears the field.
- */
-function fieldUpdate<const F extends readonly [string, ...string[]]>(
-  fields: F
-) {
-  return z.object({
-    ids: zfd.repeatableOfType(z.string().min(1)),
-    field: z.enum(fields),
-    value: z.string().nullish()
-  });
-}
-
-/** What a sales-rule check found: the violation modal's payload. */
-export type SalesRuleCheck = {
-  violations: Violation[];
-  ruleNames: Record<string, string>;
-};
-
-/**
- * The sales-rule gate a whole document passes before it moves on (quote
- * finalize and convert, RFQ convert, order confirm). Every line is
- * re-evaluated with the service role: lines arrive from paths the per-line
- * check never saw, and a rule may have been authored since.
- *
- * `blocked` is set when an error fired, or a warning that was not
- * acknowledged; that attempt is recorded (except for an RFQ, which the
- * acknowledgment table cannot name). A failed evaluation blocks too, with
- * its message as the one violation. Otherwise `check` holds the warnings the
- * caller records as acknowledged once the transition commits.
- */
-async function salesDocumentGate(
-  ctx: ServiceContext,
-  args: {
-    documentType: "quote" | "salesOrder" | "salesRfq";
-    documentId: string;
-    acknowledged: boolean;
-    /** Only these lines are checked (a violation naming no line always is). */
-    lineIds?: Set<string>;
-  }
-): Promise<{ blocked: SalesRuleCheck | null; check: SalesRuleCheck }> {
-  const { documentType, documentId, acknowledged, lineIds } = args;
-  let found: SalesRuleCheck;
-  try {
-    found = await evaluateSalesRulesForSalesDocument({
-      client: ctx.asSystem.supabase,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      documentType,
-      documentId
-    });
-  } catch (err) {
-    // Fail closed, but as the modal's message rather than a raw error.
-    const blocked = {
-      violations: [
-        {
-          ruleId: "__evaluation-error__",
-          severity: "error" as const,
-          message:
-            err instanceof Error ? err.message : "Sales rule evaluation failed"
-        }
-      ],
-      ruleNames: {}
-    };
-    return { blocked, check: blocked };
-  }
-
-  const check = {
-    violations: dedupeViolations(found.violations).filter(
-      (v) => !lineIds || !v.lineId || lineIds.has(v.lineId)
-    ),
-    ruleNames: found.ruleNames
-  };
-  if (
-    check.violations.length === 0 ||
-    !isBlocked(check.violations, acknowledged)
-  ) {
-    return { blocked: null, check };
-  }
-  if (documentType !== "salesRfq") {
-    await recordSalesRuleOutcome(ctx.asSystem.supabase, {
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      documentType,
-      documentId,
-      outcome: "blocked",
-      ...check
-    });
-  }
-  return { blocked: check, check };
-}
-
 // --- Sales RFQs -------------------------------------------------------------
 
 const salesRfqFields = [
@@ -1935,94 +595,6 @@ export const attachSalesRfqFile = defineServiceFn({
     return { lineId };
   }
 });
-
-/**
- * Move a file dropped on a quote or RFQ line into place. A 3D model gets a
- * `modelUpload` row (linked to the line through `setModel`), its raw file in
- * the staging bucket the optimise job reads, and that job queued. Any other
- * file moves under `documentFolder`.
- */
-async function placeDroppedFile(
-  ctx: ServiceContext,
-  args: {
-    documentPath: string;
-    is3DModel?: boolean;
-    size?: number;
-    documentFolder: string;
-    setModel: (
-      modelUploadId: string
-    ) => PromiseLike<{ error: { message: string } | null }>;
-    lineName: string;
-  }
-): Promise<CarbonError | null> {
-  const client = ctx.asCaller.supabase;
-  const companyId = ctx.company.id;
-  const fileName = args.documentPath.split("/").pop();
-
-  if (!args.is3DModel) {
-    const move = await storage(client)
-      .company(companyId)
-      .move(
-        args.documentPath,
-        `${companyId}/${args.documentFolder}/${fileName}`
-      );
-    return move.error
-      ? ctx.error("internal", "Failed to move file", move.error)
-      : null;
-  }
-
-  const modelId = nanoid();
-  const newPath = `${companyId}/models/${modelId}.${fileName?.split(".").pop()}`;
-  const recordCreate = await client.from("modelUpload").insert({
-    id: modelId,
-    modelPath: newPath,
-    name: fileName!,
-    size: args.size ?? 0,
-    companyId,
-    createdBy: ctx.auditUserId
-  });
-  if (recordCreate.error) {
-    return ctx.error(
-      "internal",
-      "Failed to insert model record",
-      recordCreate.error
-    );
-  }
-  const recordUpdate = await args.setModel(modelId);
-  if (recordUpdate.error) {
-    return ctx.error(
-      "internal",
-      `Failed to update ${args.lineName} with model`,
-      recordUpdate.error
-    );
-  }
-
-  // Attachments live in the company bucket, raw models in `temp-staging`
-  // (2.5 GB) for the optimise and assembly jobs; storage has no
-  // cross-bucket move.
-  const raw = await storage(client)
-    .company(companyId)
-    .download(args.documentPath);
-  if (!raw.data) {
-    return ctx.error("internal", "Failed to read model file", raw.error);
-  }
-  const staged = await client.storage
-    .from(TEMP_STAGING_BUCKET)
-    .upload(newPath, raw.data, { upsert: true });
-  if (staged.error) {
-    return ctx.error("internal", "Failed to stage model file", staged.error);
-  }
-  await storage(client).company(companyId).remove([args.documentPath]);
-
-  // The thumbnail is rendered by model-optimize on success.
-  await trigger("model-optimize", {
-    modelUploadId: modelId,
-    companyId,
-    userId: ctx.auditUserId
-  });
-  return null;
-}
-
 /**
  * Map a sales RFQ's extracted lines to items.
  *
@@ -2209,94 +781,6 @@ export const mapSalesRfqLines = defineServiceFn({
 });
 
 // --- Documents (PDF) --------------------------------------------------------
-
-/**
- * Store a rendered sales document PDF in the company bucket under `folder`
- * and record it as a document of its source, readable by the user who
- * issued it.
- */
-async function attachDocumentPdf(
-  ctx: ServiceContext,
-  args: {
-    pdf: Response;
-    identifier: string;
-    folder: string;
-    sourceDocument: "Quote" | "Sales Order" | "Sales Return Order";
-    sourceDocumentId: string;
-  }
-): Promise<
-  | { file: ArrayBuffer; fileName: string; documentFilePath: string }
-  | CarbonError
-> {
-  if (args.pdf.headers.get("content-type") !== "application/pdf") {
-    return ctx.error("internal", "Failed to generate PDF");
-  }
-  const companyId = ctx.company.id;
-  const file = await args.pdf.arrayBuffer();
-  const fileName = stripSpecialCharacters(
-    `${args.identifier} - ${datetime.timestamp().slice(0, -5)}.pdf`
-  );
-  const documentFilePath = `${companyId}/${args.folder}/${fileName}`;
-
-  const upload = await storage(ctx.asSystem.supabase)
-    .company(companyId)
-    .upload(documentFilePath, file, {
-      cacheControl: `${12 * 60 * 60}`,
-      contentType: "application/pdf",
-      upsert: true
-    });
-  if (upload.error) {
-    return ctx.error(
-      "internal",
-      "Failed to upload PDF to storage",
-      upload.error
-    );
-  }
-
-  const document = await upsertDocument(ctx.asSystem.supabase, {
-    path: documentFilePath,
-    name: fileName,
-    size: Math.round(file.byteLength / 1024),
-    sourceDocument: args.sourceDocument,
-    sourceDocumentId: args.sourceDocumentId,
-    readGroups: [ctx.auditUserId],
-    writeGroups: [ctx.auditUserId],
-    createdBy: ctx.auditUserId,
-    companyId
-  });
-  if (document.error) {
-    return ctx.error(
-      "internal",
-      "Failed to create document record",
-      document.error
-    );
-  }
-  return { file, fileName, documentFilePath };
-}
-
-/** Render a sales order's PDF and attach it to its opportunity. */
-async function attachSalesOrderPdf(
-  ctx: ServiceContext,
-  args: { salesOrderId: string; locale: string }
-) {
-  const order = await getSalesOrder(ctx.asSystem.supabase, args.salesOrderId);
-  if (!order.data?.salesOrderId || !order.data.opportunityId) {
-    return ctx.error("internal", "Failed to get sales order", order.error);
-  }
-  return attachDocumentPdf(ctx, {
-    pdf: await renderSalesOrderPdf(ctx.asCaller.supabase, {
-      id: args.salesOrderId,
-      companyId: ctx.company.id,
-      companyGroupId: ctx.company.groupId,
-      locale: args.locale
-    }),
-    identifier: order.data.salesOrderId,
-    folder: `opportunity/${order.data.opportunityId}`,
-    sourceDocument: "Sales Order",
-    sourceDocumentId: args.salesOrderId
-  });
-}
-
 /** How a document is sent once it is issued. */
 const documentNotification = {
   notification: z.enum(["Email", "None"]).optional(),
@@ -2319,9 +803,6 @@ const quoteFields = [
   "locationId",
   "salesPersonId"
 ] as const;
-
-const quoteLocked = "Cannot modify a locked quote. Reopen it first.";
-
 /**
  * Set one field on one or more quotes.
  *
@@ -2393,104 +874,6 @@ export const updateQuoteField = defineServiceFn({
     return { ids };
   }
 });
-
-/**
- * Check one quote or sales order line against the sales rules before it is
- * written. Every quantity break is evaluated: a minimum fires on the smallest,
- * a maximum on the largest. A blocked attempt is recorded; `lineId` is null
- * for a line not created yet.
- */
-async function salesLineGate(
-  ctx: ServiceContext,
-  args: {
-    surface: "quoteLine" | "salesOrderLine";
-    documentType: "quote" | "salesOrder";
-    documentId: string;
-    lineId: string | null;
-    itemId: string | null;
-    quantities: number[];
-    customerId: string | null;
-    customerLocationId: string | null;
-    acknowledged: boolean;
-  }
-): Promise<{ blocked: SalesRuleCheck | null; check: SalesRuleCheck }> {
-  const found = await evaluateSalesRuleLines({
-    client: ctx.asSystem.supabase,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId,
-    surface: args.surface,
-    lines: args.quantities.map((quantity) => ({
-      lineId: args.lineId ?? "new",
-      itemId: args.itemId,
-      quantity
-    })),
-    customerId: args.customerId,
-    customerLocationId: args.customerLocationId
-  });
-  const check = {
-    violations: dedupeViolations(found.violations),
-    ruleNames: found.ruleNames
-  };
-  if (
-    check.violations.length === 0 ||
-    !isBlocked(check.violations, args.acknowledged)
-  ) {
-    return { blocked: null, check };
-  }
-  await recordSalesLineOutcome(ctx, args, "blocked", check);
-  return { blocked: check, check };
-}
-
-/** Record a line check's outcome against the line it is about. */
-function recordSalesLineOutcome(
-  ctx: ServiceContext,
-  line: {
-    documentType: "quote" | "salesOrder";
-    documentId: string;
-    lineId: string | null;
-    itemId: string | null;
-  },
-  outcome: "blocked" | "acknowledged",
-  check: SalesRuleCheck
-) {
-  return recordSalesRuleOutcome(ctx.asSystem.supabase, {
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId,
-    documentType: line.documentType,
-    documentId: line.documentId,
-    documentLineId: line.lineId,
-    itemId: line.itemId,
-    outcome,
-    ...check
-  });
-}
-
-/** The configuration a line form posts as JSON text; unreadable means none. */
-function parseConfiguration(
-  value: unknown
-): Record<string, unknown> | undefined {
-  if (typeof value !== "string") {
-    return value && typeof value === "object"
-      ? (value as Record<string, unknown>)
-      : undefined;
-  }
-  try {
-    return JSON.parse(value);
-  } catch (error) {
-    logger.error("Failed to parse quote line configuration", { error });
-    return undefined;
-  }
-}
-
-/** A Draft quote this company owns, or why it cannot be changed. */
-async function unlockedQuote(ctx: ServiceContext, quoteId: string) {
-  const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
-  if (refused) return refused;
-  const quote = await getQuote(ctx.asCaller.supabase, quoteId);
-  if (isQuoteLocked(quote.data?.status)) return ctx.error("rule", quoteLocked);
-  return quote.data;
-}
-
 /**
  * Add a line to a quote.
  *
@@ -2573,70 +956,6 @@ export const createQuoteLine = defineServiceFn({
     return { quoteLineId, warning };
   }
 });
-
-/** Price a just-created quote line by its method; a failure is the message. */
-async function priceNewQuoteLine(
-  ctx: ServiceContext,
-  args: {
-    quoteId: string;
-    quoteLineId: string;
-    itemId: string;
-    methodType: z.infer<typeof quoteLineValidator>["methodType"];
-    quantities: number[];
-    configuration?: Record<string, unknown>;
-  }
-): Promise<string | null> {
-  const serviceRole = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-  const { quoteId, quoteLineId, quantities } = args;
-
-  if (args.methodType === "Purchase to Order") {
-    const priced = await resolvePurchaseToOrderPrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      quantities,
-      userId
-    );
-    return priced?.error ? "Failed to resolve Purchase to Order prices" : null;
-  }
-  if (args.methodType === "Pull from Inventory") {
-    const priced = await resolveQuoteLinePrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      quantities,
-      userId
-    );
-    return priced?.error
-      ? "Failed to resolve Pull from Inventory prices"
-      : null;
-  }
-  if (args.methodType === "Make to Order") {
-    const method = await upsertQuoteLineMethod(serviceRole, ctx.asSystem.pg, {
-      quoteId,
-      quoteLineId,
-      itemId: args.itemId,
-      configuration: args.configuration,
-      companyId,
-      userId
-    });
-    if (method.error) return "Failed to create quote line method.";
-    const priced = await recalculateQuoteLinePrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      userId
-    );
-    return priced?.error ? "Failed to recalculate quote line prices" : null;
-  }
-  return null;
-}
-
 /**
  * Change a quote line.
  *
@@ -2907,77 +1226,6 @@ export const finalizeAndSendQuote = defineServiceFn({
     }
   }
 });
-
-/** Email a finalized quote's PDF to its customer contact. Throws on failure. */
-async function emailQuote(
-  ctx: ServiceContext,
-  args: {
-    quote: NonNullable<Awaited<ReturnType<typeof getQuote>>["data"]>;
-    customerContactId: string;
-    cc?: string[];
-    fileName: string;
-    documentFilePath: string;
-  }
-) {
-  const serviceRole = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const [company, companySettings, customer, customerContact, user] =
-    await Promise.all([
-      getCompany(serviceRole, companyId),
-      getCompanySettings(serviceRole, companyId),
-      getCustomer(serviceRole, args.quote.customerId!),
-      getCustomerContact(serviceRole, args.customerContactId, companyId),
-      getUser(serviceRole, ctx.auditUserId)
-    ]);
-  if (!company.data) throw new Error("Failed to get company");
-  if (!companySettings.data) throw new Error("Failed to get company settings");
-  if (!customer.data) throw new Error("Failed to get customer");
-  if (!customerContact.data) throw new Error("Failed to get customer contact");
-  if (!user.data) throw new Error("Failed to get user");
-
-  const emailTemplate = QuoteEmail({
-    // @ts-expect-error TS2739 - TODO: fix type
-    company: company.data,
-    companySettings: companySettings.data,
-    // @ts-expect-error
-    quote: args.quote,
-    recipient: {
-      email: customerContact.data.contact!.email!,
-      firstName: customerContact.data.contact!.firstName!,
-      lastName: customerContact.data.contact!.lastName!
-    },
-    sender: {
-      email: user.data.email,
-      firstName: user.data.firstName,
-      lastName: user.data.lastName
-    }
-  });
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
-  const signed = await storage(serviceRole)
-    .company(companyId)
-    .createSignedUrl(args.documentFilePath, 3600);
-  if (signed.error) {
-    logger.error("Failed to create signed URL for attachment", {
-      storagePath: args.documentFilePath,
-      error: signed.error
-    });
-  }
-
-  await trigger("send-email", {
-    to: [user.data.email, customerContact.data.contact!.email!],
-    cc: args.cc?.length ? args.cc : undefined,
-    from: user.data.email,
-    subject: `Quote ${getQuoteDisplayId(args.quote)}`,
-    html,
-    text,
-    attachments: signed.data
-      ? [{ path: signed.data.signedUrl, filename: args.fileName }]
-      : undefined,
-    companyId
-  });
-}
-
 /**
  * Convert a quote to a sales order.
  *
@@ -3079,18 +1327,6 @@ export const convertQuote = defineServiceFn({
     return { salesOrderId };
   }
 });
-
-/** The quote lines `selectedLines` converts: those ordered in a quantity. */
-function convertingLineIds(
-  selectedLines: z.infer<typeof selectedLinesValidator>
-): Set<string> {
-  return new Set(
-    Object.entries(selectedLines)
-      .filter(([, line]) => (line.quantity ?? 0) > 0)
-      .map(([lineId]) => lineId)
-  );
-}
-
 /**
  * Configure a Make to Order quote line.
  *
@@ -3270,157 +1506,7 @@ export const attachQuoteFile = defineServiceFn({
     return { quoteLineId: lineId };
   }
 });
-
-/** A Make to Order part and a quote line for a file dropped on the quote. */
-async function createQuoteLineForFile(
-  ctx: ServiceContext,
-  { quoteId, fileName }: { quoteId: string; fileName: string }
-): Promise<{ lineId: string; partId: string } | CarbonError> {
-  const serviceRole = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-  const partName = fileName.replace(/\.[^/.]+$/, "");
-
-  let readableId = partName;
-  let revision = "0";
-  try {
-    const { output } = await generateText({
-      model: openai("gpt-4o-mini"),
-      output: Output.object({
-        schema: z.object({
-          partId: z
-            .string()
-            .describe("The part identifier extracted from the filename"),
-          revision: z
-            .string()
-            .nullable()
-            .describe("The revision number if present, null if not found")
-        })
-      }),
-      prompt: `Extract the part ID and revision from this filename: "${partName}". The part ID should be the main identifier, and revision should be any version/revision indicator if present.`
-    });
-    readableId = output.partId;
-    revision = output.revision || "0";
-  } catch (error) {
-    logger.error("Failed to parse part filename", { error });
-  }
-
-  // A revision that exists already gets a suffix.
-  let suffix = 1;
-  while (true) {
-    const existing = await serviceRole
-      .from("item")
-      .select("id")
-      .eq("readableId", readableId)
-      .eq("revision", revision)
-      .eq("companyId", companyId)
-      .single();
-    if (existing.error || !existing.data) break;
-    revision = `${revision} (${suffix})`;
-    suffix++;
-  }
-
-  const part = await upsertPart(serviceRole, {
-    id: readableId,
-    name: readableId,
-    defaultMethodType: "Make to Order",
-    itemTrackingType: "Inventory",
-    replenishmentSystem: "Make",
-    revision,
-    unitOfMeasureCode: "EA",
-    shelfLifeCalculateFromBom: false,
-    companyId,
-    createdBy: userId
-  });
-  if (part.error || !part.data?.id) {
-    return ctx.error("internal", "Failed to create part", part.error);
-  }
-  const partId = part.data.id;
-
-  const line = await upsertQuoteLine(serviceRole, {
-    quoteId,
-    itemId: partId,
-    status: "Not Started",
-    estimatorId: userId,
-    description: partName,
-    methodType: "Make to Order",
-    customerPartId: partName,
-    customerPartRevision: "",
-    unitOfMeasureCode: "EA",
-    taxPercent: 0,
-    quantity: [1],
-    companyId,
-    createdBy: userId
-  });
-  if (line.error || !line.data) {
-    return ctx.error("internal", "Failed to create quote line.", line.error);
-  }
-
-  const method = await upsertQuoteLineMethod(serviceRole, ctx.asSystem.pg, {
-    quoteId,
-    quoteLineId: line.data.id,
-    itemId: partId,
-    configuration: undefined,
-    companyId,
-    userId
-  });
-  if (method.error) {
-    return ctx.error(
-      "internal",
-      "Failed to create quote line method.",
-      method.error
-    );
-  }
-  return { lineId: line.data.id, partId };
-}
-
 // --- Digital quotes (the customer's share link) ------------------------------
-
-const digitalQuoteClosed = "This quote is no longer available for a response.";
-
-/** The quote a share link answers, while it still awaits a response. */
-async function sentQuote(ctx: ServiceContext, quoteId: string) {
-  const quote = await ctx.asSystem.supabase
-    .from("quote")
-    .select("*")
-    .eq("id", quoteId)
-    .eq("companyId", ctx.company.id)
-    .single();
-  if (quote.error) return ctx.error("notFound", "Quote not found", quote.error);
-  // Without this a replayed link creates duplicate orders, or flips an
-  // ordered quote back to Lost.
-  if (quote.data.status !== "Sent")
-    return ctx.error("rule", digitalQuoteClosed);
-  return quote.data;
-}
-
-/** Tell the company's digital-quote group that a customer answered. */
-async function notifyDigitalQuoteResponse(
-  ctx: ServiceContext,
-  quoteId: string
-): Promise<CarbonError | null> {
-  const settings = await getCompanySettings(
-    ctx.asSystem.supabase,
-    ctx.company.id
-  );
-  if (settings.error) {
-    return ctx.error("internal", "Failed to send notification", settings.error);
-  }
-  const groupIds = settings.data?.digitalQuoteNotificationGroup ?? [];
-  if (groupIds.length === 0) return null;
-  try {
-    await trigger("notify", {
-      companyId: ctx.company.id,
-      documentId: quoteId,
-      event: NotificationEvent.DigitalQuoteResponse,
-      recipient: { type: "group", groupIds }
-    });
-    return null;
-  } catch (err) {
-    return ctx.error("internal", "Failed to send notification", err);
-  }
-}
-
 /**
  * The customer accepts a sent quote from its share link.
  *
@@ -3616,25 +1702,6 @@ const NON_ADVANCING_SALES_ORDER_STATUSES = new Set([
   "Cancelled",
   "Closed"
 ]);
-
-async function advancingStatusRefusal(
-  ctx: ServiceContext,
-  documentType: "quote" | "salesOrder",
-  documentId: string
-): Promise<CarbonError | null> {
-  const gate = await salesDocumentGate(ctx, {
-    documentType,
-    documentId,
-    acknowledged: true
-  });
-  if (!gate.blocked) return null;
-  const errors = gate.blocked.violations.filter((v) => v.severity === "error");
-  return ctx.error(
-    "rule",
-    errors.map((v) => v.message).join("; ") || "A sales rule blocks this status"
-  );
-}
-
 /**
  * Set a quote's status.
  *
@@ -4021,30 +2088,6 @@ export const confirmSalesOrder = defineServiceFn({
     return { salesOrderId, status };
   }
 });
-
-/** A sales order line keeps only the target its type uses. */
-function withLineTarget<
-  L extends {
-    salesOrderLineType: string;
-    accountId?: string;
-    assetId?: string;
-    itemId?: string;
-  }
->(line: L): L {
-  if (line.salesOrderLineType === "Comment") {
-    return {
-      ...line,
-      accountId: undefined,
-      assetId: undefined,
-      itemId: undefined
-    };
-  }
-  if (line.salesOrderLineType === "Fixed Asset") {
-    return { ...line, accountId: undefined, itemId: undefined };
-  }
-  return { ...line, accountId: undefined, assetId: undefined };
-}
-
 /**
  * Update a sales order's details.
  *
@@ -4092,58 +2135,6 @@ export const updateSalesOrderDetails = defineServiceFn({
     return { salesOrderId: id };
   }
 });
-
-/** An unlocked sales order this company owns, or why it cannot be changed. */
-async function unlockedSalesOrder(
-  ctx: ServiceContext,
-  salesOrderId: string,
-  message: string
-) {
-  const refused = await refuseUnlessOwned(ctx, "salesOrder", {
-    id: salesOrderId
-  });
-  if (refused) return refused;
-  const order = await getSalesOrder(ctx.asCaller.supabase, salesOrderId);
-  if (isSalesOrderLocked(order.data?.status)) return ctx.error("rule", message);
-  return null;
-}
-
-/**
- * Check a sales order line's item against the sales rules, at the order's
- * ship-to (the drop-ship location for a drop shipment). A line with no item
- * (a comment, a fixed asset) is not checked.
- */
-async function salesOrderLineGate(
-  ctx: ServiceContext,
-  args: {
-    salesOrderId: string;
-    lineId: string | null;
-    itemId?: string;
-    quantity?: number;
-    acknowledged: boolean;
-  }
-) {
-  if (!args.itemId) {
-    return { blocked: null, check: { violations: [], ruleNames: {} } };
-  }
-  const shipTo = await resolveSalesOrderShipTo(
-    ctx.asSystem.supabase,
-    args.salesOrderId,
-    ctx.company.id
-  );
-  return salesLineGate(ctx, {
-    surface: "salesOrderLine",
-    documentType: "salesOrder",
-    documentId: args.salesOrderId,
-    lineId: args.lineId,
-    itemId: args.itemId,
-    quantities: [args.quantity ?? 1],
-    customerId: shipTo.customerId,
-    customerLocationId: shipTo.customerLocationId,
-    acknowledged: args.acknowledged
-  });
-}
-
 const salesOrderLineInput = salesOrderLineValidator.safeExtend({
   customFields: customFieldValues.optional(),
   acknowledged: z.boolean().default(false)
@@ -4795,170 +2786,6 @@ export const escalateReturnOrderLine = defineServiceFn({
     };
   }
 });
-
-/**
- * A return line's goods still On Hold: its expected serials and batches,
- * plus entities received blind against the line's receipt lines.
- */
-async function returnedOnHoldEntityIds(
-  ctx: ServiceContext,
-  { id, lineId }: { id: string; lineId: string }
-): Promise<string[]> {
-  const client = ctx.asCaller.supabase;
-  const companyId = ctx.company.id;
-  const linked = await getSalesReturnOrderLineTrackedEntities(client, [lineId]);
-  const ids = (linked.data ?? [])
-    .filter((row) => row.trackedEntity?.status === "On Hold")
-    .map((row) => row.trackedEntityId);
-
-  const receipts = await client
-    .from("receipt")
-    .select("id")
-    .eq("sourceDocument", "Sales Return Order")
-    .eq("sourceDocumentId", id)
-    .eq("companyId", companyId);
-  const receiptIds = (receipts.data ?? []).map((receipt) => receipt.id);
-  if (receiptIds.length > 0) {
-    const receiptLines = await client
-      .from("receiptLine")
-      .select("id")
-      .in("receiptId", receiptIds)
-      .eq("lineId", lineId)
-      .eq("companyId", companyId);
-    const receiptLineIds = (receiptLines.data ?? []).map((row) => row.id);
-    if (receiptLineIds.length > 0) {
-      const blind = await client
-        .from("trackedEntity")
-        .select("id")
-        .eq("companyId", companyId)
-        .eq("status", "On Hold")
-        .in("attributes ->> Receipt Line", receiptLineIds);
-      ids.push(...(blind.data ?? []).map((entity) => entity.id));
-    }
-  }
-  return [...new Set(ids)];
-}
-
-/**
- * Link a new Issue to the return line and its returned entities, and set
- * its item to the line's received quantity and disposition with the
- * entities split out (under the lock every disposition writer takes).
- */
-async function linkIssueToReturnLine(
-  ctx: ServiceContext,
-  args: {
-    issueId: string;
-    salesReturnOrderId: string;
-    rmaReadableId: string;
-    lineId: string;
-    itemId: string;
-    entityIds: string[];
-    quantityReceived: number;
-    disposition: "Scrap" | "Rework";
-  }
-): Promise<CarbonError | null> {
-  const serviceRole = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-  const { issueId } = args;
-
-  const lineLink = await serviceRole
-    .from("nonConformanceSalesReturnOrderLine")
-    .insert({
-      nonConformanceId: issueId,
-      salesReturnOrderLineId: args.lineId,
-      salesReturnOrderId: args.salesReturnOrderId,
-      salesReturnOrderReadableId: args.rmaReadableId,
-      companyId,
-      createdBy: userId
-    });
-  if (lineLink.error) {
-    return ctx.error(
-      "internal",
-      "Failed to link the Issue to the RMA",
-      lineLink.error
-    );
-  }
-
-  let entityRows: { id: string; quantity: number }[] = [];
-  if (args.entityIds.length > 0) {
-    const entityLinks = await serviceRole
-      .from("nonConformanceTrackedEntity")
-      .insert(
-        args.entityIds.map((trackedEntityId) => ({
-          nonConformanceId: issueId,
-          trackedEntityId,
-          companyId,
-          createdBy: userId
-        }))
-      );
-    if (entityLinks.error) {
-      return ctx.error(
-        "internal",
-        "Failed to link the returned entities to the Issue",
-        entityLinks.error
-      );
-    }
-    const quantities = await serviceRole
-      .from("trackedEntity")
-      .select("id, quantity")
-      .in("id", args.entityIds)
-      .eq("companyId", companyId);
-    if (quantities.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read the returned entities for the Issue",
-        quantities.error
-      );
-    }
-    entityRows = quantities.data.map((entity) => ({
-      id: entity.id,
-      quantity: Number(entity.quantity ?? 1)
-    }));
-  }
-
-  try {
-    // The lock helper takes a Kysely transaction itself.
-    await ctx.asSystem.pg.transaction().execute(async (trx) => {
-      await lockIssueDispositions(trx, {
-        nonConformanceId: issueId,
-        companyId
-      });
-      const itemRow = await trx
-        .updateTable("nonConformanceItem")
-        .set({
-          quantity: args.quantityReceived,
-          disposition: args.disposition,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("nonConformanceId", "=", issueId)
-        .where("itemId", "=", args.itemId)
-        .where("companyId", "=", companyId)
-        .returning(["id"])
-        .executeTakeFirst();
-      if (itemRow && entityRows.length > 0) {
-        await trx
-          .insertInto("nonConformanceItemTrackedEntity")
-          .values(
-            entityRows.map((entity) => ({
-              nonConformanceItemId: itemRow.id,
-              nonConformanceId: issueId,
-              trackedEntityId: entity.id,
-              quantity: entity.quantity,
-              companyId,
-              createdBy: userId
-            }))
-          )
-          .execute();
-      }
-    });
-    return null;
-  } catch (err) {
-    return ctx.error("internal", "Failed to set the Issue's item", err);
-  }
-}
-
 /**
  * Change a sales return order (RMA) line.
  *
@@ -5075,29 +2902,6 @@ const methodParts = z.object({
   steps: z.boolean().default(true),
   workInstructions: z.boolean().default(true)
 });
-
-/** Reprice a quote line after its method changed; a failure is logged. */
-async function repriceQuoteLine(
-  ctx: ServiceContext,
-  { quoteId, quoteLineId }: { quoteId: string; quoteLineId: string }
-) {
-  const priced = await recalculateQuoteLinePrices(
-    ctx.asSystem.supabase,
-    ctx.company.id,
-    quoteId,
-    quoteLineId,
-    ctx.auditUserId
-  );
-  if (priced?.error) {
-    logger.error("Failed to recalculate quote line prices", {
-      companyId: ctx.company.id,
-      quoteLineId,
-      error: priced.error
-    });
-  }
-  return priced;
-}
-
 /**
  * Copy an item's method onto a quote line.
  *
@@ -5409,43 +3213,6 @@ export const deleteQuoteMaterialAndReprice = defineServiceFn({
     return { id };
   }
 });
-
-/**
- * The quote line, and the make method and operation a method row names,
- * must be this company's and that line's: method rows are written with the
- * service role.
- */
-async function refuseUnlessQuoteMethodRows(
-  ctx: ServiceContext,
-  args: {
-    quoteId: string;
-    quoteLineId: string;
-    quoteMakeMethodId?: string;
-    quoteOperationId?: string;
-  }
-): Promise<CarbonError | null> {
-  const { quoteLineId } = args;
-  const refusals = await Promise.all([
-    refuseUnlessOwned(ctx, "quoteLine", {
-      id: quoteLineId,
-      quoteId: args.quoteId
-    }),
-    args.quoteMakeMethodId
-      ? refuseUnlessOwned(ctx, "quoteMakeMethod", {
-          id: args.quoteMakeMethodId,
-          quoteLineId
-        })
-      : null,
-    args.quoteOperationId
-      ? refuseUnlessOwned(ctx, "quoteOperation", {
-          id: args.quoteOperationId,
-          quoteLineId
-        })
-      : null
-  ]);
-  return refusals.find((refusal) => refusal !== null) ?? null;
-}
-
 const quoteOperationInput = quoteOperationValidator.safeExtend({
   quoteId: z.string(),
   quoteLineId: z.string(),
@@ -5564,33 +3331,6 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
 });
 
 // --- Contracts --------------------------------------------------------------
-
-const forbidden = (ctx: ServiceContext) =>
-  ctx.error("forbidden", "You do not have permission to do this");
-
-/** Today in the company's timezone: the date a contract or rental acts on. */
-async function companyToday(ctx: ServiceContext) {
-  return datetime
-    .today(await getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id))
-    .toString();
-}
-
-/** The contract lifecycle server function, run as the caller. */
-function postContract(
-  ctx: ServiceContext,
-  input: ServerFnInput<"post-customer-contract">
-) {
-  return runContractAction(
-    {
-      client: ctx.asCaller.supabase,
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    },
-    input
-  );
-}
-
 /**
  * Create a Draft contract.
  *
@@ -6366,34 +4106,6 @@ export const revertContractCancellation = defineServiceFn({
 });
 
 // --- Rental agreements ------------------------------------------------------
-
-/** The rental lifecycle server function, run as the system for the caller. */
-function postRentalAgreement(
-  ctx: ServiceContext,
-  input: ServerFnInput<"post-rental-agreement">
-) {
-  return serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("post-rental-agreement", input);
-}
-
-/** A rental agreement of this company, or why not. */
-async function ownRentalAgreement(ctx: ServiceContext, id: string) {
-  const agreement = await getRentalAgreement(
-    ctx.asCaller.supabase,
-    id,
-    ctx.company.id
-  );
-  if (agreement.error || agreement.data?.companyId !== ctx.company.id) {
-    return ctx.error("notFound", "Rental agreement not found", agreement.error);
-  }
-  return agreement.data;
-}
-
 const rentalAgreementInput = rentalAgreementValidator.safeExtend({
   ownershipTransfers: z.boolean().default(false),
   specializedAsset: z.boolean().default(false),

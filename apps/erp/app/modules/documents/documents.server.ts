@@ -2,36 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
+import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { z } from "zod";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
-import { refuseUnlessOwned } from "~/modules/shared/shared.server";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.service";
+import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { modelViewDirection } from "./documents.models";
+import { findModel } from "./documents.service";
 
 const logger = getLogger("erp", "documents");
-
-/** The model, read as the caller: a refusal unless it is the company's. */
-async function findModel(ctx: ServiceContext, modelUploadId: string) {
-  const model = await ctx.asCaller.supabase
-    .from("modelUpload")
-    .select("id")
-    .eq("id", modelUploadId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (model.error) {
-    return ctx.error("internal", "Failed to read the model", model.error);
-  }
-  if (!model.data) return ctx.error("notFound", "Model not found");
-  return null;
-}
-
 /**
  * Record an uploaded CAD model and attach it to the records it belongs to.
  *

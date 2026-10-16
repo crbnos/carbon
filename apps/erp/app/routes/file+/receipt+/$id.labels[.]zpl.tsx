@@ -11,9 +11,9 @@ import { getReceiptTracking } from "~/modules/inventory/inventory.service";
 import { getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
+  getCompanySettings,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

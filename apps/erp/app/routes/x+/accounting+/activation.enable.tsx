@@ -32,7 +32,7 @@ import {
   useUser
 } from "~/hooks";
 import { activateAccountingValidator } from "~/modules/accounting";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
   activationStepPath

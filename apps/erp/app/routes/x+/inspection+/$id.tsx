@@ -24,7 +24,7 @@ import {
 import {
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
-} from "~/modules/quality/quality.server";
+} from "~/modules/quality/quality.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,

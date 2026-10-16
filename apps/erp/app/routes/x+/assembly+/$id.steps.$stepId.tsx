@@ -15,7 +15,7 @@ import {
 import {
   logAssemblyStep,
   readAndLogFormData
-} from "~/modules/production/assembly-debug.server";
+} from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

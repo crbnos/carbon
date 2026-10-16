@@ -33,7 +33,7 @@ import {
   regenerateLeasePayments,
   saveDraftLeaseLine,
   updateDraftLease
-} from "./purchasing.server";
+} from "./purchasing.service";
 
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 

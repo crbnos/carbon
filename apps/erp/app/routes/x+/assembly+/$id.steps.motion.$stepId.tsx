@@ -15,7 +15,7 @@ import {
 import {
   logAssemblyStep,
   readAndLogFormData
-} from "~/modules/production/assembly-debug.server";
+} from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 // Autosave target for the 3D editor: patches only a step's motion, camera and

@@ -9,9 +9,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
+  getCompanySettings,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getStockTransferLabelItems } from "./labels.server";
 

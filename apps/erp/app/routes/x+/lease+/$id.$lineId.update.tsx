@@ -10,7 +10,7 @@ import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { leaseLineValidator } from "~/modules/purchasing";
-import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.server";
+import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "lease-line-update");

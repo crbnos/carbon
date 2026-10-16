@@ -20,7 +20,7 @@ import {
   getLeaseRelatedDocuments,
   getLeaseSchedule
 } from "~/modules/purchasing";
-import { leaseOpeningAsOf } from "~/modules/purchasing/purchasing.server";
+import { leaseOpeningAsOf } from "~/modules/purchasing/purchasing.service";
 import type {
   LeaseFixedAssets,
   LeasePaymentInvoiceLinks,

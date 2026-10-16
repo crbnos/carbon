@@ -12,7 +12,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { fixedAssetOutOfServiceValidator } from "~/modules/accounting";
-import { outOfServiceRefusal } from "~/modules/accounting/accounting.server";
+import { outOfServiceRefusal } from "~/modules/accounting/accounting.service";
 import { FixedAssetOutOfServiceForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 

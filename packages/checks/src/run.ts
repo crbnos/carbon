@@ -26,7 +26,6 @@ import {
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
 import { noBareOutlet } from "./conformance/no-bare-outlet";
-import { noBarrelImportInModuleFile } from "./conformance/no-barrel-import-in-module-file";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -50,6 +49,7 @@ import { noRawRedirect } from "./conformance/no-raw-redirect";
 import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noServerCodeInClient } from "./conformance/no-server-code-in-client";
 import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
@@ -58,6 +58,7 @@ import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { routeActionShape } from "./conformance/route-action-shape";
 import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
+import { serviceFnFile } from "./conformance/service-fn-file";
 import { spdxLicenseHeader } from "./conformance/spdx-license-header";
 import { loadDbTableColumns } from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
@@ -96,7 +97,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
   noInlineFractionDigits,
   noDbClientInService,
-  noBarrelImportInModuleFile,
+  noServerCodeInClient,
+  serviceFnFile,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,

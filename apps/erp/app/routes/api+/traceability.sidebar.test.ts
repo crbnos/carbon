@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchJobStepRecords } from "~/modules/inventory/lineage.server";
+import { fetchJobStepRecords } from "~/modules/inventory/inventory.service";
 import { loader } from "./traceability.sidebar";
 
 vi.mock("@carbon/auth/auth.server", () => ({

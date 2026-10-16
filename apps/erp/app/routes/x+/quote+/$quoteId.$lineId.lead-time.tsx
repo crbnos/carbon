@@ -10,7 +10,7 @@ import { runQuoteLeadTimeWhatIf } from "@carbon/planning";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { quoteLeadTimeValidator } from "~/modules/sales";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-lead-time");

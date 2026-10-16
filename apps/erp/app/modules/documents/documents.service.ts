@@ -2,8 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
-import { imageTransformErrorMessage, storage } from "@carbon/files";
+import {
+  getDocumentType,
+  imageTransformErrorMessage,
+  storage
+} from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -11,7 +16,6 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getDocumentType } from "../shared/shared.service";
 import type {
   documentLabelsValidator,
   documentSourceTypes,
@@ -435,4 +439,18 @@ export async function insertDocumentExtraction(
   }
 
   return { data: result.data, error: null };
+}
+/** The model, read as the caller: a refusal unless it is the company's. */
+export async function findModel(ctx: ServiceContext, modelUploadId: string) {
+  const model = await ctx.asCaller.supabase
+    .from("modelUpload")
+    .select("id")
+    .eq("id", modelUploadId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (model.error) {
+    return ctx.error("internal", "Failed to read the model", model.error);
+  }
+  if (!model.data) return ctx.error("notFound", "Model not found");
+  return null;
 }

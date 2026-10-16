@@ -13,7 +13,7 @@ import {
   changeNoticeAffectedItemValidator,
   changeNoticeNewPartValidator
 } from "~/modules/items";
-import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
+import { requireEditableChangeNoticeRoute } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {

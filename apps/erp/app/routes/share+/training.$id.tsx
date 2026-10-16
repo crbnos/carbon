@@ -57,7 +57,7 @@ import {
   getTrainingAssignmentForCompletion,
   TrainingGuideViewer
 } from "~/modules/resources";
-import { recordTrainingCompletion } from "~/modules/resources/resources.server";
+import { recordTrainingCompletion } from "~/modules/resources/resources.service";
 import type { TrainingQuestion } from "~/modules/resources/types";
 
 const logger = getLogger("erp", "share", "training");

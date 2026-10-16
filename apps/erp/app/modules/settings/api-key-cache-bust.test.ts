@@ -26,7 +26,7 @@ vi.mock("@carbon/ee/hooks.server", () => ({
   getIntegrationServerHooks: vi.fn()
 }));
 
-import { invalidateApiKeyCache } from "./settings.server";
+import { invalidateApiKeyCache } from "./settings.service";
 
 /** Records the `.eq()` filters so the companyId scoping can be asserted. */
 function stubServiceRole(row: { keyHash: string } | null) {

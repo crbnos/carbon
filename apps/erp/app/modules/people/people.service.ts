@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -1062,4 +1063,17 @@ export async function updateTimeCardEntry(
       })
     )
     .eq("id", args.entryId);
+}
+/**
+ * A time card helper's refusal ("Already clocked in") carries no database
+ * code; a database error does.
+ */
+export function timeCardError(
+  ctx: ServiceContext,
+  error: { message: string; code?: string },
+  message: string
+) {
+  return "code" in error
+    ? ctx.error("internal", message, error)
+    : ctx.error("rule", error.message);
 }

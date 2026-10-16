@@ -4,29 +4,22 @@
 
 import {
   type CarbonError,
-  defineServiceFn,
-  ERROR_STATUS,
-  type ErrorCategory,
-  type ServiceContext
+  defineServiceFn
 } from "@carbon/api/service-fn.server";
 import type { Json } from "@carbon/database";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
   dedupeViolations,
-  evaluateLinesForSurface,
   evaluateSalesRuleLines,
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
-import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import type { ServerFnError } from "@carbon/server-functions/errors";
+import { serverFns } from "@carbon/server-functions";
 import {
   datetime,
   getErrorMessage,
@@ -37,7 +30,6 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
-import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   getItemReplenishment,
   getSupplierPartPricing
@@ -53,25 +45,23 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.service";
 import {
   getCompanySettings,
   getNextSequence
 } from "~/modules/settings/settings.service";
-import { refuseUnlessOwned } from "~/modules/shared/shared.server";
-import { resolveSupplierPrice } from "~/modules/shared/shared.service";
 import {
   getCompanyTimeZone,
-  getLocationTimeZone
-} from "~/modules/shared/timezone.server";
-import { stripSpecialCharacters } from "~/utils/string";
+  getLocationTimeZone,
+  refuseUnlessOwned,
+  resolveSupplierPrice
+} from "~/modules/shared/shared.service";
 import {
   finishPickingList,
   inventoryAdjustmentTypes,
   inventoryItemTypes,
   isPickingListLocked,
   isStockTransferLocked,
-  isWarehouseTransferLocked,
   pickingListStatusType,
   receiptFixedAssetLineUpdateValidator,
   receiptSourceDocumentType,
@@ -82,6 +72,9 @@ import {
   warehouseTransferStatusType
 } from "./inventory.models";
 import {
+  autoPrint,
+  type Blocked,
+  defaultLocationOf,
   deleteInventoryCount,
   deleteStorageUnit,
   deleteStorageUnitCascade,
@@ -96,159 +89,40 @@ import {
   insertManualInventoryAdjustment,
   insertStockTransfer,
   pickPickingListLine,
+  pickRefusal,
+  postStockTransferLine,
+  printEntityLabels,
+  receiptFixedAssetLineChange,
+  receiptLineOf,
   reconcileReceiptSerialEntities,
+  returnReceiptLineOf,
+  savePackingSlip,
+  serverFnFailure,
   setPickingListLineTrackedEntity,
+  stockTransferLineOf,
+  storageRuleViolations,
+  system,
+  unlockedWarehouseTransfer,
   updatePickingListStatus,
   updateStockTransferStatus,
   updateWarehouseTransferStatus,
   upsertPickingList,
   upsertReceipt,
   upsertShipment,
-  upsertWarehouseTransferLine
+  upsertWarehouseTransferLine,
+  WAREHOUSE_TRANSFER_NOT_FOUND,
+  warehouseTransferLineOf,
+  withoutReceiptTracking
 } from "./inventory.service";
-import { renderPackingSlip } from "./packing-slip.server";
 
 const logger = getLogger("erp", "inventory");
 
 // ---------------------------------------------------------------------------
 // Shared steps
 // ---------------------------------------------------------------------------
-
-type RuleLines = Parameters<typeof evaluateLinesForSurface>[0]["lines"];
-type RuleSurface = Parameters<typeof evaluateLinesForSurface>[0]["surface"];
-
-/** A post a blocking rule refused: what the user must see, or acknowledge. */
-type Blocked = { violations: Violation[]; ruleNames: Record<string, string> };
-
-/**
- * Every storage rule the lines break, on each surface in turn. Read as the
- * system: a user with `inventory` rights may not see the items or bins.
- */
-async function storageRuleViolations(
-  ctx: ServiceContext,
-  surfaces: RuleSurface[],
-  lines: RuleLines
-): Promise<Blocked> {
-  const violations: Violation[] = [];
-  const ruleNames: Record<string, string> = {};
-  for (const surface of surfaces) {
-    const result = await evaluateLinesForSurface({
-      client: ctx.asSystem.supabase,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      targetType: "item",
-      surface,
-      lines
-    });
-    violations.push(...result.violations);
-    Object.assign(ruleNames, result.ruleNames);
-  }
-  return { violations, ruleNames };
-}
-
-/** The server functions, run as the system for this call's company and user. */
-function system(ctx: ServiceContext) {
-  return serverFns.system({
-    db: ctx.asSystem.pg,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId
-  });
-}
-
-const CATEGORY_BY_STATUS = Object.fromEntries(
-  Object.entries(ERROR_STATUS).map(([category, status]) => [status, category])
-) as Record<number, ErrorCategory>;
-
-/**
- * A server function's failure as this operation's error, its category from
- * the function's own status. A call that returned no data and no error is
- * `internal`.
- */
-function serverFnFailure(
-  ctx: ServiceContext,
-  error: ServerFnError | null,
-  message: string
-): CarbonError {
-  return ctx.error(
-    (error && CATEGORY_BY_STATUS[error.status]) || "internal",
-    message,
-    error
-  );
-}
-
 const customFieldsInput = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
   .optional();
-
-/** The caller's default location, from their user defaults. */
-async function defaultLocationOf(ctx: ServiceContext) {
-  const defaults = await ctx.asCaller.supabase
-    .from("userDefaults")
-    .select("locationId")
-    .eq("userId", ctx.auditUserId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  return defaults.data?.locationId ?? undefined;
-}
-
-/** Print a document's labels when its location's printer auto-prints. */
-async function autoPrint(
-  ctx: ServiceContext,
-  {
-    sourceDocument,
-    sourceDocumentId,
-    locationId,
-    context
-  }: {
-    sourceDocument: "Receipt" | "Shipment";
-    sourceDocumentId: string;
-    locationId: string | null;
-    context: "receiving" | "shipping";
-  }
-) {
-  if (!locationId) return;
-  try {
-    const config = await getCachedPrinterConfig(
-      ctx.asSystem.supabase,
-      ctx.company.id,
-      locationId,
-      context
-    );
-    if (config?.autoPrint ?? true) {
-      await trigger("print-job", {
-        sourceDocument,
-        sourceDocumentId,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId,
-        locationId
-      });
-    }
-  } catch (error) {
-    logger.error("Auto-print failed", { error });
-  }
-}
-
-/** Print a fresh label for each tracked entity a post or pick split. */
-async function printEntityLabels(
-  ctx: ServiceContext,
-  entityIds: string[],
-  locationId?: string
-) {
-  try {
-    for (const entityId of entityIds) {
-      await trigger("print-job", {
-        sourceDocument: "Entity",
-        sourceDocumentId: entityId,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId,
-        ...(locationId ? { locationId } : {})
-      });
-    }
-  } catch (error) {
-    logger.error("Auto-print for split entities failed", { error });
-  }
-}
-
 const RECEIPT_NOT_FOUND = "The receipt could not be found";
 
 // ---------------------------------------------------------------------------
@@ -851,61 +725,6 @@ export const updateReceiptFixedAssetLine = defineServiceFn({
     return { id };
   }
 });
-
-function receiptFixedAssetLineChange(
-  change: Omit<z.output<typeof receiptFixedAssetLineUpdateValidator>, "id">
-) {
-  switch (change.field) {
-    case "received":
-      return { received: change.value === "true" };
-    case "serialNumber":
-      return { serialNumber: change.value || null };
-    case "meter":
-      return { meter: change.value === "" ? null : Number(change.value) };
-    case "notes":
-      return { notes: change.value.trim() || null };
-    case "outOfService":
-      return change.value.trim() === ""
-        ? { takeOutOfService: false, outOfServiceReason: null }
-        : { takeOutOfService: true, outOfServiceReason: change.value.trim() };
-    case "residualDestination":
-      return {
-        residualDestination: (change.value || null) as
-          | "Fleet"
-          | "Inventory"
-          | null
-      };
-  }
-}
-
-/** The receipt line, read as the system: the tracking RPCs key on its ids alone. */
-async function receiptLineOf(
-  ctx: ServiceContext,
-  { receiptId, receiptLineId }: { receiptId: string; receiptLineId: string }
-) {
-  const line = await ctx.asSystem.supabase
-    .from("receiptLine")
-    .select("id, itemId")
-    .eq("id", receiptLineId)
-    .eq("receiptId", receiptId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (line.error) {
-    return ctx.error(
-      "internal",
-      "Failed to verify the receipt line",
-      line.error
-    );
-  }
-  if (!line.data) {
-    return ctx.error(
-      "notFound",
-      "The receipt line could not be found. It may have been deleted, or it belongs to another company."
-    );
-  }
-  return line.data;
-}
-
 /**
  * Set the batch number of a batch-tracked receipt line.
  *
@@ -1061,55 +880,6 @@ export const setReceiptLineSerial = defineServiceFn({
     return { receiptLineId: input.receiptLineId, index: input.index };
   }
 });
-
-/** A sales-return receipt line, and the receipt's return order. */
-async function returnReceiptLineOf(
-  ctx: ServiceContext,
-  { receiptId, receiptLineId }: { receiptId: string; receiptLineId: string }
-) {
-  const client = ctx.asCaller.supabase;
-  const [receipt, line] = await Promise.all([
-    client
-      .from("receipt")
-      .select("id, sourceDocument, sourceDocumentId")
-      .eq("id", receiptId)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle(),
-    client
-      .from("receiptLine")
-      .select("id, lineId")
-      .eq("id", receiptLineId)
-      // Scoped to the receipt too: without it, a line of another receipt of
-      // the same return order would tag the entity with a mismatched pair.
-      .eq("receiptId", receiptId)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle()
-  ]);
-  if (!receipt.data || receipt.data.sourceDocument !== "Sales Return Order") {
-    return ctx.error(
-      "validation",
-      "Return tracking requires a sales-return receipt"
-    );
-  }
-  if (!line.data?.lineId) {
-    return ctx.error("validation", "Receipt line not found");
-  }
-  return {
-    returnOrderId: receipt.data.sourceDocumentId,
-    returnLineId: line.data.lineId
-  };
-}
-
-function withoutReceiptTracking(attributes: Record<string, unknown>) {
-  const {
-    Receipt: _receipt,
-    "Receipt Line": _line,
-    "Receipt Line Index": _index,
-    ...rest
-  } = attributes;
-  return rest;
-}
-
 /**
  * Assign a returned tracked entity to a sales-return receipt line.
  *
@@ -1590,78 +1360,6 @@ export const updateShipment = defineServiceFn({
     return { id };
   }
 });
-
-/**
- * Save a sales order shipment's packing slip on the order's opportunity.
- * Best effort: a failure is logged and never stops the post.
- */
-async function savePackingSlip(
-  ctx: ServiceContext,
-  { shipmentId, locale }: { shipmentId: string; locale: string }
-) {
-  const companyId = ctx.company.id;
-  const serviceRole = ctx.asSystem.supabase;
-  try {
-    const shipment = await serviceRole
-      .from("shipment")
-      .select("sourceDocument, sourceDocumentId, shipmentId")
-      .eq("id", shipmentId)
-      .eq("companyId", companyId)
-      .single();
-    if (
-      shipment.data?.sourceDocument !== "Sales Order" ||
-      !shipment.data.sourceDocumentId
-    ) {
-      return;
-    }
-
-    const salesOrder = await serviceRole
-      .from("salesOrder")
-      .select("opportunityId")
-      .eq("id", shipment.data.sourceDocumentId)
-      .eq("companyId", companyId)
-      .single();
-    if (!salesOrder.data?.opportunityId) return;
-
-    const pdf = await renderPackingSlip({
-      client: ctx.asCaller.supabase,
-      serviceRole,
-      companyId,
-      shipmentId,
-      locale
-    });
-    if (pdf.headers.get("content-type") !== "application/pdf") return;
-
-    const file = await pdf.arrayBuffer();
-    const fileName = stripSpecialCharacters(
-      `${shipment.data.shipmentId} - ${datetime.timestamp().slice(0, -5)}.pdf`
-    );
-    const documentFilePath = `${companyId}/opportunity/${salesOrder.data.opportunityId}/${fileName}`;
-    const upload = await storage(serviceRole)
-      .company(companyId)
-      .upload(documentFilePath, file, {
-        cacheControl: `${12 * 60 * 60}`,
-        contentType: "application/pdf",
-        upsert: true
-      });
-    if (upload.error) return;
-
-    await upsertDocument(serviceRole, {
-      path: documentFilePath,
-      name: fileName,
-      size: round(file.byteLength / 1024, 0),
-      sourceDocument: "Shipment",
-      sourceDocumentId: shipmentId,
-      readGroups: [ctx.auditUserId],
-      writeGroups: [ctx.auditUserId],
-      createdBy: ctx.auditUserId,
-      companyId
-    });
-  } catch (error) {
-    logger.error("Failed to generate packing slip PDF", { error });
-  }
-}
-
 /**
  * Post a shipment.
  *
@@ -2481,80 +2179,6 @@ export const setStockTransferStatus = defineServiceFn({
     return { id, status };
   }
 });
-
-/** A stock transfer line of this company, with its transfer's status. */
-async function stockTransferLineOf(ctx: ServiceContext, lineId: string) {
-  const line = await ctx.asCaller.supabase
-    .from("stockTransferLine")
-    .select(
-      "id, stockTransferId, quantity, pickedQuantity, requiresSerialTracking, requiresBatchTracking, stockTransfer(status)"
-    )
-    .eq("id", lineId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (line.error) {
-    return ctx.error(
-      "internal",
-      "Failed to load stock transfer line",
-      line.error
-    );
-  }
-  if (!line.data) {
-    return ctx.error("notFound", "Stock transfer line not found");
-  }
-  if (line.data.stockTransfer?.status === "Completed") {
-    return ctx.error("rule", "Cannot pick from a completed stock transfer.");
-  }
-  return line.data;
-}
-
-/** Move a line's stock (or put it back), and label any batch it split. */
-async function postStockTransferLine(
-  ctx: ServiceContext,
-  input: {
-    type:
-      | "inventory"
-      | "unpickSerial"
-      | "unpickBatch"
-      | "unpickInventory"
-      | "batch"
-      | "serial";
-    stockTransferId: string;
-    stockTransferLineId: string;
-    quantity: number;
-    locationId: string;
-    trackedEntityId?: string;
-  },
-  failure: (error: ServerFnError) => string
-) {
-  const moved = await system(ctx).invoke(
-    "post-stock-transfer",
-    // One body for every `type`; the server function validates it per type.
-    input as ServerFnInput<"post-stock-transfer">
-  );
-  if (moved.error)
-    return serverFnFailure(ctx, moved.error, failure(moved.error));
-
-  // The split child that arrives at the destination gets a fresh label; the
-  // shelf parent whose quantity changed is reprinted.
-  const splitEntityId = moved.data?.splitEntityId;
-  if (splitEntityId) {
-    await printEntityLabels(
-      ctx,
-      [
-        splitEntityId,
-        ...(input.trackedEntityId ? [input.trackedEntityId] : [])
-      ],
-      input.locationId || undefined
-    );
-  }
-  return {
-    stockTransferId: input.stockTransferId,
-    stockTransferLineId: input.stockTransferLineId,
-    quantity: input.quantity
-  };
-}
-
 /**
  * Pick a stock transfer line.
  *
@@ -2760,12 +2384,6 @@ export const updateStockTransferLines = defineServiceFn({
 // ---------------------------------------------------------------------------
 // Warehouse transfers
 // ---------------------------------------------------------------------------
-
-const WAREHOUSE_TRANSFER_NOT_FOUND =
-  "The warehouse transfer could not be found";
-const WAREHOUSE_TRANSFER_LOCKED =
-  "Cannot modify a locked warehouse transfer. Reopen it first.";
-
 /** Every status but these commits the transfer plan. */
 const WAREHOUSE_TRANSFER_COMMITS = new Set<string>([
   "To Ship and Receive",
@@ -2853,34 +2471,6 @@ export const setWarehouseTransferStatus = defineServiceFn({
     return { id, status };
   }
 });
-
-/** A Draft warehouse transfer of this company: any other is locked. */
-async function unlockedWarehouseTransfer(
-  ctx: ServiceContext,
-  transferId: string
-) {
-  const transfer = await ctx.asCaller.supabase
-    .from("warehouseTransfer")
-    .select("id, status, fromLocationId, toLocationId")
-    .eq("id", transferId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (transfer.error) {
-    return ctx.error(
-      "internal",
-      "Failed to load warehouse transfer",
-      transfer.error
-    );
-  }
-  if (!transfer.data) {
-    return ctx.error("notFound", WAREHOUSE_TRANSFER_NOT_FOUND);
-  }
-  if (isWarehouseTransferLocked(transfer.data.status)) {
-    return ctx.error("rule", WAREHOUSE_TRANSFER_LOCKED);
-  }
-  return transfer.data;
-}
-
 const warehouseTransferLineFields = {
   quantity: z.number().min(0.0001, "Quantity must be greater than 0"),
   fromStorageUnitId: z.string().optional(),
@@ -2928,35 +2518,6 @@ export const createWarehouseTransferLine = defineServiceFn({
     return { id: created.data.id };
   }
 });
-
-/** The line, when it is on this transfer. */
-async function warehouseTransferLineOf(
-  ctx: ServiceContext,
-  { transferId, id }: { transferId: string; id: string }
-) {
-  const line = await ctx.asCaller.supabase
-    .from("warehouseTransferLine")
-    .select("id")
-    .eq("id", id)
-    .eq("transferId", transferId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (line.error) {
-    return ctx.error(
-      "internal",
-      "Failed to load warehouse transfer line",
-      line.error
-    );
-  }
-  if (!line.data) {
-    return ctx.error(
-      "notFound",
-      "The warehouse transfer line could not be found"
-    );
-  }
-  return line.data;
-}
-
 /**
  * Update a line of a Draft warehouse transfer.
  *
@@ -3593,18 +3154,6 @@ export const pickPickingListLineEntity = defineServiceFn({
     return result.data;
   }
 });
-
-/** A pick's refusal: its message is written for the person picking. */
-function pickRefusal(
-  ctx: ServiceContext,
-  error: string | { message?: string }
-) {
-  return ctx.error(
-    "rule",
-    typeof error === "string" ? error : (error.message ?? "Failed to pick line")
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Kanbans
 // ---------------------------------------------------------------------------

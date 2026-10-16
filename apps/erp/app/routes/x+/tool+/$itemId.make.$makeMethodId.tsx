@@ -22,7 +22,7 @@ import {
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId
 } from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+import { getRevisionLock } from "~/modules/items/items.service";
 import {
   BillOfMaterial,
   BillOfProcess,

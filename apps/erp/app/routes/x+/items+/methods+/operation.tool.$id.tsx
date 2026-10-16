@@ -9,7 +9,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { upsertMethodOperationTool } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { checkRevisionLock } from "~/modules/items/items.service";
 import { operationToolValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {

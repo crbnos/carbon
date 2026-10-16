@@ -14,7 +14,7 @@ import * as inventoryFunctions from "~/modules/inventory/inventory.service";
 import * as invoicingFunctions from "~/modules/invoicing/invoicing.service";
 import * as itemsFunctions from "~/modules/items/items.service";
 import * as peopleFunctions from "~/modules/people/people.service";
-import * as productionMcpFunctions from "~/modules/production/production.mcp.server";
+import * as productionMcpFunctions from "~/modules/production/production.service";
 import * as productionFunctions from "~/modules/production/production.service";
 import * as purchasingFunctions from "~/modules/purchasing/purchasing.service";
 import * as qualityFunctions from "~/modules/quality/quality.service";

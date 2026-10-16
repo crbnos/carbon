@@ -27,7 +27,7 @@ import {
   getFixedAssetClassesList,
   getRentalUtilization
 } from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

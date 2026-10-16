@@ -43,7 +43,7 @@ import {
   getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import {

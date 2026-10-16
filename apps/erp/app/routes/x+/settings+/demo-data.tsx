@@ -17,12 +17,12 @@ import { data, useFetcher, useLoaderData } from "react-router";
 import { SettingsPageHeading } from "~/components/SettingsPage";
 import type { CompanyTemplateRun } from "~/modules/settings";
 import { getCompanyTemplateRun } from "~/modules/settings";
-import { purgeCorruptedRows } from "~/modules/settings/backups.server";
 import {
   finalizeCompanyTemplate,
+  purgeCorruptedRows,
   revertCompanyTemplate,
   startCompanyTemplate
-} from "~/modules/settings/demoData.server";
+} from "~/modules/settings/settings.service";
 import {
   TemplateCards,
   TemplateReviewRow

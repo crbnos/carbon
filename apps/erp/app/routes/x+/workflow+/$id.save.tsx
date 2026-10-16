@@ -18,7 +18,7 @@ import {
   updateWorkflowDefinition,
   workflowDefinitionSaveValidator
 } from "~/modules/workflows";
-import { checkWorkflowVersionLock } from "~/modules/workflows/workflows.server";
+import { checkWorkflowVersionLock } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "workflow-save");

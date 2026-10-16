@@ -15,7 +15,7 @@ import {
   insertCustomerContact
 } from "~/modules/sales";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

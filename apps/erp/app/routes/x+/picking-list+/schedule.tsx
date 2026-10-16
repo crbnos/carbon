@@ -22,7 +22,7 @@ import {
   PickingListsHeader
 } from "~/modules/inventory/ui/PickingLists";
 import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

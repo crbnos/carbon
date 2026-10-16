@@ -12,9 +12,9 @@ import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory";
 import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
+  getCompanySettings,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "id-labels-pdf");
 

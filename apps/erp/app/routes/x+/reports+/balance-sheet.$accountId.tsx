@@ -13,7 +13,7 @@ import {
   getAccountLedger,
   getAccountLedgerSummary
 } from "~/modules/accounting";
-import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.server";
+import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 

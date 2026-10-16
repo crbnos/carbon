@@ -43,7 +43,7 @@ import {
   getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 import type { Method } from "~/modules/items/types";
 import {
   BoMActions,

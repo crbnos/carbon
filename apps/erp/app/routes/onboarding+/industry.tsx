@@ -56,7 +56,7 @@ import {
   clearOnboardingDraft,
   getOnboardingDraft,
   type OnboardingDraft
-} from "~/modules/shared/shared.server";
+} from "~/modules/shared/shared.service";
 import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";

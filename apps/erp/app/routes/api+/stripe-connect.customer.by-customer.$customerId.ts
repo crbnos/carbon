@@ -6,8 +6,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
-import { resolveStripeCustomerForBilling } from "~/modules/invoicing/stripe-customer.server";
+import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
+import { resolveStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 
 const logger = getLogger("stripe-connect");
 

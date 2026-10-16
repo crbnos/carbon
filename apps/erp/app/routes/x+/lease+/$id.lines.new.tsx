@@ -10,7 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { leaseLineValidator } from "~/modules/purchasing";
-import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.server";
+import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

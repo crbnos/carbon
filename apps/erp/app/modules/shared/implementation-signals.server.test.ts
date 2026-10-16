@@ -35,7 +35,7 @@ vi.mock("../documents/documents.service", () => ({}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 
-const { getImplementationSignals } = await import("./shared.server");
+const { getImplementationSignals } = await import("./shared.service");
 
 const client = {} as Parameters<typeof getImplementationSignals>[0];
 const signals = (overrides: Record<string, boolean>) => ({

@@ -26,7 +26,7 @@ import {
   seedCompany,
   updateCompany
 } from "~/modules/settings";
-import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+import { unpackBackupArchive } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;

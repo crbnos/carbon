@@ -2,6 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  type CarbonError,
+  ERROR_STATUS,
+  type ErrorCategory,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -11,14 +17,27 @@ import {
 } from "@carbon/database/picked-consumption";
 import { expandSerialTrackedLines } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
 import { storage } from "@carbon/files";
+import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import type { ServerFnError } from "@carbon/server-functions/errors";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { async, datetime, getErrorMessage } from "@carbon/utils";
+import {
+  async,
+  datetime,
+  getErrorMessage,
+  indexByMapped,
+  pluckUnique,
+  round,
+  type Violation
+} from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { upsertDocument } from "~/modules/documents/documents.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import type { StorageItem } from "~/types";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
@@ -27,6 +46,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
+import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
@@ -49,8 +69,11 @@ import type {
 } from "./inventory.models";
 import {
   isPickingListLocked,
+  isWarehouseTransferLocked,
+  type receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials
 } from "./inventory.models";
+import { renderPackingSlip } from "./packing-slip.server";
 import {
   effectiveSuccessorId,
   type PickSupersession,
@@ -59,6 +82,19 @@ import {
   resolvePickTarget,
   splitConsumeFirstPick
 } from "./supersession-pick";
+import type {
+  Activity,
+  ActivityInput,
+  ActivityOutput,
+  GraphData,
+  TrackedEntity
+} from "./types";
+import { clampDepth } from "./ui/Traceability/constants";
+import type {
+  IssueContainment,
+  IssueContainmentStatus,
+  StepRecord
+} from "./ui/Traceability/utils";
 
 const logger = getLogger("erp", "inventory");
 
@@ -4669,4 +4705,1042 @@ export async function updateWarehouseTransfer(
     .eq("id", id)
     .select("id")
     .single();
+}
+// ---------------------------------------------------------------------------
+// Shared steps
+// ---------------------------------------------------------------------------
+
+type RuleLines = Parameters<typeof evaluateLinesForSurface>[0]["lines"];
+
+type RuleSurface = Parameters<typeof evaluateLinesForSurface>[0]["surface"];
+
+/** A post a blocking rule refused: what the user must see, or acknowledge. */
+export type Blocked = {
+  violations: Violation[];
+  ruleNames: Record<string, string>;
+};
+
+/**
+ * Every storage rule the lines break, on each surface in turn. Read as the
+ * system: a user with `inventory` rights may not see the items or bins.
+ */
+export async function storageRuleViolations(
+  ctx: ServiceContext,
+  surfaces: RuleSurface[],
+  lines: RuleLines
+): Promise<Blocked> {
+  const violations: Violation[] = [];
+  const ruleNames: Record<string, string> = {};
+  for (const surface of surfaces) {
+    const result = await evaluateLinesForSurface({
+      client: ctx.asSystem.supabase,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      targetType: "item",
+      surface,
+      lines
+    });
+    violations.push(...result.violations);
+    Object.assign(ruleNames, result.ruleNames);
+  }
+  return { violations, ruleNames };
+}
+
+/** The server functions, run as the system for this call's company and user. */
+export function system(ctx: ServiceContext) {
+  return serverFns.system({
+    db: ctx.asSystem.pg,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+}
+
+const CATEGORY_BY_STATUS = Object.fromEntries(
+  Object.entries(ERROR_STATUS).map(([category, status]) => [status, category])
+) as Record<number, ErrorCategory>;
+
+/**
+ * A server function's failure as this operation's error, its category from
+ * the function's own status. A call that returned no data and no error is
+ * `internal`.
+ */
+export function serverFnFailure(
+  ctx: ServiceContext,
+  error: ServerFnError | null,
+  message: string
+): CarbonError {
+  return ctx.error(
+    (error && CATEGORY_BY_STATUS[error.status]) || "internal",
+    message,
+    error
+  );
+}
+
+/** The caller's default location, from their user defaults. */
+export async function defaultLocationOf(ctx: ServiceContext) {
+  const defaults = await ctx.asCaller.supabase
+    .from("userDefaults")
+    .select("locationId")
+    .eq("userId", ctx.auditUserId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  return defaults.data?.locationId ?? undefined;
+}
+
+/** Print a document's labels when its location's printer auto-prints. */
+export async function autoPrint(
+  ctx: ServiceContext,
+  {
+    sourceDocument,
+    sourceDocumentId,
+    locationId,
+    context
+  }: {
+    sourceDocument: "Receipt" | "Shipment";
+    sourceDocumentId: string;
+    locationId: string | null;
+    context: "receiving" | "shipping";
+  }
+) {
+  if (!locationId) return;
+  try {
+    const config = await getCachedPrinterConfig(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      locationId,
+      context
+    );
+    if (config?.autoPrint ?? true) {
+      await trigger("print-job", {
+        sourceDocument,
+        sourceDocumentId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        locationId
+      });
+    }
+  } catch (error) {
+    logger.error("Auto-print failed", { error });
+  }
+}
+
+/** Print a fresh label for each tracked entity a post or pick split. */
+export async function printEntityLabels(
+  ctx: ServiceContext,
+  entityIds: string[],
+  locationId?: string
+) {
+  try {
+    for (const entityId of entityIds) {
+      await trigger("print-job", {
+        sourceDocument: "Entity",
+        sourceDocumentId: entityId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        ...(locationId ? { locationId } : {})
+      });
+    }
+  } catch (error) {
+    logger.error("Auto-print for split entities failed", { error });
+  }
+}
+
+export function receiptFixedAssetLineChange(
+  change: Omit<z.output<typeof receiptFixedAssetLineUpdateValidator>, "id">
+) {
+  switch (change.field) {
+    case "received":
+      return { received: change.value === "true" };
+    case "serialNumber":
+      return { serialNumber: change.value || null };
+    case "meter":
+      return { meter: change.value === "" ? null : Number(change.value) };
+    case "notes":
+      return { notes: change.value.trim() || null };
+    case "outOfService":
+      return change.value.trim() === ""
+        ? { takeOutOfService: false, outOfServiceReason: null }
+        : { takeOutOfService: true, outOfServiceReason: change.value.trim() };
+    case "residualDestination":
+      return {
+        residualDestination: (change.value || null) as
+          | "Fleet"
+          | "Inventory"
+          | null
+      };
+  }
+}
+
+/** The receipt line, read as the system: the tracking RPCs key on its ids alone. */
+export async function receiptLineOf(
+  ctx: ServiceContext,
+  { receiptId, receiptLineId }: { receiptId: string; receiptLineId: string }
+) {
+  const line = await ctx.asSystem.supabase
+    .from("receiptLine")
+    .select("id, itemId")
+    .eq("id", receiptLineId)
+    .eq("receiptId", receiptId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (line.error) {
+    return ctx.error(
+      "internal",
+      "Failed to verify the receipt line",
+      line.error
+    );
+  }
+  if (!line.data) {
+    return ctx.error(
+      "notFound",
+      "The receipt line could not be found. It may have been deleted, or it belongs to another company."
+    );
+  }
+  return line.data;
+}
+
+/** A sales-return receipt line, and the receipt's return order. */
+export async function returnReceiptLineOf(
+  ctx: ServiceContext,
+  { receiptId, receiptLineId }: { receiptId: string; receiptLineId: string }
+) {
+  const client = ctx.asCaller.supabase;
+  const [receipt, line] = await Promise.all([
+    client
+      .from("receipt")
+      .select("id, sourceDocument, sourceDocumentId")
+      .eq("id", receiptId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle(),
+    client
+      .from("receiptLine")
+      .select("id, lineId")
+      .eq("id", receiptLineId)
+      // Scoped to the receipt too: without it, a line of another receipt of
+      // the same return order would tag the entity with a mismatched pair.
+      .eq("receiptId", receiptId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle()
+  ]);
+  if (!receipt.data || receipt.data.sourceDocument !== "Sales Return Order") {
+    return ctx.error(
+      "validation",
+      "Return tracking requires a sales-return receipt"
+    );
+  }
+  if (!line.data?.lineId) {
+    return ctx.error("validation", "Receipt line not found");
+  }
+  return {
+    returnOrderId: receipt.data.sourceDocumentId,
+    returnLineId: line.data.lineId
+  };
+}
+
+export function withoutReceiptTracking(attributes: Record<string, unknown>) {
+  const {
+    Receipt: _receipt,
+    "Receipt Line": _line,
+    "Receipt Line Index": _index,
+    ...rest
+  } = attributes;
+  return rest;
+}
+
+/**
+ * Save a sales order shipment's packing slip on the order's opportunity.
+ * Best effort: a failure is logged and never stops the post.
+ */
+export async function savePackingSlip(
+  ctx: ServiceContext,
+  { shipmentId, locale }: { shipmentId: string; locale: string }
+) {
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+  try {
+    const shipment = await serviceRole
+      .from("shipment")
+      .select("sourceDocument, sourceDocumentId, shipmentId")
+      .eq("id", shipmentId)
+      .eq("companyId", companyId)
+      .single();
+    if (
+      shipment.data?.sourceDocument !== "Sales Order" ||
+      !shipment.data.sourceDocumentId
+    ) {
+      return;
+    }
+
+    const salesOrder = await serviceRole
+      .from("salesOrder")
+      .select("opportunityId")
+      .eq("id", shipment.data.sourceDocumentId)
+      .eq("companyId", companyId)
+      .single();
+    if (!salesOrder.data?.opportunityId) return;
+
+    const pdf = await renderPackingSlip({
+      client: ctx.asCaller.supabase,
+      serviceRole,
+      companyId,
+      shipmentId,
+      locale
+    });
+    if (pdf.headers.get("content-type") !== "application/pdf") return;
+
+    const file = await pdf.arrayBuffer();
+    const fileName = stripSpecialCharacters(
+      `${shipment.data.shipmentId} - ${datetime.timestamp().slice(0, -5)}.pdf`
+    );
+    const documentFilePath = `${companyId}/opportunity/${salesOrder.data.opportunityId}/${fileName}`;
+    const upload = await storage(serviceRole)
+      .company(companyId)
+      .upload(documentFilePath, file, {
+        cacheControl: `${12 * 60 * 60}`,
+        contentType: "application/pdf",
+        upsert: true
+      });
+    if (upload.error) return;
+
+    await upsertDocument(serviceRole, {
+      path: documentFilePath,
+      name: fileName,
+      size: round(file.byteLength / 1024, 0),
+      sourceDocument: "Shipment",
+      sourceDocumentId: shipmentId,
+      readGroups: [ctx.auditUserId],
+      writeGroups: [ctx.auditUserId],
+      createdBy: ctx.auditUserId,
+      companyId
+    });
+  } catch (error) {
+    logger.error("Failed to generate packing slip PDF", { error });
+  }
+}
+
+/** A stock transfer line of this company, with its transfer's status. */
+export async function stockTransferLineOf(ctx: ServiceContext, lineId: string) {
+  const line = await ctx.asCaller.supabase
+    .from("stockTransferLine")
+    .select(
+      "id, stockTransferId, quantity, pickedQuantity, requiresSerialTracking, requiresBatchTracking, stockTransfer(status)"
+    )
+    .eq("id", lineId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (line.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load stock transfer line",
+      line.error
+    );
+  }
+  if (!line.data) {
+    return ctx.error("notFound", "Stock transfer line not found");
+  }
+  if (line.data.stockTransfer?.status === "Completed") {
+    return ctx.error("rule", "Cannot pick from a completed stock transfer.");
+  }
+  return line.data;
+}
+
+/** Move a line's stock (or put it back), and label any batch it split. */
+export async function postStockTransferLine(
+  ctx: ServiceContext,
+  input: {
+    type:
+      | "inventory"
+      | "unpickSerial"
+      | "unpickBatch"
+      | "unpickInventory"
+      | "batch"
+      | "serial";
+    stockTransferId: string;
+    stockTransferLineId: string;
+    quantity: number;
+    locationId: string;
+    trackedEntityId?: string;
+  },
+  failure: (error: ServerFnError) => string
+) {
+  const moved = await system(ctx).invoke(
+    "post-stock-transfer",
+    // One body for every `type`; the server function validates it per type.
+    input as ServerFnInput<"post-stock-transfer">
+  );
+  if (moved.error)
+    return serverFnFailure(ctx, moved.error, failure(moved.error));
+
+  // The split child that arrives at the destination gets a fresh label; the
+  // shelf parent whose quantity changed is reprinted.
+  const splitEntityId = moved.data?.splitEntityId;
+  if (splitEntityId) {
+    await printEntityLabels(
+      ctx,
+      [
+        splitEntityId,
+        ...(input.trackedEntityId ? [input.trackedEntityId] : [])
+      ],
+      input.locationId || undefined
+    );
+  }
+  return {
+    stockTransferId: input.stockTransferId,
+    stockTransferLineId: input.stockTransferLineId,
+    quantity: input.quantity
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Warehouse transfers
+// ---------------------------------------------------------------------------
+
+export const WAREHOUSE_TRANSFER_NOT_FOUND =
+  "The warehouse transfer could not be found";
+
+const WAREHOUSE_TRANSFER_LOCKED =
+  "Cannot modify a locked warehouse transfer. Reopen it first.";
+
+/** A Draft warehouse transfer of this company: any other is locked. */
+export async function unlockedWarehouseTransfer(
+  ctx: ServiceContext,
+  transferId: string
+) {
+  const transfer = await ctx.asCaller.supabase
+    .from("warehouseTransfer")
+    .select("id, status, fromLocationId, toLocationId")
+    .eq("id", transferId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (transfer.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load warehouse transfer",
+      transfer.error
+    );
+  }
+  if (!transfer.data) {
+    return ctx.error("notFound", WAREHOUSE_TRANSFER_NOT_FOUND);
+  }
+  if (isWarehouseTransferLocked(transfer.data.status)) {
+    return ctx.error("rule", WAREHOUSE_TRANSFER_LOCKED);
+  }
+  return transfer.data;
+}
+
+/** The line, when it is on this transfer. */
+export async function warehouseTransferLineOf(
+  ctx: ServiceContext,
+  { transferId, id }: { transferId: string; id: string }
+) {
+  const line = await ctx.asCaller.supabase
+    .from("warehouseTransferLine")
+    .select("id")
+    .eq("id", id)
+    .eq("transferId", transferId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (line.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load warehouse transfer line",
+      line.error
+    );
+  }
+  if (!line.data) {
+    return ctx.error(
+      "notFound",
+      "The warehouse transfer line could not be found"
+    );
+  }
+  return line.data;
+}
+
+/** A pick's refusal: its message is written for the person picking. */
+export function pickRefusal(
+  ctx: ServiceContext,
+  error: string | { message?: string }
+) {
+  return ctx.error(
+    "rule",
+    typeof error === "string" ? error : (error.message ?? "Failed to pick line")
+  );
+}
+export type LineageDirection = "up" | "down" | "both";
+
+export type LineagePayload = {
+  entities: TrackedEntity[];
+  inputs: ActivityInput[];
+  outputs: ActivityOutput[];
+  activities: Activity[];
+  stepRecords?: StepRecord[];
+  containments?: IssueContainment[];
+};
+
+// The graph collapses identical serial siblings into group nodes, so a large
+// serial fan no longer costs a node each — the ceiling can afford whole jobs.
+// The BFS must stay COMPLETE up to it: cluster signatures are computed from
+// the full edge set, and a truncated frontier would split a group in two.
+const MAX_ENTITIES = 500;
+
+type LineageState = {
+  companyId: string;
+  entities: Map<string, TrackedEntity>;
+  activities: Map<string, Activity>;
+  inputs: Map<string, ActivityInput>;
+  outputs: Map<string, ActivityOutput>;
+  visited: Set<string>;
+};
+
+function newLineageState(companyId: string): LineageState {
+  return {
+    companyId,
+    entities: new Map(),
+    activities: new Map(),
+    inputs: new Map(),
+    outputs: new Map(),
+    visited: new Set()
+  };
+}
+
+async function expandActivitySiblings(
+  client: SupabaseClient<Database>,
+  state: LineageState,
+  activityIds: string[]
+): Promise<void> {
+  const { companyId, entities, activities, inputs, outputs } = state;
+  const newActivityIds = activityIds.filter((id) => !activities.has(id));
+  if (newActivityIds.length > 0) {
+    const fetched = await client
+      .from("trackedActivity")
+      .select("*")
+      .in("id", newActivityIds)
+      .eq("companyId", companyId);
+    for (const row of fetched.data ?? []) {
+      activities.set(row.id, row as unknown as Activity);
+    }
+  }
+
+  // Pull sibling inputs/outputs for every activity so by-products (e.g. SCRAP)
+  // appear even when not on the direct upstream/downstream path.
+  const [siblingInputs, siblingOutputs] = await Promise.all([
+    client
+      .from("trackedActivityInput")
+      .select("*")
+      .in("trackedActivityId", activityIds)
+      .eq("companyId", companyId),
+    client
+      .from("trackedActivityOutput")
+      .select("*")
+      .in("trackedActivityId", activityIds)
+      .eq("companyId", companyId)
+  ]);
+
+  // These rows are the AUTHORITATIVE edge quantities — how much actually flowed
+  // through this activity. Always overwrite: the BFS seeds edges from the
+  // traversal RPCs, whose `quantity` column is the neighbour ENTITY's current
+  // quantity (`te."quantity"`), not the edge's. Left as-is, a lot that was later
+  // drawn down paints its post-hoc quantity onto a historical edge (a 6-unit
+  // split reading "4" after 2 were consumed).
+  const siblingEntityIds = new Set<string>();
+  for (const row of siblingInputs.data ?? []) {
+    const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
+    inputs.set(key, {
+      trackedActivityId: row.trackedActivityId,
+      trackedEntityId: row.trackedEntityId,
+      quantity: row.quantity
+    });
+    if (!entities.has(row.trackedEntityId)) {
+      siblingEntityIds.add(row.trackedEntityId);
+    }
+  }
+  for (const row of siblingOutputs.data ?? []) {
+    const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
+    outputs.set(key, {
+      trackedActivityId: row.trackedActivityId,
+      trackedEntityId: row.trackedEntityId,
+      quantity: row.quantity
+    });
+    if (!entities.has(row.trackedEntityId)) {
+      siblingEntityIds.add(row.trackedEntityId);
+    }
+  }
+
+  if (siblingEntityIds.size > 0) {
+    const remainingCapacity = MAX_ENTITIES - entities.size;
+    const idsToFetch = Array.from(siblingEntityIds).slice(0, remainingCapacity);
+    if (idsToFetch.length > 0) {
+      const fetched = await client
+        .from("trackedEntity")
+        .select("*")
+        .in("id", idsToFetch);
+      for (const row of fetched.data ?? []) {
+        entities.set(row.id, row as TrackedEntity);
+      }
+    }
+  }
+}
+
+/**
+ * Surface "event" activities (e.g. Pick, Transfer) that reference entities
+ * already in the graph. The genealogy BFS only follows input→output
+ * transformations (consume/produce/split), so input-only or output-only events
+ * — a pick relocating a lot, say — would otherwise be invisible. These render as
+ * activity nodes attached to their entity (no new genealogy edges).
+ */
+async function expandEntityActivities(
+  client: SupabaseClient<Database>,
+  state: LineageState
+): Promise<void> {
+  const entityIds = Array.from(state.entities.keys());
+  if (entityIds.length === 0) return;
+
+  const [ins, outs] = await Promise.all([
+    client
+      .from("trackedActivityInput")
+      .select("trackedActivityId")
+      .in("trackedEntityId", entityIds)
+      .eq("companyId", state.companyId),
+    client
+      .from("trackedActivityOutput")
+      .select("trackedActivityId")
+      .in("trackedEntityId", entityIds)
+      .eq("companyId", state.companyId)
+  ]);
+
+  const activityIds = new Set<string>();
+  for (const row of ins.data ?? []) {
+    if (!state.activities.has(row.trackedActivityId))
+      activityIds.add(row.trackedActivityId);
+  }
+  for (const row of outs.data ?? []) {
+    if (!state.activities.has(row.trackedActivityId))
+      activityIds.add(row.trackedActivityId);
+  }
+
+  if (activityIds.size > 0) {
+    await expandActivitySiblings(client, state, Array.from(activityIds));
+  }
+}
+
+async function runLineageBfs(
+  client: SupabaseClient<Database>,
+  state: LineageState,
+  initialFrontier: string[],
+  direction: LineageDirection,
+  safeDepth: number
+): Promise<void> {
+  const { companyId, entities, inputs, outputs, visited } = state;
+  let frontier = initialFrontier.filter((id) => {
+    if (visited.has(id)) return true;
+    visited.add(id);
+    return true;
+  });
+
+  for (let hop = 0; hop < safeDepth; hop++) {
+    if (frontier.length === 0) break;
+    if (entities.size >= MAX_ENTITIES) break;
+
+    type BatchRow = {
+      sourceEntityId: string;
+      trackedActivityId: string;
+      id: string;
+      quantity: number;
+    };
+
+    const calls: Promise<void>[] = [];
+    let descendantsBatch: BatchRow[] = [];
+    let ancestorsBatch: BatchRow[] = [];
+
+    if (direction === "down" || direction === "both") {
+      calls.push(
+        (async () => {
+          const res = await client.rpc(
+            "get_direct_descendants_of_tracked_entities_strict",
+            { p_tracked_entity_ids: frontier, p_company_id: companyId }
+          );
+          descendantsBatch = (res.data ?? []) as BatchRow[];
+        })()
+      );
+    }
+    if (direction === "up" || direction === "both") {
+      calls.push(
+        (async () => {
+          const res = await client.rpc(
+            "get_direct_ancestors_of_tracked_entities_strict",
+            { p_tracked_entity_ids: frontier, p_company_id: companyId }
+          );
+          ancestorsBatch = (res.data ?? []) as BatchRow[];
+        })()
+      );
+    }
+
+    await Promise.all(calls);
+
+    const nextFrontier = new Set<string>();
+    const newEntityIds = new Set<string>();
+    const activityIds = new Set<string>();
+
+    for (let i = 0; i < descendantsBatch.length; i++) {
+      const row = descendantsBatch[i];
+      if (!row?.id) continue;
+      activityIds.add(row.trackedActivityId);
+      const outputKey = `${row.trackedActivityId}:${row.sourceEntityId}`;
+      if (!outputs.has(outputKey)) {
+        outputs.set(outputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.sourceEntityId,
+          quantity: row.quantity
+        });
+      }
+      if (!visited.has(row.id)) {
+        visited.add(row.id);
+        newEntityIds.add(row.id);
+        nextFrontier.add(row.id);
+      }
+      const inputKey = `${row.trackedActivityId}:${row.id}`;
+      if (!inputs.has(inputKey)) {
+        inputs.set(inputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.id,
+          quantity: row.quantity
+        });
+      }
+    }
+
+    for (let i = 0; i < ancestorsBatch.length; i++) {
+      const row = ancestorsBatch[i];
+      if (!row?.id) continue;
+      activityIds.add(row.trackedActivityId);
+      const inputKey = `${row.trackedActivityId}:${row.sourceEntityId}`;
+      if (!inputs.has(inputKey)) {
+        inputs.set(inputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.sourceEntityId,
+          quantity: row.quantity
+        });
+      }
+      if (!visited.has(row.id)) {
+        visited.add(row.id);
+        newEntityIds.add(row.id);
+        nextFrontier.add(row.id);
+      }
+      const outputKey = `${row.trackedActivityId}:${row.id}`;
+      if (!outputs.has(outputKey)) {
+        outputs.set(outputKey, {
+          trackedActivityId: row.trackedActivityId,
+          trackedEntityId: row.id,
+          quantity: row.quantity
+        });
+      }
+    }
+
+    if (newEntityIds.size > 0) {
+      const remainingCapacity = MAX_ENTITIES - entities.size;
+      const idsToFetch = Array.from(newEntityIds).slice(0, remainingCapacity);
+      const fetched = await client
+        .from("trackedEntity")
+        .select("*")
+        .in("id", idsToFetch)
+        .eq("companyId", companyId);
+      for (const row of fetched.data ?? []) {
+        entities.set(row.id, row as TrackedEntity);
+      }
+    }
+
+    if (activityIds.size > 0) {
+      await expandActivitySiblings(client, state, Array.from(activityIds));
+    }
+
+    frontier = Array.from(nextFrontier);
+  }
+}
+
+export async function fetchLineageSubgraph(
+  client: SupabaseClient<Database>,
+  rootEntityId: string,
+  companyId: string,
+  depth: number,
+  direction: LineageDirection = "both"
+): Promise<LineagePayload> {
+  const safeDepth = clampDepth(depth);
+
+  const rootEntity = await client
+    .from("trackedEntity")
+    .select("*")
+    .eq("id", rootEntityId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  const state = newLineageState(companyId);
+  if (rootEntity.data)
+    state.entities.set(rootEntity.data.id, rootEntity.data as TrackedEntity);
+
+  await runLineageBfs(client, state, [rootEntityId], direction, safeDepth);
+
+  // Attach event activities (Pick/Transfer/etc.) for the entities in the graph
+  // so location moves like picking show up, not just genealogy transformations.
+  await expandEntityActivities(client, state);
+
+  return {
+    entities: Array.from(state.entities.values()),
+    inputs: Array.from(state.inputs.values()),
+    outputs: Array.from(state.outputs.values()),
+    activities: Array.from(state.activities.values())
+  };
+}
+
+export async function fetchJobStepRecords(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+): Promise<StepRecord[]> {
+  const res = await client.rpc("get_job_operation_step_records", {
+    p_job_id: jobId,
+    p_company_id: companyId
+  });
+  if (!res.data) return [];
+  return (res.data as any[]).map((r) => ({
+    id: r.id,
+    jobOperationStepId: r.jobOperationStepId,
+    index: r.index,
+    type: r.type,
+    name: r.name,
+    value: r.value,
+    numericValue: r.numericValue,
+    booleanValue: r.booleanValue,
+    userValue: r.userValue,
+    unitOfMeasureCode: r.unitOfMeasureCode,
+    minValue: r.minValue,
+    maxValue: r.maxValue,
+    operationId: r.operationId,
+    operationDescription: r.operationDescription,
+    itemId: r.itemId,
+    itemReadableId: r.itemReadableId,
+    createdAt: r.createdAt,
+    createdBy: r.createdBy
+  }));
+}
+
+export async function fetchContainmentsForEntities(
+  client: SupabaseClient<Database>,
+  entityIds: string[],
+  companyId: string
+): Promise<IssueContainment[]> {
+  if (entityIds.length === 0) return [];
+
+  // Single round-trip: PostgREST embed pulls the linked issue inline and
+  // filters server-side to only Contained/Uncontained statuses.
+  const res = await client
+    .from("nonConformanceTrackedEntity")
+    .select(
+      `trackedEntityId,
+       nonConformanceId,
+       issue:issues!inner(id, status, priority, containmentStatus)`
+    )
+    .in("trackedEntityId", entityIds)
+    .eq("companyId", companyId)
+    .in("issue.containmentStatus", ["Contained", "Uncontained"]);
+
+  const containments: IssueContainment[] = [];
+  for (const row of res.data ?? []) {
+    const issue = row.issue as {
+      id: string | null;
+      status: string | null;
+      priority: string | null;
+      containmentStatus: string | null;
+    } | null;
+    if (!issue) continue;
+    const status = issue.containmentStatus;
+    if (status !== "Contained" && status !== "Uncontained") continue;
+    containments.push({
+      id: issue.id ?? row.nonConformanceId,
+      readableId: row.nonConformanceId,
+      containmentStatus: status as IssueContainmentStatus,
+      status: issue.status ?? "",
+      priority: issue.priority ?? null,
+      trackedEntityId: row.trackedEntityId
+    });
+  }
+  return containments;
+}
+
+export async function fetchJobScopedLineage(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string,
+  depth: number
+): Promise<LineagePayload> {
+  const safeDepth = clampDepth(depth);
+
+  const [seedEntitiesRes, seedActivitiesRes] = await Promise.all([
+    client
+      .from("trackedEntity")
+      .select("*")
+      .eq("attributes->>Job", jobId)
+      .eq("companyId", companyId),
+    client
+      .from("trackedActivity")
+      .select("*")
+      .eq("attributes->>Job", jobId)
+      .eq("companyId", companyId)
+  ]);
+
+  const state = newLineageState(companyId);
+  for (const row of (seedEntitiesRes.data ?? []) as TrackedEntity[]) {
+    state.entities.set(row.id, row);
+  }
+  for (const row of (seedActivitiesRes.data ?? []) as unknown as Activity[]) {
+    state.activities.set(row.id, row);
+  }
+
+  if (state.activities.size > 0) {
+    await expandActivitySiblings(
+      client,
+      state,
+      Array.from(state.activities.keys())
+    );
+  }
+
+  if (state.entities.size > 0) {
+    await runLineageBfs(
+      client,
+      state,
+      Array.from(state.entities.keys()),
+      "both",
+      safeDepth
+    );
+  }
+
+  const containments = await fetchContainmentsForEntities(
+    client,
+    Array.from(state.entities.keys()),
+    companyId
+  );
+
+  return {
+    entities: Array.from(state.entities.values()),
+    inputs: Array.from(state.inputs.values()),
+    outputs: Array.from(state.outputs.values()),
+    activities: Array.from(state.activities.values()),
+    containments
+  };
+}
+
+export function toGraphData(payload: LineagePayload): GraphData {
+  const nodes = [
+    ...payload.entities.map((entity) => ({
+      id: entity.id,
+      type: "entity" as const,
+      data: entity,
+      parentId: null
+    })),
+    ...payload.activities.map((activity) => ({
+      id: activity.id,
+      type: "activity" as const,
+      data: activity,
+      parentId: null
+    }))
+  ];
+
+  // Historical split survivors are recorded as both input and output of their
+  // own Split activity. Drop the output half of that self-loop so the graph
+  // doesn't render the survivor as produced by its own split; the input edge
+  // stays (it carries the drawn quantity).
+  const splitActivityIds = new Set(
+    payload.activities.filter((a) => a?.type === "Split").map((a) => a.id)
+  );
+  const inputPairs = new Set(
+    pluckUnique(
+      payload.inputs.filter((input) =>
+        splitActivityIds.has(input.trackedActivityId)
+      ),
+      (input) => `${input.trackedActivityId}::${input.trackedEntityId}`
+    )
+  );
+
+  const links = [
+    ...payload.inputs.map((input) => ({
+      source: input.trackedEntityId,
+      target: input.trackedActivityId,
+      type: "input" as const,
+      quantity: input.quantity
+    })),
+    ...payload.outputs
+      .filter(
+        (output) =>
+          !inputPairs.has(
+            `${output.trackedActivityId}::${output.trackedEntityId}`
+          )
+      )
+      .map((output) => ({
+        source: output.trackedActivityId,
+        target: output.trackedEntityId,
+        type: "output" as const,
+        quantity: output.quantity
+      }))
+  ];
+
+  return { nodes, links };
+}
+
+/**
+ * Resolve the storage-unit ids that movement activities carry in their
+ * attributes ("From Shelf" / "To Shelf") into names, written back as
+ * "From Storage Unit Name" / "To Storage Unit Name".
+ *
+ * The graph renders a lot as a chain of states; a movement produces two states
+ * with the SAME quantity, so the bin is the only thing that distinguishes
+ * them. Without this they render identically and a Pick looks like a no-op.
+ * Enriching here keeps the ids server-side and needs no extra plumbing — the
+ * activities already flow through the payload to the layout worker.
+ */
+export async function enrichActivityBinNames(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload,
+  companyId: string
+): Promise<LineagePayload> {
+  const binIds = new Set<string>();
+  for (const activity of payload.activities) {
+    const attrs = activity.attributes as Record<string, unknown> | null;
+    for (const key of ["From Shelf", "To Shelf"]) {
+      const id = attrs?.[key];
+      if (typeof id === "string" && id) binIds.add(id);
+    }
+  }
+  if (binIds.size === 0) return payload;
+
+  const storageUnits = await client
+    .from("storageUnit")
+    .select("id, name")
+    .in("id", Array.from(binIds))
+    .eq("companyId", companyId);
+  if (storageUnits.error || !storageUnits.data?.length) return payload;
+
+  const nameById = indexByMapped(
+    storageUnits.data,
+    (row) => row.id,
+    (row) => row.name
+  );
+
+  return {
+    ...payload,
+    activities: payload.activities.map((activity) => {
+      const attrs = activity.attributes as Record<string, unknown> | null;
+      const from = attrs?.["From Shelf"];
+      const to = attrs?.["To Shelf"];
+      const fromName =
+        typeof from === "string" ? nameById.get(from) : undefined;
+      const toName = typeof to === "string" ? nameById.get(to) : undefined;
+      if (!fromName && !toName) return activity;
+      return {
+        ...activity,
+        attributes: {
+          ...(attrs ?? {}),
+          ...(fromName ? { "From Storage Unit Name": fromName } : {}),
+          ...(toName ? { "To Storage Unit Name": toName } : {})
+        }
+      };
+    })
+  };
 }

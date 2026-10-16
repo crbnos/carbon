@@ -2,22 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  CarbonError,
-  defineServiceFn,
-  type ErrorCategory,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   convertUnitPrice,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
-import { PurchaseOrderEmail } from "@carbon/documents/email";
-import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   decideApprovalRequest,
@@ -35,25 +25,18 @@ import {
   isApprovalRequired,
   rejectRequest
 } from "@carbon/ee/approvals.server";
-import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
+import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import {
-  cutLeasePaymentRows,
-  type DraftedLeaseInvoice
-} from "@carbon/server-functions/create-lease-invoices";
-import { isDataLayerError } from "@carbon/server-functions/errors";
+import { serverFns } from "@carbon/server-functions";
 import {
   applyRate,
-  async,
   datetime,
   deriveRate,
-  openEndedLeaseHorizon,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
   taxableBase,
@@ -61,15 +44,8 @@ import {
   unchecked
 } from "@carbon/utils";
 import { type CalendarDate, parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { sql, type Transaction } from "kysely";
 import { z } from "zod";
-import {
-  getCurrencyByCode,
-  getExchangeRate,
-  getPaymentTermsList
-} from "~/modules/accounting/accounting.service";
+import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   assignPlanningActions,
@@ -79,18 +55,16 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
-import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import {
+  getLocationTimeZone,
   isActiveCompanyEmployee,
   refuseUnlessOwned
-} from "~/modules/shared/shared.server";
-import { upsertExternalLink } from "~/modules/shared/shared.service";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
-import { getUser } from "~/modules/users/users.server";
+} from "~/modules/shared/shared.service";
+import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import {
@@ -102,15 +76,9 @@ import {
   isRfqLocked,
   isSupplierQuoteLocked,
   leaseClassificationValidator,
-  leaseLineColumns,
-  leaseLinePaymentFields,
-  type leaseLineValidator,
   leaseModifyValidator,
-  leasePaymentTermFields,
   leasePurchaseValidator,
-  leaseTermColumns,
   leaseTerminateValidator,
-  type leaseValidator,
   lockedReturnLineField,
   PURCHASE_ORDER_REOPEN_STATUSES,
   plannedOrderValidator,
@@ -123,561 +91,55 @@ import {
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
-import {
-  renderPurchaseOrderPdf,
-  renderPurchaseReturnOrderPdf
-} from "./purchasing.pdf.server";
+import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf.server";
 import {
   applyPurchasingPlanningActions,
+  attachPurchaseOrderPdf,
+  cancelPendingApprovals,
   cancelPurchaseReturnOrder,
   confirmPurchaseReturnOrder,
+  deduplicateForecasts,
   finalizePurchaseOrder,
+  fromServerFn,
   getDefaultAttachmentsForPO,
-  getLease,
   getLinkedSupplierQuotes,
   getPurchaseOrder,
-  getPurchaseOrderLines,
-  getPurchaseOrderLocations,
   getPurchaseReturnOrder,
   getPurchasingRFQ,
   getPurchasingRFQLines,
   getReturnableEntitiesForReceiptLine,
   getSupplier,
   getSupplierContact,
-  getSupplierInteractionDocuments,
   getSupplierInteractionLineAttachments,
   getSupplierQuote,
   getSupplierQuoteLines,
   insertPurchaseOrder,
   insertPurchasingRFQ,
+  interactionAttachments,
+  kilobytes,
+  postLease,
+  promisedDateOf,
+  purchaseOrderEmail,
+  refusedBy,
+  releaseApprovedPurchaseOrder,
   reopenPurchaseOrderAsRevision,
   reopenPurchaseReturnOrder,
   sendSupplierQuote,
   setPurchaseReturnOrderLineTrackedEntities,
+  sharedSupplierQuote,
+  signedAttachments,
+  statusesOf,
+  supplierQuoteLink,
+  updatePricesOnFinalize,
   updatePurchaseOrderLineSchedule,
   updatePurchaseOrderStatus,
   updatePurchasingRFQStatus,
   upsertPurchaseOrderLine,
   upsertPurchaseReturnOrderLine,
-  upsertPurchasingRFQSuppliers
+  upsertPurchasingRFQSuppliers,
+  worklistChange,
+  writeClassificationOverride
 } from "./purchasing.service";
-
-/**
- * Server-only purchasing helpers: the lease writes that need a Kysely
- * transaction. Lives in a `.server.ts`, not the barrel-exported
- * `purchasing.service.ts`, because the module barrel is bundled for the
- * browser.
- */
-
-type Trx = Transaction<KyselyDatabase>;
-
-/** A Draft lease, locked for the rest of the transaction. Throws when it is
- *  missing or no longer a Draft: its rows were cut and measured at
- *  activation, and change only with Modify. */
-async function lockDraftLease(
-  trx: Trx,
-  args: { leaseId: string; companyId: string; what: string }
-) {
-  const lease = await trx
-    .selectFrom("lease")
-    .select([
-      "status",
-      "currencyCode",
-      "paymentFrequency",
-      "paymentTiming",
-      "annualEscalationPercent",
-      sql<string>`"commencementDate"::text`.as("commencementDate"),
-      sql<string | null>`"endDate"::text`.as("endDate"),
-      sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate")
-    ])
-    .where("id", "=", args.leaseId)
-    .where("companyId", "=", args.companyId)
-    .forUpdate()
-    .executeTakeFirst();
-  if (!lease) throw new Error("Lease not found");
-  if (lease.status !== "Draft") {
-    throw new Error(
-      `${args.what} changes only while the lease is Draft; modify an active lease instead`
-    );
-  }
-  return lease;
-}
-
-/** Replaces the payment rows of a locked Draft lease's assets (one asset with
- *  `leaseLineId`) with the ones its terms cut (`cutLeasePaymentRows`). An
- *  asset with no payment has no rows. An open-ended lease is cut through one
- *  period past today (`openEndedLeaseHorizon`); the daily job rolls it
- *  forward from there. */
-async function cutDraftLeasePayments(
-  trx: Trx,
-  args: {
-    lease: Awaited<ReturnType<typeof lockDraftLease>>;
-    leaseId: string;
-    leaseLineId?: string;
-    companyId: string;
-    userId: string;
-  }
-): Promise<number> {
-  const { lease, leaseId, companyId, userId } = args;
-  let linesQuery = trx
-    .selectFrom("leaseLine")
-    .select([
-      "id",
-      "paymentAmount",
-      "purchaseOptionAmount",
-      "purchaseOptionReasonablyCertain"
-    ])
-    .where("leaseId", "=", leaseId)
-    .where("companyId", "=", companyId);
-  if (args.leaseLineId) {
-    linesQuery = linesQuery.where("id", "=", args.leaseLineId);
-  }
-  const lines = await linesQuery.execute();
-  if (args.leaseLineId && lines.length === 0) {
-    throw new Error("Asset not found");
-  }
-  if (lines.length === 0) return 0;
-
-  const currency = await trx
-    .selectFrom("currency")
-    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
-    .select("currency.decimalPlaces")
-    .where("company.id", "=", companyId)
-    .where("currency.code", "=", lease.currencyCode)
-    .executeTakeFirst();
-  if (!currency) {
-    throw new Error(`Currency ${lease.currencyCode} is not set up`);
-  }
-  const through = lease.endDate
-    ? undefined
-    : openEndedLeaseHorizon(
-        lease.commencementDate,
-        datetime.today(await getCompanyTimeZone(trx, companyId)).toString(),
-        lease.paymentFrequency
-      );
-
-  const rows = lines
-    .filter((line) => line.paymentAmount > 0)
-    .flatMap(
-      (line) =>
-        cutLeasePaymentRows({
-          lease,
-          asset: line,
-          decimals: currency.decimalPlaces,
-          through
-        }).rows
-    );
-
-  await trx
-    .deleteFrom("leasePayment")
-    .where("leaseId", "=", leaseId)
-    .where("companyId", "=", companyId)
-    .where(
-      "leaseLineId",
-      "in",
-      lines.map((line) => line.id)
-    )
-    .execute();
-  if (rows.length > 0) {
-    await trx
-      .insertInto("leasePayment")
-      .values(
-        rows.map((row) => ({ ...row, leaseId, companyId, createdBy: userId }))
-      )
-      .execute();
-  }
-  return rows.length;
-}
-
-/** Whether any of `fields` differs between a saved row and its new values. */
-function changed(
-  saved: Record<string, unknown>,
-  next: Record<string, unknown>,
-  fields: readonly string[]
-): boolean {
-  return fields.some(
-    (field) =>
-      next[field] !== undefined &&
-      String(saved[field] ?? "") !== String(next[field] ?? "")
-  );
-}
-
-/**
- * Cuts a Draft lease's payment rows again from its terms, one set per asset
- * at the asset's payment amount, replacing the rows (and any edits to them)
- * in one transaction. Pass `leaseLineId` to cut one asset's rows only. A row
- * due before the lease's `invoiceFromDate` was paid outside Carbon and is
- * created `Skipped`, so the daily job never invoices it. A purchase option row
- * is added only when it is reasonably certain (it is then part of the lease
- * liability).
- */
-export async function regenerateLeasePayments(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    leaseId: string;
-    leaseLineId?: string;
-    companyId: string;
-    userId: string;
-  }
-): Promise<{ count: number }> {
-  return db.transaction().execute(async (trx) => {
-    const lease = await lockDraftLease(trx, {
-      leaseId: args.leaseId,
-      companyId: args.companyId,
-      what: "A payment row"
-    });
-    return { count: await cutDraftLeasePayments(trx, { ...args, lease }) };
-  });
-}
-
-/**
- * Saves a Draft lease's terms and, when a term the payment rows are cut from
- * changed (`leasePaymentTermFields`), cuts every asset's rows again — one
- * transaction, so the rows never describe terms the lease no longer has. An
- * invoice-from date that still equals the commencement follows a new one
- * (`resolveLeaseDates`). `customFields` replaces the stored set; leave it out
- * to keep it.
- */
-export async function updateDraftLease(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    leaseId: string;
-    companyId: string;
-    userId: string;
-    terms: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId">;
-    customFields?: Json;
-  }
-): Promise<{ paymentsCut: boolean }> {
-  const { leaseId, companyId, userId } = args;
-  return db.transaction().execute(async (trx) => {
-    const saved = await lockDraftLease(trx, {
-      leaseId,
-      companyId,
-      what: "A lease's terms"
-    });
-    const columns = leaseTermColumns(args.terms, saved);
-    await trx
-      .updateTable("lease")
-      .set({
-        ...columns,
-        ...(args.customFields !== undefined
-          ? { customFields: JSON.stringify(args.customFields) }
-          : {}),
-        updatedBy: userId,
-        updatedAt: sql`now()`
-      })
-      .where("id", "=", leaseId)
-      .where("companyId", "=", companyId)
-      .execute();
-
-    if (!changed(saved, columns, leasePaymentTermFields)) {
-      return { paymentsCut: false };
-    }
-    await cutDraftLeasePayments(trx, {
-      lease: { ...saved, ...columns },
-      leaseId,
-      companyId,
-      userId
-    });
-    return { paymentsCut: true };
-  });
-}
-
-/**
- * Adds an asset to a Draft lease (no `leaseLineId`) or changes one, and cuts
- * its payment rows again when it is new or a field they are cut from changed
- * (`leaseLinePaymentFields`) — one transaction. Only the asset's own fields
- * are written (`leaseLineColumns`), never its status, classification or
- * measurement.
- */
-export async function saveDraftLeaseLine(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    leaseId: string;
-    leaseLineId?: string;
-    companyId: string;
-    userId: string;
-    line: Omit<z.infer<typeof leaseLineValidator>, "id" | "leaseId">;
-  }
-): Promise<{ id: string; paymentsCut: boolean }> {
-  const { leaseId, companyId, userId } = args;
-  return db.transaction().execute(async (trx) => {
-    const lease = await lockDraftLease(trx, {
-      leaseId,
-      companyId,
-      what: "A leased asset"
-    });
-    const columns = leaseLineColumns(args.line);
-
-    let id: string;
-    let recut: boolean;
-    if (args.leaseLineId) {
-      const saved = await trx
-        .selectFrom("leaseLine")
-        .select([...leaseLinePaymentFields])
-        .where("id", "=", args.leaseLineId)
-        .where("leaseId", "=", leaseId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!saved) throw new Error("Asset not found");
-      await trx
-        .updateTable("leaseLine")
-        .set({ ...columns, updatedBy: userId, updatedAt: sql`now()` })
-        .where("id", "=", args.leaseLineId)
-        .where("leaseId", "=", leaseId)
-        .where("companyId", "=", companyId)
-        .execute();
-      id = args.leaseLineId;
-      recut = changed(saved, columns, leaseLinePaymentFields);
-    } else {
-      const last = await trx
-        .selectFrom("leaseLine")
-        .select((eb) => eb.fn.max("sortOrder").as("sortOrder"))
-        .where("leaseId", "=", leaseId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      const inserted = await trx
-        .insertInto("leaseLine")
-        .values({
-          ...columns,
-          leaseId,
-          sortOrder: Number(last?.sortOrder ?? 0) + 1,
-          companyId,
-          createdBy: userId
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      id = inserted.id;
-      recut = true;
-    }
-
-    if (recut) {
-      await cutDraftLeasePayments(trx, {
-        lease,
-        leaseId,
-        leaseLineId: id,
-        companyId,
-        userId
-      });
-    }
-    return { id, paymentsCut: recut };
-  });
-}
-
-/** Returns the lease payment rows billed by these purchase invoice lines to
- *  Pending, so the next invoice run bills them again, stamped with who did
- *  it. The `purchaseInvoiceLine_release_lease_payment` trigger releases a
- *  row on ANY delete of its line (it cannot know the user); this runs first,
- *  so the trigger then finds nothing left to release. */
-async function releaseLeasePayments(
-  trx: Trx,
-  args: { companyId: string; purchaseInvoiceLineIds: string[]; userId: string }
-): Promise<void> {
-  const { companyId, purchaseInvoiceLineIds, userId } = args;
-  if (purchaseInvoiceLineIds.length === 0) return;
-  await trx
-    .updateTable("leasePayment")
-    .set({
-      status: "Pending",
-      purchaseInvoiceLineId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("purchaseInvoiceLineId", "in", purchaseInvoiceLineIds)
-    .execute();
-}
-
-/**
- * Deletes a Draft purchase invoice and, in the same transaction, returns the
- * lease payment rows it billed to Pending (see `releaseLeasePayments`).
- * Checked here under a row lock, because releasing a POSTED invoice's rows
- * would bill them twice. Throws on a missing or non-Draft invoice.
- */
-export async function deletePurchaseInvoiceReleasingLeases(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
-): Promise<void> {
-  const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
-    const invoice = await trx
-      .selectFrom("purchaseInvoice")
-      .select(["id", "status"])
-      .where("id", "=", invoiceId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!invoice) throw new Error("Purchase invoice not found");
-    if (invoice.status !== "Draft") {
-      throw new Error(
-        `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
-      );
-    }
-
-    const lines = await trx
-      .selectFrom("purchaseInvoiceLine")
-      .select("id")
-      .where("invoiceId", "=", invoiceId)
-      .where("companyId", "=", companyId)
-      .where("leasePaymentId", "is not", null)
-      .execute();
-    await releaseLeasePayments(trx, {
-      companyId,
-      purchaseInvoiceLineIds: lines.map((line) => line.id),
-      userId
-    });
-
-    await trx
-      .deleteFrom("purchaseInvoice")
-      .where("id", "=", invoiceId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
-/** One line of a Draft purchase invoice, returning the lease payment row it
- *  billed to Pending (see `deletePurchaseInvoiceReleasingLeases`). The line
- *  must belong to `invoiceId` and that invoice must be Draft — checked here,
- *  under a row lock. Throws otherwise. */
-export async function deletePurchaseInvoiceLineReleasingLeases(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    invoiceId: string;
-    purchaseInvoiceLineId: string;
-    userId: string;
-  }
-): Promise<void> {
-  const { companyId, invoiceId, purchaseInvoiceLineId, userId } = args;
-  await db.transaction().execute(async (trx) => {
-    const line = await trx
-      .selectFrom("purchaseInvoiceLine")
-      .innerJoin("purchaseInvoice", (join) =>
-        join
-          .onRef("purchaseInvoice.id", "=", "purchaseInvoiceLine.invoiceId")
-          .onRef(
-            "purchaseInvoice.companyId",
-            "=",
-            "purchaseInvoiceLine.companyId"
-          )
-      )
-      .select([
-        "purchaseInvoiceLine.invoiceId as invoiceId",
-        "purchaseInvoice.status as status"
-      ])
-      .where("purchaseInvoiceLine.id", "=", purchaseInvoiceLineId)
-      .where("purchaseInvoiceLine.companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!line || line.invoiceId !== invoiceId) {
-      throw new Error("Purchase invoice line not found on this invoice");
-    }
-    if (line.status !== "Draft") {
-      throw new Error(
-        `Cannot delete a line of a purchase invoice with status "${line.status}". Only Draft invoices can be edited.`
-      );
-    }
-
-    await releaseLeasePayments(trx, {
-      companyId,
-      purchaseInvoiceLineIds: [purchaseInvoiceLineId],
-      userId
-    });
-    await trx
-      .deleteFrom("purchaseInvoiceLine")
-      .where("id", "=", purchaseInvoiceLineId)
-      .where("companyId", "=", companyId)
-      .execute();
-  });
-}
-
-/** The date a lease that commenced before the accounting cutover opens on, as
- *  `post-lease` activate resolves it (`resolveAccountingPeriod`,
- *  "historical-with-shift"): the cutover, or the first day of the first open
- *  period after it when the cutover's period is locked or closed. Read only —
- *  activation is what locks or opens the period — so the Draft's Skipped
- *  payment check (`skippedPaymentBlockers`) matches activation. */
-export async function leaseOpeningAsOf(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; cutoverDate: string }
-): Promise<string> {
-  const { companyId, cutoverDate } = args;
-  const period = await db
-    .selectFrom("accountingPeriod")
-    .select(["closeStatus", "closedAt"])
-    .where("companyId", "=", companyId)
-    .where("startDate", "<=", cutoverDate)
-    .where("endDate", ">=", cutoverDate)
-    .orderBy("startDate")
-    .orderBy("id")
-    .executeTakeFirst();
-  const closed =
-    period &&
-    (period.closeStatus === "Locked" ||
-      period.closeStatus === "Closed" ||
-      period.closedAt !== null);
-  if (!closed) return cutoverDate;
-  const next = await db
-    .selectFrom("accountingPeriod")
-    .select(sql<string>`"startDate"::text`.as("startDate"))
-    .where("companyId", "=", companyId)
-    .where("startDate", ">", cutoverDate)
-    .where("closeStatus", "=", "Open")
-    .where("closedAt", "is", null)
-    .orderBy("startDate")
-    .orderBy("id")
-    .executeTakeFirst();
-  // With no open period after it, activation refuses; the cutover stands.
-  return next?.startDate ?? cutoverDate;
-}
-
-/** The lease page's "Invoice": drafts the purchase invoices the lease has
- *  due, exactly as the daily job would — the `create-lease-invoices` server
- *  function. */
-export async function generateLeaseInvoicesNow(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    /** `YYYY-MM-DD` in the company's timezone. */
-    asOf: string;
-    leaseId: string;
-  }
-): Promise<{ invoices: DraftedLeaseInvoice[]; invoiceIds: string[] }> {
-  const { companyId, userId, asOf, leaseId } = args;
-  const { invoices, invoiceIds, failures } = await serverFns
-    .system({ db, companyId, userId })
-    .invokeOrThrow("create-lease-invoices", { asOf, leaseId });
-  // One lease is billed here, so its failure is the action's failure.
-  if (failures.length > 0) {
-    throw new Error(failures.map((f) => f.error).join("; "));
-  }
-  return { invoices, invoiceIds };
-}
-
-/** Where a Draft lease is worked on: its setup wizard, for someone who can
- *  edit it. Null for any other lease, or a viewer, who sees the lease page —
- *  as `draftRentalAgreementSetupPath`. */
-export async function draftLeaseSetupPath(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
-): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [lease, claims] = await Promise.all([
-    client
-      .from("lease")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
-  if (lease.data?.status !== "Draft") return null;
-  if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
-    return null;
-  }
-  return path.to.leaseSetup(id, "assets");
-}
 
 // ── Operations ──────────────────────────────────────────────────────────────
 // `defineServiceFn` operations: what the routes, the API and MCP call, so each
@@ -690,93 +152,6 @@ const customFieldsInput = z.record(
   z.string(),
   z.union([z.string(), z.number(), z.boolean()])
 );
-
-/** A server function's refusal as this function's error: its status picks
- *  the category, and an empty message (a data-layer failure) is `fallback`. */
-function fromServerFn(
-  ctx: ServiceContext,
-  error: { status: number; message: string },
-  fallback: string
-): CarbonError {
-  const category: ErrorCategory =
-    error.status === 400
-      ? "validation"
-      : error.status === 403
-        ? "forbidden"
-        : error.status === 404
-          ? "notFound"
-          : error.status === 409
-            ? "conflict"
-            : error.status < 500
-              ? "rule"
-              : "internal";
-  return ctx.error(category, error.message || fallback, error);
-}
-
-/** Signed links to a supplier interaction's documents, for an email. A file
- *  that cannot be signed is logged and left out. */
-async function interactionAttachments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  interactionId: string
-): Promise<{ filename: string; path: string }[]> {
-  const docs = await getSupplierInteractionDocuments(
-    client,
-    companyId,
-    interactionId
-  );
-  return signedAttachments(
-    client,
-    companyId,
-    docs.map((doc) => ({
-      filename: doc.name,
-      path: `${companyId}/supplier-interaction/${interactionId}/${doc.name}`
-    }))
-  );
-}
-
-async function signedAttachments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  files: { filename: string; path: string }[]
-): Promise<{ filename: string; path: string }[]> {
-  const signed = await async.map(files, async (file) => {
-    const { data, error } = await storage(client)
-      .company(companyId)
-      .createSignedUrl(file.path, 3600);
-    if (!data) {
-      logger.error("Failed to create signed URL for attachment", {
-        storagePath: file.path,
-        error
-      });
-      return null;
-    }
-    return { filename: file.filename, path: data.signedUrl };
-  });
-  return signed.flatMap((file) => (file ? [file] : []));
-}
-
-/** The statuses of records an edit is about to touch, for a lock check. */
-async function statusesOf(
-  ctx: ServiceContext,
-  table:
-    | "purchaseOrder"
-    | "purchaseReturnOrder"
-    | "purchasingRfq"
-    | "supplierQuote",
-  ids: string[]
-): Promise<(string | null)[] | CarbonError> {
-  const rows = await ctx.asCaller.supabase
-    .from(table as "purchaseOrder")
-    .select("status")
-    .in("id", ids)
-    .eq("companyId", ctx.company.id);
-  if (rows.error) {
-    return ctx.error("internal", "Failed to read the records", rows.error);
-  }
-  return rows.data.map((row) => row.status);
-}
-
 // ── RFQs ────────────────────────────────────────────────────────────────────
 
 /**
@@ -1197,42 +572,6 @@ export const updateSupplierQuotes = defineServiceFn({
     return { ids };
   }
 });
-
-/**
- * The quote's share link: the existing one, or a new one, saved on the quote.
- * The link expires with the quote.
- */
-async function supplierQuoteLink(
-  ctx: ServiceContext,
-  quote: {
-    id: string;
-    externalLinkId: string | null;
-    supplierId: string | null;
-    expirationDate: string | null;
-  }
-): Promise<string | CarbonError> {
-  const client = ctx.asSystem.supabase;
-  const link = await upsertExternalLink(client, {
-    id: quote.externalLinkId ?? undefined,
-    documentType: "SupplierQuote",
-    documentId: quote.id,
-    supplierId: quote.supplierId,
-    expiresAt: quote.expirationDate,
-    companyId: ctx.company.id
-  });
-  if (link.error || !link.data) {
-    return ctx.error("internal", "Failed to create the share link", link.error);
-  }
-  if (quote.externalLinkId !== link.data.id) {
-    await client
-      .from("supplierQuote")
-      .update({ externalLinkId: link.data.id })
-      .eq("id", quote.id)
-      .eq("companyId", ctx.company.id);
-  }
-  return link.data.id;
-}
-
 /**
  * Finalize a supplier quote.
  *
@@ -1394,25 +733,6 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
 // The supplier answers through the quote's share link, which is the only
 // credential: these run as the system, in the quote's company, on behalf of
 // the quote's creator (`shareLinkContext`).
-
-/** The supplier quote a share link answers, read with the service role. */
-async function sharedSupplierQuote(
-  ctx: ServiceContext,
-  supplierQuoteId: string
-) {
-  const quote = await ctx.asSystem.supabase
-    .from("supplierQuote")
-    .select("id, createdBy, exchangeRate, externalLinkId, externalNotes")
-    .eq("id", supplierQuoteId)
-    .eq("companyId", ctx.company.id)
-    .maybeSingle();
-  if (quote.error) {
-    return ctx.error("internal", "Failed to read the quote", quote.error);
-  }
-  if (!quote.data) return ctx.error("notFound", "Quote not found");
-  return quote.data;
-}
-
 const supplierResponder = {
   submittedBy: z.string().min(1),
   submittedByEmail: z.string().email()
@@ -1896,20 +1216,6 @@ export const decideSupplierApproval = defineServiceFn({
     return { supplierId, decision };
   }
 });
-
-/** A refusal thrown by a Kysely write that guards its own rule ("Cannot
- *  cancel a return order in Completed status"): its message is for the
- *  person, unless it came from the data layer. */
-function refusedBy(
-  ctx: ServiceContext,
-  err: unknown,
-  fallback: string
-): CarbonError {
-  return err instanceof Error && !isDataLayerError(err)
-    ? ctx.error("rule", err.message, err)
-    : ctx.error("internal", fallback, err);
-}
-
 // ── Purchase return orders ──────────────────────────────────────────────────
 
 const returnOrderTextFields = [
@@ -2256,38 +1562,6 @@ export const updateReturnOrderLine = defineServiceFn({
 });
 
 // ── Leases (lessee) ─────────────────────────────────────────────────────────
-
-/** A refusal unless the lease is the caller's company's (readable as the
- *  caller). */
-async function leaseNotFound(
-  ctx: ServiceContext,
-  leaseId: string
-): Promise<CarbonError | null> {
-  const lease = await getLease(ctx.asCaller.supabase, leaseId, ctx.company.id);
-  return lease.error || lease.data?.companyId !== ctx.company.id
-    ? ctx.error("notFound", "Lease not found", lease.error)
-    : null;
-}
-
-/** Runs one `post-lease` lifecycle action, which locks the lease and checks
- *  its own rules in one transaction. */
-async function postLease(
-  ctx: ServiceContext,
-  input: ServerFnInput<"post-lease">,
-  fallback: string
-): Promise<CarbonError | null> {
-  const missing = await leaseNotFound(ctx, input.leaseId);
-  if (missing) return missing;
-  const result = await serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("post-lease", input);
-  return result.error ? fromServerFn(ctx, result.error, fallback) : null;
-}
-
 /**
  * Activate a Draft lease.
  *
@@ -2433,121 +1707,6 @@ export const purchaseLeaseLine = defineServiceFn({
     return refused ?? { leaseId, leaseLineId };
   }
 });
-
-/**
- * Write (or clear) a Draft lease asset's classification override, audit
- * logged. An accounting decision, so it runs as the system on the caller's
- * `update: accounting`: an accountant need not hold the purchasing write the
- * lease's own policies ask for.
- */
-async function writeClassificationOverride(
-  ctx: ServiceContext,
-  {
-    leaseId,
-    leaseLineId,
-    override
-  }: {
-    leaseId: string;
-    leaseLineId: string;
-    override: {
-      classification: "Operating" | "Finance";
-      reason: string;
-    } | null;
-  }
-): Promise<CarbonError | null> {
-  const client = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const [lease, line] = await Promise.all([
-    client
-      .from("lease")
-      .select("id, status")
-      .eq("id", leaseId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    client
-      .from("leaseLine")
-      .select("id, classificationOverride, classificationOverrideReason")
-      .eq("id", leaseLineId)
-      .eq("leaseId", leaseId)
-      .eq("companyId", companyId)
-      .maybeSingle()
-  ]);
-  if (lease.error || line.error) {
-    return ctx.error(
-      "internal",
-      "Leased asset not found",
-      lease.error ?? line.error
-    );
-  }
-  if (!lease.data || !line.data) {
-    return ctx.error("notFound", "Leased asset not found");
-  }
-  const fixed = () =>
-    ctx.error(
-      "rule",
-      "The classification is fixed once the lease is activated"
-    );
-  if (lease.data.status !== "Draft") return fixed();
-
-  // Activation stamps `lesseeClassification`, so an unstamped asset is one
-  // still to be classified: an asset activated since the read above matches
-  // no row, and its commenced treatment is never overwritten.
-  const update = await client
-    .from("leaseLine")
-    .update({
-      classificationOverride: override?.classification ?? null,
-      classificationOverrideReason: override?.reason ?? null,
-      updatedBy: ctx.auditUserId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", leaseLineId)
-    .eq("leaseId", leaseId)
-    .eq("companyId", companyId)
-    .is("lesseeClassification", null)
-    .select("id")
-    .maybeSingle();
-  if (update.error) {
-    return ctx.error(
-      "internal",
-      override
-        ? "Failed to override the classification"
-        : "Failed to remove the classification override",
-      update.error
-    );
-  }
-  if (!update.data) return fixed();
-
-  // Best-effort: a failed audit write never undoes the change.
-  try {
-    await insertAuditLogEntries(client, companyId, [
-      {
-        tableName: "leaseLine",
-        entityType: "lease",
-        entityId: leaseId,
-        recordId: leaseLineId,
-        operation: "UPDATE",
-        actorId: ctx.auditUserId,
-        diff: {
-          classificationOverride: {
-            old: line.data.classificationOverride,
-            new: override?.classification ?? null
-          },
-          classificationOverrideReason: {
-            old: line.data.classificationOverrideReason,
-            new: override?.reason ?? null
-          }
-        },
-        metadata: { origin: "web" }
-      }
-    ]);
-  } catch (err) {
-    logger.warn("audit write skipped for a lease classification override", {
-      error: err
-    });
-  }
-  return null;
-}
-
 /**
  * Override a Draft lease asset's classification.
  *
@@ -2843,27 +2002,6 @@ const MRP_SUPPLY_STATUSES = new Set<string>([
   "To Receive",
   "To Receive and Invoice"
 ]);
-
-/** Cancels the order's pending approval requests. Approved and Rejected ones
- *  stay: they are the audit trail. */
-async function cancelPendingApprovals(
-  ctx: ServiceContext,
-  purchaseOrderId: string
-) {
-  return ctx.asSystem.supabase
-    .from("approvalRequest")
-    .update({
-      status: "Cancelled",
-      updatedBy: ctx.auditUserId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("documentType", "purchaseOrder")
-    .eq("documentId", purchaseOrderId)
-    .eq("companyId", ctx.company.id)
-    .eq("status", "Pending")
-    .select("id");
-}
-
 /**
  * Reopen a purchase order.
  *
@@ -3056,183 +2194,6 @@ export const closePurchaseOrderAndApprovals = defineServiceFn({
     return { purchaseOrderId };
   }
 });
-
-/** A file's size as the documents table stores it: whole kilobytes. */
-function kilobytes(file: Buffer): number {
-  return Math.round(file.byteLength / 1024);
-}
-
-type PurchaseOrderRow = NonNullable<
-  Awaited<ReturnType<typeof getPurchaseOrder>>["data"]
->;
-
-/**
- * Renders the order's PDF, stores it with the supplier interaction's files
- * and adds it as a document. The step that fails is the message.
- */
-async function attachPurchaseOrderPdf(
-  ctx: ServiceContext,
-  { purchaseOrder, locale }: { purchaseOrder: PurchaseOrderRow; locale: string }
-): Promise<{ fileName: string; path: string; size: number } | CarbonError> {
-  const companyId = ctx.company.id;
-  const purchaseOrderId = purchaseOrder.id!;
-  let pdf: Awaited<ReturnType<typeof renderPurchaseOrderPdf>>;
-  try {
-    pdf = await renderPurchaseOrderPdf(ctx.asCaller.supabase, {
-      companyId,
-      companyGroupId: ctx.company.groupId,
-      purchaseOrderId,
-      locale
-    });
-  } catch (err) {
-    return ctx.error("internal", "Failed to generate PDF", err);
-  }
-
-  const fileName = stripSpecialCharacters(
-    `${getPurchaseOrderDisplayId(purchaseOrder)} - ${datetime
-      .timestamp()
-      .slice(0, -5)}.pdf`
-  );
-  const path = `${companyId}/supplier-interaction/${purchaseOrder.supplierInteractionId}/${fileName}`;
-  const upload = await storage(ctx.asSystem.supabase)
-    .company(companyId)
-    .upload(path, pdf.body, {
-      cacheControl: `${12 * 60 * 60}`,
-      contentType: "application/pdf",
-      upsert: true
-    });
-  if (upload.error) {
-    return ctx.error("internal", "Failed to upload file", upload.error);
-  }
-
-  const size = kilobytes(pdf.body);
-  const document = await upsertDocument(ctx.asSystem.supabase, {
-    path,
-    name: fileName,
-    size,
-    sourceDocument: "Purchase Order",
-    sourceDocumentId: purchaseOrderId,
-    readGroups: [ctx.auditUserId],
-    writeGroups: [ctx.auditUserId],
-    createdBy: ctx.auditUserId,
-    companyId
-  });
-  if (document.error) {
-    return ctx.error("internal", "Failed to create document", document.error);
-  }
-  return { fileName, path, size };
-}
-
-/**
- * The purchase order email to the supplier contact, copied to the buyer:
- * null when the contact has no email address.
- */
-async function purchaseOrderEmail(
-  ctx: ServiceContext,
-  {
-    purchaseOrderId,
-    supplierContactId,
-    locale
-  }: { purchaseOrderId: string; supplierContactId: string; locale: string }
-) {
-  const client = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const [
-    company,
-    contact,
-    purchaseOrder,
-    lines,
-    locations,
-    paymentTerms,
-    buyer
-  ] = await Promise.all([
-    getCompany(client, companyId),
-    getSupplierContact(client, supplierContactId, companyId),
-    getPurchaseOrder(client, purchaseOrderId),
-    getPurchaseOrderLines(client, purchaseOrderId),
-    getPurchaseOrderLocations(client, purchaseOrderId),
-    getPaymentTermsList(client, companyId),
-    getUser(client, ctx.auditUserId)
-  ]);
-  if (!contact.data?.contact) throw new Error("Failed to get supplier contact");
-  if (!company.data) throw new Error("Failed to get company");
-  if (!buyer.data) throw new Error("Failed to get user");
-  if (!purchaseOrder.data) throw new Error("Failed to get purchase order");
-  if (!locations.data)
-    throw new Error("Failed to get purchase order locations");
-  if (!paymentTerms.data) throw new Error("Failed to get payment terms");
-  const supplierEmail = contact.data.contact.email;
-  if (!supplierEmail) return null;
-
-  // Same decimals the PDF of this order uses.
-  const currency = purchaseOrder.data.currencyCode
-    ? await getCurrencyByCode(
-        client,
-        ctx.company.groupId,
-        purchaseOrder.data.currencyCode
-      )
-    : null;
-  const template = PurchaseOrderEmail({
-    // @ts-expect-error TS2739 - TODO: fix type
-    company: company.data,
-    currencyDecimals: currency?.data?.decimalPlaces ?? null,
-    locale,
-    purchaseOrder: purchaseOrder.data,
-    purchaseOrderLines: lines.data ?? [],
-    purchaseOrderLocations: locations.data,
-    recipient: {
-      email: supplierEmail,
-      firstName: contact.data.contact.firstName ?? undefined,
-      lastName: contact.data.contact.lastName ?? undefined
-    },
-    sender: {
-      email: buyer.data.email,
-      firstName: buyer.data.firstName,
-      lastName: buyer.data.lastName
-    },
-    paymentTerms: paymentTerms.data
-  });
-  return {
-    to: [buyer.data.email, supplierEmail],
-    from: buyer.data.email,
-    subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
-    html: await renderAsync(template),
-    text: await renderAsync(template, { plainText: true }),
-    purchaseOrder: purchaseOrder.data,
-    lines: lines.data ?? []
-  };
-}
-
-/** Updates the supplier prices from the order when the company updates them
- *  on finalize. A failure is logged: the order stands. */
-async function updatePricesOnFinalize(
-  ctx: ServiceContext,
-  purchaseOrderId: string
-) {
-  const settings = await getCompanySettings(
-    ctx.asSystem.supabase,
-    ctx.company.id
-  );
-  if (settings.data?.purchasePriceUpdateTiming !== "Purchase Order Finalize") {
-    return;
-  }
-  const update = await serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("update-purchased-prices", {
-      purchaseOrderId,
-      source: "purchaseOrder",
-      updatePrices: true,
-      updateLeadTimes: false
-    });
-  if (update.error) {
-    logger.error("Failed to update purchased prices", { error: update.error });
-  }
-}
-
 const purchaseOrderNotification = {
   notification: z.enum(["Email", "None"]).optional(),
   supplierContact: z.string().optional(),
@@ -3606,69 +2567,6 @@ export const decidePurchaseOrderApproval = defineServiceFn({
     return { purchaseOrderId, decision };
   }
 });
-
-/** After an approval: the PDF, the email and the prices, each logged when it
- *  fails. */
-async function releaseApprovedPurchaseOrder(
-  ctx: ServiceContext,
-  {
-    purchaseOrderId,
-    notification,
-    supplierContact,
-    cc,
-    locale
-  }: {
-    purchaseOrderId: string;
-    notification?: "Email" | "None";
-    supplierContact?: string;
-    cc?: string[];
-    locale?: string;
-  }
-) {
-  const purchaseOrder = await getPurchaseOrder(
-    ctx.asSystem.supabase,
-    purchaseOrderId
-  );
-  if (!purchaseOrder.data) return;
-
-  const pdf = await attachPurchaseOrderPdf(ctx, {
-    purchaseOrder: purchaseOrder.data,
-    locale: locale ?? "en-US"
-  });
-  if (pdf instanceof CarbonError) {
-    logger.error("Failed to generate PDF after approval", { error: pdf.cause });
-  } else if (notification === "Email" && supplierContact) {
-    try {
-      const email = await purchaseOrderEmail(ctx, {
-        purchaseOrderId,
-        supplierContactId: supplierContact,
-        locale: locale ?? "en-US"
-      });
-      if (email) {
-        const [attachment] = await signedAttachments(
-          ctx.asSystem.supabase,
-          ctx.company.id,
-          [{ filename: pdf.fileName, path: pdf.path }]
-        );
-        await trigger("send-email", {
-          to: email.to,
-          cc: cc?.length ? cc : undefined,
-          from: email.from,
-          subject: email.subject,
-          html: email.html,
-          text: email.text,
-          attachments: attachment ? [attachment] : undefined,
-          companyId: ctx.company.id
-        });
-      }
-    } catch (err) {
-      logger.error("Failed to send email after approval", { error: err });
-    }
-  }
-
-  await updatePricesOnFinalize(ctx, purchaseOrderId);
-}
-
 /**
  * Confirm a purchase return order.
  *
@@ -3764,42 +2662,6 @@ export const confirmReturnOrder = defineServiceFn({
 });
 
 // ── Purchasing planning ─────────────────────────────────────────────────────
-
-/**
- * The date the supplier promised for a PO line: the line's own, else its
- * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
- * gives MRP. MRP dates the line by this ahead of the required date, so a
- * planning date change (which writes the required date) cannot move it.
- */
-function promisedDateOf(line: {
-  promisedDate: string | null;
-  receiptPromisedDate: string | null | undefined;
-}): string | null {
-  return line.promisedDate ?? line.receiptPromisedDate ?? null;
-}
-
-/** Sums forecasts that land on the same (item, location, period). */
-function deduplicateForecasts<
-  T extends {
-    itemId: string;
-    locationId: string;
-    periodId: string;
-    forecastQuantity: number;
-  }
->(forecasts: T[]): T[] {
-  const map = new Map<string, T>();
-  for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
-    const existing = map.get(key);
-    if (existing) {
-      existing.forecastQuantity += forecast.forecastQuantity;
-    } else {
-      map.set(key, { ...forecast });
-    }
-  }
-  return Array.from(map.values());
-}
-
 /**
  * Order purchasing suggestions at a location.
  *
@@ -4714,36 +3576,6 @@ export const applyPlanningActions = defineServiceFn({
     };
   }
 });
-
-/** How many of `requested` worklist rows a dismiss, reopen or assign changed,
- *  as the message; a refusal when none did. */
-function worklistChange(
-  ctx: ServiceContext,
-  verb: "Dismissed" | "Reopened" | "Assigned",
-  changed: number,
-  requested: number
-) {
-  if (changed === 0) {
-    const what = {
-      Dismissed: "dismiss",
-      Reopened: "reopen",
-      Assigned: "assign"
-    }[verb];
-    return ctx.error(
-      "conflict",
-      `Nothing to ${what} — these actions changed since the page loaded`
-    );
-  }
-  return {
-    changed,
-    message: `${verb} ${changed} planning action${changed === 1 ? "" : "s"}${
-      changed < requested
-        ? `; ${requested - changed} changed since the page loaded`
-        : ""
-    }`
-  };
-}
-
 /**
  * Dismiss purchasing suggestions.
  *

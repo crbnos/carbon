@@ -16,7 +16,7 @@ import {
   supplierQuoteValidator
 } from "~/modules/purchasing";
 import { SupplierQuoteForm } from "~/modules/purchasing/ui/SupplierQuote";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

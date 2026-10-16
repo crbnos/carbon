@@ -28,7 +28,7 @@ import {
   getRevenueRecognitionRunLines,
   revenueScheduleTypes
 } from "~/modules/accounting";
-import { getCompanyToday } from "~/modules/accounting/accounting.server";
+import { getCompanyToday } from "~/modules/accounting/accounting.service";
 import {
   getNextPeriodEnd,
   isFutureRunPeriod

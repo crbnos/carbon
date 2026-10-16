@@ -25,8 +25,10 @@ import {
   getOpenSalesOrderLines
 } from "~/modules/items/items.service";
 import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods
+} from "~/modules/shared/shared.service";
 
 const defaultResponse = {
   demand: [],

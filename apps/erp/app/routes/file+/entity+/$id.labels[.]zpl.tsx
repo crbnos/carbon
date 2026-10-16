@@ -10,7 +10,7 @@ import { getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getEntityLabelData } from "./labels.server";
 

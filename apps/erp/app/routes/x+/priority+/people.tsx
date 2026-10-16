@@ -39,7 +39,7 @@ import {
 import {
   buildPeopleCapacityBuckets,
   getWorkCenterCalendarHoursByDay
-} from "~/modules/production/peopleCapacity.server";
+} from "~/modules/production/production.service";
 import { OvertimeDialog } from "~/modules/production/ui/Schedule/People/OvertimeDialog";
 import { PeopleBoard } from "~/modules/production/ui/Schedule/People/PeopleBoard";
 import { PeopleCapacity } from "~/modules/production/ui/Schedule/People/PeopleCapacity";
@@ -49,8 +49,10 @@ import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleW
 import { assignmentMatchesShift } from "~/modules/production/ui/Schedule/People/peopleShared";
 import { TimeOffDialog } from "~/modules/production/ui/Schedule/People/TimeOffDialog";
 import { getWorkCentersByLocation } from "~/modules/resources";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

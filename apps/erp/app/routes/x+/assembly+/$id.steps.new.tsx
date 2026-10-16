@@ -16,7 +16,7 @@ import {
 import {
   logAssemblyStep,
   readAndLogFormData
-} from "~/modules/production/assembly-debug.server";
+} from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "assembly-step-new");

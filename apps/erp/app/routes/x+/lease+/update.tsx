@@ -16,7 +16,7 @@ import {
   resolveLeaseDates,
   updateLeaseDetails
 } from "~/modules/purchasing";
-import { updateDraftLease } from "~/modules/purchasing/purchasing.server";
+import { updateDraftLease } from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "lease-update");

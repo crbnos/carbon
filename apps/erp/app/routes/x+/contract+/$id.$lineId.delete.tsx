@@ -9,7 +9,7 @@ import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 import { getContractLine } from "~/modules/sales";
-import { deleteContractLineReleasingSalesOrderLine } from "~/modules/sales/sales.server";
+import { deleteContractLineReleasingSalesOrderLine } from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

@@ -42,7 +42,7 @@ import {
   UNASSIGNED_COLUMN_KEY
 } from "~/modules/accounting/ui/Reports/pivotData";
 import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringPivotDisplay } from "~/utils/revalidate";

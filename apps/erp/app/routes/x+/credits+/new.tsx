@@ -21,7 +21,7 @@ import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
 import { getCompany, getNextSequence } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

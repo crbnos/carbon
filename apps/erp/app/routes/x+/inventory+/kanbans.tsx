@@ -15,7 +15,7 @@ import { getKanbanProjectedQuantities, getKanbans } from "~/modules/inventory";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
 import { getLocationsList } from "~/modules/resources";
 import { getKanbanOutputSetting } from "~/modules/settings";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

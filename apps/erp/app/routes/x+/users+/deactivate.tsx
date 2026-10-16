@@ -6,7 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users";
-import { originOf } from "~/modules/users/users.server";
+import { originOf } from "~/modules/users/users.service";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(deactivateUsersValidator).request(args);

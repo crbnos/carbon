@@ -14,7 +14,7 @@ import {
 import {
   getCompanyLogoForLabel,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
+} from "~/modules/settings/settings.service";
 
 import { path } from "~/utils/path";
 

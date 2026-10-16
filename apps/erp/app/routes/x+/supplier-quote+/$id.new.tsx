@@ -15,7 +15,7 @@ import {
   supplierQuoteLineValidator,
   upsertSupplierQuoteLine
 } from "~/modules/purchasing";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

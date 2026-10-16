@@ -15,7 +15,7 @@ import {
   createEmployeeValidator,
   getInvitable
 } from "~/modules/users";
-import { originOf } from "~/modules/users/users.server";
+import { originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

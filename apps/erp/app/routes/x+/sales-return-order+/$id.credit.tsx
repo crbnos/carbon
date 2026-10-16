@@ -14,7 +14,7 @@ import {
   getCreditableQuantities,
   salesReturnOrderCreditValidator
 } from "~/modules/sales";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

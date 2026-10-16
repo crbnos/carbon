@@ -20,6 +20,7 @@ import {
   requireAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
@@ -80,7 +81,7 @@ import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
+import { getCachedChangelogPanelEntry } from "~/modules/account/account.service";
 import AccountSettings from "~/modules/account/ui/AccountSettings";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
@@ -89,9 +90,8 @@ import {
   getAppShell,
   getCustomFieldsSchemas,
   getImplementationSignals
-} from "~/modules/shared/shared.server";
+} from "~/modules/shared/shared.service";
 import { getItarCertificationStatus } from "~/modules/users";
-import { getUserClaims } from "~/modules/users/users.server";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 

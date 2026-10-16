@@ -5,6 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
@@ -21,7 +22,6 @@ import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getUserClaims } from "~/modules/users/users.server";
 import {
   getWorkflow,
   getWorkflowRunSteps,

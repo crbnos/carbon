@@ -69,7 +69,7 @@ import {
   getWorkCentersByLocation
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
-import { resolveLocationId } from "~/modules/shared/location.server";
+import { resolveLocationId } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";

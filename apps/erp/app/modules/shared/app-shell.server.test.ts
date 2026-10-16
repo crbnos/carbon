@@ -27,7 +27,7 @@ vi.mock("~/modules/settings/settings.service", () => ({
   })
 }));
 
-const { getAppShell } = await import("./shared.server");
+const { getAppShell } = await import("./shared.service");
 
 type Client = Parameters<typeof getAppShell>[0];
 const clientReturning = (result: unknown) => {

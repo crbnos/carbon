@@ -37,7 +37,7 @@ import {
 } from "~/components/Form";
 import { useCompanyToday } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
+import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 import { salesInvoicePostValidator } from "../../invoicing.models";
 import StripeCustomerPanel from "./StripeCustomerPanel";

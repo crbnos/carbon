@@ -8,7 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import {
   getCachedTimezoneNames,
   keptForADay
-} from "~/modules/shared/shared.server";
+} from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});

@@ -32,7 +32,7 @@ vi.mock("@carbon/kv", () => ({
   }
 }));
 
-import { upsertCompanyIntegration } from "./settings.server";
+import { upsertCompanyIntegration } from "./settings.service";
 
 describe("Ramp settings persistence", () => {
   beforeEach(() => {

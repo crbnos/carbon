@@ -61,7 +61,7 @@ import {
   purgeCorruptedRows,
   revertCompanyRestore,
   startCompanyRestore
-} from "~/modules/settings/backups.server";
+} from "~/modules/settings/settings.service";
 import type { BackupStatus } from "~/modules/settings/ui/Backups";
 import {
   BackupContentsInfo,

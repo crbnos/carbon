@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import {
   convertKbToString,
   downloadUrl,
+  getDocumentType,
   isPreviewableDocumentType,
   storage
 } from "@carbon/files";
@@ -52,7 +53,6 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";

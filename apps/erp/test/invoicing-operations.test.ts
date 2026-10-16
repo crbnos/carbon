@@ -33,19 +33,23 @@ vi.mock("@carbon/server-functions", () => ({
   serverFns: { system: () => ({ invoke }) }
 }));
 vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
-vi.mock("../app/modules/shared/shared.server", () => ({
+vi.mock("../app/modules/shared/shared.service", async (actual) => ({
+  ...(await actual<object>()),
   // The records the tests name are the company's.
   refuseUnlessOwned: vi.fn(async () => null),
   sendSalesOrderEmail: vi.fn()
 }));
-vi.mock("../app/modules/settings/party-contact.server", () => ({
+vi.mock("@carbon/lib/party-contact.server", () => ({
   checkPartyContactRequirement: vi.fn(async () => null)
 }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
-const { postSalesInvoice, tieOutAdjustmentLines, voidCharge } = await import(
+const { postSalesInvoice, voidCharge } = await import(
   "../app/modules/invoicing/invoicing.server"
+);
+const { tieOutAdjustmentLines } = await import(
+  "../app/modules/invoicing/invoicing.service"
 );
 
 /** Every read finds the invoice's customer; every write succeeds. */

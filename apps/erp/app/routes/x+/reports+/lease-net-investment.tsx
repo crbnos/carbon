@@ -17,7 +17,7 @@ import { Table } from "~/components";
 import { useCurrencyFormatter, useUrlParams } from "~/hooks";
 import type { LeaseNetInvestmentRow } from "~/modules/accounting";
 import { getLeaseNetInvestment } from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -9,10 +9,8 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 
-import {
-  translateLegacyInspectionSavePayload,
-  valuateMeasurement
-} from "./quality.server";
+import { valuateMeasurement } from "@carbon/database/quality";
+import { translateLegacyInspectionSavePayload } from "./quality.service";
 
 const numericFeature = {
   type: "Measurement",

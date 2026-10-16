@@ -16,7 +16,7 @@ import {
 } from "~/modules/production";
 import { BatchBuilder } from "~/modules/production/ui/Batches/BatchBuilder";
 import { getLocationsList, getWorkCentersList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

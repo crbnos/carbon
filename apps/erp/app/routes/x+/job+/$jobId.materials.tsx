@@ -20,7 +20,7 @@ import {
 } from "~/modules/production";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
 import { getCompanySettings } from "~/modules/settings";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getLocationTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

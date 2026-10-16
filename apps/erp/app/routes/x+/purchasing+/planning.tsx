@@ -24,9 +24,11 @@ import {
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
 import { getPurchasingPlanning } from "~/modules/purchasing";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

@@ -18,7 +18,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { cutoverAccumulatedDepreciationValidator } from "~/modules/accounting";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
   FixedAssetDepreciationTable

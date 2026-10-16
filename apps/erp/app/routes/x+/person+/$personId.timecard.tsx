@@ -76,7 +76,7 @@ import {
   updateTimeCardEntryValidator
 } from "~/modules/people";
 import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 function formatDuration(clockIn: string, clockOut: string | null) {

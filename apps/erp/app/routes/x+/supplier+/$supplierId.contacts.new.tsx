@@ -15,7 +15,7 @@ import {
   supplierContactValidator
 } from "~/modules/purchasing";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

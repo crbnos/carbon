@@ -100,7 +100,6 @@ import {
   SyncActivity,
   syncOperationTransitionValidator
 } from "~/modules/settings";
-import { getOeeDevicesTabData } from "~/modules/settings/oee-devices.server";
 import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
@@ -112,11 +111,12 @@ import {
   workCenterDeviceUpsertValidator
 } from "~/modules/settings/settings.models";
 import {
+  getOeeDevicesTabData,
   getProviderDimensionTargets,
   getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
-} from "~/modules/settings/settings.server";
+} from "~/modules/settings/settings.service";
 import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/AccountingSyncControl";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";

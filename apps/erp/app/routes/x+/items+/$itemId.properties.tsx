@@ -24,8 +24,8 @@ import {
   getSupplierParts,
   getTool
 } from "~/modules/items";
-import type { UnreleasedChangeOrderItem } from "~/modules/items/items.server";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
+import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
+import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.service";
 import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import type { ListItem } from "~/types";

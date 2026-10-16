@@ -18,7 +18,7 @@ import {
   purchaseOrderValidator
 } from "~/modules/purchasing";
 import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -118,7 +118,7 @@ vi.mock("~/services/database.server", () => ({
 import {
   linkEntitiesToIssueItemRow,
   updateIssueItemQuantity
-} from "./quality-disposition.server";
+} from "./quality.service";
 
 function seed(overrides: Partial<Tables> = {}) {
   tables = {

@@ -44,7 +44,7 @@ import { Form, Link, useLoaderData } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
-} from "~/modules/users/users.server";
+} from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "invite");

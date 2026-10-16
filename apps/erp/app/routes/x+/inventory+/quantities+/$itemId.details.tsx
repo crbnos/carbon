@@ -30,7 +30,7 @@ import {
 import { getLocationsList } from "~/modules/resources";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 

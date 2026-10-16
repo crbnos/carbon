@@ -41,7 +41,7 @@ import {
   openingTrialBalanceImportValidator,
   openingTrialBalanceValidator
 } from "~/modules/accounting";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   mapTrialBalanceAccounts,
   parseTrialBalanceCsv

@@ -12,7 +12,7 @@ import { withLogContext } from "@carbon/logger/middleware.server";
 import { datetime, getRequestOrigin } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import {
   authenticateApiKey,
   findOAuthToken,

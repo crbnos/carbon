@@ -15,7 +15,7 @@ import {
 import {
   requireChangeNoticeChildRoute,
   requireEditableChangeNoticeRoute
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {

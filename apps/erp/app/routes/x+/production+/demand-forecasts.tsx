@@ -15,9 +15,11 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { getProductionProjections } from "~/modules/production";
 import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

@@ -32,7 +32,7 @@ import {
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
 import { getTagsList } from "~/modules/shared";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getLocationTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

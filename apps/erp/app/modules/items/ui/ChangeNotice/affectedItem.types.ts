@@ -5,13 +5,13 @@
 import type { JSONContent } from "@carbon/react";
 import type { MethodItemType, MethodType } from "../../../shared";
 import type { ChangeNoticeItemDiff } from "../../items.models";
-import type { getRevisionLock } from "../../items.server";
 import type {
   ChangeNoticeAffectedItemWithLabel,
   getConfigurationParameters,
   getConfigurationRules,
   getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId
+  getMethodOperationsByMakeMethodId,
+  getRevisionLock
 } from "../../items.service";
 import type { MakeMethod } from "../../types";
 import type { PartPropertiesData } from "../Parts/PartProperties";

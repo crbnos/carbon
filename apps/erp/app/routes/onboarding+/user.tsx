@@ -33,7 +33,7 @@ import {
   onboardingUserValidator,
   updatePublicAccount
 } from "~/modules/account";
-import { getUser } from "~/modules/users/users.server";
+import { getUser } from "~/modules/users/users.service";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 

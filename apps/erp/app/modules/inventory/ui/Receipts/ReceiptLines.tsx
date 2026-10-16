@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { isPreviewableDocumentType, storage } from "@carbon/files";
+import {
+  getDocumentType,
+  isPreviewableDocumentType,
+  storage
+} from "@carbon/files";
 import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
@@ -81,7 +85,6 @@ import type {
   RentalReceiptLine
 } from "~/modules/inventory";
 import { splitValidator } from "~/modules/inventory";
-import { getDocumentType } from "~/modules/shared/shared.service";
 import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";

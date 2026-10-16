@@ -21,7 +21,7 @@ const {
   LOCKED_REVISION_MESSAGE,
   getUnreleasedChangeOrderItems,
   getUnreleasedChangeOrderIssue
-} = await import("./items.server");
+} = await import("./items.service");
 
 describe("getLockVerdict", () => {
   it("allows edits when the revision is not locked", () => {

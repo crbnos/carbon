@@ -14,8 +14,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
 import DemandProjectionForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getCompanyTimeZone,
+  getOrCreatePeriods
+} from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;

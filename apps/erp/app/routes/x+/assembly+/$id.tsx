@@ -55,7 +55,7 @@ import {
   toViewerStep,
   upsertAssemblyInstruction
 } from "~/modules/production";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
+import { isAssemblerServiceHealthy } from "~/modules/production/production.service";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader, {
   AssemblyInstructionOverviewHero

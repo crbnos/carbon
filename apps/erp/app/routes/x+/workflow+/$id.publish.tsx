@@ -10,7 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { workflowPublishValidator } from "~/modules/workflows";
-import { publishWorkflowVersion } from "~/modules/workflows/workflows.server";
+import { publishWorkflowVersion } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

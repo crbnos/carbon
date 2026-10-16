@@ -10,9 +10,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
+  getCompanySettings,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 import { getStockTransferLabelItems } from "./labels.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

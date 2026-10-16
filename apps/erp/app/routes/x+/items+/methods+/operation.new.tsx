@@ -12,7 +12,7 @@ import {
   methodOperationValidator,
   upsertMethodOperation
 } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { checkRevisionLock } from "~/modules/items/items.service";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {

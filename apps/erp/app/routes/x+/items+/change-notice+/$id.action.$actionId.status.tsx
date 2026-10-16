@@ -15,7 +15,7 @@ import {
 import {
   requireChangeNoticeChildRoute,
   requireEditableChangeNoticeRoute
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

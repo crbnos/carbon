@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { duplicatePriceListValidator } from "~/modules/sales";
-import { duplicatePriceOverrides } from "~/modules/sales/sales.server";
+import { duplicatePriceOverrides } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

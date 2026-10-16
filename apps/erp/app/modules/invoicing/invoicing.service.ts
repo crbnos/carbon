@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  CarbonError,
+  ErrorCategory,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
+import { SUPABASE_URL } from "@carbon/auth";
+import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -10,8 +17,35 @@ import {
   loadDepositScope,
   loadSalesInvoiceDocumentIds
 } from "@carbon/database/deposit-scope";
+import { SalesInvoiceEmail } from "@carbon/documents/email";
+import { createMappingService } from "@carbon/ee/accounting";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  isBlocked
+} from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
+import { trigger } from "@carbon/jobs";
+import {
+  loadSalesInvoiceDocument,
+  renderSalesInvoicePdf
+} from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
+import {
+  expectedConnectInvoiceTotal,
+  findConnectCustomersByEmail,
+  retrieveConnectCustomer,
+  upsertConnectCustomer
+} from "@carbon/stripe/connect.server";
+import {
+  getStripeConnectAccountId,
+  STRIPE_CONNECT_INTEGRATION,
+  sendPostedSalesInvoiceViaStripe,
+  toStripeInvoiceLines
+} from "@carbon/stripe/send-sales-invoice.server";
+import type { Violation } from "@carbon/utils";
 import {
   allocatePaymentFunding,
   applyRate,
@@ -20,6 +54,7 @@ import {
   calculateDueDate,
   chunkArray,
   datetime,
+  EPSILON,
   type FundingConsumptionRow,
   type FundingPaymentRow,
   type FundingRequest,
@@ -36,21 +71,48 @@ import {
   round,
   type SettlementBalanceRow,
   toBaseAmount,
-  toDocumentAmount
+  toDocumentAmount,
+  unchecked
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
+import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { z } from "zod";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import {
+  getCurrencyByCode,
+  getDefaultAccounts,
+  saveJournalEntryWithLines
+} from "~/modules/accounting/accounting.service";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction
 } from "~/modules/purchasing/purchasing.service";
+import {
+  getCustomer,
+  getCustomerContact,
+  getCustomerLocation,
+  getCustomerTax,
+  recordSalesRuleOutcome,
+  updateCustomerContact
+} from "~/modules/sales/sales.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import {
+  getCompanyTimeZone as getCachedCompanyTimeZone,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.service";
+import { getUser } from "~/modules/users/users.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
+import { OPEN_SALES_ORDER_STATUSES } from "../sales/sales.models";
 import {
   getCustomerPayment,
   getCustomerShipping
@@ -73,6 +135,14 @@ import type {
   salesInvoiceShipmentValidator,
   salesInvoiceValidator
 } from "./invoicing.models";
+import {
+  type DepositDocument,
+  isPurchaseInvoiceLocked,
+  isSalesInvoiceLocked,
+  type stripeCustomerActions
+} from "./invoicing.models";
+import type { StripeCustomerSources } from "./stripe-customer.mapper";
+import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 
 const logger = getLogger("erp", "invoicing");
 
@@ -4494,4 +4564,1610 @@ export async function getApAging(
     _bucket2: b2,
     _bucket3: b3
   });
+}
+// Documents a customer payment can be a deposit for — or a refund of: every
+// open sales order and Draft/Active rental agreement (a new deposit), plus
+// every document a posted deposit receipt already references (a refund of a
+// Closed agreement's deposit) and any ids the caller must keep listed. Loaded
+// company-wide with the customer on each row because the form's customer can
+// change before the payment is saved; the picker narrows to that customer.
+export async function getDepositDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  keepSalesOrderIds: (string | null | undefined)[] = []
+): Promise<DepositDocument[]> {
+  const [deposits, rentalAgreements, openOrders] = await Promise.all([
+    client
+      .from("payment")
+      .select("salesOrderId")
+      .eq("companyId", companyId)
+      .eq("paymentType", "Receipt")
+      .eq("status", "Posted")
+      .not("salesOrderId", "is", null),
+    client
+      .from("rentalAgreement")
+      .select("id, rentalAgreementId, customerId, status")
+      .eq("companyId", companyId)
+      .order("rentalAgreementId", { ascending: false }),
+    fetchAllFromTable<{
+      id: string;
+      salesOrderId: string;
+      customerId: string;
+      status: string;
+    }>(client, "salesOrder", "id, salesOrderId, customerId, status", (query) =>
+      query
+        .eq("companyId", companyId)
+        .in("status", [...OPEN_SALES_ORDER_STATUSES])
+        .order("salesOrderId", { ascending: false })
+    )
+  ]);
+  const firstError =
+    deposits.error ?? rentalAgreements.error ?? openOrders.error;
+  if (firstError) throw new Error(firstError.message);
+  const listed = new Set((openOrders.data ?? []).map((order) => order.id));
+  const missingOrderIds = [
+    ...new Set(
+      [
+        ...(deposits.data ?? []).map((deposit) => deposit.salesOrderId),
+        ...keepSalesOrderIds
+      ].filter((id): id is string => Boolean(id) && !listed.has(id!))
+    )
+  ];
+  const closedOrders = missingOrderIds.length
+    ? await client
+        .from("salesOrder")
+        .select("id, salesOrderId, customerId, status")
+        .eq("companyId", companyId)
+        .in("id", missingOrderIds)
+    : { data: [], error: null };
+  if (closedOrders.error) throw new Error(closedOrders.error.message);
+  return [
+    ...(rentalAgreements.data ?? []).map((agreement) => ({
+      id: agreement.id,
+      readableId: agreement.rentalAgreementId,
+      customerId: agreement.customerId,
+      kind: "rentalAgreement" as const,
+      status: agreement.status,
+      open: agreement.status === "Draft" || agreement.status === "Active"
+    })),
+    ...[...(openOrders.data ?? []), ...(closedOrders.data ?? [])].map(
+      (order) => ({
+        id: order.id,
+        readableId: order.salesOrderId,
+        customerId: order.customerId,
+        kind: "salesOrder" as const,
+        status: order.status,
+        open: listed.has(order.id)
+      })
+    )
+  ];
+}
+
+/**
+ * Checks the document a customer payment names as its deposit (a Receipt) or
+ * the deposit it refunds (a Disbursement): it must be this company's and the
+ * payment's customer's, and a NEW deposit can only be taken against an open
+ * document — an open sales order, or a Draft/Active rental agreement. The
+ * payment's own saved link stays valid after its document closes, as the
+ * "Deposit for" picker keeps it listed. Returns the error for the picker's
+ * field, or null when the reference is fine (or absent).
+ */
+export async function checkDepositDocument(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  payment: {
+    paymentType: "Receipt" | "Disbursement";
+    customerId?: string | null;
+    salesOrderId?: string | null;
+    rentalAgreementId?: string | null;
+  },
+  saved: {
+    salesOrderId?: string | null;
+    rentalAgreementId?: string | null;
+  } = {}
+): Promise<string | null> {
+  const { salesOrderId, rentalAgreementId, customerId } = payment;
+  if (!salesOrderId && !rentalAgreementId) return null;
+  // The validator already requires a customer for a deposit.
+  if (!customerId) return "Only a customer payment can be a deposit";
+
+  const document = salesOrderId
+    ? await client
+        .from("salesOrder")
+        .select("customerId, status")
+        .eq("id", salesOrderId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    : await client
+        .from("rentalAgreement")
+        .select("customerId, status")
+        .eq("id", rentalAgreementId!)
+        .eq("companyId", companyId)
+        .maybeSingle();
+  if (document.error) throw new Error(document.error.message);
+  if (!document.data) return "The deposit document was not found";
+  if (document.data.customerId !== customerId) {
+    return "The deposit document belongs to a different customer";
+  }
+
+  const unchanged = salesOrderId
+    ? salesOrderId === saved.salesOrderId
+    : rentalAgreementId === saved.rentalAgreementId;
+  if (payment.paymentType !== "Receipt" || unchanged) return null;
+
+  const status = document.data.status as string;
+  const open = salesOrderId
+    ? (OPEN_SALES_ORDER_STATUSES as readonly string[]).includes(status)
+    : status === "Draft" || status === "Active";
+  if (open) return null;
+  return salesOrderId
+    ? `The sales order is ${status} and cannot take a new deposit`
+    : `The rental agreement is ${status} and cannot take a new deposit`;
+}
+
+/** A server function's refusal as this operation's, with its own message. */
+export function fromServerFn(
+  ctx: ServiceContext,
+  error: { status: number; message: string },
+  fallback: string
+): CarbonError {
+  const category: ErrorCategory =
+    error.status === 400
+      ? "validation"
+      : error.status === 403
+        ? "forbidden"
+        : error.status === 404
+          ? "notFound"
+          : error.status === 409
+            ? "conflict"
+            : error.status < 500
+              ? "rule"
+              : "internal";
+  return ctx.error(category, error.message || fallback, error);
+}
+
+/** The server functions, run as the system for this operation's caller. */
+export function invoker(ctx: ServiceContext) {
+  return serverFns.system({
+    db: ctx.asSystem.pg,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+}
+
+/**
+ * One field set on several invoices, as a Properties panel posts it: `ids`
+ * repeats in a form, and an empty `value` clears the field.
+ */
+export function fieldUpdate<const F extends readonly [string, ...string[]]>(
+  fields: F
+) {
+  return z.object({
+    ids: zfd.repeatableOfType(z.string().min(1)),
+    field: z.enum(fields),
+    value: z.string().nullish()
+  });
+}
+
+/** What a sales-rule check found: the violation modal's payload. */
+export type SalesRuleCheck = {
+  violations: Violation[];
+  ruleNames: Record<string, string>;
+};
+
+// --- Sales invoices -----------------------------------------------------------
+
+/** A Draft sales invoice this company owns, or why it cannot be changed. */
+export async function unlockedSalesInvoice(
+  ctx: ServiceContext,
+  invoiceId: string,
+  message: string
+) {
+  const refused = await refuseUnlessOwned(ctx, "salesInvoice", {
+    id: invoiceId
+  });
+  if (refused) return refused;
+  const invoice = await getSalesInvoice(ctx.asCaller.supabase, invoiceId);
+  if (invoice.error) {
+    return ctx.error("internal", "Failed to load sales invoice", invoice.error);
+  }
+  if (isSalesInvoiceLocked(invoice.data.status)) {
+    return ctx.error("rule", message);
+  }
+  return null;
+}
+
+type InvoiceTable = "salesInvoice" | "purchaseInvoice";
+
+/** The dates a posted invoice still takes; every other field needs a Draft. */
+const POSTED_INVOICE_FIELDS = ["dateIssued", "dateDue", "datePaid"];
+
+/** Why `field` cannot be set on these invoices, or null when it can. */
+export async function refuseLockedInvoices(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  ids: string[],
+  field: string,
+  message: string
+) {
+  if (POSTED_INVOICE_FIELDS.includes(field)) return null;
+  // Both tables hold `status`; the cast only names one for supabase-js.
+  const invoices = await ctx.asCaller.supabase
+    .from(table as "salesInvoice")
+    .select("status")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id);
+  if (invoices.error) {
+    return ctx.error("internal", "Failed to load the invoices", invoices.error);
+  }
+  return invoices.data.some((invoice) => isSalesInvoiceLocked(invoice.status))
+    ? ctx.error("rule", message)
+    : null;
+}
+
+/**
+ * Write one field on invoices of either kind. A new issue date or payment
+ * term on a single invoice recomputes its due date (with several, nothing is
+ * written); a new currency brings today's exchange rate; an empty value
+ * clears the field.
+ */
+export async function writeInvoiceField(
+  ctx: ServiceContext,
+  table: InvoiceTable,
+  { ids, field, value }: { ids: string[]; field: string; value?: string | null }
+) {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  let changes: Record<string, unknown> = { [field]: value || null };
+
+  if (field === "dateIssued" || field === "paymentTermId") {
+    if (ids.length !== 1) return { ids };
+    const invoice = await client
+      .from(table as "salesInvoice")
+      .select("dateIssued, paymentTermId")
+      .eq("id", ids[0]!)
+      .eq("companyId", companyId)
+      .single();
+    const dateDue = await computeInvoiceDateDue(client, {
+      dateIssued: field === "dateIssued" ? value : invoice.data?.dateIssued,
+      paymentTermId:
+        field === "paymentTermId" ? value : invoice.data?.paymentTermId,
+      companyId
+    });
+    if (dateDue) changes = { ...changes, dateDue };
+  } else if (field === "currencyCode" && value) {
+    const rate = await getExchangeRate(client, companyId, value);
+    if (rate.error) {
+      return ctx.error(
+        "internal",
+        "Failed to get the exchange rate",
+        rate.error
+      );
+    }
+    changes = { currencyCode: value, exchangeRate: rate.data };
+  }
+
+  const update = await client
+    .from(table as "salesInvoice")
+    .update(
+      unchecked({
+        ...changes,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+    )
+    .in("id", ids)
+    .eq("companyId", companyId);
+  if (update.error) {
+    return ctx.error("internal", "Failed to update the invoices", update.error);
+  }
+  return { ids };
+}
+
+/** A party's currency at today's rate, or null when it has none. */
+export async function partyCurrency(
+  ctx: ServiceContext,
+  table: "customer" | "supplier",
+  id: string
+) {
+  const client = ctx.asCaller.supabase;
+  const party = await client
+    .from(table as "customer")
+    .select("currencyCode")
+    .eq("id", id)
+    .eq("companyId", ctx.company.id)
+    .single();
+  if (party.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load the invoice party",
+      party.error
+    );
+  }
+  if (!party.data.currencyCode) return null;
+  const rate = await getExchangeRate(
+    client,
+    ctx.company.id,
+    party.data.currencyCode
+  );
+  if (rate.error) {
+    return ctx.error("internal", "Failed to get the exchange rate", rate.error);
+  }
+  return { currencyCode: party.data.currencyCode, exchangeRate: rate.data };
+}
+
+/** A sales invoice line keeps only the target its type uses. */
+function withInvoiceLineTarget<
+  L extends {
+    invoiceLineType: string;
+    accountId?: string;
+    assetId?: string;
+    itemId?: string;
+  }
+>(line: L): L {
+  if (line.invoiceLineType === "Fixed Asset") {
+    return { ...line, accountId: undefined, itemId: undefined };
+  }
+  return { ...line, accountId: undefined, assetId: undefined };
+}
+
+/**
+ * Check one sales invoice line's item against the sales rules at `shipTo`.
+ * A blocked check is recorded against the line.
+ */
+export async function salesInvoiceLineGate(
+  ctx: ServiceContext,
+  args: {
+    invoiceId: string;
+    lineId: string | null;
+    itemId: string;
+    quantity: number;
+    shipTo: { customerId: string | null; customerLocationId: string | null };
+    acknowledged: boolean;
+  }
+): Promise<{ blocked: SalesRuleCheck | null; check: SalesRuleCheck }> {
+  const found = await evaluateSalesRuleLines({
+    client: ctx.asSystem.supabase,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    surface: "salesInvoiceLine",
+    lines: [
+      {
+        lineId: args.lineId ?? "new",
+        itemId: args.itemId,
+        quantity: args.quantity
+      }
+    ],
+    customerId: args.shipTo.customerId,
+    customerLocationId: args.shipTo.customerLocationId
+  });
+  const check = {
+    violations: dedupeViolations(found.violations),
+    ruleNames: found.ruleNames
+  };
+  if (
+    check.violations.length === 0 ||
+    !isBlocked(check.violations, args.acknowledged)
+  ) {
+    return { blocked: null, check };
+  }
+  await recordSalesInvoiceLineOutcome(ctx, args, "blocked", check);
+  return { blocked: check, check };
+}
+
+/** Record a line check's outcome against the line it is about. */
+export function recordSalesInvoiceLineOutcome(
+  ctx: ServiceContext,
+  line: { invoiceId: string; lineId: string | null; itemId: string },
+  outcome: "blocked" | "acknowledged",
+  check: SalesRuleCheck
+) {
+  return recordSalesRuleOutcome(ctx.asSystem.supabase, {
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    documentType: "salesInvoice",
+    documentId: line.invoiceId,
+    documentLineId: line.lineId,
+    itemId: line.itemId,
+    outcome,
+    ...check
+  });
+}
+
+/** The line as the column stores it: the discount as a 0–1 fraction. */
+export function salesInvoiceLineRow<
+  L extends { discountPercent?: number; invoiceLineType: string }
+>(line: L): L {
+  const row = withInvoiceLineTarget(line);
+  return row.discountPercent === undefined
+    ? row
+    : { ...row, discountPercent: round(row.discountPercent / 100) };
+}
+
+export type StripeSendContext = {
+  stripeAccountId: string;
+  /** Resolved and linked by the preflight: it exists on the connected account. */
+  stripeCustomerId: string;
+};
+
+/**
+ * Resolve the Stripe customer the invoice will be billed to, and link it.
+ *
+ * Runs BEFORE the invoice is posted, so a customer that cannot be resolved
+ * stops the post rather than leaving a posted invoice that was never sent.
+ * The user's choice is never taken at face value: `linkStripeCustomerForBilling`
+ * re-runs the resolution the modal showed and checks the action against the
+ * connected account as it is now.
+ */
+export async function preflightStripeSend(
+  ctx: ServiceContext,
+  args: {
+    invoiceId: string;
+    customerContact?: string;
+    stripeCustomerAction?: (typeof stripeCustomerActions)[number];
+    stripeCustomerId?: string;
+    stripeContactEmail?: string;
+  }
+): Promise<
+  { ok: true; context: StripeSendContext } | { ok: false; message: string }
+> {
+  const serviceRole = ctx.asSystem.supabase;
+  const { invoiceId } = args;
+  if (!args.customerContact) {
+    return { ok: false, message: "a customer contact is required" };
+  }
+  if (!args.stripeCustomerAction) {
+    return { ok: false, message: "the Stripe customer was not confirmed" };
+  }
+
+  const [lines, shipment] = await Promise.all([
+    getSalesInvoiceLines(serviceRole, invoiceId),
+    getSalesInvoiceShipment(serviceRole, invoiceId)
+  ]);
+  // The same arithmetic the send reconciles against, so an invoice billable
+  // only through its surcharges is not refused here as empty.
+  const { total } = expectedConnectInvoiceTotal({
+    lines: toStripeInvoiceLines(lines.data ?? []),
+    shippingCost: shipment.data?.shippingCost ?? undefined
+  });
+  if (total <= 0) {
+    return { ok: false, message: "Stripe cannot send a zero-amount invoice" };
+  }
+
+  const billingCustomerId = await getBillingCustomerId(
+    serviceRole,
+    invoiceId,
+    ctx.company.id
+  );
+  if (!billingCustomerId) {
+    return { ok: false, message: "this invoice has no customer to bill" };
+  }
+
+  const linked = await linkStripeCustomerForBilling({
+    serviceRole,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    billingCustomerId,
+    customerContactId: args.customerContact,
+    action: args.stripeCustomerAction,
+    stripeCustomerId: args.stripeCustomerId,
+    contactEmail: args.stripeContactEmail
+  });
+  if (!linked.ok) return linked;
+  return {
+    ok: true,
+    context: {
+      stripeAccountId: linked.stripeAccountId,
+      stripeCustomerId: linked.stripeCustomerId
+    }
+  };
+}
+
+/**
+ * File a posted invoice's PDF and send it. Past the post nothing is undone:
+ * a failure stamps `sendError` on the invoice (so it shows "Not sent" with a
+ * Send retry, as invoice automation does) and is returned as the warning.
+ */
+export async function sendPostedSalesInvoice(
+  ctx: ServiceContext,
+  args: {
+    invoiceId: string;
+    notification: "Email" | "Stripe" | null;
+    customerContact?: string;
+    cc?: string[];
+    stripeSend: StripeSendContext | null;
+    stripeDueDate?: string;
+    locale: string;
+  }
+): Promise<string | null> {
+  const { invoiceId, notification, locale } = args;
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const stampSendError = async (sendError: string) => {
+    if (!notification) return;
+    const stamped = await serviceRole
+      .from("salesInvoice")
+      .update({ sendError })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId);
+    if (stamped.error) {
+      logger.error("Failed to stamp sales invoice send error", {
+        companyId,
+        invoiceId,
+        error: stamped.error
+      });
+    }
+  };
+  const stampSent = async (sentTo: string) => {
+    const stamped = await serviceRole
+      .from("salesInvoice")
+      .update({ sentAt: datetime.timestamp(), sentTo, sendError: null })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId);
+    if (stamped.error) {
+      logger.error("Failed to stamp sales invoice as sent", {
+        companyId,
+        invoiceId,
+        error: stamped.error
+      });
+    }
+  };
+  const fail = async (warning: string, sendError = warning) => {
+    await stampSendError(sendError);
+    return warning;
+  };
+
+  const salesInvoice = await getSalesInvoice(serviceRole, invoiceId);
+  if (salesInvoice.error) {
+    logger.error("Failed to read the posted sales invoice", {
+      companyId,
+      invoiceId,
+      error: salesInvoice.error
+    });
+    return "Failed to get sales invoice";
+  }
+
+  let filed: {
+    path: string;
+    fileName: string;
+    document: Awaited<ReturnType<typeof loadSalesInvoiceDocument>>;
+  };
+  try {
+    const document = await loadSalesInvoiceDocument({
+      client: serviceRole,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      invoiceId,
+      locale,
+      storageUrl: SUPABASE_URL ?? ""
+    });
+    const file = await renderSalesInvoicePdf(document.pdfProps);
+    const fileName = stripSpecialCharacters(
+      `${salesInvoice.data.invoiceId} - ${datetime.timestamp().slice(0, -5)}.pdf`
+    );
+    const { opportunityId } = salesInvoice.data;
+    const path = `${companyId}/${opportunityId ? `opportunity/${opportunityId}` : `sales-invoice/${invoiceId}`}/${fileName}`;
+
+    const upload = await storage(serviceRole)
+      .company(companyId)
+      .upload(path, file, {
+        cacheControl: `${12 * 60 * 60}`,
+        contentType: "application/pdf",
+        upsert: true
+      });
+    if (upload.error) {
+      logger.error("Failed to upload the sales invoice PDF", {
+        companyId,
+        invoiceId,
+        error: upload.error
+      });
+      return fail("Failed to upload file", "Failed to upload the invoice PDF");
+    }
+
+    const recorded = await upsertDocument(serviceRole, {
+      path,
+      name: fileName,
+      size: round(file.byteLength / 1024, 0),
+      sourceDocument: "Sales Invoice",
+      sourceDocumentId: invoiceId,
+      readGroups: [userId],
+      writeGroups: [userId],
+      createdBy: userId,
+      companyId
+    });
+    if (recorded.error) {
+      logger.error("Failed to record the sales invoice PDF", {
+        companyId,
+        invoiceId,
+        error: recorded.error
+      });
+      return fail(
+        "Failed to create document",
+        "Failed to record the invoice PDF"
+      );
+    }
+    filed = { path, fileName, document };
+  } catch (err) {
+    logger.error("Failed to generate the sales invoice PDF", {
+      companyId,
+      invoiceId,
+      error: err
+    });
+    return fail("Failed to generate PDF", "Failed to generate the invoice PDF");
+  }
+
+  if (notification === "Email") {
+    try {
+      if (!args.customerContact) {
+        return fail("Customer contact is required");
+      }
+      const [customer, seller] = await Promise.all([
+        getCustomerContact(serviceRole, args.customerContact, companyId),
+        getUser(serviceRole, userId)
+      ]);
+      const contact = customer?.data?.contact;
+      if (!contact) return fail("Failed to get customer contact");
+      if (!seller.data) return fail("Failed to get user");
+
+      // The same reads the PDF rendered from.
+      const template = SalesInvoiceEmail({
+        ...filed.document.email,
+        locale,
+        recipient: {
+          email: contact.email ?? "",
+          firstName: contact.firstName ?? undefined,
+          lastName: contact.lastName ?? undefined
+        },
+        sender: {
+          email: seller.data.email,
+          firstName: seller.data.firstName,
+          lastName: seller.data.lastName
+        }
+      });
+      const html = await renderAsync(template);
+      const text = await renderAsync(template, { plainText: true });
+      const signed = await storage(serviceRole)
+        .company(companyId)
+        .createSignedUrl(filed.path, 3600);
+      if (signed.error) {
+        logger.error("Failed to create signed URL for attachment", {
+          storagePath: filed.path,
+          error: signed.error
+        });
+      }
+
+      await trigger("send-email", {
+        to: [seller.data.email, contact.email!],
+        cc: args.cc?.length ? args.cc : undefined,
+        from: seller.data.email,
+        subject: `Invoice ${filed.document.invoiceReadableId} from ${filed.document.email.company.name}`,
+        html,
+        text,
+        attachments: signed.data
+          ? [{ path: signed.data.signedUrl, filename: filed.fileName }]
+          : undefined,
+        companyId
+      });
+
+      // trigger() only queues the email, so sentAt here means "queued".
+      await stampSent(
+        [contact.email, ...(args.cc ?? [])].filter(Boolean).join(", ")
+      );
+    } catch (err) {
+      logger.error("Failed to send sales invoice email", {
+        companyId,
+        invoiceId,
+        error: err
+      });
+      return fail("Failed to send email");
+    }
+  }
+
+  if (notification === "Stripe") {
+    if (!args.stripeSend) {
+      return fail(
+        "Invoice posted, but the Stripe send was not prepared",
+        "The Stripe send was not prepared"
+      );
+    }
+    const { stripeAccountId, stripeCustomerId } = args.stripeSend;
+    try {
+      await sendPostedSalesInvoiceViaStripe({
+        serviceRole,
+        companyId,
+        userId,
+        invoiceId,
+        stripeAccountId,
+        stripeCustomerId,
+        dueDateOverride: args.stripeDueDate,
+        linkStripeInvoice: (stripeInvoiceId, metadata) =>
+          createMappingService(ctx.asSystem.pg, companyId).link(
+            "salesInvoice",
+            invoiceId,
+            STRIPE_CONNECT_INTEGRATION,
+            stripeInvoiceId,
+            { metadata }
+          )
+      });
+    } catch (err) {
+      logger.error("Failed to send sales invoice via Stripe", {
+        companyId,
+        invoiceId,
+        error: err
+      });
+      const reason = err instanceof Error ? err.message : undefined;
+      return fail(
+        `Invoice posted, but failed to send via Stripe: ${reason ?? "unknown error"}`,
+        reason ?? "Failed to send via Stripe"
+      );
+    }
+    // Stripe emails the invoice itself; the stamp names the channel.
+    await stampSent("Stripe");
+  }
+
+  return null;
+}
+
+// --- Purchase invoices --------------------------------------------------------
+
+/** A Draft purchase invoice this company owns, or why it cannot be changed. */
+export async function unlockedPurchaseInvoice(
+  ctx: ServiceContext,
+  invoiceId: string,
+  message: string
+) {
+  const refused = await refuseUnlessOwned(ctx, "purchaseInvoice", {
+    id: invoiceId
+  });
+  if (refused) return refused;
+  const invoice = await getPurchaseInvoice(ctx.asCaller.supabase, invoiceId);
+  if (invoice.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load purchase invoice",
+      invoice.error
+    );
+  }
+  if (isPurchaseInvoiceLocked(invoice.data.status)) {
+    return ctx.error("rule", message);
+  }
+  return null;
+}
+
+// --- Payments -----------------------------------------------------------------
+
+/**
+ * Open invoices a payment can settle, for the payment's party: a receipt's
+ * customer, or a disbursement's supplier.
+ */
+export async function getSeedableOpenInvoices(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  paymentType: "Receipt" | "Disbursement",
+  partyId: string
+) {
+  const res =
+    paymentType === "Receipt"
+      ? await getOpenSalesInvoicesForCustomer(client, companyId, partyId)
+      : await getOpenPurchaseInvoicesForSupplier(client, companyId, partyId);
+  if (res.error) throw new Error(res.error.message);
+  return res.data ?? [];
+}
+
+/**
+ * The early-payment discount per invoice as of `asOfDate`, in the invoice's
+ * DOCUMENT currency: computed from `remainingDocument` (not the base
+ * `balance`), so it lines up with the payment's cash total. All zero when
+ * the currency cannot be resolved, so a missing currency never blocks.
+ */
+export async function getSeededDiscounts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  companyGroupId: string,
+  currencyCode: string,
+  asOfDate: string,
+  invoices: {
+    id?: string | null;
+    remainingDocument: number;
+    dateIssued?: string | null;
+    paymentTermId?: string | null;
+  }[]
+): Promise<Map<string, number>> {
+  const currency = await getCurrencyByCode(
+    client,
+    companyGroupId,
+    currencyCode
+  );
+  const currencyDecimals = currency.data?.decimalPlaces;
+  if (currencyDecimals == null) {
+    return new Map(invoices.map((inv) => [inv.id ?? "", 0]));
+  }
+  return computeEarlyPaymentDiscounts(client, {
+    companyId,
+    asOfDate,
+    currencyDecimals,
+    invoices: invoices.map((inv) => ({
+      id: inv.id ?? "",
+      balance: inv.remainingDocument,
+      dateIssued: inv.dateIssued ?? null,
+      paymentTermId: inv.paymentTermId ?? null
+    }))
+  });
+}
+
+/**
+ * One application per selected invoice for its full open balance. Each
+ * balance and rate is read again here, so the seed matches the current books.
+ */
+export async function seedPaymentApplications(
+  ctx: ServiceContext,
+  payment: {
+    id: string;
+    paymentType: "Receipt" | "Disbursement";
+    customerId?: string;
+    supplierId?: string;
+    currencyCode: string;
+    exchangeRate: number;
+    paymentDate: string;
+    seedInvoiceIds: string[];
+  }
+) {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const isReceipt = payment.paymentType === "Receipt";
+  const partyId = isReceipt ? payment.customerId : payment.supplierId;
+  if (!partyId) return;
+
+  const open = await getSeedableOpenInvoices(
+    client,
+    companyId,
+    payment.paymentType,
+    partyId
+  );
+  const selected = open.filter(
+    (inv) =>
+      payment.seedInvoiceIds.includes(inv.id ?? "") &&
+      inv.currencyCode === payment.currencyCode
+  );
+  if (selected.length === 0) return;
+
+  // As of the payment date, which moves the discount window; `applied +
+  // discount` still settles the invoice in full.
+  const discounts = await getSeededDiscounts(
+    client,
+    companyId,
+    ctx.company.groupId,
+    payment.currencyCode,
+    payment.paymentDate,
+    selected
+  );
+  await replaceInvoiceSettlements(ctx.asSystem.pg, {
+    paymentId: payment.id,
+    companyId,
+    createdBy: ctx.auditUserId,
+    applications: selected.map((inv) => {
+      // The discount is a DOCUMENT amount. `sourceAmount` is document
+      // principal; `appliedAmount` and `discountAmount` are company base, so
+      // the base half is converted at the invoice's own rate.
+      const discountDocument = discounts.get(inv.id ?? "") ?? 0;
+      const discountBase = discountDocument
+        ? toBaseAmount(discountDocument, Number(inv.exchangeRate))
+        : 0;
+      return {
+        targetSalesInvoiceId: isReceipt ? (inv.id ?? undefined) : undefined,
+        targetPurchaseInvoiceId: isReceipt ? undefined : (inv.id ?? undefined),
+        appliedAmount: round(Number(inv.balance ?? 0) - discountBase),
+        sourceAmount: round(inv.remainingDocument - discountDocument),
+        discountAmount: discountBase,
+        writeOffAmount: 0,
+        targetExchangeRate: Number(inv.exchangeRate),
+        sourceExchangeRate: Number(payment.exchangeRate),
+        appliedDate: payment.paymentDate
+      };
+    })
+  });
+}
+
+// --- Receivables and payables ------------------------------------------------
+
+/**
+ * The two lines of a tie-out adjustment. A subledger above the GL (variance
+ * > 0) means the control account is understated: receivables (an asset) is
+ * debited to raise it, payables (a liability) credited. Below the GL, the
+ * other way. The rounding account takes the opposite side.
+ */
+export function tieOutAdjustmentLines(args: {
+  side: "receivables" | "payables";
+  variance: number;
+  controlAccount: string;
+  offsetAccount: string;
+  description: string;
+}) {
+  const { side, variance, description } = args;
+  const amount = Math.abs(variance);
+  const raisesWithDebit = side === "receivables";
+  const controlDebit = variance > 0 ? raisesWithDebit : !raisesWithDebit;
+  const line = (accountId: string, debit: boolean) => ({
+    accountId,
+    description,
+    debit: debit ? amount : 0,
+    credit: debit ? 0 : amount
+  });
+  return [
+    line(args.controlAccount, controlDebit),
+    line(args.offsetAccount, !controlDebit)
+  ];
+}
+
+/**
+ * Turn the tie-out variance of one side into a balanced Draft journal entry:
+ * the control account against the rounding account. The variance is read
+ * again here, never taken from the caller.
+ */
+export async function adjustTieOut(
+  ctx: ServiceContext,
+  side: "receivables" | "payables",
+  asOfDate: string | undefined
+) {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+
+  // Adjusting entries only count once journals do (after the cutover).
+  const settings = await getCompanySettings(client, companyId);
+  if (!hasAccountingCutover(settings.data)) {
+    return ctx.error("rule", "Accounting is not set up");
+  }
+
+  const date =
+    asOfDate ??
+    datetime
+      .today(await getCachedCompanyTimeZone(client, companyId))
+      .toString();
+  const [tieOut, defaults] = await Promise.all([
+    side === "receivables"
+      ? getArTieOut(client, companyId, date)
+      : getApTieOut(client, companyId, date),
+    getDefaultAccounts(client, companyId)
+  ]);
+  const variance = Number(tieOut.data?.variance ?? 0);
+  const controlAccount =
+    side === "receivables"
+      ? defaults.data?.receivablesAccount
+      : defaults.data?.payablesAccount;
+  const offsetAccount = defaults.data?.roundingAccount;
+  if (!controlAccount || !offsetAccount || variance === 0) {
+    return ctx.error("rule", `No ${side} variance to adjust`);
+  }
+
+  const journalEntry = await invoker(ctx).invoke("create", {
+    type: "journalEntry"
+  });
+  if (journalEntry.error || !journalEntry.data) {
+    return ctx.error(
+      "internal",
+      "Failed to create adjusting entry",
+      journalEntry.error
+    );
+  }
+  const journalId = String(journalEntry.data.id);
+  const description = `${side === "receivables" ? "AR" : "AP"} tie-out adjustment as of ${date}`;
+
+  const saved = await saveJournalEntryWithLines(client, {
+    journalEntryId: journalId,
+    postingDate: date,
+    description,
+    updatedBy: ctx.auditUserId,
+    companyId,
+    companyGroupId: ctx.company.groupId,
+    lines: tieOutAdjustmentLines({
+      side,
+      variance,
+      controlAccount,
+      offsetAccount,
+      description
+    })
+  });
+  if (saved.error) {
+    // The Draft journal exists: the user finishes it by hand.
+    logger.error("Failed to seed the adjusting entry", {
+      companyId,
+      journalId,
+      error: saved.error
+    });
+    return {
+      journalId,
+      warning: "Entry created, but seeding the lines failed"
+    };
+  }
+  return { journalId, warning: null };
+}
+
+// --- Reimbursements -------------------------------------------------------------
+
+/**
+ * The line sum must equal the header amount before a reimbursement may post.
+ * The threshold is `EPSILON`, as in `post-reimbursement`'s `requireLineSum`
+ * and `DocumentLineEditor` — NOT its 0.01 journal tolerance, which governs
+ * the journal's debit/credit residual, a different question.
+ */
+export function linesBalanceHeader(
+  headerAmount: number,
+  lineAmounts: number[]
+): boolean {
+  const total = lineAmounts.reduce((sum, amount) => sum + amount, 0);
+  return Math.abs(total - headerAmount) <= EPSILON;
+}
+
+/** A reimbursement this company owns, with its lines. */
+export async function loadReimbursement(
+  ctx: ServiceContext,
+  reimbursementId: string
+) {
+  const refused = await refuseUnlessOwned(ctx, "reimbursement", {
+    id: reimbursementId
+  });
+  if (refused) return refused;
+  const reimbursement = await getReimbursement(
+    ctx.asCaller.supabase,
+    ctx.company.id,
+    reimbursementId
+  );
+  if (reimbursement.error || !reimbursement.data) {
+    return ctx.error(
+      "internal",
+      "Failed to load reimbursement",
+      reimbursement.error
+    );
+  }
+  return reimbursement.data;
+}
+type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
+
+// The pure Carbon → Stripe field mapping lives in its own module so it can be
+// unit tested without this file's database and Stripe imports.
+export { buildStripeCustomerInput };
+
+export type { StripeCustomerSources };
+
+/**
+ * Gather every table a Stripe customer is assembled from.
+ *
+ * The billing address is NOT "the customer's first location" — Carbon points at
+ * it explicitly through `customerPayment.invoiceCustomerLocationId`, which can
+ * differ from the shipping location and can even belong to a different customer
+ * (bill-to ≠ sold-to). Resolving it any other way bills the wrong address.
+ *
+ * `customerContactId` is scoped to `customerId = billingCustomerId` (not just
+ * `companyId`) — `customerContact` carries no `companyId` column of its own, and
+ * `billingCustomerId` is already validated against the invoice's `companyId` by
+ * `getBillingCustomerId`. Without this, a caller who knows a contact UUID from
+ * another tenant's customer could resolve that contact's email into this Stripe
+ * lookup. With no contact (a contract need not name one) the email can only
+ * come from the caller's `emailOverride`.
+ */
+export async function resolveStripeCustomerSources(
+  serviceRole: ServiceRole,
+  companyId: string,
+  billingCustomerId: string,
+  customerContactId: string | null
+): Promise<StripeCustomerSources | null> {
+  const [customer, contact, payment, customerTax] = await Promise.all([
+    getCustomer(serviceRole, billingCustomerId, companyId),
+    customerContactId
+      ? serviceRole
+          .from("customerContact")
+          .select(
+            "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
+          )
+          .eq("id", customerContactId)
+          .eq("customerId", billingCustomerId)
+          .eq("companyId", companyId)
+          .single()
+      : { data: null },
+    getCustomerPayment(serviceRole, billingCustomerId, companyId),
+    getCustomerTax(serviceRole, billingCustomerId, companyId)
+  ]);
+
+  if (!customer.data) return null;
+
+  // `getCustomerLocation` (singular) is the only reader that selects
+  // `address.countryCode`; the plural `getCustomerLocations` embeds
+  // `country(alpha2, name)` instead and cannot supply Stripe's `address.country`.
+  const billingLocationId = payment.data?.invoiceCustomerLocationId;
+  const billingLocation = billingLocationId
+    ? (await getCustomerLocation(serviceRole, billingLocationId, companyId))
+        .data
+    : null;
+
+  return {
+    customer: customer.data,
+    contact: contact.data,
+    billingLocation,
+    customerTax: customerTax.data
+  };
+}
+
+/** A Stripe customer, reduced to what the confirmation panel shows. */
+export type StripeCustomerSummary = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
+/**
+ * What posting this invoice through Stripe would do to the connected account.
+ *
+ * Deliberately a closed union rather than a bag of optional fields: every state
+ * demands a different question of the user, and the caller must handle all of
+ * them before anything is created on a merchant's live account.
+ */
+export type StripeCustomerResolution =
+  | { state: "unavailable"; message: string }
+  | { state: "missing-email"; customerName: string }
+  | { state: "linked"; customer: StripeCustomerSummary }
+  | { state: "match-found"; matches: StripeCustomerSummary[] }
+  | {
+      state: "new";
+      preview: {
+        name: string;
+        email: string;
+        phone?: string;
+        addressLines: string[];
+        taxExempt: "none" | "exempt" | "reverse";
+      };
+    };
+
+function toSummary(customer: {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+}): StripeCustomerSummary {
+  return {
+    id: customer.id,
+    name: customer.name ?? null,
+    email: customer.email ?? null
+  };
+}
+
+/**
+ * Who gets billed for this invoice.
+ *
+ * `invoiceCustomerId` is the bill-to and takes precedence — it is set when the
+ * customer receiving the goods is not the one paying for them.
+ */
+export async function getBillingCustomerId(
+  serviceRole: ServiceRole,
+  invoiceId: string,
+  companyId: string
+): Promise<string | null> {
+  const invoice = await serviceRole
+    .from("salesInvoice")
+    .select("customerId, invoiceCustomerId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (!invoice.data) return null;
+  return invoice.data.invoiceCustomerId ?? invoice.data.customerId ?? null;
+}
+
+/**
+ * Decide what would happen to the connected account, without changing anything.
+ *
+ * Read-only by design: both the modal (to ask the user) and the post action (to
+ * check the answer it got back) call this. Running the same resolution on both
+ * sides is what stops a client from claiming "just link me to cus_X" for a
+ * customer that does not exist, belongs to another account, or was never offered.
+ *
+ * Starts from an INVOICE: the billed customer is its bill-to. A contract (or
+ * anything else that already knows who it bills) uses
+ * `resolveStripeCustomerForBilling` directly.
+ */
+export async function resolveStripeCustomer({
+  serviceRole,
+  companyId,
+  invoiceId,
+  customerContactId,
+  emailOverride
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  invoiceId: string;
+  customerContactId: string;
+  emailOverride?: string;
+}): Promise<StripeCustomerResolutionResult> {
+  const stripeAccountId = await getStripeConnectAccountId(
+    serviceRole,
+    companyId
+  );
+  if (!stripeAccountId) return notConnected();
+
+  const billingCustomerId = await getBillingCustomerId(
+    serviceRole,
+    invoiceId,
+    companyId
+  );
+  if (!billingCustomerId) {
+    return {
+      resolution: {
+        state: "unavailable",
+        message: "this invoice has no customer to bill"
+      },
+      sources: null
+    };
+  }
+
+  return resolveForAccount({
+    serviceRole,
+    companyId,
+    stripeAccountId,
+    billingCustomerId,
+    customerContactId,
+    emailOverride
+  });
+}
+
+type StripeCustomerResolutionResult =
+  | { resolution: StripeCustomerResolution; sources: null }
+  | {
+      resolution: StripeCustomerResolution;
+      sources: StripeCustomerSources;
+      stripeAccountId: string;
+      billingCustomerId: string;
+      input: ConnectCustomerInput | null;
+    };
+
+function notConnected(): StripeCustomerResolutionResult {
+  return {
+    resolution: {
+      state: "unavailable",
+      message: "Stripe Connect is not connected for this company"
+    },
+    sources: null
+  };
+}
+
+/**
+ * `resolveStripeCustomer`, starting from the customer who is billed rather
+ * than from an invoice. `billingCustomerId` must already be the bill-to (a
+ * contract's `invoiceCustomerId ?? customerId`); it is loaded scoped to
+ * `companyId`, so a customer of another company resolves to `unavailable`
+ * before anything reaches Stripe.
+ *
+ * `customerContactId` is optional: a contract need not name an invoice
+ * contact, and the Stripe customer's email can then come only from
+ * `emailOverride`.
+ */
+export async function resolveStripeCustomerForBilling({
+  serviceRole,
+  companyId,
+  billingCustomerId,
+  customerContactId,
+  emailOverride
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  billingCustomerId: string;
+  customerContactId?: string | null;
+  emailOverride?: string;
+}): Promise<StripeCustomerResolutionResult> {
+  const stripeAccountId = await getStripeConnectAccountId(
+    serviceRole,
+    companyId
+  );
+  if (!stripeAccountId) return notConnected();
+
+  return resolveForAccount({
+    serviceRole,
+    companyId,
+    stripeAccountId,
+    billingCustomerId,
+    customerContactId,
+    emailOverride
+  });
+}
+
+async function resolveForAccount({
+  serviceRole,
+  companyId,
+  stripeAccountId,
+  billingCustomerId,
+  customerContactId,
+  emailOverride
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  stripeAccountId: string;
+  billingCustomerId: string;
+  customerContactId?: string | null;
+  emailOverride?: string;
+}): Promise<StripeCustomerResolutionResult> {
+  const sources = await resolveStripeCustomerSources(
+    serviceRole,
+    companyId,
+    billingCustomerId,
+    customerContactId ?? null
+  );
+  if (!sources) {
+    return {
+      resolution: {
+        state: "unavailable",
+        message: "the customer could not be loaded"
+      },
+      sources: null
+    };
+  }
+
+  const found = { stripeAccountId, billingCustomerId, sources };
+  const input = buildStripeCustomerInput(sources, emailOverride);
+
+  // No email means no invoice can be sent, so ask for one before looking
+  // anything up — an email is also the only key we can match Stripe on.
+  if (!input) {
+    return {
+      ...found,
+      input: null,
+      resolution: {
+        state: "missing-email",
+        customerName: sources.customer.name ?? ""
+      }
+    };
+  }
+
+  const mappingService = createMappingService(getDatabaseClient(), companyId);
+  const mapping = await mappingService.getByEntity(
+    "customer",
+    billingCustomerId,
+    STRIPE_CONNECT_INTEGRATION
+  );
+
+  if (mapping?.externalId) {
+    const existing = await retrieveConnectCustomer(
+      stripeAccountId,
+      mapping.externalId
+    );
+    // A mapping whose customer was deleted in the Stripe dashboard falls
+    // through to the search below rather than failing the post.
+    if (existing) {
+      return {
+        ...found,
+        input,
+        resolution: { state: "linked", customer: toSummary(existing) }
+      };
+    }
+  }
+
+  const matches = await findConnectCustomersByEmail(
+    stripeAccountId,
+    input.email
+  );
+
+  if (matches.length) {
+    return {
+      ...found,
+      input,
+      resolution: { state: "match-found", matches: matches.map(toSummary) }
+    };
+  }
+
+  return {
+    ...found,
+    input,
+    resolution: {
+      state: "new",
+      preview: {
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+        addressLines: [
+          input.address?.line1,
+          input.address?.line2,
+          [
+            input.address?.city,
+            input.address?.state,
+            input.address?.postal_code
+          ]
+            .filter(Boolean)
+            .join(", "),
+          input.address?.country
+        ].filter((line): line is string => Boolean(line)),
+        taxExempt: input.taxExempt ?? "none"
+      }
+    }
+  };
+}
+
+/**
+ * Act on the user's Stripe customer choice for the customer who is billed,
+ * and link the result in `externalIntegrationMapping`.
+ *
+ * The choice comes from a form (the invoice post modal, the contract confirm
+ * modal), so it is never taken at face value: the resolution is re-run here —
+ * the same one the modal showed — and the action is checked against what the
+ * connected account looks like now. That closes the gap between the dialog
+ * being shown and the form being submitted (a customer deleted in the Stripe
+ * dashboard, a mapping written by a concurrent post, a hand-rolled form body
+ * naming someone else's customer id).
+ *
+ * `contactEmail` is an address the user typed for a contact that had none; it
+ * is saved to that contact before resolving, so the match search runs on it.
+ */
+export async function linkStripeCustomerForBilling({
+  serviceRole,
+  companyId,
+  userId,
+  billingCustomerId,
+  customerContactId,
+  action,
+  stripeCustomerId,
+  contactEmail
+}: {
+  serviceRole: ServiceRole;
+  companyId: string;
+  userId: string;
+  billingCustomerId: string;
+  customerContactId?: string | null;
+  action: (typeof stripeCustomerActions)[number];
+  stripeCustomerId?: string;
+  contactEmail?: string;
+}): Promise<
+  | {
+      ok: true;
+      stripeAccountId: string;
+      stripeCustomerId: string;
+      customerName: string;
+    }
+  | { ok: false; message: string }
+> {
+  if (contactEmail && customerContactId) {
+    // customerContactId comes from the form and the service role bypasses RLS:
+    // scope it so another company's contact is never read or rewritten.
+    const contact = await getCustomerContact(
+      serviceRole,
+      customerContactId,
+      companyId
+    );
+    if (contact.data && !contact.data.contact?.email) {
+      const update = await updateCustomerContact(serviceRole, {
+        contactId: contact.data.contactId,
+        contact: {
+          firstName: contact.data.contact?.firstName ?? "",
+          lastName: contact.data.contact?.lastName ?? "",
+          email: contactEmail
+        }
+      });
+      if (update.error) {
+        return { ok: false, message: "the contact email could not be saved" };
+      }
+    }
+  }
+
+  const resolveNow = () =>
+    resolveStripeCustomerForBilling({
+      serviceRole,
+      companyId,
+      billingCustomerId,
+      customerContactId,
+      emailOverride: contactEmail
+    });
+
+  const resolved = await resolveNow();
+
+  if (!resolved.sources) {
+    return {
+      ok: false,
+      message:
+        resolved.resolution.state === "unavailable"
+          ? resolved.resolution.message
+          : "the Stripe customer could not be resolved"
+    };
+  }
+
+  const { stripeAccountId, sources, input } = resolved;
+
+  if (!input) {
+    return { ok: false, message: "the selected contact has no email address" };
+  }
+
+  const customerName = sources.customer.name;
+  if (!customerName) {
+    return { ok: false, message: "the customer could not be loaded" };
+  }
+
+  let resolvedCustomerId: string;
+
+  switch (action) {
+    case "use-linked": {
+      // The dialog showed a linked customer; it must still be linked and live.
+      // Falling through to a create here would put a customer on the merchant's
+      // account that the user never agreed to.
+      if (resolved.resolution.state !== "linked") {
+        return {
+          ok: false,
+          message:
+            "the linked Stripe customer is no longer available — reopen the dialog"
+        };
+      }
+      resolvedCustomerId = resolved.resolution.customer.id;
+      break;
+    }
+    case "link-existing": {
+      if (!stripeCustomerId) {
+        return {
+          ok: false,
+          message: "no Stripe customer was selected to link"
+        };
+      }
+      // Confirm the id exists on THIS connected account before writing it into
+      // the mapping — an id from another account (or an invented one) would
+      // otherwise be linked and every future invoice would fail at send.
+      const existing = await retrieveConnectCustomer(
+        stripeAccountId,
+        stripeCustomerId
+      );
+      if (!existing) {
+        return {
+          ok: false,
+          message: "that Stripe customer no longer exists on this account"
+        };
+      }
+      resolvedCustomerId = existing.id;
+      break;
+    }
+    case "create": {
+      // A concurrent post (or a link made since the dialog opened) means this
+      // Carbon customer now HAS a Stripe customer. Creating a second one is
+      // exactly what this flow exists to prevent, so stop and let the user
+      // confirm the one that now exists.
+      if (resolved.resolution.state === "linked") {
+        return {
+          ok: false,
+          message:
+            "this customer was just linked to a Stripe customer — reopen the dialog to confirm it"
+        };
+      }
+      try {
+        resolvedCustomerId = await upsertConnectCustomer(
+          stripeAccountId,
+          null,
+          input
+        );
+      } catch (err) {
+        // A genuinely concurrent post for the same unlinked customer reuses
+        // the same idempotency key (upsertConnectCustomer scopes it by
+        // companyId+carbonCustomerId) — Stripe rejects the SECOND request
+        // in-flight with an idempotency_error rather than returning the
+        // first request's result. The winning request finishes and links
+        // its mapping shortly after, so re-resolve once instead of failing
+        // outright.
+        if ((err as { type?: string }).type !== "idempotency_error") {
+          throw err;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const retried = await resolveNow();
+        if (retried.resolution.state !== "linked") {
+          throw err;
+        }
+        resolvedCustomerId = retried.resolution.customer.id;
+      }
+      break;
+    }
+  }
+
+  await createMappingService(getDatabaseClient(), companyId).link(
+    "customer",
+    billingCustomerId,
+    STRIPE_CONNECT_INTEGRATION,
+    resolvedCustomerId,
+    { createdBy: userId }
+  );
+
+  return {
+    ok: true,
+    stripeAccountId,
+    stripeCustomerId: resolvedCustomerId,
+    customerName
+  };
 }

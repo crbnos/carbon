@@ -54,7 +54,7 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes
 } from "../../items.models";
-import type { UnreleasedChangeOrderItem } from "../../items.server";
+import type { UnreleasedChangeOrderItem } from "../../items.service";
 import type {
   ItemFile,
   MakeMethod,

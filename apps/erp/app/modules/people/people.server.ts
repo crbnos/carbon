@@ -2,10 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
+import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { employeeJobValidator } from "./people.models";
@@ -14,6 +11,7 @@ import {
   clockOut,
   createTimeCardEntry,
   deleteTimeCardEntry,
+  timeCardError,
   updateEmployeeJob,
   updateTimeCardEntry,
   upsertShift
@@ -131,21 +129,6 @@ export const updatePersonJob = defineServiceFn({
     return { employeeId };
   }
 });
-
-/**
- * A time card helper's refusal ("Already clocked in") carries no database
- * code; a database error does.
- */
-function timeCardError(
-  ctx: ServiceContext,
-  error: { message: string; code?: string },
-  message: string
-) {
-  return "code" in error
-    ? ctx.error("internal", message, error)
-    : ctx.error("rule", error.message);
-}
-
 // The person timecard page has always let anyone with people view clock a
 // person in or out and edit their entries. That is kept as it was, so these
 // stay unpublished: an API key with view access must not write time.

@@ -14,7 +14,7 @@ import {
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.server";
+import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.service";
 import type { ChartPeriodSeries } from "~/modules/accounting/types";
 import { NET_INCOME_ACCOUNT_ID } from "~/modules/accounting/types";
 import { exportPeriodReport } from "~/modules/accounting/ui/Reports/exportReport";

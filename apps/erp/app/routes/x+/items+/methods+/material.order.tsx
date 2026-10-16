@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { updateMaterialOrder } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { checkRevisionLock } from "~/modules/items/items.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

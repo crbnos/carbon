@@ -2,10 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServiceContext } from "@carbon/api/service-fn.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { redis } from "@carbon/kv";
 import type { NotificationPreferenceChannel } from "@carbon/notifications";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getAttribute } from "~/modules/people/people.service";
 import { sanitize } from "~/utils/supabase";
 
 export type ChangelogPanelEntry = {
@@ -368,4 +372,45 @@ export async function upsertUserAttributeValue(
       .select("id")
       .single();
   }
+}
+const CHANGELOG_CACHE_KEY = "changelog:latest";
+
+const CHANGELOG_CACHE_TTL_SECONDS = 300;
+
+export async function getCachedChangelogPanelEntry(): Promise<ChangelogPanelEntry | null> {
+  const cached = await redis.get(CHANGELOG_CACHE_KEY);
+  if (cached) return JSON.parse(cached) as ChangelogPanelEntry;
+
+  const entry = await getChangelogPanelEntry(getCarbonServiceRole());
+  if (entry) {
+    await redis.set(
+      CHANGELOG_CACHE_KEY,
+      JSON.stringify(entry),
+      "EX",
+      CHANGELOG_CACHE_TTL_SECONDS
+    );
+  }
+  return entry;
+}
+
+/**
+ * Whether the caller may change `userId`'s value of an attribute: anyone with
+ * resources update may change anyone's; others only their own, of an
+ * attribute people manage themselves.
+ */
+export async function refuseAttributeValueChange(
+  ctx: ServiceContext,
+  userId: string,
+  userAttributeId: string,
+  refusal: string
+) {
+  if (ctx.can({ update: "resources" })) return null;
+  if (ctx.auditUserId !== userId) return ctx.error("forbidden", refusal);
+
+  const attribute = await getAttribute(ctx.asCaller.supabase, userAttributeId);
+  if (attribute.error) {
+    return ctx.error("internal", "Failed to get attribute", attribute.error);
+  }
+  if (!attribute.data?.canSelfManage) return ctx.error("forbidden", refusal);
+  return null;
 }

@@ -2,6 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { appendFileSync } from "node:fs";
+import type {
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import {
   fetchAllByIds,
@@ -10,12 +15,19 @@ import {
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
+import { trigger } from "@carbon/jobs";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import {
+  type LadderShiftRow,
+  resolveLocationWindows,
+  subtractIntervals
+} from "@carbon/planning";
 import type { JSONContent } from "@carbon/react";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
@@ -24,6 +36,7 @@ import {
   datetime,
   getErrorMessage,
   groupBy,
+  HOUR_MS,
   isUniqueViolation,
   nameSimilarity,
   scrapAllowance,
@@ -45,14 +58,21 @@ import {
   validateSubAssemblies
 } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
-import { parseDate } from "@internationalized/date";
+import {
+  getDayOfWeek,
+  parseDate,
+  parseDateTime,
+  toCalendarDateTime
+} from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { StorageItem } from "~/types";
+import { makeDurations } from "~/utils/duration";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -11349,4 +11369,1147 @@ export async function createJobDocumentUploadUrl(
     entityId: args.jobId,
     name: args.name
   });
+}
+// TEMPORARY debugging instrumentation for the assembly step save/motion bug.
+// Writes one JSON line per server action hit so we can see exactly which route
+// fires (new vs update vs motion) and with what payload. Remove once resolved.
+const LOG_PATH =
+  "/Users/barbinbrad/Code/carbon-claude-confident-maxwell-dy4fvr/.ai/scratch/e2e/assembly-step-debug.jsonl";
+
+export function logAssemblyStep(
+  event: string,
+  payload: Record<string, unknown>
+) {
+  try {
+    appendFileSync(
+      LOG_PATH,
+      `${JSON.stringify({ at: new Date().toISOString(), event, ...payload })}\n`
+    );
+  } catch {
+    // best-effort; never break the request
+  }
+}
+
+/** Read a request's form data and return both the entries (for logging) and a
+ * re-usable FormData clone the validator can consume. */
+export async function readAndLogFormData(request: Request, event: string) {
+  const formData = await request.formData();
+  const entries: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    entries[key] =
+      typeof value === "string"
+        ? value.length > 300
+          ? `${value.slice(0, 300)}…`
+          : value
+        : "[file]";
+  }
+  logAssemblyStep(event, { url: request.url, entries });
+  return formData;
+}
+/** The `shift` rows returned by getShiftsWithTimes (weekday flags + times). */
+type ShiftRow = {
+  startTime: string | null;
+  endTime: string | null;
+  monday: boolean | null;
+  tuesday: boolean | null;
+  wednesday: boolean | null;
+  thursday: boolean | null;
+  friday: boolean | null;
+  saturday: boolean | null;
+  sunday: boolean | null;
+};
+
+// dayOfWeek 0 = Sunday .. 6 = Saturday — the ladder's convention, matching the
+// scheduler's own location-shift mapping (master-data-provider.expandShiftDays).
+const WEEKDAY_FLAGS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+] as const;
+
+/**
+ * Non-working intervals inside [windowStartMs, windowEndMs) for the forecast
+ * board's shading — the complement of the plant's operating hours. Uses the
+ * SAME availability ladder the scheduler uses (the location's shifts if any,
+ * else the stock Mon–Fri 08:00–16:00 week in the plant timezone), so the bars
+ * and the shaded background can never disagree. Location-level, not
+ * per-work-center: one plant calendar behind every lane. Per-WC shifts /
+ * `alwaysOn` are a deliberate follow-up (see #3b).
+ */
+export function getForecastNonWorkingIntervals(args: {
+  timeZone: string;
+  shifts: ShiftRow[];
+  windowStartMs: number;
+  windowEndMs: number;
+}): { start: number; end: number }[] {
+  const { timeZone, shifts, windowStartMs, windowEndMs } = args;
+
+  const locationShiftRows: LadderShiftRow[] = [];
+  for (const shift of shifts) {
+    if (!shift.startTime || !shift.endTime) continue;
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+      const flag = WEEKDAY_FLAGS[dayOfWeek];
+      if (!flag || !shift[flag]) continue;
+      locationShiftRows.push({
+        dayOfWeek,
+        startTime: String(shift.startTime),
+        endTime: String(shift.endTime),
+        timezone: timeZone
+      });
+    }
+  }
+
+  const working = resolveLocationWindows({
+    timezone: timeZone,
+    locationShiftRows,
+    rangeStart: windowStartMs,
+    rangeEnd: windowEndMs
+  });
+
+  return subtractIntervals(
+    [{ start: windowStartMs, end: windowEndMs }],
+    working
+  ).map((w) => ({ start: w.start, end: w.end }));
+}
+type CapacityOperation = {
+  workCenterId: string | null;
+  dueDate: string | null;
+  setupTime?: number;
+  setupUnit?: string;
+  laborTime?: number;
+  laborUnit?: string;
+  machineTime?: number;
+  machineUnit?: string;
+  operationQuantity: number | null;
+};
+
+type CapacityReservation = {
+  resourceId: string;
+  startAt: string;
+  endAt: string;
+  workHours: number | null;
+};
+
+/** A location shift reduced to its per-day hours and which weekdays it runs. */
+type CapacityShift = {
+  id: string;
+  /** shift hours per day (start→end duration, or the location default). */
+  hours: number;
+  /** 7 weekday flags, Sunday-first (index 0 = Sunday … 6 = Saturday). */
+  runsOn: boolean[];
+};
+
+// Rung 3 of the ladder: no shifts anywhere → stock Mon–Fri, 8h/day. Mirrors the
+// engine's stock week (08:00–16:00 = 8h) so machine and people capacity assume
+// the same default day.
+const FALLBACK_SHIFT_HOURS = 8;
+
+/**
+ * DAY-granularity mirror of the engine's machine-availability ladder, for the
+ * Capacity view's Available series. The engine
+ * (`packages/planning/src/scheduling/machine-availability.ts`)
+ * owns the AUTHORITATIVE wall-clock ladder; this is DISPLAY math and resolves the
+ * same rungs at day granularity.
+ *
+ * Per work center, per week date, resolved in order:
+ *   1. `alwaysOn` → 24h (lights-out).
+ *   2. explicit `workCenterShift` rows → Σ (shift hours whose weekday flag covers
+ *      that date) over the work center's shifts.
+ *   3. no WC rows but the location has shifts → the same Σ over the location's
+ *      shifts.
+ *   4. no shifts anywhere → 8h on Mon–Fri, 0 on the weekend.
+ */
+export function getWorkCenterCalendarHoursByDay(args: {
+  workCenters: { id: string; alwaysOn: boolean }[];
+  workCenterShifts: { workCenterId: string; shiftId: string }[];
+  locationShifts: CapacityShift[];
+  weekDates: string[];
+}): Map<string, Map<string, number>> {
+  const { workCenters, workCenterShifts, locationShifts, weekDates } = args;
+
+  const shiftById = new Map(locationShifts.map((shift) => [shift.id, shift]));
+  const shiftIdsByWorkCenter = new Map<string, string[]>();
+  for (const link of workCenterShifts) {
+    const list = shiftIdsByWorkCenter.get(link.workCenterId);
+    if (list) list.push(link.shiftId);
+    else shiftIdsByWorkCenter.set(link.workCenterId, [link.shiftId]);
+  }
+
+  // weekday index per week date — a plain calendar date, so timezone-independent
+  const dowByDate = weekDates.map((day) =>
+    getDayOfWeek(parseDate(day), "en-US")
+  );
+
+  const sumShiftHours = (shifts: CapacityShift[], dow: number) =>
+    shifts.reduce(
+      (sum, shift) => (shift.runsOn[dow] ? sum + shift.hours : sum),
+      0
+    );
+
+  const result = new Map<string, Map<string, number>>();
+  for (const workCenter of workCenters) {
+    const wcShiftIds = shiftIdsByWorkCenter.get(workCenter.id) ?? [];
+    const wcShifts = wcShiftIds.flatMap((id) => {
+      const shift = shiftById.get(id);
+      return shift ? [shift] : [];
+    });
+    const byDate = new Map<string, number>();
+    weekDates.forEach((day, i) => {
+      const dow = dowByDate[i] ?? 0;
+      let hours: number;
+      if (workCenter.alwaysOn) {
+        hours = 24;
+      } else if (wcShifts.length > 0) {
+        hours = sumShiftHours(wcShifts, dow);
+      } else if (locationShifts.length > 0) {
+        hours = sumShiftHours(locationShifts, dow);
+      } else {
+        hours = dow === 0 || dow === 6 ? 0 : FALLBACK_SHIFT_HOURS;
+      }
+      byDate.set(day, hours);
+    });
+    result.set(workCenter.id, byDate);
+  }
+  return result;
+}
+
+/**
+ * The Capacity view's week buckets.
+ *
+ * Demand = open job-operation hours by due date (overdue lands in `pastDue`,
+ * like the classic capacity board's Past Weeks column). Scheduled = each
+ * reservation's actual work content distributed across its wall-clock span —
+ * a reservation holds the station for its full span (including idle
+ * overnight stretches), so distributing `workHours` keeps a spanning op from
+ * reading as 24h/day. Day boundaries come from the plant's calendar via
+ * `CalendarDate.toDate(tz)` so DST weeks bucket correctly.
+ */
+export function buildPeopleCapacityBuckets(args: {
+  weekDates: string[];
+  timezone: string;
+  operations: CapacityOperation[];
+  reservations: CapacityReservation[];
+  /** per-work-center calendar hours (the ladder above) — clamps null-workHours reservations. */
+  calendarHoursByWorkCenter: Map<string, Map<string, number>>;
+}): {
+  demandByWorkCenter: Record<
+    string,
+    { pastDue: number; days: Record<string, number> }
+  >;
+  scheduledByWorkCenter: Record<string, Record<string, number>>;
+} {
+  const {
+    weekDates,
+    timezone,
+    operations,
+    reservations,
+    calendarHoursByWorkCenter
+  } = args;
+  const weekStartDate = weekDates[0];
+
+  const demandByWorkCenter: Record<
+    string,
+    { pastDue: number; days: Record<string, number> }
+  > = {};
+  for (const operation of operations) {
+    if (!operation.workCenterId || !operation.dueDate) continue;
+    const durations = makeDurations(operation);
+    const hours =
+      (durations.setupDuration +
+        durations.laborDuration +
+        durations.machineDuration) /
+      HOUR_MS;
+    if (hours <= 0) continue;
+    const bucket = (demandByWorkCenter[operation.workCenterId] ??= {
+      pastDue: 0,
+      days: {}
+    });
+    if (operation.dueDate < weekStartDate) {
+      bucket.pastDue += hours;
+    } else {
+      bucket.days[operation.dueDate] =
+        (bucket.days[operation.dueDate] ?? 0) + hours;
+    }
+  }
+
+  // day boundaries on the plant's calendar, computed once (not per reservation)
+  const dayBounds = weekDates.map((day) => {
+    const dayDate = parseDate(day);
+    return {
+      day,
+      startMs: dayDate.toDate(timezone).getTime(),
+      endMs: dayDate.add({ days: 1 }).toDate(timezone).getTime()
+    };
+  });
+
+  const scheduledByWorkCenter: Record<string, Record<string, number>> = {};
+  for (const reservation of reservations) {
+    const startMs = new Date(reservation.startAt).getTime();
+    const endMs = new Date(reservation.endAt).getTime();
+    const spanMs = endMs - startMs;
+    if (spanMs <= 0) continue;
+
+    let workMs: number;
+    if (reservation.workHours != null) {
+      workMs = reservation.workHours * HOUR_MS;
+    } else {
+      // Legacy rows carry no measured work content, so the old code counted the
+      // full wall-clock span — which reads as 24h/day for an op that idles
+      // overnight. Clamp to the calendar hours actually available at this work
+      // center over the days the reservation spans.
+      const dayHours = calendarHoursByWorkCenter.get(reservation.resourceId);
+      let calendarMsWithinSpan = 0;
+      for (const { day, startMs: dayStartMs, endMs: dayEndMs } of dayBounds) {
+        const overlapMs =
+          Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
+        if (overlapMs > 0) {
+          calendarMsWithinSpan += (dayHours?.get(day) ?? 0) * HOUR_MS;
+        }
+      }
+      workMs = Math.min(spanMs, calendarMsWithinSpan);
+    }
+
+    for (const { day, startMs: dayStartMs, endMs: dayEndMs } of dayBounds) {
+      const overlapMs =
+        Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
+      if (overlapMs > 0) {
+        const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
+        byDay[day] =
+          (byDay[day] ?? 0) + (overlapMs / spanMs) * (workMs / HOUR_MS);
+      }
+    }
+  }
+
+  return { demandByWorkCenter, scheduledByWorkCenter };
+}
+// MCP-exposed production writes that depend on server-only modules
+// (`@carbon/auth/users.server`, `@carbon/ee/rules.server`). These CANNOT
+// live in `production.service.ts`: that file is re-exported by the
+// `~/modules/production` barrel, which client components value-import, so it is
+// part of the client bundle and React Router's dot-server plugin rejects any
+// `.server` reference reachable from it. This module is server-only (never
+// re-exported by the barrel) and is pulled into the MCP tool set by
+// `scripts/generate-mcp.ts` + the Carbon API registry
+// (`api+/v1+/lib/registry.server.ts`), which run server-side only.
+//
+// Some of these writes reach privileged paths (a SECURITY DEFINER RPC, an
+// Inngest trigger) that bypass RLS. The API gate (`gate` in
+// `api+/v1+/lib/base.server.ts`) checks each published tool's permission for
+// every caller: API keys, OAuth connectors and workflows.
+
+/**
+ * Issue material to a job operation, enforcing work-center material-issue rules first.
+ * Wraps the `issue` server function (type "partToOperation").
+ *
+ * The work-center rule check fails closed: a failed or empty operation lookup throws rather
+ * than silently skipping the rule and letting the server function run unchecked.
+ */
+export async function issueMaterial(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    operationId: string;
+    itemId: string;
+    quantity: number;
+    materialId?: string;
+    jobOperationStepId?: string;
+    adjustmentType?: string;
+    acknowledged?: boolean;
+  }
+) {
+  const { data: jobOp, error: jobOpError } = await client
+    .from("jobOperation")
+    .select("workCenterId")
+    .eq("id", args.operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  // Fail closed: a failed or empty lookup must not silently skip the work-center
+  // material-issue rule and let the `issue` server function run unchecked.
+  if (jobOpError || !jobOp) {
+    throw new Error(`Job operation ${args.operationId} was not found.`);
+  }
+  const workCenterId = jobOp.workCenterId;
+  if (workCenterId) {
+    const ruleEval = await evaluateLinesForSurface({
+      client,
+      companyId,
+      userId,
+      targetType: "workCenter",
+      surface: "materialIssue",
+      lines: [
+        {
+          lineId: args.operationId,
+          itemId: args.itemId,
+          workCenterId,
+          operation: {
+            id: args.operationId,
+            itemId: args.itemId,
+            quantity: args.quantity,
+            workInstructionId: null
+          },
+          quantity: args.quantity
+        }
+      ]
+    });
+    if (
+      ruleEval.violations.length > 0 &&
+      isBlocked(ruleEval.violations, args.acknowledged ?? false)
+    ) {
+      throw new Error(
+        `Material issue blocked by a work-center rule: ${ruleEval.violations
+          .map((v) => v.message)
+          .join("; ")}`
+      );
+    }
+  }
+
+  return serverFns
+    .as({ client, db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
+      id: args.operationId,
+      type: "partToOperation",
+      itemId: args.itemId,
+      materialId: args.materialId,
+      jobOperationStepId: args.jobOperationStepId,
+      quantity: args.quantity,
+      adjustmentType: args.adjustmentType as
+        | "Negative Adjmt."
+        | "Positive Adjmt."
+        | "Set Quantity"
+    });
+}
+
+/**
+ * Schedule or reschedule a job's operations. Routes through
+ * `recalculateJobOperationDependencies`, which resolves the job's location and
+ * regenerates the whole location IN-PROCESS via `@carbon/planning`
+ * (`runLocationSchedule`) — the same in-process path the rest of the app uses.
+ * Forecast-first scheduling is a single forward-ASAP pass, so there are no
+ * `mode`/`direction` knobs to validate.
+ *
+ * The scheduling path has no gate of its own: the API gate checks the tool's
+ * `production` update permission for every caller. `client` MUST stay named
+ * `client` and first — the MCP executor injects it positionally by that exact
+ * name; renaming breaks the tool.
+ */
+export async function scheduleJob(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    jobId: string;
+  }
+) {
+  return recalculateJobOperationDependencies(client, getDatabaseClient(), {
+    jobId: args.jobId,
+    companyId,
+    userId
+  });
+}
+// The geometry (assembler) service backs model conversion and motion planning.
+// When it's unreachable those actions can't run, so loaders probe its health and
+// the UI soft-gates the assembler-dependent controls. Result cached so a
+// navigation burst doesn't fan out one probe per route.
+//
+// The default deployment is a scale-to-zero Lambda: a cold /health takes ~2-5s
+// to init, so the probe timeout must outlast a cold start (the old 2s abort
+// read every cold service as down). Healthy sticks longer than unhealthy —
+// a failed probe usually WARMED the service (the request went through; we just
+// stopped waiting), so re-probe quickly instead of pinning "down" for 15s.
+const ASSEMBLER_HEALTHY_TTL_MS = 60_000;
+
+const ASSEMBLER_UNHEALTHY_TTL_MS = 5_000;
+
+const ASSEMBLER_HEALTH_TIMEOUT_MS = 10_000;
+
+let assemblerHealthCache: { healthy: boolean; expires: number } | null = null;
+
+export async function isAssemblerServiceHealthy(): Promise<boolean> {
+  if (!ASSEMBLER_SERVICE_URL) return false;
+
+  const now = Date.now();
+  if (assemblerHealthCache && assemblerHealthCache.expires > now) {
+    return assemblerHealthCache.healthy;
+  }
+
+  let healthy = false;
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    ASSEMBLER_HEALTH_TIMEOUT_MS
+  );
+  try {
+    const response = await fetch(`${ASSEMBLER_SERVICE_URL}/health`, {
+      method: "GET",
+      signal: controller.signal
+    });
+    healthy = response.ok;
+  } catch {
+    healthy = false;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  assemblerHealthCache = {
+    healthy,
+    expires:
+      now + (healthy ? ASSEMBLER_HEALTHY_TTL_MS : ASSEMBLER_UNHEALTHY_TTL_MS)
+  };
+  return healthy;
+}
+
+/**
+ * Save the release dialog's supplier for outside operations whose process has
+ * several, so `purchaseOrderFromJob` resolves it. Runs before the purchase
+ * orders are created. Both ids come from the caller and drive an RLS-bypassing
+ * write, so the operation must belong to one of `jobIds` and the supplier
+ * process to the operation's own process.
+ */
+export async function stampSupplierChoices(
+  ctx: ServiceContext,
+  { jobIds, choices }: { jobIds: string[]; choices: Record<string, string> }
+): Promise<CarbonError | null> {
+  const entries = Object.entries(choices);
+  if (entries.length === 0) return null;
+  const companyId = ctx.company.id;
+  const system = ctx.asSystem.supabase;
+
+  const [operations, supplierProcesses] = await Promise.all([
+    system
+      .from("jobOperation")
+      .select("id, processId")
+      .in("jobId", jobIds)
+      .eq("companyId", companyId)
+      .in(
+        "id",
+        entries.map(([operationId]) => operationId)
+      ),
+    system
+      .from("supplierProcess")
+      .select("id, processId")
+      .eq("companyId", companyId)
+      .in(
+        "id",
+        entries.map(([, supplierProcessId]) => supplierProcessId)
+      )
+  ]);
+  if (operations.error || supplierProcesses.error) {
+    return ctx.error(
+      "internal",
+      "Failed to save the supplier choice",
+      operations.error ?? supplierProcesses.error
+    );
+  }
+
+  const processOfOperation = new Map(
+    operations.data.map((op) => [op.id, op.processId])
+  );
+  const processOfSupplierProcess = new Map(
+    supplierProcesses.data.map((sp) => [sp.id, sp.processId])
+  );
+  for (const [operationId, supplierProcessId] of entries) {
+    const processId = processOfOperation.get(operationId);
+    if (!processId) {
+      return ctx.error(
+        "validation",
+        `Operation ${operationId} does not belong to these jobs`
+      );
+    }
+    if (processOfSupplierProcess.get(supplierProcessId) !== processId) {
+      return ctx.error(
+        "validation",
+        "Selected supplier does not belong to the operation's process"
+      );
+    }
+  }
+
+  const updates = await Promise.all(
+    entries.map(([operationId, supplierProcessId]) =>
+      system
+        .from("jobOperation")
+        .update({
+          operationSupplierProcessId: supplierProcessId,
+          updatedBy: ctx.auditUserId
+        })
+        .eq("id", operationId)
+        .eq("companyId", companyId)
+    )
+  );
+  const failed = updates.find((update) => update.error)?.error;
+  return failed
+    ? ctx.error("internal", "Failed to save the supplier choice", failed)
+    : null;
+}
+
+export type JobStatus = (typeof jobStatus)[number];
+
+/**
+ * Move a job from one of `from` to `to`, as one guarded UPDATE: the job must be
+ * in `from` when it is read and still when it is written.
+ */
+export async function moveJobStatus(
+  ctx: ServiceContext,
+  jobId: string,
+  {
+    from,
+    to,
+    refusal
+  }: { from: readonly JobStatus[]; to: JobStatus; refusal: string }
+) {
+  const job = await ctx.asCaller.supabase
+    .from("job")
+    .select("status")
+    .eq("id", jobId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (job.error)
+    return ctx.error("internal", "Failed to read the job", job.error);
+  if (!job.data) return ctx.error("notFound", "Job not found");
+  if (!from.includes(job.data.status)) return ctx.error("rule", refusal);
+
+  const update = await updateJobStatus(ctx.asCaller.supabase, {
+    id: jobId,
+    companyId: ctx.company.id,
+    status: to,
+    updatedBy: ctx.auditUserId,
+    fromStatuses: [...from]
+  });
+  if (update.error) {
+    return ctx.error("internal", "Failed to update job status", update.error);
+  }
+  if (!update.updated) {
+    return ctx.error("conflict", "The job's status changed; reload the job");
+  }
+  return { jobId, status: to };
+}
+
+/** Post an ended event's time to the GL; a skip or failure is the reason, not an error. */
+export async function postEndedEvent(
+  ctx: ServiceContext,
+  productionEventId: string
+) {
+  const posting = await serverFns
+    .system({
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    })
+    .invoke("post-production-event", { productionEventId });
+  if (posting.error) return posting.error.message || "unknown error";
+  if (posting.data.success === false) {
+    return posting.data.reason ?? "unknown reason";
+  }
+  return null;
+}
+
+type OwnedTable =
+  | "item"
+  | "location"
+  | "customer"
+  | "modelUpload"
+  | "fixedAssetClass"
+  | "fixedAsset";
+
+/**
+ * `notFound` unless every id is a row of this company. Ids from a form prove
+ * nothing about tenancy, and the writes after this run with the service role.
+ * Read with the service role, since a production user may not hold the
+ * other module's view and RLS would read their own row as absent.
+ */
+export async function requireOwnRecords(
+  ctx: ServiceContext,
+  records: [table: OwnedTable, id: string | null | undefined, label: string][]
+): Promise<CarbonError | null> {
+  const checks = await Promise.all(
+    records
+      .filter(([, id]) => id)
+      .map(async ([table, id, label]) => {
+        const row = await ctx.asSystem.supabase
+          .from(table as "item")
+          .select("id")
+          .eq("id", id!)
+          .eq("companyId", ctx.company.id)
+          .maybeSingle();
+        if (row.error) {
+          return ctx.error(
+            "internal",
+            `Failed to verify the ${label}`,
+            row.error
+          );
+        }
+        return row.data
+          ? null
+          : ctx.error(
+              "notFound",
+              `The ${label} could not be found. It may have been deleted, or it belongs to another company.`
+            );
+      })
+  );
+  return checks.find((check) => check !== null) ?? null;
+}
+
+/**
+ * The jobs, read as the caller, refusing the request when any is locked
+ * (Completed, Closed or Cancelled). Ids of other companies are not returned.
+ */
+export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
+  const jobs = await ctx.asCaller.supabase
+    .from("job")
+    .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id);
+  if (jobs.error) {
+    return ctx.error("internal", "Failed to read the jobs", jobs.error);
+  }
+  if (jobs.data.some((job) => isJobLocked(job.status))) {
+    return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
+  }
+  return jobs.data;
+}
+
+/**
+ * Each job's due date when `count` jobs are spread from the first job's due
+ * date to the last's: several jobs a day when there are more jobs than days,
+ * several days a job otherwise. The last job is due on the last date.
+ */
+export function spreadDueDates(
+  count: number,
+  first: string | undefined,
+  last: string | undefined
+): (string | undefined)[] {
+  if (!first || !last) return Array.from({ length: count }, () => first);
+  const startDate = toCalendarDateTime(parseDateTime(first));
+  const endDate = toCalendarDateTime(parseDateTime(last));
+  const daysBetween = endDate.compare(startDate);
+  const jobsPerDay = (count - 1) / daysBetween;
+  const daysPerJob = daysBetween / (count - 1);
+
+  let cumulativeJobs = 0;
+  return Array.from({ length: count }, (_, i) => {
+    if (i === count - 1) return last;
+    if (jobsPerDay >= 1) {
+      cumulativeJobs += 1;
+      const dayOffset = Math.floor(cumulativeJobs / jobsPerDay);
+      return startDate.add({ days: dayOffset }).toString();
+    }
+    const dayOffset = Math.floor(i * daysPerJob);
+    return startDate.add({ days: dayOffset }).toString();
+  });
+}
+
+/**
+ * A job's configuration: an object, or the JSON a form posts. Anything else
+ * (invalid JSON) is no configuration.
+ */
+export function parseConfiguration(
+  value: unknown
+): Record<string, unknown> | undefined {
+  if (value && typeof value === "object") {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value !== "string" || !value) return undefined;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+}
+
+/** `notFound` unless the job is this company's (read as the caller). */
+export async function requireJob(ctx: ServiceContext, jobId: string) {
+  const job = await ctx.asCaller.supabase
+    .from("job")
+    .select("id, status")
+    .eq("id", jobId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (job.error)
+    return ctx.error("internal", "Failed to read the job", job.error);
+  if (!job.data) return ctx.error("notFound", "Job not found");
+  return job.data;
+}
+
+/**
+ * Recalculate a job's requirements and operation dependencies (which also
+ * reschedules its location). The first failure is returned.
+ */
+export async function recalculateJob(
+  ctx: ServiceContext,
+  jobId: string,
+  { requirements = true }: { requirements?: boolean } = {}
+): Promise<CarbonError | null> {
+  const params = { companyId: ctx.company.id, userId: ctx.auditUserId };
+  const [quantities, dependencies] = await Promise.all([
+    requirements
+      ? recalculateJobRequirements(ctx.asSystem.supabase, ctx.asSystem.pg, {
+          id: jobId,
+          ...params
+        })
+      : null,
+    recalculateJobOperationDependencies(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        jobId,
+        ...params
+      }
+    )
+  ]);
+  if (quantities?.error) {
+    return ctx.error(
+      "internal",
+      "Failed to calculate job quantities",
+      quantities.error
+    );
+  }
+  if (dependencies?.error) {
+    return ctx.error(
+      "internal",
+      "Failed to recalculate job operation dependencies",
+      dependencies.error
+    );
+  }
+  return null;
+}
+
+/** `notFound` unless the make method and operation given hang off this job. */
+export async function requireJobChildren(
+  ctx: ServiceContext,
+  jobId: string,
+  {
+    jobMakeMethodId,
+    jobOperationId
+  }: { jobMakeMethodId?: string; jobOperationId?: string }
+): Promise<CarbonError | null> {
+  const system = ctx.asSystem.supabase;
+  const [method, operation] = await Promise.all([
+    jobMakeMethodId
+      ? system
+          .from("jobMakeMethod")
+          .select("id")
+          .eq("id", jobMakeMethodId)
+          .eq("jobId", jobId)
+          .eq("companyId", ctx.company.id)
+          .maybeSingle()
+      : null,
+    jobOperationId
+      ? system
+          .from("jobOperation")
+          .select("id")
+          .eq("id", jobOperationId)
+          .eq("jobId", jobId)
+          .eq("companyId", ctx.company.id)
+          .maybeSingle()
+      : null
+  ]);
+  const failed = method?.error ?? operation?.error;
+  if (failed) return ctx.error("internal", "Failed to read the job", failed);
+  if (method && !method.data)
+    return ctx.error("notFound", "Make method not found");
+  if (operation && !operation.data) {
+    return ctx.error("notFound", "Operation not found");
+  }
+  return null;
+}
+
+/** Recalculate one make method's requirements, and the job's dependencies. */
+export async function recalculateMaterialMethod(
+  ctx: ServiceContext,
+  {
+    jobId,
+    jobMakeMethodId,
+    dependencies
+  }: { jobId: string; jobMakeMethodId: string; dependencies: boolean }
+): Promise<CarbonError | null> {
+  const params = { companyId: ctx.company.id, userId: ctx.auditUserId };
+  const [requirements, dependencyResult] = await Promise.all([
+    recalculateJobMakeMethodRequirements(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        id: jobMakeMethodId,
+        ...params
+      }
+    ),
+    dependencies
+      ? recalculateJobOperationDependencies(
+          ctx.asSystem.supabase,
+          ctx.asSystem.pg,
+          { jobId, ...params }
+        )
+      : null
+  ]);
+  if (requirements.error) {
+    return ctx.error(
+      "internal",
+      "Failed to recalculate job make method requirements",
+      requirements.error
+    );
+  }
+  if (dependencyResult?.error) {
+    return ctx.error(
+      "internal",
+      "Failed to recalculate job operation dependencies",
+      dependencyResult.error
+    );
+  }
+  return null;
+}
+
+// --- People board ---------------------------------------------------------
+
+type BoardReferenceTable =
+  | "department"
+  | "employee"
+  | "location"
+  | "shift"
+  | "workCenter";
+
+/**
+ * `notFound` unless every id given is this company's. Every board write puts
+ * these ids into this company's rows through Kysely (no RLS), and their
+ * single-column foreign keys accept another company's row. Empty values are
+ * skipped, so optional fields stay optional.
+ */
+export async function requireBoardReferences(
+  ctx: ServiceContext,
+  refs: Partial<Record<BoardReferenceTable, (string | null | undefined)[]>>
+): Promise<CarbonError | null> {
+  const checks = await Promise.all(
+    (Object.entries(refs) as [BoardReferenceTable, unknown[]][]).map(
+      async ([table, values]) => {
+        const ids = [
+          ...new Set(
+            values.filter(
+              (value): value is string =>
+                typeof value === "string" && value.length > 0
+            )
+          )
+        ];
+        if (ids.length === 0) return true;
+        // Every table in the union has `id` + `companyId`; the cast only
+        // narrows the union so Kysely can type the builder.
+        const rows = await ctx.asSystem.pg
+          .selectFrom(table as "location")
+          .select("id")
+          .where("id", "in", ids)
+          .where("companyId", "=", ctx.company.id)
+          .execute();
+        return rows.length === ids.length;
+      }
+    )
+  );
+  if (checks.every(Boolean)) return null;
+  logger.error("People board reference is not in the caller's company", {
+    companyId: ctx.company.id,
+    refs
+  });
+  return ctx.error("notFound", "Not found");
+}
+
+/** Tell the scheduler once per work center; with none, once, unscoped. */
+export async function notifyPeopleChange(
+  ctx: ServiceContext,
+  reason: string,
+  workCenterIds: (string | null | undefined)[] = []
+) {
+  const ids = [...new Set(workCenterIds.filter(Boolean))] as string[];
+  if (ids.length === 0) {
+    await notifyScheduleInputsChanged(ctx.company.id, "people", reason);
+    return;
+  }
+  for (const workCenterId of ids) {
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "people",
+      reason,
+      workCenterId
+    );
+  }
+}
+
+/** The work centers a person is assigned at on a date, for the notice. */
+export async function notifyForEmployeeDate(
+  ctx: ServiceContext,
+  employeeId: string,
+  date: string,
+  reason: string
+) {
+  const assignments = await ctx.asCaller.supabase
+    .from("peopleAssignment")
+    .select("workCenterId")
+    .eq("companyId", ctx.company.id)
+    .eq("employeeId", employeeId)
+    .eq("date", date);
+  await notifyPeopleChange(
+    ctx,
+    reason,
+    (assignments.data ?? []).map((row) => row.workCenterId)
+  );
+}
+
+/** A write that throws on failure, as an `internal` error with `message`. */
+export async function attempt<T>(
+  ctx: ServiceContext,
+  message: string,
+  write: () => Promise<T>
+): Promise<T | CarbonError<"internal">> {
+  try {
+    return await write();
+  } catch (err) {
+    return ctx.error("internal", message, err);
+  }
+}
+
+/** A Draft or Planned job of this company at `locationId`, for planning. */
+export async function readPlanningJob(
+  ctx: ServiceContext,
+  jobId: string,
+  locationId: string
+) {
+  const target = await ctx.asSystem.supabase
+    .from("job")
+    .select("id, status, locationId, salesOrderId, salesOrderLineId")
+    .eq("id", jobId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (target.error || !target.data) {
+    return ctx.error("notFound", "Job not found", target.error);
+  }
+  // The drawer lists one location's jobs.
+  if (target.data.locationId !== locationId) {
+    return ctx.error("conflict", "This job is for another location.");
+  }
+  return target.data;
+}
+
+/**
+ * Tell the scheduler after a planning write. A follow-up to a write that
+ * already landed, so a failure is logged and reported, never thrown.
+ */
+export async function notifyPlanningScheduleChange(
+  ctx: ServiceContext,
+  reason: string,
+  jobId?: string
+): Promise<boolean> {
+  try {
+    await notifyScheduleInputsChanged(ctx.company.id, "reorder", reason, jobId);
+    return true;
+  } catch (error) {
+    logger.error("Failed to notify the scheduler from planning", {
+      companyId: ctx.company.id,
+      jobId,
+      reason,
+      error
+    });
+    return false;
+  }
+}
+
+/**
+ * Report how many of the requested worklist rows changed; none is a conflict
+ * (each one was applied or changed since the page loaded).
+ */
+export function changedPlanningActions(
+  ctx: ServiceContext,
+  result: { data: unknown[] | null; error: unknown },
+  requested: number,
+  verb: "dismiss" | "reopen" | "assign"
+) {
+  if (result.error) {
+    return ctx.error(
+      "internal",
+      `Failed to ${verb} planning actions`,
+      result.error
+    );
+  }
+  const changed = result.data?.length ?? 0;
+  if (changed === 0) {
+    return ctx.error(
+      "conflict",
+      `Nothing to ${verb} — these actions changed since the page loaded`
+    );
+  }
+  return { changed, requested };
+}
+
+// --- Assembly instructions -------------------------------------------------
+
+/** The instruction's model id, `notFound` unless it is this company's. */
+export async function readInstructionModel(ctx: ServiceContext, id: string) {
+  const instruction = await ctx.asCaller.supabase
+    .from("assemblyInstruction")
+    .select(
+      "modelUploadId, modelUpload(id, processingStatus, glbPath, graphPath, modelPath)"
+    )
+    .eq("id", id)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (instruction.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the instruction",
+      instruction.error
+    );
+  }
+  if (!instruction.data) return ctx.error("notFound", "Instruction not found");
+  if (!instruction.data.modelUploadId) {
+    return ctx.error("rule", "This instruction has no model");
+  }
+  return {
+    modelUploadId: instruction.data.modelUploadId,
+    modelUpload: instruction.data.modelUpload
+  };
+}
+
+/** The geometry service is down: no conversion or planning can start. */
+export const geometryServiceDown = (ctx: ServiceContext, work: string) =>
+  ctx.error(
+    "unavailable",
+    `The geometry service is unavailable — ${work} can't run right now.`
+  );
+
+/**
+ * Start motion planning for a model: the job row first, so the page shows
+ * the run on its next load (the worker adopts it via `planJobId`; it inserts
+ * its own row when this insert fails), then the event.
+ */
+export async function startAssemblyPlan(
+  ctx: ServiceContext,
+  modelUploadId: string,
+  options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
+) {
+  const created = await createAssemblyPlanJob(ctx.asCaller.supabase, {
+    modelUploadId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
+  await trigger("assembly-plan", {
+    modelUploadId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    ...(created.data?.id ? { planJobId: created.data.id } : {}),
+    ...options
+  });
+}
+
+/** What resuming a paused job checks: its status, item and asset links. */
+export async function getJobToResume(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("job")
+    .select(
+      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+    )
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
 }

@@ -16,7 +16,7 @@ import {
   salesReturnOrderValidator
 } from "~/modules/sales";
 import { SalesReturnOrderForm } from "~/modules/sales/ui/SalesReturnOrders";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

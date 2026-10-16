@@ -14,7 +14,7 @@ import { useCompanyToday, useRouteData, useUser } from "~/hooks";
 import type { GaugeType } from "~/modules/quality";
 import { gaugeValidator, insertGauge } from "~/modules/quality";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

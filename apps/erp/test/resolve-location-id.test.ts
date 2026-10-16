@@ -4,7 +4,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveLocationId } from "~/modules/shared/location.server";
+import { resolveLocationId } from "~/modules/shared/shared.service";
 
 /**
  * `resolveLocationId` returns the location id that five `bypassRls: true`

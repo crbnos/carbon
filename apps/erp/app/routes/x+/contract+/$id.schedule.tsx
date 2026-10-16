@@ -10,8 +10,8 @@ import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { customerContractScheduleEditValidator } from "~/modules/sales";
-import { runContractAction } from "~/modules/sales/sales.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { runContractAction } from "~/modules/sales/sales.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

@@ -14,7 +14,6 @@ export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-author
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { moduleShape } from "./conformance/module-shape";
-export { noBarrelImportInModuleFile } from "./conformance/no-barrel-import-in-module-file";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -29,10 +28,12 @@ export { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 export { noRawRedirect } from "./conformance/no-raw-redirect";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+export { noServerCodeInClient } from "./conformance/no-server-code-in-client";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
 export { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
+export { serviceFnFile } from "./conformance/service-fn-file";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
 export {
   type Invariant,

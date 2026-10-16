@@ -13,7 +13,7 @@ import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { insertSalesOrder, salesOrderValidator } from "~/modules/sales";
 import { SalesOrderForm } from "~/modules/sales/ui/SalesOrder";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

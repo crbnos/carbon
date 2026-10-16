@@ -29,7 +29,7 @@ import {
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
   getRevisionLock
-} from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,

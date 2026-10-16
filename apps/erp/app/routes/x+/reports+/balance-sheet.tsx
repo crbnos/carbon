@@ -26,7 +26,7 @@ import {
 import {
   applyCtaToReportPeriodSeriesForReport,
   getConsolidatedPeriodSeriesForReport
-} from "~/modules/accounting/accounting.server";
+} from "~/modules/accounting/accounting.service";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,
@@ -34,7 +34,7 @@ import {
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";

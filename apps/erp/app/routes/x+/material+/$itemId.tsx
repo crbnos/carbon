@@ -22,7 +22,7 @@ import {
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
-import { streamItemSupersession } from "~/modules/items/items.server";
+import { streamItemSupersession } from "~/modules/items/items.service";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import {

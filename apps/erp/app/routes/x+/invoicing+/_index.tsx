@@ -17,7 +17,7 @@ import {
   InvoicingDashboard
 } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const meta: MetaFunction = () => {

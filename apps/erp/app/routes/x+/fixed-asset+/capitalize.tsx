@@ -19,7 +19,7 @@ import {
 import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
 import { getTrackedEntity } from "~/modules/inventory";
 import { getItem } from "~/modules/items";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

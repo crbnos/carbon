@@ -12,7 +12,7 @@ import {
   assertMethodOperationIsDraft,
   upsertMethodOperationStep
 } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { checkRevisionLock } from "~/modules/items/items.service";
 import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {

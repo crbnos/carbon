@@ -23,7 +23,7 @@ import { RecordHero } from "~/components/Layout/RecordHeader";
 import { useUrlParams } from "~/hooks";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
-import { resolveLocationId } from "~/modules/shared/location.server";
+import { resolveLocationId } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

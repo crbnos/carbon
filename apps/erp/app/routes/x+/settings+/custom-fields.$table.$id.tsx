@@ -17,7 +17,7 @@ import {
   customFieldValidator,
   getCustomField
 } from "~/modules/settings";
-import { upsertCustomField } from "~/modules/settings/settings.server";
+import { upsertCustomField } from "~/modules/settings/settings.service";
 import { DataType } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 

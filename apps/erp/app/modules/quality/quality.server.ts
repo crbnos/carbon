@@ -2,29 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-/**
- * ERP bindings for the shared inspection execution engine
- * (@carbon/database/quality). The engine moved there so the MES inspection
- * routes can run the same transactional core; these wrappers keep the ERP
- * call sites unchanged by currying in the ERP Kysely singleton.
- *
- * Below them, the quality module's operations (`defineServiceFn`).
- */
-import { openai } from "@ai-sdk/openai";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "@carbon/api/service-fn.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
+import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import * as engine from "@carbon/database/quality";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   cancelPendingApprovals,
-  decideApprovalRequest,
-  openApprovalRequests
+  decideApprovalRequest
 } from "@carbon/ee/approvals/document.server";
 import {
   notifyIssueCreated,
@@ -36,9 +21,6 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import { async, datetime, unchecked } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateText, Output } from "ai";
-import template from "lodash.template";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { updateChangeNotice } from "~/modules/items/items.service";
@@ -48,22 +30,15 @@ import {
   setPurchaseReturnOrderLineTrackedEntities,
   upsertPurchaseReturnOrderLine
 } from "~/modules/purchasing/purchasing.service";
-import { systemContext } from "~/modules/service-context.server";
-import { getCompanyIntegrations } from "~/modules/settings/settings.server";
-import { refuseUnlessOwned } from "~/modules/shared/shared.server";
-import { getExternalLink } from "~/modules/shared/shared.service";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
-import { getUserDefaults } from "~/modules/users/users.server";
-import { getDatabaseClient } from "~/services/database.server";
+import {
+  getLocationTimeZone,
+  refuseUnlessOwned
+} from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import {
-  type BalloonRegionAnalysis,
-  balloonRegionAnalysisResultSchema,
   disposition,
-  type inspectionDispositionValidator,
   inspectionDocumentSamplingValidator,
-  type inspectionMeasurementValidator,
-  type inspectionSampleValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
@@ -77,401 +52,44 @@ import {
   riskRegisterValidator
 } from "./quality.models";
 import {
+  activateQualityDocuments,
+  associationHeaders,
+  closeIssue,
+  createIssueTasks,
   deleteIssue,
+  failedFeatureLines,
   getInspection,
-  getInspectionMeasurements,
-  getInspectionSamplingPlans,
-  getIssueActionTasks,
-  getIssueFromExternalLink,
   getIssueTypesList,
   getRisk,
+  type InspectionSaveBalloonsGeometryPayload,
+  type InspectionSaveFeaturesPayload,
   insertIssue,
+  insertLineAssociation,
+  interpolateTemplate,
+  issueLocked,
+  linkInspectionToIssue,
+  linkJobOperationContext,
+  linkJobOperationLot,
+  mergeInspectionBalloonsPayload,
+  mergeInspectionFeaturesPayload,
+  notifyIssue,
+  notifyRiskAssignee,
+  resolveInspectionFeaturePayloadIds,
+  rpcErrorMessage,
   saveInspectionDocumentAtomic,
+  scarTask,
+  translateLegacyInspectionSavePayload,
   updateInspectionDocumentSampling,
+  updateIssueItemQuantity,
   updateIssueStatus,
   updateIssueTaskContent,
   updateIssueTaskStatus,
   upsertRisk
 } from "./quality.service";
-import {
-  closeIssue,
-  linkEntitiesToIssueItemRow,
-  updateIssueItemQuantity
-} from "./quality-disposition.server";
 
 const logger = getLogger("erp", "quality");
-
-export type { Result } from "@carbon/database/quality";
-export { errResult, valuateMeasurement } from "@carbon/database/quality";
-
-export async function upsertInspectionSample(
-  sample: z.infer<typeof inspectionSampleValidator> & {
-    companyId: string;
-    inspectedBy: string;
-  }
-) {
-  return engine.upsertInspectionSample(getDatabaseClient(), sample);
-}
-
-export async function dispositionInspection(
-  args: z.infer<typeof inspectionDispositionValidator> & {
-    companyId: string;
-    dispositionedBy: string;
-  } & Pick<engine.InspectionDispositionInput, "requireOpen" | "requireSource">
-) {
-  return engine.dispositionInspection(getDatabaseClient(), args);
-}
-
-export async function upsertInspectionMeasurement(
-  args: z.infer<typeof inspectionMeasurementValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.upsertInspectionMeasurement(getDatabaseClient(), args);
-}
-
-export async function reconcileInspectionSamplingPlans(
-  inspectionId: string,
-  companyId: string
-) {
-  return engine.reconcileInspectionSamplingPlans(
-    getDatabaseClient(),
-    inspectionId,
-    companyId
-  );
-}
-
-export async function changeInspectionDocument(args: {
-  inspectionId: string;
-  inspectionDocumentId: string | null;
-  companyId: string;
-  userId: string;
-}) {
-  return engine.changeInspectionDocument(getDatabaseClient(), args);
-}
-
-export async function recordInspectionGauge(
-  args: Parameters<typeof engine.recordInspectionGauge>[1]
-) {
-  return engine.recordInspectionGauge(getDatabaseClient(), args);
-}
-
-export async function getRecentInspectionGauges(
-  args: Parameters<typeof engine.getRecentInspectionGauges>[1]
-) {
-  return engine.getRecentInspectionGauges(getDatabaseClient(), args);
-}
-
 // ─── Inspection plan save ────────────────────────────────────────────────────
-
-/** Maps persisted balloon ids to inspectionFeature ids for legacy save payloads. */
-async function mapBalloonIdsToFeatureIdsForDocument(
-  client: SupabaseClient<Database>,
-  inspectionDocumentId: string,
-  companyId: string,
-  ids: string[]
-) {
-  const unique = [...new Set(ids.filter((id) => id.length > 0))];
-  const mapped = new Map<string, string>();
-  for (const id of unique) {
-    mapped.set(id, id);
-  }
-
-  const [balloons, features] = await Promise.all([
-    client
-      .from("balloon")
-      .select("id, inspectionFeatureId")
-      .eq("inspectionDocumentId", inspectionDocumentId)
-      .eq("companyId", companyId),
-    client
-      .from("inspectionFeature")
-      .select("id")
-      .eq("inspectionDocumentId", inspectionDocumentId)
-      .eq("companyId", companyId)
-  ]);
-
-  for (const balloon of balloons.data ?? []) {
-    if (mapped.has(balloon.id)) {
-      mapped.set(balloon.id, balloon.inspectionFeatureId);
-    }
-  }
-  for (const row of features.data ?? []) {
-    if (mapped.has(row.id)) {
-      mapped.set(row.id, row.id);
-    }
-  }
-
-  return mapped;
-}
-
-export type InspectionSaveFeaturesPayload = ReturnType<
-  typeof inspectionSaveFeaturesPayloadValidator.parse
->;
-export type InspectionSaveBalloonsGeometryPayload = ReturnType<
-  typeof inspectionSaveBalloonsGeometryPayloadValidator.parse
->;
-type LegacyAnchors = ReturnType<
-  typeof inspectionSaveAnchorsPayloadValidator.parse
->;
-type LegacyBalloons = ReturnType<
-  typeof inspectionSaveBalloonsPayloadValidator.parse
->;
-
-export function isTempInspectionId(id: string) {
-  return id.startsWith("temp-");
-}
-
-/** Maps legacy anchors + metadata balloons save shape to features + geometry balloons. */
-export function translateLegacyInspectionSavePayload(
-  anchors: LegacyAnchors,
-  balloons: LegacyBalloons
-): {
-  features: InspectionSaveFeaturesPayload;
-  balloons: InspectionSaveBalloonsGeometryPayload;
-} {
-  const anchorByTempId = new Map(anchors.create.map((a) => [a.tempId, a]));
-
-  const featuresCreate = balloons.create.map((b) => {
-    const anchor = anchorByTempId.get(b.tempBalloonAnchorId);
-    return {
-      tempId: b.tempBalloonAnchorId,
-      pageNumber: anchor?.pageNumber ?? 1,
-      label: b.label,
-      description: b.description ?? null,
-      nominalValue: b.nominalValue ?? null,
-      tolerancePlus: b.tolerancePlus ?? null,
-      toleranceMinus: b.toleranceMinus ?? null,
-      unit: b.unit ?? null
-    };
-  });
-
-  for (const anchor of anchors.create) {
-    if (featuresCreate.some((f) => f.tempId === anchor.tempId)) continue;
-    featuresCreate.push({
-      tempId: anchor.tempId,
-      pageNumber: anchor.pageNumber,
-      label: "0",
-      description: null,
-      nominalValue: null,
-      tolerancePlus: null,
-      toleranceMinus: null,
-      unit: null
-    });
-  }
-
-  const balloonsCreate = balloons.create.map((b) => {
-    const anchor = anchorByTempId.get(b.tempBalloonAnchorId);
-    return {
-      tempInspectionFeatureId: b.tempBalloonAnchorId,
-      tempBalloonAnchorId: b.tempBalloonAnchorId,
-      pageNumber: anchor?.pageNumber ?? 1,
-      regionX: anchor?.xCoordinate ?? 0,
-      regionY: anchor?.yCoordinate ?? 0,
-      regionWidth: anchor?.width ?? 0.1,
-      regionHeight: anchor?.height ?? 0.1,
-      xCoordinate: b.xCoordinate,
-      yCoordinate: b.yCoordinate
-    };
-  });
-
-  for (const anchor of anchors.create) {
-    if (balloons.create.some((b) => b.tempBalloonAnchorId === anchor.tempId)) {
-      continue;
-    }
-    balloonsCreate.push({
-      tempInspectionFeatureId: anchor.tempId,
-      tempBalloonAnchorId: anchor.tempId,
-      pageNumber: anchor.pageNumber,
-      regionX: anchor.xCoordinate,
-      regionY: anchor.yCoordinate,
-      regionWidth: anchor.width,
-      regionHeight: anchor.height,
-      xCoordinate: Math.min(
-        1 - 0.04,
-        Math.max(0, anchor.xCoordinate + anchor.width + 0.02)
-      ),
-      yCoordinate: Math.min(1 - 0.04, Math.max(0, anchor.yCoordinate))
-    });
-  }
-
-  const featuresUpdate = balloons.update.map((b) => ({
-    id: b.id,
-    label: b.label,
-    description: b.description ?? null,
-    nominalValue: b.nominalValue ?? null,
-    tolerancePlus: b.tolerancePlus ?? null,
-    toleranceMinus: b.toleranceMinus ?? null,
-    unit: b.unit ?? null
-  }));
-
-  const balloonsUpdate = [
-    ...anchors.update.map((a) => ({
-      id: a.id,
-      pageNumber: a.pageNumber,
-      regionX: a.xCoordinate,
-      regionY: a.yCoordinate,
-      regionWidth: a.width,
-      regionHeight: a.height
-    })),
-    ...balloons.update.map((b) => ({
-      id: b.id,
-      xCoordinate: b.xCoordinate,
-      yCoordinate: b.yCoordinate
-    }))
-  ];
-
-  const mergedBalloonUpdates = new Map<
-    string,
-    (typeof balloonsUpdate)[number]
-  >();
-  for (const item of balloonsUpdate) {
-    const existing = mergedBalloonUpdates.get(item.id);
-    mergedBalloonUpdates.set(item.id, { ...existing, ...item });
-  }
-
-  return {
-    features: {
-      create: featuresCreate,
-      update: featuresUpdate,
-      delete: [...new Set([...balloons.delete, ...anchors.delete])]
-    },
-    balloons: {
-      create: balloonsCreate,
-      update: [...mergedBalloonUpdates.values()],
-      delete: []
-    }
-  };
-}
-
-export function mergeInspectionFeaturesPayload(
-  base: InspectionSaveFeaturesPayload,
-  extra: InspectionSaveFeaturesPayload
-): InspectionSaveFeaturesPayload {
-  return {
-    create: [...base.create, ...extra.create],
-    update: [...base.update, ...extra.update],
-    delete: [...new Set([...base.delete, ...extra.delete])]
-  };
-}
-
-export function mergeInspectionBalloonsPayload(
-  base: InspectionSaveBalloonsGeometryPayload,
-  extra: InspectionSaveBalloonsGeometryPayload
-): InspectionSaveBalloonsGeometryPayload {
-  return {
-    create: [...base.create, ...extra.create],
-    update: [...base.update, ...extra.update],
-    delete: [...new Set([...base.delete, ...extra.delete])]
-  };
-}
-
-export async function resolveInspectionFeaturePayloadIds(
-  client: SupabaseClient<Database>,
-  inspectionDocumentId: string,
-  companyId: string,
-  features: InspectionSaveFeaturesPayload
-): Promise<InspectionSaveFeaturesPayload> {
-  const ids = [
-    ...features.update.map((row) => row.id),
-    ...features.delete
-  ].filter((rowId) => !isTempInspectionId(rowId));
-
-  if (ids.length === 0) {
-    return features;
-  }
-
-  const idMap = await mapBalloonIdsToFeatureIdsForDocument(
-    client,
-    inspectionDocumentId,
-    companyId,
-    ids
-  );
-
-  return {
-    create: features.create,
-    update: features.update.map((row) => ({
-      ...row,
-      id: idMap.get(row.id) ?? row.id
-    })),
-    delete: [
-      ...new Set(features.delete.map((rowId) => idMap.get(rowId) ?? rowId))
-    ]
-  };
-}
-
 // ─── Balloon region vision analysis ──────────────────────────────────────────
-
-/** Decoded image size limit for vision analyze (bytes). */
-export const INSPECTION_BALLOON_ANALYZE_MAX_IMAGE_BYTES = 12 * 1024 * 1024;
-
-const BALLOON_REGION_ANALYSIS_SYSTEM = `You assist with mechanical inspection ballooning on technical CAD drawings.
-
-You receive one raster image: a crop of a single callout region from a sheet.
-
-Return ONLY the JSON object matching the schema (field names and allowed enum values exactly).
-
-type (required, exactly one of):
-- linear — linear length/width/height dimension without ⌀ or R prefix.
-- diameter — nominal is the value for a diameter callout (⌀ or equivalent).
-- radius — nominal is the value for a radius callout (R or equivalent).
-- angle — nominal is the numeric angle; set unit to degree or rad only when °, deg, or rad is visible in the crop; otherwise unit null.
-- unknown — not clearly one of the above, or unreadable / ambiguous.
-
-unit (nullable, exactly one of the allowed enum strings or null):
-- Default is null. Set unit ONLY when this crop visibly shows a unit indicator (e.g. mm, cm, m, um, µm, in, ", IN, ft, °, DEG, RAD, or equivalent text/symbols next to the dimension).
-- Do NOT infer unit from decimal places, title block, drawing "standard," locale, or anything outside visible pixels in this crop. A bare number with tolerances but no unit text/symbol → unit null.
-- For type angle: use degree or rad only when that angle notation is visible; otherwise unit null.
-
-nominal / tolerances:
-- Prefer numbers from the print; use null (not zero) when not shown or unreadable.
-- Bilateral ±T: tol_plus = +T, tol_minus = -T (e.g. ±0.02 → tol_plus 0.02, tol_minus -0.02).
-- Unilateral stacked +0.005 / -0.000 (plus above, minus below nominal): tol_plus = 0.005, tol_minus = 0 (minus side is zero additional tolerance below nominal).
-- Other asymmetric +a / −b (both non-zero): tol_plus = +a, tol_minus = -b using the signed values as printed relative to nominal.
-
-Do not invent title-block or revision data outside the crop.
-`;
-
-const BALLOON_REGION_ANALYSIS_USER_MESSAGE =
-  "Extract nominal, tol_plus, tol_minus, unit, and type per the system rules. For unit: use null unless a unit symbol or unit letters are literally visible in this crop; do not guess. Use only allowed enum literals for type and for unit when non-null.";
-
-const BALLOON_REGION_ANALYSIS_SCHEMA_DESCRIPTION =
-  "Drawing crop: nominal, tolerances, type enum; unit enum only when a unit symbol/text is visible in the crop, otherwise null";
-
-/**
- * Runs vision extraction on a prepared PNG/JPEG/WebP buffer (caller validates size and auth).
- */
-export async function runInspectionBalloonRegionVisionAnalysis(args: {
-  imageBytes: Buffer;
-  mediaType: string;
-}): Promise<BalloonRegionAnalysis> {
-  const { imageBytes, mediaType } = args;
-  const { output: object } = await generateText({
-    model: openai("gpt-4o"),
-    output: Output.object({
-      schema: balloonRegionAnalysisResultSchema,
-      name: "balloon_region_analysis",
-      description: BALLOON_REGION_ANALYSIS_SCHEMA_DESCRIPTION
-    }),
-    instructions: BALLOON_REGION_ANALYSIS_SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: BALLOON_REGION_ANALYSIS_USER_MESSAGE },
-          {
-            type: "image",
-            image: imageBytes,
-            mediaType
-          }
-        ]
-      }
-    ],
-    temperature: 0.1
-  });
-  return object;
-}
-
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
@@ -481,37 +99,6 @@ const customFieldValues = z.record(
   z.string(),
   z.union([z.string(), z.number(), z.boolean()])
 );
-
-const issueLocked = "Cannot modify a closed issue. Reopen it first.";
-
-/** The issue's integrations told, never failing the write that came first. */
-async function notifyIssue(
-  ctx: ServiceContext,
-  send: (
-    integrations: Awaited<ReturnType<typeof getCompanyIntegrations>>
-  ) => Promise<unknown>,
-  failure: string
-) {
-  try {
-    await send(
-      await getCompanyIntegrations(ctx.asCaller.supabase, ctx.company.id)
-    );
-  } catch (error) {
-    logger.error(failure, { error });
-  }
-}
-
-/** The issue's action tasks, from its required actions and approvals. */
-function createIssueTasks(ctx: ServiceContext, issueId: string) {
-  return serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("create", { type: "nonConformanceTasks", id: issueId });
-}
-
 // --- Issues -----------------------------------------------------------------
 
 /**
@@ -681,99 +268,6 @@ export const createIssue = defineServiceFn({
     return { id: issueId, nonConformanceId, warning };
   }
 });
-
-/**
- * Links the lot a job operation's make method produced to a new issue: the
- * issue-level tracked-entity links, then the item's disposition row (found
- * or created) under the issue lock every link writer shares. Failures are
- * logged, never returned: the issue already exists.
- */
-async function linkJobOperationLot(
-  ctx: ServiceContext,
-  {
-    nonConformanceId,
-    jobOperationId
-  }: { nonConformanceId: string; jobOperationId: string }
-) {
-  const client = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-
-  const operation = await client
-    .from("jobOperation")
-    .select("jobMakeMethodId")
-    .eq("id", jobOperationId)
-    .eq("companyId", companyId)
-    .single();
-  const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
-  if (!jobMakeMethodId) return;
-
-  const makeMethod = await client
-    .from("jobMakeMethod")
-    .select("itemId")
-    .eq("id", jobMakeMethodId)
-    .eq("companyId", companyId)
-    .single();
-  const itemId = makeMethod.data?.itemId ?? null;
-  if (!itemId) return;
-
-  const entities = await client
-    .from("trackedEntity")
-    .select("id, quantity")
-    .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .eq("companyId", companyId);
-  const lotEntities = (entities.data ?? []) as {
-    id: string;
-    quantity: number | null;
-  }[];
-  if (lotEntities.length === 0) return;
-
-  const entityIds = lotEntities.map((e) => e.id);
-  const existingLinks = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", entityIds);
-  const alreadyLinked = new Set(
-    (existingLinks.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const linkRows = entityIds
-    .filter((id) => !alreadyLinked.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      companyId,
-      createdBy: userId
-    }));
-  if (linkRows.length > 0) {
-    const inserted = await client
-      .from("nonConformanceTrackedEntity")
-      .insert(linkRows);
-    if (inserted.error) {
-      logger.error("Issue creation step failed", { error: inserted.error });
-      return;
-    }
-  }
-
-  try {
-    await ctx.asSystem.pg.transaction().execute(async (trx) => {
-      await lockIssueDispositions(trx, { nonConformanceId, companyId });
-      await linkEntitiesToIssueItemRow(trx, {
-        nonConformanceId,
-        companyId,
-        userId,
-        itemId,
-        entities: lotEntities.map((e) => ({
-          id: e.id,
-          quantity: Number(e.quantity ?? 1)
-        }))
-      });
-    });
-  } catch (err) {
-    logger.error("Issue creation step failed", { error: err });
-  }
-}
-
 const issueArrayFields = ["requiredActionIds", "approvalRequirements"] as const;
 
 /**
@@ -1216,42 +710,6 @@ export const updateIssueItemField = defineServiceFn({
     return { id: input.id };
   }
 });
-
-/** The header a line association names: its id and readable id. */
-const associationHeaders = {
-  jobOperations: { table: "job", readable: "jobId", noun: "job operation" },
-  purchaseOrderLines: {
-    table: "purchaseOrder",
-    readable: "purchaseOrderId",
-    noun: "purchase order line"
-  },
-  salesOrderLines: {
-    table: "salesOrder",
-    readable: "salesOrderId",
-    noun: "sales order line"
-  },
-  shipmentLines: {
-    table: "shipment",
-    readable: "shipmentId",
-    noun: "shipment line"
-  },
-  receiptLines: {
-    table: "receipt",
-    readable: "receiptId",
-    noun: "receipt line"
-  },
-  salesReturnOrderLines: {
-    table: "salesReturnOrder",
-    readable: "salesReturnOrderId",
-    noun: "sales return order line"
-  },
-  purchaseReturnOrderLines: {
-    table: "purchaseReturnOrder",
-    readable: "purchaseReturnOrderId",
-    noun: "purchase return order line"
-  }
-} as const;
-
 /**
  * Associate a record with an issue: an item, customer, supplier, tracked
  * entity or inspection, or a line of a job (operation), purchase order, sales
@@ -1364,296 +822,9 @@ export const createIssueAssociation = defineServiceFn({
     return { nonConformanceId, type, id };
   }
 });
-
-/** One insert per line association type: each table names its columns. */
-function insertLineAssociation(
-  ctx: ServiceContext,
-  type: keyof typeof associationHeaders,
-  row: {
-    nonConformanceId: string;
-    companyId: string;
-    createdBy: string;
-    lineId: string;
-    headerId: string;
-    readableId: string | null;
-  }
-) {
-  const client = ctx.asCaller.supabase;
-  const { lineId, headerId, readableId, ...audit } = row;
-  switch (type) {
-    case "jobOperations":
-      return client.from("nonConformanceJobOperation").insert({
-        ...audit,
-        jobOperationId: lineId,
-        jobId: headerId,
-        jobReadableId: readableId
-      });
-    case "purchaseOrderLines":
-      return client.from("nonConformancePurchaseOrderLine").insert({
-        ...audit,
-        purchaseOrderLineId: lineId,
-        purchaseOrderId: headerId,
-        purchaseOrderReadableId: readableId
-      });
-    case "salesOrderLines":
-      return client.from("nonConformanceSalesOrderLine").insert({
-        ...audit,
-        salesOrderLineId: lineId,
-        salesOrderId: headerId,
-        salesOrderReadableId: readableId
-      });
-    case "shipmentLines":
-      return client.from("nonConformanceShipmentLine").insert({
-        ...audit,
-        shipmentLineId: lineId,
-        shipmentId: headerId,
-        shipmentReadableId: readableId
-      });
-    case "receiptLines":
-      return client.from("nonConformanceReceiptLine").insert({
-        ...audit,
-        receiptLineId: lineId,
-        receiptId: headerId,
-        receiptReadableId: readableId
-      });
-    case "salesReturnOrderLines":
-      return client.from("nonConformanceSalesReturnOrderLine").insert({
-        ...audit,
-        salesReturnOrderLineId: lineId,
-        salesReturnOrderId: headerId,
-        salesReturnOrderReadableId: readableId ?? ""
-      });
-    case "purchaseReturnOrderLines":
-      return client.from("nonConformancePurchaseReturnOrderLine").insert({
-        ...audit,
-        purchaseReturnOrderLineId: lineId,
-        purchaseReturnOrderId: headerId,
-        purchaseReturnOrderReadableId: readableId ?? "",
-        quantity: 0
-      });
-  }
-}
-
 // Auto-linking after a job operation association: it surfaces context into
 // the issue explorer (the job's item, the tracked entities its make method
 // produced), so its failures are logged, never returned.
-async function linkJobOperationContext(
-  ctx: ServiceContext,
-  args: {
-    nonConformanceId: string;
-    jobItemId: string | null;
-    jobOperationId: string;
-  }
-) {
-  const client = ctx.asCaller.supabase;
-  const { nonConformanceId, jobItemId, jobOperationId } = args;
-
-  if (jobItemId) {
-    const existing = await client
-      .from("nonConformanceItem")
-      .select("id")
-      .eq("nonConformanceId", nonConformanceId)
-      .eq("itemId", jobItemId)
-      .maybeSingle();
-    if (!existing.data) {
-      const result = await client.from("nonConformanceItem").insert({
-        itemId: jobItemId,
-        nonConformanceId,
-        createdBy: ctx.auditUserId,
-        companyId: ctx.company.id,
-        quantity: 0
-      });
-      if (result.error) {
-        logger.error("Failed to create association", { error: result.error });
-      }
-    }
-  }
-
-  const operation = await client
-    .from("jobOperation")
-    .select("jobMakeMethodId")
-    .eq("id", jobOperationId)
-    .single();
-  const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
-  if (!jobMakeMethodId) return;
-
-  const entities = await client
-    .from("trackedEntity")
-    .select("id")
-    .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .eq("companyId", ctx.company.id);
-  await linkMissingTrackedEntities(ctx, {
-    nonConformanceId,
-    trackedEntityIds: (entities.data ?? []).map((e) => e.id)
-  });
-}
-
-async function linkMissingTrackedEntities(
-  ctx: ServiceContext,
-  {
-    nonConformanceId,
-    trackedEntityIds
-  }: { nonConformanceId: string; trackedEntityIds: string[] }
-) {
-  if (trackedEntityIds.length === 0) return;
-  const client = ctx.asCaller.supabase;
-
-  const existing = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", trackedEntityIds);
-  const already = new Set(
-    (existing.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const rows = trackedEntityIds
-    .filter((id) => !already.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      createdBy: ctx.auditUserId,
-      companyId: ctx.company.id
-    }));
-  if (rows.length === 0) return;
-
-  const result = await client.from("nonConformanceTrackedEntity").insert(rows);
-  if (result.error) {
-    logger.error("Failed to create association", { error: result.error });
-  }
-}
-
-/**
- * Links an inspection to the issue with its whole lot, and seeds the item's
- * disposition row with it. The inspection link and the row writes share one
- * transaction under the issue lock, so a concurrent quantity edit either
- * lands before (and the row write overwrites it) or sees the inspection link
- * and is refused. False when any step failed.
- */
-async function linkInspectionToIssue(
-  ctx: ServiceContext,
-  {
-    nonConformanceId,
-    inspectionId
-  }: { nonConformanceId: string; inspectionId: string }
-): Promise<boolean> {
-  const client = ctx.asCaller.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-
-  const inspection = await client
-    .from("inspection")
-    .select(
-      "id, itemId, lotSize, sourceDocument, sourceDocumentLineId, inspectionSample(trackedEntityId)"
-    )
-    .eq("id", inspectionId)
-    // The link below is written through Kysely (no RLS), so scope here.
-    .eq("companyId", companyId)
-    .single();
-  if (inspection.error) {
-    logger.error("Failed to create association", { error: inspection.error });
-    return false;
-  }
-
-  const sampledIds = (
-    (inspection.data.inspectionSample ?? []) as {
-      trackedEntityId: string | null;
-    }[]
-  )
-    .map((s) => s.trackedEntityId)
-    .filter((id): id is string => Boolean(id));
-  // The rest of the lot too: un-sampled entities are still part of the lot
-  // the MRB needs to disposition.
-  let lotEntityIds: string[] = sampledIds;
-  if (
-    inspection.data.sourceDocument === "Receipt" &&
-    inspection.data.sourceDocumentLineId
-  ) {
-    const receiptLineEntities = await client
-      .from("trackedEntity")
-      .select("id")
-      .eq("attributes ->> Receipt Line", inspection.data.sourceDocumentLineId)
-      .eq("companyId", companyId);
-    // A failed read would link only the sampled part of the lot.
-    if (receiptLineEntities.error) {
-      logger.error("Failed to create association", {
-        error: receiptLineEntities.error
-      });
-      return false;
-    }
-    lotEntityIds = [
-      ...new Set([
-        ...sampledIds,
-        ...(receiptLineEntities.data ?? []).map((r) => r.id)
-      ])
-    ];
-  }
-
-  // Read before writing anything: a failed read would seed the row with
-  // wrong quantities and still report success.
-  const entityQuantities =
-    lotEntityIds.length > 0
-      ? await client
-          .from("trackedEntity")
-          .select("id, quantity")
-          .in("id", lotEntityIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null };
-  if (entityQuantities.error) {
-    logger.error("Failed to create association", {
-      error: entityQuantities.error
-    });
-    return false;
-  }
-
-  await linkMissingTrackedEntities(ctx, {
-    nonConformanceId,
-    trackedEntityIds: lotEntityIds
-  });
-
-  const quantityById = new Map(
-    (entityQuantities.data ?? []).map((e) => [e.id, Number(e.quantity ?? 1)])
-  );
-  const itemId = inspection.data.itemId ?? null;
-
-  try {
-    await ctx.asSystem.pg.transaction().execute(async (trx) => {
-      const { status } = await lockIssueDispositions(trx, {
-        nonConformanceId,
-        companyId
-      });
-      if (isIssueLocked(status)) throw new Error(issueLocked);
-
-      await trx
-        .insertInto("nonConformanceInspection")
-        .values({
-          nonConformanceId,
-          inspectionId: inspection.data.id,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
-
-      if (itemId) {
-        await linkEntitiesToIssueItemRow(trx, {
-          nonConformanceId,
-          companyId,
-          userId,
-          itemId,
-          entities: lotEntityIds.map((id) => ({
-            id,
-            quantity: quantityById.get(id) ?? 1
-          })),
-          fallbackQuantity: Number(inspection.data.lotSize ?? 0)
-        });
-      }
-    });
-    return true;
-  } catch (err) {
-    logger.error("Failed to create association", { error: err });
-    return false;
-  }
-}
-
 /**
  * Draft a supplier return from an issue's Return to Supplier rows.
  *
@@ -2384,70 +1555,9 @@ export const rejectInspection = defineServiceFn({
     return { id, issueId };
   }
 });
-
-/** A document-driven lot's failed features, measured values against spec. */
-async function failedFeatureLines(ctx: ServiceContext, inspectionId: string) {
-  const [lotFeatures, lotMeasurements] = await Promise.all([
-    getInspectionSamplingPlans(
-      ctx.asSystem.supabase,
-      inspectionId,
-      ctx.company.id
-    ),
-    getInspectionMeasurements(
-      ctx.asSystem.supabase,
-      inspectionId,
-      ctx.company.id
-    )
-  ]);
-  const lines: string[] = [];
-  for (const lotFeature of lotFeatures.data ?? []) {
-    const feature = lotFeature.inspectionFeature;
-    if (!feature) continue;
-    const measurements = (lotMeasurements.data ?? []).filter(
-      (m) => m.inspectionFeatureId === feature.id
-    );
-    const recorded = measurements.filter((m) => m.status !== "Pending").length;
-    const failed = measurements.filter((m) => m.status === "Failed");
-    if (failed.length === 0) continue;
-    const failedValues = failed
-      .map((m) => (m.value == null ? "F" : String(m.value)))
-      .join(", ");
-    const spec = [
-      feature.nominalValue,
-      feature.tolerancePlus != null || feature.toleranceMinus != null
-        ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
-        : null,
-      feature.unit
-    ]
-      .filter(Boolean)
-      .join(" ");
-    lines.push(
-      spec
-        ? `- ${feature.label}: nominal ${spec} — failed values: ${failedValues} (${failed.length}/${recorded} failed, n=${lotFeature.sampleSize}, Ac=${lotFeature.acceptanceNumber})`
-        : `- ${feature.label}: ${failed.length}/${recorded} failed (n=${lotFeature.sampleSize}, Ac=${lotFeature.acceptanceNumber})`
-    );
-  }
-  return lines;
-}
-
 // --- Inspection documents ---------------------------------------------------------
 
 const emptyInspectionSave = { create: [], update: [], delete: [] };
-
-/** The message of an RPC error, which may not be an `Error`. */
-function rpcErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-  return fallback;
-}
-
 /**
  * Save an inspection plan's characteristics and balloons in one transaction.
  *
@@ -2700,93 +1810,6 @@ export const updateQualityDocumentField = defineServiceFn({
     );
   }
 });
-
-/**
- * Draft or Archived → Active. With an approval rule, each document opens a
- * request and waits in Draft (an Archived one moves to Draft) until it is
- * approved; without one it goes Active at once.
- */
-async function activateQualityDocuments(
-  ctx: ServiceContext,
-  ids: string[],
-  documents: { id: string; status: string | null }[]
-) {
-  const client = ctx.asCaller.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-  const audit = { updatedBy: userId, updatedAt: new Date().toISOString() };
-
-  const transitioning = documents.filter(
-    (doc) => doc.status === "Draft" || doc.status === "Archived"
-  );
-  const opened =
-    transitioning.length > 0
-      ? await openApprovalRequests(ctx.asSystem.supabase, {
-          documentType: "qualityDocument",
-          documentIds: transitioning.map((doc) => doc.id),
-          companyId,
-          userId
-        })
-      : ({ status: "not-required" } as const);
-  if (opened.status === "failed") {
-    return ctx.error("internal", "Failed to submit for approval");
-  }
-
-  const awaitingApproval = new Set(
-    opened.status === "opened" ? transitioning.map((doc) => doc.id) : []
-  );
-  if (opened.status === "opened" && opened.requested.length > 0) {
-    if (opened.approverIds.length > 0) {
-      for (const documentId of opened.requested) {
-        await trigger("notify", {
-          event: NotificationEvent.ApprovalRequested,
-          companyId,
-          documentId,
-          documentType: "qualityDocument",
-          recipient: { type: "users", userIds: opened.approverIds },
-          from: userId
-        }).catch((e) =>
-          logger.error("Failed to trigger approval notification", {
-            companyId,
-            documentId,
-            error: e
-          })
-        );
-      }
-    }
-
-    const archivedToDraft = transitioning
-      .filter(
-        (doc) => doc.status === "Archived" && opened.requested.includes(doc.id)
-      )
-      .map((doc) => doc.id);
-    if (archivedToDraft.length > 0) {
-      await client
-        .from("qualityDocument")
-        .update({ status: "Draft", ...audit })
-        .in("id", archivedToDraft)
-        .eq("companyId", companyId);
-    }
-  }
-
-  const activate = ids.filter((id) => !awaitingApproval.has(id));
-  if (activate.length > 0) {
-    const update = await client
-      .from("qualityDocument")
-      .update({ status: "Active", ...audit })
-      .in("id", activate)
-      .eq("companyId", companyId);
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update the document",
-        update.error
-      );
-    }
-  }
-  return { ids, awaitingApproval: [...awaitingApproval] };
-}
-
 /**
  * Approve or reject a quality document's pending approval request.
  *
@@ -2855,29 +1878,6 @@ export const decideQualityDocumentApproval = defineServiceFn({
     return { qualityDocumentId, decision };
   }
 });
-
-/** Fills `<%= company.name %>` in every text of a template document. */
-function interpolateTemplate(
-  content: unknown,
-  data: { company: { name: string } }
-): unknown {
-  if (typeof content === "string") return template(content)(data);
-  if (Array.isArray(content)) {
-    return content.map((item) => interpolateTemplate(item, data));
-  }
-  if (content && typeof content === "object") {
-    return Object.fromEntries(
-      Object.entries(content).map(([key, value]) => [
-        key,
-        key === "text" && typeof value === "string"
-          ? template(value)(data)
-          : interpolateTemplate(value, data)
-      ])
-    );
-  }
-  return content;
-}
-
 /**
  * Load Carbon's template quality documents (the QMS procedures) into a
  * company that has none, with the company's name filled in.
@@ -2972,26 +1972,6 @@ const riskInput = riskRegisterValidator
     severity: z.number().int(),
     likelihood: z.number().int()
   });
-
-/** Tell a risk's assignee it is theirs. A failure never fails the save. */
-async function notifyRiskAssignee(
-  ctx: ServiceContext,
-  riskId: string,
-  assignee: string
-) {
-  try {
-    await trigger("notify", {
-      companyId: ctx.company.id,
-      documentId: riskId,
-      event: NotificationEvent.RiskAssignment,
-      recipient: { type: "user", userId: assignee },
-      from: ctx.auditUserId
-    });
-  } catch (err) {
-    logger.error("Failed to notify assignee", { error: err });
-  }
-}
-
 /**
  * Record a risk or an opportunity.
  *
@@ -3056,87 +2036,6 @@ export const updateRisk = defineServiceFn({
 });
 
 // --- Supplier corrective action (SCAR) share link -----------------------------------
-
-/**
- * The context for a SCAR share link: a system actor in the link's company,
- * acting for whoever linked the supplier to the issue. Null when the link is
- * not a SCAR link, or names an issue of another company.
- */
-export async function scarLinkContext(
-  externalLinkId: string
-): Promise<ServiceContext | null> {
-  const serviceRole = getCarbonServiceRole();
-  const link = await getExternalLink(serviceRole, externalLinkId);
-  if (
-    !link.data?.documentId ||
-    link.data.documentType !== "Non-Conformance Supplier"
-  ) {
-    return null;
-  }
-  const [issueSupplier, company] = await Promise.all([
-    getIssueFromExternalLink(serviceRole, link.data.documentId),
-    serviceRole
-      .from("company")
-      .select("companyGroupId")
-      .eq("id", link.data.companyId)
-      .single()
-  ]);
-  if (
-    !issueSupplier.data ||
-    issueSupplier.data.companyId !== link.data.companyId ||
-    !company.data?.companyGroupId
-  ) {
-    return null;
-  }
-  return systemContext({
-    companyId: link.data.companyId,
-    companyGroupId: company.data.companyGroupId,
-    onBehalfOf: issueSupplier.data.createdBy
-  });
-}
-
-/**
- * The supplier's action task a SCAR link may change: the link's issue must
- * still be open, and the task one of the supplier's on it.
- */
-async function scarTask(
-  ctx: ServiceContext,
-  { externalLinkId, taskId }: { externalLinkId: string; taskId: string }
-) {
-  const serviceRole = ctx.asSystem.supabase;
-  const link = await getExternalLink(serviceRole, externalLinkId);
-  if (
-    !link.data?.documentId ||
-    link.data.companyId !== ctx.company.id ||
-    link.data.documentType !== "Non-Conformance Supplier"
-  ) {
-    return ctx.error("notFound", "Could not find id");
-  }
-  const issue = await getIssueFromExternalLink(
-    serviceRole,
-    link.data.documentId
-  );
-  if (!issue.data || issue.data.companyId !== ctx.company.id) {
-    return ctx.error("notFound", "Could not find the issue");
-  }
-  if (issue.data.nonConformance?.status === "Closed") {
-    return ctx.error(
-      "rule",
-      "Issue has been closed already. Unable to make changes"
-    );
-  }
-  const tasks = await getIssueActionTasks(
-    serviceRole,
-    issue.data.nonConformanceId,
-    ctx.company.id,
-    issue.data.supplierId
-  );
-  if (!tasks.data?.some((task) => task.id === taskId)) {
-    return ctx.error("notFound", "Invalid task id");
-  }
-  return taskId;
-}
-
 /**
  * The supplier sets the status of one of their SCAR action tasks, from the
  * share link.

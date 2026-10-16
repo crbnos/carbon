@@ -36,7 +36,7 @@ import {
 import {
   checkDepositDocument,
   getDepositDocuments
-} from "~/modules/invoicing/invoicing.server";
+} from "~/modules/invoicing/invoicing.service";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

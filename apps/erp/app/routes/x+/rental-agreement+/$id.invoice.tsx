@@ -14,8 +14,8 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 import { getRentalAgreement } from "~/modules/sales";
-import { generateRentalInvoicesNow } from "~/modules/sales/sales.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { generateRentalInvoicesNow } from "~/modules/sales/sales.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

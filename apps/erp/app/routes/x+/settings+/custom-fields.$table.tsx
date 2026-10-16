@@ -12,7 +12,7 @@ import { data, useLoaderData, useNavigate } from "react-router";
 import { useRouteData, useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";
-import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.server";
+import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.service";
 import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 

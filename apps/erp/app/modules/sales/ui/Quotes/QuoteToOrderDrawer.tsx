@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
+import { getDocumentType } from "@carbon/files";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import {
@@ -62,7 +63,6 @@ import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useCurrencyDecimals, useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import { getDocumentType } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { selectedLineSchema } from "../../sales.models";
 import { salesConfirmValidator } from "../../sales.models";

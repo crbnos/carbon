@@ -42,10 +42,10 @@ import {
   nonConformanceTaskStatus
 } from "~/modules/quality";
 import {
-  scarLinkContext,
   setScarTaskStatus,
   updateScarTaskNotes
 } from "~/modules/quality/quality.server";
+import { scarLinkContext } from "~/modules/quality/quality.service";
 import { TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { getCompany } from "~/modules/settings";

@@ -142,13 +142,9 @@ vi.mock("../people/people.service", () => ({
   insertEmployeeJob: mocks.insertEmployeeJob
 }));
 
-const {
-  acceptInvite,
-  certifyItarEntity,
-  createEmployeeAccount,
-  deactivateUsers,
-  resetConsoleOperatorPin
-} = await import("./users.server");
+const { certifyItarEntity, deactivateUsers, resetConsoleOperatorPin } =
+  await import("./users.server");
+const { acceptInvite, createEmployeeAccount } = await import("./users.service");
 const { createServiceContext } = await import("@carbon/api/service-fn.server");
 
 const USER = "usr_1";

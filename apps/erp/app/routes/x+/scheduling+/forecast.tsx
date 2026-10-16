@@ -32,7 +32,7 @@ import {
   getCapacityReservationsForResources,
   getMaintenanceDowntimeForResources
 } from "~/modules/production";
-import { getForecastNonWorkingIntervals } from "~/modules/production/forecast.server";
+import { getForecastNonWorkingIntervals } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import type { ForecastRange } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader";
@@ -48,8 +48,10 @@ import type {
 } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
 import { WorkCenterAvailabilityPopover } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
 import { getWorkCentersByLocation } from "~/modules/resources";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

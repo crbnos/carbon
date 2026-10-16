@@ -24,8 +24,8 @@ import {
   getDocumentTemplate,
   getTerms
 } from "~/modules/settings";
-import { listPreviewEntities } from "~/modules/settings/documentPreview.server";
-import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
+import { listPreviewEntities } from "~/modules/settings/settings.service";
+import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

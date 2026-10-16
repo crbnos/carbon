@@ -10,7 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
 import { inspectionMeasurementValidator } from "~/modules/quality";
-import { upsertInspectionMeasurement } from "~/modules/quality/quality.server";
+import { upsertInspectionMeasurement } from "~/modules/quality/quality.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -6,7 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { updateChangeNotice } from "~/modules/items";
-import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
+import { requireEditableChangeNoticeRoute } from "~/modules/items/items.service";
 
 // The two rich-text header columns. They used to be written straight from the
 // browser via the supabase client, which left no server-side place to enforce
