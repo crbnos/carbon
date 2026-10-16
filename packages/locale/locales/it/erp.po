@@ -5558,6 +5558,9 @@ msgstr "Dettagli del materiale di consumo"
 msgid "Consumable ID"
 msgstr "ID del materiale di consumo"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "materiali di consumo"
 
@@ -13313,6 +13316,9 @@ msgstr "Materiale base"
 msgid "Material Substances"
 msgstr "Materiali base"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "Tipo di Materiale"
 
@@ -16217,6 +16223,9 @@ msgstr "Numero componente"
 
 msgid "Part Supersession"
 msgstr "Sostituzione Pezzo"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "Parziale"
@@ -20362,6 +20371,9 @@ msgstr "Dettagli del Provider di Servizio"
 msgid "Service start"
 msgstr "Inizio servizio"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "servizi"
 
@@ -21711,6 +21723,9 @@ msgstr "Numero Parte Fornitore"
 
 msgid "Supplier Part Numbers"
 msgstr "Numeri di Parte Fornitore"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "Componenti fornitore"
@@ -23998,6 +24013,9 @@ msgstr "Dettagli Strumento"
 
 msgid "Tool ID"
 msgstr "ID Strumento"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "Costo di utensili"

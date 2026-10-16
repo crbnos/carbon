@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -11,17 +11,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
-import {
-  getItemPlanning,
-  itemPlanningValidator,
-  upsertItemPlanning
-} from "~/modules/items";
+import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { getItemPlanning, itemPlanningValidator } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { replanAfterItemChange } from "~/modules/production/production.server";
 import { getLocationsList } from "~/modules/resources";
-import { serviceContext } from "~/modules/service-context.server";
-import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -91,66 +85,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const auth = await requirePermissions(request, {
-    update: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(itemPlanningValidator).request(args, {
+    params: ["itemId"]
   });
-  const { client, companyId, userId } = auth;
-  const ctx = serviceContext(auth);
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(itemPlanningValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // The column references the global user table, so the database would take
-  // a person from another company, or one since deactivated.
-  if (
-    validation.data.responsibleEmployee &&
-    !(await isActiveCompanyEmployee(
-      client,
-      companyId,
-      validation.data.responsibleEmployee
-    ))
-  ) {
+  if ("invalid" in input) return input.invalid;
+  const { itemId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.items.planning.update({
+    ...input.data,
+    itemId,
+    customFields: input.formData && setCustomFields(input.formData)
+  });
+  if (result.error?.category === "rule") {
     return validationError({
-      fieldErrors: {
-        responsibleEmployee: "Choose an employee of this company"
-      },
-      formId: validation.formId
+      fieldErrors: { responsibleEmployee: result.error.message }
     });
   }
-
-  const updateMateriallanning = await upsertItemPlanning(client, {
-    ...validation.data,
-    itemId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  return redirectWithResult(args.request, result, {
+    to: result.error
+      ? path.to.material(itemId)
+      : path.to.materialPlanningLocation(itemId, input.data.locationId),
+    message: "Updated material planning"
   });
-  if (updateMateriallanning.error) {
-    throw redirect(
-      path.to.material(itemId),
-      await flash(
-        request,
-        error(updateMateriallanning.error, "Failed to update material planning")
-      )
-    );
-  }
-
-  // The planning pages list MRP's suggestions; re-plan so they follow the
-  // new settings now, not at the next scheduled run.
-  await replanAfterItemChange(ctx, { itemId });
-
-  throw redirect(
-    path.to.materialPlanningLocation(itemId, validation.data.locationId),
-    await flash(request, success("Updated material planning"))
-  );
 }
 
 export default function MateriallanningRoute() {

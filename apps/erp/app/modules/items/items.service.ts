@@ -150,7 +150,7 @@ export async function activateMethodVersion(
   });
 }
 
-/** @mcp create */
+/** The copy only; `items.method.copy` also checks the target's revision lock. */
 export async function copyItem(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -176,7 +176,7 @@ export async function copyItem(
     });
 }
 
-/** @mcp create */
+/** The copy only; `items.method.copy` also checks the target's revision lock. */
 export async function copyMakeMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -3351,8 +3351,8 @@ export async function upsertPickMethodWithShelfLife(
  *
  * Without this, snapshot flags drift from the live item value and leave the
  * UI reading stale (often sticky-true) tracking flags after an item is
- * flipped back to Inventory / Non-Inventory.
- * @mcp action
+ * flipped back to Inventory / Non-Inventory. The cascade only:
+ * `items.item.setTrackingType` also writes the item.
  */
 export async function cascadeItemTrackingType(
   db: Kysely<KyselyDatabase>,
@@ -3494,8 +3494,8 @@ export async function cascadeItemTrackingType(
  *
  * sourcingType and defaultMethodType are item-level properties; method
  * materials are read-only mirrors. Only mirrors on Draft make methods are
- * touched — Active and Archived methods are frozen.
- * @mcp update
+ * touched — Active and Archived methods are frozen. The write only:
+ * `items.item.setSourcing` derives the interlocked fields first.
  */
 export async function updateItemMethodAndSourcing(
   db: Kysely<KyselyDatabase>,
@@ -4047,10 +4047,8 @@ export async function resolveItemIdFromExtractedText(
 /**
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
- * omitted optional fields are cleared.
- * @mcp upsert
- * @mcp key item id
- * @mcp key item readableId=id
+ * omitted optional fields are cleared. `items.part.create` / `.update` are the
+ * operations; create also queues the part's model optimisation.
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -4268,7 +4266,7 @@ export async function upsertPickMethod(
     .eq("locationId", pickMethod.locationId);
 }
 
-/** @mcp upsert */
+/** The row write only; `items.manufacturing.update` also re-plans the item. */
 export async function upsertItemManufacturing(
   client: SupabaseClient<Database>,
   partManufacturing: z.infer<typeof itemManufacturingValidator> & {
@@ -4282,10 +4280,7 @@ export async function upsertItemManufacturing(
     .eq("itemId", partManufacturing.itemId);
 }
 
-/**
- * @mcp upsert
- * @mcp key itemPlanning itemId, locationId
- */
+/** The row write only; `items.planning.update` also checks the responsible employee and re-plans. */
 export async function upsertItemPlanning(
   client: SupabaseClient<Database>,
   partPlanning:
@@ -4402,7 +4397,7 @@ async function findSupersessionCycle(
   return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
 }
 
-/** @mcp upsert destructive */
+/** The building block of `items.supersession.set` and `.addPredecessor`. */
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -4537,7 +4532,7 @@ export async function upsertItemPostingGroup(
     .single();
 }
 
-/** @mcp upsert */
+/** The row write only; `items.supplierPart.create` / `.update` also save the price breaks. */
 export async function upsertSupplierPart(
   client: SupabaseClient<Database>,
   supplierPart:
@@ -4609,7 +4604,7 @@ export async function upsertItemUnitSalePrice(
     .eq("itemId", itemUnitSalePrice.itemId);
 }
 
-/** @mcp upsert */
+/** The header insert only; `items.method.createVersion` also copies the method. */
 export async function upsertMakeMethodVersion(
   client: SupabaseClient<Database>,
   makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {

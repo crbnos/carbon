@@ -5558,6 +5558,9 @@ msgstr "消耗品の詳細"
 msgid "Consumable ID"
 msgstr "消耗品ID"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "消耗品"
 
@@ -13313,6 +13316,9 @@ msgstr "素材"
 msgid "Material Substances"
 msgstr "素材"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "材料タイプ"
 
@@ -16217,6 +16223,9 @@ msgstr "部品番号"
 
 msgid "Part Supersession"
 msgstr "部品後継切替"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "一部"
@@ -20362,6 +20371,9 @@ msgstr "サービスプロバイダーの詳細"
 msgid "Service start"
 msgstr "サービス開始日"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "サービス"
 
@@ -21711,6 +21723,9 @@ msgstr "仕入先部品番号"
 
 msgid "Supplier Part Numbers"
 msgstr "仕入先品番"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "仕入先部品"
@@ -23998,6 +24013,9 @@ msgstr "ツール詳細"
 
 msgid "Tool ID"
 msgstr "ツールID"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "工具原価"

@@ -5558,6 +5558,9 @@ msgstr "耗材详情"
 msgid "Consumable ID"
 msgstr "耗材编号"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "耗材"
 
@@ -13313,6 +13316,9 @@ msgstr "材质"
 msgid "Material Substances"
 msgstr "材质"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "原材料类型"
 
@@ -16217,6 +16223,9 @@ msgstr "零件编号"
 
 msgid "Part Supersession"
 msgstr "零件替代"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "部分"
@@ -20362,6 +20371,9 @@ msgstr "服务提供商详情"
 msgid "Service start"
 msgstr "服务开始"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "服务"
 
@@ -21711,6 +21723,9 @@ msgstr "供应商零件号"
 
 msgid "Supplier Part Numbers"
 msgstr "供应商零件号"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "供应商零件"
@@ -23998,6 +24013,9 @@ msgstr "工具详情"
 
 msgid "Tool ID"
 msgstr "工具ID"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "工具成本"

@@ -5558,6 +5558,9 @@ msgstr "Sarf malzemesi Ayrıntıları"
 msgid "Consumable ID"
 msgstr "Sarf malzemesi ID"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "sarf malzemeleri"
 
@@ -13313,6 +13316,9 @@ msgstr "Ana malzeme"
 msgid "Material Substances"
 msgstr "Ana malzemeler"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "Malzeme Türü"
 
@@ -16217,6 +16223,9 @@ msgstr "Parça Numarası"
 
 msgid "Part Supersession"
 msgstr "Parça İkamesi"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "Kısmi"
@@ -20362,6 +20371,9 @@ msgstr "Hizmet Sağlayıcı Ayrıntıları"
 msgid "Service start"
 msgstr "Hizmet Başlangıç Tarihi"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "hizmetler"
 
@@ -21711,6 +21723,9 @@ msgstr "Tedarikçi Parça Numarası"
 
 msgid "Supplier Part Numbers"
 msgstr "Tedarikçi Parça Numaraları"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "Tedarikçi Parçaları"
@@ -23998,6 +24013,9 @@ msgstr "Alet Detayları"
 
 msgid "Tool ID"
 msgstr "Alet Kimliği"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "Takım Maliyeti"
