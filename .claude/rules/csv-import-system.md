@@ -3,7 +3,7 @@ paths:
   - "apps/erp/app/components/ImportCSVModal/**"
   - "apps/erp/app/modules/shared/imports.models.ts"
   - "apps/erp/app/routes/x+/shared+/import.$tableId.tsx"
-  - "packages/server-functions/src/import-csv/**"
+  - "apps/erp/app/modules/shared/shared.service.ts"
 ---
 
 # CSV Import System
@@ -85,7 +85,7 @@ authorization on a bulk import — taking it from the page gate would let a user
 create rows the database itself would refuse. `itemPostingGroup` is where the two
 disagree: its page is parts-gated, its policies are `accounting_*`.
 
-The server function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
+The import's own `table` enum (`importCsvInput`, `shared.service.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
 `partWithMethod`, `part`, `service`, `supplier`, `supplierContact`, `tool`,
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
@@ -132,8 +132,8 @@ of rolling back the whole import. The DB same-location / no-cycle interceptors
 `inventoryQuantity`, `batchQuantity` and `serialQuantity` load on-hand stock for
 items that already exist, one import per `itemTrackingType` (Inventory / Batch /
 Serial; Non-Inventory has none). Surfaced from the Inventory → Quantities table
-(`InventoryTable.tsx`). Handled by `import-csv/stock-quantity-import.ts`; the pure
-per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.ts`).
+(`InventoryTable.tsx`). Handled by `importStockQuantities` (`shared.service.ts`); the pure
+per-row decision is `classifyStockRow` (tested by `shared.classify-stock-row.test.ts`).
 
 - **Columns**: `readableId` (Part Number), `revision` (blank → `"0"`), `locationId`
   (enum via the shared `locationFetcher`, re-checked against the company's locations),
@@ -211,7 +211,7 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
 
 `unitOfMeasure`, `itemPostingGroup`, `storageType`, `scrapReason` and `department`
 are small company-scoped config tables filled in once during onboarding. They are
-handled by `import-csv/config-lookup-import.ts` — one `CONFIGS` entry per table,
+handled by `importConfigLookups` (`shared.service.ts`) — one `CONFIGS` entry per table,
 one shared walk — with the same **create-only, skip-duplicate** semantics as the
 material lookups below: no `externalIntegrationMapping`, no updates, and no
 `id` column in the wizard, because none of these carries a natural external id.
@@ -234,7 +234,8 @@ one, and `config-lookup-import.test.ts` pins that.
 The six material-taxonomy lookups (`materialSubstance`, `materialForm`,
 `materialFinish`, `materialGrade`, `materialType`, `materialDimension`) are each a
 standalone import surfaced from its own config table (`apps/erp/app/modules/items/ui/Material*`).
-They are handled by `import-csv/material-property-import.ts` (not the item/customer
+They are handled by `importMaterialProperties` (`shared.service.ts`, its table map is
+`materialPropertyImportCONFIGS`; not the item/customer
 paths) with **create-only, skip-duplicate** semantics — no `externalIntegrationMapping`,
 no updates. A row matching an existing entry for the company **or** a global system row
 (`companyId IS NULL`) is reported as `skipped`; re-importing the same file is a no-op.
@@ -269,15 +270,15 @@ The lookup values an import creates on the fly (`api+/csv+/create-lookup.tsx`) a
 `shared.csvImport.createLookups`, gated on `create` of the lookup's module.
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
-it lazily imports `@carbon/server-functions/import-csv` and calls
-`serverFns.as({ client, db, companyId, userId }).invoke("import-csv", args)`.
+it calls `invokePosting({ client, db, companyId, userId }, "import-csv", args,
+importCsvTable, { as: importCsvTablePermission })`.
 
-## Server function (`packages/server-functions/src/import-csv/index.ts`)
+## The import (`importCsvTable`, `shared.service.ts`)
 
-Built with `defineServerFn`; input validated by `importCsvInput` (table enum, `filePath`,
-`columnMappings`, optional `enumMappings`).
+Ported from the `import-csv` server function. Its input is `importCsvInput` (table enum,
+`filePath`, `columnMappings`, optional `enumMappings`).
 
-- Checks the caller via `permissions: { by: "table", rules }`: `update` on
+- `importCsv` checks the caller against `importCsvTablePermission`, `{ by: "table", rules }`: `update` on
   `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
   models, so a new import type adds its table to both sides.
 - Refuses a `filePath` outside the `${companyId}/` prefix, then downloads it from the
@@ -294,7 +295,7 @@ Built with `defineServerFn`; input validated by `importCsvInput` (table enum, `f
   company-scoped taxonomy row for unmatched names** (mirroring the creatable comboboxes on
   the material form). A row with no substance (finish/grade) or no form (dimensions) leaves
   the attribute unset.
-- Classifies each row with `classifyImportRow()` (see `classify-import-row.ts`):
+- Classifies each row with `classifyImportRow()` (tested by `shared.classify-import-row.test.ts`):
   returns `{ action: "insert" }`, `{ action: "update"; entityId }`, or
   `{ action: "skip"; reason }`. Skips on missing Name or duplicate id/name within the file.
 - Wraps writes per-entity in `db.transaction().execute(...)` (Kysely; bypasses RLS). Persists ID mappings via `upsertCsvMappings`.

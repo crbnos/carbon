@@ -38,12 +38,12 @@ vi.mock("@carbon/server-functions", () => ({
 vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   refuseUnlessOwned: vi.fn(async () => null),
-  sendSalesOrderEmail: vi.fn()
-}));
-vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
+  sendSalesOrderEmail: vi.fn(),
   getCompanyTimeZone: vi.fn(async () => "UTC"),
-  getLocationTimeZone: vi.fn(async () => "UTC")
+  getLocationTimeZone: vi.fn(async () => "UTC"),
+  // The ported server functions (convert) run through invokePosting.
+  invokePosting: (_from: unknown, name: string, input: unknown) =>
+    invoke(name, input)
 }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";

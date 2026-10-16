@@ -14,9 +14,9 @@
   - [x] Single-function tools: a codemod turns each route-called legacy tool into a leaf (below)
 - [ ] Phase 5 — Dissolve `packages/server-functions`
   - [x] The pattern: a function's body becomes a building block in `<module>.service.ts`; `settle` or `invokePosting` runs it with the function's own error rules (`.claude/rules/module-files.md`)
-  - [x] 13 functions ported: `close-job`, `assign-serial-numbers`, `preview-serial-unit-costs`, `recost-serial-unit`, `post-asset-transfer`, `preview-asset-capitalization`, `seed-company`, `finalize-supplier-quote`, `finalize-purchasing-rfq`, `post-inventory-count`, `post-nonconformance`, `apply-account-import`, `post-stock-transfer`
+  - [x] 18 functions ported: `close-job`, `assign-serial-numbers`, `preview-serial-unit-costs`, `recost-serial-unit`, `post-asset-transfer`, `preview-asset-capitalization`, `seed-company`, `finalize-supplier-quote`, `finalize-purchasing-rfq`, `post-inventory-count`, `post-nonconformance`, `apply-account-import`, `post-stock-transfer`, `import-csv`, `correct-stock-movement`, `sync`, `get-method`, `convert`
   - [x] Their live tests run from `apps/erp/test/database/`
-  - [ ] 27 functions that only the ERP and jobs call: step 1, then the jobs seam (step 2)
+  - [ ] 22 functions that only the ERP and jobs call: step 1, then the jobs seam (step 2). They import each other, so they move in dependency order
   - [ ] The callers in `packages/ee` (step 3)
   - [ ] The shared `lib` helpers (step 4)
   - [ ] The 10 functions of the MES closure stay until Phase 6 (step 5)

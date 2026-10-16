@@ -95,7 +95,7 @@ Key service functions (verified):
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`correct-stock-movement` server function**: fixes any
+- `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from `postStockMovementCorrection` (`inventory.service.ts`, ported from the `correct-stock-movement` server function)): fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
   `postingDate` and posting its journal: after the accounting cutover into the period containing

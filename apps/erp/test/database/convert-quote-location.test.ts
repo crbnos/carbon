@@ -5,21 +5,20 @@
 // A quote with no location (Paperless Parts imports never set one) still
 // converts to a sales order with a location on the order, its lines and its
 // shipment: the company's first location.
+// Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
-import { expect, vi } from "vitest";
+import { expect } from "vitest";
 import {
   alwaysPostFixture,
   seed,
   USER,
   unwrap
-} from "../always-post-test-fixture";
-import { databaseTest } from "../local-database-test-fixture";
-import convert from "./index";
-
-// `convert` builds a service-role client up front; the quote path never uses
-// it, and the real one pulls in the browser UI package.
-vi.mock("@carbon/auth", () => ({ getCarbonClient: () => ({}) }));
-vi.mock("@carbon/env", () => ({ SUPABASE_SERVICE_ROLE_KEY: "test" }));
+} from "@carbon/server-functions/always-post-test-fixture";
+import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import {
+  convertDocument,
+  invokePosting
+} from "../../app/modules/shared/shared.service";
 
 databaseTest(
   "a quote with no location converts to an order at the first location",
@@ -89,11 +88,11 @@ databaseTest(
       });
 
       const { convertedId } = unwrap(
-        await convert(f.ctx, {
+        await invokePosting(f.service, "convert", {
           type: "quoteToSalesOrder",
           id: quoteId,
           selectedLines: { [quoteLineId]: { quantity: 4 } }
-        })
+        }, convertDocument)
       );
 
       const order = await f.db

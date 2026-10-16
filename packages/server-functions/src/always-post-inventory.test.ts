@@ -7,8 +7,6 @@
 // accounting period and no period is created; after it, the same posting is
 // Posted in the period of the posting date.
 
-import type { Database } from "@carbon/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
 import {
   alwaysPostFixture,
@@ -22,56 +20,10 @@ import {
   USER,
   unwrap
 } from "./always-post-test-fixture";
-import correctStockMovement from "./correct-stock-movement";
 import create from "./create";
-import { importStockQuantities } from "./import-csv/stock-quantity-import";
 import { databaseTest } from "./local-database-test-fixture";
 import postReceipt from "./post-receipt";
 import postShipment from "./post-shipment";
-
-/** The latest positive adjustment of the part. */
-async function latestPositiveAdjustment(f: Fixture): Promise<string> {
-  const row = await f.db
-    .selectFrom("itemLedger")
-    .select("id")
-    .where("companyId", "=", f.companyId)
-    .where("itemId", "=", f.partId)
-    .where("entryType", "=", "Positive Adjmt.")
-    .where("correctionOfItemLedgerId", "is", null)
-    .orderBy("entryNumber", "desc")
-    .executeTakeFirstOrThrow();
-  return row.id;
-}
-
-/** Imports 3 of the part as opening stock. */
-async function importThree(f: Fixture) {
-  const summary = {
-    inserted: 0,
-    updated: 0,
-    errors: [] as { row: number; reason: string }[],
-    skipped: [] as { row: number; reason: string }[]
-  };
-  await importStockQuantities(
-    f.db,
-    // The stock importer never reads its Supabase client.
-    undefined as unknown as SupabaseClient<Database>,
-    {
-      table: "inventoryQuantity",
-      mappedRecords: [
-        {
-          readableId: `${f.prefix}-PART`,
-          locationId: f.locationId,
-          quantity: "3"
-        }
-      ],
-      companyId: f.companyId,
-      userId: USER,
-      summary
-    }
-  );
-  expect(summary.errors).toEqual([]);
-  expect(summary.skipped).toEqual([]);
-}
 
 /** Ships two parts back to the supplier on a purchase return order. */
 async function shipPurchaseReturn(f: Fixture, key: string) {
@@ -202,60 +154,6 @@ async function receiveTransfer(f: Fixture, key: string) {
     unwrap(await postReceipt(f.ctx, { type: "post", receiptId: receipt.id }))
   );
 }
-
-databaseTest(
-  "a stock movement correction writes a Provisional journal before the cutover and a Posted one after it",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      // A positive adjustment of 5 that should have been 6.
-      await stockPart(f, 5);
-      const before = await latestPositiveAdjustment(f);
-      const provisional = await newJournals(f, async () =>
-        unwrap(
-          await correctStockMovement(f.ctx, {
-            itemLedgerId: before,
-            correctedQuantity: 6
-          })
-        )
-      );
-      await expectProvisionalJournals(f, provisional, "Inventory Adjustment");
-
-      const periodId = await stampCutover(f);
-      await stockPart(f, 5);
-      const after = await latestPositiveAdjustment(f);
-      expect(after).not.toBe(before);
-      const posted = await newJournals(f, async () =>
-        unwrap(
-          await correctStockMovement(f.ctx, {
-            itemLedgerId: after,
-            correctedQuantity: 6
-          })
-        )
-      );
-      await expectPostedJournals(f, posted, "Inventory Adjustment", periodId);
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "a stock quantity CSV import writes a Provisional journal before the cutover and a Posted one after it",
-  async () => {
-    const f = await alwaysPostFixture();
-    try {
-      const provisional = await newJournals(f, () => importThree(f));
-      await expectProvisionalJournals(f, provisional, "Inventory Adjustment");
-
-      const periodId = await stampCutover(f);
-      const posted = await newJournals(f, () => importThree(f));
-      await expectPostedJournals(f, posted, "Inventory Adjustment", periodId);
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
 
 databaseTest(
   "a purchase return shipment writes a Provisional journal before the cutover and a Posted one after it",

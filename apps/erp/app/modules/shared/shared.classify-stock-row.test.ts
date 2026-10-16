@@ -12,7 +12,7 @@ import {
   type StockItemInfo,
   storageUnitKey,
   trackedKey
-} from "./classify-stock-row";
+} from "./shared.service";
 
 const items = new Map<string, StockItemInfo>([
   [

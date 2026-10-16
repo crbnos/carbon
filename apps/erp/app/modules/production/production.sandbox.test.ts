@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { importTypeScript } from "./sandbox";
+import { importTypeScript } from "./production.service";
 
 describe("importTypeScript", () => {
   it("runs a typed rule body", async () => {

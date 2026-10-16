@@ -18,11 +18,7 @@ const registry = {
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-lease-invoices": () => import("./create-lease-invoices"),
   "create-rental-invoices": () => import("./create-rental-invoices"),
-  convert: () => import("./convert"),
-  "correct-stock-movement": () => import("./correct-stock-movement"),
   create: () => import("./create"),
-  "get-method": () => import("./get-method"),
-  "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
   "journal-legacy-documents": () => import("./journal-legacy-documents"),
   "kanban-replenish": () => import("./kanban-replenish"),
@@ -49,7 +45,6 @@ const registry = {
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
-  sync: () => import("./sync"),
   "trigger-rework": () => import("./trigger-rework"),
   "update-purchased-prices": () => import("./update-purchased-prices")
 } as const;

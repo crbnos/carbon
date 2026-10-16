@@ -84,13 +84,19 @@ import {
   getCurrencyByCode,
   getExchangeRate
 } from "../accounting/accounting.service";
+import * as productionPostings from "../production/production.service";
 import type {
   operationParameterValidator,
   operationStepValidator,
   operationToolValidator
 } from "../shared/shared.models";
 import { normalizeOperationSourceIds } from "../shared/shared.models";
-import { getModelByItemId, upsertExternalLink } from "../shared/shared.service";
+import * as sharedPostings from "../shared/shared.service";
+import {
+  getModelByItemId,
+  invokePosting,
+  upsertExternalLink
+} from "../shared/shared.service";
 import {
   lookupBuyPriceFromMap,
   resolveBuyUnitCost
@@ -223,10 +229,16 @@ export async function convertSalesRfqToQuote(
   }
 ) {
   const { companyId, userId, id } = payload;
-  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
-    type: "salesRfqToQuote",
-    id
-  });
+  return invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    {
+      type: "salesRfqToQuote",
+      id
+    },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 }
 
 /** Not published: `sales.quote.convert` also gates and files the PDF. */
@@ -244,12 +256,16 @@ export async function convertQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  const result = await serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("convert", {
+  const result = await invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    {
       type: "quoteToSalesOrder",
       ...input
-    });
+    },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 
   if (!result.error && result.data?.convertedId) {
     await raiseMoment("sales.quoteAccepted", {
@@ -286,9 +302,10 @@ export async function copyQuoteLine(
     userId: string;
   }
 ) {
-  return serverFns
-    .as({ client, db, companyId: payload.companyId, userId: payload.userId })
-    .invoke("get-method", {
+  return invokePosting(
+    { client, db, companyId: payload.companyId, userId: payload.userId },
+    "get-method",
+    {
       ...payload,
       type: "quoteLineToQuoteLine",
       parts: {
@@ -299,7 +316,10 @@ export async function copyQuoteLine(
         steps: payload.steps,
         workInstructions: payload.workInstructions
       }
-    });
+    },
+    productionPostings.getMethod,
+    { as: productionPostings.getMethodPermission }
+  );
 }
 
 export async function copyQuote(
@@ -314,12 +334,16 @@ export async function copyQuote(
     userId: string;
   }
 ) {
-  return serverFns
-    .as({ client, db, companyId: payload.companyId, userId: payload.userId })
-    .invoke("get-method", {
+  return invokePosting(
+    { client, db, companyId: payload.companyId, userId: payload.userId },
+    "get-method",
+    {
       ...payload,
       type: "quoteToQuote"
-    });
+    },
+    productionPostings.getMethod,
+    { as: productionPostings.getMethodPermission }
+  );
 }
 
 export async function createPricingRule(
@@ -3570,19 +3594,23 @@ export async function upsertMakeMethodFromQuoteLine(
     };
   }
 ) {
-  return serverFns
-    .as({
+  return invokePosting(
+    {
       client,
       db,
       companyId: lineMethod.companyId,
       userId: lineMethod.userId
-    })
-    .invoke("get-method", {
+    },
+    "get-method",
+    {
       type: "quoteLineToItem",
       sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
       targetId: lineMethod.itemId,
       parts: lineMethod.parts
-    });
+    },
+    productionPostings.getMethod,
+    { as: productionPostings.getMethodPermission }
+  );
 }
 
 export async function upsertMakeMethodFromQuoteMethod(
@@ -3603,19 +3631,23 @@ export async function upsertMakeMethodFromQuoteMethod(
     };
   }
 ) {
-  const { error } = await serverFns
-    .as({
+  const { error } = await invokePosting(
+    {
       client,
       db,
       companyId: quoteMethod.companyId,
       userId: quoteMethod.userId
-    })
-    .invoke("get-method", {
+    },
+    "get-method",
+    {
       type: "quoteMakeMethodToItem",
       sourceId: quoteMethod.sourceId,
       targetId: quoteMethod.targetId,
       parts: quoteMethod.parts
-    });
+    },
+    productionPostings.getMethod,
+    { as: productionPostings.getMethodPermission }
+  );
 
   if (error) {
     return {
@@ -5469,9 +5501,13 @@ export async function upsertQuoteLineMethod(
     body.parts = lineMethod.parts;
   }
 
-  return serverFns
-    .as({ client, db, companyId: body.companyId, userId: body.userId })
-    .invoke("get-method", body);
+  return invokePosting(
+    { client, db, companyId: body.companyId, userId: body.userId },
+    "get-method",
+    body,
+    productionPostings.getMethod,
+    { as: productionPostings.getMethodPermission }
+  );
 }
 
 export async function upsertQuoteMaterial(
@@ -5573,9 +5609,13 @@ export async function upsertQuoteMaterialMakeMethod(
     body.parts = quoteMethod.parts;
   }
 
-  const { error } = await serverFns
-    .as({ client, db, companyId: body.companyId, userId: body.userId })
-    .invoke("get-method", body);
+  const { error } = await invokePosting(
+    { client, db, companyId: body.companyId, userId: body.userId },
+    "get-method",
+    body,
+    productionPostings.getMethod,
+    { as: productionPostings.getMethodPermission }
+  );
 
   if (error) {
     return {

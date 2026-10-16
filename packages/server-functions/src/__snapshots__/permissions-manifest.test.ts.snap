@@ -8,41 +8,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "batch-operations": {
     "update": "production",
   },
-  "convert": {
-    "by": "type",
-    "rules": {
-      "methodVersionToActive": {
-        "update": "resources",
-      },
-      "purchaseOrderToPurchaseInvoice": {
-        "update": "invoicing",
-      },
-      "quoteToSalesOrder": {
-        "update": "sales",
-      },
-      "salesOrderToSalesInvoice": {
-        "update": "invoicing",
-      },
-      "salesRfqToQuote": {
-        "update": "sales",
-      },
-      "shipmentToSalesInvoice": {
-        "update": "invoicing",
-      },
-      "supplierQuoteToPurchaseOrder": {
-        "update": "purchasing",
-      },
-      "warehouseTransferToReceipt": {
-        "update": "inventory",
-      },
-      "warehouseTransferToShipment": {
-        "update": "inventory",
-      },
-    },
-  },
-  "correct-stock-movement": {
-    "update": "inventory",
-  },
   "create": {
     "by": "type",
     "rules": {
@@ -119,107 +84,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "create-rental-invoices": {
     "create": "invoicing",
     "update": "sales",
-  },
-  "get-method": {
-    "update": "production",
-  },
-  "import-csv": {
-    "by": "table",
-    "rules": {
-      "batchQuantity": {
-        "create": "inventory",
-        "update": "inventory",
-      },
-      "bom": {
-        "update": "parts",
-      },
-      "consumable": {
-        "update": "parts",
-      },
-      "customer": {
-        "update": "sales",
-      },
-      "customerContact": {
-        "update": "sales",
-      },
-      "department": {
-        "update": "people",
-      },
-      "fixture": {
-        "update": "parts",
-      },
-      "inventoryQuantity": {
-        "create": "inventory",
-        "update": "inventory",
-      },
-      "itemPostingGroup": {
-        "update": "accounting",
-      },
-      "material": {
-        "update": "parts",
-      },
-      "materialDimension": {
-        "update": "parts",
-      },
-      "materialFinish": {
-        "update": "parts",
-      },
-      "materialForm": {
-        "update": "parts",
-      },
-      "materialGrade": {
-        "update": "parts",
-      },
-      "materialSubstance": {
-        "update": "parts",
-      },
-      "materialType": {
-        "update": "parts",
-      },
-      "operations": {
-        "update": "parts",
-      },
-      "part": {
-        "update": "parts",
-      },
-      "partWithMethod": {
-        "update": "parts",
-      },
-      "process": {
-        "update": "production",
-      },
-      "scrapReason": {
-        "update": "production",
-      },
-      "serialQuantity": {
-        "create": "inventory",
-        "update": "inventory",
-      },
-      "service": {
-        "update": "parts",
-      },
-      "storageType": {
-        "update": "parts",
-      },
-      "storageUnit": {
-        "update": "inventory",
-      },
-      "supplier": {
-        "update": "purchasing",
-      },
-      "supplierContact": {
-        "update": "purchasing",
-      },
-      "tool": {
-        "update": "parts",
-      },
-      "unitOfMeasure": {
-        "update": "parts",
-      },
-      "workCenter": {
-        "update": "production",
-      },
-    },
   },
   "issue": {
     "by": "type",
@@ -344,9 +208,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   },
   "reschedule": {
     "update": "production",
-  },
-  "sync": {
-    "update": "resources",
   },
   "trigger-rework": {
     "update": "production",

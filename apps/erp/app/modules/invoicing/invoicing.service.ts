@@ -117,6 +117,8 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import * as sharedPostings from "../shared/shared.service";
+import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
   ChargeStatusType,
@@ -306,10 +308,16 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
-  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
-    type: "purchaseOrderToPurchaseInvoice",
-    id: purchaseOrderId
-  });
+  return invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    {
+      type: "purchaseOrderToPurchaseInvoice",
+      id: purchaseOrderId
+    },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 }
 
 export async function createSalesInvoiceFromSalesOrder(
@@ -319,10 +327,16 @@ export async function createSalesInvoiceFromSalesOrder(
   companyId: string,
   userId: string
 ) {
-  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
-    type: "salesOrderToSalesInvoice",
-    id: salesOrderId
-  });
+  return invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    {
+      type: "salesOrderToSalesInvoice",
+      id: salesOrderId
+    },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 }
 
 export async function createSalesInvoiceFromShipment(
@@ -332,10 +346,16 @@ export async function createSalesInvoiceFromShipment(
   companyId: string,
   userId: string
 ) {
-  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
-    type: "shipmentToSalesInvoice",
-    id: shipmentId
-  });
+  return invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    {
+      type: "shipmentToSalesInvoice",
+      id: shipmentId
+    },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 }
 
 export async function deletePurchaseInvoice(

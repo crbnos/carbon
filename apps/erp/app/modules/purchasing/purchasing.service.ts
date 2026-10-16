@@ -87,7 +87,8 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
-import { upsertExternalLink } from "../shared/shared.service";
+import * as sharedPostings from "../shared/shared.service";
+import { invokePosting, upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
   leasePaymentValidator,
@@ -174,10 +175,16 @@ export async function convertSupplierQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
-    type: "supplierQuoteToPurchaseOrder",
-    ...input
-  });
+  return invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    {
+      type: "supplierQuoteToPurchaseOrder",
+      ...input
+    },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 }
 
 /** Not published: `purchasing_deletePurchaseOrders` deletes, with the status and approval checks this skips. */

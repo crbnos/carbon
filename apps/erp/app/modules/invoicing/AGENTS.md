@@ -183,7 +183,7 @@ guarded by `requireUnlockedBulk`, not validators.
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
 - `createSalesInvoiceFromSalesOrder` / `createSalesInvoiceFromShipment` /
-  `createPurchaseInvoiceFromPurchaseOrder` — all three call the `convert` server function.
+  `createPurchaseInvoiceFromPurchaseOrder` — all three call `convertDocument` (`shared.service.ts`, ported from the `convert` server function).
 - `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
   `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
   discounts batch-load their terms in one query, never per invoice.

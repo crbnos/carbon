@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { CONFIGS } from "./config-lookup-import";
+import { CONFIGS } from "./shared.service";
 
 it("unit of measure requires both a code and a name", () => {
   expect(CONFIGS.unitOfMeasure.validate({ code: "", name: "Each" })).toEqual(

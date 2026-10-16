@@ -20,7 +20,6 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
 import { datetime, isUniqueViolation, pluckUnique } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
@@ -37,6 +36,7 @@ import {
   resolveOperationRates,
   type WorkCenterRate
 } from "~/utils/bom";
+import { invokePosting } from "../shared/shared.service";
 import {
   applyStorageAndShelfLifeRefines,
   changeNoticeChangeTypes,
@@ -1176,13 +1176,16 @@ export const syncOnshapeMethod = defineServiceFn({
     }
     const { itemId } = method.data;
 
-    const synced = await serverFns
-      .system({ db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId })
-      .invoke("sync", {
+    const synced = await invokePosting(
+      { db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId },
+      "sync",
+      {
         type: "onshape",
         makeMethodId: input.makeMethodId,
         data: input.rows
-      });
+      },
+      service.syncMakeMethod
+    );
     if (synced.error) {
       return ctx.error("internal", "Failed to sync onshape data", synced.error);
     }

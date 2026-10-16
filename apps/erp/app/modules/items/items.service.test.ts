@@ -35,6 +35,12 @@ vi.mock("@carbon/server-functions", () => {
   const invoker = { invoke: serverFnInvoke };
   return { serverFns: { system: () => invoker, as: () => invoker } };
 });
+// The ported ones (get-method) run through invokePosting: the same boundary.
+vi.mock("../shared/shared.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  invokePosting: (_from: unknown, name: string, input: unknown) =>
+    serverFnInvoke(name, input)
+}));
 
 const {
   createRevision,

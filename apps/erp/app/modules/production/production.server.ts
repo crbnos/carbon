@@ -41,6 +41,7 @@ import {
   getCompanyTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
+import { invokePosting } from "../shared/shared.service";
 import {
   type AssemblyModelState,
   assemblyStepComponentsReassignValidator,
@@ -2729,17 +2730,20 @@ export const syncJobOperationProcedure = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { operationId, procedureId }) {
-    const sync = await serverFns
-      .system({
+    const sync = await invokePosting(
+      {
         db: ctx.asSystem.pg,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
-      })
-      .invoke("get-method", {
+      },
+      "get-method",
+      {
         type: "procedureToOperation",
         sourceId: procedureId,
         targetId: operationId
-      });
+      },
+      service.getMethod
+    );
     if (sync.error) {
       return ctx.error("internal", "Failed to sync procedure", sync.error);
     }

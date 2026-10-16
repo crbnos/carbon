@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { classifyImportRow } from "./classify-import-row";
+import { classifyImportRow } from "./shared.service";
 
 const base = () => ({
   externalIdMap: new Map<string, string>(),
