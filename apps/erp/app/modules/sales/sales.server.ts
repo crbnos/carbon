@@ -6733,16 +6733,14 @@ export const insertCustomerLocation = defineServiceFn({
  */
 export const resolvePrice = defineServiceFn({
   input: z.looseObject({
-    input: z.looseObject({
-      customerId: z.string().optional(),
-      customerTypeId: z.string().optional(),
-      itemId: z.string(),
-      itemPostingGroupId: z.string().optional(),
-      quantity: z.number(),
-      date: z.string().optional(),
-      existingBasePrice: z.number().optional(),
-      configuration: z.record(z.string(), z.unknown()).nullable().optional()
-    })
+    customerId: z.string().optional(),
+    customerTypeId: z.string().optional(),
+    itemId: z.string(),
+    itemPostingGroupId: z.string().optional(),
+    quantity: z.number(),
+    date: z.string().optional(),
+    existingBasePrice: z.number().optional(),
+    configuration: z.record(z.string(), z.unknown()).nullable().optional()
   }),
   permission: { update: "sales" },
   async run(ctx, input) {
@@ -6751,7 +6749,7 @@ export const resolvePrice = defineServiceFn({
       await service.resolvePrice(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.input, ["companyId"]) as never
+        stamp(ctx, input, ["companyId"]) as never
       )
     );
   }
@@ -7698,11 +7696,7 @@ export const upsertQuoteLineAdditionalCharges = defineServiceFn({
       await service.upsertQuoteLineAdditionalCharges(
         ctx.asCaller.supabase,
         input.lineId as never,
-        stamp(ctx, input.update, [
-          "companyId",
-          "createdBy",
-          "updatedBy"
-        ]) as never
+        stamp(ctx, input.update, ["updatedBy"]) as never
       )
     );
   }

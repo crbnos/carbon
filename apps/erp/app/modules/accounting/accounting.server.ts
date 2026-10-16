@@ -2494,12 +2494,10 @@ export const getReportViews = defineServiceFn({
  */
 export const createReportView = defineServiceFn({
   input: z.looseObject({
-    view: z.looseObject({
-      reportKey: z.string(),
-      name: z.string(),
-      visibility: z.enum(["Private", "Company"]),
-      config: z.unknown()
-    })
+    reportKey: z.string(),
+    name: z.string(),
+    visibility: z.enum(["Private", "Company"]),
+    config: z.unknown()
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -2509,7 +2507,7 @@ export const createReportView = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.view,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "create"
         ) as never
@@ -2528,13 +2526,11 @@ export const createReportView = defineServiceFn({
  */
 export const updateReportView = defineServiceFn({
   input: z.looseObject({
-    view: z.looseObject({
-      id: z.string(),
-      reportKey: z.string(),
-      name: z.string(),
-      visibility: z.enum(["Private", "Company"]),
-      config: z.unknown()
-    })
+    id: z.string(),
+    reportKey: z.string(),
+    name: z.string(),
+    visibility: z.enum(["Private", "Company"]),
+    config: z.unknown()
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
@@ -2544,7 +2540,7 @@ export const updateReportView = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.view,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "update"
         ) as never
@@ -3272,7 +3268,7 @@ export const createAccount = defineServiceFn({
         stamp(
           ctx,
           input,
-          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          ["createdBy", "updatedBy", "companyGroupId"],
           "create"
         ) as never
       )
@@ -3339,7 +3335,7 @@ export const updateAccount = defineServiceFn({
         stamp(
           ctx,
           input,
-          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          ["createdBy", "updatedBy", "companyGroupId"],
           "update"
         ) as never
       )
@@ -3765,47 +3761,46 @@ export const getDimension = defineServiceFn({
  */
 export const createDimension = defineServiceFn({
   input: z.looseObject({
-    dimension: z.looseObject({
-      name: z.string().min(1),
-      entityType: z.enum([
-        "CostCenter",
-        "Custom",
-        "Customer",
-        "CustomerType",
-        "Department",
-        "Employee",
-        "FixedAssetClass",
-        "Item",
-        "ItemPostingGroup",
-        "Location",
-        "Process",
-        "Project",
-        "ScrapReason",
-        "Supplier",
-        "SupplierType",
-        "WorkCenter"
-      ]),
-      active: z.boolean().optional(),
-      required: z.boolean().optional()
-    }),
+    name: z.string().min(1),
+    entityType: z.enum([
+      "CostCenter",
+      "Custom",
+      "Customer",
+      "CustomerType",
+      "Department",
+      "Employee",
+      "FixedAssetClass",
+      "Item",
+      "ItemPostingGroup",
+      "Location",
+      "Process",
+      "Project",
+      "ScrapReason",
+      "Supplier",
+      "SupplierType",
+      "WorkCenter"
+    ]),
+    active: z.boolean().optional(),
+    required: z.boolean().optional(),
     dimensionValues: z.array(z.string()).optional()
   }),
   permission: { create: "accounting" },
   async run(ctx, input) {
+    const { dimensionValues, ...dimension } = input;
     return envelope(
       ctx,
       await service.upsertDimension(
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.dimension,
-          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          dimension,
+          ["createdBy", "updatedBy", "companyGroupId"],
           "create"
         ) as never,
         stamp(
           ctx,
-          input.dimensionValues,
-          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          dimensionValues,
+          ["createdBy", "updatedBy", "companyGroupId"],
           "create"
         ) as never
       )
@@ -3823,48 +3818,47 @@ export const createDimension = defineServiceFn({
  */
 export const updateDimension = defineServiceFn({
   input: z.looseObject({
-    dimension: z.looseObject({
-      name: z.string().min(1),
-      entityType: z.enum([
-        "CostCenter",
-        "Custom",
-        "Customer",
-        "CustomerType",
-        "Department",
-        "Employee",
-        "FixedAssetClass",
-        "Item",
-        "ItemPostingGroup",
-        "Location",
-        "Process",
-        "Project",
-        "ScrapReason",
-        "Supplier",
-        "SupplierType",
-        "WorkCenter"
-      ]),
-      active: z.boolean().optional(),
-      required: z.boolean().optional(),
-      id: z.string()
-    }),
+    name: z.string().min(1),
+    entityType: z.enum([
+      "CostCenter",
+      "Custom",
+      "Customer",
+      "CustomerType",
+      "Department",
+      "Employee",
+      "FixedAssetClass",
+      "Item",
+      "ItemPostingGroup",
+      "Location",
+      "Process",
+      "Project",
+      "ScrapReason",
+      "Supplier",
+      "SupplierType",
+      "WorkCenter"
+    ]),
+    active: z.boolean().optional(),
+    required: z.boolean().optional(),
+    id: z.string(),
     dimensionValues: z.array(z.string()).optional()
   }),
   permission: { update: "accounting" },
   async run(ctx, input) {
+    const { dimensionValues, ...dimension } = input;
     return envelope(
       ctx,
       await service.upsertDimension(
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.dimension,
-          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          dimension,
+          ["createdBy", "updatedBy", "companyGroupId"],
           "update"
         ) as never,
         stamp(
           ctx,
-          input.dimensionValues,
-          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          dimensionValues,
+          ["createdBy", "updatedBy", "companyGroupId"],
           "update"
         ) as never
       )
@@ -4317,7 +4311,9 @@ export const createFixedAssetClass = defineServiceFn({
  * @mcp
  */
 export const updateFixedAssetClass = defineServiceFn({
-  input: z.looseObject({ data: z.looseObject({ id: z.string() }) }),
+  input: z.looseObject({
+    id: z.string()
+  }),
   permission: { update: "accounting" },
   async run(ctx, input) {
     return envelope(
@@ -4326,7 +4322,7 @@ export const updateFixedAssetClass = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.data,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "update"
         ) as never

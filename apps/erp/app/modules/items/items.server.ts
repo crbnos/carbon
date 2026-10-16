@@ -4310,7 +4310,7 @@ export const upsertItemCost = defineServiceFn({
       ctx,
       await service.upsertItemCost(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        stamp(ctx, input, ["updatedBy"]) as never
       )
     );
   }
@@ -4543,7 +4543,7 @@ export const upsertItemUnitSalePrice = defineServiceFn({
       ctx,
       await service.upsertItemUnitSalePrice(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        stamp(ctx, input, ["updatedBy"]) as never
       )
     );
   }
@@ -6197,10 +6197,8 @@ export const getChangeNoticeType = defineServiceFn({
  */
 export const createChangeNoticeType = defineServiceFn({
   input: z.looseObject({
-    changeNoticeType: z.looseObject({
-      name: z.string(),
-      customFields: z.unknown().optional()
-    })
+    name: z.string(),
+    customFields: z.unknown().optional()
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
@@ -6210,7 +6208,7 @@ export const createChangeNoticeType = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.changeNoticeType,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "create"
         ) as never
@@ -6229,11 +6227,9 @@ export const createChangeNoticeType = defineServiceFn({
  */
 export const updateChangeNoticeType = defineServiceFn({
   input: z.looseObject({
-    changeNoticeType: z.looseObject({
-      id: z.string(),
-      name: z.string(),
-      customFields: z.unknown().optional()
-    })
+    id: z.string(),
+    name: z.string(),
+    customFields: z.unknown().optional()
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -6243,7 +6239,7 @@ export const updateChangeNoticeType = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.changeNoticeType,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "update"
         ) as never

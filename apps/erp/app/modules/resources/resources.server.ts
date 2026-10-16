@@ -2937,16 +2937,14 @@ export const updateTrainingQuestionOrder = defineServiceFn({
  */
 export const createContractor = defineServiceFn({
   input: z.looseObject({
-    contractorWithAbilities: z.looseObject({
-      id: z
-        .string()
-        .describe(
-          "Updates the existing record with this key; creates one when there is none."
-        ),
-      hoursPerWeek: z.number().optional(),
-      abilities: z.array(z.string()),
-      customFields: z.unknown().optional()
-    })
+    id: z
+      .string()
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    hoursPerWeek: z.number().optional(),
+    abilities: z.array(z.string()),
+    customFields: z.unknown().optional()
   }),
   permission: { create: "resources" },
   async run(ctx, input) {
@@ -2956,7 +2954,7 @@ export const createContractor = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.contractorWithAbilities,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "create"
         ) as never
@@ -2975,16 +2973,14 @@ export const createContractor = defineServiceFn({
  */
 export const updateContractor = defineServiceFn({
   input: z.looseObject({
-    contractorWithAbilities: z.looseObject({
-      id: z
-        .string()
-        .describe(
-          "Updates the existing record with this key; creates one when there is none."
-        ),
-      hoursPerWeek: z.number().optional(),
-      abilities: z.array(z.string()),
-      customFields: z.unknown().optional()
-    })
+    id: z
+      .string()
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    hoursPerWeek: z.number().optional(),
+    abilities: z.array(z.string()),
+    customFields: z.unknown().optional()
   }),
   permission: { update: "resources" },
   async run(ctx, input) {
@@ -2994,7 +2990,7 @@ export const updateContractor = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.contractorWithAbilities,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "update"
         ) as never

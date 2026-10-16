@@ -6019,17 +6019,15 @@ export const upsertPurchasingRFQ = defineServiceFn({
  */
 export const createPurchasingRFQLine = defineServiceFn({
   input: z.looseObject({
-    purchasingRfqLine: z.looseObject({
-      purchasingRfqId: z.string(),
-      itemId: z.string(),
-      description: z.string().optional(),
-      quantity: z.array(z.number()),
-      purchaseUnitOfMeasureCode: z.string(),
-      inventoryUnitOfMeasureCode: z.string(),
-      conversionFactor: z.number().optional(),
-      order: z.number(),
-      customFields: z.unknown().optional()
-    })
+    purchasingRfqId: z.string(),
+    itemId: z.string(),
+    description: z.string().optional(),
+    quantity: z.array(z.number()),
+    purchaseUnitOfMeasureCode: z.string(),
+    inventoryUnitOfMeasureCode: z.string(),
+    conversionFactor: z.number().optional(),
+    order: z.number(),
+    customFields: z.unknown().optional()
   }),
   permission: { create: "purchasing" },
   async run(ctx, input) {
@@ -6039,7 +6037,7 @@ export const createPurchasingRFQLine = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.purchasingRfqLine,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "create"
         ) as never
@@ -6058,18 +6056,16 @@ export const createPurchasingRFQLine = defineServiceFn({
  */
 export const updatePurchasingRFQLine = defineServiceFn({
   input: z.looseObject({
-    purchasingRfqLine: z.looseObject({
-      id: z.string(),
-      purchasingRfqId: z.string(),
-      itemId: z.string(),
-      description: z.string().optional(),
-      quantity: z.array(z.number()),
-      purchaseUnitOfMeasureCode: z.string(),
-      inventoryUnitOfMeasureCode: z.string(),
-      conversionFactor: z.number().optional(),
-      order: z.number(),
-      customFields: z.unknown().optional()
-    })
+    id: z.string(),
+    purchasingRfqId: z.string(),
+    itemId: z.string(),
+    description: z.string().optional(),
+    quantity: z.array(z.number()),
+    purchaseUnitOfMeasureCode: z.string(),
+    inventoryUnitOfMeasureCode: z.string(),
+    conversionFactor: z.number().optional(),
+    order: z.number(),
+    customFields: z.unknown().optional()
   }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
@@ -6079,7 +6075,7 @@ export const updatePurchasingRFQLine = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(
           ctx,
-          input.purchasingRfqLine,
+          input,
           ["companyId", "createdBy", "updatedBy"],
           "update"
         ) as never

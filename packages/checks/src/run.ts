@@ -60,6 +60,10 @@ import { routeActionShape } from "./conformance/route-action-shape";
 import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 import { serviceFnFile } from "./conformance/service-fn-file";
 import { spdxLicenseHeader } from "./conformance/spdx-license-header";
+import {
+  findStampColumnMismatches,
+  STAMP_MATCHES_COLUMNS
+} from "./conformance/stamp-matches-columns";
 import { loadDbTableColumns } from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
 import {
@@ -68,7 +72,11 @@ import {
 } from "./sources/edge-functions";
 import { loadLicenseFiles } from "./sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
-import { loadModules, modulesDir } from "./sources/modules";
+import {
+  loadModuleServerFiles,
+  loadModules,
+  modulesDir
+} from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
 import {
   loadTypescriptFiles,
@@ -206,7 +214,11 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ),
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
-    )
+    ),
+    ...findStampColumnMismatches(
+      loadModuleServerFiles(root),
+      loadDbTableColumns(root)
+    ).map((violation) => ({ checkId: STAMP_MATCHES_COLUMNS, violation }))
   ];
 }
 

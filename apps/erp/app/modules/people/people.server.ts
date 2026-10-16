@@ -765,7 +765,7 @@ export const insertAttribute = defineServiceFn({
       ctx,
       await service.insertAttribute(
         ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+        stamp(ctx, input, ["createdBy"]) as never
       )
     );
   }

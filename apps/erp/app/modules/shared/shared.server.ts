@@ -1111,11 +1111,9 @@ export const insertNote = defineServiceFn({
  */
 export const insertTag = defineServiceFn({
   input: z.looseObject({
-    tag: z.looseObject({
-      createdAt: z.string().optional(),
-      name: z.string(),
-      table: z.string()
-    })
+    createdAt: z.string().optional(),
+    name: z.string(),
+    table: z.string()
   }),
   permission: {},
   async run(ctx, input) {
@@ -1123,7 +1121,7 @@ export const insertTag = defineServiceFn({
       ctx,
       await service.insertTag(
         ctx.asCaller.supabase,
-        stamp(ctx, input.tag, ["companyId", "createdBy", "updatedBy"]) as never
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
       )
     );
   }

@@ -7042,45 +7042,43 @@ export const updateProcedureStepOrder = defineServiceFn({
  */
 export const insertJob = defineServiceFn({
   input: z.looseObject({
-    input: z.looseObject({
-      itemId: z.string(),
-      quantity: z.number(),
-      jobId: z.string().optional(),
-      locationId: z.string().optional(),
-      dueDate: z.string().optional(),
-      startDate: z.string().optional(),
-      priority: z.number().optional(),
-      status: z
-        .enum([
-          "Draft",
-          "Planned",
-          "Ready",
-          "In Progress",
-          "Paused",
-          "Completed",
-          "Closed",
-          "Cancelled",
-          "Overdue",
-          "Due Today"
-        ])
-        .optional(),
-      deadlineType: z
-        .enum(["ASAP", "Hard Deadline", "Soft Deadline", "No Deadline"])
-        .optional(),
-      storageUnitId: z.string().optional(),
-      unitOfMeasureCode: z.string().optional(),
-      customerId: z.string().optional(),
-      salesOrderId: z.string().optional(),
-      salesOrderLineId: z.string().optional(),
-      quoteId: z.string().optional(),
-      quoteLineId: z.string().optional(),
-      modelUploadId: z.string().optional(),
-      notes: z.string().optional(),
-      customFields: z.unknown().optional(),
-      configuration: z.record(z.string(), z.unknown()).optional(),
-      fixedAssetClassId: z.string().nullable().optional(),
-      fixedAssetId: z.string().nullable().optional()
-    }),
+    itemId: z.string(),
+    quantity: z.number(),
+    jobId: z.string().optional(),
+    locationId: z.string().optional(),
+    dueDate: z.string().optional(),
+    startDate: z.string().optional(),
+    priority: z.number().optional(),
+    status: z
+      .enum([
+        "Draft",
+        "Planned",
+        "Ready",
+        "In Progress",
+        "Paused",
+        "Completed",
+        "Closed",
+        "Cancelled",
+        "Overdue",
+        "Due Today"
+      ])
+      .optional(),
+    deadlineType: z
+      .enum(["ASAP", "Hard Deadline", "Soft Deadline", "No Deadline"])
+      .optional(),
+    storageUnitId: z.string().optional(),
+    unitOfMeasureCode: z.string().optional(),
+    customerId: z.string().optional(),
+    salesOrderId: z.string().optional(),
+    salesOrderLineId: z.string().optional(),
+    quoteId: z.string().optional(),
+    quoteLineId: z.string().optional(),
+    modelUploadId: z.string().optional(),
+    notes: z.string().optional(),
+    customFields: z.unknown().optional(),
+    configuration: z.record(z.string(), z.unknown()).optional(),
+    fixedAssetClassId: z.string().nullable().optional(),
+    fixedAssetId: z.string().nullable().optional(),
     options: z
       .looseObject({
         skipMethod: z.boolean().optional(),
@@ -7104,21 +7102,14 @@ export const insertJob = defineServiceFn({
   }),
   permission: { create: "production" },
   async run(ctx, input) {
+    const { options, ...job } = input;
     return envelope(
       ctx,
       await service.insertJob(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, input.input, [
-          "companyId",
-          "createdBy",
-          "updatedBy"
-        ]) as never,
-        stamp(ctx, input.options, [
-          "companyId",
-          "createdBy",
-          "updatedBy"
-        ]) as never
+        stamp(ctx, job, ["companyId", "createdBy", "updatedBy"]) as never,
+        stamp(ctx, options, ["companyId", "createdBy", "updatedBy"]) as never
       )
     );
   }
@@ -8967,118 +8958,116 @@ export const deleteAssemblyInstruction = defineServiceFn({
  */
 export const upsertAssemblyInstructionStep = defineServiceFn({
   input: z.looseObject({
-    data: z.looseObject({
-      title: z.string().nullable().optional(),
-      type: z
-        .enum([
-          "Value",
-          "Measurement",
-          "Checkbox",
-          "Timestamp",
-          "Person",
-          "List",
-          "File",
-          "Task",
-          "Inspection"
-        ])
-        .optional(),
-      description: z.unknown().optional(),
-      required: z.boolean().optional(),
-      unitOfMeasureCode: z.string().nullable().optional(),
-      minValue: z.number().nullable().optional(),
-      maxValue: z.number().nullable().optional(),
-      listValues: z.array(z.string()).nullable().optional(),
-      componentNodeIds: z.array(z.string()).optional(),
-      motion: z
-        .union([
-          z.looseObject({
-            type: z.literal("linear"),
-            direction: z.tuple([z.number(), z.number(), z.number()]),
-            distance: z.number().gt(0)
-          }),
-          z.looseObject({
-            type: z.literal("L"),
-            segments: z
-              .array(
-                z.looseObject({
-                  direction: z.tuple([z.number(), z.number(), z.number()]),
-                  distance: z.number().gt(0)
-                })
-              )
-              .min(2)
-          }),
-          z.looseObject({
-            type: z.literal("helix"),
-            axis: z.tuple([z.number(), z.number(), z.number()]),
-            origin: z.tuple([z.number(), z.number(), z.number()]),
-            pitch: z.number().gt(0),
-            turns: z.number().gt(0),
-            approach: z.number().min(0)
-          }),
-          z.looseObject({
-            type: z.literal("path"),
-            keyframes: z
-              .array(
-                z.looseObject({
-                  t: z.number().min(0).max(1),
-                  position: z.tuple([z.number(), z.number(), z.number()]),
-                  quaternion: z.tuple([
-                    z.number(),
-                    z.number(),
-                    z.number(),
-                    z.number()
-                  ])
-                })
-              )
-              .min(2)
-          }),
-          z.looseObject({
-            type: z.literal("waypoints"),
-            waypoints: z
-              .array(
-                z.looseObject({
-                  offset: z.tuple([z.number(), z.number(), z.number()]),
-                  rotation: z.tuple([
-                    z.number(),
-                    z.number(),
-                    z.number(),
-                    z.number()
-                  ])
-                })
-              )
-              .min(2)
-          }),
-          z.looseObject({ type: z.literal("none") })
-        ])
-        .optional(),
-      camera: z
-        .union([
-          z.looseObject({
-            position: z.tuple([z.number(), z.number(), z.number()]),
-            target: z.tuple([z.number(), z.number(), z.number()]),
-            fov: z.number().gt(0)
-          }),
-          z.looseObject({
-            source: z.literal("plan"),
-            direction: z.tuple([z.number(), z.number(), z.number()])
-          })
-        ])
-        .nullable()
-        .optional(),
-      fastener: z
-        .looseObject({
-          spec: z.string().optional(),
-          count: z.number().int().gt(0).optional(),
-          torqueNm: z.number().gt(0).optional(),
-          tool: z.string().optional()
+    title: z.string().nullable().optional(),
+    type: z
+      .enum([
+        "Value",
+        "Measurement",
+        "Checkbox",
+        "Timestamp",
+        "Person",
+        "List",
+        "File",
+        "Task",
+        "Inspection"
+      ])
+      .optional(),
+    description: z.unknown().optional(),
+    required: z.boolean().optional(),
+    unitOfMeasureCode: z.string().nullable().optional(),
+    minValue: z.number().nullable().optional(),
+    maxValue: z.number().nullable().optional(),
+    listValues: z.array(z.string()).nullable().optional(),
+    componentNodeIds: z.array(z.string()).optional(),
+    motion: z
+      .union([
+        z.looseObject({
+          type: z.literal("linear"),
+          direction: z.tuple([z.number(), z.number(), z.number()]),
+          distance: z.number().gt(0)
+        }),
+        z.looseObject({
+          type: z.literal("L"),
+          segments: z
+            .array(
+              z.looseObject({
+                direction: z.tuple([z.number(), z.number(), z.number()]),
+                distance: z.number().gt(0)
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({
+          type: z.literal("helix"),
+          axis: z.tuple([z.number(), z.number(), z.number()]),
+          origin: z.tuple([z.number(), z.number(), z.number()]),
+          pitch: z.number().gt(0),
+          turns: z.number().gt(0),
+          approach: z.number().min(0)
+        }),
+        z.looseObject({
+          type: z.literal("path"),
+          keyframes: z
+            .array(
+              z.looseObject({
+                t: z.number().min(0).max(1),
+                position: z.tuple([z.number(), z.number(), z.number()]),
+                quaternion: z.tuple([
+                  z.number(),
+                  z.number(),
+                  z.number(),
+                  z.number()
+                ])
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({
+          type: z.literal("waypoints"),
+          waypoints: z
+            .array(
+              z.looseObject({
+                offset: z.tuple([z.number(), z.number(), z.number()]),
+                rotation: z.tuple([
+                  z.number(),
+                  z.number(),
+                  z.number(),
+                  z.number()
+                ])
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({ type: z.literal("none") })
+      ])
+      .optional(),
+    camera: z
+      .union([
+        z.looseObject({
+          position: z.tuple([z.number(), z.number(), z.number()]),
+          target: z.tuple([z.number(), z.number(), z.number()]),
+          fov: z.number().gt(0)
+        }),
+        z.looseObject({
+          source: z.literal("plan"),
+          direction: z.tuple([z.number(), z.number(), z.number()])
         })
-        .nullable()
-        .optional(),
-      durationSeconds: z.number().nullable().optional(),
-      id: z.string().optional(),
-      assemblyInstructionId: z.string(),
-      sortOrder: z.number().optional()
-    })
+      ])
+      .nullable()
+      .optional(),
+    fastener: z
+      .looseObject({
+        spec: z.string().optional(),
+        count: z.number().int().gt(0).optional(),
+        torqueNm: z.number().gt(0).optional(),
+        tool: z.string().optional()
+      })
+      .nullable()
+      .optional(),
+    durationSeconds: z.number().nullable().optional(),
+    id: z.string().optional(),
+    assemblyInstructionId: z.string(),
+    sortOrder: z.number().optional()
   }),
   permission: { create: "production", update: "production" },
   async run(ctx, input) {
@@ -9086,7 +9075,7 @@ export const upsertAssemblyInstructionStep = defineServiceFn({
       ctx,
       await service.upsertAssemblyInstructionStep(
         ctx.asCaller.supabase,
-        stamp(ctx, input.data, ["companyId", "createdBy", "updatedBy"]) as never
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
       )
     );
   }

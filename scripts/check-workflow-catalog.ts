@@ -139,12 +139,9 @@ const tools = new Map<string, ToolMeta>(
   ).tools.map((tool) => [tool.name, tool])
 );
 
-/** A nested `{ input: {...} }` schema describes the wrapper, not the fields the
- * action supplies; unwrap so the required list is comparable. */
+/** An action sends its inputs flat, as the operation's top-level fields. */
 function requiredParamsOf(tool: ToolMeta): string[] {
-  const outer = tool.schema;
-  const inner = outer?.properties?.input as ToolMeta["schema"] | undefined;
-  return (inner?.required ?? outer?.required ?? []) as string[];
+  return tool.schema?.required ?? [];
 }
 
 for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
@@ -173,6 +170,17 @@ for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
       `Action "${id}" calls "${call}", which requires ${missing
         .map((p) => `"${p}"`)
         .join(", ")} — not declared as an input.`
+    );
+  }
+  // Inputs go out flat, so each must be a top-level field of the operation;
+  // anything else passes validation unread.
+  const fields = tool.schema?.properties ?? {};
+  const unread = Object.keys(inputs).filter((name) => !(name in fields));
+  if (unread.length > 0) {
+    fail(
+      `Action "${id}" calls "${call}", which has no field ${unread
+        .map((p) => `"${p}"`)
+        .join(", ")} — the operation would never read it.`
     );
   }
 }
