@@ -134,19 +134,6 @@ describe("mcp tool-metadata generator", () => {
     expect(email?.format).toBe("email");
   });
 
-  // A union/intersection AROUND a validator reference publishes the
-  // intersection extras, not the validator verbatim. `jobId` is NOT NULL in
-  // the DB but lived only in the `& { jobId: string }` extras, so the schema
-  // omitted it and a schema-exact create failed with a 23502 — an MCP agent
-  // found this live. Required only where required in EVERY union branch, so a
-  // create-only `Omit<…, "id">` branch demotes `id` to optional.
-  it("publishes intersection extras on discriminated upserts", () => {
-    const quoteMaterial = get("sales_upsertQuoteMaterial");
-    expect(quoteMaterial.schema.required).toContain("quoteId");
-    expect(quoteMaterial.schema.required).toContain("quoteLineId");
-
-  });
-
   // `zfd.text(z.string().transform((v) => v === "true"))` — the form-post
   // boolean — publishes its two legal values instead of a bare string. An MCP
   // agent passing real booleans got an opaque validation failure.
@@ -230,12 +217,6 @@ describe("mcp tool-metadata generator", () => {
   // alias declared in items.service.ts, so it must resolve to real properties
   // rather than an opaque {}.
   it("resolves module-local type aliases and Partial wrappers", () => {
-    const input = props(get("items_diffMethod")).input;
-    const inputBranches = input?.anyOf ?? [input];
-    expect(
-      Object.keys(inputBranches[0]?.properties ?? {}).length
-    ).toBeGreaterThan(0);
-
     // updateAbility takes an optional `name` and an optional cadence, so the
     // published schema has both fields and no required list.
     const ability = props(get("resources_updateAbility")).ability;
@@ -290,10 +271,6 @@ describe("mcp tool-metadata generator", () => {
   });
 
   it("gives an upsert rule to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
-    // Inverted, id required either way — looked up.
-    expect(get("sales_upsertQuoteMaterial").upsert?.lookups).toEqual([
-      { table: "quoteMaterial", match: { id: "id" } }
-    ]);
     expect(get("resources_upsertPartner").upsert?.lookups).toEqual([
       { table: "partner", match: { id: "id" } }
     ]);

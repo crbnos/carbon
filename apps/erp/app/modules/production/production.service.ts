@@ -1360,7 +1360,6 @@ export async function getJobMaterialsWithQuantityOnHand(
 }
 
 // Distinct item ids on a job — scopes the Materials-page Item filter.
-/** @mcp read */
 export async function getJobMaterialItemIds(
   client: SupabaseClient<Database>,
   jobId: string,

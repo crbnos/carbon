@@ -1078,7 +1078,6 @@ export async function insertSalesInvoice(
   };
 }
 
-/** @mcp update */
 export async function updateSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1590,7 +1589,6 @@ export async function updateReimbursement(
  *
  * Delete-all-then-reinsert rather than a diff: the editor submits the whole
  * line set as one field, so a diff would be more code for the same result.
- * @mcp upsert destructive
  */
 export async function upsertReimbursementLines(
   db: Kysely<KyselyDatabase>,

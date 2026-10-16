@@ -8963,9 +8963,6 @@ export type DiffMethodResult = {
 // rows (live method rows as `base`, CO-staged rows as `target`), and optionally
 // the per-operation child buckets to also diff steps/parameters/tools, and the
 // two items' supplier parts.
-/**
- * @mcp read
- */
 export function diffMethod(input: DiffMethodInput): DiffMethodResult {
   return {
     materials: diffRows(

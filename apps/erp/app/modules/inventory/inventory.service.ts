@@ -1047,7 +1047,6 @@ export async function getStorageUnitsList(
   );
 }
 
-/** @mcp read */
 export async function getStorageUnitsListForLocation(
   client: SupabaseClient<Database>,
   companyId: string,

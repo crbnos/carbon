@@ -1654,7 +1654,6 @@ export async function getQuoteOperationsByLine(
     .eq("quoteLineId", quoteLineId);
 }
 
-/** @mcp read */
 export async function getQuoteOperationsByMethodId(
   client: SupabaseClient<Database>,
   quoteMakeMethodId: string
@@ -2261,7 +2260,6 @@ export async function finalizeQuote(
   return lineUpdate;
 }
 
-/** @mcp update */
 export async function releaseSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string,
@@ -5578,10 +5576,6 @@ export async function upsertQuoteLineMethod(
     .invoke("get-method", body);
 }
 
-/**
- * @mcp upsert
- * @mcp key quoteMaterial id
- */
 export async function upsertQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterial:
