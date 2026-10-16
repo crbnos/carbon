@@ -50,7 +50,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(source).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.inventory.shipment.create(input.data);
+  const result = await api.inventory.createShipment(input.data);
   if (!result.data) {
     return respond(args.request, result).redirect(sourcePath(input.data), {
       message: ""

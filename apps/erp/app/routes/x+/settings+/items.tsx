@@ -75,7 +75,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(itemsSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.items.update(input.data);
+  return api.settings.updateItemsSettings(input.data);
 }
 
 export default function ItemsSettingsRoute() {

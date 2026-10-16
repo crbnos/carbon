@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   const { quoteId } = input.params;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.sales.quote.line.create({
+  const result = await api.sales.createQuoteLine({
     ...input.data,
     // The URL quote, not the form's copy.
     quoteId,

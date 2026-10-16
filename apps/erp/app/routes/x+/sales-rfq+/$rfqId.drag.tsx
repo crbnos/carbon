@@ -19,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.sales.rfq.attachFile(input.data.payload);
+  const result = await api.sales.attachSalesRfqFile(input.data.payload);
   // Nothing reads a successful drop; a failure is shown on the RFQ.
   if (result.error) {
     return respond(args.request, result).redirect(

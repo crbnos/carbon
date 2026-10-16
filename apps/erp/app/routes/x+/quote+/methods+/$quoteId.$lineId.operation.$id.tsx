@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.sales.quote.operation.update({
+  return api.sales.updateQuoteOperation({
     ...input.data,
     id: input.params.id,
     quoteId: input.params.quoteId,

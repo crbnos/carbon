@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(form).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.accounting.depreciationRun.create({
+  const result = await api.accounting.createDepreciationRun({
     periodEnd: input.data.periodEnd || undefined
   });
   return respond(args.request, result).redirect(

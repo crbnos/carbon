@@ -41,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
           "The amendment is incomplete"
       };
     }
-    const result = await api.sales.contract.previewAmendment({
+    const result = await api.sales.previewContractAmendment({
       ...amendment.data,
       customerContractId: id
     });
@@ -52,7 +52,7 @@ export async function action(args: ActionFunctionArgs) {
     customerContractAmendmentValidator
   ).validate(formData);
   if (amendment.error) return validationError(amendment.error);
-  const result = await api.sales.contract.amend({
+  const result = await api.sales.amendContract({
     ...amendment.data,
     customerContractId: id
   });

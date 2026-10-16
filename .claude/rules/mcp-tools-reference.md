@@ -268,7 +268,7 @@ These are published from the ERP router, not from a `*.service.ts`:
   DESTRUCTIVE). The summary line is the `title` (OpenAPI summary), the summary
   plus `@remarks` the `description`. Classification otherwise comes from the
   permission: `view` only is READ, `delete` is DESTRUCTIVE, anything else WRITE.
-- **Named** by the router path: tool `production_job_release`, HTTP
+- **Named** by the router path: tool `production_releaseJobs`, HTTP
   `POST /api/v1/production/job/release` (`operationPath`). A name that a
   `*.service.ts` tool already has fails generation.
 - **Permission**: one module → the API gate checks it; several modules →

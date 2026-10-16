@@ -78,11 +78,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   switch (input.data.intent) {
     case "reprint":
-      return api.settings.printJob.reprint(input.data);
+      return api.settings.reprintPrintJob(input.data);
     case "delete":
-      return api.settings.printJob.delete(input.data);
+      return api.settings.deletePrintJob(input.data);
     case "viewContent":
-      return api.settings.printJob.viewContent(input.data);
+      return api.settings.viewPrintJobContent(input.data);
   }
 }
 

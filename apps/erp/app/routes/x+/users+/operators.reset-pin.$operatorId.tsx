@@ -74,7 +74,9 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["operatorId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.users.operator.resetPin({ operatorId: input.params.operatorId });
+  return api.users.resetConsoleOperatorPin({
+    operatorId: input.params.operatorId
+  });
 }
 
 export default function ResetPinRoute() {

@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   ).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.inspectionDocument.setDrawingNumber({
+  return api.quality.setInspectionDocumentDrawingNumber({
     id: input.params.id,
     drawingNumber: input.data.drawingNumber
   });

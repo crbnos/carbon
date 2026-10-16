@@ -46,7 +46,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(source).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.inventory.receipt.create(input.data);
+  const result = await api.inventory.createReceipt(input.data);
   if (!result.data) {
     return respond(args.request, result).redirect(sourcePath(input.data), {
       message: ""

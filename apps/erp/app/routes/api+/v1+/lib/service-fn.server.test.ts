@@ -57,7 +57,7 @@ import type { AuthedContext } from "./base.server";
 import { runServiceFn } from "./service-fn.server";
 
 const meta = {
-  name: "production_job_cancel",
+  name: "production_cancelJob",
   serviceFn: { path: ["production", "job", "cancel"] }
 } as ManifestEntry;
 

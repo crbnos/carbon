@@ -138,7 +138,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (formData.get("intent") === "apply") {
     const api = await carbon(request);
-    const result = await api.accounting.chartOfAccounts.import({
+    const result = await api.accounting.importChartOfAccounts({
       chart: chart.rows,
       defaults: defaults.rows,
       resolutions

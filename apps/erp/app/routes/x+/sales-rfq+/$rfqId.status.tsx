@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.sales.rfq.setStatus({
+  const result = await api.sales.setSalesRfqStatus({
     ...input.data,
     id: input.params.rfqId
   });

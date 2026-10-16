@@ -7,13 +7,7 @@ import type { Json } from "@carbon/database";
 import { CURRENT_DEFINITION_FORMAT_VERSION } from "@carbon/ee/workflows";
 import { z } from "zod";
 import { createNode, TRIGGER_POSITION } from "./ui/Builder/graph";
-import {
-  deleteWorkflow as deleteWorkflowRow,
-  insertWorkflow,
-  insertWorkflowVersion,
-  refuseUnlessWorkflowsEnabled,
-  syncAfterWorkflowDelete
-} from "./workflows.service";
+import * as service from "./workflows.service";
 
 /**
  * Create a workflow, with a first version holding only its trigger.
@@ -32,13 +26,13 @@ export const createWorkflow = defineServiceFn({
   permission: { create: "workflows" },
 
   async run(ctx, { name, description }) {
-    const gated = await refuseUnlessWorkflowsEnabled(ctx);
+    const gated = await service.refuseUnlessWorkflowsEnabled(ctx);
     if (gated) return gated;
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const created = await insertWorkflow(client, {
+    const created = await service.insertWorkflow(client, {
       name,
       description,
       companyId,
@@ -48,7 +42,7 @@ export const createWorkflow = defineServiceFn({
       return ctx.error("internal", "Failed to create workflow", created.error);
     }
 
-    const version = await insertWorkflowVersion(client, {
+    const version = await service.insertWorkflowVersion(client, {
       workflowId: created.data.id,
       companyId,
       versionNumber: 1,
@@ -84,10 +78,10 @@ export const deleteWorkflow = defineServiceFn({
   permission: { delete: "workflows" },
 
   async run(ctx, { id }) {
-    const gated = await refuseUnlessWorkflowsEnabled(ctx);
+    const gated = await service.refuseUnlessWorkflowsEnabled(ctx);
     if (gated) return gated;
 
-    const deleted = await deleteWorkflowRow(
+    const deleted = await service.deleteWorkflow(
       ctx.asCaller.supabase,
       id,
       ctx.company.id
@@ -96,7 +90,7 @@ export const deleteWorkflow = defineServiceFn({
       return ctx.error("internal", "Failed to delete workflow", deleted.error);
     }
 
-    await syncAfterWorkflowDelete(ctx.asSystem.pg, ctx.company.id, id);
+    await service.syncAfterWorkflowDelete(ctx.asSystem.pg, ctx.company.id, id);
     return { id };
   }
 });

@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...supplierPart } = input.data;
   const api = await carbon(args.request);
-  return api.items.supplierPart.create({
+  return api.items.createSupplierPart({
     ...supplierPart,
     customFields: input.formData && setCustomFields(input.formData)
   });

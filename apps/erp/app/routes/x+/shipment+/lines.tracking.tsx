@@ -31,5 +31,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(tracking).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.inventory.shipment.line.assignEntity(input.data);
+  return api.inventory.assignShipmentLineEntity(input.data);
 }

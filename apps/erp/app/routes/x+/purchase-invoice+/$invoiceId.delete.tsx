@@ -11,7 +11,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["invoiceId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.invoicing.purchaseInvoice.delete({
+  const result = await api.invoicing.deleteDraftPurchaseInvoice({
     invoiceId: input.params.invoiceId
   });
   return respond(args.request, result).redirect(path.to.invoicingPurchasing);

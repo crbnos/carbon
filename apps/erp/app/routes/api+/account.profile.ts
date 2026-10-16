@@ -44,7 +44,7 @@ export async function action(args: ActionFunctionArgs) {
 
   if (form.intent === "photo") {
     const api = await carbon(args.request);
-    return api.account.avatar.update({ path: form.path });
+    return api.account.updateOwnAvatar({ path: form.path });
   }
 
   const { request } = args;

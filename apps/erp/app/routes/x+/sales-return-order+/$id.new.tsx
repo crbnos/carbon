@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const orderId = input.params.id;
   const api = await carbon(args.request);
-  const result = await api.sales.returnOrder.line.create({
+  const result = await api.sales.createReturnOrderLine({
     ...input.data,
     // The URL order, not the form's copy.
     salesReturnOrderId: orderId,

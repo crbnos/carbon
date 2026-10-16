@@ -26,7 +26,7 @@ export async function action(args: ActionFunctionArgs) {
   const { status, cancelJobIds } = input.data;
 
   const api = await carbon(args.request);
-  const result = await api.sales.order.setStatus({
+  const result = await api.sales.setSalesOrderStatus({
     salesOrderId: orderId,
     status,
     cancelJobIds:

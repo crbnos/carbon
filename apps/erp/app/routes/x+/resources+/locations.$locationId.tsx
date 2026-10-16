@@ -46,7 +46,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.location.update({
+  const result = await api.resources.updateLocation({
     ...input.data,
     id: input.params.locationId,
     customFields: input.formData && setCustomFields(input.formData)

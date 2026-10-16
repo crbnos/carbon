@@ -54,7 +54,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.event.update({
+  const result = await api.production.updateProductionEvent({
     ...input.data,
     id: input.params.id
   });

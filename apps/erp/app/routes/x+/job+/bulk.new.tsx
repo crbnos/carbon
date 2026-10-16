@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(bulkJobValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.job.createMany({
+  const result = await api.production.createJobs({
     ...input.data,
     customFields: setCustomFields(input.formData ?? new FormData())
   });

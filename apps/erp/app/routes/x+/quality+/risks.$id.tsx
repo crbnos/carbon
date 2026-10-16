@@ -37,7 +37,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _, severity, likelihood, ...risk } = input.data;
   const api = await carbon(args.request);
-  const result = await api.quality.risk.update({
+  const result = await api.quality.updateRisk({
     ...risk,
     id: input.params.id,
     severity: Number.parseInt(severity ?? "1", 10),

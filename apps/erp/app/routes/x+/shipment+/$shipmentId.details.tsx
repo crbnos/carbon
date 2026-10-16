@@ -23,7 +23,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(shipmentValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.inventory.shipment.update({
+  const result = await api.inventory.updateShipment({
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });

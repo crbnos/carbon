@@ -26,20 +26,20 @@ export async function action(args: ActionFunctionArgs) {
 
   if ("intent" in input.data) {
     if (input.data.intent === "request-approval") {
-      const result = await api.purchasing.supplier.requestApproval({
+      const result = await api.purchasing.requestSupplierApproval({
         supplierId
       });
       return respond(args.request, result).redirect(to, {
         message: "Approval request submitted"
       });
     }
-    const result = await api.purchasing.supplier.deactivate({ supplierId });
+    const result = await api.purchasing.deactivateSupplier({ supplierId });
     return respond(args.request, result).redirect(to, {
       message: "Supplier deactivated"
     });
   }
 
-  const result = await api.purchasing.supplier.decideApproval({
+  const result = await api.purchasing.decideSupplierApproval({
     ...input.data,
     supplierId
   });

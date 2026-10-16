@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.sales.rfq.convert({
+  const result = await api.sales.convertSalesRfq({
     id: input.params.rfqId,
     acknowledged: input.data.acknowledged
   });

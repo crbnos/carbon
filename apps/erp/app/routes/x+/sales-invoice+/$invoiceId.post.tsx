@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.invoicing.salesInvoice.post({
+  const result = await api.invoicing.postSalesInvoice({
     ...input.data,
     invoiceId: input.params.invoiceId,
     acknowledged: input.formData?.get("acknowledged") === "true",

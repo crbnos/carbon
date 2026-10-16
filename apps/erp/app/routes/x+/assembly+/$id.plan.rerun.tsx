@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(rerunForm).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.assembly.replan({
+  return api.production.replanAssembly({
     id: input.params.id,
     fresh: input.data.fresh === "1"
   });

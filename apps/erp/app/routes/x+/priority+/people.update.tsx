@@ -55,17 +55,17 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(peopleForm).request(args);
   if ("invalid" in input) return input.invalid;
   const form = input.data;
-  const people = (await carbon(args.request)).production.people;
+  const people = (await carbon(args.request)).production;
 
   switch (form.intent) {
     case "assign":
-      return people.assign(form);
+      return people.assignPerson(form);
     case "unassign":
-      return people.unassign(form);
+      return people.unassignPerson(form);
     case "absent":
-      return people.markAbsent(form);
+      return people.markPersonAbsent(form);
     case "clear-absence":
-      return people.clearAbsence({
+      return people.clearPersonAbsence({
         id: form.id,
         date:
           form.date ??
@@ -73,24 +73,24 @@ export async function action(args: ActionFunctionArgs) {
           undefined
       });
     case "move":
-      return people.move(form);
+      return people.movePerson(form);
     case "day-hours":
-      return people.setDay(form);
+      return people.setPersonDay(form);
     case "hours":
-      return people.setHours(form);
+      return people.setPersonHours(form);
     case "overtime-bulk":
-      return people.setOvertime(form);
+      return people.setPeopleOvertime(form);
     case "copy":
-      return people.copyDay(form);
+      return people.copyPeopleDay(form);
     case "assign-week":
-      return people.assignWeek(form);
+      return people.assignPersonWeek(form);
     case "unassign-week":
-      return people.unassignWeek(form);
+      return people.unassignPersonWeek(form);
     case "move-week":
-      return people.moveWeek(form);
+      return people.movePersonWeek(form);
     case "copy-week":
-      return people.copyWeek(form);
+      return people.copyPeopleWeekBoard(form);
     case "absent-range":
-      return people.markAbsentRange(form);
+      return people.markPersonAbsentRange(form);
   }
 }

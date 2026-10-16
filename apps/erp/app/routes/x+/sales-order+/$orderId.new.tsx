@@ -26,7 +26,7 @@ export async function action(args: ActionFunctionArgs) {
   const { orderId } = input.params;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.sales.order.line.create({
+  const result = await api.sales.createSalesOrderLine({
     ...input.data,
     // The URL order, not the form's copy.
     salesOrderId: orderId,

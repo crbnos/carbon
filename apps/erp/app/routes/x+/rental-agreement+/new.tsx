@@ -49,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
   // The fleet register's Rent action opens this form with the unit to rent.
   const fixedAssetId = formData.get("fixedAssetId");
   const api = await carbon(args.request);
-  const result = await api.sales.rentalAgreement.create({
+  const result = await api.sales.createRentalAgreement({
     ...input.data,
     fixedAssetId:
       typeof fixedAssetId === "string" && fixedAssetId

@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { locationId, lines, acknowledged } = input.data;
   const api = await carbon(args.request);
-  const result = await api.inventory.stockTransfer.create({
+  const result = await api.inventory.createStockTransfer({
     locationId,
     lines,
     acknowledged,

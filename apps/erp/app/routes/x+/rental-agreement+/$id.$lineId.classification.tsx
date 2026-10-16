@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.rentalAgreement.unit.classify({
+  const result = await api.sales.classifyRentalUnit({
     ...input.data,
     rentalAgreementId: id,
     rentalAgreementLineId: lineId

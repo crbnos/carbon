@@ -170,7 +170,7 @@ export async function convertSupplierQuoteToOrder(
   });
 }
 
-/** Not published: `purchasing_purchaseOrder_delete` deletes, with the status and approval checks this skips. */
+/** Not published: `purchasing_deletePurchaseOrders` deletes, with the status and approval checks this skips. */
 export async function deletePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -476,7 +476,7 @@ export async function getPurchaseOrder(
     .single();
 }
 
-/** Not published: `purchasing_supplierQuote_finalize` finalizes, with the supplier contact rule and share link. */
+/** Not published: `purchasing_finalizeSupplierQuoteWithLink` finalizes, with the supplier contact rule and share link. */
 export async function finalizeSupplierQuote(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -488,7 +488,7 @@ export async function finalizeSupplierQuote(
     .invoke("finalize-supplier-quote", input);
 }
 
-/** Not published: `purchasing_rfq_finalize` sends an RFQ, and emails the suppliers. */
+/** Not published: `purchasing_finalizePurchasingRfqAndNotify` sends an RFQ, and emails the suppliers. */
 export async function finalizePurchasingRfq(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -1301,7 +1301,7 @@ export async function insertSupplierLocation(
     .single();
 }
 
-/** Not published: `purchasing_purchaseOrder_finalize` finalizes, and runs the approval rule this skips. */
+/** Not published: `purchasing_finalizePurchaseOrderAndNotify` finalizes, and runs the approval rule this skips. */
 export async function finalizePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string,
@@ -1334,7 +1334,7 @@ export async function finalizePurchaseOrder(
     .eq("id", purchaseOrderId);
 }
 
-/** Not published: `purchasing_supplierQuote_send` sends a quote, with its share link and email. */
+/** Not published: `purchasing_sendSupplierQuoteToSupplier` sends a quote, with its share link and email. */
 export async function sendSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string,
@@ -1409,7 +1409,7 @@ export async function updatePurchaseOrderFavorite(
   }
 }
 
-/** Not published: a bare status write skips approval. Use `purchasing_purchaseOrder_finalize`, `_reopen` or `_close`. */
+/** Not published: a bare status write skips approval. Use `purchasing_finalizePurchaseOrderAndNotify`, `_reopen` or `_close`. */
 export async function updatePurchaseOrderStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1430,7 +1430,7 @@ export async function updatePurchaseOrderStatus(
  * SQL, so concurrent requests can't share a revision number and an ineligible
  * order matches no rows. Returns rows updated — 0 means it was not eligible.
  *
- * Not published: `purchasing_purchaseOrder_reopen` with `createRevision` does it, with the permission and approval checks.
+ * Not published: `purchasing_reopenPurchaseOrder` with `createRevision` does it, with the permission and approval checks.
  */
 export async function reopenPurchaseOrderAsRevision(
   db: Kysely<KyselyDatabase>,
@@ -3159,7 +3159,7 @@ export async function getPurchasingRFQSuppliers(
     .eq("purchasingRfqId", purchasingRfqId);
 }
 
-/** Not published: `purchasing_rfq_create` creates an RFQ with its suppliers. */
+/** Not published: `purchasing_createPurchasingRfq` creates an RFQ with its suppliers. */
 export async function insertPurchasingRFQ(
   client: SupabaseClient<Database>,
   input: {
@@ -3982,7 +3982,7 @@ export async function updatePurchaseReturnOrder(
     .single();
 }
 
-/** Not published: `purchasing_purchaseReturnOrder_addLine` / `_updateLine` write a line, with the Draft and post-confirm checks this skips. */
+/** Not published: `purchasing_addReturnOrderLine` / `_updateLine` write a line, with the Draft and post-confirm checks this skips. */
 export async function upsertPurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   line:
@@ -4050,7 +4050,7 @@ export async function deletePurchaseReturnOrderLine(
   return client.from("purchaseReturnOrderLine").delete().eq("id", lineId);
 }
 
-/** Not published: `purchasing_purchaseReturnOrder_updateLine` sets a line's entities, with its lock check. */
+/** Not published: `purchasing_updateReturnOrderLine` sets a line's entities, with its lock check. */
 export async function setPurchaseReturnOrderLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineId: string,
@@ -4125,7 +4125,7 @@ export async function getPurchaseReturnOrderIssues(
  * serialize, and the aggregates are re-read under that lock
  * (replaceInvoiceSettlements pattern).
  *
- * Not published: `purchasing_purchaseReturnOrder_confirm` confirms, and stores the PDF.
+ * Not published: `purchasing_confirmReturnOrder` confirms, and stores the PDF.
  */
 export async function confirmPurchaseReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -4352,7 +4352,7 @@ export async function confirmPurchaseReturnOrder(
  * source lines (the confirm check excludes only "Cancelled"), so the
  * authorization it holds is unchanged — only its editability.
  *
- * Not published: `purchasing_purchaseReturnOrder_reopen` runs it.
+ * Not published: `purchasing_reopenReturnOrder` runs it.
  */
 export async function reopenPurchaseReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -4413,7 +4413,7 @@ export async function reopenPurchaseReturnOrder(
  * wins, and the loser sees the new state instead of producing a Cancelled
  * order with shipped stock (whose caps and Issue coverage then vanish).
  *
- * Not published: `purchasing_purchaseReturnOrder_cancel` runs it.
+ * Not published: `purchasing_cancelReturnOrder` runs it.
  */
 export async function cancelPurchaseReturnOrder(
   db: Kysely<KyselyDatabase>,

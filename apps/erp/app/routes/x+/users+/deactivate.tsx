@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { users, redirectTo } = input.data;
   const api = await carbon(args.request);
-  const result = await api.users.user.deactivate({
+  const result = await api.users.deactivateUsers({
     userIds: users,
     ip: originOf(args.request).ip
   });

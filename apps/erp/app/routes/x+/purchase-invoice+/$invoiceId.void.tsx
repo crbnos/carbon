@@ -10,7 +10,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["invoiceId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.invoicing.purchaseInvoice.void({
+  return api.invoicing.voidPurchaseInvoice({
     invoiceId: input.params.invoiceId
   });
 }

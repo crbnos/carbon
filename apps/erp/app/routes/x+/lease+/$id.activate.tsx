@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.lease.activate({ leaseId: id });
+  const result = await api.purchasing.activateLease({ leaseId: id });
   // A refusal goes back where Activate was pressed (the setup Review step):
   // the lease page sends a Draft to its setup anyway.
   return respond(args.request, result).redirect(path.to.leaseDetails(id), {

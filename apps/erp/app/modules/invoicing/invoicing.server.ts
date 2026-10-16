@@ -4,6 +4,12 @@
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import {
+  envelope,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
+import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument,
   isBlocked,
@@ -51,40 +57,8 @@ import {
   salesInvoiceLineValidator,
   salesInvoicePostValidator
 } from "./invoicing.models";
-import {
-  adjustTieOut,
-  checkDepositDocument,
-  deleteMemo as deleteMemoRow,
-  fieldUpdate,
-  fromServerFn,
-  getMemo,
-  getOpenReimbursementsForEmployee,
-  getPaymentCurrencyConfiguration,
-  getPurchaseInvoice,
-  insertPurchaseInvoice,
-  invoker,
-  linesBalanceHeader,
-  loadReimbursement,
-  partyCurrency,
-  preflightStripeSend,
-  recordSalesInvoiceLineOutcome,
-  refuseLockedInvoices,
-  replaceInvoiceSettlements,
-  type SalesRuleCheck,
-  type StripeSendContext,
-  salesInvoiceLineGate,
-  salesInvoiceLineRow,
-  seedPaymentApplications,
-  sendPostedSalesInvoice,
-  unlockedPurchaseInvoice,
-  unlockedSalesInvoice,
-  updateReimbursement as updateReimbursementRow,
-  upsertPayment,
-  upsertPurchaseInvoiceLine,
-  upsertReimbursementLines,
-  upsertSalesInvoiceLine,
-  writeInvoiceField
-} from "./invoicing.service";
+import type { SalesRuleCheck, StripeSendContext } from "./invoicing.service";
+import * as service from "./invoicing.service";
 
 const logger = getLogger("erp", "invoicing");
 
@@ -129,13 +103,13 @@ const salesInvoiceFields = [
  * currency brings today's exchange rate. An empty value clears the field.
  */
 export const updateSalesInvoiceField = defineServiceFn({
-  input: fieldUpdate(salesInvoiceFields),
+  input: service.fieldUpdate(salesInvoiceFields),
   permission: { update: "sales" },
 
   async run(ctx, { ids, field, value }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const locked = await refuseLockedInvoices(
+    const locked = await service.refuseLockedInvoices(
       ctx,
       "salesInvoice",
       ids,
@@ -151,7 +125,7 @@ export const updateSalesInvoiceField = defineServiceFn({
     if (field === "invoiceCustomerId") {
       if (!value)
         return ctx.error("validation", "Invoice customer is required");
-      const currency = await partyCurrency(ctx, "customer", value);
+      const currency = await service.partyCurrency(ctx, "customer", value);
       if (currency instanceof Error) return currency;
       const update = await client
         .from("salesInvoice")
@@ -217,7 +191,11 @@ export const updateSalesInvoiceField = defineServiceFn({
       return { ids };
     }
 
-    return writeInvoiceField(ctx, "salesInvoice", { ids, field, value });
+    return service.writeInvoiceField(ctx, "salesInvoice", {
+      ids,
+      field,
+      value
+    });
   }
 });
 const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
@@ -242,8 +220,8 @@ export const createSalesInvoiceLine = defineServiceFn({
   permission: { create: "invoicing" },
 
   async run(ctx, { id: _id, acknowledged, customFields, ...input }) {
-    const line = salesInvoiceLineRow(input);
-    const locked = await unlockedSalesInvoice(
+    const line = service.salesInvoiceLineRow(input);
+    const locked = await service.unlockedSalesInvoice(
       ctx,
       line.invoiceId,
       "Cannot modify a locked sales invoice. Reopen it first."
@@ -258,7 +236,7 @@ export const createSalesInvoiceLine = defineServiceFn({
         line.invoiceId,
         ctx.company.id
       );
-      const gate = await salesInvoiceLineGate(ctx, {
+      const gate = await service.salesInvoiceLineGate(ctx, {
         invoiceId: line.invoiceId,
         lineId: null,
         itemId: line.itemId,
@@ -270,12 +248,15 @@ export const createSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
-    const created = await upsertSalesInvoiceLine(ctx.asCaller.supabase, {
-      ...line,
-      companyId: ctx.company.id,
-      createdBy: ctx.auditUserId,
-      customFields
-    });
+    const created = await service.upsertSalesInvoiceLine(
+      ctx.asCaller.supabase,
+      {
+        ...line,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId,
+        customFields
+      }
+    );
     if (created.error) {
       return ctx.error(
         "internal",
@@ -285,7 +266,7 @@ export const createSalesInvoiceLine = defineServiceFn({
     }
 
     if (line.itemId && check.violations.length > 0) {
-      await recordSalesInvoiceLineOutcome(
+      await service.recordSalesInvoiceLineOutcome(
         ctx,
         {
           invoiceId: line.invoiceId,
@@ -316,13 +297,13 @@ export const updateSalesInvoiceLine = defineServiceFn({
   permission: { create: "invoicing" },
 
   async run(ctx, { id, acknowledged, customFields, ...input }) {
-    const line = salesInvoiceLineRow(input);
+    const line = service.salesInvoiceLineRow(input);
     const refused = await refuseUnlessOwned(ctx, "salesInvoiceLine", {
       id,
       invoiceId: line.invoiceId
     });
     if (refused) return refused;
-    const locked = await unlockedSalesInvoice(
+    const locked = await service.unlockedSalesInvoice(
       ctx,
       line.invoiceId,
       "Cannot modify a locked sales invoice. Reopen it first."
@@ -358,7 +339,7 @@ export const updateSalesInvoiceLine = defineServiceFn({
             line.invoiceId,
             ctx.company.id
           );
-      const gate = await salesInvoiceLineGate(ctx, {
+      const gate = await service.salesInvoiceLineGate(ctx, {
         invoiceId: line.invoiceId,
         lineId: id,
         itemId: line.itemId,
@@ -370,12 +351,15 @@ export const updateSalesInvoiceLine = defineServiceFn({
       check = gate.check;
     }
 
-    const updated = await upsertSalesInvoiceLine(ctx.asCaller.supabase, {
-      id,
-      ...line,
-      updatedBy: ctx.auditUserId,
-      customFields
-    });
+    const updated = await service.upsertSalesInvoiceLine(
+      ctx.asCaller.supabase,
+      {
+        id,
+        ...line,
+        updatedBy: ctx.auditUserId,
+        customFields
+      }
+    );
     if (updated.error) {
       return ctx.error(
         "internal",
@@ -385,7 +369,7 @@ export const updateSalesInvoiceLine = defineServiceFn({
     }
 
     if (line.itemId && check.violations.length > 0) {
-      await recordSalesInvoiceLineOutcome(
+      await service.recordSalesInvoiceLineOutcome(
         ctx,
         { invoiceId: line.invoiceId, lineId: id, itemId: line.itemId },
         "acknowledged",
@@ -411,7 +395,7 @@ export const deleteDraftSalesInvoiceLine = defineServiceFn({
   permission: { delete: "invoicing" },
 
   async run(ctx, { invoiceId, lineId }) {
-    const locked = await unlockedSalesInvoice(
+    const locked = await service.unlockedSalesInvoice(
       ctx,
       invoiceId,
       "Cannot delete lines on a locked sales invoice."
@@ -446,7 +430,7 @@ export const deleteDraftSalesInvoice = defineServiceFn({
   permission: { delete: "invoicing" },
 
   async run(ctx, { invoiceId }) {
-    const locked = await unlockedSalesInvoice(
+    const locked = await service.unlockedSalesInvoice(
       ctx,
       invoiceId,
       "Only a Draft sales invoice can be deleted."
@@ -498,12 +482,16 @@ export const voidSalesInvoice = defineServiceFn({
       return ctx.error("rule", "Can only void posted invoices");
     }
 
-    const voided = await invoker(ctx).invoke("post-sales-invoice", {
+    const voided = await service.invoker(ctx).invoke("post-sales-invoice", {
       type: "void",
       invoiceId
     });
     if (voided.error) {
-      return fromServerFn(ctx, voided.error, "Failed to void sales invoice");
+      return service.fromServerFn(
+        ctx,
+        voided.error,
+        "Failed to void sales invoice"
+      );
     }
     return { invoiceId };
   }
@@ -661,20 +649,24 @@ export const postSalesInvoice = defineServiceFn({
 
     let stripeSend: StripeSendContext | null = null;
     if (notification === "Stripe") {
-      const preflight = await preflightStripeSend(ctx, {
-        invoiceId,
-        customerContact,
-        stripeCustomerAction: input.stripeCustomerAction,
-        stripeCustomerId: input.stripeCustomerId,
-        stripeContactEmail: input.stripeContactEmail
-      }).catch(
-        (err: unknown) =>
-          ({
-            ok: false,
-            message:
-              err instanceof Error ? err.message : "the Stripe preflight failed"
-          }) as const
-      );
+      const preflight = await service
+        .preflightStripeSend(ctx, {
+          invoiceId,
+          customerContact,
+          stripeCustomerAction: input.stripeCustomerAction,
+          stripeCustomerId: input.stripeCustomerId,
+          stripeContactEmail: input.stripeContactEmail
+        })
+        .catch(
+          (err: unknown) =>
+            ({
+              ok: false,
+              message:
+                err instanceof Error
+                  ? err.message
+                  : "the Stripe preflight failed"
+            }) as const
+        );
       if (!preflight.ok) {
         return ctx.error("rule", `Invoice not posted — ${preflight.message}`);
       }
@@ -705,7 +697,7 @@ export const postSalesInvoice = defineServiceFn({
       );
     }
 
-    const posted = await invoker(ctx).invoke("post-sales-invoice", {
+    const posted = await service.invoker(ctx).invoke("post-sales-invoice", {
       invoiceId
     });
     if (posted.error) {
@@ -724,7 +716,11 @@ export const postSalesInvoice = defineServiceFn({
           error: released.error
         });
       }
-      return fromServerFn(ctx, posted.error, "Failed to post sales invoice");
+      return service.fromServerFn(
+        ctx,
+        posted.error,
+        "Failed to post sales invoice"
+      );
     }
 
     // Override evidence only once the post has committed.
@@ -755,7 +751,7 @@ export const postSalesInvoice = defineServiceFn({
       notification === "Email" || notification === "Stripe"
         ? notification
         : null;
-    const warning = await sendPostedSalesInvoice(ctx, {
+    const warning = await service.sendPostedSalesInvoice(ctx, {
       invoiceId,
       notification: sentVia,
       customerContact,
@@ -808,7 +804,7 @@ export const createPurchaseInvoice = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const result = await insertPurchaseInvoice(client, {
+    const result = await service.insertPurchaseInvoice(client, {
       ...invoice,
       invoiceId: invoice.invoiceId || undefined,
       companyId,
@@ -847,7 +843,7 @@ export const createPurchaseInvoice = defineServiceFn({
         [line.partNumber, line.description]
       );
       work.push(
-        upsertPurchaseInvoiceLine(client, {
+        service.upsertPurchaseInvoiceLine(client, {
           invoiceId: id,
           invoiceLineType: itemId ? "Part" : "Comment",
           itemId: itemId ?? undefined,
@@ -868,7 +864,7 @@ export const createPurchaseInvoice = defineServiceFn({
     if (documentPath) {
       work.push(
         (async () => {
-          const created = await getPurchaseInvoice(client, id);
+          const created = await service.getPurchaseInvoice(client, id);
           const interactionId = created.data?.supplierInteractionId;
           if (!interactionId) return;
           const basename =
@@ -928,11 +924,11 @@ const purchaseInvoiceFields = [
  * currency brings today's exchange rate. An empty value clears the field.
  */
 export const updatePurchaseInvoiceField = defineServiceFn({
-  input: fieldUpdate(purchaseInvoiceFields),
+  input: service.fieldUpdate(purchaseInvoiceFields),
   permission: { update: "sales" },
 
   async run(ctx, { ids, field, value }) {
-    const locked = await refuseLockedInvoices(
+    const locked = await service.refuseLockedInvoices(
       ctx,
       "purchaseInvoice",
       ids,
@@ -944,7 +940,7 @@ export const updatePurchaseInvoiceField = defineServiceFn({
     if (field === "invoiceSupplierId") {
       if (!value)
         return ctx.error("validation", "Invoice supplier is required");
-      const currency = await partyCurrency(ctx, "supplier", value);
+      const currency = await service.partyCurrency(ctx, "supplier", value);
       if (currency instanceof Error) return currency;
       const update = await ctx.asCaller.supabase
         .from("purchaseInvoice")
@@ -965,7 +961,11 @@ export const updatePurchaseInvoiceField = defineServiceFn({
       return { ids };
     }
 
-    return writeInvoiceField(ctx, "purchaseInvoice", { ids, field, value });
+    return service.writeInvoiceField(ctx, "purchaseInvoice", {
+      ids,
+      field,
+      value
+    });
   }
 });
 
@@ -1063,13 +1063,15 @@ export const postPurchaseInvoice = defineServiceFn({
 
     let receiptIds: string[] | undefined;
     try {
-      const posted = await invoker(ctx).invoke("post-purchase-invoice", {
-        invoiceId,
-        skipReceiptPost
-      });
+      const posted = await service
+        .invoker(ctx)
+        .invoke("post-purchase-invoice", {
+          invoiceId,
+          skipReceiptPost
+        });
       if (posted.error) {
         await backToDraft();
-        return fromServerFn(
+        return service.fromServerFn(
           ctx,
           posted.error,
           "Failed to post purchase invoice"
@@ -1083,12 +1085,14 @@ export const postPurchaseInvoice = defineServiceFn({
       );
       const timing = settings.data?.purchasePriceUpdateTiming;
       if (!timing || timing === "Purchase Invoice Post") {
-        const prices = await invoker(ctx).invoke("update-purchased-prices", {
-          invoiceId,
-          source: "purchaseInvoice",
-          updatePrices: true,
-          updateLeadTimes: false
-        });
+        const prices = await service
+          .invoker(ctx)
+          .invoke("update-purchased-prices", {
+            invoiceId,
+            source: "purchaseInvoice",
+            updatePrices: true,
+            updateLeadTimes: false
+          });
         if (prices.error) {
           await backToDraft();
           return ctx.error("internal", "Failed to update prices", prices.error);
@@ -1164,12 +1168,16 @@ export const voidPurchaseInvoice = defineServiceFn({
       );
     }
 
-    const voided = await invoker(ctx).invoke("post-purchase-invoice", {
+    const voided = await service.invoker(ctx).invoke("post-purchase-invoice", {
       type: "void",
       invoiceId
     });
     if (voided.error) {
-      return fromServerFn(ctx, voided.error, "Failed to void purchase invoice");
+      return service.fromServerFn(
+        ctx,
+        voided.error,
+        "Failed to void purchase invoice"
+      );
     }
     return { invoiceId };
   }
@@ -1190,7 +1198,7 @@ export const deleteDraftPurchaseInvoice = defineServiceFn({
   permission: { delete: "invoicing" },
 
   async run(ctx, { invoiceId }) {
-    const locked = await unlockedPurchaseInvoice(
+    const locked = await service.unlockedPurchaseInvoice(
       ctx,
       invoiceId,
       "Only a Draft purchase invoice can be deleted."
@@ -1223,7 +1231,7 @@ export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
   permission: { delete: "invoicing" },
 
   async run(ctx, { invoiceId, lineId }) {
-    const locked = await unlockedPurchaseInvoice(
+    const locked = await service.unlockedPurchaseInvoice(
       ctx,
       invoiceId,
       "Cannot delete lines on a confirmed purchase invoice."
@@ -1420,11 +1428,15 @@ export const createPayment = defineServiceFn({
 
     // The deposit ids arrive as hidden fields: never trust them to name this
     // company's, this customer's, open document.
-    const depositError = await checkDepositDocument(client, companyId, payment);
+    const depositError = await service.checkDepositDocument(
+      client,
+      companyId,
+      payment
+    );
     if (depositError) return ctx.error("validation", depositError);
 
     try {
-      await getPaymentCurrencyConfiguration(
+      await service.getPaymentCurrencyConfiguration(
         client,
         companyId,
         payment.currencyCode
@@ -1450,7 +1462,7 @@ export const createPayment = defineServiceFn({
       paymentId = next.data;
     }
 
-    const inserted = await upsertPayment(client, {
+    const inserted = await service.upsertPayment(client, {
       ...payment,
       paymentId,
       companyId,
@@ -1465,7 +1477,7 @@ export const createPayment = defineServiceFn({
     let warning: string | null = null;
     if (seedInvoiceIds.length > 0) {
       try {
-        await seedPaymentApplications(ctx, {
+        await service.seedPaymentApplications(ctx, {
           id,
           ...payment,
           seedInvoiceIds
@@ -1499,12 +1511,12 @@ export const postPayment = defineServiceFn({
   async run(ctx, { paymentId }) {
     const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
     if (refused) return refused;
-    const posted = await invoker(ctx).invoke("post-payment", {
+    const posted = await service.invoker(ctx).invoke("post-payment", {
       type: "post",
       paymentId
     });
     if (posted.error) {
-      return fromServerFn(ctx, posted.error, "Failed to post payment");
+      return service.fromServerFn(ctx, posted.error, "Failed to post payment");
     }
     return { paymentId };
   }
@@ -1526,12 +1538,12 @@ export const voidPayment = defineServiceFn({
   async run(ctx, { paymentId }) {
     const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
     if (refused) return refused;
-    const voided = await invoker(ctx).invoke("post-payment", {
+    const voided = await service.invoker(ctx).invoke("post-payment", {
       type: "void",
       paymentId
     });
     if (voided.error) {
-      return fromServerFn(ctx, voided.error, "Failed to void payment");
+      return service.fromServerFn(ctx, voided.error, "Failed to void payment");
     }
     return { paymentId };
   }
@@ -1555,12 +1567,12 @@ export const postMemo = defineServiceFn({
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
     if (refused) return refused;
-    const posted = await invoker(ctx).invoke("post-memo", {
+    const posted = await service.invoker(ctx).invoke("post-memo", {
       type: "post",
       memoId
     });
     if (posted.error) {
-      return fromServerFn(ctx, posted.error, "Failed to post memo");
+      return service.fromServerFn(ctx, posted.error, "Failed to post memo");
     }
     return { memoId };
   }
@@ -1582,12 +1594,12 @@ export const voidMemo = defineServiceFn({
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
     if (refused) return refused;
-    const voided = await invoker(ctx).invoke("post-memo", {
+    const voided = await service.invoker(ctx).invoke("post-memo", {
       type: "void",
       memoId
     });
     if (voided.error) {
-      return fromServerFn(ctx, voided.error, "Failed to void memo");
+      return service.fromServerFn(ctx, voided.error, "Failed to void memo");
     }
     return { memoId };
   }
@@ -1610,7 +1622,7 @@ export const deleteDraftMemo = defineServiceFn({
   async run(ctx, { memoId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const memo = await getMemo(client, memoId, companyId);
+    const memo = await service.getMemo(client, memoId, companyId);
     if (memo.error) {
       return ctx.error("internal", "Failed to delete memo", memo.error);
     }
@@ -1637,7 +1649,7 @@ export const deleteDraftMemo = defineServiceFn({
       return { memoId, party };
     }
 
-    const removed = await deleteMemoRow(client, memoId, companyId);
+    const removed = await service.deleteMemo(client, memoId, companyId);
     if (removed.error) {
       return ctx.error("internal", "Failed to delete memo", removed.error);
     }
@@ -1661,12 +1673,12 @@ export const voidCharge = defineServiceFn({
   async run(ctx, { chargeId }) {
     const refused = await refuseUnlessOwned(ctx, "charge", { id: chargeId });
     if (refused) return refused;
-    const voided = await invoker(ctx).invoke("post-charge", {
+    const voided = await service.invoker(ctx).invoke("post-charge", {
       type: "void",
       chargeId
     });
     if (voided.error) {
-      return fromServerFn(ctx, voided.error, "Failed to void charge");
+      return service.fromServerFn(ctx, voided.error, "Failed to void charge");
     }
     return { chargeId };
   }
@@ -1690,7 +1702,7 @@ const adjustInput = z.object({ asOfDate: z.string().optional() });
 export const adjustReceivables = defineServiceFn({
   input: adjustInput,
   permission: { create: "accounting" },
-  run: (ctx, { asOfDate }) => adjustTieOut(ctx, "receivables", asOfDate)
+  run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "receivables", asOfDate)
 });
 
 /**
@@ -1708,7 +1720,7 @@ export const adjustReceivables = defineServiceFn({
 export const adjustPayables = defineServiceFn({
   input: adjustInput,
   permission: { create: "accounting" },
-  run: (ctx, { asOfDate }) => adjustTieOut(ctx, "payables", asOfDate)
+  run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "payables", asOfDate)
 });
 
 // --- Reimbursements -------------------------------------------------------------
@@ -1734,14 +1746,14 @@ export const saveReimbursement = defineServiceFn({
   permission: { update: "invoicing" },
 
   async run(ctx, { lines, customFields, ...header }) {
-    const existing = await loadReimbursement(ctx, header.id);
+    const existing = await service.loadReimbursement(ctx, header.id);
     if (existing instanceof Error) return existing;
     // A readable refusal beats the raw 55000 the draft guard trigger raises.
     if (existing.status !== "Draft") {
       return ctx.error("rule", "A posted reimbursement cannot be edited");
     }
 
-    const updated = await updateReimbursementRow(ctx.asCaller.supabase, {
+    const updated = await service.updateReimbursement(ctx.asCaller.supabase, {
       ...header,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId,
@@ -1756,7 +1768,7 @@ export const saveReimbursement = defineServiceFn({
     }
 
     try {
-      await upsertReimbursementLines(ctx.asSystem.pg, {
+      await service.upsertReimbursementLines(ctx.asSystem.pg, {
         reimbursementId: header.id,
         companyId: ctx.company.id,
         createdBy: ctx.auditUserId,
@@ -1791,7 +1803,7 @@ export const saveAndPostReimbursement = defineServiceFn({
 
   async run(ctx, input) {
     if (
-      !linesBalanceHeader(
+      !service.linesBalanceHeader(
         input.amount,
         input.lines.map((line) => line.amount)
       )
@@ -1821,7 +1833,7 @@ export const postReimbursement = defineServiceFn({
   permission: { update: "invoicing" },
 
   async run(ctx, { reimbursementId }) {
-    const reimbursement = await loadReimbursement(ctx, reimbursementId);
+    const reimbursement = await service.loadReimbursement(ctx, reimbursementId);
     if (reimbursement instanceof Error) return reimbursement;
     if (reimbursement.status !== "Draft") {
       return ctx.error("rule", "Only a Draft reimbursement can be posted");
@@ -1829,7 +1841,7 @@ export const postReimbursement = defineServiceFn({
     // Checked here, with a readable message, before the server function.
     const lines = reimbursement.reimbursementLine ?? [];
     if (
-      !linesBalanceHeader(
+      !service.linesBalanceHeader(
         Number(reimbursement.amount),
         lines.map((line) => Number(line.amount))
       )
@@ -1837,12 +1849,16 @@ export const postReimbursement = defineServiceFn({
       return ctx.error("rule", REIMBURSEMENT_UNBALANCED_MESSAGE);
     }
 
-    const posted = await invoker(ctx).invoke("post-reimbursement", {
+    const posted = await service.invoker(ctx).invoke("post-reimbursement", {
       type: "post",
       reimbursementId
     });
     if (posted.error) {
-      return fromServerFn(ctx, posted.error, "Failed to post reimbursement");
+      return service.fromServerFn(
+        ctx,
+        posted.error,
+        "Failed to post reimbursement"
+      );
     }
     return { reimbursementId };
   }
@@ -1866,12 +1882,16 @@ export const voidReimbursement = defineServiceFn({
       id: reimbursementId
     });
     if (refused) return refused;
-    const voided = await invoker(ctx).invoke("post-reimbursement", {
+    const voided = await service.invoker(ctx).invoke("post-reimbursement", {
       type: "void",
       reimbursementId
     });
     if (voided.error) {
-      return fromServerFn(ctx, voided.error, "Failed to void reimbursement");
+      return service.fromServerFn(
+        ctx,
+        voided.error,
+        "Failed to void reimbursement"
+      );
     }
     return { reimbursementId };
   }
@@ -1900,7 +1920,7 @@ export const payReimbursement = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
-    const reimbursement = await loadReimbursement(ctx, reimbursementId);
+    const reimbursement = await service.loadReimbursement(ctx, reimbursementId);
     if (reimbursement instanceof Error) return reimbursement;
     if (reimbursement.status !== "Posted") {
       return ctx.error("rule", "Only a posted reimbursement can be paid");
@@ -1908,7 +1928,7 @@ export const payReimbursement = defineServiceFn({
 
     // The modal's default came from a loader that may be minutes old, and
     // a second payout must not overdraw the payable.
-    const open = await getOpenReimbursementsForEmployee(
+    const open = await service.getOpenReimbursementsForEmployee(
       client,
       companyId,
       reimbursement.employeeId,
@@ -1933,7 +1953,7 @@ export const payReimbursement = defineServiceFn({
     }
 
     try {
-      await getPaymentCurrencyConfiguration(
+      await service.getPaymentCurrencyConfiguration(
         client,
         companyId,
         reimbursement.currencyCode
@@ -1953,7 +1973,7 @@ export const payReimbursement = defineServiceFn({
 
     // Paid at the reimbursement's own rate: no revaluation nobody asked for.
     const exchangeRate = Number(reimbursement.exchangeRate);
-    const payment = await upsertPayment(client, {
+    const payment = await service.upsertPayment(client, {
       paymentId: next.data,
       paymentType: "Disbursement",
       employeeId: reimbursement.employeeId,
@@ -1977,7 +1997,7 @@ export const payReimbursement = defineServiceFn({
     try {
       // The employee arm here is the authority on party, currency, Posted
       // status and the balance ceiling.
-      await replaceInvoiceSettlements(ctx.asSystem.pg, {
+      await service.replaceInvoiceSettlements(ctx.asSystem.pg, {
         paymentId,
         companyId,
         createdBy: ctx.auditUserId,
@@ -2007,7 +2027,7 @@ export const payReimbursement = defineServiceFn({
       };
     }
 
-    const posted = await invoker(ctx).invoke("post-payment", {
+    const posted = await service.invoker(ctx).invoke("post-payment", {
       type: "post",
       paymentId
     });
@@ -2024,5 +2044,1568 @@ export const payReimbursement = defineServiceFn({
       };
     }
     return { paymentId, warning: null };
+  }
+});
+/**
+ * Create purchase invoice from purchase order
+ *
+ * @mcp
+ */
+export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
+  input: z.looseObject({ purchaseOrderId: z.string() }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createPurchaseInvoiceFromPurchaseOrder(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.purchaseOrderId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Create sales invoice from sales order
+ *
+ * @mcp
+ */
+export const createSalesInvoiceFromSalesOrder = defineServiceFn({
+  input: z.looseObject({ salesOrderId: z.string() }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createSalesInvoiceFromSalesOrder(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.salesOrderId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Create sales invoice from shipment
+ *
+ * @mcp
+ */
+export const createSalesInvoiceFromShipment = defineServiceFn({
+  input: z.looseObject({ shipmentId: z.string() }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createSalesInvoiceFromShipment(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.shipmentId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoice = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPurchaseInvoice(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoices
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoices = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPurchaseInvoices(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice delivery
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoiceDelivery = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPurchaseInvoiceDelivery(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice lines
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoiceLines = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPurchaseInvoiceLines(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase invoice line
+ *
+ * @mcp read
+ */
+export const getPurchaseInvoiceLine = defineServiceFn({
+  input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPurchaseInvoiceLine(
+        ctx.asCaller.supabase,
+        input.purchaseInvoiceLineId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice
+ *
+ * @mcp read
+ */
+export const getSalesInvoice = defineServiceFn({
+  input: z.looseObject({ salesInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSalesInvoice(
+        ctx.asCaller.supabase,
+        input.salesInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoices
+ *
+ * @mcp read
+ */
+export const getSalesInvoices = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    customerId: z.string().nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSalesInvoices(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice shipment
+ *
+ * @mcp read
+ */
+export const getSalesInvoiceShipment = defineServiceFn({
+  input: z.looseObject({ salesInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSalesInvoiceShipment(
+        ctx.asCaller.supabase,
+        input.salesInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice lines
+ *
+ * @mcp read
+ */
+export const getSalesInvoiceLines = defineServiceFn({
+  input: z.looseObject({ salesInvoiceId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSalesInvoiceLines(
+        ctx.asCaller.supabase,
+        input.salesInvoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sales invoice line
+ *
+ * @mcp read
+ */
+export const getSalesInvoiceLine = defineServiceFn({
+  input: z.looseObject({ salesInvoiceLineId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSalesInvoiceLine(
+        ctx.asCaller.supabase,
+        input.salesInvoiceLineId as never
+      )
+    );
+  }
+});
+
+/**
+ * Update purchase invoice exchange rate
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
+  input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updatePurchaseInvoiceExchangeRate(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update sales invoice exchange rate
+ *
+ * @mcp
+ */
+export const updateSalesInvoiceExchangeRate = defineServiceFn({
+  input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateSalesInvoiceExchangeRate(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update purchase invoice
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoice = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    invoiceId: z.string().optional(),
+    supplierId: z.string().optional(),
+    supplierReference: z.string().nullable().optional(),
+    paymentTermId: z.string().nullable().optional(),
+    currencyCode: z.string().optional(),
+    locationId: z.string().optional(),
+    invoiceSupplierId: z.string().nullable().optional(),
+    invoiceSupplierContactId: z.string().nullable().optional(),
+    invoiceSupplierLocationId: z.string().nullable().optional(),
+    dateIssued: z.string().nullable().optional(),
+    dateDue: z.string().nullable().optional(),
+    exchangeRate: z.number().optional(),
+    exchangeRateUpdatedAt: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updatePurchaseInvoice(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Updates an invoice's delivery
+ *
+ * @mcp
+ */
+export const upsertPurchaseInvoiceDelivery = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    locationId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    shippingTermId: z.string().optional(),
+    supplierShippingCost: z.number().optional(),
+    incoterm: z
+      .enum([
+        "EXW",
+        "FCA",
+        "FAS",
+        "FOB",
+        "CPT",
+        "CIP",
+        "CFR",
+        "CIF",
+        "DAP",
+        "DPU",
+        "DDP"
+      ])
+      .optional(),
+    incotermLocation: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPurchaseInvoiceDelivery(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a purchase invoice line
+ *
+ * @remarks
+ * Upsert purchase invoice line
+ *
+ * @mcp
+ */
+export const createPurchaseInvoiceLine = defineServiceFn({
+  input: z.looseObject({
+    invoiceId: z.string().min(1),
+    invoiceLineType: z.enum([
+      "Part",
+      "Material",
+      "Tool",
+      "Consumable",
+      "Service",
+      "Fixture",
+      "G/L Account",
+      "Fixed Asset",
+      "Lease",
+      "Comment"
+    ]),
+    purchaseOrderId: z.string().optional(),
+    purchaseOrderLineId: z.string().optional(),
+    itemId: z.string().optional(),
+    accountId: z.string().optional(),
+    costCenterId: z.string().optional(),
+    assetId: z.string().optional(),
+    leaseId: z.string().optional(),
+    leasePaymentId: z.string().optional(),
+    description: z.string().optional(),
+    quantity: z.number().optional(),
+    purchaseUnitOfMeasureCode: z.string().optional(),
+    inventoryUnitOfMeasureCode: z.string().optional(),
+    conversionFactor: z.number().optional(),
+    supplierUnitPrice: z.number().optional(),
+    supplierShippingCost: z
+      .number()
+      .default(0)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    supplierTaxAmount: z
+      .number()
+      .default(0)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    taxPercent: z
+      .number()
+      .min(0)
+      .max(1)
+      .default(0)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    requiredDate: z.string().optional(),
+    locationId: z.string().optional(),
+    storageUnitId: z.string().optional(),
+    exchangeRate: z.number().optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPurchaseInvoiceLine(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a purchase invoice line
+ *
+ * @remarks
+ * Upsert purchase invoice line
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoiceLine = defineServiceFn({
+  input: z
+    .looseObject({
+      invoiceId: z.string().min(1),
+      invoiceLineType: z.enum([
+        "Part",
+        "Material",
+        "Tool",
+        "Consumable",
+        "Service",
+        "Fixture",
+        "G/L Account",
+        "Fixed Asset",
+        "Lease",
+        "Comment"
+      ]),
+      purchaseOrderId: z.string().optional(),
+      purchaseOrderLineId: z.string().optional(),
+      itemId: z.string().optional(),
+      accountId: z.string().optional(),
+      costCenterId: z.string().optional(),
+      assetId: z.string().optional(),
+      leaseId: z.string().optional(),
+      leasePaymentId: z.string().optional(),
+      description: z.string().optional(),
+      quantity: z.number().optional(),
+      purchaseUnitOfMeasureCode: z.string().optional(),
+      inventoryUnitOfMeasureCode: z.string().optional(),
+      conversionFactor: z.number().optional(),
+      supplierUnitPrice: z.number().optional(),
+      supplierShippingCost: z
+        .number()
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      supplierTaxAmount: z
+        .number()
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      taxPercent: z
+        .number()
+        .min(0)
+        .max(1)
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      requiredDate: z.string().optional(),
+      locationId: z.string().optional(),
+      storageUnitId: z.string().optional(),
+      exchangeRate: z.number().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPurchaseInvoiceLine(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update purchase invoice line order
+ *
+ * @mcp
+ */
+export const updatePurchaseInvoiceLineOrder = defineServiceFn({
+  input: z.looseObject({
+    invoiceId: z.string(),
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.updatePurchaseInvoiceLineOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        input.invoiceId as never,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert sales invoice
+ *
+ * @mcp destructive
+ */
+export const insertSalesInvoice = defineServiceFn({
+  input: z.looseObject({
+    customerId: z.string(),
+    invoiceId: z.string().optional(),
+    customerReference: z.string().optional(),
+    paymentTermId: z.string().optional(),
+    currencyCode: z.string().optional(),
+    locationId: z.string().optional(),
+    invoiceCustomerId: z.string().optional(),
+    invoiceCustomerContactId: z.string().optional(),
+    invoiceCustomerLocationId: z.string().optional(),
+    dateIssued: z.string().optional(),
+    dateDue: z.string().optional(),
+    exchangeRate: z.number().optional(),
+    exchangeRateUpdatedAt: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertSalesInvoice(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "companyGroupId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Updates an invoice's shipment
+ *
+ * @mcp
+ */
+export const upsertSalesInvoiceShipment = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    locationId: z.string().optional(),
+    customerLocationId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    shippingTermId: z.string().optional(),
+    shippingCost: z.number().optional(),
+    incoterm: z
+      .enum([
+        "EXW",
+        "FCA",
+        "FAS",
+        "FOB",
+        "CPT",
+        "CIP",
+        "CFR",
+        "CIF",
+        "DAP",
+        "DPU",
+        "DDP"
+      ])
+      .optional(),
+    incotermLocation: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertSalesInvoiceShipment(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update sales invoice line order
+ *
+ * @mcp
+ */
+export const updateSalesInvoiceLineOrder = defineServiceFn({
+  input: z.looseObject({
+    invoiceId: z.string(),
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.updateSalesInvoiceLineOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        input.invoiceId as never,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get payment
+ *
+ * @mcp read
+ */
+export const getPayment = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPayment(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get payments
+ *
+ * @mcp read
+ */
+export const getPayments = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    paymentType: z.enum(["Receipt", "Disbursement"]).nullable().optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
+    customerId: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional(),
+    counterpartyIds: z.array(z.string()).nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPayments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get charge
+ *
+ * @mcp read
+ */
+export const getCharge = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCharge(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get charges
+ *
+ * @mcp read
+ */
+export const getCharges = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    type: z
+      .enum(["Charge", "Credit", "Payment", "Cashback", "Repayment"])
+      .nullable()
+      .optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getCharges(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get reimbursement
+ *
+ * @mcp read
+ */
+export const getReimbursement = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getReimbursement(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get reimbursements
+ *
+ * @mcp read
+ */
+export const getReimbursements = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
+    employeeId: z.string().nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getReimbursements(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The payments that settle a reimbursement, for its Documents panel
+ *
+ * @mcp read
+ */
+export const getReimbursementRelatedItems = defineServiceFn({
+  input: z.looseObject({ reimbursementId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getReimbursementRelatedItems(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.reimbursementId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get invoice settlements
+ *
+ * @mcp read
+ */
+export const getInvoiceSettlements = defineServiceFn({
+  input: z.looseObject({ paymentId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInvoiceSettlements(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.paymentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get invoice settlements for invoice
+ *
+ * @mcp read
+ */
+export const getInvoiceSettlementsForInvoice = defineServiceFn({
+  input: z.looseObject({
+    side: z.enum(["sales", "purchase"]),
+    invoiceId: z.string()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInvoiceSettlementsForInvoice(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.side as never,
+        input.invoiceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get memo applications
+ *
+ * @mcp read
+ */
+export const getMemoApplications = defineServiceFn({
+  input: z.looseObject({ memoId: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMemoApplications(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.memoId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open sales invoices for customer
+ *
+ * @mcp read
+ */
+export const getOpenSalesInvoicesForCustomer = defineServiceFn({
+  input: z.looseObject({
+    customerId: z.string(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenSalesInvoicesForCustomer(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.customerId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open purchase invoices for supplier
+ *
+ * @mcp read
+ */
+export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
+  input: z.looseObject({
+    supplierId: z.string(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenPurchaseInvoicesForSupplier(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.supplierId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Posted reimbursements an employee is still owed money on — the apply table's target list when a payment's payee is an employee, and the source of the balance t…
+ *
+ * @mcp read
+ */
+export const getOpenReimbursementsForEmployee = defineServiceFn({
+  input: z.looseObject({
+    employeeId: z.string(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenReimbursementsForEmployee(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.employeeId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get payment currency configuration
+ *
+ * @mcp read
+ */
+export const getPaymentCurrencyConfiguration = defineServiceFn({
+  input: z.looseObject({ currencyCode: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getPaymentCurrencyConfiguration(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get available on account credit sources
+ *
+ * @mcp read
+ */
+export const getAvailableOnAccountCreditSources = defineServiceFn({
+  input: z.looseObject({
+    party: z.union([
+      z.looseObject({
+        paymentType: z.literal("Receipt"),
+        customerId: z.string()
+      }),
+      z.looseObject({
+        paymentType: z.literal("Disbursement"),
+        supplierId: z.string()
+      })
+    ]),
+    currencyCode: z.string()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAvailableOnAccountCreditSources(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.party, ["companyId"]) as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a payment
+ *
+ * @remarks
+ * Upsert payment
+ *
+ * @mcp
+ */
+export const updatePayment = defineServiceFn({
+  input: z
+    .looseObject({
+      paymentType: z.enum(["Receipt", "Disbursement"]),
+      customerId: z.string().optional(),
+      supplierId: z.string().optional(),
+      employeeId: z.string().optional(),
+      paymentDate: z.string().min(1),
+      currencyCode: z.string().min(1),
+      exchangeRate: z
+        .number()
+        .gt(0)
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      totalAmount: z.number().min(0),
+      bankAccount: z.string().min(1),
+      reference: z.string().optional(),
+      memo: z.string().optional(),
+      salesOrderId: z.string().optional(),
+      rentalAgreementId: z.string().optional(),
+      paymentId: z.string().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPayment(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete payment
+ *
+ * @mcp destructive
+ */
+export const deletePayment = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deletePayment(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Replace invoice settlements
+ *
+ * @mcp destructive
+ */
+export const replaceInvoiceSettlements = defineServiceFn({
+  input: z.looseObject({
+    paymentId: z.string(),
+    applications: z.array(
+      z.looseObject({
+        memoId: z.string().optional(),
+        targetSalesInvoiceId: z.string().optional(),
+        targetPurchaseInvoiceId: z.string().optional(),
+        targetMemoId: z.string().optional(),
+        targetReimbursementId: z.string().optional(),
+        sourceAmount: z.number().min(0).optional(),
+        appliedAmount: z.number().min(0).default(0),
+        discountAmount: z.number().min(0).default(0),
+        writeOffAmount: z.number().min(0).default(0),
+        targetExchangeRate: z.number().gt(0),
+        sourceExchangeRate: z.number().gt(0),
+        appliedDate: z.string().min(1)
+      })
+    )
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.replaceInvoiceSettlements(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "createdBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get memo
+ *
+ * @mcp read
+ */
+export const getMemo = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMemo(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get memos
+ *
+ * @mcp read
+ */
+export const getMemos = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    direction: z.enum(["Credit", "Debit"]).nullable().optional(),
+    status: z.enum(["Draft", "Posted", "Voided"]).nullable().optional(),
+    counterpartyIds: z.array(z.string()).nullable().optional(),
+    party: z.enum(["customer", "supplier"]).nullable().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMemos(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a memo
+ *
+ * @remarks
+ * Upsert memo
+ *
+ * @mcp
+ */
+export const createMemo = defineServiceFn({
+  input: z.looseObject({
+    direction: z.enum(["Credit", "Debit"]),
+    customerId: z.string().optional(),
+    supplierId: z.string().optional(),
+    memoDate: z.string().min(1),
+    currencyCode: z.string().min(1),
+    exchangeRate: z
+      .number()
+      .gt(0)
+      .default(1)
+      .describe(
+        "Applied when creating; on update a field left out keeps its value."
+      ),
+    amount: z.number().gt(0),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+    memoId: z.string().optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMemo(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a memo
+ *
+ * @remarks
+ * Upsert memo
+ *
+ * @mcp
+ */
+export const updateMemo = defineServiceFn({
+  input: z
+    .looseObject({
+      direction: z.enum(["Credit", "Debit"]),
+      customerId: z.string().optional(),
+      supplierId: z.string().optional(),
+      memoDate: z.string().min(1),
+      currencyCode: z.string().min(1),
+      exchangeRate: z
+        .number()
+        .gt(0)
+        .describe(
+          "Applied when creating; on update a field left out keeps its value."
+        )
+        .optional(),
+      amount: z.number().gt(0),
+      reference: z.string().optional(),
+      notes: z.string().optional(),
+      memoId: z.string().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMemo(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get available credits for party
+ *
+ * @mcp read
+ */
+export const getAvailableCreditsForParty = defineServiceFn({
+  input: z.looseObject({
+    party: z.union([
+      z.looseObject({ side: z.literal("sales"), customerId: z.string() }),
+      z.looseObject({ side: z.literal("purchase"), supplierId: z.string() })
+    ]),
+    excludePaymentId: z.string().optional(),
+    currencyCode: z.string().optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAvailableCreditsForParty(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.party, ["companyId"]) as never,
+        input.excludePaymentId as never,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get company has open credits
+ *
+ * @mcp read
+ */
+export const getCompanyHasOpenCredits = defineServiceFn({
+  input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getCompanyHasOpenCredits(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.side as never
+      )
+    );
+  }
+});
+
+/**
+ * Get staged credits for payment
+ *
+ * @mcp read
+ */
+export const getStagedCreditsForPayment = defineServiceFn({
+  input: z.looseObject({
+    paymentId: z.string(),
+    side: z.enum(["sales", "purchase"])
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getStagedCreditsForPayment(
+        ctx.asCaller.supabase,
+        input.paymentId as never,
+        input.side as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Apply credits to invoices
+ *
+ * @mcp destructive
+ */
+export const applyCreditsToInvoices = defineServiceFn({
+  input: z.looseObject({
+    paymentId: z.string(),
+    appliedDate: z.string(),
+    side: z.enum(["sales", "purchase"]),
+    applications: z.array(
+      z.looseObject({
+        memoId: z.string(),
+        invoiceId: z.string(),
+        amount: z.number(),
+        sourceAmount: z.number().optional()
+      })
+    )
+  }),
+  permission: { update: "invoicing" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.applyCreditsToInvoices(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "createdBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ar tie out
+ *
+ * @mcp read
+ */
+export const getArTieOut = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getArTieOut(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ap tie out
+ *
+ * @mcp read
+ */
+export const getApTieOut = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getApTieOut(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ar open by customer
+ *
+ * @mcp read
+ */
+export const getArOpenByCustomer = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getArOpenByCustomer(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ap open by supplier
+ *
+ * @mcp read
+ */
+export const getApOpenBySupplier = defineServiceFn({
+  input: z.looseObject({ asOfDate: z.string() }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getApOpenBySupplier(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ar aging
+ *
+ * @mcp read
+ */
+export const getArAging = defineServiceFn({
+  input: z.looseObject({
+    asOfDate: z.string(),
+    options: z
+      .looseObject({
+        agingMethod: z.enum(["dueDate", "documentDate"]).optional(),
+        bucketDays: z.array(z.number()).nullable().optional()
+      })
+      .optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getArAging(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never,
+        stamp(ctx, input.options, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get ap aging
+ *
+ * @mcp read
+ */
+export const getApAging = defineServiceFn({
+  input: z.looseObject({
+    asOfDate: z.string(),
+    options: z
+      .looseObject({
+        agingMethod: z.enum(["dueDate", "documentDate"]).optional(),
+        bucketDays: z.array(z.number()).nullable().optional()
+      })
+      .optional()
+  }),
+  permission: { view: "invoicing" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getApAging(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.asOfDate as never,
+        stamp(ctx, input.options, ["companyId"]) as never
+      )
+    );
   }
 });

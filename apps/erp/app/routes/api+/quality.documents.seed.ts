@@ -10,5 +10,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.qualityDocument.seed({});
+  return api.quality.seedQualityDocuments({});
 }

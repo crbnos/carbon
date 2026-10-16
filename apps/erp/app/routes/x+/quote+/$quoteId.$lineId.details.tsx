@@ -167,7 +167,7 @@ export async function action(args: ActionFunctionArgs) {
   const { quoteId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.sales.quote.line.update({
+  const result = await api.sales.updateQuoteLine({
     ...input.data,
     id: lineId,
     quoteId,

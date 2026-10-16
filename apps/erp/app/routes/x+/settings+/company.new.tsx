@@ -28,7 +28,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(companyValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.company.create(input.data);
+  const result = await api.settings.createCompany(input.data);
   if (result.error) {
     return respond(args.request, result).redirect(
       requestReferrer(args.request) ?? path.to.authenticatedRoot

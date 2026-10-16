@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(processValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.process.create({
+  const result = await api.resources.createProcess({
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });

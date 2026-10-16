@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   ).request(args, { params: ["dispatchId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.resources.maintenanceDispatch.setStatus({
+  return api.resources.setMaintenanceDispatchStatus({
     dispatchId: input.params.dispatchId,
     status: input.data.status
   });

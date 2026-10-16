@@ -22,12 +22,12 @@ export async function action(args: ActionFunctionArgs) {
   const { id: lineId, quantity, locationId = "", trackedEntityId } = input.data;
   const api = await carbon(args.request);
   return quantity === 0
-    ? api.inventory.stockTransfer.line.unpick({
+    ? api.inventory.unpickStockTransferLine({
         lineId,
         locationId,
         trackedEntityId
       })
-    : api.inventory.stockTransfer.line.pick({
+    : api.inventory.pickStockTransferLine({
         lineId,
         quantity,
         locationId,

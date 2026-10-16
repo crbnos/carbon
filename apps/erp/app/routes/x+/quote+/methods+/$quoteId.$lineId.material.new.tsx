@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.sales.quote.material.create({
+  return api.sales.createQuoteMaterial({
     ...input.data,
     quoteId: input.params.quoteId,
     quoteLineId: input.params.lineId,

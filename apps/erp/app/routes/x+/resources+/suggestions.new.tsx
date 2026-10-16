@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   // The form's `userId` is only an on/off signal: the suggestion is
   // attributed to the session's user, or to nobody.
-  return api.resources.suggestion.create({
+  return api.resources.createSuggestion({
     ...suggestion,
     attributed: !!userId
   });

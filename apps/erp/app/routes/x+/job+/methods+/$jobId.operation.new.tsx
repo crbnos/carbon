@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.operation.create({
+  return api.production.createJobOperation({
     ...input.data,
     jobId: input.params.jobId,
     customFields: setCustomFields(input.formData ?? new FormData())

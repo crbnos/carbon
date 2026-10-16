@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.contract.updateTerms({
+  const result = await api.sales.updateContractTerms({
     ...input.data,
     id,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

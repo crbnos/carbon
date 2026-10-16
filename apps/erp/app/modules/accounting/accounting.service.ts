@@ -2274,7 +2274,7 @@ export async function getExchangeRates(
   });
 }
 
-/** Not published: `accounting_exchangeRate_override` pins a rate, and refuses the base currency this accepts. */
+/** Not published: `accounting_overrideExchangeRate` pins a rate, and refuses the base currency this accepts. */
 export async function upsertExchangeRateOverride(
   client: SupabaseClient<Database>,
   override: {
@@ -2334,7 +2334,7 @@ export async function upsertExchangeRateOverride(
   return insert;
 }
 
-/** Not published: `accounting_exchangeRate_reset` runs it. */
+/** Not published: `accounting_resetExchangeRate` runs it. */
 export async function deleteExchangeRateOverride(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2700,7 +2700,7 @@ export async function getFiscalCalendarCommitted(
   };
 }
 
-/** Not published: `accounting_period_lock` runs it. */
+/** Not published: `accounting_lockPeriod` runs it. */
 export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2738,7 +2738,7 @@ export async function lockAccountingPeriod(
     .single();
 }
 
-/** Not published: `accounting_period_unlock` runs it. */
+/** Not published: `accounting_unlockPeriod` runs it. */
 export async function unlockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2933,7 +2933,7 @@ export async function closeAccountingPeriod(
 // checklist-aware close is exactly that call with the argument shape the route
 // action passes. Kept as a distinct named export so the route imports intent,
 // not the lower-level lifecycle primitive.
-/** Not published: `accounting_period_close` runs it. */
+/** Not published: `accounting_closePeriod` runs it. */
 export async function closePeriodWithChecklist(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4043,7 +4043,7 @@ async function getPeriodCloseTaskById(
   }>;
 }
 
-/** Not published: `accounting_closeTask_complete` runs it. */
+/** Not published: `accounting_closeTaskComplete` runs it. */
 export async function completeCloseTask(
   client: SupabaseClient<Database>,
   args: { taskId: string; companyId: string; userId: string; notes?: string }
@@ -4084,7 +4084,7 @@ export async function completeCloseTask(
     .single();
 }
 
-/** Not published: `accounting_closeTask_skip` runs it. */
+/** Not published: `accounting_closeTaskSkip` runs it. */
 export async function skipCloseTask(
   client: SupabaseClient<Database>,
   args: {
@@ -6247,7 +6247,7 @@ export async function getJournalEntryRelatedItems(
   };
 }
 
-/** Not published: it takes the entry number from the caller. `accounting_journalEntry_create` numbers it from the sequence. */
+/** Not published: it takes the entry number from the caller. `accounting_createJournalEntry` numbers it from the sequence. */
 export async function createJournalEntry(
   client: SupabaseClient<Database>,
   data: z.infer<typeof journalEntryValidator> & {
@@ -6357,7 +6357,7 @@ export async function deleteJournalEntryLine(
   return client.from("journalLine").delete().eq("id", id);
 }
 
-/** Not published: `accounting_journalEntry_save` saves, with the one-sided line rule this skips. */
+/** Not published: `accounting_saveJournalEntry` saves, with the one-sided line rule this skips. */
 export async function saveJournalEntryWithLines(
   client: SupabaseClient<Database>,
   data: {
@@ -6991,7 +6991,7 @@ export async function deleteFixedAsset(
   return client.from("fixedAsset").delete().eq("id", id).eq("status", "Draft");
 }
 
-/** Not published: it takes the lines from the caller. `accounting_depreciationRun_create` calculates them. */
+/** Not published: it takes the lines from the caller. `accounting_createDepreciationRun` calculates them. */
 export async function insertDepreciationRun(
   client: SupabaseClient<Database>,
   input: {
@@ -8659,7 +8659,7 @@ export async function getWorkCenterCapitalCost(
   };
 }
 
-/** Not published: `accounting_fixedAsset_takeOutOfService` runs it, with the on-rent and disposed checks this skips. */
+/** Not published: `accounting_takeFixedAssetOutOfService` runs it, with the on-rent and disposed checks this skips. */
 export async function setFixedAssetOutOfService(
   client: SupabaseClient<Database>,
   {
@@ -8695,7 +8695,7 @@ export async function setFixedAssetOutOfService(
   );
 }
 
-/** Not published: `accounting_fixedAsset_returnToService` runs it. */
+/** Not published: `accounting_returnFixedAssetToService` runs it. */
 export async function returnFixedAssetToService(
   client: SupabaseClient<Database>,
   {

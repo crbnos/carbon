@@ -150,7 +150,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.invoicing.payment.create({
+  const result = await api.invoicing.createPayment({
     ...input.data,
     customFields: setCustomFields(formData),
     // Set by the loader, so the action can seed applications without

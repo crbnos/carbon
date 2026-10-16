@@ -19,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.employeeAbility.add({
+  const result = await api.resources.addEmployeeAbility({
     ...input.data,
     abilityId: input.params.id
   });

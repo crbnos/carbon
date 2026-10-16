@@ -27,13 +27,13 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   // Each operation checks the value it is given against its own choices.
   if (intent === "invoiceAutomation") {
-    return api.sales.rentalAgreement.setInvoiceAutomation({
+    return api.sales.setRentalInvoiceAutomation({
       id,
       // Empty is the company's setting.
       invoiceAutomation: (value || null) as never
     });
   }
-  return api.sales.rentalAgreement.setTerm({
+  return api.sales.setRentalAgreementTerm({
     id,
     field: field as never,
     value

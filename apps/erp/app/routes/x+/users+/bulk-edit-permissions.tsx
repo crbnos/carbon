@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { editType, userIds, data } = input.data;
   const api = await carbon(args.request);
-  const result = await api.users.permissions.bulkUpdate({
+  const result = await api.users.bulkUpdatePermissions({
     editType,
     userIds,
     permissions: JSON.parse(data),

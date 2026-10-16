@@ -53,7 +53,7 @@ export async function action(args: ActionFunctionArgs) {
   const url = new URL(args.request.url);
   const changeOrderId = url.searchParams.get("changeOrderId") ?? undefined;
   const api = await carbon(args.request);
-  const result = await api.quality.issue.create({
+  const result = await api.quality.createIssue({
     ...input.data,
     customFields: input.formData ? setCustomFields(input.formData) : undefined,
     trackedEntityIds: url.searchParams.get("trackedEntityIds")?.split(","),

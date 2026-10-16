@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { envelope, paged, stamp } from "@carbon/api/service-tools.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -11,7 +12,7 @@ import { z } from "zod";
 import { isAssemblerServiceHealthy } from "~/modules/production/production.service";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { modelViewDirection } from "./documents.models";
-import { findModel } from "./documents.service";
+import * as service from "./documents.service";
 
 const logger = getLogger("erp", "documents");
 /**
@@ -176,7 +177,7 @@ export const regenerateModelThumbnail = defineServiceFn({
   permission: {},
 
   async run(ctx, { modelUploadId, direction }) {
-    const missing = await findModel(ctx, modelUploadId);
+    const missing = await service.findModel(ctx, modelUploadId);
     if (missing) return missing;
     const companyId = ctx.company.id;
 
@@ -216,7 +217,7 @@ export const optimizeModel = defineServiceFn({
   permission: {},
 
   async run(ctx, { modelUploadId, force = false }) {
-    const missing = await findModel(ctx, modelUploadId);
+    const missing = await service.findModel(ctx, modelUploadId);
     if (missing) return missing;
     const companyId = ctx.company.id;
 
@@ -260,7 +261,7 @@ export const cancelModelOptimize = defineServiceFn({
   permission: {},
 
   async run(ctx, { modelUploadId }) {
-    const missing = await findModel(ctx, modelUploadId);
+    const missing = await service.findModel(ctx, modelUploadId);
     if (missing) return missing;
 
     // The service role: the RLS UPDATE policy needs an edit permission, and a
@@ -336,5 +337,413 @@ export const recordDocumentDownload = defineServiceFn({
       );
     }
     return { documentId };
+  }
+});
+/**
+ * Delete document
+ *
+ * @mcp destructive
+ */
+export const deleteDocument = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteDocument(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get document
+ *
+ * @mcp read
+ */
+export const getDocument = defineServiceFn({
+  input: z.looseObject({ documentId: z.string() }),
+  permission: { view: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDocument(
+        ctx.asCaller.supabase,
+        input.documentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get documents
+ *
+ * @mcp read
+ */
+export const getDocuments = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    favorite: z.boolean().optional(),
+    recent: z.boolean().optional(),
+    active: z.boolean()
+  }),
+  permission: { view: "documents" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getDocuments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get document extensions
+ *
+ * @mcp read
+ */
+export const getDocumentExtensions = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "documents" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getDocumentExtensions(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get document labels
+ *
+ * @mcp read
+ */
+export const getDocumentLabels = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "documents" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getDocumentLabels(ctx.asCaller.supabase, ctx.auditUserId)
+    );
+  }
+});
+
+/**
+ * Move document to trash
+ *
+ * @mcp
+ */
+export const moveDocumentToTrash = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.moveDocumentToTrash(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Restore document
+ *
+ * @mcp
+ */
+export const restoreDocument = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.restoreDocument(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Create a document
+ *
+ * @remarks
+ * Upsert document
+ *
+ * @mcp
+ */
+export const createDocument = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(3).max(50),
+    extension: z.string().optional(),
+    description: z.string().optional(),
+    labels: z.array(z.string().min(1).max(50)).optional(),
+    readGroups: z.array(z.string().min(1)).min(1),
+    writeGroups: z.array(z.string().min(1)).min(1),
+    path: z.string().optional(),
+    size: z.number().optional(),
+    sourceDocument: z
+      .enum([
+        "Job",
+        "Gauge Calibration Record",
+        "Issue",
+        "Purchase Order",
+        "Purchase Invoice",
+        "Quote",
+        "Request for Quote",
+        "Purchasing Request for Quote",
+        "Supplier Quote",
+        "Sales Order",
+        "Sales Invoice",
+        "Sales Return Order",
+        "Purchase Return Order",
+        "Shipment",
+        "Supplier",
+        "Customer",
+        "Part",
+        "Material",
+        "Tool",
+        "Consumable",
+        "Service"
+      ])
+      .optional(),
+    sourceDocumentId: z.string().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertDocument(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a document
+ *
+ * @remarks
+ * Upsert document
+ *
+ * @mcp
+ */
+export const updateDocument = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(3).max(50),
+      extension: z.string().optional(),
+      description: z.string().optional(),
+      labels: z.array(z.string().min(1).max(50)).optional(),
+      readGroups: z.array(z.string().min(1)).min(1),
+      writeGroups: z.array(z.string().min(1)).min(1),
+      path: z.string().optional(),
+      size: z.number().optional(),
+      sourceDocument: z
+        .enum([
+          "Job",
+          "Gauge Calibration Record",
+          "Issue",
+          "Purchase Order",
+          "Purchase Invoice",
+          "Quote",
+          "Request for Quote",
+          "Purchasing Request for Quote",
+          "Supplier Quote",
+          "Sales Order",
+          "Sales Invoice",
+          "Sales Return Order",
+          "Purchase Return Order",
+          "Shipment",
+          "Supplier",
+          "Customer",
+          "Part",
+          "Material",
+          "Tool",
+          "Consumable",
+          "Service"
+        ])
+        .optional(),
+      sourceDocumentId: z.string().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertDocument(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a presigned upload URL for a document in the "private" bucket
+ *
+ * @mcp
+ */
+export const createDocumentUploadUrl = defineServiceFn({
+  input: z.looseObject({
+    folder: z.string(),
+    entityId: z.string(),
+    name: z.string()
+  }),
+  permission: { create: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createDocumentUploadUrl(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Register the metadata row for a file already uploaded to storage
+ *
+ * @mcp
+ */
+export const insertUploadedDocument = defineServiceFn({
+  input: z.looseObject({
+    path: z.string(),
+    name: z.string(),
+    size: z.number(),
+    sourceDocument: z
+      .enum([
+        "Job",
+        "Gauge Calibration Record",
+        "Issue",
+        "Purchase Order",
+        "Purchase Invoice",
+        "Quote",
+        "Request for Quote",
+        "Purchasing Request for Quote",
+        "Supplier Quote",
+        "Sales Order",
+        "Sales Invoice",
+        "Sales Return Order",
+        "Purchase Return Order",
+        "Shipment",
+        "Supplier",
+        "Customer",
+        "Part",
+        "Material",
+        "Tool",
+        "Consumable",
+        "Service"
+      ])
+      .optional(),
+    sourceDocumentId: z.string().optional()
+  }),
+  permission: { create: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertUploadedDocument(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update document favorite
+ *
+ * @mcp destructive
+ */
+export const updateDocumentFavorite = defineServiceFn({
+  input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
+  permission: { update: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateDocumentFavorite(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update document labels
+ *
+ * @mcp destructive
+ */
+export const updateDocumentLabels = defineServiceFn({
+  input: z.looseObject({
+    documentId: z.string().min(20),
+    labels: z.array(z.string().min(1).max(50)).optional()
+  }),
+  permission: { update: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateDocumentLabels(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert document extraction
+ *
+ * @mcp
+ */
+export const insertDocumentExtraction = defineServiceFn({
+  input: z.looseObject({
+    storagePath: z.string(),
+    documentType: z.enum(["purchaseInvoice", "salesRfq"]),
+    sourceDocument: z.string(),
+    sourceDocumentId: z.string().optional()
+  }),
+  permission: { create: "documents" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertDocumentExtraction(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
   }
 });

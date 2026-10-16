@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { quoteId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.quote.finalize({
+  const result = await api.sales.finalizeAndSendQuote({
     ...input.data,
     quoteId,
     acknowledged: input.formData?.get("acknowledged") === "true",

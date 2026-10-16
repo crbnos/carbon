@@ -175,7 +175,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id: _id, ...line } = input.data;
   const api = await carbon(args.request);
   // The line must be on the URL's order, never re-parented to the form's.
-  const result = await api.purchasing.purchaseReturnOrder.updateLine({
+  const result = await api.purchasing.updateReturnOrderLine({
     ...line,
     purchaseReturnOrderId: orderId,
     lineId,

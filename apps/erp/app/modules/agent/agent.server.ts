@@ -7,13 +7,7 @@ import { companyHasFeature } from "@carbon/ee/plan.server";
 import { Ratelimit, redis } from "@carbon/kv";
 import { z } from "zod";
 import { chatRequest } from "./agent.models";
-import {
-  createThread,
-  deleteThread,
-  getModelHistory,
-  getThread,
-  saveUserMessage
-} from "./agent.service";
+import * as service from "./agent.service";
 
 // Every step re-sends the whole context. A docs answer is search → read → answer, with a
 // read or two more at most, so a few steps cover it and bound the worst-case cost.
@@ -32,7 +26,7 @@ export const createAgentThread = defineServiceFn({
   permission: {},
 
   async run(ctx) {
-    const created = await createThread(ctx.asCaller.supabase, {
+    const created = await service.createThread(ctx.asCaller.supabase, {
       companyId: ctx.company.id,
       userId: ctx.auditUserId
     });
@@ -52,7 +46,7 @@ export const deleteAgentThread = defineServiceFn({
   permission: {},
 
   async run(ctx, { threadId }) {
-    const deleted = await deleteThread(ctx.asCaller.supabase, {
+    const deleted = await service.deleteThread(ctx.asCaller.supabase, {
       threadId,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
@@ -103,7 +97,11 @@ export const startAgentTurn = defineServiceFn({
 
     // The browser sends only its new message and a thread id: the thread must
     // be the caller's own before anything is written to it or read back.
-    const thread = await getThread(client, { threadId, companyId, userId });
+    const thread = await service.getThread(client, {
+      threadId,
+      companyId,
+      userId
+    });
     if (thread.error) {
       return ctx.error(
         "internal",
@@ -115,7 +113,7 @@ export const startAgentTurn = defineServiceFn({
 
     const saveQuestion = async (question: string) => {
       try {
-        await saveUserMessage(ctx.asSystem.pg, {
+        await service.saveUserMessage(ctx.asSystem.pg, {
           threadId,
           companyId,
           userId,
@@ -128,7 +126,10 @@ export const startAgentTurn = defineServiceFn({
       }
     };
     const loadHistory = async () => {
-      const history = await getModelHistory(client, { threadId, companyId });
+      const history = await service.getModelHistory(client, {
+        threadId,
+        companyId
+      });
       if (history.error) {
         return ctx.error(
           "internal",

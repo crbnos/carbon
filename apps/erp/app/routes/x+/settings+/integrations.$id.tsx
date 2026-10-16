@@ -1027,7 +1027,7 @@ export async function action(args: ActionFunctionArgs) {
       );
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.syncOperation.transition(input.data);
+      return api.settings.transitionSyncOperations(input.data);
     }
     case "ai-suggest-account-mappings": {
       const input = await validator(accountMappingAiSuggestValidator).request(
@@ -1036,7 +1036,7 @@ export async function action(args: ActionFunctionArgs) {
       );
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.accountMapping.suggest(input.data);
+      return api.settings.suggestAccountMappings(input.data);
     }
     case "bulk-upsert-account-mappings": {
       const input = await validator(accountMappingBulkUpsertValidator).request(
@@ -1045,7 +1045,7 @@ export async function action(args: ActionFunctionArgs) {
       );
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.accountMapping.save({
+      return api.settings.saveAccountMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
       });
@@ -1057,7 +1057,7 @@ export async function action(args: ActionFunctionArgs) {
       );
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.dimensionSync.update({
+      return api.settings.updateDimensionSync({
         ...input.data,
         integrationId: input.params.id
       });
@@ -1069,7 +1069,7 @@ export async function action(args: ActionFunctionArgs) {
       if ("invalid" in input) return input.invalid;
       const { intent: _, ...mapping } = input.data;
       const api = await carbon(args.request);
-      return api.settings.dimensionValueMapping.save({
+      return api.settings.saveDimensionValueMappings({
         integrationId: input.params.id,
         mappings: [mapping]
       });
@@ -1080,7 +1080,7 @@ export async function action(args: ActionFunctionArgs) {
       ).request(args, params);
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.dimensionValueMapping.save({
+      return api.settings.saveDimensionValueMappings({
         integrationId: input.params.id,
         mappings: input.data.mappings
       });
@@ -1089,7 +1089,7 @@ export async function action(args: ActionFunctionArgs) {
       const input = await validator(syncEnabledValidator).request(args, params);
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.integration.setSyncEnabled({
+      return api.settings.setIntegrationSyncEnabled({
         integrationId: input.params.id,
         syncEnabled: input.data.syncEnabled
       });
@@ -1101,7 +1101,7 @@ export async function action(args: ActionFunctionArgs) {
       );
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.postingSync.update({
+      return api.settings.updatePostingSync({
         ...input.data,
         integrationId: input.params.id
       });
@@ -1113,7 +1113,7 @@ export async function action(args: ActionFunctionArgs) {
       );
       if ("invalid" in input) return input.invalid;
       const api = await carbon(args.request);
-      return api.settings.oeeDevice.map({
+      return api.settings.saveOeeDeviceMapping({
         integrationId: input.params.id,
         externalDeviceId: input.data.externalDeviceId,
         deviceName: input.data.deviceName,

@@ -3,6 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
@@ -90,34 +96,7 @@ import {
   returnPickedMaterialTimings,
   subsidiaryValidator
 } from "./settings.models";
-import {
-  apiKeysEntitlement,
-  createHeadquarters,
-  deactivateIntegration,
-  deleteDocumentSection,
-  fromServerFn,
-  generateTestLabel,
-  getProviderDimensionTargets,
-  insertCompany,
-  integrationSettings,
-  invalidateApiKeyCache,
-  invalidateIntegrationHealthCache,
-  listOeeDevices,
-  nothingSent,
-  refuseUnlessInternalUser,
-  resolveSections,
-  saveCompanySettings,
-  saveIntegrationMetadata,
-  seedCompany,
-  sentFields,
-  setLocationResponsibleEmployee,
-  updateCompany,
-  updateCompanyWithBaseCurrencyChange,
-  updateSubsidiary,
-  upsertDocumentSection,
-  upsertDocumentTemplate,
-  upsertItemPostingGroupResponsibility
-} from "./settings.service";
+import * as service from "./settings.service";
 
 const logger = getLogger("erp", "settings");
 // Server-only (needs the service-role client for the Vault RPC). Lives here rather
@@ -175,7 +154,7 @@ export const updateAccountingSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const {
       deferredTaxLiabilityAccountId,
@@ -183,14 +162,14 @@ export const updateAccountingSettings = defineServiceFn({
       ...settings
     } = input;
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       settings,
       "Failed to update accounting settings"
     );
     if (saved) return saved;
 
-    const accounts = sentFields({
+    const accounts = service.sentFields({
       deferredTaxLiabilityAccountId,
       deferredTaxExpenseAccountId
     });
@@ -234,7 +213,7 @@ export const writeMissingJournals = defineServiceFn({
       })
       .invoke("journal-legacy-documents", {});
     if (result.error) {
-      return fromServerFn(
+      return service.fromServerFn(
         ctx,
         result.error,
         "Failed to write the missing journals"
@@ -279,9 +258,9 @@ export const updateInventorySettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       input,
       "Failed to update inventory settings"
@@ -315,7 +294,7 @@ export const updateInvoicingSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { accountsReceivableBillingAddress, ...settings } = input;
 
@@ -326,7 +305,7 @@ export const updateInvoicingSettings = defineServiceFn({
       return ctx.error("rule", "Connect Stripe in Integrations first");
     }
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       settings,
       "Failed to update invoicing settings"
@@ -338,7 +317,7 @@ export const updateInvoicingSettings = defineServiceFn({
         .from("companyAccountsReceivableBillingAddress")
         .upsert({
           id: ctx.company.id,
-          ...sentFields(accountsReceivableBillingAddress),
+          ...service.sentFields(accountsReceivableBillingAddress),
           updatedBy: ctx.auditUserId
         });
       if (error) {
@@ -375,9 +354,9 @@ export const updateItemsSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       input,
       "Failed to update items settings"
@@ -418,11 +397,11 @@ export const updateProductionSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { locationStaffing, ...settings } = input;
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       settings,
       "Failed to update production settings"
@@ -478,11 +457,11 @@ export const updatePurchasingSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { accountsPayableBillingAddress, ...settings } = input;
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       settings,
       "Failed to update purchasing settings"
@@ -493,7 +472,7 @@ export const updatePurchasingSettings = defineServiceFn({
       const { error } = await ctx.asCaller.supabase
         .from("companyAccountsPayableBillingAddress")
         .update({
-          ...sentFields(accountsPayableBillingAddress),
+          ...service.sentFields(accountsPayableBillingAddress),
           updatedBy: ctx.auditUserId
         })
         .eq("id", ctx.company.id);
@@ -529,9 +508,9 @@ export const updateQualitySettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       input,
       "Failed to update quality settings"
@@ -560,7 +539,7 @@ export const updateResourcesSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { suggestionNotificationGroup, ...settings } = input;
 
@@ -579,7 +558,7 @@ export const updateResourcesSettings = defineServiceFn({
       }
     }
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       settings,
       "Failed to update dispatch notifications"
@@ -624,9 +603,9 @@ export const updateSalesSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       input,
       "Failed to update sales settings"
@@ -654,11 +633,11 @@ export const updatePeopleSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { consoleEnabled, ...settings } = input;
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       settings,
       "Failed to update timecard settings"
@@ -820,7 +799,7 @@ export const updatePlanningSettings = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
-    const refused = nothingSent(ctx, input);
+    const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const {
       locationResponsibleEmployee: location,
@@ -846,7 +825,7 @@ export const updatePlanningSettings = defineServiceFn({
       }
     }
 
-    const saved = await saveCompanySettings(
+    const saved = await service.saveCompanySettings(
       ctx,
       {
         ...settings,
@@ -860,7 +839,7 @@ export const updatePlanningSettings = defineServiceFn({
     if (saved) return saved;
 
     if (location) {
-      const result = await setLocationResponsibleEmployee(
+      const result = await service.setLocationResponsibleEmployee(
         ctx.asCaller.supabase,
         {
           companyId: ctx.company.id,
@@ -887,7 +866,7 @@ export const updatePlanningSettings = defineServiceFn({
     }
 
     if (itemGroup) {
-      const result = await upsertItemPostingGroupResponsibility(
+      const result = await service.upsertItemPostingGroupResponsibility(
         ctx.asCaller.supabase,
         {
           companyId: ctx.company.id,
@@ -936,7 +915,7 @@ export const updateCompanyDetails = defineServiceFn({
 
     if (baseCurrencyChanged) {
       try {
-        await updateCompanyWithBaseCurrencyChange(
+        await service.updateCompanyWithBaseCurrencyChange(
           ctx.asSystem.pg,
           ctx.company.id,
           { ...company, updatedBy: ctx.auditUserId }
@@ -945,7 +924,7 @@ export const updateCompanyDetails = defineServiceFn({
         return ctx.error("internal", "Failed to update company", err);
       }
     } else {
-      const update = await updateCompany(
+      const update = await service.updateCompany(
         ctx.asCaller.supabase,
         ctx.company.id,
         { ...company, updatedBy: ctx.auditUserId }
@@ -974,13 +953,13 @@ export const createCompany = defineServiceFn({
   permission: { update: ["settings", "users"] },
   async run(ctx, company) {
     const client = ctx.asSystem.supabase;
-    const inserted = await insertCompany(client, company);
+    const inserted = await service.insertCompany(client, company);
     if (inserted.error || !inserted.data?.id) {
       return ctx.error("internal", "Failed to create company", inserted.error);
     }
     const companyId = inserted.data.id;
 
-    const seed = await seedCompany(
+    const seed = await service.seedCompany(
       client,
       ctx.asSystem.pg,
       companyId,
@@ -991,7 +970,11 @@ export const createCompany = defineServiceFn({
     }
 
     const { baseCurrencyCode: _, ...location } = company;
-    const headquarters = await createHeadquarters(ctx, companyId, location);
+    const headquarters = await service.createHeadquarters(
+      ctx,
+      companyId,
+      location
+    );
     if (headquarters) return headquarters;
 
     const { data } = await client
@@ -1017,7 +1000,7 @@ export const createSubsidiary = defineServiceFn({
   input: subsidiaryValidator,
   permission: { create: "settings" },
   async run(ctx, subsidiary) {
-    const refused = await refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessInternalUser(ctx);
     if (refused) return refused;
 
     const { id: _, parentCompanyId, ...company } = subsidiary;
@@ -1035,13 +1018,13 @@ export const createSubsidiary = defineServiceFn({
       }
     }
 
-    const inserted = await insertCompany(client, company);
+    const inserted = await service.insertCompany(client, company);
     if (inserted.error || !inserted.data?.id) {
       return ctx.error("internal", "Failed to create company", inserted.error);
     }
     const companyId = inserted.data.id;
 
-    const seed = await seedCompany(
+    const seed = await service.seedCompany(
       client,
       ctx.asSystem.pg,
       companyId,
@@ -1053,7 +1036,11 @@ export const createSubsidiary = defineServiceFn({
     }
 
     const { baseCurrencyCode: __, ...location } = company;
-    const headquarters = await createHeadquarters(ctx, companyId, location);
+    const headquarters = await service.createHeadquarters(
+      ctx,
+      companyId,
+      location
+    );
     return headquarters ?? { companyId };
   }
 });
@@ -1069,10 +1056,10 @@ export const updateSubsidiaryDetails = defineServiceFn({
   input: subsidiaryValidator.safeExtend({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, { id, ...subsidiary }) {
-    const refused = await refuseUnlessInternalUser(ctx);
+    const refused = await service.refuseUnlessInternalUser(ctx);
     if (refused) return refused;
 
-    const result = await updateSubsidiary(ctx.asCaller.supabase, id, {
+    const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
       ...subsidiary,
       updatedBy: ctx.auditUserId
     });
@@ -1142,7 +1129,10 @@ export const testPrinterRoute = defineServiceFn({
       .single();
     if (!route) return ctx.error("notFound", "Printer route not found");
 
-    const testLabel = generateTestLabel(route.format, route.mediaSizeId);
+    const testLabel = service.generateTestLabel(
+      route.format,
+      route.mediaSizeId
+    );
     if (!testLabel) {
       return ctx.error(
         "rule",
@@ -1449,11 +1439,11 @@ export const saveDocumentTemplate = defineServiceFn({
     const { headerConfig, headerSectionId } = template;
 
     if (headerConfig && headerSectionId) {
-      const resolved = await resolveSections(client, ctx.company.id, [
+      const resolved = await service.resolveSections(client, ctx.company.id, [
         headerSectionId
       ]);
       const header = resolved[headerSectionId];
-      const section = await upsertDocumentSection(client, {
+      const section = await service.upsertDocumentSection(client, {
         id: headerSectionId,
         companyId: ctx.company.id,
         name: header?.name ?? "Default Header",
@@ -1471,7 +1461,7 @@ export const saveDocumentTemplate = defineServiceFn({
       }
     }
 
-    const upsert = await upsertDocumentTemplate(client, {
+    const upsert = await service.upsertDocumentTemplate(client, {
       companyId: ctx.company.id,
       documentType: template.documentType,
       blocks: template.blocks as DocumentBlock[],
@@ -1515,7 +1505,7 @@ export const saveDocumentSection = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { id, name, placement, content, config }) {
-    const result = await upsertDocumentSection(ctx.asCaller.supabase, {
+    const result = await service.upsertDocumentSection(ctx.asCaller.supabase, {
       id,
       companyId: ctx.company.id,
       name,
@@ -1544,7 +1534,7 @@ export const removeDocumentSection = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { id }) {
-    const result = await deleteDocumentSection(
+    const result = await service.deleteDocumentSection(
       ctx.asCaller.supabase,
       id,
       ctx.company.id
@@ -1588,7 +1578,7 @@ export const createApiKey = defineServiceFn({
         createdBy: ctx.auditUserId
       });
     } catch (err) {
-      return apiKeysEntitlement(ctx, err);
+      return service.apiKeysEntitlement(ctx, err);
     }
     const key = created.data && "key" in created.data ? created.data.key : null;
     if (created.error || !key) {
@@ -1618,13 +1608,13 @@ export const updateApiKey = defineServiceFn({
         expiresAt: expiresAt || undefined
       });
     } catch (err) {
-      return apiKeysEntitlement(ctx, err);
+      return service.apiKeysEntitlement(ctx, err);
     }
     if (updated.error) {
       return ctx.error("internal", "Failed to update API key", updated.error);
     }
     // A scope or expiry edit must not keep authenticating from the 30s cache.
-    await invalidateApiKeyCache(id, ctx.company.id);
+    await service.invalidateApiKeyCache(id, ctx.company.id);
     return { id };
   }
 });
@@ -1641,12 +1631,12 @@ export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: { update: "users" },
   async run(ctx, { id }) {
-    const keyHash = await invalidateApiKeyCache(id, ctx.company.id);
+    const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
     try {
       deleted = await deleteApiKey(ctx.asCaller.supabase, id);
     } catch (err) {
-      return apiKeysEntitlement(ctx, err);
+      return service.apiKeysEntitlement(ctx, err);
     }
     if (deleted.error) {
       return ctx.error("internal", "Failed to delete API key", deleted.error);
@@ -1683,7 +1673,7 @@ export const deactivateCompanyIntegration = defineServiceFn({
     const integration = availableIntegrations.find((i) => i.id === id);
     if (!integration) return ctx.error("notFound", "Integration not found");
 
-    const update = await deactivateIntegration(ctx.asCaller.supabase, {
+    const update = await service.deactivateIntegration(ctx.asCaller.supabase, {
       id,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
@@ -1699,7 +1689,7 @@ export const deactivateCompanyIntegration = defineServiceFn({
     const hooks = getIntegrationServerHooks(id);
     if (hooks?.onUninstall) await hooks.onUninstall(ctx.company.id);
 
-    await invalidateIntegrationHealthCache(id, ctx.company.id);
+    await service.invalidateIntegrationHealthCache(id, ctx.company.id);
     return { id, name: integration.name };
   }
 });
@@ -1761,7 +1751,7 @@ export const disableCompanyAuditLog = defineServiceFn({
 });
 
 /** A signed URL that downloads one of the company's audit log archives. */
-export const auditArchiveDownloadUrl = defineServiceFn({
+export const getAuditArchiveDownloadUrl = defineServiceFn({
   input: z.object({ archiveId: z.string().min(1) }),
   permission: { update: "settings" },
   async run(ctx, { archiveId }) {
@@ -1779,7 +1769,7 @@ export const auditArchiveDownloadUrl = defineServiceFn({
 });
 
 /** A Stripe billing portal session for the company, for its subscription. */
-export const billingPortalUrl = defineServiceFn({
+export const getBillingPortalUrl = defineServiceFn({
   input: z.object({}),
   permission: { update: "settings" },
   async run(ctx) {
@@ -2010,7 +2000,7 @@ export const updateDimensionSync = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { integrationId, slots, onUnmappedDimensionValue }) {
-    const providerTargets = await getProviderDimensionTargets(
+    const providerTargets = await service.getProviderDimensionTargets(
       ctx.asCaller.supabase,
       ctx.company.id,
       integrationId
@@ -2042,7 +2032,7 @@ export const updateDimensionSync = defineServiceFn({
       );
     }
 
-    const existing = await integrationSettings(ctx, integrationId);
+    const existing = await service.integrationSettings(ctx, integrationId);
     if (!existing) {
       return ctx.error("notFound", "Failed to load integration settings");
     }
@@ -2053,7 +2043,7 @@ export const updateDimensionSync = defineServiceFn({
     // The v2 shim-marker keys are deliberately left in place: this does not
     // write the v3 sourceTypes record, so stripping them would make the
     // schema shim lose the stored v2 enabled set on the next read.
-    const saved = await saveIntegrationMetadata(
+    const saved = await service.saveIntegrationMetadata(
       ctx,
       integrationId,
       existing.active ?? true,
@@ -2129,7 +2119,7 @@ export const setIntegrationSyncEnabled = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { integrationId, syncEnabled }) {
-    const existing = await integrationSettings(ctx, integrationId);
+    const existing = await service.integrationSettings(ctx, integrationId);
     if (!existing?.active) {
       return ctx.error("notFound", "Failed to load integration settings");
     }
@@ -2156,7 +2146,7 @@ export const setIntegrationSyncEnabled = defineServiceFn({
       }
     }
 
-    const saved = await saveIntegrationMetadata(
+    const saved = await service.saveIntegrationMetadata(
       ctx,
       integrationId,
       existing.active,
@@ -2228,7 +2218,10 @@ export const updatePostingSync = defineServiceFn({
       };
     }
 
-    const existing = await integrationSettings(ctx, input.integrationId);
+    const existing = await service.integrationSettings(
+      ctx,
+      input.integrationId
+    );
     if (!existing) {
       return ctx.error("notFound", "Failed to load integration settings");
     }
@@ -2246,7 +2239,7 @@ export const updatePostingSync = defineServiceFn({
       | Record<string, unknown>
       | undefined) ?? {};
 
-    const saved = await saveIntegrationMetadata(
+    const saved = await service.saveIntegrationMetadata(
       ctx,
       input.integrationId,
       existing.active ?? true,
@@ -2298,7 +2291,10 @@ export const saveOeeDeviceMapping = defineServiceFn({
   ) {
     let device: OeeDevice | undefined;
     if (workCenterId) {
-      const provider = await listOeeDevices(ctx.company.id, integrationId);
+      const provider = await service.listOeeDevices(
+        ctx.company.id,
+        integrationId
+      );
       device = provider.devices.find(
         (candidate) => candidate.externalDeviceId === externalDeviceId
       );
@@ -2354,5 +2350,780 @@ export const saveOeeDeviceMapping = defineServiceFn({
       );
     }
     return { externalDeviceId, workCenterId: workCenterId ?? null };
+  }
+});
+/**
+ * Get accounts payable billing address
+ *
+ * @mcp read
+ */
+export const getAccountsPayableBillingAddress = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getAccountsPayableBillingAddress(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get accounts receivable billing address
+ *
+ * @mcp read
+ */
+export const getAccountsReceivableBillingAddress = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getAccountsReceivableBillingAddress(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get api keys
+ *
+ * @mcp read
+ */
+export const getApiKeys = defineServiceFn({
+  input: z.looseObject({
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getApiKeys(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The view already carries `companyGroupName`, so there is nothing to embed
+ *
+ * @mcp read
+ */
+export const getCompanies = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCompanies(ctx.asCaller.supabase, ctx.auditUserId)
+    );
+  }
+});
+
+/**
+ * The companies a user can enter in the ERP
+ *
+ * @mcp read
+ */
+export const getEmployeeCompanies = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getEmployeeCompanies(ctx.asCaller.supabase, ctx.auditUserId)
+    );
+  }
+});
+
+/**
+ * Get industries
+ *
+ * @mcp read
+ */
+export const getIndustries = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(ctx, await service.getIndustries(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * Get company
+ *
+ * @mcp read
+ */
+export const getCompany = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCompany(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get company settings
+ *
+ * @mcp read
+ */
+export const getCompanySettings = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCompanySettings(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get config
+ *
+ * @mcp read
+ */
+export const getConfig = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(ctx, await service.getConfig(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * Get current sequence
+ *
+ * @mcp read
+ */
+export const getCurrentSequence = defineServiceFn({
+  input: z.looseObject({ table: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCurrentSequence(
+        ctx.asCaller.supabase,
+        input.table as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get custom field
+ *
+ * @mcp read
+ */
+export const getCustomField = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCustomField(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get custom fields
+ *
+ * @mcp read
+ */
+export const getCustomFields = defineServiceFn({
+  input: z.looseObject({ table: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCustomFields(
+        ctx.asCaller.supabase,
+        input.table as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get custom fields tables
+ *
+ * @mcp read
+ */
+export const getCustomFieldsTables = defineServiceFn({
+  input: z.looseObject({
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getCustomFieldsTables(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get integration
+ *
+ * @mcp read
+ */
+export const getIntegration = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIntegration(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get kanban output setting
+ *
+ * @mcp read
+ */
+export const getKanbanOutputSetting = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getKanbanOutputSetting(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Takes the next number of a sequence, which advances it
+ *
+ * @mcp
+ */
+export const getNextSequence = defineServiceFn({
+  input: z.looseObject({ table: z.string() }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getNextSequence(
+        ctx.asCaller.supabase,
+        input.table as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get plans
+ *
+ * @mcp read
+ */
+export const getPlans = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(ctx, await service.getPlans(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * Get sequence
+ *
+ * @mcp read
+ */
+export const getSequence = defineServiceFn({
+  input: z.looseObject({ table: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSequence(
+        ctx.asCaller.supabase,
+        input.table as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get sequences
+ *
+ * @mcp read
+ */
+export const getSequences = defineServiceFn({
+  input: z.looseObject({
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSequences(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get sequences list
+ *
+ * @mcp read
+ */
+export const getSequencesList = defineServiceFn({
+  input: z.looseObject({ table: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSequencesList(
+        ctx.asCaller.supabase,
+        input.table as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item serial sequences
+ *
+ * @mcp read
+ */
+export const getItemSerialSequences = defineServiceFn({
+  input: z.looseObject({
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getItemSerialSequences(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item serial sequence
+ *
+ * @mcp read
+ */
+export const getItemSerialSequence = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemSerialSequence(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create a item serial sequence
+ *
+ * @remarks
+ * Upsert item serial sequence
+ *
+ * @mcp
+ */
+export const createItemSerialSequence = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string().min(1),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
+    next: z.number().min(0),
+    step: z.number().min(1),
+    size: z.number().min(1).max(20),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemSerialSequence(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a item serial sequence
+ *
+ * @remarks
+ * Upsert item serial sequence
+ *
+ * @mcp
+ */
+export const updateItemSerialSequence = defineServiceFn({
+  input: z
+    .looseObject({
+      itemId: z.string().min(1),
+      prefix: z.string().optional(),
+      suffix: z.string().optional(),
+      next: z.number().min(0),
+      step: z.number().min(1),
+      size: z.number().min(1).max(20),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemSerialSequence(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete item serial sequence
+ *
+ * @mcp destructive
+ */
+export const deleteItemSerialSequence = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteItemSerialSequence(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get subsidiaries
+ *
+ * @mcp read
+ */
+export const getSubsidiaries = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getSubsidiaries(ctx.asCaller.supabase, ctx.company.groupId)
+    );
+  }
+});
+
+/**
+ * Get subsidiary
+ *
+ * @mcp read
+ */
+export const getSubsidiary = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getSubsidiary(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get terms
+ *
+ * @mcp read
+ */
+export const getTerms = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getTerms(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get document template
+ *
+ * @mcp read
+ */
+export const getDocumentTemplate = defineServiceFn({
+  input: z.looseObject({
+    documentType: z.enum([
+      "purchaseOrder",
+      "salesOrder",
+      "stockTransfer",
+      "salesInvoice",
+      "quote",
+      "purchaseReturnOrder",
+      "salesReturnOrder",
+      "issue",
+      "packingSlip",
+      "jobTraveler",
+      "trackingLabel"
+    ])
+  }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDocumentTemplate(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.documentType as never
+      )
+    );
+  }
+});
+
+/**
+ * Load a stored document template as a `DocumentTemplate | null` ready to pass to a PDF (which runs it through `resolveTemplate`)
+ *
+ * @mcp read
+ */
+export const getDocumentTemplateConfig = defineServiceFn({
+  input: z.looseObject({
+    documentType: z.enum([
+      "purchaseOrder",
+      "salesOrder",
+      "stockTransfer",
+      "salesInvoice",
+      "quote",
+      "purchaseReturnOrder",
+      "salesReturnOrder",
+      "issue",
+      "packingSlip",
+      "jobTraveler",
+      "trackingLabel"
+    ])
+  }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getDocumentTemplateConfig(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.documentType as never
+      )
+    );
+  }
+});
+
+/**
+ * Get document sections
+ *
+ * @mcp read
+ */
+export const getDocumentSections = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getDocumentSections(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Fetch the given section ids and return them keyed by id for rendering
+ *
+ * @mcp
+ */
+export const resolveSections = defineServiceFn({
+  input: z.looseObject({ ids: z.array(z.string()) }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.resolveSections(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.ids, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get webhook
+ *
+ * @mcp read
+ */
+export const getWebhook = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getWebhook(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get webhooks
+ *
+ * @mcp read
+ */
+export const getWebhooks = defineServiceFn({
+  input: z.looseObject({
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { view: "settings" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getWebhooks(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get webhook tables
+ *
+ * @mcp read
+ */
+export const getWebhookTables = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "settings" },
+  async run(ctx) {
+    return envelope(ctx, await service.getWebhookTables(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * Update sequence
+ *
+ * @mcp
+ */
+export const updateSequence = defineServiceFn({
+  input: z.looseObject({
+    table: z.string(),
+    sequence: z.looseObject({
+      table: z.string().min(1).optional(),
+      prefix: z.string().optional(),
+      suffix: z.string().optional(),
+      next: z.number().min(0).optional(),
+      step: z.number().min(1).optional(),
+      size: z.number().min(1).max(20).optional()
+    })
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateSequence(
+        ctx.asCaller.supabase,
+        input.table as never,
+        ctx.company.id,
+        stamp(ctx, input.sequence, ["companyId", "updatedBy"]) as never
+      )
+    );
   }
 });

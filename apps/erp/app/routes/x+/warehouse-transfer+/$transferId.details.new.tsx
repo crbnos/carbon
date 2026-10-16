@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
     ...line
   } = input.data;
   const api = await carbon(args.request);
-  const result = await api.inventory.warehouseTransfer.line.create({
+  const result = await api.inventory.createWarehouseTransferLine({
     transferId,
     ...line
   });

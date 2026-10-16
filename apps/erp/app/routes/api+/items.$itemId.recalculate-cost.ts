@@ -11,7 +11,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["itemId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.items.cost.recalculate({
+  const result = await api.items.recalculateItemCost({
     itemId: input.params.itemId
   });
   if (result.error) return { success: false, message: result.error.message };

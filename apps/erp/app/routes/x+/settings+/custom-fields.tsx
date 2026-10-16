@@ -76,7 +76,11 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const { ids, table, value } = input.data;
-  return api.settings.customFields.set({ table, ids, customFields: value });
+  return api.settings.setRecordCustomFields({
+    table,
+    ids,
+    customFields: value
+  });
 }
 
 export default function CustomFieldsRoute() {

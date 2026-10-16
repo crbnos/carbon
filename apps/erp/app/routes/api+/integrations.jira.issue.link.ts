@@ -23,12 +23,12 @@ export async function action(args: ActionFunctionArgs) {
     });
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
-    return api.shared.jira.unlinkIssue(input.data);
+    return api.shared.unlinkJiraIssue(input.data);
   }
   const input = await validator(linkJiraIssue.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.shared.jira.linkIssue(input.data);
+  return api.shared.linkJiraIssue(input.data);
 }
 
 export const loader: LoaderFunction = async ({ request }) => {

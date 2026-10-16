@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(makeMethodVersionValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.items.method.createVersion(input.data);
+  const result = await api.items.createMethodVersion(input.data);
   if (result.error) return result;
   const { id, itemId, type } = result.data;
   // Only parts, tools and services have make methods.

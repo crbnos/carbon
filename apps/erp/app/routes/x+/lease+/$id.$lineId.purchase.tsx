@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.leaseLine.purchase({
+  const result = await api.purchasing.purchaseLeaseLine({
     ...input.data,
     leaseId: id,
     leaseLineId: lineId

@@ -23,7 +23,7 @@ export async function action(args: ActionFunctionArgs) {
   const { pickingListId } = input.params;
 
   const api = await carbon(args.request);
-  const result = await api.inventory.pickingList.setStatus({
+  const result = await api.inventory.setPickingListStatus({
     pickingListId,
     ...input.data
   });

@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { name, selections } = input.data;
   const api = await carbon(args.request);
-  const result = await api.users.group.create({ name, selections });
+  const result = await api.users.createGroup({ name, selections });
   return respond(args.request, result).redirect(path.to.groups, {
     message: "Group created",
     onError: path.to.newGroup

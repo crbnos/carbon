@@ -48,7 +48,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { name, data: permissions } = input.data;
   const api = await carbon(args.request);
-  const result = await api.users.employeeType.create({
+  const result = await api.users.createEmployeeType({
     name,
     permissions: JSON.parse(permissions)
   });

@@ -48,41 +48,45 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
   const request = input.data;
-  const { planning } = (await carbon(args.request)).purchasing;
+  const purchasing = (await carbon(args.request)).purchasing;
 
   switch (request.action) {
     case "order":
       return respond(
-        await planning.order({
+        await purchasing.orderPlannedPurchases({
           locationId: request.locationId,
           items: request.items
         })
       );
     case "updateLine":
       return respond(
-        await planning.updateLine({
+        await purchasing.updatePlanningPurchaseOrderLine({
           locationId: request.locationId,
           line: request.line
         })
       );
     case "dismiss":
       return respond(
-        await planning.dismiss({ planningActionIds: request.planningActionIds })
+        await purchasing.dismissPurchasingPlanningActions({
+          planningActionIds: request.planningActionIds
+        })
       );
     case "reopen":
       return respond(
-        await planning.reopen({ planningActionIds: request.planningActionIds })
+        await purchasing.reopenPurchasingPlanningActions({
+          planningActionIds: request.planningActionIds
+        })
       );
     case "assign":
       return respond(
-        await planning.assign({
+        await purchasing.assignPurchasingPlanningActions({
           planningActionIds: request.planningActionIds,
           assignee: request.assignee ?? undefined
         })
       );
     default:
       return respond(
-        await planning.apply({
+        await purchasing.applyPlanningActions({
           planningActionIds: request.planningActionIds,
           type: request.action
         })

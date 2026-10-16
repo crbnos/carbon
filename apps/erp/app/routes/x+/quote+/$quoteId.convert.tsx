@@ -28,7 +28,7 @@ export async function action(args: ActionFunctionArgs) {
   const { quoteId } = input.params;
   const { poNumber, ...form } = input.data;
   const api = await carbon(args.request);
-  const result = await api.sales.quote.convert({
+  const result = await api.sales.convertQuote({
     ...form,
     quoteId,
     purchaseOrderNumber: poNumber,

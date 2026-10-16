@@ -72,7 +72,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { fixedAssetId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.fixedAsset.purchase({
+  const result = await api.accounting.purchaseFixedAsset({
     fixedAssetId,
     supplierId: input.data.supplierId
   });

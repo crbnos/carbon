@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.returnOrder.line.escalate({
+  const result = await api.sales.escalateReturnOrderLine({
     salesReturnOrderId: id,
     lineId,
     disposition: input.data.disposition

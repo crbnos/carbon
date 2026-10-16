@@ -10,13 +10,13 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 import {
-  accountMove,
-  depreciationRunCreate,
-  exchangeRateOverride,
-  fixedAssetDispose,
-  fixedAssetSell,
-  fixedAssetTakeOutOfService,
-  journalEntrySave
+  moveAccount,
+  createDepreciationRun,
+  overrideExchangeRate,
+  disposeFixedAsset,
+  sellFixedAsset,
+  takeFixedAssetOutOfService,
+  saveJournalEntry
 } from "../app/modules/accounting/accounting.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
@@ -75,9 +75,9 @@ const line = (debit: number, credit: number, accountId = "acc-1") => ({
   credit
 });
 
-describe("journalEntrySave", () => {
+describe("saveJournalEntry", () => {
   it("refuses a line with both a debit and a credit, before saving", async () => {
-    const result = await journalEntrySave(contextFor(noClient()), {
+    const result = await saveJournalEntry(contextFor(noClient()), {
       journalEntryId: "je-1",
       postingDate: "2026-10-01",
       lines: [line(10, 0), line(5, 5)]
@@ -89,7 +89,7 @@ describe("journalEntrySave", () => {
   });
 
   it("refuses a line with no account", async () => {
-    const result = await journalEntrySave(contextFor(noClient()), {
+    const result = await saveJournalEntry(contextFor(noClient()), {
       journalEntryId: "je-1",
       postingDate: "2026-10-01",
       lines: [line(10, 0, "")]
@@ -100,7 +100,7 @@ describe("journalEntrySave", () => {
   });
 });
 
-describe("accountMove", () => {
+describe("moveAccount", () => {
   // 1000 Assets ⊃ 1100 Current Assets ⊃ 1110 Cash (a leaf)
   const chart = [
     {
@@ -127,7 +127,7 @@ describe("accountMove", () => {
   ];
 
   it("refuses to move a group under one of its own accounts", async () => {
-    const result = await accountMove(contextFor(reading({ account: chart })), {
+    const result = await moveAccount(contextFor(reading({ account: chart })), {
       accountId: "assets",
       parentId: "current"
     });
@@ -138,7 +138,7 @@ describe("accountMove", () => {
   });
 
   it("refuses a parent that is not a group", async () => {
-    const result = await accountMove(contextFor(reading({ account: chart })), {
+    const result = await moveAccount(contextFor(reading({ account: chart })), {
       accountId: "current",
       parentId: "cash"
     });
@@ -149,9 +149,9 @@ describe("accountMove", () => {
   });
 });
 
-describe("fixedAssetDispose", () => {
+describe("disposeFixedAsset", () => {
   it("refuses an asset that is already disposed, before posting", async () => {
-    const result = await fixedAssetDispose(
+    const result = await disposeFixedAsset(
       contextFor(
         reading({
           fixedAsset: { status: "Disposed", fixedAssetClass: { id: "c" } },
@@ -167,9 +167,9 @@ describe("fixedAssetDispose", () => {
   });
 });
 
-describe("fixedAssetSell", () => {
+describe("sellFixedAsset", () => {
   it("refuses a Draft asset, before creating an order", async () => {
-    const result = await fixedAssetSell(
+    const result = await sellFixedAsset(
       contextFor(
         reading({ fixedAsset: { status: "Draft" }, userDefaults: null })
       ),
@@ -182,9 +182,9 @@ describe("fixedAssetSell", () => {
   });
 });
 
-describe("fixedAssetTakeOutOfService", () => {
+describe("takeFixedAssetOutOfService", () => {
   it("refuses a unit on rent, read with the service role", async () => {
-    const result = await fixedAssetTakeOutOfService(
+    const result = await takeFixedAssetOutOfService(
       contextFor(
         reading({
           fixedAsset: { status: "Active", outOfServiceSince: null }
@@ -207,7 +207,7 @@ describe("fixedAssetTakeOutOfService", () => {
   });
 
   it("refuses an asset already out of service", async () => {
-    const result = await fixedAssetTakeOutOfService(
+    const result = await takeFixedAssetOutOfService(
       contextFor(
         reading({
           fixedAsset: { status: "Active", outOfServiceSince: "2026-09-01" }
@@ -221,9 +221,9 @@ describe("fixedAssetTakeOutOfService", () => {
   });
 });
 
-describe("exchangeRateOverride", () => {
+describe("overrideExchangeRate", () => {
   it("refuses to pin the base currency", async () => {
-    const result = await exchangeRateOverride(
+    const result = await overrideExchangeRate(
       contextFor(reading({ company: { baseCurrencyCode: "USD" } })),
       { currencyCode: "USD", rate: 1.1 }
     );
@@ -234,9 +234,9 @@ describe("exchangeRateOverride", () => {
   });
 });
 
-describe("depreciationRunCreate", () => {
+describe("createDepreciationRun", () => {
   it("refuses a period that does not end after the last run", async () => {
-    const result = await depreciationRunCreate(
+    const result = await createDepreciationRun(
       contextFor(
         reading({ depreciationRun: [{ periodEnd: "2026-09-30" }] })
       ),

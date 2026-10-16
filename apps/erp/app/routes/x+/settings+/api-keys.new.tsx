@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(apiKeyValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.apiKey.create(apiKeyFields(input.data));
+  return api.settings.createApiKey(apiKeyFields(input.data));
 }
 
 export default function NewApiKeyRoute() {

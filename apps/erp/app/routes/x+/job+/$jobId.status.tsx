@@ -32,7 +32,7 @@ export async function action(args: ActionFunctionArgs) {
 
   switch (input.data.status) {
     case "Planned": {
-      const result = await api.production.job.plan({ jobId });
+      const result = await api.production.planDraftJob({ jobId });
       if (result.error) return result;
       return respond(args.request, result).redirect(
         path.to.jobMaterials(jobId),
@@ -40,15 +40,15 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
     case "Paused":
-      return api.production.job.pause({ jobId });
+      return api.production.pauseJob({ jobId });
     case "Ready":
-      return api.production.job.resume({ jobId });
+      return api.production.resumeJob({ jobId });
     case "Draft":
     case "In Progress":
-      return api.production.job.reopen({ jobId });
+      return api.production.reopenJob({ jobId });
     case "Closed":
-      return api.production.job.close({ jobId });
+      return api.production.closeJob({ jobId });
     case "Cancelled":
-      return api.production.job.cancel({ jobId });
+      return api.production.cancelJob({ jobId });
   }
 }

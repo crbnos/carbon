@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(receiptValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.inventory.receipt.update({
+  const result = await api.inventory.updateReceipt({
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });

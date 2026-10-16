@@ -38,7 +38,7 @@ export async function action(args: ActionFunctionArgs) {
           "The cancellation is incomplete"
       };
     }
-    const result = await api.sales.contract.previewCancellation({
+    const result = await api.sales.previewContractCancellation({
       customerContractId: id,
       endDate: cancellation.data.endDate
     });
@@ -49,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
     customerContractCancelValidator
   ).validate(formData);
   if (cancellation.error) return validationError(cancellation.error);
-  const result = await api.sales.contract.cancel({
+  const result = await api.sales.cancelContract({
     ...cancellation.data,
     customerContractId: id
   });

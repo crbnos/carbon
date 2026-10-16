@@ -68,7 +68,7 @@ export async function action(args: ActionFunctionArgs) {
   const { quoteId } = input.params;
 
   const api = await carbon(args.request);
-  const result = await api.sales.quote.update({
+  const result = await api.sales.updateQuoteDetails({
     ...input.data,
     id: quoteId,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

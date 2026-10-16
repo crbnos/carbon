@@ -25,7 +25,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...rfq } = input.data;
   const api = await carbon(args.request);
-  const result = await api.purchasing.rfq.create({
+  const result = await api.purchasing.createPurchasingRfq({
     ...rfq,
     customFields: input.formData && setCustomFields(input.formData)
   });

@@ -42,7 +42,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(maintenanceDispatchValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.maintenanceDispatch.create(input.data);
+  const result = await api.resources.createMaintenanceDispatch(input.data);
   return respond(args.request, result).redirect(
     result.data
       ? path.to.maintenanceDispatch(result.data.id)

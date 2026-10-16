@@ -173,9 +173,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   if ("writeMissingJournals" in input.data) {
-    return api.settings.accounting.writeMissingJournals({});
+    return api.settings.writeMissingJournals({});
   }
-  return api.settings.accounting.update(input.data);
+  return api.settings.updateAccountingSettings(input.data);
 }
 
 export default function AccountingSettingsRoute() {

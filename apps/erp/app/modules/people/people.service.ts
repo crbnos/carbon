@@ -597,7 +597,7 @@ export async function updateAttributeSortOrder(
   return Promise.all(updatePromises);
 }
 
-/** People's job updates go through `people_job_update`, which also reschedules. */
+/** People's job updates go through `people_updatePersonJob`, which also reschedules. */
 export async function updateEmployeeJob(
   db: Kysely<KyselyDatabase>,
   employeeId: string,
@@ -774,7 +774,7 @@ export async function upsertHoliday(
   return client.from("holiday").update(sanitize(holiday)).eq("id", holiday.id);
 }
 
-/** Shifts are saved through `people_shift_create` / `people_shift_update`. */
+/** Shifts are saved through `people_createShift` / `people_updateShift`. */
 export async function upsertShift(
   client: SupabaseClient<Database>,
   shift:

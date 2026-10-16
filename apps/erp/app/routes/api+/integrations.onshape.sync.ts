@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const { rows, ...ids } = input.data;
   // The operation checks `rows` with its own schema; the panel toasts what is wrong.
-  return api.items.method.syncOnshape({
+  return api.items.syncOnshapeMethod({
     ...ids,
     rows: rows as z.input<typeof onShapeDataValidator>
   });

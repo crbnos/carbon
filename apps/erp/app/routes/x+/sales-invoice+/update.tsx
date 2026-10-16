@@ -11,5 +11,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateSalesInvoiceField.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.invoicing.salesInvoice.updateField(input.data);
+  return api.invoicing.updateSalesInvoiceField(input.data);
 }

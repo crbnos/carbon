@@ -86,11 +86,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   switch (input.data.intent) {
     case "upsertRoute":
-      return api.settings.printerRoute.save(input.data);
+      return api.settings.savePrinterRoute(input.data);
     case "testPrint":
-      return api.settings.printerRoute.test(input.data);
+      return api.settings.testPrinterRoute(input.data);
     case "updateAssignment":
-      return api.settings.printing.assign(input.data);
+      return api.settings.assignPrinter(input.data);
   }
 }
 

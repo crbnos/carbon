@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { runId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.revenueRecognitionRun.repeat({ runId });
+  const result = await api.accounting.repeatRevenueRecognitionRun({ runId });
   return respond(args.request, result).redirect(
     path.to.revenueRecognitionRun(result.data?.id ?? runId),
     { message: result.data ? `${result.data.readableId} created` : undefined }

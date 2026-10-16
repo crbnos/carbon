@@ -93,7 +93,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { trackedEntityId, quantity, locationId } = input.data;
   const api = await carbon(args.request);
-  const result = await api.inventory.stockTransfer.line.pickEntity({
+  const result = await api.inventory.pickStockTransferLineEntity({
     lineId: input.params.lineId,
     trackedEntityId,
     quantity,

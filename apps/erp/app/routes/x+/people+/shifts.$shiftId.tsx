@@ -44,7 +44,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id, ...shift } = input.data;
   if (!id) throw new Error("Shift ID is required");
   const api = await carbon(args.request);
-  const result = await api.people.shift.update({
+  const result = await api.people.updateShift({
     ...shift,
     id,
     customFields: input.formData && setCustomFields(input.formData)

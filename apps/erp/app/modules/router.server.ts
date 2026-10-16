@@ -2,23 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { account } from "./account/index.server";
-import { accounting } from "./accounting/index.server";
-import { agent } from "./agent/index.server";
-import { documents } from "./documents/index.server";
-import { inventory } from "./inventory/index.server";
-import { invoicing } from "./invoicing/index.server";
-import { items } from "./items/index.server";
-import { people } from "./people/index.server";
-import { production } from "./production/index.server";
-import { purchasing } from "./purchasing/index.server";
-import { quality } from "./quality/index.server";
-import { resources } from "./resources/index.server";
-import { sales } from "./sales/index.server";
-import { settings } from "./settings/index.server";
-import { shared } from "./shared/index.server";
-import { users } from "./users/index.server";
-import { workflows } from "./workflows/index.server";
+import * as account from "./account/account.server";
+import * as accounting from "./accounting/accounting.server";
+import * as agent from "./agent/agent.server";
+import * as documents from "./documents/documents.server";
+import * as inventory from "./inventory/inventory.server";
+import * as invoicing from "./invoicing/invoicing.server";
+import * as items from "./items/items.server";
+import * as people from "./people/people.server";
+import * as production from "./production/production.server";
+import * as purchasing from "./purchasing/purchasing.server";
+import * as quality from "./quality/quality.server";
+import * as resources from "./resources/resources.server";
+import * as sales from "./sales/sales.server";
+import * as settings from "./settings/settings.server";
+import * as shared from "./shared/shared.server";
+import * as users from "./users/users.server";
+import * as workflows from "./workflows/workflows.server";
 
 /**
  * Every module's operations. Routes call them through `carbon(request)`; the

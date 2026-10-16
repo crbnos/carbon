@@ -47,7 +47,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(trainingAssignmentValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.trainingAssignment.create(input.data);
+  const result = await api.resources.createTrainingAssignment(input.data);
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
   return respond(args.request, result).redirect(path.to.trainingAssignments, {

@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.account.attributeValue.delete({
+  return api.account.deleteAttributeValue({
     ...input.data,
     userId: input.params.userId
   });

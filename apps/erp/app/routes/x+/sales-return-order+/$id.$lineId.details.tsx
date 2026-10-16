@@ -130,7 +130,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: orderId, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.returnOrder.line.update({
+  const result = await api.sales.updateReturnOrderLine({
     ...input.data,
     id: lineId,
     // The URL order: a line is never re-parented.

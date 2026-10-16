@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.shared.implementationHub.enroll({});
+  const result = await api.shared.enrollImplementationHub({});
   if (result.error) return result;
   throw redirect(path.to.getStarted);
 }

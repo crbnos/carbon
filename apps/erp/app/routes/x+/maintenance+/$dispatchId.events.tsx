@@ -32,7 +32,7 @@ export async function action(args: ActionFunctionArgs) {
     const input = await validator().request(args, { params: ["dispatchId"] });
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
-    return api.resources.maintenanceEvent.start({
+    return api.resources.startMaintenanceEvent({
       dispatchId: input.params.dispatchId
     });
   }
@@ -44,7 +44,7 @@ export async function action(args: ActionFunctionArgs) {
     );
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
-    return api.resources.maintenanceEvent.stop({
+    return api.resources.stopMaintenanceEvent({
       dispatchId: input.params.dispatchId,
       eventId: input.data.eventId
     });
@@ -60,12 +60,12 @@ export async function action(args: ActionFunctionArgs) {
   const maintenanceDispatchId = input.params.dispatchId;
   const api = await carbon(args.request);
   return id
-    ? api.resources.maintenanceEvent.update({
+    ? api.resources.updateMaintenanceEvent({
         ...event,
         id,
         maintenanceDispatchId
       })
-    : api.resources.maintenanceEvent.create({
+    : api.resources.createMaintenanceEvent({
         ...event,
         maintenanceDispatchId
       });

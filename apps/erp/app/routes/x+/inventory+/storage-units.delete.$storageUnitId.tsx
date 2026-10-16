@@ -74,7 +74,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { cascade } = input.data;
   const api = await carbon(args.request);
-  const result = await api.inventory.storageUnit.delete({
+  const result = await api.inventory.removeStorageUnit({
     storageUnitId: input.params.storageUnitId,
     cascade
   });

@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { ip, city } = originOf(args.request);
   const api = await carbon(args.request);
-  const result = await api.users.customerAccount.invite({
+  const result = await api.users.inviteCustomerContact({
     customerContactId: input.data.id,
     customerId: input.data.customer,
     ip,

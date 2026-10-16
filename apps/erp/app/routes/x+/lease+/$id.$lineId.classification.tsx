@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
 
   if ("intent" in input.data) {
-    const result = await api.purchasing.leaseLine.removeClassificationOverride({
+    const result = await api.purchasing.removeLeaseLineClassificationOverride({
       leaseId,
       leaseLineId
     });
@@ -35,7 +35,7 @@ export async function action(args: ActionFunctionArgs) {
       message: "Classification override removed"
     });
   }
-  const result = await api.purchasing.leaseLine.overrideClassification({
+  const result = await api.purchasing.overrideLeaseLineClassification({
     ...input.data,
     leaseId,
     leaseLineId

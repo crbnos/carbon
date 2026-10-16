@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { runId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.revenueRecognitionRun.recalculate({
+  const result = await api.accounting.recalculateRevenueRecognitionRun({
     runId
   });
   const run = result.data;

@@ -28,6 +28,10 @@ export async function action(args: ActionFunctionArgs) {
   const { ids, field, value } = input.data;
   const api = await carbon(args.request);
   return field === "supplierIds"
-    ? api.purchasing.rfq.update({ ids, field, value })
-    : api.purchasing.rfq.update({ ids, field, value: value[0] || null });
+    ? api.purchasing.updatePurchasingRfqs({ ids, field, value })
+    : api.purchasing.updatePurchasingRfqs({
+        ids,
+        field,
+        value: value[0] || null
+      });
 }

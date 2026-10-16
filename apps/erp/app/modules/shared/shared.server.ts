@@ -3,6 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  envelopes,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
   actionTaskEntities,
@@ -49,7 +56,6 @@ import {
   importQuotes,
   isQuoteImportTable
 } from "~/modules/sales/sales.service";
-import { importCsv } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import {
   type CreatableLookup,
@@ -58,14 +64,7 @@ import {
   importRequiresCreate,
   importSchemas
 } from "./imports.models";
-import {
-  actionTaskUrl,
-  assign,
-  assignmentEvent,
-  editableActionTask,
-  normalizeLookupName,
-  notifyImplementationHubAdmins
-} from "./shared.service";
+import * as service from "./shared.service";
 
 const logger = getLogger("erp", "shared");
 // tzdata only changes when the Postgres image is upgraded — a day-long TTL
@@ -105,12 +104,12 @@ export const assignRecord = defineServiceFn({
 
   async run(ctx, { table, id, assignee }) {
     const client = ctx.asCaller.supabase;
-    const assigned = await assign(client, { table, id, assignee });
+    const assigned = await service.assign(client, { table, id, assignee });
     if (assigned.error) {
       return ctx.error("internal", "Failed to assign", assigned.error);
     }
 
-    const event = assignee ? assignmentEvent(table) : null;
+    const event = assignee ? service.assignmentEvent(table) : null;
     if (!event) return { id };
 
     let documentId: string | null | undefined = id;
@@ -214,7 +213,7 @@ export const importCsvFile = defineServiceFn({
           companyGroupId: ctx.company.groupId,
           userId: ctx.auditUserId
         })
-      : await importCsv(ctx.asSystem.supabase, ctx.asSystem.pg, {
+      : await service.importCsv(ctx.asSystem.supabase, ctx.asSystem.pg, {
           table,
           filePath,
           columnMappings,
@@ -287,13 +286,13 @@ export const createImportLookups = defineServiceFn({
     }
 
     const rowByName = new Map(
-      existing.data.map((row) => [normalizeLookupName(row.name), row])
+      existing.data.map((row) => [service.normalizeLookupName(row.name), row])
     );
     const missing = [
       ...new Map(
         names
-          .filter((name) => !rowByName.has(normalizeLookupName(name)))
-          .map((name) => [normalizeLookupName(name), name])
+          .filter((name) => !rowByName.has(service.normalizeLookupName(name)))
+          .map((name) => [service.normalizeLookupName(name), name])
       ).values()
     ];
 
@@ -316,13 +315,13 @@ export const createImportLookups = defineServiceFn({
         );
       }
       for (const row of inserted.data) {
-        rowByName.set(normalizeLookupName(row.name), row);
+        rowByName.set(service.normalizeLookupName(row.name), row);
       }
     }
 
     return {
       results: names.map((name) => {
-        const row = rowByName.get(normalizeLookupName(name));
+        const row = rowByName.get(service.normalizeLookupName(name));
         return row
           ? { id: row.id, name: row.name }
           : { name, error: "Could not create value" };
@@ -364,7 +363,7 @@ export const enrollImplementationHub = defineServiceFn({
       return ctx.error("internal", "Failed to enroll company", enrolled.error);
     }
 
-    await notifyImplementationHubAdmins(ctx);
+    await service.notifyImplementationHubAdmins(ctx);
     return { enrolled: true };
   }
 });
@@ -650,7 +649,7 @@ export const createJiraIssue = defineServiceFn({
     const jira = getJiraClient();
 
     const [task, siteUrl] = await Promise.all([
-      editableActionTask(ctx, entityType, actionId),
+      service.editableActionTask(ctx, entityType, actionId),
       jira.getSiteUrl(companyId)
     ]);
     if (task instanceof CarbonError) return task;
@@ -701,7 +700,7 @@ export const createJiraIssue = defineServiceFn({
     await jira.createRemoteLink(
       companyId,
       issue.id,
-      actionTaskUrl(linked.data, entityType),
+      service.actionTaskUrl(linked.data, entityType),
       `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     );
     return { issueId: issue.id };
@@ -727,7 +726,7 @@ export const linkJiraIssue = defineServiceFn({
     const jira = getJiraClient();
 
     const [task, issue, siteUrl] = await Promise.all([
-      editableActionTask(ctx, entityType, actionId),
+      service.editableActionTask(ctx, entityType, actionId),
       jira.getIssue(companyId, issueId),
       jira.getSiteUrl(companyId)
     ]);
@@ -769,7 +768,7 @@ export const linkJiraIssue = defineServiceFn({
     await jira.createRemoteLink(
       companyId,
       issue.id,
-      actionTaskUrl(linked.data, entityType),
+      service.actionTaskUrl(linked.data, entityType),
       `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     );
     return { issueId: issue.id };
@@ -791,7 +790,7 @@ export const unlinkJiraIssue = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     if (entityType === "changeOrderActionTask") {
-      const task = await editableActionTask(ctx, entityType, actionId);
+      const task = await service.editableActionTask(ctx, entityType, actionId);
       if (task instanceof CarbonError) return task;
     }
 
@@ -856,7 +855,7 @@ export const createLinearIssue = defineServiceFn({
     const { entityType, actionId } = input;
     const linear = getLinearClient();
 
-    const task = await editableActionTask(ctx, entityType, actionId);
+    const task = await service.editableActionTask(ctx, entityType, actionId);
     if (task instanceof CarbonError) return task;
 
     const issue = await linear.createIssue(companyId, {
@@ -878,7 +877,7 @@ export const createLinearIssue = defineServiceFn({
 
     await linear.createAttachmentLink(companyId, {
       issueId: issue.id,
-      url: actionTaskUrl(linked.data, entityType),
+      url: service.actionTaskUrl(linked.data, entityType),
       title: `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     });
     return { issueId: issue.id };
@@ -903,7 +902,7 @@ export const linkLinearIssue = defineServiceFn({
     const linear = getLinearClient();
 
     const [task, issue] = await Promise.all([
-      editableActionTask(ctx, entityType, actionId),
+      service.editableActionTask(ctx, entityType, actionId),
       linear.getIssueById(companyId, issueId)
     ]);
     if (task instanceof CarbonError) return task;
@@ -932,7 +931,7 @@ export const linkLinearIssue = defineServiceFn({
 
     await linear.createAttachmentLink(companyId, {
       issueId: issue.id as string,
-      url: actionTaskUrl(linked.data, entityType),
+      url: service.actionTaskUrl(linked.data, entityType),
       title: `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     });
     return { issueId: issue.id as string };
@@ -954,7 +953,7 @@ export const unlinkLinearIssue = defineServiceFn({
   async run(ctx, { entityType, actionId }) {
     const companyId = ctx.company.id;
     if (entityType === "changeOrderActionTask") {
-      const task = await editableActionTask(ctx, entityType, actionId);
+      const task = await service.editableActionTask(ctx, entityType, actionId);
       if (task instanceof CarbonError) return task;
     }
 
@@ -978,5 +977,346 @@ export const unlinkLinearIssue = defineServiceFn({
       logger.error("Failed to clean up Linear attachment", { error });
     }
     return { actionId };
+  }
+});
+/**
+ * Delete saved view
+ *
+ * @mcp destructive
+ */
+export const deleteSavedView = defineServiceFn({
+  input: z.looseObject({ viewId: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteSavedView(
+        ctx.asCaller.supabase,
+        input.viewId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get base64 image from supabase
+ *
+ * @mcp read
+ */
+export const getBase64ImageFromSupabase = defineServiceFn({
+  input: z.looseObject({ path: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getBase64ImageFromSupabase(
+        ctx.asCaller.supabase,
+        input.path as never
+      )
+    );
+  }
+});
+
+/**
+ * Get countries
+ *
+ * @mcp read
+ */
+export const getCountries = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return envelope(ctx, await service.getCountries(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * The item's CAD model in the same shape the line views expose it, so it drops straight into `<CadModel modelUpload={...} />`
+ *
+ * @mcp read
+ */
+export const getModelByItemId = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getModelByItemId(
+        ctx.asCaller.supabase,
+        input.itemId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get notes
+ *
+ * @mcp read
+ */
+export const getNotes = defineServiceFn({
+  input: z.looseObject({ documentId: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getNotes(ctx.asCaller.supabase, input.documentId as never)
+    );
+  }
+});
+
+/**
+ * Get tags list
+ *
+ * @mcp read
+ */
+export const getTagsList = defineServiceFn({
+  input: z.looseObject({ table: z.string().nullable().optional() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getTagsList(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.table as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert note
+ *
+ * @mcp
+ */
+export const insertNote = defineServiceFn({
+  input: z.looseObject({ note: z.string(), documentId: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertNote(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert tag
+ *
+ * @mcp
+ */
+export const insertTag = defineServiceFn({
+  input: z.looseObject({
+    tag: z.looseObject({
+      createdAt: z.string().optional(),
+      name: z.string(),
+      table: z.string()
+    })
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertTag(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.tag, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get external link
+ *
+ * @mcp read
+ */
+export const getExternalLink = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getExternalLink(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get customer portals
+ *
+ * @mcp read
+ */
+export const getCustomerPortals = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getCustomerPortals(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get customer portal
+ *
+ * @mcp read
+ */
+export const getCustomerPortal = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCustomerPortal(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Upsert saved view
+ *
+ * @mcp
+ */
+export const upsertSavedView = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    name: z.string(),
+    description: z.string().optional(),
+    table: z.string(),
+    type: z.enum(["Public", "Private"]),
+    filters: z.array(z.string()).optional(),
+    sorts: z.array(z.string()).optional(),
+    columnPinning: z.record(z.string(), z.unknown()).optional(),
+    columnVisibility: z.record(z.string(), z.unknown()).optional(),
+    columnOrder: z.array(z.string()).optional()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertSavedView(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update saved view order
+ *
+ * @mcp
+ */
+export const updateSavedViewOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateSavedViewOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get enforcement rules
+ *
+ * @mcp read
+ */
+export const getEnforcementRules = defineServiceFn({
+  input: z.looseObject({
+    family: z.enum(["storage", "sales"]),
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional(),
+      targetType: z.enum(["item", "workCenter"]).nullable().optional()
+    })
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getEnforcementRules(
+        ctx.asCaller.supabase,
+        input.family as never,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get enforcement rule
+ *
+ * @mcp read
+ */
+export const getEnforcementRule = defineServiceFn({
+  input: z.looseObject({
+    family: z.enum(["storage", "sales"]),
+    id: z.string()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getEnforcementRule(
+        ctx.asCaller.supabase,
+        input.family as never,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Pin counts per rule id
+ *
+ * @mcp read
+ */
+export const getEnforcementRuleAssignmentCounts = defineServiceFn({
+  input: z.looseObject({ ruleIds: z.array(z.string()) }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getEnforcementRuleAssignmentCounts(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.ruleIds, ["companyId"]) as never
+      )
+    );
   }
 });

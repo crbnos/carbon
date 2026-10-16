@@ -69,21 +69,29 @@ export const replan = defineServiceFn({
 `;
 
 const ROUTER = `
-import { cancelJob, deleteJob, replan } from "./production";
-const production = { job: { cancel: cancelJob, delete: deleteJob }, item: { replan } };
+import * as production from "./production";
 export const router = { production };
 `;
 
 describe("buildServiceFnTools", () => {
   const tools = toolsFor({ "/m/production.ts": PRODUCTION, "/m/router.ts": ROUTER });
-  const cancel = tools.find((tool) => tool.name === "production_job_cancel");
+  const cancel = tools.find((tool) => tool.name === "production_cancelJob");
 
-  it("publishes only the leaves tagged @mcp, named by their router path", () => {
+  it("publishes only the leaves tagged @mcp, named module_function", () => {
     expect(tools.map((tool) => tool.name)).toEqual([
-      "production_job_cancel",
-      "production_job_delete"
+      "production_cancelJob",
+      "production_deleteJob"
     ]);
-    expect(cancel?.serviceFn).toEqual({ path: ["production", "job", "cancel"] });
+    expect(cancel?.serviceFn).toEqual({ path: ["production", "cancelJob"] });
+  });
+
+  it("refuses a server file that exports anything but service functions", () => {
+    expect(() =>
+      toolsFor({
+        "/m/production.ts": `${PRODUCTION}\nexport function helper() {}`,
+        "/m/router.ts": ROUTER
+      })
+    ).toThrow(/export helper is not a defineServiceFn/);
   });
 
   it("takes the title from the summary and the description from @remarks", () => {
@@ -107,7 +115,7 @@ describe("buildServiceFnTools", () => {
   it("gates one module on the API and leaves several to the function", () => {
     expect(cancel?.permission).toEqual({ module: "production", actions: ["update"] });
     expect(cancel?.classification).toBe("WRITE");
-    const remove = tools.find((tool) => tool.name === "production_job_delete");
+    const remove = tools.find((tool) => tool.name === "production_deleteJob");
     expect(remove?.permission).toEqual({ module: null, actions: [] });
     expect(remove?.classification).toBe("DESTRUCTIVE");
   });

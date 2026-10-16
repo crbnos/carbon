@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { memoId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.invoicing.memo.delete({ memoId });
+  const result = await api.invoicing.deleteDraftMemo({ memoId });
   // Back to the memo's own list: supplier memos are Supplier Credits (AP),
   // customer memos Credit Memos (AR).
   return respond(args.request, result).redirect(

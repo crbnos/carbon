@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.sales.returnOrder.confirm({
+  const result = await api.sales.confirmReturnOrder({
     salesReturnOrderId: input.params.id,
     locale: getPreferenceHeaders(args.request).locale
   });

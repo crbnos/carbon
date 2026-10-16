@@ -22,7 +22,7 @@ export async function action(args: ActionFunctionArgs) {
     ])
   );
   const api = await carbon(args.request);
-  return api.production.operation.reorder({
+  return api.production.reorderJobOperations({
     jobId: input.params.jobId,
     orders
   });

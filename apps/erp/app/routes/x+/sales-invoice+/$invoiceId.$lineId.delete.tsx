@@ -57,7 +57,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { invoiceId, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.invoicing.salesInvoice.line.delete({
+  const result = await api.invoicing.deleteDraftSalesInvoiceLine({
     invoiceId,
     lineId
   });

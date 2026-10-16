@@ -6,6 +6,12 @@
 // copy that (a) missed the canonical version's cache TTL and (b) bypassed its
 // per-request memoization.
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -28,32 +34,13 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
-  deleteGroup,
-  insertGroup,
-  upsertGroup,
-  upsertGroupMembers
-} from "~/modules/users/users.service";
-import {
   createOperatorValidator,
   employeeTypePermissionsValidator,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
   userPermissionsValidator
 } from "./users.models";
-import {
-  createConsoleOperator,
-  createCustomerAccount,
-  createEmployeeAccount,
-  createSupplierAccount,
-  emailAccountInvite,
-  firstIssue,
-  getSsoInviteDomainError,
-  inviteSender,
-  permissionsWriteError,
-  recordItarCertification,
-  refuseUnlessPermissionsFeature,
-  sendInviteEmail
-} from "./users.service";
+import * as service from "./users.service";
 
 const logger = getLogger("erp", "users");
 // Returns false if the auth identity for this userId has been deleted, leaving only an app-side row.
@@ -121,14 +108,14 @@ export const inviteEmployee = defineServiceFn({
       );
     }
 
-    const ssoDomainError = await getSsoInviteDomainError(
+    const ssoDomainError = await service.getSsoInviteDomainError(
       ctx.asSystem.supabase,
       companyId,
       input.email
     );
     if (ssoDomainError) return ctx.error("rule", ssoDomainError);
 
-    const created = await createEmployeeAccount(client, {
+    const created = await service.createEmployeeAccount(client, {
       email: input.email.toLowerCase(),
       firstName: input.firstName,
       lastName: input.lastName,
@@ -147,9 +134,9 @@ export const inviteEmployee = defineServiceFn({
       );
     }
 
-    const sender = await inviteSender(ctx);
+    const sender = await service.inviteSender(ctx);
     if (!sender) return ctx.error("internal", "Failed to load company or user");
-    await sendInviteEmail(ctx, {
+    await service.sendInviteEmail(ctx, {
       ...sender,
       email: input.email,
       code: created.code,
@@ -172,7 +159,7 @@ export const inviteCustomerContact = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { customerContactId, customerId, ...origin }) {
-    const created = await createCustomerAccount(ctx.asCaller.supabase, {
+    const created = await service.createCustomerAccount(ctx.asCaller.supabase, {
       id: customerContactId,
       customerId,
       companyId: ctx.company.id,
@@ -185,7 +172,7 @@ export const inviteCustomerContact = defineServiceFn({
         created
       );
     }
-    return emailAccountInvite(ctx, created, origin);
+    return service.emailAccountInvite(ctx, created, origin);
   }
 });
 
@@ -201,7 +188,7 @@ export const inviteSupplierContact = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { supplierContactId, supplierId, ...origin }) {
-    const created = await createSupplierAccount(ctx.asCaller.supabase, {
+    const created = await service.createSupplierAccount(ctx.asCaller.supabase, {
       id: supplierContactId,
       supplierId,
       companyId: ctx.company.id,
@@ -214,7 +201,7 @@ export const inviteSupplierContact = defineServiceFn({
         created
       );
     }
-    return emailAccountInvite(ctx, created, origin);
+    return service.emailAccountInvite(ctx, created, origin);
   }
 });
 
@@ -305,7 +292,7 @@ export const resendInvites = defineServiceFn({
       .eq("id", existingInvite.data.createdBy)
       .single();
 
-    await sendInviteEmail(ctx, {
+    await service.sendInviteEmail(ctx, {
       companyName: company.data.name,
       invitedBy: {
         email: inviter.data?.email ?? user.data.email,
@@ -494,7 +481,7 @@ export const updateEmployeePermissions = defineServiceFn({
   }),
   permission: { update: "users" },
   async run(ctx, { id, employeeType, permissions, ip }) {
-    const gated = await refuseUnlessPermissionsFeature(ctx);
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
     const result = await updateEmployee(ctx.asCaller.supabase, {
@@ -505,7 +492,8 @@ export const updateEmployeePermissions = defineServiceFn({
       actorId: ctx.auditUserId,
       ip
     });
-    if (!result.success) return permissionsWriteError(ctx, result.message);
+    if (!result.success)
+      return service.permissionsWriteError(ctx, result.message);
     return { id };
   }
 });
@@ -527,7 +515,7 @@ export const bulkUpdatePermissions = defineServiceFn({
   }),
   permission: { update: "users" },
   async run(ctx, { editType, userIds, permissions, ip }) {
-    const gated = await refuseUnlessPermissionsFeature(ctx);
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
     const companyId = ctx.company.id;
@@ -579,7 +567,7 @@ export const createEmployeeType = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { name, permissions }) {
-    const gated = await refuseUnlessPermissionsFeature(ctx);
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
     const client = ctx.asCaller.supabase;
@@ -626,7 +614,7 @@ export const updateEmployeeType = defineServiceFn({
   }),
   permission: { update: "users" },
   async run(ctx, { id, name, permissions }) {
-    const gated = await refuseUnlessPermissionsFeature(ctx);
+    const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
     const client = ctx.asCaller.supabase;
@@ -667,7 +655,7 @@ export const createGroup = defineServiceFn({
   permission: { create: "users" },
   async run(ctx, { name, selections }) {
     const client = ctx.asCaller.supabase;
-    const created = await insertGroup(client, {
+    const created = await service.insertGroup(client, {
       name,
       companyId: ctx.company.id
     });
@@ -676,9 +664,13 @@ export const createGroup = defineServiceFn({
       return ctx.error("internal", "Failed to insert group", created.error);
     }
 
-    const members = await upsertGroupMembers(client, groupId, selections);
+    const members = await service.upsertGroupMembers(
+      client,
+      groupId,
+      selections
+    );
     if (members.error) {
-      await deleteGroup(client, groupId);
+      await service.deleteGroup(client, groupId);
       return ctx.error(
         "internal",
         "Failed to insert group members",
@@ -702,8 +694,8 @@ export const updateGroup = defineServiceFn({
   async run(ctx, { id, name, selections }) {
     const client = ctx.asCaller.supabase;
     const [group, members] = await Promise.all([
-      upsertGroup(client, { id, name, companyId: ctx.company.id }),
-      upsertGroupMembers(client, id, selections)
+      service.upsertGroup(client, { id, name, companyId: ctx.company.id }),
+      service.upsertGroupMembers(client, id, selections)
     ]);
     if (group.error) {
       return ctx.error("internal", "Failed to update group", group.error);
@@ -747,7 +739,7 @@ export const addConsoleOperator = defineServiceFn({
       );
     }
 
-    const created = await createConsoleOperator(ctx.asCaller.supabase, {
+    const created = await service.createConsoleOperator(ctx.asCaller.supabase, {
       firstName,
       lastName,
       employeeType: operatorType.data.id,
@@ -869,9 +861,9 @@ export const certifyItarEntity = defineServiceFn({
 
     const parsed = itarEntityCertificationValidator.safeParse(form);
     if (!parsed.success) {
-      return ctx.error("validation", firstIssue(parsed.error));
+      return ctx.error("validation", service.firstIssue(parsed.error));
     }
-    return recordItarCertification(ctx, {
+    return service.recordItarCertification(ctx, {
       type: "entity",
       fullLegalName: parsed.data.fullLegalName,
       title: parsed.data.title,
@@ -895,13 +887,524 @@ export const certifyItarUser = defineServiceFn({
   async run(ctx, { ipAddress, userAgent, ...form }) {
     const parsed = itarUserCertificationValidator.safeParse(form);
     if (!parsed.success) {
-      return ctx.error("validation", firstIssue(parsed.error));
+      return ctx.error("validation", service.firstIssue(parsed.error));
     }
-    return recordItarCertification(ctx, {
+    return service.recordItarCertification(ctx, {
       type: "user",
       fullLegalName: parsed.data.fullLegalName,
       ipAddress,
       userAgent
     });
+  }
+});
+/**
+ * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user
+ *
+ * @mcp read
+ */
+export const getItarCertificationStatus = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return plain(
+      ctx,
+      await service.getItarCertificationStatus(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * The company's latest entity Rider acceptance, or null when nobody has accepted one yet
+ *
+ * @mcp read
+ */
+export const getItarEntityCertification = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getItarEntityCertification(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)
+ *
+ * @mcp read
+ */
+export const getItarCertificationReport = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getItarCertificationReport(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete group
+ *
+ * @mcp destructive
+ */
+export const deleteGroup = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { delete: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteGroup(ctx.asCaller.supabase, input.groupId as never)
+    );
+  }
+});
+
+/**
+ * Get customers
+ *
+ * @mcp read
+ */
+export const getCustomers = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getCustomers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee
+ *
+ * @mcp read
+ */
+export const getEmployee = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getEmployee(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get unrevoked invite emails
+ *
+ * @mcp read
+ */
+export const getUnrevokedInviteEmails = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getUnrevokedInviteEmails(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * User ids in this company with a verified authenticator
+ *
+ * @mcp read
+ */
+export const getUsersWithVerifiedMfa = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getUsersWithVerifiedMfa(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get employees
+ *
+ * @mcp read
+ */
+export const getEmployees = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getEmployees(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Gets console operators — users with @console.internal emails
+ *
+ * @mcp read
+ */
+export const getConsoleOperators = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getConsoleOperators(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee type
+ *
+ * @mcp read
+ */
+export const getEmployeeType = defineServiceFn({
+  input: z.looseObject({ employeeTypeId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getEmployeeType(
+        ctx.asCaller.supabase,
+        input.employeeTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee types
+ *
+ * @mcp read
+ */
+export const getEmployeeTypes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getEmployeeTypes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get invitable
+ *
+ * @mcp read
+ */
+export const getInvitable = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getInvitable(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get modules
+ *
+ * @mcp read
+ */
+export const getModules = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "users" },
+  async run(ctx) {
+    return envelope(ctx, await service.getModules(ctx.asCaller.supabase));
+  }
+});
+
+/**
+ * Get group
+ *
+ * @mcp read
+ */
+export const getGroup = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getGroup(ctx.asCaller.supabase, input.groupId as never)
+    );
+  }
+});
+
+/**
+ * Get group members
+ *
+ * @mcp read
+ */
+export const getGroupMembers = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getGroupMembers(
+        ctx.asCaller.supabase,
+        input.groupId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get groups
+ *
+ * @mcp read
+ */
+export const getGroups = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    uid: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getGroups(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get group emails
+ *
+ * @mcp read
+ */
+export const getGroupEmails = defineServiceFn({
+  input: z.looseObject({ groupIds: z.array(z.string()) }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getGroupEmails(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.groupIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get user select groups
+ *
+ * @mcp read
+ */
+export const getUserSelectGroups = defineServiceFn({
+  input: z.looseObject({
+    type: z.string().optional(),
+    search: z.string().optional(),
+    limit: z.number(),
+    offset: z.number()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getUserSelectGroups(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get user select group members
+ *
+ * @mcp read
+ */
+export const getUserSelectGroupMembers = defineServiceFn({
+  input: z.looseObject({ groupId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getUserSelectGroupMembers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.groupId as never
+      )
+    );
+  }
+});
+
+/**
+ * Search users for select
+ *
+ * @mcp read
+ */
+export const searchUsersForSelect = defineServiceFn({
+  input: z.looseObject({
+    q: z.string(),
+    type: z.string().optional(),
+    excludeSelf: z.boolean().optional(),
+    allowedIds: z.array(z.string()).optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.searchUsersForSelect(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Resolve user select ids
+ *
+ * @mcp
+ */
+export const resolveUserSelectIds = defineServiceFn({
+  input: z.looseObject({ ids: z.array(z.string()) }),
+  permission: { update: "users" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.resolveUserSelectIds(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.ids, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get permissions by employee type
+ *
+ * @mcp read
+ */
+export const getPermissionsByEmployeeType = defineServiceFn({
+  input: z.looseObject({ employeeTypeId: z.string() }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPermissionsByEmployeeType(
+        ctx.asCaller.supabase,
+        input.employeeTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get suppliers
+ *
+ * @mcp read
+ */
+export const getSuppliers = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "users" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSuppliers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
   }
 });

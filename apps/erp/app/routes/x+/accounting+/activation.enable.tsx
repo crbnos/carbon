@@ -116,7 +116,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(activateAccountingValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.accounting.cutover.enable(input.data);
+  const result = await api.accounting.enableAccountingCutover(input.data);
   const { pathname, search } = new URL(args.request.url);
   return respond(args.request, result).redirect(path.to.accountingPeriods, {
     message: "Accounting is enabled",

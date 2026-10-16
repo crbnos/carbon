@@ -10,5 +10,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["receiptId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.inventory.receipt.void({ receiptId: input.params.receiptId });
+  return api.inventory.voidReceipt({ receiptId: input.params.receiptId });
 }

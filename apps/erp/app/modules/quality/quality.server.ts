@@ -3,6 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import * as engine from "@carbon/database/quality";
 import { lockIssueDispositions } from "@carbon/database/quality";
@@ -51,41 +57,11 @@ import {
   qualityDocumentStatus,
   riskRegisterValidator
 } from "./quality.models";
-import {
-  activateQualityDocuments,
-  associationHeaders,
-  closeIssue,
-  createIssueTasks,
-  deleteIssue,
-  failedFeatureLines,
-  getInspection,
-  getIssueTypesList,
-  getRisk,
-  type InspectionSaveBalloonsGeometryPayload,
-  type InspectionSaveFeaturesPayload,
-  insertIssue,
-  insertLineAssociation,
-  interpolateTemplate,
-  issueLocked,
-  linkInspectionToIssue,
-  linkJobOperationContext,
-  linkJobOperationLot,
-  mergeInspectionBalloonsPayload,
-  mergeInspectionFeaturesPayload,
-  notifyIssue,
-  notifyRiskAssignee,
-  resolveInspectionFeaturePayloadIds,
-  rpcErrorMessage,
-  saveInspectionDocumentAtomic,
-  scarTask,
-  translateLegacyInspectionSavePayload,
-  updateInspectionDocumentSampling,
-  updateIssueItemQuantity,
-  updateIssueStatus,
-  updateIssueTaskContent,
-  updateIssueTaskStatus,
-  upsertRisk
+import type {
+  InspectionSaveBalloonsGeometryPayload,
+  InspectionSaveFeaturesPayload
 } from "./quality.service";
+import * as service from "./quality.service";
 
 const logger = getLogger("erp", "quality");
 // ─── Inspection plan save ────────────────────────────────────────────────────
@@ -171,7 +147,7 @@ export const createIssue = defineServiceFn({
       return ctx.error("notFound", "Failed to insert issue");
     }
 
-    const created = await insertIssue(serviceRole, {
+    const created = await service.insertIssue(serviceRole, {
       nonConformanceId: input.nonConformanceId || undefined,
       name: input.name,
       priority: input.priority,
@@ -217,19 +193,19 @@ export const createIssue = defineServiceFn({
     // operation's make method produced onto a disposition row, so the MRB can
     // scrap / rework / use-as-is it at once.
     if (input.jobOperationId) {
-      await linkJobOperationLot(ctx, {
+      await service.linkJobOperationLot(ctx, {
         nonConformanceId: issueId,
         jobOperationId: input.jobOperationId
       });
     }
 
-    const tasks = await createIssueTasks(ctx, issueId);
+    const tasks = await service.createIssueTasks(ctx, issueId);
     if (tasks.error) {
-      await deleteIssue(serviceRole, issueId);
+      await service.deleteIssue(serviceRole, issueId);
       return ctx.error("internal", "Failed to create tasks", tasks.error);
     }
 
-    await notifyIssue(
+    await service.notifyIssue(
       ctx,
       (integrations) =>
         notifyIssueCreated({ client, serviceRole }, integrations, {
@@ -314,7 +290,7 @@ export const updateIssueField = defineServiceFn({
       return ctx.error("internal", "Failed to update issue", issues.error);
     }
     if (issues.data.some((issue) => isIssueLocked(issue.status))) {
-      return ctx.error("rule", issueLocked);
+      return ctx.error("rule", service.issueLocked);
     }
 
     const isArrayField = (issueArrayFields as readonly string[]).includes(
@@ -346,7 +322,7 @@ export const updateIssueField = defineServiceFn({
       // edit can name hundreds of issues.
       const reconciled = await async.map(
         issues.data,
-        ({ id }) => createIssueTasks(ctx, id),
+        ({ id }) => service.createIssueTasks(ctx, id),
         { concurrency: 4 }
       );
       const failed = reconciled.find((r) => r.error)?.error;
@@ -406,7 +382,7 @@ export const setIssueStatus = defineServiceFn({
       }
     }
 
-    const update = await updateIssueStatus(ctx.asCaller.supabase, {
+    const update = await service.updateIssueStatus(ctx.asCaller.supabase, {
       id,
       status,
       assignee: undefined,
@@ -421,7 +397,7 @@ export const setIssueStatus = defineServiceFn({
       );
     }
 
-    await notifyIssue(
+    await service.notifyIssue(
       ctx,
       (integrations) =>
         notifyIssueStatusChanged(
@@ -461,7 +437,7 @@ export const completeIssue = defineServiceFn({
   async run(ctx, { id }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const result = await closeIssue(ctx.asSystem.supabase, {
+    const result = await service.closeIssue(ctx.asSystem.supabase, {
       nonConformanceId: id,
       companyId,
       userId
@@ -474,7 +450,7 @@ export const completeIssue = defineServiceFn({
       );
     }
 
-    await notifyIssue(
+    await service.notifyIssue(
       ctx,
       (integrations) =>
         notifyIssueStatusChanged(
@@ -517,7 +493,7 @@ export const setIssueTaskStatus = defineServiceFn({
   async run(ctx, { id, status, type, assignee }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const update = await updateIssueTaskStatus(ctx.asCaller.supabase, {
+    const update = await service.updateIssueTaskStatus(ctx.asCaller.supabase, {
       id,
       status,
       type,
@@ -530,7 +506,7 @@ export const setIssueTaskStatus = defineServiceFn({
 
     const issueId = update.data?.nonConformanceId;
     if (issueId) {
-      await notifyIssue(
+      await service.notifyIssue(
         ctx,
         (integrations) =>
           notifyTaskStatusChanged(
@@ -680,11 +656,11 @@ export const updateIssueItemField = defineServiceFn({
       return ctx.error("notFound", "Issue item not found");
     }
     if (isIssueLocked(parent.data.nonConformance?.status)) {
-      return ctx.error("rule", issueLocked);
+      return ctx.error("rule", service.issueLocked);
     }
 
     if (input.field === "quantity") {
-      const result = await updateIssueItemQuantity({
+      const result = await service.updateIssueItemQuantity({
         id: input.id,
         companyId,
         userId: ctx.auditUserId,
@@ -744,7 +720,7 @@ export const createIssueAssociation = defineServiceFn({
       .eq("companyId", companyId)
       .maybeSingle();
     if (isIssueLocked(issue.data?.status)) {
-      return ctx.error("rule", issueLocked);
+      return ctx.error("rule", service.issueLocked);
     }
 
     const audit = { nonConformanceId, companyId, createdBy: userId };
@@ -779,7 +755,7 @@ export const createIssueAssociation = defineServiceFn({
         break;
       }
       case "inspections": {
-        const linked = await linkInspectionToIssue(ctx, {
+        const linked = await service.linkInspectionToIssue(ctx, {
           nonConformanceId,
           inspectionId: id
         });
@@ -787,7 +763,7 @@ export const createIssueAssociation = defineServiceFn({
         break;
       }
       default: {
-        const { table, readable, noun } = associationHeaders[type];
+        const { table, readable, noun } = service.associationHeaders[type];
         let headerQuery = client
           .from(table as "job")
           .select(`id, ${readable}${table === "job" ? ", itemId" : ""}`)
@@ -801,7 +777,7 @@ export const createIssueAssociation = defineServiceFn({
         if (header.error) return failed(noun, header.error);
         const row = header.data as unknown as Record<string, string | null>;
 
-        const insert = await insertLineAssociation(ctx, type, {
+        const insert = await service.insertLineAssociation(ctx, type, {
           ...audit,
           lineId: lineId!,
           headerId: row.id!,
@@ -810,7 +786,7 @@ export const createIssueAssociation = defineServiceFn({
         if (insert.error) return failed(noun, insert.error);
 
         if (type === "jobOperations") {
-          await linkJobOperationContext(ctx, {
+          await service.linkJobOperationContext(ctx, {
             nonConformanceId,
             jobItemId: row.itemId ?? null,
             jobOperationId: lineId!
@@ -1321,9 +1297,9 @@ export const rejectInspection = defineServiceFn({
     if (!createNcr) return { id, issueId: null };
 
     const [inspection, userDefaults, issueTypes] = await Promise.all([
-      getInspection(client, id),
+      service.getInspection(client, id),
       getUserDefaults(client, userId, companyId),
-      getIssueTypesList(client, companyId)
+      service.getIssueTypesList(client, companyId)
     ]);
     if (inspection.error || !inspection.data) {
       return ctx.error(
@@ -1360,13 +1336,13 @@ export const rejectInspection = defineServiceFn({
       .filter(Boolean)
       .join(" ");
 
-    const failedFeatures = await failedFeatureLines(ctx, id);
+    const failedFeatures = await service.failedFeatureLines(ctx, id);
     const failedFeaturesBlock =
       failedFeatures.length > 0
         ? `\n\nFailed features:\n${failedFeatures.join("\n")}`
         : "";
 
-    const created = await insertIssue(serviceRole, {
+    const created = await service.insertIssue(serviceRole, {
       name: issueTitle,
       description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${failedFeaturesBlock}`,
       priority: "Medium",
@@ -1390,7 +1366,7 @@ export const rejectInspection = defineServiceFn({
     }
     const { id: issueId, nonConformanceId } = created.data;
     const abandon = async (message: string, cause: unknown) => {
-      await deleteIssue(serviceRole, issueId);
+      await service.deleteIssue(serviceRole, issueId);
       return ctx.error("internal", message, cause);
     };
 
@@ -1526,7 +1502,7 @@ export const rejectInspection = defineServiceFn({
       );
     }
 
-    const tasks = await createIssueTasks(ctx, issueId);
+    const tasks = await service.createIssueTasks(ctx, issueId);
     if (tasks.error) {
       return abandon(
         "Lot rejected, but failed to create NCR tasks",
@@ -1534,7 +1510,7 @@ export const rejectInspection = defineServiceFn({
       );
     }
 
-    await notifyIssue(
+    await service.notifyIssue(
       ctx,
       (integrations) =>
         notifyIssueCreated({ client, serviceRole }, integrations, {
@@ -1613,17 +1589,23 @@ export const saveInspectionDocument = defineServiceFn({
           "Legacy balloons payload requires anchors"
         );
       }
-      const translated = translateLegacyInspectionSavePayload(
+      const translated = service.translateLegacyInspectionSavePayload(
         input.anchors!,
         input.balloons
           ? inspectionSaveBalloonsPayloadValidator.parse(input.balloons)
           : emptyInspectionSave
       );
-      features = mergeInspectionFeaturesPayload(features, translated.features);
-      balloons = mergeInspectionBalloonsPayload(balloons, translated.balloons);
+      features = service.mergeInspectionFeaturesPayload(
+        features,
+        translated.features
+      );
+      balloons = service.mergeInspectionBalloonsPayload(
+        balloons,
+        translated.balloons
+      );
     }
 
-    features = await resolveInspectionFeaturePayloadIds(
+    features = await service.resolveInspectionFeaturePayloadIds(
       client,
       id,
       companyId,
@@ -1631,7 +1613,7 @@ export const saveInspectionDocument = defineServiceFn({
     );
 
     if (input.samplingDefault) {
-      const sampling = await updateInspectionDocumentSampling(client, {
+      const sampling = await service.updateInspectionDocumentSampling(client, {
         ...input.samplingDefault,
         inspectionDocumentId: id,
         companyId,
@@ -1646,7 +1628,7 @@ export const saveInspectionDocument = defineServiceFn({
       }
     }
 
-    const saved = await saveInspectionDocumentAtomic(client, {
+    const saved = await service.saveInspectionDocumentAtomic(client, {
       inspectionDocumentId: id,
       companyId,
       userId: ctx.auditUserId,
@@ -1660,7 +1642,7 @@ export const saveInspectionDocument = defineServiceFn({
     if (saved.error || !saved.data) {
       return ctx.error(
         "rule",
-        rpcErrorMessage(saved.error, "Failed to save inspection plan"),
+        service.rpcErrorMessage(saved.error, "Failed to save inspection plan"),
         saved.error
       );
     }
@@ -1786,7 +1768,7 @@ export const updateQualityDocumentField = defineServiceFn({
     }
 
     if (status === "Active") {
-      return activateQualityDocuments(ctx, ids, documents.data);
+      return service.activateQualityDocuments(ctx, ids, documents.data);
     }
 
     if (documents.data.length > 0) {
@@ -1914,7 +1896,7 @@ export const seedQualityDocuments = defineServiceFn({
     const inserted = await client.from("qualityDocument").insert(
       documents.map((document) => ({
         ...document,
-        content: interpolateTemplate(document.content, {
+        content: service.interpolateTemplate(document.content, {
           company: company.data
         }) as typeof document.content,
         companyId,
@@ -1985,7 +1967,7 @@ export const createRisk = defineServiceFn({
   permission: {},
 
   async run(ctx, input) {
-    const result = await upsertRisk(ctx.asCaller.supabase, {
+    const result = await service.upsertRisk(ctx.asCaller.supabase, {
       ...input,
       notes: input.notes ?? {},
       assignee: input.assignee ?? ctx.auditUserId,
@@ -1996,7 +1978,7 @@ export const createRisk = defineServiceFn({
       return ctx.error("internal", "Failed to create risk", result.error);
     }
     if (input.assignee) {
-      await notifyRiskAssignee(ctx, result.data.id, input.assignee);
+      await service.notifyRiskAssignee(ctx, result.data.id, input.assignee);
     }
     return { id: result.data.id };
   }
@@ -2016,8 +1998,8 @@ export const updateRisk = defineServiceFn({
 
   async run(ctx, { id, ...input }) {
     const client = ctx.asCaller.supabase;
-    const previous = await getRisk(client, id);
-    const result = await upsertRisk(client, {
+    const previous = await service.getRisk(client, id);
+    const result = await service.upsertRisk(client, {
       ...input,
       notes: input.notes ?? {},
       id,
@@ -2029,7 +2011,7 @@ export const updateRisk = defineServiceFn({
       return ctx.error("internal", "Failed to update risk", result.error);
     }
     if (input.assignee && input.assignee !== previous.data?.assignee) {
-      await notifyRiskAssignee(ctx, id, input.assignee);
+      await service.notifyRiskAssignee(ctx, id, input.assignee);
     }
     return { id };
   }
@@ -2049,9 +2031,9 @@ export const setScarTaskStatus = defineServiceFn({
   permission: "system",
 
   async run(ctx, { externalLinkId, taskId, status }) {
-    const task = await scarTask(ctx, { externalLinkId, taskId });
+    const task = await service.scarTask(ctx, { externalLinkId, taskId });
     if (typeof task !== "string") return task;
-    const update = await updateIssueTaskStatus(ctx.asSystem.supabase, {
+    const update = await service.updateIssueTaskStatus(ctx.asSystem.supabase, {
       id: taskId,
       status,
       type: "action"
@@ -2080,9 +2062,9 @@ export const updateScarTaskNotes = defineServiceFn({
   permission: "system",
 
   async run(ctx, { externalLinkId, taskId, notes }) {
-    const task = await scarTask(ctx, { externalLinkId, taskId });
+    const task = await service.scarTask(ctx, { externalLinkId, taskId });
     if (typeof task !== "string") return task;
-    const update = await updateIssueTaskContent(ctx.asSystem.supabase, {
+    const update = await service.updateIssueTaskContent(ctx.asSystem.supabase, {
       id: taskId,
       content: notes,
       type: "action"
@@ -2091,5 +2073,2070 @@ export const updateScarTaskNotes = defineServiceFn({
       return ctx.error("internal", "Failed to update content", update.error);
     }
     return { taskId };
+  }
+});
+/**
+ * Activate gauge
+ *
+ * @mcp
+ */
+export const activateGauge = defineServiceFn({
+  input: z.looseObject({ gaugeId: z.string() }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.activateGauge(ctx.asCaller.supabase, input.gaugeId as never)
+    );
+  }
+});
+
+/**
+ * Deactivate gauge
+ *
+ * @mcp
+ */
+export const deactivateGauge = defineServiceFn({
+  input: z.looseObject({ gaugeId: z.string() }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deactivateGauge(
+        ctx.asCaller.supabase,
+        input.gaugeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete gauge
+ *
+ * @mcp destructive
+ */
+export const deleteGauge = defineServiceFn({
+  input: z.looseObject({ gaugeId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteGauge(ctx.asCaller.supabase, input.gaugeId as never)
+    );
+  }
+});
+
+/**
+ * Delete gauge calibration record
+ *
+ * @mcp destructive
+ */
+export const deleteGaugeCalibrationRecord = defineServiceFn({
+  input: z.looseObject({ gaugeCalibrationRecordId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteGaugeCalibrationRecord(
+        ctx.asCaller.supabase,
+        input.gaugeCalibrationRecordId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete gauge type
+ *
+ * @mcp destructive
+ */
+export const deleteGaugeType = defineServiceFn({
+  input: z.looseObject({ gaugeTypeId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteGaugeType(
+        ctx.asCaller.supabase,
+        input.gaugeTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete issue
+ *
+ * @mcp destructive
+ */
+export const deleteIssue = defineServiceFn({
+  input: z.looseObject({ nonConformanceId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteIssue(
+        ctx.asCaller.supabase,
+        input.nonConformanceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete issue association
+ *
+ * @mcp destructive
+ */
+export const deleteIssueAssociation = defineServiceFn({
+  input: z.looseObject({ type: z.string(), associationId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.deleteIssueAssociation(
+        ctx.asCaller.supabase,
+        input.type as never,
+        input.associationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete issue type
+ *
+ * @mcp destructive
+ */
+export const deleteIssueType = defineServiceFn({
+  input: z.looseObject({ nonConformanceTypeId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteIssueType(
+        ctx.asCaller.supabase,
+        input.nonConformanceTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete issue workflow
+ *
+ * @mcp destructive
+ */
+export const deleteIssueWorkflow = defineServiceFn({
+  input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteIssueWorkflow(
+        ctx.asCaller.supabase,
+        input.nonConformanceWorkflowId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete required action
+ *
+ * @mcp destructive
+ */
+export const deleteRequiredAction = defineServiceFn({
+  input: z.looseObject({ requiredActionId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteRequiredAction(
+        ctx.asCaller.supabase,
+        input.requiredActionId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete quality document
+ *
+ * @mcp destructive
+ */
+export const deleteQualityDocument = defineServiceFn({
+  input: z.looseObject({ qualityDocumentId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteQualityDocument(
+        ctx.asCaller.supabase,
+        input.qualityDocumentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete risk
+ *
+ * @mcp destructive
+ */
+export const deleteRisk = defineServiceFn({
+  input: z.looseObject({ riskId: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteRisk(ctx.asCaller.supabase, input.riskId as never)
+    );
+  }
+});
+
+/**
+ * Get issue from external link
+ *
+ * @mcp read
+ */
+export const getIssueFromExternalLink = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueFromExternalLink(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get gauge
+ *
+ * @mcp read
+ */
+export const getGauge = defineServiceFn({
+  input: z.looseObject({ gaugeId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getGauge(ctx.asCaller.supabase, input.gaugeId as never)
+    );
+  }
+});
+
+/**
+ * Get gauges
+ *
+ * @mcp read
+ */
+export const getGauges = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getGauges(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get gauges list
+ *
+ * @mcp read
+ */
+export const getGaugesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "quality" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getGaugesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get gauge calibration record
+ *
+ * @mcp read
+ */
+export const getGaugeCalibrationRecord = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getGaugeCalibrationRecord(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get gauge calibration records
+ *
+ * @mcp read
+ */
+export const getGaugeCalibrationRecords = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getGaugeCalibrationRecords(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get gauge calibration records by gauge id
+ *
+ * @mcp read
+ */
+export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
+  input: z.looseObject({ gaugeId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getGaugeCalibrationRecordsByGaugeId(
+        ctx.asCaller.supabase,
+        input.gaugeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get gauge types list
+ *
+ * @mcp read
+ */
+export const getGaugeTypesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "quality" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getGaugeTypesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get gauge type
+ *
+ * @mcp read
+ */
+export const getGaugeType = defineServiceFn({
+  input: z.looseObject({ gaugeTypeId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getGaugeType(
+        ctx.asCaller.supabase,
+        input.gaugeTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get gauge types
+ *
+ * @mcp read
+ */
+export const getGaugeTypes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getGaugeTypes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue
+ *
+ * @mcp read
+ */
+export const getIssue = defineServiceFn({
+  input: z.looseObject({ nonConformanceId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssue(
+        ctx.asCaller.supabase,
+        input.nonConformanceId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issues
+ *
+ * @mcp read
+ */
+export const getIssues = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getIssues(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue workflow
+ *
+ * @mcp read
+ */
+export const getIssueWorkflow = defineServiceFn({
+  input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueWorkflow(
+        ctx.asCaller.supabase,
+        input.nonConformanceWorkflowId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue action tasks
+ *
+ * @mcp read
+ */
+export const getIssueActionTasks = defineServiceFn({
+  input: z.looseObject({ id: z.string(), supplierId: z.string().optional() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueActionTasks(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id,
+        input.supplierId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue approval tasks
+ *
+ * @mcp read
+ */
+export const getIssueApprovalTasks = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueApprovalTasks(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get issue items
+ *
+ * @mcp read
+ */
+export const getIssueItems = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueItems(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get issue associations
+ *
+ * @mcp read
+ */
+export const getIssueAssociations = defineServiceFn({
+  input: z.looseObject({ nonConformanceId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getIssueAssociations(
+        ctx.asCaller.supabase,
+        input.nonConformanceId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get issue reviewers
+ *
+ * @mcp read
+ */
+export const getIssueReviewers = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueReviewers(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get issue suppliers
+ *
+ * @mcp read
+ */
+export const getIssueSuppliers = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueSuppliers(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get issue type
+ *
+ * @mcp read
+ */
+export const getIssueType = defineServiceFn({
+  input: z.looseObject({ nonConformanceTypeId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueType(
+        ctx.asCaller.supabase,
+        input.nonConformanceTypeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue type by name
+ *
+ * @mcp read
+ */
+export const getIssueTypeByName = defineServiceFn({
+  input: z.looseObject({ name: z.string(), excludeId: z.string().optional() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getIssueTypeByName(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.name as never,
+        input.excludeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue types
+ *
+ * @mcp read
+ */
+export const getIssueTypes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getIssueTypes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue workflows
+ *
+ * @mcp read
+ */
+export const getIssueWorkflows = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getIssueWorkflows(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get issue workflows list
+ *
+ * @mcp read
+ */
+export const getIssueWorkflowsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "quality" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getIssueWorkflowsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get issue types list
+ *
+ * @mcp read
+ */
+export const getIssueTypesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "quality" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getIssueTypesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get quality actions
+ *
+ * @mcp read
+ */
+export const getQualityActions = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getQualityActions(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get quality document
+ *
+ * @mcp read
+ */
+export const getQualityDocument = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getQualityDocument(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get quality document versions
+ *
+ * @mcp read
+ */
+export const getQualityDocumentVersions = defineServiceFn({
+  input: z.looseObject({ name: z.string(), version: z.number() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getQualityDocumentVersions(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get quality documents
+ *
+ * @mcp read
+ */
+export const getQualityDocuments = defineServiceFn({
+  input: z.looseObject({
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getQualityDocuments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get quality files
+ *
+ * @mcp read
+ */
+export const getQualityFiles = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getQualityFiles(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get required actions list
+ *
+ * @mcp read
+ */
+export const getRequiredActionsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "quality" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getRequiredActionsList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get required actions
+ *
+ * @mcp read
+ */
+export const getRequiredActions = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getRequiredActions(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get required action
+ *
+ * @mcp read
+ */
+export const getRequiredAction = defineServiceFn({
+  input: z.looseObject({ requiredActionId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRequiredAction(
+        ctx.asCaller.supabase,
+        input.requiredActionId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get risk
+ *
+ * @mcp read
+ */
+export const getRisk = defineServiceFn({
+  input: z.looseObject({ riskId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRisk(ctx.asCaller.supabase, input.riskId as never)
+    );
+  }
+});
+
+/**
+ * Get risks
+ *
+ * @mcp read
+ */
+export const getRisks = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z
+      .array(z.enum(["Open", "Closed", "In Review", "Mitigating", "Accepted"]))
+      .nullable()
+      .optional(),
+    source: z
+      .array(
+        z.enum([
+          "Customer",
+          "Supplier",
+          "Item",
+          "Job",
+          "General",
+          "Quote Line",
+          "Work Center"
+        ])
+      )
+      .nullable()
+      .optional(),
+    assignee: z.array(z.string()).optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getRisks(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert issue reviewer
+ *
+ * @mcp
+ */
+export const insertIssueReviewer = defineServiceFn({
+  input: z.looseObject({
+    title: z.string().min(1),
+    nonConformanceId: z.string()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertIssueReviewer(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update issue action processes
+ *
+ * @mcp destructive
+ */
+export const updateIssueActionProcesses = defineServiceFn({
+  input: z.looseObject({
+    actionTaskId: z.string(),
+    processIds: z.array(z.string())
+  }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateIssueActionProcesses(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert gauge
+ *
+ * @mcp
+ */
+export const insertGauge = defineServiceFn({
+  input: z.looseObject({
+    gaugeId: z.string().optional(),
+    gaugeTypeId: z.string(),
+    gaugeRole: z.enum(["Master", "Standard"]),
+    gaugeCalibrationStatus: z.enum([
+      "Pending",
+      "In-Calibration",
+      "Out-of-Calibration"
+    ]),
+    supplierId: z.string().optional(),
+    modelNumber: z.string().optional(),
+    serialNumber: z.string().optional(),
+    description: z.string().optional(),
+    dateAcquired: z.string().optional(),
+    lastCalibrationDate: z.string().optional(),
+    nextCalibrationDate: z.string().optional(),
+    locationId: z.string().optional(),
+    storageUnitId: z.string().optional(),
+    calibrationIntervalInMonths: z.number().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertGauge(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update gauge
+ *
+ * @mcp
+ */
+export const updateGauge = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    gaugeId: z.string().optional(),
+    gaugeTypeId: z.string().optional(),
+    gaugeRole: z.enum(["Master", "Standard"]).optional(),
+    gaugeCalibrationStatus: z
+      .enum(["Pending", "In-Calibration", "Out-of-Calibration"])
+      .optional(),
+    supplierId: z.string().nullable().optional(),
+    modelNumber: z.string().nullable().optional(),
+    serialNumber: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    dateAcquired: z.string().nullable().optional(),
+    lastCalibrationDate: z.string().nullable().optional(),
+    nextCalibrationDate: z.string().nullable().optional(),
+    locationId: z.string().nullable().optional(),
+    storageUnitId: z.string().nullable().optional(),
+    calibrationIntervalInMonths: z.number().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateGauge(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a gauge calibration record
+ *
+ * @remarks
+ * Upsert gauge calibration record
+ *
+ * @mcp
+ */
+export const createGaugeCalibrationRecord = defineServiceFn({
+  input: z.looseObject({
+    gaugeId: z.string().min(1),
+    supplierId: z.string().optional(),
+    dateCalibrated: z.string().min(1),
+    requiresAction: z.boolean().optional(),
+    requiresAdjustment: z.boolean().optional(),
+    requiresRepair: z.boolean().optional(),
+    temperature: z.number().min(-200).max(500).optional(),
+    humidity: z.number().min(0).max(1).optional(),
+    approvedBy: z.string().optional(),
+    measurementStandard: z.string().optional(),
+    calibrationAttempts: z.array(
+      z.looseObject({ reference: z.number(), actual: z.number() })
+    ),
+    notes: z.string().optional(),
+    inspectionStatus: z.enum(["Pass", "Fail"]),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertGaugeCalibrationRecord(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a gauge calibration record
+ *
+ * @remarks
+ * Upsert gauge calibration record
+ *
+ * @mcp
+ */
+export const updateGaugeCalibrationRecord = defineServiceFn({
+  input: z
+    .looseObject({
+      gaugeId: z.string().min(1),
+      supplierId: z.string().optional(),
+      dateCalibrated: z.string().min(1),
+      requiresAction: z.boolean().optional(),
+      requiresAdjustment: z.boolean().optional(),
+      requiresRepair: z.boolean().optional(),
+      temperature: z.number().min(-200).max(500).optional(),
+      humidity: z.number().min(0).max(1).optional(),
+      approvedBy: z.string().optional(),
+      measurementStandard: z.string().optional(),
+      calibrationAttempts: z.array(
+        z.looseObject({ reference: z.number(), actual: z.number() })
+      ),
+      notes: z.string().optional(),
+      inspectionStatus: z.enum(["Pass", "Fail"]),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertGaugeCalibrationRecord(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a gauge type
+ *
+ * @remarks
+ * Upsert gauge type
+ *
+ * @mcp
+ */
+export const createGaugeType = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertGaugeType(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a gauge type
+ *
+ * @remarks
+ * Upsert gauge type
+ *
+ * @mcp
+ */
+export const updateGaugeType = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertGaugeType(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert issue
+ *
+ * @mcp
+ */
+export const insertIssue = defineServiceFn({
+  input: z.looseObject({
+    nonConformanceId: z.string().optional(),
+    name: z.string(),
+    priority: z.enum(["Low", "Medium", "High", "Critical"]),
+    source: z.enum(["Internal", "External"]),
+    locationId: z.string(),
+    nonConformanceTypeId: z.string(),
+    openDate: z.string().optional(),
+    description: z.string().optional(),
+    nonConformanceWorkflowId: z.string().optional(),
+    dueDate: z.string().optional(),
+    closeDate: z.string().optional(),
+    quantity: z.number().optional(),
+    requiredActionIds: z.array(z.string()).optional(),
+    approvalRequirements: z.array(z.literal("MRB")).optional(),
+    items: z.array(z.string()).optional(),
+    jobOperationId: z.string().optional(),
+    customerId: z.string().optional(),
+    salesOrderLineId: z.string().optional(),
+    operationSupplierProcessId: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertIssue(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update issue
+ *
+ * @mcp
+ */
+export const updateIssue = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    nonConformanceId: z.string().optional(),
+    name: z.string().optional(),
+    priority: z.enum(["Low", "Medium", "High", "Critical"]).optional(),
+    source: z.enum(["Internal", "External"]).optional(),
+    locationId: z.string().optional(),
+    nonConformanceTypeId: z.string().optional(),
+    nonConformanceWorkflowId: z.string().nullable().optional(),
+    openDate: z.string().optional(),
+    dueDate: z.string().nullable().optional(),
+    closeDate: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    quantity: z.number().optional(),
+    requiredActionIds: z.array(z.string()).optional(),
+    approvalRequirements: z.array(z.literal("MRB")).optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateIssue(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a issue workflow
+ *
+ * @remarks
+ * Upsert issue workflow
+ *
+ * @mcp
+ */
+export const createIssueWorkflow = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    content: z.string().min(1),
+    priority: z.enum(["Low", "Medium", "High", "Critical"]),
+    source: z.enum(["Internal", "External"]),
+    requiredActionIds: z.string().optional(),
+    approvalRequirements: z.array(z.literal("MRB")).optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertIssueWorkflow(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a issue workflow
+ *
+ * @remarks
+ * Upsert issue workflow
+ *
+ * @mcp
+ */
+export const updateIssueWorkflow = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      content: z.string().min(1),
+      priority: z.enum(["Low", "Medium", "High", "Critical"]),
+      source: z.enum(["Internal", "External"]),
+      requiredActionIds: z.string().optional(),
+      approvalRequirements: z.array(z.literal("MRB")).optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertIssueWorkflow(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a issue type
+ *
+ * @remarks
+ * Upsert issue type
+ *
+ * @mcp
+ */
+export const createIssueType = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertIssueType(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a issue type
+ *
+ * @remarks
+ * Upsert issue type
+ *
+ * @mcp
+ */
+export const updateIssueType = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertIssueType(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a required action
+ *
+ * @remarks
+ * Upsert required action
+ *
+ * @mcp
+ */
+export const createRequiredAction = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    active: z.boolean().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertRequiredAction(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a required action
+ *
+ * @remarks
+ * Upsert required action
+ *
+ * @mcp
+ */
+export const updateRequiredAction = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      active: z.boolean().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertRequiredAction(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a quality document
+ *
+ * @remarks
+ * Upsert quality document
+ *
+ * @mcp
+ */
+export const createQualityDocument = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    version: z.number().min(0),
+    content: z.string().optional(),
+    copyFromId: z.string().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertQualityDocument(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a quality document
+ *
+ * @remarks
+ * Upsert quality document
+ *
+ * @mcp
+ */
+export const updateQualityDocument = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      version: z.number().min(0),
+      content: z.string().optional(),
+      copyFromId: z.string().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertQualityDocument(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get inspections
+ *
+ * @mcp read
+ */
+export const getInspections = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z.string().nullable().optional(),
+    source: z.string().nullable().optional()
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getInspections(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection
+ *
+ * @mcp read
+ */
+export const getInspection = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getInspection(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get receipt inspections
+ *
+ * @mcp read
+ */
+export const getReceiptInspections = defineServiceFn({
+  input: z.looseObject({ receiptId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getReceiptInspections(
+        ctx.asCaller.supabase,
+        input.receiptId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection tracked entities
+ *
+ * @mcp read
+ */
+export const getInspectionTrackedEntities = defineServiceFn({
+  input: z.looseObject({ receiptLineId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionTrackedEntities(
+        ctx.asCaller.supabase,
+        input.receiptLineId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection sampling plans
+ *
+ * @mcp read
+ */
+export const getInspectionSamplingPlans = defineServiceFn({
+  input: z.looseObject({ inspectionId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionSamplingPlans(
+        ctx.asCaller.supabase,
+        input.inspectionId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection gauges
+ *
+ * @mcp read
+ */
+export const getInspectionGauges = defineServiceFn({
+  input: z.looseObject({ inspectionId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionGauges(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.inspectionId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection measurements
+ *
+ * @mcp read
+ */
+export const getInspectionMeasurements = defineServiceFn({
+  input: z.looseObject({ inspectionId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionMeasurements(
+        ctx.asCaller.supabase,
+        input.inspectionId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item inspection document assignments
+ *
+ * @mcp read
+ */
+export const getItemInspectionDocumentAssignments = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemInspectionDocumentAssignments(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Upsert item inspection document assignment
+ *
+ * @mcp destructive
+ */
+export const upsertItemInspectionDocumentAssignment = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string().min(1),
+    usage: z.literal("Receipt"),
+    inspectionDocumentId: z.string().optional()
+  }),
+  permission: { create: "quality", update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemInspectionDocumentAssignment(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection documents
+ *
+ * @mcp read
+ */
+export const getInspectionDocuments = defineServiceFn({
+  input: z.looseObject({
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getInspectionDocuments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection documents for item
+ *
+ * @mcp read
+ */
+export const getInspectionDocumentsForItem = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionDocumentsForItem(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection document
+ *
+ * @mcp read
+ */
+export const getInspectionDocument = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionDocument(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Upsert inspection document
+ *
+ * @mcp
+ */
+export const upsertInspectionDocument = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().optional(),
+    partId: z.string().min(1),
+    drawingNumber: z.string().optional(),
+    pdfUrl: z.string().optional(),
+    annotations: z.string().optional(),
+    features: z.string().optional(),
+    id: z.string().optional(),
+    pageCount: z.number().optional(),
+    defaultPageWidth: z.number().optional(),
+    defaultPageHeight: z.number().optional()
+  }),
+  permission: { create: "quality", update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertInspectionDocument(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete inspection document
+ *
+ * @mcp destructive
+ */
+export const deleteInspectionDocument = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteInspectionDocument(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection features
+ *
+ * @mcp read
+ */
+export const getInspectionFeatures = defineServiceFn({
+  input: z.looseObject({ inspectionDocumentId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionFeatures(
+        ctx.asCaller.supabase,
+        input.inspectionDocumentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get balloons
+ *
+ * @mcp read
+ */
+export const getBalloons = defineServiceFn({
+  input: z.looseObject({ inspectionDocumentId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getBalloons(
+        ctx.asCaller.supabase,
+        input.inspectionDocumentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get inspection plan
+ *
+ * @mcp read
+ */
+export const getInspectionPlan = defineServiceFn({
+  input: z.looseObject({ inspectionDocumentId: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getInspectionPlan(
+        ctx.asCaller.supabase,
+        input.inspectionDocumentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Update inspection document sampling
+ *
+ * @mcp
+ */
+export const updateInspectionDocumentSampling = defineServiceFn({
+  input: z.looseObject({
+    samplingPlanType: z.enum(["All", "First", "Percentage", "AQL"]).nullable(),
+    samplingSampleSize: z.number().int().gt(0).nullable(),
+    samplingPercentage: z.number().max(100).gt(0).nullable(),
+    samplingAql: z.number().gt(0).nullable(),
+    samplingInspectionLevel: z
+      .enum(["I", "II", "III", "S1", "S2", "S3", "S4"])
+      .nullable(),
+    samplingSeverity: z.enum(["Normal", "Tightened", "Reduced"]).nullable(),
+    inspectionDocumentId: z.string()
+  }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateInspectionDocumentSampling(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Save inspection document atomic
+ *
+ * @mcp
+ */
+export const saveInspectionDocumentAtomic = defineServiceFn({
+  input: z.looseObject({
+    inspectionDocumentId: z.string(),
+    pdfUrl: z.string().nullable().optional(),
+    pageCount: z.number().optional(),
+    defaultPageWidth: z.number().optional(),
+    defaultPageHeight: z.number().optional(),
+    features: z.unknown(),
+    balloons: z.unknown()
+  }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.saveInspectionDocumentAtomic(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
   }
 });

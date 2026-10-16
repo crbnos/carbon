@@ -18,5 +18,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(reoptimizeForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.documents.model.optimize(input.data);
+  return api.documents.optimizeModel(input.data);
 }

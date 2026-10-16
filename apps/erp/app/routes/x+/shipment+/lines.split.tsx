@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { documentId, documentLineId, ...split } = input.data;
   const api = await carbon(args.request);
-  return api.inventory.shipment.line.split({
+  return api.inventory.splitShipmentLine({
     shipmentId: documentId,
     shipmentLineId: documentLineId,
     ...split

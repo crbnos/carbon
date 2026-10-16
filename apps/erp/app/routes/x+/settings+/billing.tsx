@@ -112,7 +112,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
 
   if (input.data.intent === "billing-portal") {
-    const result = await api.settings.billing.portalUrl({});
+    const result = await api.settings.getBillingPortalUrl({});
     if (result.error) {
       return respond(args.request, result).redirect(path.to.billing);
     }
@@ -121,7 +121,7 @@ export async function action(args: ActionFunctionArgs) {
 
   return respond(
     args.request,
-    await api.settings.billing.transferOwnership(input.data)
+    await api.settings.transferCompanyOwnership(input.data)
   ).redirect(path.to.billing, {
     message: "Company ownership has been transferred successfully"
   });

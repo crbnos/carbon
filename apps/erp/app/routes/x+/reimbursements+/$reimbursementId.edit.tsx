@@ -101,8 +101,8 @@ export async function action(args: ActionFunctionArgs) {
   };
   const willPost = formData.get("intent") === "save-and-post";
   const result = willPost
-    ? await api.invoicing.reimbursement.updateAndPost(reimbursement)
-    : await api.invoicing.reimbursement.update(reimbursement);
+    ? await api.invoicing.saveAndPostReimbursement(reimbursement)
+    : await api.invoicing.saveReimbursement(reimbursement);
   // A refusal keeps the editor and what was typed in it.
   if (result.error) return stay(args.request, result.error.message);
   return respond(args.request, result).redirect(

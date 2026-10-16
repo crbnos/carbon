@@ -59,32 +59,35 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(planningForm).request(args);
   if ("invalid" in input) return input.invalid;
   const form = input.data;
-  const planning = (await carbon(args.request)).production.planning;
+  const planning = (await carbon(args.request)).production;
 
   switch (form.action) {
     case "order":
-      return planning.order({ locationId: form.locationId, items: form.items });
+      return planning.orderPlannedJobs({
+        locationId: form.locationId,
+        items: form.items
+      });
     case "updateJob":
-      return planning.updateJob({
+      return planning.updatePlannedJob({
         locationId: form.locationId,
         job: form.job
       });
     case "planJob":
-      return planning.planJob({
+      return planning.planJobFromPlanning({
         locationId: form.locationId,
         jobId: form.job.id
       });
     case "dismiss":
-      return planning.dismiss(form);
+      return planning.dismissProductionPlanningActions(form);
     case "reopen":
-      return planning.reopen(form);
+      return planning.reopenProductionPlanningActions(form);
     case "assign":
-      return planning.assign({
+      return planning.assignProductionPlanningActions({
         planningActionIds: form.planningActionIds,
         assignee: form.assignee ?? undefined
       });
     default:
-      return planning.apply({
+      return planning.applyPlanningActions({
         planningActionIds: form.planningActionIds,
         type: APPLY_TYPE[form.action]
       });

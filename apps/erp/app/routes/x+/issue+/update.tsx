@@ -11,5 +11,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateIssueField.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.issue.updateField(input.data);
+  return api.quality.updateIssueField(input.data);
 }

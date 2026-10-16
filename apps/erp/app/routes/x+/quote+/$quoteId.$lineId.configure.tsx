@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { quoteId, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.quote.line.configure({
+  const result = await api.sales.configureQuoteLine({
     quoteId,
     lineId,
     configuration: input.data

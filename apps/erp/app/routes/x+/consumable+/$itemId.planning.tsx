@@ -93,7 +93,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { itemId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.items.planning.update({
+  const result = await api.items.updateItemPlanning({
     ...input.data,
     itemId,
     customFields: input.formData && setCustomFields(input.formData)

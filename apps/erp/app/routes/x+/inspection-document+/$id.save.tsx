@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(save).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.inspectionDocument.save({
+  return api.quality.saveInspectionDocument({
     ...input.data,
     inspectionDocumentId: input.params.id
   });

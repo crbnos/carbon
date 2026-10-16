@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.contract.revertCancellation({
+  const result = await api.sales.revertContractCancellation({
     customerContractId: id
   });
   return respond(args.request, result).redirect(path.to.contractDetails(id), {

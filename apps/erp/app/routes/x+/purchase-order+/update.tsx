@@ -23,6 +23,6 @@ export async function action(args: ActionFunctionArgs) {
   const { ids, field, value } = input.data;
   const api = await carbon(args.request);
   return field === "delete"
-    ? api.purchasing.purchaseOrder.delete({ purchaseOrderIds: ids })
-    : api.purchasing.purchaseOrder.update({ ids, field, value: value || null });
+    ? api.purchasing.deletePurchaseOrders({ purchaseOrderIds: ids })
+    : api.purchasing.updatePurchaseOrders({ ids, field, value: value || null });
 }

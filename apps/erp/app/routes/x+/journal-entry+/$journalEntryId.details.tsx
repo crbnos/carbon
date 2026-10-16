@@ -39,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
   const { journalEntryId } = input.params;
   const { intent, postingDate, description, lines } = input.data;
   const api = await carbon(args.request);
-  const result = await api.accounting.journalEntry.save({
+  const result = await api.accounting.saveJournalEntry({
     journalEntryId,
     postingDate,
     description,

@@ -26,12 +26,12 @@ export async function action(args: ActionFunctionArgs) {
     });
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
-    return api.shared.linear.unlinkIssue(input.data);
+    return api.shared.unlinkLinearIssue(input.data);
   }
   const input = await validator(linkLinearIssue.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.shared.linear.linkIssue(input.data);
+  return api.shared.linkLinearIssue(input.data);
 }
 
 export const loader: LoaderFunction = async ({ request }) => {

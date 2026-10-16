@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(getMethodValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.items.method.copy(input.data);
+  const result = await api.items.copyMethod(input.data);
   if (result.error) return result;
   throw redirect(
     requestReferrer(args.request) ?? path.to.items,

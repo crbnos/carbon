@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(createImportLookups.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.shared.csvImport.createLookups(input.data);
+  return api.shared.createImportLookups(input.data);
 }

@@ -69,7 +69,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.invoicing.purchaseInvoice.mapLines({
+  const result = await api.invoicing.mapPurchaseInvoiceLines({
     ...input.data,
     invoiceId: input.params.invoiceId
   });

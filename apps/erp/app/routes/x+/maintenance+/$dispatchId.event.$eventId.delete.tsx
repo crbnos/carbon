@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { dispatchId, eventId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.resources.maintenanceEvent.delete({
+  const result = await api.resources.deleteMaintenanceEvent({
     dispatchId,
     eventId
   });

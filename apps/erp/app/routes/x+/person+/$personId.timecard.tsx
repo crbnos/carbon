@@ -201,25 +201,25 @@ export async function action(args: ActionFunctionArgs) {
 
   switch (form.intent) {
     case "clockIn":
-      return api.people.timecard.clockIn({
+      return api.people.clockInPerson({
         employeeId: form.employeeId || personId
       });
     case "clockOut":
-      return api.people.timecard.clockOut({
+      return api.people.clockOutPerson({
         employeeId: form.employeeId || personId,
         note: form.note
       });
     case "updateEntry":
-      return api.people.timecard.updateEntry({
+      return api.people.updatePersonTimeCardEntry({
         entryId: form.entryId,
         clockIn: form.clockIn,
         clockOut: form.clockOut,
         note: form.note
       });
     case "deleteEntry":
-      return api.people.timecard.deleteEntry({ entryId: form.entryId });
+      return api.people.deletePersonTimeCardEntry({ entryId: form.entryId });
     case "addEntry":
-      return api.people.timecard.addEntry({
+      return api.people.addPersonTimeCardEntry({
         employeeId: personId,
         clockIn: form.clockIn,
         clockOut: form.clockOut

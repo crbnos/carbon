@@ -17,5 +17,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(order).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.issue.action.reorder(input.data);
+  return api.quality.reorderIssueActionTasks(input.data);
 }

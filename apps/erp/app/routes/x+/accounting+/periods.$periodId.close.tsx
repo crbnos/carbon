@@ -138,22 +138,22 @@ export async function action(args: ActionFunctionArgs) {
 
   switch (intent) {
     case "completeTask":
-      return api.accounting.closeTask.complete({ taskId, notes });
+      return api.accounting.closeTaskComplete({ taskId, notes });
     case "skipTask":
-      return api.accounting.closeTask.skip({ taskId, skippedReason });
+      return api.accounting.closeTaskSkip({ taskId, skippedReason });
     case "lock":
-      return api.accounting.period.lock({ periodId });
+      return api.accounting.lockPeriod({ periodId });
     case "unlock":
-      return api.accounting.period.unlock({ periodId });
+      return api.accounting.unlockPeriod({ periodId });
     case "close": {
-      const result = await api.accounting.period.close({ periodId });
+      const result = await api.accounting.closePeriod({ periodId });
       if (result.error) return result;
       return respond(args.request, result).redirect(path.to.accountingPeriods, {
         message: "Period closed"
       });
     }
     default: {
-      const result = await api.accounting.period.createRun({
+      const result = await api.accounting.createRunForPeriod({
         periodId,
         run: RUN_OF_INTENT[intent]
       });

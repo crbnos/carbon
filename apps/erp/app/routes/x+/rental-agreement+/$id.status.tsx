@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = input.params;
   const { intent } = input.data;
   const api = await carbon(args.request);
-  const result = await api.sales.rentalAgreement.setStatus({ id, intent });
+  const result = await api.sales.setRentalAgreementStatus({ id, intent });
   return respond(args.request, result).redirect(
     result.error?.category === "notFound"
       ? path.to.rentalAgreements

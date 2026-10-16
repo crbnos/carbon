@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(completeTrainingAssignment.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.resources.trainingAssignment.complete(input.data);
+  return api.resources.completeTrainingAssignment(input.data);
 }
 
 export async function loader() {

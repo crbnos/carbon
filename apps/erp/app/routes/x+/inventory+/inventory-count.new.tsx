@@ -21,7 +21,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...count } = input.data;
   const api = await carbon(args.request);
-  const result = await api.inventory.inventoryCount.create(count);
+  const result = await api.inventory.createInventoryCount(count);
   // An error is toasted by the form's fetcher.
   if (!result.data) return result;
   return respond(args.request, result).redirect(

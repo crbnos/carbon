@@ -97,7 +97,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(resourcesSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.resources.update(input.data);
+  return api.settings.updateResourcesSettings(input.data);
 }
 
 export default function ResourcesSettingsRoute() {

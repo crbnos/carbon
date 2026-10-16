@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const reimbursementId = input.params.reimbursementId;
   const api = await carbon(args.request);
-  const result = await api.invoicing.reimbursement.void({
+  const result = await api.invoicing.voidReimbursement({
     reimbursementId: reimbursementId
   });
   return respond(args.request, result).redirect(

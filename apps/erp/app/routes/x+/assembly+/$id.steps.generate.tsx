@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.assembly.generateSteps({
+  return api.production.generateAssemblySteps({
     id: input.params.id,
     mode: input.data.mode === "regenerate" ? "regenerate" : "generate"
   });

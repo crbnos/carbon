@@ -95,7 +95,7 @@ export async function action(args: ActionFunctionArgs) {
   const { orderId } = input.params;
 
   const api = await carbon(args.request);
-  const result = await api.sales.order.update({
+  const result = await api.sales.updateSalesOrderDetails({
     ...input.data,
     id: orderId,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

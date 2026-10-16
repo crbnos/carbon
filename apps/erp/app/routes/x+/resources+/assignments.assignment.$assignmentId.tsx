@@ -71,7 +71,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.trainingAssignment.update({
+  const result = await api.resources.updateTrainingAssignment({
     ...input.data,
     id: input.params.assignmentId
   });

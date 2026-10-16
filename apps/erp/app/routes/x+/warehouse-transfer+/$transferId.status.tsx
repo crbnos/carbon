@@ -22,7 +22,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { transferId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.inventory.warehouseTransfer.setStatus({
+  const result = await api.inventory.setWarehouseTransferStatus({
     id: transferId,
     ...input.data
   });

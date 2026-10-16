@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.quality.issue.draftSupplierReturn({
+  const result = await api.quality.draftIssueSupplierReturn({
     nonConformanceId: id,
     supplierId: input.data.supplierId
   });

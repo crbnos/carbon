@@ -48,7 +48,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.maintenanceSchedule.update({
+  const result = await api.resources.updateMaintenanceSchedule({
     ...input.data,
     id: input.params.scheduleId
   });

@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(adjustForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.invoicing.payables.adjust(input.data);
+  const result = await api.invoicing.adjustPayables(input.data);
   if (!result.data) {
     return respond(args.request, result).redirect(path.to.payables);
   }

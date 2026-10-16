@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const { filePath, enumMappings, ...columnMappings } = input.data;
-  return api.shared.csvImport.run({
+  return api.shared.importCsvFile({
     // The operation refuses a table it cannot import.
     table: input.params.tableId as z.input<typeof importCsvFile.input>["table"],
     filePath,

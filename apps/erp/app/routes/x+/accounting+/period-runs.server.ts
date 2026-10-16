@@ -76,7 +76,7 @@ export async function createPeriodRun(args: ActionFunctionArgs, type: RunType) {
   const input = await validator(newRunForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.accounting.revenueRecognitionRun.create({
+  const result = await api.accounting.createRevenueRecognitionRun({
     type,
     periodEnd: input.data.periodEnd || undefined
   });

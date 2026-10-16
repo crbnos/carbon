@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   ).request(args, { params: ["id", "stepId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.assembly.setStepComponents({
+  return api.production.setAssemblyStepComponents({
     ...input.data,
     ...input.params
   });

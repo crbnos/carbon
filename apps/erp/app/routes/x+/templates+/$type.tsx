@@ -132,7 +132,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(documentTemplateValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.documentTemplate.save(input.data);
+  return api.settings.saveDocumentTemplate(input.data);
 }
 
 export default function DocumentTemplateRoute() {

@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   const { invoiceId } = input.params;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.invoicing.salesInvoice.line.create({
+  const result = await api.invoicing.createSalesInvoiceLine({
     ...input.data,
     // The URL invoice, not the form's copy.
     invoiceId,

@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.apiKey.delete({ id: input.params.id });
+  const result = await api.settings.revokeApiKey({ id: input.params.id });
   return respond(args.request, result).redirect(
     `${path.to.apiKeys}?${getParams(args.request)}`,
     { message: "Successfully deleted API key" }

@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { receiptId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.inventory.receipt.post({
+  const result = await api.inventory.postReceipt({
     receiptId,
     ...input.data
   });

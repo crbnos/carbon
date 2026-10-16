@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.sales.order.confirm({
+  const result = await api.sales.confirmSalesOrder({
     ...input.data,
     salesOrderId: input.params.orderId,
     acknowledged: input.formData?.get("acknowledged") === "true",

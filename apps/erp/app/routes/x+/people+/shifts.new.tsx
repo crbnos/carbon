@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _id, ...shift } = input.data;
   const api = await carbon(args.request);
-  const result = await api.people.shift.create({
+  const result = await api.people.createShift({
     ...shift,
     customFields: input.formData && setCustomFields(input.formData)
   });

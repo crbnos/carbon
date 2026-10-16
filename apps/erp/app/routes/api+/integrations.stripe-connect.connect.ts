@@ -15,7 +15,7 @@ async function handle({ request }: { request: Request }) {
   const api = await carbon(request);
   // Stripe sends the browser back here: the public origin, not request.url's.
   const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
-  const result = await api.shared.stripeConnect.startOnboarding({ origin });
+  const result = await api.shared.startStripeConnectOnboarding({ origin });
   const wantsJson =
     request.headers.get("Accept")?.includes("application/json") ||
     request.method === "POST";

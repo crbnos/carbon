@@ -52,8 +52,8 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "resources_insertTrainingCompletion",
   // Bare deletes. Removing a sales invoice (or a line) that billed a rental
   // period, a rental charge or a contract schedule line must release those
-  // stamps so they are billed again — `invoicing_salesInvoice_delete` /
-  // `invoicing_salesInvoice_line_delete` do that; these plain deletes would
+  // stamps so they are billed again — `invoicing_deleteDraftSalesInvoice` /
+  // `invoicing_deleteDraftSalesInvoiceLine` do that; these plain deletes would
   // orphan them, and the periods would never be re-billed.
   "invoicing_deleteSalesInvoice",
   "invoicing_deleteSalesInvoiceLine",
@@ -61,8 +61,8 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // deleting its line returns the row to Pending
   // (`purchaseInvoiceLine_release_lease_payment`), so it is billed again —
   // right for a Draft, a double bill for a posted invoice. The operations check
-  // the invoice is Draft under a row lock (`invoicing_purchaseInvoice_delete`
-  // / `invoicing_purchaseInvoice_line_delete`); `deletePurchaseInvoiceLine`
+  // the invoice is Draft under a row lock (`invoicing_deleteDraftPurchaseInvoice`
+  // / `invoicing_deleteDraftPurchaseInvoiceLine`); `deletePurchaseInvoiceLine`
   // checks nothing.
   "invoicing_deletePurchaseInvoice",
   "invoicing_deletePurchaseInvoiceLine",

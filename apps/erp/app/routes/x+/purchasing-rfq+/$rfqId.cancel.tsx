@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { rfqId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.rfq.cancel({ rfqId });
+  const result = await api.purchasing.cancelPurchasingRfq({ rfqId });
   return respond(args.request, result).redirect(
     path.to.purchasingRfqDetails(rfqId),
     { message: "RFQ cancelled" }

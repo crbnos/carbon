@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.sales.quote.operation.delete(input.data);
+  return api.sales.deleteQuoteOperationAndReprice(input.data);
 }

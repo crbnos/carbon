@@ -73,12 +73,12 @@ export async function action(args: ActionFunctionArgs) {
     const input = await validator(deleteSectionForm).request(args);
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
-    return api.settings.documentSection.delete(input.data);
+    return api.settings.removeDocumentSection(input.data);
   }
   const input = await validator(documentSectionValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.documentSection.save(input.data);
+  return api.settings.saveDocumentSection(input.data);
 }
 
 export default function SharedSectionsRoute() {

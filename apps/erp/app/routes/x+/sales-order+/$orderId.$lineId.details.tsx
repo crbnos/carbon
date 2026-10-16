@@ -109,7 +109,7 @@ export async function action(args: ActionFunctionArgs) {
   const { orderId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.sales.order.line.update({
+  const result = await api.sales.updateSalesOrderLine({
     ...input.data,
     id: lineId,
     salesOrderId: orderId,

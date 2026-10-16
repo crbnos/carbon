@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   ).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.assembly.reassignComponents({
+  return api.production.reassignAssemblyComponents({
     ...input.data,
     id: input.params.id
   });

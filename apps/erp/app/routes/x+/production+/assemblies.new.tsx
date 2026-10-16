@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.assembly.create({
+  const result = await api.production.createAssemblyInstruction({
     itemId: input.data.itemId,
     modelUploadId: input.data.modelUploadId
   });

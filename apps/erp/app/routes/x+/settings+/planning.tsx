@@ -180,7 +180,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(planningSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.planning.update(input.data);
+  return api.settings.updatePlanningSettings(input.data);
 }
 
 export default function PlanningSettingsRoute() {

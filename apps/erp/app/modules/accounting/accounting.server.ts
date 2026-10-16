@@ -3,6 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
 import type { RunType } from "@carbon/database/run-type";
@@ -15,47 +21,7 @@ import {
 } from "~/modules/purchasing/purchasing.service";
 import { insertSalesOrder } from "~/modules/sales/sales.service";
 import { getUserDefaults } from "~/modules/users/users.service";
-import {
-  asCaller,
-  buildDepreciationRunLines,
-  closePeriodWithChecklist,
-  completeCloseTask,
-  createDepreciationRunAt,
-  deleteExchangeRateOverride,
-  deleteRevenueRecognitionRun,
-  fromServerFn,
-  futureRunPeriodError,
-  getCompanyToday,
-  getDefaultAccounts,
-  getExchangeRates,
-  getFixedAsset,
-  getOrCreateAccountingPeriod,
-  insertDepreciationRun,
-  lockAccountingPeriod,
-  outOfServiceRefusal,
-  postAssetRegistration,
-  postDepreciationRun,
-  postDisposal,
-  postJournalEntry,
-  postRevenueRecognitionRun,
-  proposeRunAt,
-  RunOutOfDateError,
-  RunReversalError,
-  refusal,
-  replaceDepreciationRunLines,
-  resolveReversalPeriods,
-  resolveRunPostingPeriods,
-  returnFixedAssetToService,
-  reverseDepreciationRun,
-  reverseRevenueRecognitionRun,
-  saveCurrencyWithRateOverride,
-  saveJournalEntryWithLines,
-  setFixedAssetOutOfService,
-  skipCloseTask,
-  system,
-  unlockAccountingPeriod,
-  upsertExchangeRateOverride
-} from "./accounting.service";
+import * as service from "./accounting.service";
 import {
   depreciationRunLinesMatch,
   getNextPeriodEnd,
@@ -101,7 +67,7 @@ const runTypes = ["Revenue Recognition", "Lease"] as const satisfies RunType[];
  *
  * @mcp
  */
-export const depreciationRunCreate = defineServiceFn({
+export const createDepreciationRun = defineServiceFn({
   input: z.object({ periodEnd: z.string().optional() }),
   permission: { create: "accounting" },
   async run(ctx, input) {
@@ -129,7 +95,7 @@ export const depreciationRunCreate = defineServiceFn({
       );
     }
 
-    const futureError = await futureRunPeriodError(
+    const futureError = await service.futureRunPeriodError(
       client,
       companyId,
       periodEnd
@@ -148,7 +114,7 @@ export const depreciationRunCreate = defineServiceFn({
       );
     }
 
-    return createDepreciationRunAt(ctx, periodEnd);
+    return service.createDepreciationRunAt(ctx, periodEnd);
   }
 });
 
@@ -167,7 +133,7 @@ export const depreciationRunCreate = defineServiceFn({
  *
  * @mcp
  */
-export const depreciationRunPost = defineServiceFn({
+export const postDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -190,7 +156,7 @@ export const depreciationRunPost = defineServiceFn({
     }
     const { periodEnd, depreciationRunId: readableId } = run.data;
 
-    const futureError = await futureRunPeriodError(
+    const futureError = await service.futureRunPeriodError(
       client,
       companyId,
       periodEnd
@@ -260,7 +226,7 @@ export const depreciationRunPost = defineServiceFn({
 
     // A Draft is computed once. An asset disposed, added or re-valued since —
     // or a later period posted first — makes it post the wrong depreciation.
-    const proposal = await buildDepreciationRunLines(client, {
+    const proposal = await service.buildDepreciationRunLines(client, {
       companyId,
       companyGroupId,
       periodEnd,
@@ -292,7 +258,7 @@ export const depreciationRunPost = defineServiceFn({
     }
 
     // Each month posts in its own period (the run's when that month is Closed).
-    const periods = await resolveRunPostingPeriods(client, {
+    const periods = await service.resolveRunPostingPeriods(client, {
       companyId,
       monthEnds: lines.data.map(lineMonth),
       runPeriodEnd: periodEnd
@@ -322,7 +288,7 @@ export const depreciationRunPost = defineServiceFn({
       (dimensions.data ?? []).find((d) => d.entityType === entityType)?.id;
 
     try {
-      await postDepreciationRun(ctx.asSystem.pg, {
+      await service.postDepreciationRun(ctx.asSystem.pg, {
         depreciationRunId,
         depreciationRunReadableId: readableId,
         periods: periods.data,
@@ -337,7 +303,7 @@ export const depreciationRunPost = defineServiceFn({
         userId: ctx.auditUserId
       });
     } catch (err) {
-      return err instanceof RunOutOfDateError
+      return err instanceof service.RunOutOfDateError
         ? ctx.error("conflict", err.message, err)
         : ctx.error("internal", "Failed to post depreciation run", err);
     }
@@ -358,7 +324,7 @@ export const depreciationRunPost = defineServiceFn({
  *
  * @mcp
  */
-export const depreciationRunRecalculate = defineServiceFn({
+export const recalculateDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -380,7 +346,7 @@ export const depreciationRunRecalculate = defineServiceFn({
     }
     const readableId = run.data.depreciationRunId;
 
-    const proposal = await buildDepreciationRunLines(client, {
+    const proposal = await service.buildDepreciationRunLines(client, {
       companyId,
       companyGroupId: ctx.company.groupId,
       periodEnd: run.data.periodEnd,
@@ -401,12 +367,15 @@ export const depreciationRunRecalculate = defineServiceFn({
     }
 
     try {
-      const result = await replaceDepreciationRunLines(ctx.asSystem.pg, {
-        depreciationRunId,
-        lines: proposal.data.lines,
-        companyId,
-        userId: ctx.auditUserId
-      });
+      const result = await service.replaceDepreciationRunLines(
+        ctx.asSystem.pg,
+        {
+          depreciationRunId,
+          lines: proposal.data.lines,
+          companyId,
+          userId: ctx.auditUserId
+        }
+      );
       return {
         id: depreciationRunId,
         readableId,
@@ -435,7 +404,7 @@ export const depreciationRunRecalculate = defineServiceFn({
  *
  * @mcp
  */
-export const depreciationRunRepeat = defineServiceFn({
+export const repeatDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
   permission: { create: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -465,7 +434,7 @@ export const depreciationRunRepeat = defineServiceFn({
 
     // No runId: every run already at this period covers its assets, so the
     // repeat holds only the active assets none of them does.
-    const proposal = await buildDepreciationRunLines(client, {
+    const proposal = await service.buildDepreciationRunLines(client, {
       companyId,
       companyGroupId: ctx.company.groupId,
       periodEnd
@@ -491,7 +460,7 @@ export const depreciationRunRepeat = defineServiceFn({
       );
     }
 
-    const created = await insertDepreciationRun(client, {
+    const created = await service.insertDepreciationRun(client, {
       periodEnd,
       lines,
       companyId,
@@ -519,7 +488,7 @@ export const depreciationRunRepeat = defineServiceFn({
  *
  * @mcp destructive
  */
-export const depreciationRunReverse = defineServiceFn({
+export const reverseDepreciationRun = defineServiceFn({
   input: z.object({ depreciationRunId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { depreciationRunId }) {
@@ -548,7 +517,7 @@ export const depreciationRunReverse = defineServiceFn({
 
     // Each journal reverses on its own date, or today when that period is
     // Closed.
-    const periods = await resolveReversalPeriods(client, {
+    const periods = await service.resolveReversalPeriods(client, {
       companyId,
       postingDates: lines.data.flatMap((line) =>
         [
@@ -566,7 +535,7 @@ export const depreciationRunReverse = defineServiceFn({
     }
 
     try {
-      const reversed = await reverseDepreciationRun(ctx.asSystem.pg, {
+      const reversed = await service.reverseDepreciationRun(ctx.asSystem.pg, {
         depreciationRunId,
         periods: periods.data,
         companyId,
@@ -574,7 +543,7 @@ export const depreciationRunReverse = defineServiceFn({
       });
       return { id: depreciationRunId, readableId: reversed.depreciationRunId };
     } catch (err) {
-      return err instanceof RunReversalError
+      return err instanceof service.RunReversalError
         ? ctx.error("rule", err.message, err)
         : ctx.error("internal", "Failed to reverse depreciation run", err);
     }
@@ -596,7 +565,7 @@ export const depreciationRunReverse = defineServiceFn({
  *
  * @mcp
  */
-export const revenueRecognitionRunCreate = defineServiceFn({
+export const createRevenueRecognitionRun = defineServiceFn({
   input: z.object({
     type: z.enum(runTypes),
     periodEnd: z.string().optional()
@@ -607,7 +576,7 @@ export const revenueRecognitionRunCreate = defineServiceFn({
       // Schedule rows fall on month ends, so a picked day means its month: a
       // mid-month date would leave that month's rows out. Depreciation runs
       // snap the same way.
-      return proposeRunAt(ctx, monthEndOf(periodEnd), type);
+      return service.proposeRunAt(ctx, monthEndOf(periodEnd), type);
     }
 
     const client = ctx.asCaller.supabase;
@@ -618,11 +587,11 @@ export const revenueRecognitionRunCreate = defineServiceFn({
       .eq("type", type)
       .order("periodEnd", { ascending: false })
       .limit(1);
-    return proposeRunAt(
+    return service.proposeRunAt(
       ctx,
       getNextRevenueRecognitionPeriodEnd(
         lastRun.data?.[0]?.periodEnd ?? null,
-        await getCompanyToday(client, ctx.company.id)
+        await service.getCompanyToday(client, ctx.company.id)
       ),
       type
     );
@@ -643,7 +612,7 @@ export const revenueRecognitionRunCreate = defineServiceFn({
  *
  * @mcp
  */
-export const revenueRecognitionRunPost = defineServiceFn({
+export const postRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -664,7 +633,7 @@ export const revenueRecognitionRunPost = defineServiceFn({
       return ctx.error("conflict", "Run is not in Draft status");
     }
 
-    const futureError = await futureRunPeriodError(
+    const futureError = await service.futureRunPeriodError(
       client,
       companyId,
       run.data.periodEnd
@@ -700,7 +669,7 @@ export const revenueRecognitionRunPost = defineServiceFn({
       );
     }
 
-    const periods = await resolveRunPostingPeriods(client, {
+    const periods = await service.resolveRunPostingPeriods(client, {
       companyId,
       monthEnds: scheduledLines.data.flatMap((line) =>
         line.schedule ? [monthEndOf(line.schedule.scheduledDate)] : []
@@ -719,7 +688,7 @@ export const revenueRecognitionRunPost = defineServiceFn({
       (dimensions.data ?? []).find((d) => d.entityType === entityType)?.id;
 
     try {
-      await postRevenueRecognitionRun(ctx.asSystem.pg, {
+      await service.postRevenueRecognitionRun(ctx.asSystem.pg, {
         runId,
         companyId,
         userId: ctx.auditUserId,
@@ -733,7 +702,7 @@ export const revenueRecognitionRunPost = defineServiceFn({
         }
       });
     } catch (err) {
-      return err instanceof RunOutOfDateError
+      return err instanceof service.RunOutOfDateError
         ? ctx.error("conflict", err.message, err)
         : ctx.error("internal", "Failed to post revenue recognition run", err);
     }
@@ -753,7 +722,7 @@ export const revenueRecognitionRunPost = defineServiceFn({
  *
  * @mcp
  */
-export const revenueRecognitionRunRepeat = defineServiceFn({
+export const repeatRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
   permission: { create: "accounting" },
   async run(ctx, { runId }) {
@@ -774,7 +743,7 @@ export const revenueRecognitionRunRepeat = defineServiceFn({
     if (sourceRun.data.status !== "Posted") {
       return ctx.error("rule", "Only posted runs can be repeated");
     }
-    return proposeRunAt(
+    return service.proposeRunAt(
       ctx,
       getNextPeriodEnd(sourceRun.data.periodEnd),
       sourceRun.data.type
@@ -795,7 +764,7 @@ export const revenueRecognitionRunRepeat = defineServiceFn({
  *
  * @mcp destructive
  */
-export const revenueRecognitionRunReverse = defineServiceFn({
+export const reverseRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -820,7 +789,7 @@ export const revenueRecognitionRunReverse = defineServiceFn({
 
     // Each journal reverses on its own date, or today when that period is
     // Closed.
-    const periods = await resolveReversalPeriods(client, {
+    const periods = await service.resolveReversalPeriods(client, {
       companyId,
       postingDates: lines.data.flatMap((line) =>
         line.schedule?.journal?.postingDate
@@ -837,19 +806,22 @@ export const revenueRecognitionRunReverse = defineServiceFn({
     }
 
     try {
-      const reversed = await reverseRevenueRecognitionRun(ctx.asSystem.pg, {
-        runId,
-        periods: periods.data,
-        companyId,
-        userId: ctx.auditUserId
-      });
+      const reversed = await service.reverseRevenueRecognitionRun(
+        ctx.asSystem.pg,
+        {
+          runId,
+          periods: periods.data,
+          companyId,
+          userId: ctx.auditUserId
+        }
+      );
       return {
         id: runId,
         readableId: reversed.runId,
         deleted: reversed.deleted
       };
     } catch (err) {
-      return err instanceof RunReversalError
+      return err instanceof service.RunReversalError
         ? ctx.error("rule", err.message, err)
         : ctx.error(
             "internal",
@@ -872,7 +844,7 @@ export const revenueRecognitionRunReverse = defineServiceFn({
  *
  * @mcp
  */
-export const revenueRecognitionRunRecalculate = defineServiceFn({
+export const recalculateRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { runId }) {
@@ -885,12 +857,11 @@ export const revenueRecognitionRunRecalculate = defineServiceFn({
       .eq("companyId", ctx.company.id)
       .maybeSingle();
 
-    const result = await asCaller(ctx).invoke(
-      "recalculate-revenue-recognition-run",
-      { runId }
-    );
+    const result = await service
+      .asCaller(ctx)
+      .invoke("recalculate-revenue-recognition-run", { runId });
     if (result.error) {
-      return fromServerFn(
+      return service.fromServerFn(
         ctx,
         result.error,
         "Failed to recalculate revenue recognition run"
@@ -916,7 +887,7 @@ export const revenueRecognitionRunRecalculate = defineServiceFn({
  *
  * @mcp destructive
  */
-export const revenueRecognitionRunDelete = defineServiceFn({
+export const deleteRevenueRecognitionRun = defineServiceFn({
   input: z.object({ runId: z.string() }),
   permission: { delete: "accounting" },
   async run(ctx, { runId }) {
@@ -932,13 +903,13 @@ export const revenueRecognitionRunDelete = defineServiceFn({
     if (!run.data) return ctx.error("notFound", "Run not found");
 
     try {
-      await deleteRevenueRecognitionRun(ctx.asSystem.pg, {
+      await service.deleteRevenueRecognitionRun(ctx.asSystem.pg, {
         runId,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
       });
     } catch (err) {
-      return refusal(ctx, err, "Failed to delete the run");
+      return service.refusal(ctx, err, "Failed to delete the run");
     }
     return { id: runId, type: run.data.type };
   }
@@ -957,17 +928,17 @@ export const revenueRecognitionRunDelete = defineServiceFn({
  *
  * @mcp
  */
-export const periodLock = defineServiceFn({
+export const lockPeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
-    const result = await lockAccountingPeriod(ctx.asCaller.supabase, {
+    const result = await service.lockAccountingPeriod(ctx.asCaller.supabase, {
       periodId,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
     });
     if (result.error)
-      return refusal(ctx, result.error, "Failed to lock period");
+      return service.refusal(ctx, result.error, "Failed to lock period");
     return { periodId, closeStatus: "Locked" as const };
   }
 });
@@ -980,17 +951,17 @@ export const periodLock = defineServiceFn({
  *
  * @mcp
  */
-export const periodUnlock = defineServiceFn({
+export const unlockPeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
-    const result = await unlockAccountingPeriod(ctx.asCaller.supabase, {
+    const result = await service.unlockAccountingPeriod(ctx.asCaller.supabase, {
       periodId,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
     });
     if (result.error) {
-      return refusal(ctx, result.error, "Failed to unlock period");
+      return service.refusal(ctx, result.error, "Failed to unlock period");
     }
     return { periodId, closeStatus: "Open" as const };
   }
@@ -1008,11 +979,11 @@ export const periodUnlock = defineServiceFn({
  *
  * @mcp
  */
-export const periodClose = defineServiceFn({
+export const closePeriod = defineServiceFn({
   input: z.object({ periodId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { periodId }) {
-    const result = await closePeriodWithChecklist(
+    const result = await service.closePeriodWithChecklist(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
       {
@@ -1023,7 +994,7 @@ export const periodClose = defineServiceFn({
       }
     );
     if (result.error)
-      return refusal(ctx, result.error, "Failed to close period");
+      return service.refusal(ctx, result.error, "Failed to close period");
     return { periodId };
   }
 });
@@ -1040,7 +1011,7 @@ export const periodClose = defineServiceFn({
  *
  * @mcp
  */
-export const periodCreateRun = defineServiceFn({
+export const createRunForPeriod = defineServiceFn({
   input: z.object({
     periodId: z.string(),
     run: z.enum([...runTypes, "Depreciation"])
@@ -1061,11 +1032,11 @@ export const periodCreateRun = defineServiceFn({
     const periodEnd = period.data.endDate;
 
     if (run !== "Depreciation") {
-      const created = await proposeRunAt(ctx, periodEnd, run);
+      const created = await service.proposeRunAt(ctx, periodEnd, run);
       return created instanceof Error ? created : { ...created, run };
     }
 
-    const futureError = await futureRunPeriodError(
+    const futureError = await service.futureRunPeriodError(
       client,
       ctx.company.id,
       periodEnd
@@ -1088,7 +1059,7 @@ export const periodCreateRun = defineServiceFn({
       );
     }
 
-    const created = await createDepreciationRunAt(ctx, periodEnd);
+    const created = await service.createDepreciationRunAt(ctx, periodEnd);
     return created instanceof Error ? created : { ...created, run };
   }
 });
@@ -1106,14 +1077,14 @@ export const closeTaskComplete = defineServiceFn({
   input: z.object({ taskId: z.string(), notes: z.string().optional() }),
   permission: { update: "accounting" },
   async run(ctx, { taskId, notes }) {
-    const result = await completeCloseTask(ctx.asCaller.supabase, {
+    const result = await service.completeCloseTask(ctx.asCaller.supabase, {
       taskId,
       notes,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
     });
     if (result.error) {
-      return refusal(ctx, result.error, "Failed to complete task");
+      return service.refusal(ctx, result.error, "Failed to complete task");
     }
     return { taskId, status: "Done" as const };
   }
@@ -1132,13 +1103,14 @@ export const closeTaskSkip = defineServiceFn({
   input: z.object({ taskId: z.string(), skippedReason: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { taskId, skippedReason }) {
-    const result = await skipCloseTask(ctx.asCaller.supabase, {
+    const result = await service.skipCloseTask(ctx.asCaller.supabase, {
       taskId,
       skippedReason,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
     });
-    if (result.error) return refusal(ctx, result.error, "Failed to skip task");
+    if (result.error)
+      return service.refusal(ctx, result.error, "Failed to skip task");
     return { taskId, status: "Skipped" as const };
   }
 });
@@ -1154,11 +1126,11 @@ export const closeTaskSkip = defineServiceFn({
  *
  * @mcp
  */
-export const journalEntryCreate = defineServiceFn({
+export const createJournalEntry = defineServiceFn({
   input: z.object({}),
   permission: { create: "accounting" },
   async run(ctx) {
-    const created = await system(ctx).invoke("create", {
+    const created = await service.system(ctx).invoke("create", {
       type: "journalEntry"
     });
     if (created.error || !created.data) {
@@ -1197,7 +1169,7 @@ const journalLineInput = z.object({
  *
  * @mcp destructive
  */
-export const journalEntrySave = defineServiceFn({
+export const saveJournalEntry = defineServiceFn({
   input: z.object({
     journalEntryId: z.string(),
     postingDate: z.string(),
@@ -1225,27 +1197,34 @@ export const journalEntrySave = defineServiceFn({
       }
     }
 
-    const saved = await saveJournalEntryWithLines(ctx.asCaller.supabase, {
-      journalEntryId,
-      postingDate,
-      description,
-      updatedBy: ctx.auditUserId,
-      lines,
-      companyId: ctx.company.id,
-      companyGroupId: ctx.company.groupId
-    });
+    const saved = await service.saveJournalEntryWithLines(
+      ctx.asCaller.supabase,
+      {
+        journalEntryId,
+        postingDate,
+        description,
+        updatedBy: ctx.auditUserId,
+        lines,
+        companyId: ctx.company.id,
+        companyGroupId: ctx.company.groupId
+      }
+    );
     if (saved.error) {
-      return refusal(ctx, saved.error, "Failed to save journal entry");
+      return service.refusal(ctx, saved.error, "Failed to save journal entry");
     }
 
     if (post) {
-      const posted = await postJournalEntry(
+      const posted = await service.postJournalEntry(
         ctx.asCaller.supabase,
         journalEntryId,
         ctx.auditUserId
       );
       if (posted.error) {
-        return refusal(ctx, posted.error, "Failed to post journal entry");
+        return service.refusal(
+          ctx,
+          posted.error,
+          "Failed to post journal entry"
+        );
       }
     }
     return { journalEntryId, posted: post === true };
@@ -1265,7 +1244,7 @@ export const journalEntrySave = defineServiceFn({
  *
  * @mcp
  */
-export const fixedAssetTakeOutOfService = defineServiceFn({
+export const takeFixedAssetOutOfService = defineServiceFn({
   input: z.object({
     fixedAssetId: z.string(),
     reason: z.string().trim().min(1, { message: "Reason is required" })
@@ -1274,7 +1253,7 @@ export const fixedAssetTakeOutOfService = defineServiceFn({
   async run(ctx, { fixedAssetId, reason }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const refused = await outOfServiceRefusal(
+    const refused = await service.outOfServiceRefusal(
       client,
       ctx.asSystem.supabase,
       fixedAssetId,
@@ -1284,11 +1263,11 @@ export const fixedAssetTakeOutOfService = defineServiceFn({
       return ctx.error(refused.category, refused.message, refused.cause);
     }
 
-    const result = await setFixedAssetOutOfService(client, {
+    const result = await service.setFixedAssetOutOfService(client, {
       id: fixedAssetId,
       companyId,
       reason,
-      since: await getCompanyToday(client, companyId),
+      since: await service.getCompanyToday(client, companyId),
       updatedBy: ctx.auditUserId
     });
     if (result.error) {
@@ -1311,15 +1290,18 @@ export const fixedAssetTakeOutOfService = defineServiceFn({
  *
  * @mcp
  */
-export const fixedAssetReturnToService = defineServiceFn({
+export const returnFixedAssetToService = defineServiceFn({
   input: z.object({ fixedAssetId: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, { fixedAssetId }) {
-    const result = await returnFixedAssetToService(ctx.asCaller.supabase, {
-      id: fixedAssetId,
-      companyId: ctx.company.id,
-      updatedBy: ctx.auditUserId
-    });
+    const result = await service.returnFixedAssetToService(
+      ctx.asCaller.supabase,
+      {
+        id: fixedAssetId,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (result.error) {
       return ctx.error(
         "internal",
@@ -1348,7 +1330,7 @@ const SELLABLE_ASSET_STATUSES: string[] = ["Active", "Fully Depreciated"];
  *
  * @mcp
  */
-export const fixedAssetPurchase = defineServiceFn({
+export const purchaseFixedAsset = defineServiceFn({
   input: z.object({ fixedAssetId: z.string(), supplierId: z.string() }),
   permission: { create: "purchasing" },
   async run(ctx, { fixedAssetId, supplierId }) {
@@ -1356,7 +1338,7 @@ export const fixedAssetPurchase = defineServiceFn({
     const companyId = ctx.company.id;
 
     const [asset, defaults] = await Promise.all([
-      getFixedAsset(client, fixedAssetId, companyId),
+      service.getFixedAsset(client, fixedAssetId, companyId),
       getUserDefaults(client, ctx.auditUserId, companyId)
     ]);
     if (asset.error || !asset.data) {
@@ -1430,7 +1412,7 @@ export const fixedAssetPurchase = defineServiceFn({
  *
  * @mcp
  */
-export const fixedAssetSell = defineServiceFn({
+export const sellFixedAsset = defineServiceFn({
   input: z.object({ fixedAssetId: z.string(), customerId: z.string() }),
   permission: { create: "sales" },
   async run(ctx, { fixedAssetId, customerId }) {
@@ -1438,7 +1420,7 @@ export const fixedAssetSell = defineServiceFn({
     const companyId = ctx.company.id;
 
     const [asset, defaults] = await Promise.all([
-      getFixedAsset(client, fixedAssetId, companyId),
+      service.getFixedAsset(client, fixedAssetId, companyId),
       getUserDefaults(client, ctx.auditUserId, companyId)
     ]);
     if (asset.error || !asset.data) {
@@ -1502,7 +1484,7 @@ export const fixedAssetSell = defineServiceFn({
  *
  * @mcp destructive
  */
-export const fixedAssetDispose = defineServiceFn({
+export const disposeFixedAsset = defineServiceFn({
   input: z.object({
     fixedAssetId: z.string(),
     disposalDate: z.string().min(1, { message: "Disposal date is required" })
@@ -1536,7 +1518,7 @@ export const fixedAssetDispose = defineServiceFn({
     }
     const assetClass = asset.data.fixedAssetClass;
 
-    const period = await getOrCreateAccountingPeriod(
+    const period = await service.getOrCreateAccountingPeriod(
       client,
       companyId,
       disposalDate,
@@ -1554,7 +1536,7 @@ export const fixedAssetDispose = defineServiceFn({
       (dimensions.data ?? []).find((d) => d.entityType === entityType)?.id;
 
     try {
-      await postDisposal(ctx.asSystem.pg, {
+      await service.postDisposal(ctx.asSystem.pg, {
         fixedAssetId,
         fixedAssetReadableId: asset.data.fixedAssetId,
         disposalDate,
@@ -1594,7 +1576,7 @@ export const fixedAssetDispose = defineServiceFn({
  *
  * @mcp
  */
-export const fixedAssetRegister = defineServiceFn({
+export const registerFixedAsset = defineServiceFn({
   input: z.object({
     fixedAssetId: z.string(),
     acquisitionCost: z
@@ -1624,7 +1606,7 @@ export const fixedAssetRegister = defineServiceFn({
         .eq("id", fixedAssetId)
         .eq("companyId", companyId)
         .single(),
-      getDefaultAccounts(client, companyId),
+      service.getDefaultAccounts(client, companyId),
       client
         .from("dimension")
         .select("id, entityType")
@@ -1659,7 +1641,7 @@ export const fixedAssetRegister = defineServiceFn({
       // construction-in-progress class is registered as Under Construction: it
       // accumulates cost until it is capitalized into its in-service class,
       // and is not depreciated before then.
-      await postAssetRegistration(ctx.asSystem.pg, {
+      await service.postAssetRegistration(ctx.asSystem.pg, {
         fixedAssetId,
         fixedAssetReadableId: asset.data.fixedAssetId,
         registration,
@@ -1673,7 +1655,7 @@ export const fixedAssetRegister = defineServiceFn({
           locationDimensionId: dimensionId("Location"),
           assetClassDimensionId: dimensionId("FixedAssetClass"),
           resolveAccountingPeriodId: async (postingDate) => {
-            const period = await getOrCreateAccountingPeriod(
+            const period = await service.getOrCreateAccountingPeriod(
               client,
               companyId,
               postingDate,
@@ -1694,7 +1676,7 @@ export const fixedAssetRegister = defineServiceFn({
         userId: ctx.auditUserId
       });
     } catch (err) {
-      return refusal(ctx, err, "Failed to register asset");
+      return service.refusal(ctx, err, "Failed to register asset");
     }
     return { fixedAssetId };
   }
@@ -1712,7 +1694,7 @@ export const fixedAssetRegister = defineServiceFn({
  *
  * @mcp
  */
-export const exchangeRateOverride = defineServiceFn({
+export const overrideExchangeRate = defineServiceFn({
   input: z.object({
     currencyCode: z.string().trim().min(1, { message: "Currency is required" }),
     rate: z.number().positive({ message: "Rate must be positive" })
@@ -1731,7 +1713,7 @@ export const exchangeRateOverride = defineServiceFn({
       return ctx.error("rule", "The base currency's exchange rate is always 1");
     }
 
-    const result = await upsertExchangeRateOverride(client, {
+    const result = await service.upsertExchangeRateOverride(client, {
       companyId: ctx.company.id,
       currencyCode,
       rate,
@@ -1758,13 +1740,13 @@ export const exchangeRateOverride = defineServiceFn({
  *
  * @mcp destructive
  */
-export const exchangeRateReset = defineServiceFn({
+export const resetExchangeRate = defineServiceFn({
   input: z.object({
     currencyCode: z.string().min(1, { message: "Currency code is required" })
   }),
   permission: { update: "accounting" },
   async run(ctx, { currencyCode }) {
-    const result = await deleteExchangeRateOverride(
+    const result = await service.deleteExchangeRateOverride(
       ctx.asCaller.supabase,
       ctx.company.id,
       currencyCode
@@ -1793,7 +1775,7 @@ export const exchangeRateReset = defineServiceFn({
  *
  * @mcp
  */
-export const currencyUpdate = defineServiceFn({
+export const updateCurrency = defineServiceFn({
   input: z.object({
     currencyId: z.string(),
     code: z.string(),
@@ -1815,7 +1797,10 @@ export const currencyUpdate = defineServiceFn({
       rate !== undefined &&
       (displayedRate === undefined || round(displayedRate) !== round(rate))
     ) {
-      const current = await getExchangeRates(ctx.asCaller.supabase, companyId);
+      const current = await service.getExchangeRates(
+        ctx.asCaller.supabase,
+        companyId
+      );
       if (current.error) {
         return ctx.error(
           "internal",
@@ -1833,18 +1818,21 @@ export const currencyUpdate = defineServiceFn({
     }
 
     try {
-      const saved = await saveCurrencyWithRateOverride(ctx.asSystem.pg, {
-        currencyId: input.currencyId,
-        companyId,
-        companyGroupId: ctx.company.groupId,
-        userId: ctx.auditUserId,
-        config: {
-          decimalPlaces: input.decimalPlaces,
-          historicalExchangeRate: input.historicalExchangeRate ?? null,
-          customFields: input.customFields ?? {}
-        },
-        overrideRate
-      });
+      const saved = await service.saveCurrencyWithRateOverride(
+        ctx.asSystem.pg,
+        {
+          currencyId: input.currencyId,
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          userId: ctx.auditUserId,
+          config: {
+            decimalPlaces: input.decimalPlaces,
+            historicalExchangeRate: input.historicalExchangeRate ?? null,
+            customFields: input.customFields ?? {}
+          },
+          overrideRate
+        }
+      );
       if (!saved) return ctx.error("notFound", "Currency not found");
     } catch (err) {
       return ctx.error("internal", "Failed to update currency", err);
@@ -1867,7 +1855,7 @@ export const currencyUpdate = defineServiceFn({
  *
  * @mcp
  */
-export const accountMove = defineServiceFn({
+export const moveAccount = defineServiceFn({
   input: z.object({ accountId: z.string(), parentId: z.string().optional() }),
   permission: { update: "accounting" },
   async run(ctx, { accountId, parentId }) {
@@ -1945,13 +1933,15 @@ export const accountMove = defineServiceFn({
  *
  * @mcp destructive
  */
-export const chartOfAccountsImport = defineServiceFn({
+export const importChartOfAccounts = defineServiceFn({
   input: applyAccountImportInput,
   permission: { update: "accounting" },
   async run(ctx, input) {
-    const result = await asCaller(ctx).invoke("apply-account-import", input);
+    const result = await service
+      .asCaller(ctx)
+      .invoke("apply-account-import", input);
     if (result.error) {
-      return fromServerFn(
+      return service.fromServerFn(
         ctx,
         result.error,
         "Failed to import the chart of accounts"
@@ -1975,14 +1965,2979 @@ export const chartOfAccountsImport = defineServiceFn({
  *
  * @mcp destructive
  */
-export const cutoverEnable = defineServiceFn({
+export const enableAccountingCutover = defineServiceFn({
   input: z.object({ cutoverDate: z.string(), confirmation: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    const result = await asCaller(ctx).invoke("activate-accounting", input);
+    const result = await service
+      .asCaller(ctx)
+      .invoke("activate-accounting", input);
     if (result.error) {
-      return fromServerFn(ctx, result.error, "Failed to enable accounting");
+      return service.fromServerFn(
+        ctx,
+        result.error,
+        "Failed to enable accounting"
+      );
     }
     return { cutoverDate: input.cutoverDate };
+  }
+});
+/**
+ * Get account ledger
+ *
+ * @mcp read
+ */
+export const getAccountLedger = defineServiceFn({
+  input: z.looseObject({
+    accountId: z.string(),
+    companyIds: z.array(z.string()).optional(),
+    startDate: z.string().nullable(),
+    endDate: z.string().nullable(),
+    limit: z.number(),
+    offset: z.number()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getAccountLedger(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get account ledger summary
+ *
+ * @mcp read
+ */
+export const getAccountLedgerSummary = defineServiceFn({
+  input: z.looseObject({
+    accountId: z.string(),
+    startDate: z.string().nullable(),
+    endDate: z.string().nullable()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccountLedgerSummary(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get financial statement balances
+ *
+ * @mcp read
+ */
+export const getFinancialStatementBalances = defineServiceFn({
+  input: z.looseObject({
+    startDate: z.string().nullable(),
+    endDate: z.string().nullable(),
+    includeCurrentYearEarnings: z.boolean().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFinancialStatementBalances(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Multi-period financial statement balances: one column per bucket, powered by the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan)
+ *
+ * @mcp read
+ */
+export const getFinancialStatementPeriodSeries = defineServiceFn({
+  input: z.looseObject({
+    buckets: z.array(
+      z.looseObject({
+        key: z.string(),
+        start: z.string(),
+        end: z.string(),
+        fiscalYear: z.number(),
+        quarter: z.number().nullable().optional(),
+        isPartial: z.boolean()
+      })
+    ),
+    includeCurrentYearEarnings: z.boolean().optional(),
+    translate: z.looseObject({ targetCurrency: z.string() }).optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFinancialStatementPeriodSeries(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get report pins
+ *
+ * @mcp read
+ */
+export const getReportPins = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getReportPins(
+        ctx.asCaller.supabase,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Upsert report pin
+ *
+ * @mcp
+ */
+export const upsertReportPin = defineServiceFn({
+  input: z.looseObject({ reportKey: z.string(), pinned: z.boolean() }),
+  permission: { create: "accounting", update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertReportPin(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The leaf accounts inside a report's account scope — the universe the per-report account multi-select filters within
+ *
+ * @mcp read
+ */
+export const getAccountsInScope = defineServiceFn({
+  input: z.looseObject({
+    scope: z.union([
+      z.looseObject({
+        classes: z.array(
+          z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"])
+        )
+      }),
+      z.looseObject({
+        types: z.array(
+          z.enum([
+            "Bank",
+            "Cash",
+            "Accounts Receivable",
+            "Accounts Payable",
+            "Inventory",
+            "Fixed Asset",
+            "Accumulated Depreciation",
+            "Other Current Asset",
+            "Other Asset",
+            "Other Current Liability",
+            "Long Term Liability",
+            "Equity - No Close",
+            "Equity - Close",
+            "Retained Earnings",
+            "Income",
+            "Cost of Goods Sold",
+            "Expense",
+            "Other Income",
+            "Other Expense",
+            "Tax",
+            "Investments"
+          ])
+        )
+      }),
+      z.looseObject({ source: z.literal("scrapAccounts") })
+    ]),
+    scrapAccountIds: z.array(z.string()).optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccountsInScope(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        stamp(ctx, input.scope, ["companyId"]) as never,
+        stamp(ctx, input.scrapAccountIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get dimension pivot
+ *
+ * @mcp read
+ */
+export const getDimensionPivot = defineServiceFn({
+  input: z.looseObject({
+    report: z.looseObject({
+      key: z.enum([
+        "revenue",
+        "expenses",
+        "assets",
+        "inventory-change",
+        "scrap"
+      ]),
+      accountScope: z.union([
+        z.looseObject({
+          classes: z.array(
+            z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"])
+          )
+        }),
+        z.looseObject({
+          types: z.array(
+            z.enum([
+              "Bank",
+              "Cash",
+              "Accounts Receivable",
+              "Accounts Payable",
+              "Inventory",
+              "Fixed Asset",
+              "Accumulated Depreciation",
+              "Other Current Asset",
+              "Other Asset",
+              "Other Current Liability",
+              "Long Term Liability",
+              "Equity - No Close",
+              "Equity - Close",
+              "Retained Earnings",
+              "Income",
+              "Cost of Goods Sold",
+              "Expense",
+              "Other Income",
+              "Other Expense",
+              "Tax",
+              "Investments"
+            ])
+          )
+        }),
+        z.looseObject({ source: z.literal("scrapAccounts") })
+      ]),
+      defaultRows: z.array(z.string())
+    }),
+    scrapAccountIds: z.array(z.string()).optional(),
+    startDate: z.string(),
+    endDate: z.string(),
+    periodEnds: z.array(z.string()).optional(),
+    state: z.looseObject({
+      rows: z.array(z.string().min(1)).max(2).default([]),
+      columnAxis: z
+        .union([
+          z.looseObject({
+            type: z.literal("period"),
+            bucket: z.enum(["month", "quarter", "year"])
+          }),
+          z.looseObject({
+            type: z.literal("dimension"),
+            dimensionId: z.string().min(1)
+          })
+        ])
+        .default({ type: "period", bucket: "month" }),
+      measure: z.enum(["amount", "quantity", "count"]).default("amount"),
+      percentOfTotal: z.boolean().default(false),
+      sort: z
+        .looseObject({
+          key: z.string().min(1),
+          direction: z.enum(["asc", "desc"])
+        })
+        .nullable()
+        .default(null),
+      filters: z
+        .array(
+          z.looseObject({
+            dimensionId: z.string().min(1),
+            valueIds: z.array(z.string()).min(1)
+          })
+        )
+        .default([]),
+      accountIds: z.array(z.string().min(1)).default([])
+    })
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDimensionPivot(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "companyGroupId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Drill-through: the journal lines behind one pivot cell
+ *
+ * @mcp read
+ */
+export const getDimensionPivotLines = defineServiceFn({
+  input: z.looseObject({
+    report: z.looseObject({
+      key: z.enum([
+        "revenue",
+        "expenses",
+        "assets",
+        "inventory-change",
+        "scrap"
+      ]),
+      accountScope: z.union([
+        z.looseObject({
+          classes: z.array(
+            z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"])
+          )
+        }),
+        z.looseObject({
+          types: z.array(
+            z.enum([
+              "Bank",
+              "Cash",
+              "Accounts Receivable",
+              "Accounts Payable",
+              "Inventory",
+              "Fixed Asset",
+              "Accumulated Depreciation",
+              "Other Current Asset",
+              "Other Asset",
+              "Other Current Liability",
+              "Long Term Liability",
+              "Equity - No Close",
+              "Equity - Close",
+              "Retained Earnings",
+              "Income",
+              "Cost of Goods Sold",
+              "Expense",
+              "Other Income",
+              "Other Expense",
+              "Tax",
+              "Investments"
+            ])
+          )
+        }),
+        z.looseObject({ source: z.literal("scrapAccounts") })
+      ]),
+      defaultRows: z.array(z.string())
+    }),
+    scrapAccountIds: z.array(z.string()).optional(),
+    startDate: z.string(),
+    endDate: z.string(),
+    filters: z.array(
+      z.looseObject({ dimensionId: z.string(), valueIds: z.array(z.string()) })
+    ),
+    rowDimension1: z.string().optional(),
+    rowValue1: z.string().optional(),
+    rowValue1IsNull: z.boolean().optional(),
+    rowDimension2: z.string().optional(),
+    rowValue2: z.string().optional(),
+    rowValue2IsNull: z.boolean().optional(),
+    columnDimension: z.string().optional(),
+    columnValue: z.string().optional(),
+    columnValueIsNull: z.boolean().optional(),
+    columnPeriodStart: z.string().optional(),
+    columnPeriodEnd: z.string().optional(),
+    accountIds: z.array(z.string()).optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDimensionPivotLines(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "companyGroupId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase line pivot
+ *
+ * @mcp read
+ */
+export const getPurchaseLinePivot = defineServiceFn({
+  input: z.looseObject({
+    startDate: z.string(),
+    endDate: z.string(),
+    periodEnds: z.array(z.string()).optional(),
+    state: z.looseObject({
+      rows: z.array(z.string().min(1)).max(2).default([]),
+      columnAxis: z
+        .union([
+          z.looseObject({
+            type: z.literal("period"),
+            bucket: z.enum(["month", "quarter", "year"])
+          }),
+          z.looseObject({
+            type: z.literal("dimension"),
+            dimensionId: z.string().min(1)
+          })
+        ])
+        .default({ type: "period", bucket: "month" }),
+      measure: z.enum(["amount", "quantity", "count"]).default("amount"),
+      percentOfTotal: z.boolean().default(false),
+      sort: z
+        .looseObject({
+          key: z.string().min(1),
+          direction: z.enum(["asc", "desc"])
+        })
+        .nullable()
+        .default(null),
+      filters: z
+        .array(
+          z.looseObject({
+            dimensionId: z.string().min(1),
+            valueIds: z.array(z.string()).min(1)
+          })
+        )
+        .default([]),
+      accountIds: z.array(z.string().min(1)).default([])
+    })
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPurchaseLinePivot(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get purchase line pivot lines
+ *
+ * @mcp read
+ */
+export const getPurchaseLinePivotLines = defineServiceFn({
+  input: z.looseObject({
+    startDate: z.string(),
+    endDate: z.string(),
+    rowField1: z.string().optional(),
+    rowValue1: z.string().optional(),
+    rowField2: z.string().optional(),
+    rowValue2: z.string().optional(),
+    columnField: z.string().optional(),
+    columnValue: z.string().optional(),
+    columnPeriodStart: z.string().optional(),
+    columnPeriodEnd: z.string().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPurchaseLinePivotLines(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get report views
+ *
+ * @mcp read
+ */
+export const getReportViews = defineServiceFn({
+  input: z.looseObject({ reportKey: z.string().optional() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getReportViews(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a report view
+ *
+ * @remarks
+ * Upsert report view
+ *
+ * @mcp
+ */
+export const createReportView = defineServiceFn({
+  input: z.looseObject({
+    view: z.looseObject({
+      reportKey: z.string(),
+      name: z.string(),
+      visibility: z.enum(["Private", "Company"]),
+      config: z.unknown()
+    })
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertReportView(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.view,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a report view
+ *
+ * @remarks
+ * Upsert report view
+ *
+ * @mcp
+ */
+export const updateReportView = defineServiceFn({
+  input: z.looseObject({
+    view: z.looseObject({
+      id: z.string(),
+      reportKey: z.string(),
+      name: z.string(),
+      visibility: z.enum(["Private", "Company"]),
+      config: z.unknown()
+    })
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertReportView(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.view,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete report view
+ *
+ * @mcp destructive
+ */
+export const deleteReportView = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteReportView(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get companies in group
+ *
+ * @mcp read
+ */
+export const getCompaniesInGroup = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCompaniesInGroup(
+        ctx.asCaller.supabase,
+        ctx.company.groupId
+      )
+    );
+  }
+});
+
+/**
+ * Delete account
+ *
+ * @mcp destructive
+ */
+export const deleteAccount = defineServiceFn({
+  input: z.looseObject({ accountId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAccount(
+        ctx.asCaller.supabase,
+        input.accountId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete payment term
+ *
+ * @mcp destructive
+ */
+export const deletePaymentTerm = defineServiceFn({
+  input: z.looseObject({ paymentTermId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deletePaymentTerm(
+        ctx.asCaller.supabase,
+        input.paymentTermId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get account
+ *
+ * @mcp read
+ */
+export const getAccount = defineServiceFn({
+  input: z.looseObject({ accountId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccount(ctx.asCaller.supabase, input.accountId as never)
+    );
+  }
+});
+
+/**
+ * Get accounts list
+ *
+ * @mcp read
+ */
+export const getAccountsList = defineServiceFn({
+  input: z.looseObject({
+    isGroup: z.boolean().nullable().optional(),
+    incomeBalance: z
+      .enum(["Balance Sheet", "Income Statement"])
+      .nullable()
+      .optional(),
+    classes: z
+      .array(z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]))
+      .optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccountsList(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get group accounts
+ *
+ * @mcp read
+ */
+export const getGroupAccounts = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getGroupAccounts(ctx.asCaller.supabase, ctx.company.groupId)
+    );
+  }
+});
+
+/**
+ * Get base currency
+ *
+ * @mcp read
+ */
+export const getBaseCurrency = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getBaseCurrency(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get chart of accounts
+ *
+ * @mcp read
+ */
+export const getChartOfAccounts = defineServiceFn({
+  input: z.looseObject({
+    incomeBalance: z.enum(["Income Statement", "Balance Sheet"]).nullable(),
+    startDate: z.string().nullable(),
+    endDate: z.string().nullable()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChartOfAccounts(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get currency
+ *
+ * @mcp read
+ */
+export const getCurrency = defineServiceFn({
+  input: z.looseObject({ currencyId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCurrency(
+        ctx.asCaller.supabase,
+        input.currencyId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get currency by code
+ *
+ * @mcp read
+ */
+export const getCurrencyByCode = defineServiceFn({
+  input: z.looseObject({ currencyCode: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCurrencyByCode(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * The one sanctioned answer to "how many units of `currencyCode` per 1 unit of THIS company's base currency, right now"
+ *
+ * @mcp read
+ */
+export const getExchangeRate = defineServiceFn({
+  input: z.looseObject({ currencyCode: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getExchangeRate(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Every active currency of the company's group, resolved for THIS company, with provenance: 'base' | 'override' | 'market' | 'missing'
+ *
+ * @mcp read
+ */
+export const getExchangeRates = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getExchangeRates(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get currencies
+ *
+ * @mcp read
+ */
+export const getCurrencies = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCurrencies(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The full ISO currency list for pickers, carrying the company group's configured `decimalPlaces` where the currency has been set up
+ *
+ * @mcp read
+ */
+export const getCurrenciesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCurrenciesList(
+        ctx.asCaller.supabase,
+        ctx.company.groupId
+      )
+    );
+  }
+});
+
+/**
+ * Get accounting periods
+ *
+ * @mcp read
+ */
+export const getAccountingPeriods = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getAccountingPeriods(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get accounting period deletability
+ *
+ * @mcp read
+ */
+export const getAccountingPeriodDeletability = defineServiceFn({
+  input: z.looseObject({ periodId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccountingPeriodDeletability(
+        ctx.asCaller.supabase,
+        input.periodId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete accounting period
+ *
+ * @mcp destructive
+ */
+export const deleteAccountingPeriod = defineServiceFn({
+  input: z.looseObject({ periodId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.deleteAccountingPeriod(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fiscal calendar committed
+ *
+ * @mcp read
+ */
+export const getFiscalCalendarCommitted = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getFiscalCalendarCommitted(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create fiscal year periods
+ *
+ * @mcp
+ */
+export const createFiscalYearPeriods = defineServiceFn({
+  input: z.looseObject({ fiscalYear: z.number() }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.createFiscalYearPeriods(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Idempotently instantiate the checklist for a period from active definitions, then overlay live readiness
+ *
+ * @mcp
+ */
+export const getPeriodCloseChecklist = defineServiceFn({
+  input: z.looseObject({ periodId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeriodCloseChecklist(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "userId", "companyGroupId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get default accounts
+ *
+ * @mcp read
+ */
+export const getDefaultAccounts = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getDefaultAccounts(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * The GL account ids scrap postings offset to, for the scrap analytics report's account scope (accountScope.source === "scrapAccounts")
+ *
+ * @mcp read
+ */
+export const getScrapAccountIds = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getScrapAccountIds(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get fiscal year settings
+ *
+ * @mcp read
+ */
+export const getFiscalYearSettings = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getFiscalYearSettings(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get payment term
+ *
+ * @mcp read
+ */
+export const getPaymentTerm = defineServiceFn({
+  input: z.looseObject({ paymentTermId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPaymentTerm(
+        ctx.asCaller.supabase,
+        input.paymentTermId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get payment terms
+ *
+ * @mcp read
+ */
+export const getPaymentTerms = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPaymentTerms(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get payment terms list
+ *
+ * @mcp read
+ */
+export const getPaymentTermsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getPaymentTermsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Save both defaults sections atomically after validating the effective mapping
+ *
+ * @mcp
+ */
+export const updateDefaultAccounts = defineServiceFn({
+  input: z.looseObject({
+    rawMaterialsAccount: z.string().min(1),
+    finishedGoodsAccount: z.string().min(1),
+    goodsReceivedNotInvoicedAccount: z.string().min(1),
+    workInProgressAccount: z.string().min(1),
+    receivablesAccount: z.string().min(1),
+    bankCashAccount: z.string().min(1),
+    bankLocalCurrencyAccount: z.string().min(1),
+    bankForeignCurrencyAccount: z.string().min(1),
+    assetAquisitionCostAccount: z.string().min(1),
+    assetAquisitionCostOnDisposalAccount: z.string().min(1),
+    accumulatedDepreciationAccount: z.string().min(1),
+    accumulatedDepreciationOnDisposalAccount: z.string().min(1),
+    prepaymentAccount: z.string().min(1),
+    supplierPrepaymentAccount: z.string().min(1),
+    payablesAccount: z.string().min(1),
+    employeeReimbursementsPayableAccount: z.string().optional(),
+    salesTaxPayableAccount: z.string().min(1),
+    purchaseTaxPayableAccount: z.string().min(1),
+    reverseChargeSalesTaxPayableAccount: z.string().min(1),
+    retainedEarningsAccount: z.string().min(1),
+    currencyTranslationAccount: z.string().min(1),
+    deferredTaxLiabilityAccountId: z.string().min(1),
+    migrationClearingAccount: z.string().optional(),
+    deferredRevenueAccount: z.string().optional(),
+    contractAssetAccount: z.string().optional(),
+    netInvestmentInLeasesAccount: z.string().optional(),
+    rightOfUseAssetAccount: z.string().optional(),
+    accumulatedRightOfUseAmortizationAccount: z.string().optional(),
+    leaseLiabilityAccount: z.string().optional(),
+    salesAccount: z.string().min(1),
+    salesShippingRevenueAccount: z.string().min(1).optional(),
+    salesDiscountAccount: z.string().min(1),
+    costOfGoodsSoldAccount: z.string().min(1),
+    purchaseVarianceAccount: z.string().min(1),
+    inventoryAdjustmentVarianceAccount: z.string().min(1),
+    scrapAccount: z.string().optional(),
+    materialVarianceAccount: z.string().min(1),
+    laborAndMachineVarianceAccount: z.string().min(1),
+    overheadVarianceAccount: z.string().min(1),
+    lotSizeVarianceAccount: z.string().min(1),
+    subcontractingVarianceAccount: z.string().min(1),
+    laborAbsorptionAccount: z.string().min(1),
+    overheadAbsorptionAccount: z.string().optional(),
+    indirectCostAccount: z.string().min(1),
+    maintenanceAccount: z.string().min(1),
+    assetDepreciationExpenseAccount: z.string().min(1),
+    assetGainOnDisposalAccount: z.string().min(1),
+    assetLossOnDisposalAccount: z.string().min(1),
+    serviceChargeAccount: z.string().min(1),
+    interestAccount: z.string().min(1),
+    supplierPaymentDiscountAccount: z.string().min(1),
+    customerPaymentDiscountAccount: z.string().min(1),
+    customerWriteOffAccount: z.string().min(1),
+    supplierWriteOffAccount: z.string().min(1),
+    realizedExchangeGainAccount: z.string().min(1),
+    realizedExchangeLossAccount: z.string().min(1),
+    roundingAccount: z.string().min(1),
+    deferredTaxExpenseAccountId: z.string().min(1),
+    rentalIncomeAccount: z.string().optional(),
+    leaseRevenueAccount: z.string().optional(),
+    leaseInterestIncomeAccount: z.string().optional(),
+    operatingLeaseExpenseAccount: z.string().optional(),
+    variableLeaseExpenseAccount: z.string().optional(),
+    rightOfUseAmortizationExpenseAccount: z.string().optional(),
+    leaseInterestExpenseAccount: z.string().optional()
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateDefaultAccounts(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update fiscal year settings
+ *
+ * @mcp
+ */
+export const updateFiscalYearSettings = defineServiceFn({
+  input: z.looseObject({
+    startMonth: z.enum([
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ]),
+    taxStartMonth: z.enum([
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ])
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateFiscalYearSettings(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a account
+ *
+ * @remarks
+ * Upsert account
+ *
+ * @mcp
+ */
+export const createAccount = defineServiceFn({
+  input: z.looseObject({
+    number: z.string().min(1).nullable().optional(),
+    name: z.string().min(1),
+    parentId: z.string().optional(),
+    isGroup: z.boolean().optional(),
+    accountType: z
+      .enum([
+        "Bank",
+        "Cash",
+        "Accounts Receivable",
+        "Accounts Payable",
+        "Inventory",
+        "Fixed Asset",
+        "Accumulated Depreciation",
+        "Other Current Asset",
+        "Other Asset",
+        "Other Current Liability",
+        "Long Term Liability",
+        "Equity - No Close",
+        "Equity - Close",
+        "Retained Earnings",
+        "Income",
+        "Cost of Goods Sold",
+        "Expense",
+        "Other Income",
+        "Other Expense",
+        "Tax",
+        "Investments"
+      ])
+      .optional(),
+    incomeBalance: z.enum(["Balance Sheet", "Income Statement"]),
+    class: z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]),
+    consolidatedRate: z.enum(["Average", "Current", "Historical"]),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAccount(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a account
+ *
+ * @remarks
+ * Upsert account
+ *
+ * @mcp
+ */
+export const updateAccount = defineServiceFn({
+  input: z
+    .looseObject({
+      number: z.string().min(1).nullable().optional(),
+      name: z.string().min(1),
+      parentId: z.string().optional(),
+      isGroup: z.boolean().optional(),
+      accountType: z
+        .enum([
+          "Bank",
+          "Cash",
+          "Accounts Receivable",
+          "Accounts Payable",
+          "Inventory",
+          "Fixed Asset",
+          "Accumulated Depreciation",
+          "Other Current Asset",
+          "Other Asset",
+          "Other Current Liability",
+          "Long Term Liability",
+          "Equity - No Close",
+          "Equity - Close",
+          "Retained Earnings",
+          "Income",
+          "Cost of Goods Sold",
+          "Expense",
+          "Other Income",
+          "Other Expense",
+          "Tax",
+          "Investments"
+        ])
+        .optional(),
+      incomeBalance: z.enum(["Balance Sheet", "Income Statement"]),
+      class: z.enum(["Asset", "Liability", "Equity", "Revenue", "Expense"]),
+      consolidatedRate: z.enum(["Average", "Current", "Historical"]),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAccount(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a payment term
+ *
+ * @remarks
+ * Upsert payment term
+ *
+ * @mcp
+ */
+export const createPaymentTerm = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    daysDue: z.number().min(0),
+    daysDiscount: z.number().min(0),
+    discountPercentage: z.number().min(0).max(100),
+    calculationMethod: z.enum(["Net", "End of Month", "Day of Month"]),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPaymentTerm(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a payment term
+ *
+ * @remarks
+ * Upsert payment term
+ *
+ * @mcp
+ */
+export const updatePaymentTerm = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      daysDue: z.number().min(0),
+      daysDiscount: z.number().min(0),
+      discountPercentage: z.number().min(0).max(100),
+      calculationMethod: z.enum(["Net", "End of Month", "Day of Month"]),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPaymentTerm(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete cost center
+ *
+ * @mcp destructive
+ */
+export const deleteCostCenter = defineServiceFn({
+  input: z.looseObject({ costCenterId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteCostCenter(
+        ctx.asCaller.supabase,
+        input.costCenterId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get cost center
+ *
+ * @mcp read
+ */
+export const getCostCenter = defineServiceFn({
+  input: z.looseObject({ costCenterId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCostCenter(
+        ctx.asCaller.supabase,
+        input.costCenterId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get cost centers list
+ *
+ * @mcp read
+ */
+export const getCostCentersList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCostCentersList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get cost centers tree
+ *
+ * @mcp read
+ */
+export const getCostCentersTree = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCostCentersTree(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create a cost center
+ *
+ * @remarks
+ * Upsert cost center
+ *
+ * @mcp
+ */
+export const createCostCenter = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    parentCostCenterId: z.string().optional(),
+    ownerId: z.string().min(1),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertCostCenter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a cost center
+ *
+ * @remarks
+ * Upsert cost center
+ *
+ * @mcp
+ */
+export const updateCostCenter = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      parentCostCenterId: z.string().optional(),
+      ownerId: z.string().min(1),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertCostCenter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete project
+ *
+ * @mcp destructive
+ */
+export const deleteProject = defineServiceFn({
+  input: z.looseObject({ projectId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteProject(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.projectId as never,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Get project
+ *
+ * @mcp read
+ */
+export const getProject = defineServiceFn({
+  input: z.looseObject({ projectId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getProject(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.projectId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get projects
+ *
+ * @mcp read
+ */
+export const getProjects = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProjects(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a project
+ *
+ * @remarks
+ * Upsert project
+ *
+ * @mcp
+ */
+export const createProject = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    description: z.string().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProject(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a project
+ *
+ * @remarks
+ * Upsert project
+ *
+ * @mcp
+ */
+export const updateProject = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      description: z.string().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProject(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get dimensions
+ *
+ * @mcp read
+ */
+export const getDimensions = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getDimensions(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get dimension
+ *
+ * @mcp read
+ */
+export const getDimension = defineServiceFn({
+  input: z.looseObject({ dimensionId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDimension(
+        ctx.asCaller.supabase,
+        input.dimensionId as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a dimension
+ *
+ * @remarks
+ * Upsert dimension
+ *
+ * @mcp destructive
+ */
+export const createDimension = defineServiceFn({
+  input: z.looseObject({
+    dimension: z.looseObject({
+      name: z.string().min(1),
+      entityType: z.enum([
+        "CostCenter",
+        "Custom",
+        "Customer",
+        "CustomerType",
+        "Department",
+        "Employee",
+        "FixedAssetClass",
+        "Item",
+        "ItemPostingGroup",
+        "Location",
+        "Process",
+        "Project",
+        "ScrapReason",
+        "Supplier",
+        "SupplierType",
+        "WorkCenter"
+      ]),
+      active: z.boolean().optional(),
+      required: z.boolean().optional()
+    }),
+    dimensionValues: z.array(z.string()).optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertDimension(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.dimension,
+          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          "create"
+        ) as never,
+        stamp(
+          ctx,
+          input.dimensionValues,
+          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a dimension
+ *
+ * @remarks
+ * Upsert dimension
+ *
+ * @mcp destructive
+ */
+export const updateDimension = defineServiceFn({
+  input: z.looseObject({
+    dimension: z.looseObject({
+      name: z.string().min(1),
+      entityType: z.enum([
+        "CostCenter",
+        "Custom",
+        "Customer",
+        "CustomerType",
+        "Department",
+        "Employee",
+        "FixedAssetClass",
+        "Item",
+        "ItemPostingGroup",
+        "Location",
+        "Process",
+        "Project",
+        "ScrapReason",
+        "Supplier",
+        "SupplierType",
+        "WorkCenter"
+      ]),
+      active: z.boolean().optional(),
+      required: z.boolean().optional(),
+      id: z.string()
+    }),
+    dimensionValues: z.array(z.string()).optional()
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertDimension(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.dimension,
+          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          "update"
+        ) as never,
+        stamp(
+          ctx,
+          input.dimensionValues,
+          ["companyId", "createdBy", "updatedBy", "companyGroupId"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete dimension
+ *
+ * @mcp destructive
+ */
+export const deleteDimension = defineServiceFn({
+  input: z.looseObject({ dimensionId: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteDimension(
+        ctx.asCaller.supabase,
+        input.dimensionId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get active dimensions with values
+ *
+ * @mcp read
+ */
+export const getActiveDimensionsWithValues = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getActiveDimensionsWithValues(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get journal line dimensions
+ *
+ * @mcp read
+ */
+export const getJournalLineDimensions = defineServiceFn({
+  input: z.looseObject({ journalLineIds: z.array(z.string()) }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJournalLineDimensions(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.journalLineIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Save journal line dimensions
+ *
+ * @mcp destructive
+ */
+export const saveJournalLineDimensions = defineServiceFn({
+  input: z.looseObject({
+    journalLineId: z.string(),
+    dimensions: z.array(
+      z.looseObject({ dimensionId: z.string(), valueId: z.string() })
+    )
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.saveJournalLineDimensions(
+        ctx.asCaller.supabase,
+        input.journalLineId as never,
+        ctx.company.id,
+        stamp(ctx, input.dimensions, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Translate company balances
+ *
+ * @mcp
+ */
+export const translateCompanyBalances = defineServiceFn({
+  input: z.looseObject({
+    targetCurrency: z.string(),
+    periodEnd: z.string(),
+    periodStart: z.string(),
+    balances: z.array(
+      z.looseObject({
+        id: z.string(),
+        balanceAtDate: z.number(),
+        consolidatedRate: z.string().nullable(),
+        isGroup: z.boolean().nullable(),
+        class: z.string().nullable()
+      })
+    )
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.translateCompanyBalances(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        ctx.company.id,
+        input.targetCurrency as never,
+        input.periodEnd as never,
+        input.periodStart as never,
+        stamp(ctx, input.balances, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get intercompany transactions
+ *
+ * @mcp read
+ */
+export const getIntercompanyTransactions = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    status: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getIntercompanyTransactions(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create intercompany transaction
+ *
+ * @mcp
+ */
+export const createIntercompanyTransaction = defineServiceFn({
+  input: z.looseObject({
+    sourceCompanyId: z.string().min(1),
+    targetCompanyId: z.string().min(1),
+    amount: z.number().gt(0),
+    currencyCode: z.string().min(1),
+    description: z.string().min(1),
+    debitAccountId: z.string().min(1),
+    creditAccountId: z.string().min(1),
+    postingDate: z.string().optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createIntercompanyTransaction(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId",
+          "companyGroupId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Run intercompany matching
+ *
+ * @mcp
+ */
+export const runIntercompanyMatching = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { update: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.runIntercompanyMatching(
+        ctx.asCaller.supabase,
+        ctx.company.groupId
+      )
+    );
+  }
+});
+
+/**
+ * Generate eliminations
+ *
+ * @mcp
+ */
+export const generateEliminations = defineServiceFn({
+  input: z.looseObject({ regenerate: z.boolean().optional() }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.generateEliminations(
+        ctx.asCaller.supabase,
+        ctx.company.groupId,
+        ctx.auditUserId,
+        input.regenerate as never
+      )
+    );
+  }
+});
+
+/**
+ * Market-rate history for the chart on the exchange-rates page
+ *
+ * @mcp read
+ */
+export const getExchangeRateHistory = defineServiceFn({
+  input: z.looseObject({ currencyCode: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getExchangeRateHistory(
+        ctx.asCaller.supabase,
+        input.currencyCode as never
+      )
+    );
+  }
+});
+
+/**
+ * Get journal entries
+ *
+ * @mcp read
+ */
+export const getJournalEntries = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getJournalEntries(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get journal entry
+ *
+ * @mcp read
+ */
+export const getJournalEntry = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJournalEntry(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Delete journal entry
+ *
+ * @mcp destructive
+ */
+export const deleteJournalEntry = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteJournalEntry(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Post journal entry
+ *
+ * @mcp
+ */
+export const postJournalEntry = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.postJournalEntry(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Reverse journal entry
+ *
+ * @mcp
+ */
+export const reverseJournalEntry = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    data: z.looseObject({ journalEntryId: z.string().optional() })
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.reverseJournalEntry(
+        ctx.asCaller.supabase,
+        input.id as never,
+        stamp(ctx, input.data, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed asset classes
+ *
+ * @mcp read
+ */
+export const getFixedAssetClasses = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getFixedAssetClasses(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed asset class
+ *
+ * @mcp read
+ */
+export const getFixedAssetClass = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFixedAssetClass(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get fixed asset classes list
+ *
+ * @mcp read
+ */
+export const getFixedAssetClassesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "accounting" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getFixedAssetClassesList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create a fixed asset class
+ *
+ * @remarks
+ * Upsert fixed asset class
+ *
+ * @mcp
+ */
+export const createFixedAssetClass = defineServiceFn({
+  input: z.looseObject({ data: z.unknown() }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertFixedAssetClass(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.data,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a fixed asset class
+ *
+ * @remarks
+ * Upsert fixed asset class
+ *
+ * @mcp
+ */
+export const updateFixedAssetClass = defineServiceFn({
+  input: z.looseObject({ data: z.looseObject({ id: z.string() }) }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertFixedAssetClass(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.data,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete fixed asset class
+ *
+ * @mcp destructive
+ */
+export const deleteFixedAssetClass = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteFixedAssetClass(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed assets
+ *
+ * @mcp read
+ */
+export const getFixedAssets = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z
+      .enum([
+        "Draft",
+        "Active",
+        "Fully Depreciated",
+        "Disposed",
+        "Under Construction"
+      ])
+      .nullable()
+      .optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getFixedAssets(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed asset
+ *
+ * @mcp read
+ */
+export const getFixedAsset = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFixedAsset(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Insert fixed asset
+ *
+ * @mcp
+ */
+export const insertFixedAsset = defineServiceFn({
+  input: z.looseObject({
+    fixedAssetId: z.string().optional(),
+    fixedAssetClassId: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    serialNumber: z.string().optional(),
+    depreciationMethod: z.string(),
+    usefulLifeMonths: z.number(),
+    residualValuePercent: z.number(),
+    assetLifetimeUsage: z.number().nullable().optional(),
+    locationId: z.string().optional(),
+    workCenterId: z.string().nullable().optional(),
+    status: z.string().optional(),
+    taxDepreciationMethod: z.string().nullable().optional(),
+    taxUsefulLifeMonths: z.number().nullable().optional(),
+    taxResidualValuePercent: z.number().nullable().optional(),
+    macrsPropertyClass: z.string().nullable().optional(),
+    macrsConvention: z.string().nullable().optional(),
+    bonusDepreciationPercent: z.number().nullable().optional()
+  }),
+  permission: { create: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertFixedAsset(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update fixed asset
+ *
+ * @mcp
+ */
+export const updateFixedAsset = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    fixedAssetClassId: z.string().optional(),
+    name: z.string().optional(),
+    description: z.string().nullable().optional(),
+    serialNumber: z.string().nullable().optional(),
+    depreciationMethod: z
+      .enum(["Straight Line", "Declining Balance", "Units of Production"])
+      .optional(),
+    usefulLifeMonths: z.number().optional(),
+    residualValuePercent: z.number().optional(),
+    assetLifetimeUsage: z.number().nullable().optional(),
+    locationId: z.string().nullable().optional(),
+    workCenterId: z.string().nullable().optional(),
+    taxDepreciationMethod: z
+      .enum(["Straight Line", "Declining Balance", "MACRS"])
+      .nullable()
+      .optional(),
+    taxUsefulLifeMonths: z.number().nullable().optional(),
+    taxResidualValuePercent: z.number().nullable().optional(),
+    macrsPropertyClass: z
+      .enum(["3", "5", "7", "10", "15", "20", "27.5", "39"])
+      .nullable()
+      .optional(),
+    macrsConvention: z.enum(["Half-Year", "Mid-Quarter"]).nullable().optional(),
+    bonusDepreciationPercent: z.number().nullable().optional()
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateFixedAsset(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete fixed asset
+ *
+ * @mcp destructive
+ */
+export const deleteFixedAsset = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteFixedAsset(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Delete depreciation run
+ *
+ * @mcp destructive
+ */
+export const deleteDepreciationRun = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteDepreciationRun(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get depreciation runs
+ *
+ * @mcp read
+ */
+export const getDepreciationRuns = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getDepreciationRuns(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get depreciation run
+ *
+ * @mcp read
+ */
+export const getDepreciationRun = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDepreciationRun(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get depreciation run lines
+ *
+ * @mcp read
+ */
+export const getDepreciationRunLines = defineServiceFn({
+  input: z.looseObject({ depreciationRunId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDepreciationRunLines(
+        ctx.asCaller.supabase,
+        input.depreciationRunId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get revenue recognition run
+ *
+ * @mcp read
+ */
+export const getRevenueRecognitionRun = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRevenueRecognitionRun(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get revenue recognition run lines
+ *
+ * @mcp read
+ */
+export const getRevenueRecognitionRunLines = defineServiceFn({
+  input: z.looseObject({ runId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRevenueRecognitionRunLines(
+        ctx.asCaller.supabase,
+        input.runId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * The documents around a depreciation or revenue recognition run that its own row doesn't name: the accounting period its `periodEnd` falls in (the one posting r…
+ *
+ * @mcp read
+ */
+export const getPeriodRunRelatedItems = defineServiceFn({
+  input: z.looseObject({
+    periodEnd: z.string(),
+    journalIds: z.array(z.string())
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getPeriodRunRelatedItems(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.periodEnd as never,
+        stamp(ctx, input.journalIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get deferred revenue waterfall
+ *
+ * @mcp read
+ */
+export const getDeferredRevenueWaterfall = defineServiceFn({
+  input: z.looseObject({ asOf: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDeferredRevenueWaterfall(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Time and dollar utilization of the rental fleet over `[from, to]` (inclusive `YYYY-MM-DD`)
+ *
+ * @mcp read
+ */
+export const getRentalUtilization = defineServiceFn({
+  input: z.looseObject({
+    from: z.string(),
+    to: z.string(),
+    fixedAssetClassId: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRentalUtilization(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The lessor's net investment in sales-type leases as of `asOf` (spec §4)
+ *
+ * @mcp read
+ */
+export const getLeaseNetInvestment = defineServiceFn({
+  input: z.looseObject({ asOf: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getLeaseNetInvestment(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The lessee's Lease Liabilities report (spec §11, ASC 842-20-50): the balances, maturity analysis and weighted averages as of `asOf` (`summarizeLeaseLiabilities…
+ *
+ * @mcp read
+ */
+export const getLeaseLiabilities = defineServiceFn({
+  input: z.looseObject({
+    asOf: z.string(),
+    from: z.string().optional(),
+    to: z.string().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getLeaseLiabilities(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get asset depreciation history
+ *
+ * @mcp read
+ */
+export const getAssetDepreciationHistory = defineServiceFn({
+  input: z.looseObject({ fixedAssetId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssetDepreciationHistory(
+        ctx.asCaller.supabase,
+        input.fixedAssetId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed asset disposal
+ *
+ * @mcp read
+ */
+export const getFixedAssetDisposal = defineServiceFn({
+  input: z.looseObject({ fixedAssetId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFixedAssetDisposal(
+        ctx.asCaller.supabase,
+        input.fixedAssetId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fleet assets
+ *
+ * @mcp read
+ */
+export const getFleetAssets = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    fleetStatus: z.string().nullable().optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getFleetAssets(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed asset transfers
+ *
+ * @mcp read
+ */
+export const getFixedAssetTransfers = defineServiceFn({
+  input: z.looseObject({ fixedAssetId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFixedAssetTransfers(
+        ctx.asCaller.supabase,
+        input.fixedAssetId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get fixed asset cip costs
+ *
+ * @mcp read
+ */
+export const getFixedAssetCipCosts = defineServiceFn({
+  input: z.looseObject({ fixedAssetId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFixedAssetCipCosts(
+        ctx.asCaller.supabase,
+        input.fixedAssetId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * The capital tied up in a work center: every non-disposed asset assigned to it, with its net book value and — for straight-line assets — the depreciation it car…
+ *
+ * @mcp read
+ */
+export const getWorkCenterCapitalCost = defineServiceFn({
+  input: z.looseObject({ workCenterId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getWorkCenterCapitalCost(
+        ctx.asCaller.supabase,
+        input.workCenterId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Capitalize a unit, return an asset to inventory, attach a job to a CIP asset or capitalize a CIP asset — the `post-asset-transfer` server function, run as the…
+ *
+ * @mcp
+ */
+export const invokeAssetTransfer = defineServiceFn({
+  input: z.unknown(),
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.invokeAssetTransfer(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The tie-out grid: every persisted cell for the company, joined with account and period identity, newest period first
+ *
+ * @mcp read
+ */
+export const getAccountingSyncTieOut = defineServiceFn({
+  input: z.looseObject({
+    integration: z
+      .union([z.string(), z.array(z.string())])
+      .nullable()
+      .optional(),
+    accountingPeriodId: z.string().nullable().optional(),
+    accountId: z
+      .union([z.string(), z.array(z.string())])
+      .nullable()
+      .optional()
+  }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccountingSyncTieOut(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * One tie-out cell plus its drill-down: the posted journals dated inside the cell's period with at least one line on the cell's account, each with the latest acc…
+ *
+ * @mcp read
+ */
+export const getAccountingSyncTieOutCell = defineServiceFn({
+  input: z.looseObject({ cellId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccountingSyncTieOutCell(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.cellId as never
+      )
+    );
   }
 });

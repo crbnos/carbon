@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const id = input.params.id;
   const api = await carbon(args.request);
-  const result = await api.invoicing.charge.void({ chargeId: id });
+  const result = await api.invoicing.voidCharge({ chargeId: id });
   return respond(args.request, result).redirect(path.to.charge(id), {
     message: "Charge voided"
   });

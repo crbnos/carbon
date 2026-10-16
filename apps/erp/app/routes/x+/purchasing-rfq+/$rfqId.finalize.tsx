@@ -15,7 +15,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { rfqId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.rfq.finalize({ ...input.data, rfqId });
+  const result = await api.purchasing.finalizePurchasingRfqAndNotify({
+    ...input.data,
+    rfqId
+  });
   const sent = result.data?.emailsSent ?? 0;
   return respond(args.request, result).redirect(
     path.to.purchasingRfqDetails(rfqId),

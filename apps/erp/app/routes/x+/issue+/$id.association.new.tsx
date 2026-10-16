@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.issue.association.create({
+  return api.quality.createIssueAssociation({
     ...input.data,
     nonConformanceId: input.params.id
   });

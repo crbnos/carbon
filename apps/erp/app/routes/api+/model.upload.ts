@@ -25,5 +25,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(modelUploadForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.documents.model.upload(input.data);
+  return api.documents.uploadModel(input.data);
 }

@@ -53,7 +53,7 @@ export async function action(args: ActionFunctionArgs) {
     if ("invalid" in input) return input.invalid;
     const { fixedAssetId } = input.params;
     const api = await carbon(args.request);
-    const result = await api.accounting.fixedAsset.returnToService({
+    const result = await api.accounting.returnFixedAssetToService({
       fixedAssetId
     });
     return respond(args.request, result).redirect(
@@ -68,7 +68,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { fixedAssetId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.fixedAsset.takeOutOfService({
+  const result = await api.accounting.takeFixedAssetOutOfService({
     fixedAssetId,
     reason: input.data.reason
   });

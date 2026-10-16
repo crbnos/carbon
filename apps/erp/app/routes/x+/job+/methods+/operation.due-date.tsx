@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(dueDateForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.operation.setDueDate({
+  return api.production.setJobOperationDueDate({
     id: input.data.id,
     dueDate: input.data.dueDate ?? null
   });

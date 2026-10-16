@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.quality.issue.close({ id });
+  const result = await api.quality.completeIssue({ id });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.issueDetails(id),
     { message: "NCR closed" }

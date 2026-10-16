@@ -79,7 +79,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { orderId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.purchaseOrder.decideApproval({
+  const result = await api.purchasing.decidePurchaseOrderApproval({
     ...input.data,
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale

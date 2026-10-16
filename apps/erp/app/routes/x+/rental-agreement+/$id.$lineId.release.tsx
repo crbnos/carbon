@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   // The line is the URL's; the server function re-reads it under the
   // agreement and company.
-  const result = await api.sales.rentalAgreement.unit.release({
+  const result = await api.sales.releaseRentalUnit({
     rentalAgreementId: id,
     rentalAgreementLineId: lineId,
     returnedAt: input.data.returnedAt

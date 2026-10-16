@@ -80,7 +80,7 @@ export async function action(args: ActionFunctionArgs) {
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
     return answer(
-      await api.accounting.exchangeRate.override(input.data),
+      await api.accounting.overrideExchangeRate(input.data),
       "Updated exchange rate"
     );
   }
@@ -90,7 +90,7 @@ export async function action(args: ActionFunctionArgs) {
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
     return answer(
-      await api.accounting.exchangeRate.reset(input.data),
+      await api.accounting.resetExchangeRate(input.data),
       "Reset to market rate"
     );
   }
@@ -100,7 +100,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id: _id, ...currency } = input.data;
   const api = await carbon(args.request);
   return answer(
-    await api.accounting.currency.update({
+    await api.accounting.updateCurrency({
       ...currency,
       currencyId,
       customFields: setCustomFields(input.formData ?? new FormData())

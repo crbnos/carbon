@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
 
   const api = await carbon(args.request);
-  return api.inventory.pickingList.line.pick({
+  return api.inventory.pickPickingListLineChecked({
     pickingListId: input.params.pickingListId,
     pickingListLineId: input.data.pickingListLineId,
     quantity: input.data.quantity,

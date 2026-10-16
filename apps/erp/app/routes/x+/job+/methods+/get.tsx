@@ -32,9 +32,9 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
 
   if (type !== "method") {
-    return api.production.method.copyToJob({ ...method, type });
+    return api.production.copyMethodToJob({ ...method, type });
   }
-  const result = await api.production.method.copyToMaterial(method);
+  const result = await api.production.copyMethodToMaterial(method);
   if (result.error) return result;
   throw redirect(requestReferrer(args.request) ?? path.to.jobs);
 }

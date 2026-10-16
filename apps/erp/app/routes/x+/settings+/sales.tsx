@@ -112,7 +112,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(salesSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.sales.update(input.data);
+  return api.settings.updateSalesSettings(input.data);
 }
 
 export default function SalesSettingsRoute() {

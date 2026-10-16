@@ -55,7 +55,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id, name, data: permissions } = input.data;
   if (!id) throw notFound("id not found");
   const api = await carbon(args.request);
-  const result = await api.users.employeeType.update({
+  const result = await api.users.updateEmployeeType({
     id,
     name,
     permissions: JSON.parse(permissions)

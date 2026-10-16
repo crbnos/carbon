@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { orderId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.purchaseOrder.delete({
+  const result = await api.purchasing.deletePurchaseOrders({
     purchaseOrderIds: [orderId]
   });
   // A refusal stays on the order; a deleted (or missing) one goes to the list.

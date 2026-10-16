@@ -28,14 +28,14 @@ export async function action(args: ActionFunctionArgs) {
   // Each operation checks the value it is given against its own choices.
 
   if (intent === "invoiceAutomation") {
-    return api.sales.contract.setInvoiceAutomation({
+    return api.sales.setContractInvoiceAutomation({
       id,
       // Empty is the company's setting.
       invoiceAutomation: (value || null) as never
     });
   }
   if (intent === "contractType") {
-    return api.sales.contract.setType({ id, contractType: value as never });
+    return api.sales.setContractType({ id, contractType: value as never });
   }
-  return api.sales.contract.setTerm({ id, field: field as never, value });
+  return api.sales.setContractTerm({ id, field: field as never, value });
 }

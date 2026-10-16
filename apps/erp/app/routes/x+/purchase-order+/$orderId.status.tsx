@@ -25,7 +25,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
 
   if (status === "Closed") {
-    const result = await api.purchasing.purchaseOrder.close({
+    const result = await api.purchasing.closePurchaseOrderAndApprovals({
       purchaseOrderId: orderId
     });
     return respond(args.request, result).redirect(to, {
@@ -33,7 +33,7 @@ export async function action(args: ActionFunctionArgs) {
     });
   }
 
-  const result = await api.purchasing.purchaseOrder.reopen({
+  const result = await api.purchasing.reopenPurchaseOrder({
     purchaseOrderId: orderId,
     status,
     createRevision: createRevision === "true"

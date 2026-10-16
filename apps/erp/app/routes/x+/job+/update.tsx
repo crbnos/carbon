@@ -38,31 +38,31 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateForm).request(args);
   if ("invalid" in input) return input.invalid;
   const { ids, field, value } = input.data;
-  const job = (await carbon(args.request)).production.job;
+  const job = (await carbon(args.request)).production;
 
   switch (field) {
     case "delete":
-      return job.delete({ ids });
+      return job.deleteJobs({ ids });
     case "itemId":
       if (!value) return invalid("Invalid form data");
-      return job.setItem({ ids, itemId: value });
+      return job.setJobItem({ ids, itemId: value });
     case "dueDate":
-      return job.setDeadline({ ids, dueDate: value ?? null });
+      return job.setJobDeadline({ ids, dueDate: value ?? null });
     case "deadlineType":
-      return job.setDeadline({
+      return job.setJobDeadline({
         ids,
         deadlineType: value as (typeof deadlineTypes)[number]
       });
     case "quantity":
     case "scrapQuantity":
-      return job.setQuantity({ ids, [field]: Number(value) });
+      return job.setJobQuantity({ ids, [field]: Number(value) });
     case "salesOrderId":
       // Linking goes through the line; the order alone can only be cleared.
       if (value) return invalid(`Invalid value: ${value} for field: ${field}`);
-      return job.setSalesOrderLine({ ids, salesOrderLineId: null });
+      return job.setJobSalesOrderLine({ ids, salesOrderLineId: null });
     case "salesOrderLineId":
-      return job.setSalesOrderLine({ ids, salesOrderLineId: value ?? null });
+      return job.setJobSalesOrderLine({ ids, salesOrderLineId: value ?? null });
     default:
-      return job.setFields({ ids, [field]: value ?? null });
+      return job.setJobFields({ ids, [field]: value ?? null });
   }
 }

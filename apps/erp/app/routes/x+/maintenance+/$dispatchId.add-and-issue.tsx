@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   ).request(args, { params: ["dispatchId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.resources.maintenancePart.issue({
+  return api.resources.issueMaintenancePart({
     ...input.data,
     dispatchId: input.params.dispatchId
   });

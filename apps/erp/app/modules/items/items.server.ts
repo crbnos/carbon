@@ -3,6 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  envelopes,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   cancelPendingApprovals,
@@ -50,37 +57,8 @@ import {
   supplierPartValidator,
   toolFields
 } from "./items.models";
-import {
-  addChangeNoticeAffectedItem,
-  applyChangeNotice,
-  cascadeItemTrackingType,
-  changeNoticeStageEvent,
-  checkRevisionLock,
-  copyItem,
-  copyMakeMethod,
-  getItem,
-  getItemSupersession,
-  getMethodTree,
-  getUnreleasedChangeOrderItems,
-  insertChangeNotice,
-  isMakeMethodId,
-  notifyChangeNoticeTransition,
-  priceBreakRows,
-  SUPERSESSION_CYCLE_CODE,
-  toRichText,
-  unreleasedChangeOrderItemsMessage,
-  updateChangeNoticeStatus,
-  updateItemMethodAndSourcing,
-  updateMaterialProperties,
-  updateServiceName,
-  upsertItemManufacturing,
-  upsertItemPlanning,
-  upsertItemSupersession,
-  upsertMakeMethodVersion,
-  upsertPart,
-  upsertSupplierPart,
-  upsertTool
-} from "./items.service";
+import * as service from "./items.service";
+import * as utils from "./items.utils";
 
 const logger = getLogger("erp", "change-orders");
 
@@ -254,7 +232,7 @@ export const setItemTrackingType = defineServiceFn({
     }
 
     try {
-      await cascadeItemTrackingType(ctx.asSystem.pg, {
+      await service.cascadeItemTrackingType(ctx.asSystem.pg, {
         itemIds: ids,
         companyId,
         newType: itemTrackingType,
@@ -349,7 +327,7 @@ export const setItemSourcing = defineServiceFn({
         ? deriveItemMethodUpdate("defaultMethodType", defaultMethodType)
         : deriveItemMethodUpdate("sourcingType", sourcingType ?? "");
     try {
-      await updateItemMethodAndSourcing(ctx.asSystem.pg, {
+      await service.updateItemMethodAndSourcing(ctx.asSystem.pg, {
         itemIds: ids,
         companyId: ctx.company.id,
         userId: ctx.auditUserId,
@@ -381,7 +359,7 @@ export const setItemActive = defineServiceFn({
   async run(ctx, { ids, active }) {
     const companyId = ctx.company.id;
     if (active) {
-      const unreleased = await getUnreleasedChangeOrderItems(
+      const unreleased = await service.getUnreleasedChangeOrderItems(
         ctx.asSystem.supabase,
         { itemIds: ids, companyId }
       );
@@ -389,7 +367,7 @@ export const setItemActive = defineServiceFn({
       if (unreleased.data.length > 0) {
         return ctx.error(
           "rule",
-          `${unreleasedChangeOrderItemsMessage(
+          `${service.unreleasedChangeOrderItemsMessage(
             unreleased.data
           )} Release the change notice to activate it.`
         );
@@ -573,9 +551,9 @@ export const renameService = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { itemId, name }) {
-    let renamed: Awaited<ReturnType<typeof updateServiceName>>;
+    let renamed: Awaited<ReturnType<typeof service.updateServiceName>>;
     try {
-      renamed = await updateServiceName(ctx.asSystem.pg, {
+      renamed = await service.updateServiceName(ctx.asSystem.pg, {
         itemId,
         name,
         companyId: ctx.company.id,
@@ -636,12 +614,16 @@ export const setMaterialProperties = defineServiceFn({
     );
     const failures: string[] = [];
     for (const materialId of materialIds) {
-      const update = await updateMaterialProperties(client, ctx.asSystem.pg, {
-        id: materialId,
-        companyId,
-        updatedBy: ctx.auditUserId,
-        ...changes
-      });
+      const update = await service.updateMaterialProperties(
+        client,
+        ctx.asSystem.pg,
+        {
+          id: materialId,
+          companyId,
+          updatedBy: ctx.auditUserId,
+          ...changes
+        }
+      );
       if (update.error) failures.push(`${materialId}: ${update.error.message}`);
     }
     if (failures.length > 0) return ctx.error("rule", failures.join("; "));
@@ -672,7 +654,7 @@ export const createPart = defineServiceFn({
 
   async run(ctx, part) {
     const companyId = ctx.company.id;
-    const created = await upsertPart(ctx.asCaller.supabase, {
+    const created = await service.upsertPart(ctx.asCaller.supabase, {
       ...part,
       companyId,
       createdBy: ctx.auditUserId
@@ -714,7 +696,7 @@ export const updatePart = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, part) {
-    const updated = await upsertPart(ctx.asCaller.supabase, {
+    const updated = await service.upsertPart(ctx.asCaller.supabase, {
       ...part,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
@@ -742,7 +724,7 @@ export const updateTool = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, tool) {
-    const updated = await upsertTool(ctx.asCaller.supabase, {
+    const updated = await service.upsertTool(ctx.asCaller.supabase, {
       ...tool,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
@@ -772,11 +754,14 @@ export const updateItemManufacturing = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { customFields, ...manufacturing }) {
-    const update = await upsertItemManufacturing(ctx.asCaller.supabase, {
-      ...manufacturing,
-      ...(customFields && { customFields }),
-      updatedBy: ctx.auditUserId
-    });
+    const update = await service.upsertItemManufacturing(
+      ctx.asCaller.supabase,
+      {
+        ...manufacturing,
+        ...(customFields && { customFields }),
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (update.error) {
       return ctx.error(
         "internal",
@@ -820,7 +805,7 @@ export const updateItemPlanning = defineServiceFn({
       return ctx.error("rule", "Choose an employee of this company");
     }
 
-    const update = await upsertItemPlanning(client, {
+    const update = await service.upsertItemPlanning(client, {
       ...planning,
       ...(customFields && { customFields }),
       updatedBy: ctx.auditUserId
@@ -855,14 +840,14 @@ export const setItemSupersession = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, supersession) {
-    const upsert = await upsertItemSupersession(ctx.asCaller.supabase, {
+    const upsert = await service.upsertItemSupersession(ctx.asCaller.supabase, {
       ...supersession,
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId,
       updatedBy: ctx.auditUserId
     });
     if (upsert.error) {
-      return upsert.error.code === SUPERSESSION_CYCLE_CODE
+      return upsert.error.code === service.SUPERSESSION_CYCLE_CODE
         ? ctx.error("rule", upsert.error.message)
         : ctx.error("internal", "Failed to update supersession", upsert.error);
     }
@@ -900,7 +885,7 @@ export const addItemPredecessor = defineServiceFn({
         .eq("id", predecessorItemId)
         .eq("companyId", companyId)
         .maybeSingle(),
-      getItemSupersession(client, predecessorItemId, companyId)
+      service.getItemSupersession(client, predecessorItemId, companyId)
     ]);
     if (!predecessor.data) return ctx.error("notFound", "Part not found");
     if (existing.error) {
@@ -920,7 +905,7 @@ export const addItemPredecessor = defineServiceFn({
       );
     }
 
-    const upsert = await upsertItemSupersession(client, {
+    const upsert = await service.upsertItemSupersession(client, {
       ...supersession,
       itemId: predecessorItemId,
       successorItemId: itemId,
@@ -929,7 +914,7 @@ export const addItemPredecessor = defineServiceFn({
       updatedBy: ctx.auditUserId
     });
     if (upsert.error) {
-      return upsert.error.code === SUPERSESSION_CYCLE_CODE
+      return upsert.error.code === service.SUPERSESSION_CYCLE_CODE
         ? ctx.error("rule", upsert.error.message)
         : ctx.error("internal", "Failed to add predecessor", upsert.error);
     }
@@ -966,7 +951,7 @@ export const createSupplierPart = defineServiceFn({
 
   async run(ctx, { priceBreaks, customFields, ...supplierPart }) {
     const client = ctx.asCaller.supabase;
-    const created = await upsertSupplierPart(client, {
+    const created = await service.upsertSupplierPart(client, {
       ...supplierPart,
       ...(customFields && { customFields }),
       companyId: ctx.company.id,
@@ -987,7 +972,7 @@ export const createSupplierPart = defineServiceFn({
     if (priceBreaks?.length) {
       const inserted = await client
         .from("supplierPartPrice")
-        .insert(priceBreakRows(ctx, id, priceBreaks));
+        .insert(service.priceBreakRows(ctx, id, priceBreaks));
       if (inserted.error) {
         logger.error("Failed to save a new supplier part's price breaks", {
           companyId: ctx.company.id,
@@ -1017,7 +1002,7 @@ export const updateSupplierPart = defineServiceFn({
 
   async run(ctx, { id, priceBreaks, customFields, ...supplierPart }) {
     const companyId = ctx.company.id;
-    const updated = await upsertSupplierPart(ctx.asCaller.supabase, {
+    const updated = await service.upsertSupplierPart(ctx.asCaller.supabase, {
       ...supplierPart,
       ...(customFields && { customFields }),
       id,
@@ -1046,7 +1031,7 @@ export const updateSupplierPart = defineServiceFn({
         if (priceBreaks.length > 0) {
           await tx.asSystem.pg
             .insertInto("supplierPartPrice")
-            .values(priceBreakRows(ctx, id, priceBreaks))
+            .values(service.priceBreakRows(ctx, id, priceBreaks))
             .execute();
         }
       });
@@ -1078,8 +1063,8 @@ export const copyMethod = defineServiceFn({
     const companyId = ctx.company.id;
     const system = ctx.asSystem.supabase;
     // Copying overwrites the target's materials and operations.
-    const lock = await checkRevisionLock(system, {
-      kind: isMakeMethodId(input.targetId) ? "makeMethod" : "item",
+    const lock = await service.checkRevisionLock(system, {
+      kind: service.isMakeMethodId(input.targetId) ? "makeMethod" : "item",
       id: input.targetId,
       companyId
     });
@@ -1087,9 +1072,10 @@ export const copyMethod = defineServiceFn({
 
     const args = { ...input, companyId, userId: ctx.auditUserId };
     const copy =
-      isMakeMethodId(input.sourceId) || isMakeMethodId(input.targetId)
-        ? await copyMakeMethod(system, ctx.asSystem.pg, args)
-        : await copyItem(system, ctx.asSystem.pg, args);
+      service.isMakeMethodId(input.sourceId) ||
+      service.isMakeMethodId(input.targetId)
+        ? await service.copyMakeMethod(system, ctx.asSystem.pg, args)
+        : await service.copyItem(system, ctx.asSystem.pg, args);
     if (copy.error) {
       return ctx.error("internal", "Failed to copy method", copy.error);
     }
@@ -1118,11 +1104,14 @@ export const createMethodVersion = defineServiceFn({
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const insert = await upsertMakeMethodVersion(ctx.asCaller.supabase, {
-      ...input,
-      companyId,
-      createdBy: userId
-    });
+    const insert = await service.upsertMakeMethodVersion(
+      ctx.asCaller.supabase,
+      {
+        ...input,
+        companyId,
+        createdBy: userId
+      }
+    );
     const version = insert.data;
     if (insert.error || !version?.id || !version.type || !version.itemId) {
       return ctx.error(
@@ -1132,18 +1121,22 @@ export const createMethodVersion = defineServiceFn({
       );
     }
 
-    const copy = await copyMakeMethod(ctx.asSystem.supabase, ctx.asSystem.pg, {
-      sourceId: input.copyFromId,
-      targetId: version.id,
-      billOfMaterial: true,
-      billOfProcess: true,
-      parameters: true,
-      tools: true,
-      steps: true,
-      workInstructions: true,
-      companyId,
-      userId
-    });
+    const copy = await service.copyMakeMethod(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        sourceId: input.copyFromId,
+        targetId: version.id,
+        billOfMaterial: true,
+        billOfProcess: true,
+        parameters: true,
+        tools: true,
+        steps: true,
+        workInstructions: true,
+        companyId,
+        userId
+      }
+    );
     if (copy.error) {
       return ctx.error("internal", "Failed to copy make method", copy.error);
     }
@@ -1245,7 +1238,7 @@ export const deleteMethodOperation = defineServiceFn({
   async run(ctx, { id }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const lock = await checkRevisionLock(client, {
+    const lock = await service.checkRevisionLock(client, {
       kind: "operation",
       id,
       companyId
@@ -1298,7 +1291,7 @@ export const recalculateItemCost = defineServiceFn({
       );
     }
 
-    const methodTree = await getMethodTree(client, makeMethod.data.id);
+    const methodTree = await service.getMethodTree(client, makeMethod.data.id);
     if (methodTree.error) {
       return ctx.error(
         "internal",
@@ -1421,11 +1414,11 @@ export const createChangeNotice = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    const created = await insertChangeNotice(client, {
+    const created = await service.insertChangeNotice(client, {
       changeNoticeId: input.changeOrderId || undefined,
       name: input.name,
-      reasonForChange: toRichText(input.reasonForChange),
-      description: toRichText(input.description),
+      reasonForChange: service.toRichText(input.reasonForChange),
+      description: service.toRichText(input.description),
       priority: input.priority,
       changeNoticeTypeId: input.changeOrderTypeId || undefined,
       nonConformanceId: input.nonConformanceId || undefined,
@@ -1463,13 +1456,17 @@ export const createChangeNotice = defineServiceFn({
 
     let failed = !!items?.error;
     for (const itemId of partIds) {
-      const added = await addChangeNoticeAffectedItem(client, ctx.asSystem.pg, {
-        changeNoticeId: id,
-        itemId,
-        changeType: "Version",
-        companyId,
-        userId
-      });
+      const added = await service.addChangeNoticeAffectedItem(
+        client,
+        ctx.asSystem.pg,
+        {
+          changeNoticeId: id,
+          itemId,
+          changeType: "Version",
+          companyId,
+          userId
+        }
+      );
       if (added.error) {
         logger.error("Failed to add an affected item to a new change notice", {
           companyId,
@@ -1517,11 +1514,11 @@ export const createChangeNoticeForItem = defineServiceFn({
     const owned = await refuseUnlessOwned(ctx, "item", { id: itemId });
     if (owned) return owned;
 
-    const item = await getItem(client, itemId);
+    const item = await service.getItem(client, itemId);
     const label =
       item.data?.readableIdWithRevision ?? item.data?.readableId ?? itemId;
 
-    const created = await insertChangeNotice(client, {
+    const created = await service.insertChangeNotice(client, {
       companyId,
       createdBy: userId,
       name: `Change for ${label}`,
@@ -1538,14 +1535,18 @@ export const createChangeNoticeForItem = defineServiceFn({
     }
     const id = created.data.id;
 
-    const added = await addChangeNoticeAffectedItem(client, ctx.asSystem.pg, {
-      changeNoticeId: id,
-      itemId,
-      changeType,
-      revision,
-      companyId,
-      userId
-    });
+    const added = await service.addChangeNoticeAffectedItem(
+      client,
+      ctx.asSystem.pg,
+      {
+        changeNoticeId: id,
+        itemId,
+        changeType,
+        revision,
+        companyId,
+        userId
+      }
+    );
     if (added.error) {
       logger.error("Failed to add the item to its new change notice", {
         companyId,
@@ -1643,7 +1644,7 @@ export const setChangeNoticeStatus = defineServiceFn({
     }
 
     if (status === "Done") {
-      const applied = await applyChangeNotice(client, ctx.asSystem.pg, {
+      const applied = await service.applyChangeNotice(client, ctx.asSystem.pg, {
         changeNoticeId: id,
         userId,
         companyId
@@ -1656,7 +1657,7 @@ export const setChangeNoticeStatus = defineServiceFn({
         );
       }
     } else {
-      const update = await updateChangeNoticeStatus(client, {
+      const update = await service.updateChangeNoticeStatus(client, {
         id,
         companyId,
         fromStatus,
@@ -1690,9 +1691,9 @@ export const setChangeNoticeStatus = defineServiceFn({
     }
 
     if (changeNoticeNotifyStages.includes(status)) {
-      await notifyChangeNoticeTransition({
+      await service.notifyChangeNoticeTransition({
         client,
-        event: changeNoticeStageEvent[status],
+        event: service.changeNoticeStageEvent[status],
         changeNoticeId: id,
         companyId,
         userId
@@ -1771,14 +1772,4918 @@ export const decideChangeNoticeApproval = defineServiceFn({
     }
 
     if (decision === "Approved") {
-      await notifyChangeNoticeTransition({
+      await service.notifyChangeNoticeTransition({
         client: ctx.asCaller.supabase,
-        event: changeNoticeStageEvent.Implementation,
+        event: service.changeNoticeStageEvent.Implementation,
         changeNoticeId,
         companyId,
         userId
       });
     }
     return { changeNoticeId, decision };
+  }
+});
+/**
+ * Activate method version
+ *
+ * @mcp
+ */
+export const activateMethodVersion = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.activateMethodVersion(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create revision
+ *
+ * @mcp
+ */
+export const createRevision = defineServiceFn({
+  input: z.looseObject({
+    item: z.looseObject({
+      companyId: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      type: z.enum([
+        "Part",
+        "Service",
+        "Material",
+        "Tool",
+        "Fixture",
+        "Consumable"
+      ]),
+      modelUploadId: z.string().nullable(),
+      description: z.string().nullable(),
+      unitOfMeasureCode: z.string().nullable(),
+      readableId: z.string(),
+      defaultMethodType: z
+        .enum(["Purchase to Order", "Pull from Inventory", "Make to Order"])
+        .nullable(),
+      itemTrackingType: z.enum([
+        "Inventory",
+        "Non-Inventory",
+        "Serial",
+        "Batch"
+      ]),
+      mpn: z.string().nullable(),
+      replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+      sourcingType: z.enum(["Specified", "Drop Ship", "Ship from Inventory"]),
+      thumbnailPath: z.string().nullable()
+    }),
+    revision: z.string(),
+    active: z.boolean().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createRevision(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete configuration parameter
+ *
+ * @mcp destructive
+ */
+export const deleteConfigurationParameter = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteConfigurationParameter(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete configuration rule
+ *
+ * @mcp destructive
+ */
+export const deleteConfigurationRule = defineServiceFn({
+  input: z.looseObject({ field: z.string(), itemId: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteConfigurationRule(
+        ctx.asCaller.supabase,
+        input.field as never,
+        input.itemId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete item customer part
+ *
+ * @mcp destructive
+ */
+export const deleteItemCustomerPart = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteItemCustomerPart(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete supplier part
+ *
+ * @mcp destructive
+ */
+export const deleteSupplierPart = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteSupplierPart(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete configuration parameter group
+ *
+ * @mcp destructive
+ */
+export const deleteConfigurationParameterGroup = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteConfigurationParameterGroup(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete item
+ *
+ * @mcp destructive
+ */
+export const deleteItem = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteItem(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete item posting group
+ *
+ * @mcp destructive
+ */
+export const deleteItemPostingGroup = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteItemPostingGroup(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete material dimension
+ *
+ * @mcp destructive
+ */
+export const deleteMaterialDimension = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaterialDimension(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete material finish
+ *
+ * @mcp destructive
+ */
+export const deleteMaterialFinish = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaterialFinish(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete material form
+ *
+ * @mcp destructive
+ */
+export const deleteMaterialForm = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaterialForm(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Delete material grade
+ *
+ * @mcp destructive
+ */
+export const deleteMaterialGrade = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaterialGrade(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete material substance
+ *
+ * @mcp destructive
+ */
+export const deleteMaterialSubstance = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaterialSubstance(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete method material
+ *
+ * @mcp destructive
+ */
+export const deleteMethodMaterial = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMethodMaterial(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Assert method operation is draft
+ *
+ * @mcp
+ */
+export const assertMethodOperationIsDraft = defineServiceFn({
+  input: z.looseObject({ operationId: z.string() }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.assertMethodOperationIsDraft(
+        ctx.asCaller.supabase,
+        input.operationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete method operation step
+ *
+ * @mcp destructive
+ */
+export const deleteMethodOperationStep = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMethodOperationStep(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete method operation step slide
+ *
+ * @mcp destructive
+ */
+export const deleteMethodOperationStepSlide = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMethodOperationStepSlide(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete method operation parameter
+ *
+ * @mcp destructive
+ */
+export const deleteMethodOperationParameter = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMethodOperationParameter(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete method operation tool
+ *
+ * @mcp destructive
+ */
+export const deleteMethodOperationTool = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMethodOperationTool(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete unit of measure
+ *
+ * @mcp destructive
+ */
+export const deleteUnitOfMeasure = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteUnitOfMeasure(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get configuration parameters
+ *
+ * @mcp read
+ */
+export const getConfigurationParameters = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await utils.getConfigurationParameters(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get configuration rules
+ *
+ * @mcp read
+ */
+export const getConfigurationRules = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getConfigurationRules(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get consumable
+ *
+ * @mcp read
+ */
+export const getConsumable = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getConsumable(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get consumables
+ *
+ * @mcp read
+ */
+export const getConsumables = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getConsumables(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item
+ *
+ * @mcp read
+ */
+export const getItem = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItem(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get item cost
+ *
+ * @mcp read
+ */
+export const getItemCost = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemCost(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item cost history
+ *
+ * @mcp read
+ */
+export const getItemCostHistory = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemCostHistory(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item customer part
+ *
+ * @mcp read
+ */
+export const getItemCustomerPart = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemCustomerPart(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item customer parts
+ *
+ * @mcp read
+ */
+export const getItemCustomerParts = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemCustomerParts(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item demand
+ *
+ * @mcp read
+ */
+export const getItemDemand = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string(),
+    locationId: z.string(),
+    periods: z.array(z.string())
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemDemand(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get demand forecast sources
+ *
+ * @mcp read
+ */
+export const getDemandForecastSources = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string(),
+    locationId: z.string(),
+    periods: z.array(z.string())
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDemandForecastSources(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item files
+ *
+ * @mcp read
+ */
+export const getItemFiles = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getItemFiles(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item posting group
+ *
+ * @mcp read
+ */
+export const getItemPostingGroup = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemPostingGroup(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item posting groups
+ *
+ * @mcp read
+ */
+export const getItemPostingGroups = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getItemPostingGroups(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item posting groups list
+ *
+ * @mcp read
+ */
+export const getItemPostingGroupsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getItemPostingGroupsList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item manufacturing
+ *
+ * @mcp read
+ */
+export const getItemManufacturing = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemManufacturing(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item planning
+ *
+ * @mcp read
+ */
+export const getItemPlanning = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemPlanning(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item quantities
+ *
+ * @mcp read
+ */
+export const getItemQuantities = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemQuantities(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * On-hand quantity per item for the Item picker's badge, as a plain map
+ *
+ * @mcp read
+ */
+export const getItemStockQuantitiesByLocation = defineServiceFn({
+  input: z.looseObject({ locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemStockQuantitiesByLocation(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item replenishment
+ *
+ * @mcp read
+ */
+export const getItemReplenishment = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemReplenishment(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item supersession
+ *
+ * @mcp read
+ */
+export const getItemSupersession = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemSupersession(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item supersessions for items
+ *
+ * @mcp read
+ */
+export const getItemSupersessionsForItems = defineServiceFn({
+  input: z.looseObject({ itemIds: z.array(z.string()) }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemSupersessionsForItems(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.itemIds, ["companyId"]) as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get supersession chain
+ *
+ * @mcp read
+ */
+export const getSupersessionChain = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getSupersessionChain(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get item storage unit quantities
+ *
+ * @mcp read
+ */
+export const getItemStorageUnitQuantities = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await utils.getItemStorageUnitQuantities(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item unit sale price
+ *
+ * @mcp read
+ */
+export const getItemUnitSalePrice = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemUnitSalePrice(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Where a material or consumable is used
+ *
+ * @mcp read
+ */
+export const getMaterialUsedIn = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getMaterialUsedIn(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get make methods
+ *
+ * @mcp read
+ */
+export const getMakeMethods = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMakeMethods(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get make method by id
+ *
+ * @mcp read
+ */
+export const getMakeMethodById = defineServiceFn({
+  input: z.looseObject({ makeMethodId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMakeMethodById(
+        ctx.asCaller.supabase,
+        input.makeMethodId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get material
+ *
+ * @mcp read
+ */
+export const getMaterial = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterial(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get materials
+ *
+ * @mcp read
+ */
+export const getMaterials = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterials(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material dimension
+ *
+ * @mcp read
+ */
+export const getMaterialDimension = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialDimension(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material dimensions
+ *
+ * @mcp read
+ */
+export const getMaterialDimensions = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    isMetric: z.boolean()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterialDimensions(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material dimension list
+ *
+ * @mcp read
+ */
+export const getMaterialDimensionList = defineServiceFn({
+  input: z.looseObject({ materialFormId: z.string(), isMetric: z.boolean() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialDimensionList(
+        ctx.asCaller.supabase,
+        input.materialFormId as never,
+        input.isMetric as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get material finish
+ *
+ * @mcp read
+ */
+export const getMaterialFinish = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialFinish(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get material finishes
+ *
+ * @mcp read
+ */
+export const getMaterialFinishes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterialFinishes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material finish list
+ *
+ * @mcp read
+ */
+export const getMaterialFinishList = defineServiceFn({
+  input: z.looseObject({ materialSubstanceId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialFinishList(
+        ctx.asCaller.supabase,
+        input.materialSubstanceId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get material form
+ *
+ * @mcp read
+ */
+export const getMaterialForm = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialForm(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get material forms
+ *
+ * @mcp read
+ */
+export const getMaterialForms = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterialForms(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material forms list
+ *
+ * @mcp read
+ */
+export const getMaterialFormsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getMaterialFormsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get material grades
+ *
+ * @mcp read
+ */
+export const getMaterialGrades = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterialGrades(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material grade
+ *
+ * @mcp read
+ */
+export const getMaterialGrade = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialGrade(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get material grade list
+ *
+ * @mcp read
+ */
+export const getMaterialGradeList = defineServiceFn({
+  input: z.looseObject({ materialSubstanceId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialGradeList(
+        ctx.asCaller.supabase,
+        input.materialSubstanceId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get material substance
+ *
+ * @mcp read
+ */
+export const getMaterialSubstance = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialSubstance(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material substances
+ *
+ * @mcp read
+ */
+export const getMaterialSubstances = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterialSubstances(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material substances list
+ *
+ * @mcp read
+ */
+export const getMaterialSubstancesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getMaterialSubstancesList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get method materials
+ *
+ * @mcp read
+ */
+export const getMethodMaterials = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMethodMaterials(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get method materials by make method
+ *
+ * @mcp read
+ */
+export const getMethodMaterialsByMakeMethod = defineServiceFn({
+  input: z.looseObject({ makeMethodId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMethodMaterialsByMakeMethod(
+        ctx.asCaller.supabase,
+        input.makeMethodId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get method operations
+ *
+ * @mcp read
+ */
+export const getMethodOperations = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMethodOperations(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get method operations by make method id
+ *
+ * @mcp read
+ */
+export const getMethodOperationsByMakeMethodId = defineServiceFn({
+  input: z.looseObject({ makeMethodId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMethodOperationsByMakeMethodId(
+        ctx.asCaller.supabase,
+        input.makeMethodId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get method tree
+ *
+ * @mcp read
+ */
+export const getMethodTree = defineServiceFn({
+  input: z.looseObject({ makeMethodId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMethodTree(
+        ctx.asCaller.supabase,
+        input.makeMethodId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get bom item attributes
+ *
+ * @mcp read
+ */
+export const getBomItemAttributes = defineServiceFn({
+  input: z.looseObject({ itemIds: z.array(z.string()) }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getBomItemAttributes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.itemIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open job materials
+ *
+ * @mcp read
+ */
+export const getOpenJobMaterials = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenJobMaterials(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open production orders
+ *
+ * @mcp read
+ */
+export const getOpenProductionOrders = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenProductionOrders(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open purchase order lines
+ *
+ * @mcp read
+ */
+export const getOpenPurchaseOrderLines = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenPurchaseOrderLines(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open sales order lines
+ *
+ * @mcp read
+ */
+export const getOpenSalesOrderLines = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenSalesOrderLines(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get part
+ *
+ * @mcp read
+ */
+export const getPart = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPart(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get parts
+ *
+ * @mcp read
+ */
+export const getParts = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getParts(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get item mpns list
+ *
+ * @mcp read
+ */
+export const getItemMpnsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getItemMpnsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get parts list
+ *
+ * @mcp read
+ */
+export const getPartsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getPartsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Where a part, tool or service is used
+ *
+ * @mcp read
+ */
+export const getPartUsedIn = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getPartUsedIn(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get pick method
+ *
+ * @mcp read
+ */
+export const getPickMethod = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPickMethod(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get pick methods
+ *
+ * @mcp read
+ */
+export const getPickMethods = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPickMethods(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get services
+ *
+ * @mcp read
+ */
+export const getServices = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    group: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getServices(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get service
+ *
+ * @mcp read
+ */
+export const getService = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getService(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get services list
+ *
+ * @mcp read
+ */
+export const getServicesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getServicesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get supplier parts
+ *
+ * @mcp read
+ */
+export const getSupplierParts = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSupplierParts(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier parts by supplier
+ *
+ * @mcp read
+ */
+export const getSupplierPartsBySupplier = defineServiceFn({
+  input: z.looseObject({ supplierId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getSupplierPartsBySupplier(
+        ctx.asCaller.supabase,
+        input.supplierId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get tool
+ *
+ * @mcp read
+ */
+export const getTool = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getTool(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get tools
+ *
+ * @mcp read
+ */
+export const getTools = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    supplierId: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getTools(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get unit of measure
+ *
+ * @mcp read
+ */
+export const getUnitOfMeasure = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getUnitOfMeasure(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Which tables still reference a unit of measure, and how many rows each; empty means safe to delete (or id not visible to the caller)
+ *
+ * @mcp read
+ */
+export const getUnitOfMeasureUsage = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getUnitOfMeasureUsage(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get unit of measures
+ *
+ * @mcp read
+ */
+export const getUnitOfMeasures = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getUnitOfMeasures(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get unit of measures list
+ *
+ * @mcp read
+ */
+export const getUnitOfMeasuresList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getUnitOfMeasuresList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Update configuration parameter group order
+ *
+ * @mcp
+ */
+export const updateConfigurationParameterGroupOrder = defineServiceFn({
+  input: z.looseObject({ id: z.string().min(1), sortOrder: z.number().min(0) }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateConfigurationParameterGroupOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update default revision
+ *
+ * @mcp
+ */
+export const updateDefaultRevision = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateDefaultRevision(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update configuration parameter order
+ *
+ * @mcp
+ */
+export const updateConfigurationParameterOrder = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().min(1),
+    sortOrder: z.number().min(0),
+    configurationParameterGroupId: z.string().nullable().optional()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateConfigurationParameterOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update item cost
+ *
+ * @mcp
+ */
+export const updateItemCost = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string(),
+    cost: z.looseObject({ unitCost: z.number() })
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateItemCost(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        stamp(ctx, input.cost, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update material order
+ *
+ * @mcp
+ */
+export const updateMaterialOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateMaterialOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update operation order
+ *
+ * @mcp
+ */
+export const updateOperationOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateOperationOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update revision
+ *
+ * @mcp
+ */
+export const updateRevision = defineServiceFn({
+  input: z.looseObject({ id: z.string(), revision: z.string() }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateRevision(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert configuration parameter
+ *
+ * @mcp
+ */
+export const upsertConfigurationParameter = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    itemId: z.string().min(1),
+    key: z.string().optional(),
+    label: z.string().min(1),
+    dataType: z.enum([
+      "text",
+      "numeric",
+      "boolean",
+      "list",
+      "material",
+      "date"
+    ]),
+    listOptions: z.array(z.string().min(1)).optional(),
+    configurationParameterGroupId: z.string().optional(),
+    materialFormFilterId: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertConfigurationParameter(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert configuration parameter group
+ *
+ * @mcp
+ */
+export const upsertConfigurationParameterGroup = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertConfigurationParameterGroup(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert configuration rule
+ *
+ * @mcp
+ */
+export const upsertConfigurationRule = defineServiceFn({
+  input: z.looseObject({
+    field: z.string().min(1),
+    code: z.string().min(1),
+    itemId: z.string()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertConfigurationRule(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Return the distinct processIds referenced by methodOperation rows on the item's active makeMethod
+ *
+ * @mcp read
+ */
+export const getRecipeProcessIdsForItem = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRecipeProcessIdsForItem(
+        ctx.asCaller.supabase,
+        input.itemId as never
+      )
+    );
+  }
+});
+
+/**
+ * Fetch the shelf-life policy for an item
+ *
+ * @mcp read
+ */
+export const getItemShelfLife = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getItemShelfLife(
+        ctx.asCaller.supabase,
+        input.itemId as never
+      )
+    );
+  }
+});
+
+/**
+ * Returns true when the item's active make-method has at least one BOM input with a managed shelf-life policy
+ *
+ * @mcp read
+ */
+export const getBomHasShelfLifeManagedInput = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getBomHasShelfLifeManagedInput(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Atomic counterpart to {@link upsertPickMethod} + {@link upsertItemShelfLife}
+ *
+ * @mcp destructive
+ */
+export const upsertPickMethodWithShelfLife = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string(),
+    locationId: z.string(),
+    defaultStorageUnitId: z.string().nullable().optional(),
+    sortMethod: z.enum(["Default", "FEFO", "FIFO", "LIFO"]).optional(),
+    customFields: z.unknown().optional(),
+    shelfLife: z.looseObject({
+      mode: z
+        .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+        .optional(),
+      days: z.number().optional(),
+      triggerProcessId: z.string().optional(),
+      triggerTiming: z.enum(["Before", "After"]).optional(),
+      calculateFromBom: z.boolean().optional()
+    })
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.upsertPickMethodWithShelfLife(
+        ctx.asSystem.pg,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a consumable
+ *
+ * @remarks
+ * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
+ *
+ * @mcp
+ */
+export const createConsumable = defineServiceFn({
+  input: z.looseObject({
+    id: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    readableId: z.string().optional(),
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    mpn: z.string().optional(),
+    replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+    defaultMethodType: z.enum([
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ]),
+    itemTrackingType: z.enum(["Inventory", "Non-Inventory", "Serial", "Batch"]),
+    postingGroupId: z.string().optional(),
+    unitOfMeasureCode: z.string().min(1),
+    unitCost: z.number().min(0).optional(),
+    defaultStorageUnitId: z.string().optional(),
+    shelfLifeMode: z
+      .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+      .optional(),
+    shelfLifeDays: z.number().gt(0).optional(),
+    shelfLifeTriggerProcessId: z.string().optional(),
+    shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+    shelfLifeCalculateFromBom: z.boolean().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.upsertConsumable(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a consumable
+ *
+ * @remarks
+ * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
+ *
+ * @mcp
+ */
+export const updateConsumable = defineServiceFn({
+  input: z
+    .looseObject({
+      id: z
+        .string()
+        .min(1)
+        .max(255)
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        ),
+      readableId: z.string().optional(),
+      name: z.string().min(1).max(255),
+      description: z.string().optional(),
+      mpn: z.string().optional(),
+      replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+      defaultMethodType: z.enum([
+        "Purchase to Order",
+        "Pull from Inventory",
+        "Make to Order"
+      ]),
+      itemTrackingType: z.enum([
+        "Inventory",
+        "Non-Inventory",
+        "Serial",
+        "Batch"
+      ]),
+      postingGroupId: z.string().optional(),
+      unitOfMeasureCode: z.string().min(1),
+      unitCost: z.number().min(0).optional(),
+      defaultStorageUnitId: z.string().optional(),
+      shelfLifeMode: z
+        .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+        .optional(),
+      shelfLifeDays: z.number().gt(0).optional(),
+      shelfLifeTriggerProcessId: z.string().optional(),
+      shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+      shelfLifeCalculateFromBom: z.boolean().optional(),
+      customFields: z.unknown().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.upsertConsumable(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Resolve extracted document line text to an item id: first through the party's part mapping (customerPartToItem / supplierPart), then by exact readableId/name m…
+ *
+ * @mcp
+ */
+export const resolveItemIdFromExtractedText = defineServiceFn({
+  input: z.looseObject({
+    party: z.union([
+      z.looseObject({
+        type: z.literal("customer"),
+        id: z.string().nullable().optional()
+      }),
+      z.looseObject({
+        type: z.literal("supplier"),
+        id: z.string().nullable().optional()
+      })
+    ]),
+    candidates: z.array(z.string().nullable())
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.resolveItemIdFromExtractedText(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.party, ["companyId"]) as never,
+        stamp(ctx, input.candidates, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update item
+ *
+ * @mcp
+ */
+export const updateItem = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().min(1).max(255),
+    readableId: z.string().optional(),
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    mpn: z.string().optional(),
+    replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+    defaultMethodType: z.enum([
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ]),
+    itemTrackingType: z.enum(["Inventory", "Non-Inventory", "Serial", "Batch"]),
+    postingGroupId: z.string().optional(),
+    unitOfMeasureCode: z.string().min(1),
+    unitCost: z.number().min(0).optional(),
+    defaultStorageUnitId: z.string().optional(),
+    shelfLifeMode: z
+      .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+      .optional(),
+    shelfLifeDays: z.number().gt(0).optional(),
+    shelfLifeTriggerProcessId: z.string().optional(),
+    shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+    shelfLifeCalculateFromBom: z.boolean().optional(),
+    type: z.enum([
+      "Part",
+      "Material",
+      "Tool",
+      "Service",
+      "Consumable",
+      "Fixture"
+    ])
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateItem(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert item cost
+ *
+ * @mcp
+ */
+export const upsertItemCost = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string().min(1),
+    itemPostingGroupId: z.string().optional(),
+    costingMethod: z.enum(["Standard", "Average", "FIFO", "LIFO"]),
+    unitCost: z.number().min(0),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemCost(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a pick method
+ *
+ * @remarks
+ * Upsert pick method
+ *
+ * @mcp
+ */
+export const createPickMethod = defineServiceFn({
+  input: z.looseObject({
+    itemId: z
+      .string()
+      .min(1)
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    locationId: z
+      .string()
+      .min(1)
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    defaultStorageUnitId: z.string().optional(),
+    sortMethod: z.enum(["Default", "FEFO", "FIFO", "LIFO"]).optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPickMethod(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a pick method
+ *
+ * @remarks
+ * Upsert pick method
+ *
+ * @mcp
+ */
+export const updatePickMethod = defineServiceFn({
+  input: z
+    .looseObject({
+      itemId: z
+        .string()
+        .min(1)
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        ),
+      locationId: z
+        .string()
+        .min(1)
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        ),
+      defaultStorageUnitId: z.string().optional(),
+      sortMethod: z.enum(["Default", "FEFO", "FIFO", "LIFO"]).optional(),
+      customFields: z.unknown().optional()
+    })
+    .required({ itemId: true, locationId: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertPickMethod(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert item purchasing
+ *
+ * @mcp
+ */
+export const upsertItemPurchasing = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string().min(1),
+    preferredSupplierId: z.string().optional(),
+    conversionFactor: z.number().min(0),
+    leadTime: z.number().min(0),
+    purchasingUnitOfMeasureCode: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemPurchasing(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a item posting group
+ *
+ * @remarks
+ * Upsert item posting group
+ *
+ * @mcp
+ */
+export const createItemPostingGroup = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemPostingGroup(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a item posting group
+ *
+ * @remarks
+ * Upsert item posting group
+ *
+ * @mcp
+ */
+export const updateItemPostingGroup = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1).max(255),
+      description: z.string().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemPostingGroup(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert item customer part
+ *
+ * @mcp
+ */
+export const upsertItemCustomerPart = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string().min(1),
+    customerId: z.string().min(1),
+    customerPartId: z.string(),
+    customerPartRevision: z.string().optional(),
+    id: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemCustomerPart(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert item unit sale price
+ *
+ * @mcp
+ */
+export const upsertItemUnitSalePrice = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string().min(1),
+    unitSalePrice: z.number().min(0),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertItemUnitSalePrice(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a method material
+ *
+ * @remarks
+ * Upsert method material
+ *
+ * @mcp
+ */
+export const createMethodMaterial = defineServiceFn({
+  input: z.looseObject({
+    id: z
+      .string()
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    makeMethodId: z.string().min(1),
+    order: z.number().min(0),
+    itemType: z.enum(["Part", "Material", "Consumable"]),
+    kit: z.enum(["true", "false"]).optional(),
+    methodType: z.enum([
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ]),
+    sourcingType: z.enum(["Specified", "Drop Ship", "Ship from Inventory"]),
+    itemId: z.string().optional(),
+    methodOperationId: z.string().optional(),
+    quantity: z.number().min(0),
+    unitOfMeasureCode: z.string().min(1),
+    storageUnitIds: z.record(z.string(), z.unknown()).nullable().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodMaterial(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a method material
+ *
+ * @remarks
+ * Upsert method material
+ *
+ * @mcp
+ */
+export const updateMethodMaterial = defineServiceFn({
+  input: z
+    .looseObject({
+      id: z
+        .string()
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        ),
+      makeMethodId: z.string().min(1),
+      order: z.number().min(0),
+      itemType: z.enum(["Part", "Material", "Consumable"]),
+      kit: z.enum(["true", "false"]).optional(),
+      methodType: z.enum([
+        "Purchase to Order",
+        "Pull from Inventory",
+        "Make to Order"
+      ]),
+      sourcingType: z.enum(["Specified", "Drop Ship", "Ship from Inventory"]),
+      itemId: z.string().optional(),
+      methodOperationId: z.string().optional(),
+      quantity: z.number().min(0),
+      unitOfMeasureCode: z.string().min(1),
+      storageUnitIds: z.record(z.string(), z.unknown()).nullable().optional(),
+      customFields: z.unknown().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodMaterial(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a method operation
+ *
+ * @remarks
+ * Upsert method operation
+ *
+ * @mcp
+ */
+export const createMethodOperation = defineServiceFn({
+  input: z.looseObject({
+    makeMethodId: z.string().min(0),
+    order: z.number().min(0),
+    operationOrder: z.enum(["After Previous", "With Previous"]),
+    operationType: z.enum([
+      "Process",
+      "Assembly",
+      "Inspection",
+      "Outside Processing"
+    ]),
+    processId: z.string().min(1),
+    workCenterId: z.string().optional(),
+    procedureId: z.string().optional(),
+    assemblyInstructionId: z.string().optional(),
+    inspectionDocumentId: z.string().optional(),
+    description: z.string().min(0),
+    setupUnit: z
+      .enum([
+        "Hours/Piece",
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Minutes/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ])
+      .optional(),
+    setupTime: z.number().min(0).optional(),
+    laborUnit: z
+      .enum([
+        "Hours/Piece",
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Minutes/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ])
+      .optional(),
+    laborTime: z.number().min(0).optional(),
+    machineUnit: z
+      .enum([
+        "Hours/Piece",
+        "Hours/100 Pieces",
+        "Hours/1000 Pieces",
+        "Minutes/Piece",
+        "Minutes/100 Pieces",
+        "Minutes/1000 Pieces",
+        "Pieces/Hour",
+        "Pieces/Minute",
+        "Seconds/Piece",
+        "Total Hours",
+        "Total Minutes"
+      ])
+      .optional(),
+    machineTime: z.number().min(0).optional(),
+    operationSupplierProcessId: z.string().optional(),
+    operationMinimumCost: z.number().min(0).optional(),
+    operationUnitCost: z.number().min(0).optional(),
+    operationLeadTime: z.number().min(0).optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      )
+      .optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperation(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a method operation
+ *
+ * @remarks
+ * Upsert method operation
+ *
+ * @mcp
+ */
+export const updateMethodOperation = defineServiceFn({
+  input: z
+    .looseObject({
+      makeMethodId: z.string().min(0),
+      order: z.number().min(0),
+      operationOrder: z.enum(["After Previous", "With Previous"]),
+      operationType: z.enum([
+        "Process",
+        "Assembly",
+        "Inspection",
+        "Outside Processing"
+      ]),
+      processId: z.string().min(1),
+      workCenterId: z.string().optional(),
+      procedureId: z.string().optional(),
+      assemblyInstructionId: z.string().optional(),
+      inspectionDocumentId: z.string().optional(),
+      description: z.string().min(0),
+      setupUnit: z
+        .enum([
+          "Hours/Piece",
+          "Hours/100 Pieces",
+          "Hours/1000 Pieces",
+          "Minutes/Piece",
+          "Minutes/100 Pieces",
+          "Minutes/1000 Pieces",
+          "Pieces/Hour",
+          "Pieces/Minute",
+          "Seconds/Piece",
+          "Total Hours",
+          "Total Minutes"
+        ])
+        .optional(),
+      setupTime: z.number().min(0).optional(),
+      laborUnit: z
+        .enum([
+          "Hours/Piece",
+          "Hours/100 Pieces",
+          "Hours/1000 Pieces",
+          "Minutes/Piece",
+          "Minutes/100 Pieces",
+          "Minutes/1000 Pieces",
+          "Pieces/Hour",
+          "Pieces/Minute",
+          "Seconds/Piece",
+          "Total Hours",
+          "Total Minutes"
+        ])
+        .optional(),
+      laborTime: z.number().min(0).optional(),
+      machineUnit: z
+        .enum([
+          "Hours/Piece",
+          "Hours/100 Pieces",
+          "Hours/1000 Pieces",
+          "Minutes/Piece",
+          "Minutes/100 Pieces",
+          "Minutes/1000 Pieces",
+          "Pieces/Hour",
+          "Pieces/Minute",
+          "Seconds/Piece",
+          "Total Hours",
+          "Total Minutes"
+        ])
+        .optional(),
+      machineTime: z.number().min(0).optional(),
+      operationSupplierProcessId: z.string().optional(),
+      operationMinimumCost: z.number().min(0).optional(),
+      operationUnitCost: z.number().min(0).optional(),
+      operationLeadTime: z.number().min(0).optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        )
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperation(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a method operation step
+ *
+ * @remarks
+ * Upsert method operation step
+ *
+ * @mcp
+ */
+export const createMethodOperationStep = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string().min(1),
+    name: z.string().min(1),
+    description: z.string().min(1),
+    type: z.enum([
+      "Task",
+      "Value",
+      "Measurement",
+      "Checkbox",
+      "Timestamp",
+      "Person",
+      "List",
+      "File",
+      "Inspection"
+    ]),
+    unitOfMeasureCode: z.string().optional(),
+    minValue: z.number().nullable().optional(),
+    maxValue: z.number().nullable().optional(),
+    listValues: z.array(z.string()).optional(),
+    sortOrder: z.number().min(0).optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationStep(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a method operation step
+ *
+ * @remarks
+ * Upsert method operation step
+ *
+ * @mcp
+ */
+export const updateMethodOperationStep = defineServiceFn({
+  input: z
+    .looseObject({
+      operationId: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string().min(1),
+      type: z.enum([
+        "Task",
+        "Value",
+        "Measurement",
+        "Checkbox",
+        "Timestamp",
+        "Person",
+        "List",
+        "File",
+        "Inspection"
+      ]),
+      unitOfMeasureCode: z.string().optional(),
+      minValue: z.number().nullable().optional(),
+      maxValue: z.number().nullable().optional(),
+      listValues: z.array(z.string()).optional(),
+      sortOrder: z.number().min(0).optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationStep(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Duplicate method operation step
+ *
+ * @mcp
+ */
+export const duplicateMethodOperationStep = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.duplicateMethodOperationStep(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a method operation step slide
+ *
+ * @remarks
+ * Upsert method operation step slide
+ *
+ * @mcp
+ */
+export const createMethodOperationStepSlide = defineServiceFn({
+  input: z.looseObject({
+    stepId: z.string().min(1),
+    imagePath: z.string().optional(),
+    modelUploadId: z.string().optional(),
+    caption: z.string().optional(),
+    sortOrder: z.number().min(0).optional(),
+    size: z.enum(["small", "medium", "large"]).optional(),
+    annotations: z
+      .array(
+        z.looseObject({
+          id: z.string(),
+          x: z.number(),
+          y: z.number(),
+          label: z.string().nullable().optional(),
+          color: z.string().nullable().optional(),
+          toolId: z.string().nullable().optional()
+        })
+      )
+      .nullable()
+      .optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationStepSlide(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a method operation step slide
+ *
+ * @remarks
+ * Upsert method operation step slide
+ *
+ * @mcp
+ */
+export const updateMethodOperationStepSlide = defineServiceFn({
+  input: z
+    .looseObject({
+      stepId: z.string().min(1),
+      imagePath: z.string().optional(),
+      modelUploadId: z.string().optional(),
+      caption: z.string().optional(),
+      sortOrder: z.number().min(0).optional(),
+      size: z.enum(["small", "medium", "large"]).optional(),
+      annotations: z
+        .array(
+          z.looseObject({
+            id: z.string(),
+            x: z.number(),
+            y: z.number(),
+            label: z.string().nullable().optional(),
+            color: z.string().nullable().optional(),
+            toolId: z.string().nullable().optional()
+          })
+        )
+        .nullable()
+        .optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationStepSlide(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a method operation parameter
+ *
+ * @remarks
+ * Upsert method operation parameter
+ *
+ * @mcp
+ */
+export const createMethodOperationParameter = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string().min(1),
+    key: z.string().min(1),
+    value: z.string().min(1),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationParameter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a method operation parameter
+ *
+ * @remarks
+ * Upsert method operation parameter
+ *
+ * @mcp
+ */
+export const updateMethodOperationParameter = defineServiceFn({
+  input: z
+    .looseObject({
+      operationId: z.string().min(1),
+      key: z.string().min(1),
+      value: z.string().min(1),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationParameter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a method operation tool
+ *
+ * @remarks
+ * Upsert method operation tool
+ *
+ * @mcp
+ */
+export const createMethodOperationTool = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string().min(1),
+    toolId: z.string().min(1),
+    quantity: z.number().min(0.000001),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationTool(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a method operation tool
+ *
+ * @remarks
+ * Upsert method operation tool
+ *
+ * @mcp
+ */
+export const updateMethodOperationTool = defineServiceFn({
+  input: z
+    .looseObject({
+      operationId: z.string().min(1),
+      toolId: z.string().min(1),
+      quantity: z.number().min(0.000001),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMethodOperationTool(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Set method material step link
+ *
+ * @mcp destructive
+ */
+export const setMethodMaterialStepLink = defineServiceFn({
+  input: z.looseObject({
+    methodMaterialId: z.string(),
+    methodOperationStepId: z.string(),
+    linked: z.boolean(),
+    quantity: z.number().nullable().optional()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.setMethodMaterialStepLink(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Set method operation tool step link
+ *
+ * @mcp destructive
+ */
+export const setMethodOperationToolStepLink = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string(),
+    toolId: z.string(),
+    methodOperationStepId: z.string(),
+    linked: z.boolean()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.setMethodOperationToolStepLink(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a material
+ *
+ * @remarks
+ * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
+ *
+ * @mcp
+ */
+export const createMaterial = defineServiceFn({
+  input: z.looseObject({
+    id: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    readableId: z.string().optional(),
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    mpn: z.string().optional(),
+    replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+    defaultMethodType: z.enum([
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ]),
+    itemTrackingType: z.enum(["Inventory", "Non-Inventory", "Serial", "Batch"]),
+    postingGroupId: z.string().optional(),
+    unitOfMeasureCode: z.string().min(1),
+    unitCost: z.number().min(0).optional(),
+    defaultStorageUnitId: z.string().optional(),
+    shelfLifeMode: z
+      .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+      .optional(),
+    shelfLifeDays: z.number().gt(0).optional(),
+    shelfLifeTriggerProcessId: z.string().optional(),
+    shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+    shelfLifeCalculateFromBom: z.boolean().optional(),
+    materialSubstanceId: z.string().optional(),
+    materialFormId: z.string().optional(),
+    materialTypeId: z.string().optional(),
+    finishId: z.string().optional(),
+    gradeId: z.string().optional(),
+    dimensionId: z.string().optional(),
+    sizes: z.array(z.string()).optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.upsertMaterial(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a material
+ *
+ * @remarks
+ * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
+ *
+ * @mcp
+ */
+export const updateMaterial = defineServiceFn({
+  input: z
+    .looseObject({
+      id: z
+        .string()
+        .min(1)
+        .max(255)
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        ),
+      readableId: z.string().optional(),
+      name: z.string().min(1).max(255),
+      description: z.string().optional(),
+      mpn: z.string().optional(),
+      replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+      defaultMethodType: z.enum([
+        "Purchase to Order",
+        "Pull from Inventory",
+        "Make to Order"
+      ]),
+      itemTrackingType: z.enum([
+        "Inventory",
+        "Non-Inventory",
+        "Serial",
+        "Batch"
+      ]),
+      postingGroupId: z.string().optional(),
+      unitOfMeasureCode: z.string().min(1),
+      unitCost: z.number().min(0).optional(),
+      defaultStorageUnitId: z.string().optional(),
+      shelfLifeMode: z
+        .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+        .optional(),
+      shelfLifeDays: z.number().gt(0).optional(),
+      shelfLifeTriggerProcessId: z.string().optional(),
+      shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+      shelfLifeCalculateFromBom: z.boolean().optional(),
+      materialSubstanceId: z.string().optional(),
+      materialFormId: z.string().optional(),
+      materialTypeId: z.string().optional(),
+      finishId: z.string().optional(),
+      gradeId: z.string().optional(),
+      dimensionId: z.string().optional(),
+      sizes: z.array(z.string()).optional(),
+      customFields: z.unknown().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.upsertMaterial(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Creates a dimension (a named size) for a material shape, or updates the one whose `id` is sent; a new dimension's id is generated
+ *
+ * @mcp
+ */
+export const upsertMaterialDimension = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1).max(255),
+    materialFormId: z.string().min(1),
+    isMetric: z.boolean().optional(),
+    id: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialDimension(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Creates a finish for a material substance, or updates the one whose `id` is sent; a new finish's id is generated
+ *
+ * @mcp
+ */
+export const upsertMaterialFinish = defineServiceFn({
+  input: z.looseObject({
+    materialSubstanceId: z.string().min(1),
+    name: z.string().min(1).max(255),
+    id: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialFinish(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a material form
+ *
+ * @remarks
+ * Upsert material form
+ *
+ * @mcp
+ */
+export const createMaterialForm = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1).max(255),
+    code: z.string().min(1).max(10),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialForm(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a material form
+ *
+ * @remarks
+ * Upsert material form
+ *
+ * @mcp
+ */
+export const updateMaterialForm = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1).max(255),
+      code: z.string().min(1).max(10),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialForm(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Creates a grade for a material substance, or updates the one whose `id` is sent; a new grade's id is generated
+ *
+ * @mcp
+ */
+export const upsertMaterialGrade = defineServiceFn({
+  input: z.looseObject({
+    materialSubstanceId: z.string().min(1),
+    name: z.string().min(1).max(255),
+    id: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialGrade(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete material type
+ *
+ * @mcp destructive
+ */
+export const deleteMaterialType = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaterialType(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get material types
+ *
+ * @mcp read
+ */
+export const getMaterialTypes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getMaterialTypes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get material type
+ *
+ * @mcp read
+ */
+export const getMaterialType = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialType(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get material type list
+ *
+ * @mcp read
+ */
+export const getMaterialTypeList = defineServiceFn({
+  input: z.looseObject({
+    materialSubstanceId: z.string(),
+    materialFormId: z.string()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaterialTypeList(
+        ctx.asCaller.supabase,
+        input.materialSubstanceId as never,
+        input.materialFormId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Creates a material type for a substance and shape pair, or updates the one whose `id` is sent; a new type's id is generated
+ *
+ * @mcp
+ */
+export const upsertMaterialType = defineServiceFn({
+  input: z.looseObject({
+    materialSubstanceId: z.string().min(1),
+    materialFormId: z.string().min(1),
+    name: z.string().min(1).max(255),
+    code: z.string().min(1).max(10),
+    id: z.string().optional()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialType(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a material substance
+ *
+ * @remarks
+ * Upsert material substance
+ *
+ * @mcp
+ */
+export const createMaterialSubstance = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1).max(255),
+    code: z.string().min(1).max(10),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialSubstance(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a material substance
+ *
+ * @remarks
+ * Upsert material substance
+ *
+ * @mcp
+ */
+export const updateMaterialSubstance = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1).max(255),
+      code: z.string().min(1).max(10),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaterialSubstance(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a service
+ *
+ * @remarks
+ * Creates a service (item row and service row) or updates one
+ *
+ * @mcp
+ */
+export const createService = defineServiceFn({
+  input: z.looseObject({
+    id: z
+      .string()
+      .max(255)
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      )
+      .optional(),
+    readableId: z.string().optional(),
+    name: z.string().min(1).max(100),
+    description: z.string().optional(),
+    mpn: z.string().optional(),
+    replenishmentSystem: z.enum(["Buy", "Make"]),
+    defaultMethodType: z.enum([
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ]),
+    itemTrackingType: z.literal("Non-Inventory"),
+    postingGroupId: z.string().optional(),
+    unitOfMeasureCode: z.string().optional(),
+    unitCost: z.number().min(0).optional(),
+    defaultStorageUnitId: z.string().optional(),
+    shelfLifeMode: z
+      .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+      .optional(),
+    shelfLifeDays: z.number().gt(0).optional(),
+    shelfLifeTriggerProcessId: z.string().optional(),
+    shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+    shelfLifeCalculateFromBom: z.boolean().optional(),
+    revision: z.string().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertService(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a service
+ *
+ * @remarks
+ * Creates a service (item row and service row) or updates one
+ *
+ * @mcp
+ */
+export const updateService = defineServiceFn({
+  input: z
+    .looseObject({
+      id: z
+        .string()
+        .max(255)
+        .describe(
+          "Updates the existing record with this key; creates one when there is none."
+        )
+        .optional(),
+      readableId: z.string().optional(),
+      name: z.string().min(1).max(100),
+      description: z.string().optional(),
+      mpn: z.string().optional(),
+      replenishmentSystem: z.enum(["Buy", "Make"]),
+      defaultMethodType: z.enum([
+        "Purchase to Order",
+        "Pull from Inventory",
+        "Make to Order"
+      ]),
+      itemTrackingType: z.literal("Non-Inventory"),
+      postingGroupId: z.string().optional(),
+      unitOfMeasureCode: z.string().optional(),
+      unitCost: z.number().min(0).optional(),
+      defaultStorageUnitId: z.string().optional(),
+      shelfLifeMode: z
+        .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+        .optional(),
+      shelfLifeDays: z.number().gt(0).optional(),
+      shelfLifeTriggerProcessId: z.string().optional(),
+      shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+      shelfLifeCalculateFromBom: z.boolean().optional(),
+      revision: z.string().optional(),
+      customFields: z.unknown().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertService(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a unit of measure
+ *
+ * @remarks
+ * Upsert unit of measure
+ *
+ * @mcp
+ */
+export const createUnitOfMeasure = defineServiceFn({
+  input: z.looseObject({
+    code: z.string().min(1).max(10),
+    name: z.string().min(1).max(50),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertUnitOfMeasure(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a unit of measure
+ *
+ * @remarks
+ * Upsert unit of measure
+ *
+ * @mcp
+ */
+export const updateUnitOfMeasure = defineServiceFn({
+  input: z
+    .looseObject({
+      code: z.string().min(1).max(10),
+      name: z.string().min(1).max(50),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertUnitOfMeasure(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a tool
+ *
+ * @remarks
+ * Creates a tool (item row and tool row) or updates one; on update `id` is the item id (uuid) or the tool's readable id and the write is a full replace, so omitt…
+ *
+ * @mcp
+ */
+export const createTool = defineServiceFn({
+  input: z.looseObject({
+    id: z
+      .string()
+      .min(1)
+      .max(255)
+      .describe(
+        "Updates the existing record with this key; creates one when there is none."
+      ),
+    readableId: z.string().optional(),
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    mpn: z.string().optional(),
+    replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+    defaultMethodType: z.enum([
+      "Purchase to Order",
+      "Pull from Inventory",
+      "Make to Order"
+    ]),
+    itemTrackingType: z.enum(["Inventory", "Non-Inventory", "Serial", "Batch"]),
+    postingGroupId: z.string().optional(),
+    unitOfMeasureCode: z.string().min(1),
+    unitCost: z.number().min(0).optional(),
+    defaultStorageUnitId: z.string().optional(),
+    shelfLifeMode: z
+      .enum(["NotManaged", "Fixed Duration", "Calculated", "Set on Receipt"])
+      .optional(),
+    shelfLifeDays: z.number().gt(0).optional(),
+    shelfLifeTriggerProcessId: z.string().optional(),
+    shelfLifeTriggerTiming: z.enum(["Before", "After"]).optional(),
+    shelfLifeCalculateFromBom: z.boolean().optional(),
+    revision: z.string().min(1),
+    modelUploadId: z.string().optional(),
+    lotSize: z.number().min(0).optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.upsertTool(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Batch pre-fetch supplier pricing for multiple items, for costing
+ *
+ * @mcp read
+ */
+export const getSupplierPriceBreaksForItems = defineServiceFn({
+  input: z.looseObject({ itemIds: z.array(z.string()) }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await utils.getSupplierPriceBreaksForItems(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.itemIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice
+ *
+ * @mcp read
+ */
+export const getChangeNotice = defineServiceFn({
+  input: z.looseObject({ changeNoticeId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNotice(
+        ctx.asCaller.supabase,
+        input.changeNoticeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get change notices
+ *
+ * @mcp read
+ */
+export const getChangeNotices = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getChangeNotices(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update change notice
+ *
+ * @mcp
+ */
+export const updateChangeNotice = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    changeOrderId: z.string().optional(),
+    name: z.string().optional(),
+    type: z.enum(["Engineering", "Manufacturing", "Documentation"]).optional(),
+    priority: z.string().nullable().optional(),
+    changeOrderTypeId: z.string().nullable().optional(),
+    nonConformanceId: z.string().nullable().optional(),
+    openDate: z.string().optional(),
+    reasonForChange: z.unknown().optional(),
+    description: z.unknown().optional(),
+    dueDate: z.string().nullable().optional(),
+    assignee: z.string().nullable().optional(),
+    customFields: z.unknown().optional()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateChangeNotice(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete change notice
+ *
+ * @mcp destructive
+ */
+export const deleteChangeNotice = defineServiceFn({
+  input: z.looseObject({ changeNoticeId: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteChangeNotice(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.changeNoticeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice types
+ *
+ * @mcp read
+ */
+export const getChangeNoticeTypes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getChangeNoticeTypes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice types list
+ *
+ * @mcp read
+ */
+export const getChangeNoticeTypesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeTypesList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice type
+ *
+ * @mcp read
+ */
+export const getChangeNoticeType = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeType(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create a change notice type
+ *
+ * @remarks
+ * Upsert change notice type
+ *
+ * @mcp
+ */
+export const createChangeNoticeType = defineServiceFn({
+  input: z.looseObject({
+    changeNoticeType: z.looseObject({
+      name: z.string(),
+      customFields: z.unknown().optional()
+    })
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertChangeNoticeType(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.changeNoticeType,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a change notice type
+ *
+ * @remarks
+ * Upsert change notice type
+ *
+ * @mcp
+ */
+export const updateChangeNoticeType = defineServiceFn({
+  input: z.looseObject({
+    changeNoticeType: z.looseObject({
+      id: z.string(),
+      name: z.string(),
+      customFields: z.unknown().optional()
+    })
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertChangeNoticeType(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input.changeNoticeType,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete change notice type
+ *
+ * @mcp destructive
+ */
+export const deleteChangeNoticeType = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteChangeNoticeType(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Add change notice affected item
+ *
+ * @mcp destructive
+ */
+export const addChangeNoticeAffectedItem = defineServiceFn({
+  input: z.looseObject({
+    changeNoticeId: z.string(),
+    itemId: z.string().optional(),
+    changeType: z.enum(["Version", "Revision", "Replacement Part", "New Part"]),
+    revision: z.string().optional(),
+    newPart: z
+      .looseObject({
+        readableId: z.string(),
+        name: z.string(),
+        itemType: z.enum(["Part", "Tool"]),
+        replenishmentSystem: z.enum(["Buy", "Make", "Buy and Make"]),
+        itemTrackingType: z
+          .enum(["Inventory", "Non-Inventory", "Serial", "Batch"])
+          .optional()
+      })
+      .optional()
+  }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.addChangeNoticeAffectedItem(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update change notice affected item change type
+ *
+ * @mcp
+ */
+export const updateChangeNoticeAffectedItemChangeType = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    changeType: z.enum(["Version", "Revision", "Replacement Part", "New Part"])
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateChangeNoticeAffectedItemChangeType(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update change notice affected item cutover
+ *
+ * @mcp
+ */
+export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    supersessionMode: z.enum([
+      "Consume First",
+      "Prefer New",
+      "Stock Only",
+      "No Stock"
+    ]),
+    discontinuationDate: z.string().optional(),
+    successorEffectivityDate: z.string().optional()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateChangeNoticeAffectedItemCutover(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice affected items
+ *
+ * @mcp read
+ */
+export const getChangeNoticeAffectedItems = defineServiceFn({
+  input: z.looseObject({ changeNoticeId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeAffectedItems(
+        ctx.asCaller.supabase,
+        input.changeNoticeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Remove change notice affected item
+ *
+ * @mcp destructive
+ */
+export const removeChangeNoticeAffectedItem = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.removeChangeNoticeAffectedItem(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get change notices for non conformance
+ *
+ * @mcp read
+ */
+export const getChangeNoticesForNonConformance = defineServiceFn({
+  input: z.looseObject({ nonConformanceId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticesForNonConformance(
+        ctx.asCaller.supabase,
+        input.nonConformanceId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice actions
+ *
+ * @mcp read
+ */
+export const getChangeNoticeActions = defineServiceFn({
+  input: z.looseObject({ changeNoticeId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeActions(
+        ctx.asCaller.supabase,
+        input.changeNoticeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Update change notice action status
+ *
+ * @mcp
+ */
+export const updateChangeNoticeActionStatus = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    status: z.enum(["Pending", "In Progress", "Completed", "Skipped"])
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateChangeNoticeActionStatus(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete change notice action
+ *
+ * @mcp destructive
+ */
+export const deleteChangeNoticeAction = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteChangeNoticeAction(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Update change notice action order
+ *
+ * @mcp
+ */
+export const updateChangeNoticeActionOrder = defineServiceFn({
+  input: z.looseObject({
+    changeNoticeId: z.string(),
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.updateChangeNoticeActionOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        input.changeNoticeId as never,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice required actions
+ *
+ * @mcp read
+ */
+export const getChangeNoticeRequiredActions = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getChangeNoticeRequiredActions(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice required actions list
+ *
+ * @mcp read
+ */
+export const getChangeNoticeRequiredActionsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "parts" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeRequiredActionsList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice required action
+ *
+ * @mcp read
+ */
+export const getChangeNoticeRequiredAction = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeRequiredAction(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Upsert change notice required action
+ *
+ * @mcp
+ */
+export const upsertChangeNoticeRequiredAction = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    name: z.string(),
+    active: z.boolean()
+  }),
+  permission: { create: "parts", update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertChangeNoticeRequiredAction(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete change notice required action
+ *
+ * @mcp destructive
+ */
+export const deleteChangeNoticeRequiredAction = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteChangeNoticeRequiredAction(
+        ctx.asCaller.supabase,
+        input.id as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Set change notice action tasks
+ *
+ * @mcp destructive
+ */
+export const setChangeNoticeActionTasks = defineServiceFn({
+  input: z.looseObject({
+    changeNoticeId: z.string(),
+    requiredActionIds: z.array(z.string())
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.setChangeNoticeActionTasks(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get change notice diff
+ *
+ * @mcp read
+ */
+export const getChangeNoticeDiff = defineServiceFn({
+  input: z.looseObject({ changeNoticeId: z.string() }),
+  permission: { view: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getChangeNoticeDiff(
+        ctx.asCaller.supabase,
+        input.changeNoticeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create a presigned upload URL for an item (part/material/tool/consumable/service) document
+ *
+ * @mcp
+ */
+export const createItemDocumentUploadUrl = defineServiceFn({
+  input: z.looseObject({ itemId: z.string(), name: z.string() }),
+  permission: { create: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createItemDocumentUploadUrl(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
   }
 });

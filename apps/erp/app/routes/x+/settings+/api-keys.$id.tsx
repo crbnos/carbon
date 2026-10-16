@@ -22,7 +22,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.apiKey.update({
+  const result = await api.settings.updateApiKey({
     ...apiKeyFields(input.data),
     id: input.params.id
   });

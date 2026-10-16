@@ -32,10 +32,10 @@ export async function action(args: ActionFunctionArgs) {
     });
     if ("invalid" in input) return input.invalid;
     const api = await carbon(args.request);
-    return api.agent.thread.delete(input.data);
+    return api.agent.deleteAgentThread(input.data);
   }
   const input = await validator().request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.agent.thread.create({});
+  return api.agent.createAgentThread({});
 }

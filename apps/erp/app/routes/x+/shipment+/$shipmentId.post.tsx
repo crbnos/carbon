@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { shipmentId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.inventory.shipment.post({
+  const result = await api.inventory.postShipment({
     shipmentId,
     ...input.data,
     locale: getPreferenceHeaders(args.request).locale

@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.quality.issue.task.setStatus({
+  return api.quality.setIssueTaskStatus({
     ...input.data,
     id: input.params.id
   });

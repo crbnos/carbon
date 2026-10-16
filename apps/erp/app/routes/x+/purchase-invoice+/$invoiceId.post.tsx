@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.invoicing.purchaseInvoice.post({
+  return api.invoicing.postPurchaseInvoice({
     invoiceId: input.params.invoiceId,
     skipReceiptPost: input.data.skipReceiptPost
   });

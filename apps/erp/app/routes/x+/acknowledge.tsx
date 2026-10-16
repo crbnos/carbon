@@ -46,7 +46,7 @@ export async function action(args: ActionFunctionArgs) {
 
   switch (form.intent) {
     case "itar-entity":
-      return api.users.itarCertification.certifyEntity({
+      return api.users.certifyItarEntity({
         authorityToBind: form.authorityToBind,
         acceptRider: form.acceptRider,
         fullLegalName: form.fullLegalName ?? "",
@@ -56,7 +56,7 @@ export async function action(args: ActionFunctionArgs) {
         userAgent
       });
     case "itar-user":
-      return api.users.itarCertification.certifyUser({
+      return api.users.certifyItarUser({
         certifyUsPerson: form.certifyUsPerson,
         agreeNotify: form.agreeNotify,
         understandPenalty: form.understandPenalty,
@@ -65,7 +65,7 @@ export async function action(args: ActionFunctionArgs) {
         userAgent
       });
     case "flag": {
-      const result = await api.account.flag.set({
+      const result = await api.account.setOwnFlag({
         flag: form.flag,
         value: form.value
       });

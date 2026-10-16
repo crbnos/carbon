@@ -27,7 +27,7 @@ export async function action(args: ActionFunctionArgs) {
   switch (type) {
     case "item": {
       const [quoteId, quoteLineId] = targetId.split(":");
-      return api.sales.quote.line.copyItemMethod({
+      return api.sales.copyItemMethodToQuoteLine({
         quoteId: quoteId ?? "",
         quoteLineId: quoteLineId ?? "",
         itemId: sourceId,
@@ -36,9 +36,9 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
     case "quoteLine":
-      return api.sales.quote.line.copyLineMethod({ sourceId, targetId, parts });
+      return api.sales.copyQuoteLineMethod({ sourceId, targetId, parts });
     case "method": {
-      const result = await api.sales.quote.material.copyItemMethod({
+      const result = await api.sales.copyItemMethodToQuoteMaterial({
         sourceId,
         targetId,
         parts,

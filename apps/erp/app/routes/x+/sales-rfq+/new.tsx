@@ -26,7 +26,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.sales.rfq.create({
+  const result = await api.sales.createSalesRfq({
     ...input.data,
     customFields: setCustomFields(formData),
     lines: extractedLines(formData.get("extractedLineItems")),

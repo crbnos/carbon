@@ -124,7 +124,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(invoicingSettingsForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.settings.invoicing.update(input.data);
+  return api.settings.updateInvoicingSettings(input.data);
 }
 
 export default function InvoicingSettingsRoute() {

@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { runId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.revenueRecognitionRun.reverse({ runId });
+  const result = await api.accounting.reverseRevenueRecognitionRun({ runId });
   const run = result.data;
   // A revenue run that held only rental rows gives them to the lease run.
   return respond(args.request, result).redirect(

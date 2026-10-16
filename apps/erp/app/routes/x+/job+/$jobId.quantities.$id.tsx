@@ -48,7 +48,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.quantity.update({
+  const result = await api.production.updateProductionQuantity({
     ...input.data,
     id: input.params.id
   });

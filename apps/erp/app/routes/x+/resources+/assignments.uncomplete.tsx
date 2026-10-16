@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.trainingAssignment.uncomplete(input.data);
+  const result = await api.resources.uncompleteTrainingAssignment(input.data);
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.trainingAssignments,
     { message: "Completion removed" }

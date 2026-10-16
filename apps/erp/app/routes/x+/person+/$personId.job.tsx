@@ -44,7 +44,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { personId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.people.job.update({
+  const result = await api.people.updatePersonJob({
     ...input.data,
     employeeId: personId,
     customFields: input.formData && setCustomFields(input.formData)

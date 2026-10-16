@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id: _, severity, likelihood, ...risk } = input.data;
   const api = await carbon(args.request);
-  const result = await api.quality.risk.create({
+  const result = await api.quality.createRisk({
     ...risk,
     severity: Number.parseInt(severity ?? "1", 10),
     likelihood: Number.parseInt(likelihood ?? "1", 10)

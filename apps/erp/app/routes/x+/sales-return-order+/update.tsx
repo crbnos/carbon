@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.sales.returnOrder.updateField(input.data);
+  return api.sales.updateSalesReturnOrderField(input.data);
 }

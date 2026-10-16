@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.inventory.inventoryCount.post({
+  const result = await api.inventory.postInventoryCount({
     inventoryCountId: id
   });
   // An error is toasted by the Post button's fetcher.

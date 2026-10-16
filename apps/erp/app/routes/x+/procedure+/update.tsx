@@ -22,13 +22,13 @@ export async function action(args: ActionFunctionArgs) {
   const { ids, field, value } = input.data;
   const api = await carbon(args.request);
   if (field === "tags") {
-    return api.production.procedure.setFields({ ids, tags: value });
+    return api.production.setProcedureFields({ ids, tags: value });
   }
   if (field === "status") {
-    return api.production.procedure.setFields({
+    return api.production.setProcedureFields({
       ids,
       status: value[0] as (typeof procedureStatus)[number]
     });
   }
-  return api.production.procedure.setFields({ ids, [field]: value[0] ?? "" });
+  return api.production.setProcedureFields({ ids, [field]: value[0] ?? "" });
 }

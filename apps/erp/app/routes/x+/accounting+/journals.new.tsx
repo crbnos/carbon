@@ -11,7 +11,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.accounting.journalEntry.create({});
+  const result = await api.accounting.createJournalEntry({});
   return respond(args.request, result).redirect(
     result.data
       ? path.to.journalEntryDetails(result.data.id)

@@ -3,6 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  envelopes,
+  paged,
+  plain,
+  stamp
+} from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
@@ -69,88 +76,9 @@ import {
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator
 } from "./production.models";
-import {
-  applyProductionPlanningDateActions,
-  assignPeopleWeek,
-  assignPlanningActions,
-  attempt,
-  autoMatchAssemblyComponents,
-  calculateJobPriority,
-  changedPlanningActions,
-  clearPeopleAbsence,
-  copyPeopleBoard,
-  copyPeopleWeek,
-  createJobOperationBatch,
-  deletePeopleAssignment,
-  dismissPlanningActions,
-  generateAssemblyStepsFromPlan,
-  geometryServiceDown,
-  getBatchOutputLots,
-  getJobReleaseReadiness,
-  getJobToResume,
-  getLatestAssemblyPlanJob,
-  getModelForItem,
-  getPlanningActionsByIds,
-  insertJob,
-  invalidateAssemblyModelCache,
-  isAssemblerServiceHealthy,
-  type JobStatus,
-  markPlanningActionsActioned,
-  moveJobStatus,
-  movePeopleAssignment,
-  movePeopleWeek,
-  notifyForEmployeeDate,
-  notifyPeopleChange,
-  notifyPlanningScheduleChange,
-  notifyScheduleInputsChanged,
-  parseConfiguration,
-  postEndedEvent,
-  pullJobMaterialMakeMethod,
-  readInstructionModel,
-  readPlanningJob,
-  readUnlockedJobs,
-  reassignAssemblyStepComponents,
-  recalculateJob,
-  recalculateJobRequirements,
-  recalculateMaterialMethod,
-  releaseJobOperationBatch,
-  releasePlanningActionClaim,
-  reopenDismissedPlanningActions,
-  requireBoardReferences,
-  requireJob,
-  requireJobChildren,
-  requireOwnRecords,
-  returnPickedRemaindersForJob,
-  returnPickedRemaindersForOperation,
-  runMRP,
-  setPeopleAbsence,
-  setPeopleAbsenceRange,
-  setPeopleAssignmentHours,
-  setPeopleDay,
-  setPeopleOvertimeBulk,
-  settleNewSupplyPlanningActions,
-  spreadDueDates,
-  stampSupplierChoices,
-  startAssemblyPlan,
-  syncAssemblyInstructionToOperation,
-  syncAssemblyStepMaterialsFromMappings,
-  unassignPeopleWeek,
-  unreleaseJobOperationBatch,
-  updateAssemblyStepComponents,
-  updateJob,
-  updateJobOperationBatch,
-  updateJobStatus,
-  updatePlanningJob,
-  upsertAssemblyComponentMapping,
-  upsertAssemblyInstruction,
-  upsertJobMaterial,
-  upsertJobMaterialMakeMethod,
-  upsertJobMethod,
-  upsertJobOperation,
-  upsertPeopleAssignment,
-  upsertProductionEvent,
-  upsertProductionQuantity
-} from "./production.service";
+import type { JobStatus } from "./production.service";
+import * as service from "./production.service";
+import * as utils from "./production.utils";
 import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
 
 const logger = getLogger("erp", "production");
@@ -181,7 +109,7 @@ export const replanAfterItemChange = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { itemId }) {
-    const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
       type: "item",
       id: itemId,
       companyId: ctx.company.id,
@@ -238,7 +166,7 @@ export const planDraftJob = defineServiceFn({
       return ctx.error("conflict", "Only a Draft job can be planned.");
     }
 
-    const recalc = await recalculateJobRequirements(
+    const recalc = await service.recalculateJobRequirements(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { id: jobId, companyId, userId }
@@ -251,7 +179,7 @@ export const planDraftJob = defineServiceFn({
       );
     }
 
-    const flipped = await updateJobStatus(ctx.asCaller.supabase, {
+    const flipped = await service.updateJobStatus(ctx.asCaller.supabase, {
       id: jobId,
       companyId,
       status: "Planned",
@@ -265,7 +193,7 @@ export const planDraftJob = defineServiceFn({
       return ctx.error("conflict", "Only a Draft job can be planned.");
     }
 
-    const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
       type: "job",
       id: jobId,
       companyId,
@@ -325,7 +253,7 @@ export const releaseCheckedJobs = defineServiceFn({
     });
 
     for (const id of jobIds) {
-      const recalc = await recalculateJobRequirements(
+      const recalc = await service.recalculateJobRequirements(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         { id, companyId, userId }
@@ -342,7 +270,7 @@ export const releaseCheckedJobs = defineServiceFn({
 
       // A failed plan never blocks a release: the scheduled MRP run (every 3
       // hours) and Material Planning's Recalculate both repair it.
-      const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+      const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
         type: "job",
         id,
         companyId,
@@ -359,7 +287,7 @@ export const releaseCheckedJobs = defineServiceFn({
       // Only a job still waiting for release flips: the caller checked the
       // status before the recalculation and MRP above, and someone may have
       // cancelled or released it since.
-      const update = await updateJobStatus(ctx.asCaller.supabase, {
+      const update = await service.updateJobStatus(ctx.asCaller.supabase, {
         id,
         companyId,
         status: "Ready",
@@ -504,13 +432,13 @@ export const releaseJobs = defineServiceFn({
       })
       .sort((a, b) => a.jobId.localeCompare(b.jobId));
 
-    const stamped = await stampSupplierChoices(ctx, {
+    const stamped = await service.stampSupplierChoices(ctx, {
       jobIds: releasable.map((job) => job.id),
       choices: supplierProcessByOperationId
     });
     if (stamped) return stamped;
 
-    const readiness = await getJobReleaseReadiness(
+    const readiness = await service.getJobReleaseReadiness(
       client,
       releasable.map((job) => job.id),
       companyId
@@ -667,7 +595,7 @@ export const cancelJob = defineServiceFn({
       }
     }
 
-    const sweep = await returnPickedRemaindersForJob(
+    const sweep = await service.returnPickedRemaindersForJob(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { jobId, userId, companyId }
@@ -693,7 +621,7 @@ export const cancelJob = defineServiceFn({
       );
     }
 
-    const update = await updateJobStatus(ctx.asCaller.supabase, {
+    const update = await service.updateJobStatus(ctx.asCaller.supabase, {
       id: jobId,
       companyId,
       status: "Cancelled",
@@ -723,7 +651,7 @@ export const pauseJob = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { jobId }) {
-    return moveJobStatus(ctx, jobId, {
+    return service.moveJobStatus(ctx, jobId, {
       from: ["Ready", "In Progress"],
       to: "Paused",
       refusal: "Only a Ready or In Progress job can be paused"
@@ -751,7 +679,11 @@ export const resumeJob = defineServiceFn({
   async run(ctx, { jobId }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const job = await getJobToResume(ctx.asCaller.supabase, jobId, companyId);
+    const job = await service.getJobToResume(
+      ctx.asCaller.supabase,
+      jobId,
+      companyId
+    );
     if (job.error) {
       return ctx.error("internal", "Failed to read the job", job.error);
     }
@@ -778,7 +710,7 @@ export const resumeJob = defineServiceFn({
       }
     }
 
-    const recalc = await recalculateJobRequirements(
+    const recalc = await service.recalculateJobRequirements(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { id: jobId, companyId, userId }
@@ -790,7 +722,7 @@ export const resumeJob = defineServiceFn({
         error: recalc.error
       });
     }
-    const mrp = await runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+    const mrp = await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
       type: "job",
       id: jobId,
       companyId,
@@ -804,7 +736,7 @@ export const resumeJob = defineServiceFn({
       });
     }
 
-    return moveJobStatus(ctx, jobId, {
+    return service.moveJobStatus(ctx, jobId, {
       from: ["Paused"],
       to: "Ready",
       refusal: "Only a Paused job can be resumed"
@@ -850,7 +782,7 @@ export const reopenJob = defineServiceFn({
         "Only a Cancelled or Completed job can be reopened"
       );
     }
-    return moveJobStatus(ctx, jobId, {
+    return service.moveJobStatus(ctx, jobId, {
       from: [status],
       to: REOPENED_STATUS[status],
       refusal: "Only a Cancelled or Completed job can be reopened"
@@ -874,7 +806,7 @@ export const closeJob = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { jobId }) {
-    const closed = await moveJobStatus(ctx, jobId, {
+    const closed = await service.moveJobStatus(ctx, jobId, {
       from: ["Completed"],
       to: "Closed",
       refusal: "Only a Completed job can be closed"
@@ -961,7 +893,7 @@ export const completeJob = defineServiceFn({
 
     // After the RPC: its backflush must consume first. The sweep is
     // idempotent, so a failure is reported and can be re-run.
-    const sweep = await returnPickedRemaindersForJob(
+    const sweep = await service.returnPickedRemaindersForJob(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { jobId, userId, companyId }
@@ -1021,7 +953,7 @@ export const releaseBatchMemberJobs = defineServiceFn({
       .map((job) => job.id);
     if (toRelease.length === 0) return { releasedJobIds: [] as string[] };
 
-    const readiness = await getJobReleaseReadiness(
+    const readiness = await service.getJobReleaseReadiness(
       client,
       toRelease,
       companyId
@@ -1161,11 +1093,15 @@ export const releaseBatches = defineServiceFn({
         continue;
       }
 
-      const result = await releaseJobOperationBatch(client, ctx.asSystem.pg, {
-        batchId: batch.id,
-        companyId,
-        userId: ctx.auditUserId
-      });
+      const result = await service.releaseJobOperationBatch(
+        client,
+        ctx.asSystem.pg,
+        {
+          batchId: batch.id,
+          companyId,
+          userId: ctx.auditUserId
+        }
+      );
       if (result.error) {
         failed.push({
           ...ref,
@@ -1175,7 +1111,7 @@ export const releaseBatches = defineServiceFn({
       }
 
       // After the status flip is persisted: the wave must see the new state.
-      await notifyScheduleInputsChanged(
+      await service.notifyScheduleInputsChanged(
         companyId,
         "work-center",
         "batch released",
@@ -1322,7 +1258,7 @@ export const reorderScheduleOperations = defineServiceFn({
       (o) => o.workCenterId !== destination.id
     );
     if (workCenterChanged) {
-      await notifyScheduleInputsChanged(
+      await service.notifyScheduleInputsChanged(
         companyId,
         "work-center",
         "Operation reassigned to a different work center",
@@ -1376,7 +1312,7 @@ export const moveScheduleJob = defineServiceFn({
     }
 
     try {
-      await notifyScheduleInputsChanged(
+      await service.notifyScheduleInputsChanged(
         companyId,
         "reorder",
         "Schedule reordered"
@@ -1425,7 +1361,7 @@ export const createProductionEvent = defineServiceFn({
       return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
     }
 
-    const insert = await upsertProductionEvent(ctx.asCaller.supabase, {
+    const insert = await service.upsertProductionEvent(ctx.asCaller.supabase, {
       ...event,
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId
@@ -1439,7 +1375,7 @@ export const createProductionEvent = defineServiceFn({
     }
 
     const postingError = event.endTime
-      ? await postEndedEvent(ctx, insert.data.id)
+      ? await service.postEndedEvent(ctx, insert.data.id)
       : null;
     return { id: insert.data.id, postingError };
   }
@@ -1462,7 +1398,7 @@ export const updateProductionEvent = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, ...event }) {
-    const update = await upsertProductionEvent(ctx.asCaller.supabase, {
+    const update = await service.upsertProductionEvent(ctx.asCaller.supabase, {
       id,
       ...event,
       companyId: ctx.company.id,
@@ -1476,7 +1412,9 @@ export const updateProductionEvent = defineServiceFn({
       );
     }
 
-    const postingError = event.endTime ? await postEndedEvent(ctx, id) : null;
+    const postingError = event.endTime
+      ? await service.postEndedEvent(ctx, id)
+      : null;
     return { id, postingError };
   }
 });
@@ -1497,7 +1435,7 @@ export const deleteJobs = defineServiceFn({
   permission: { delete: "production" },
 
   async run(ctx, { ids }) {
-    const jobs = await readUnlockedJobs(ctx, ids);
+    const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
     const deleted = await ctx.asCaller.supabase
       .from("job")
@@ -1532,7 +1470,7 @@ export const setJobItem = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
     const client = ctx.asCaller.supabase;
-    const jobs = await readUnlockedJobs(ctx, ids);
+    const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
 
     const [item, manufacturing] = await Promise.all([
@@ -1593,7 +1531,7 @@ export const setJobItem = defineServiceFn({
     if (failed) return ctx.error("internal", failed.message, failed);
 
     for (const id of ids) {
-      const method = await upsertJobMethod(
+      const method = await service.upsertJobMethod(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         "itemToJob",
@@ -1638,7 +1576,7 @@ export const setJobDeadline = defineServiceFn({
   async run(ctx, { ids, dueDate, deadlineType }) {
     const companyId = ctx.company.id;
     const client = ctx.asCaller.supabase;
-    const jobs = await readUnlockedJobs(ctx, ids);
+    const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
 
     for (const id of ids) {
@@ -1654,7 +1592,7 @@ export const setJobDeadline = defineServiceFn({
       const newDueDate =
         dueDate !== undefined ? dueDate || null : current.data.dueDate;
       const newDeadlineType = deadlineType ?? current.data.deadlineType;
-      const priority = await calculateJobPriority(client, {
+      const priority = await service.calculateJobPriority(client, {
         jobId: id,
         dueDate: newDueDate,
         deadlineType: newDeadlineType,
@@ -1700,7 +1638,7 @@ export const setJobQuantity = defineServiceFn({
   async run(ctx, { ids, quantity, scrapQuantity }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const jobs = await readUnlockedJobs(ctx, ids);
+    const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
 
     const update = await ctx.asCaller.supabase
@@ -1718,7 +1656,7 @@ export const setJobQuantity = defineServiceFn({
     }
 
     for (const id of ids) {
-      const recalc = await recalculateJobRequirements(
+      const recalc = await service.recalculateJobRequirements(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         { id, companyId, userId }
@@ -1755,7 +1693,7 @@ export const setJobSalesOrderLine = defineServiceFn({
   async run(ctx, { ids, salesOrderLineId }) {
     const companyId = ctx.company.id;
     const client = ctx.asCaller.supabase;
-    const jobs = await readUnlockedJobs(ctx, ids);
+    const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
 
     let link = { salesOrderId: null, salesOrderLineId: null } as {
@@ -1825,7 +1763,7 @@ export const setJobFields = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { ids, ...fields }) {
-    const jobs = await readUnlockedJobs(ctx, ids);
+    const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
 
     const update = await ctx.asCaller.supabase
@@ -1878,11 +1816,11 @@ export const updateJobDetails = defineServiceFn({
   async run(ctx, { id, customFields, ...job }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const jobs = await readUnlockedJobs(ctx, [id]);
+    const jobs = await service.readUnlockedJobs(ctx, [id]);
     if (jobs instanceof CarbonError) return jobs;
     if (jobs.length === 0) return ctx.error("notFound", "Job not found");
 
-    const owned = await requireOwnRecords(ctx, [
+    const owned = await service.requireOwnRecords(ctx, [
       ["fixedAssetClass", job.fixedAssetClassId, "fixed asset class"],
       ["fixedAsset", job.fixedAssetId, "fixed asset"]
     ]);
@@ -1902,7 +1840,7 @@ export const updateJobDetails = defineServiceFn({
       if (itemError) return ctx.error("rule", itemError);
     }
 
-    const result = await updateJob(ctx.asCaller.supabase, {
+    const result = await service.updateJob(ctx.asCaller.supabase, {
       id,
       companyId,
       quantity: job.quantity,
@@ -1924,7 +1862,7 @@ export const updateJobDetails = defineServiceFn({
       return ctx.error("internal", "Failed to update job", result.error);
     }
 
-    const recalculate = await recalculateJobRequirements(
+    const recalculate = await service.recalculateJobRequirements(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { id, companyId, userId }
@@ -1984,7 +1922,7 @@ export const configureJob = defineServiceFn({
     if (job.error) return ctx.error("internal", "Failed to get job", job.error);
     if (!job.data) return ctx.error("notFound", "Job not found");
 
-    const method = await upsertJobMethod(
+    const method = await service.upsertJobMethod(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       "itemToJob",
@@ -2039,9 +1977,9 @@ export const createJobs = defineServiceFn({
       ...job
     } = input;
 
-    const configuration = parseConfiguration(configStr);
+    const configuration = service.parseConfiguration(configStr);
 
-    const owned = await requireOwnRecords(ctx, [
+    const owned = await service.requireOwnRecords(ctx, [
       ["item", job.itemId, "item"],
       ["location", job.locationId, "location"],
       ["customer", job.customerId, "customer"],
@@ -2051,7 +1989,11 @@ export const createJobs = defineServiceFn({
 
     const jobs = Math.ceil(totalQuantity / quantityPerJob);
     const quantityOfLastJob = totalQuantity - (jobs - 1) * quantityPerJob;
-    const dueDates = spreadDueDates(jobs, dueDateOfFirstJob, dueDateOfLastJob);
+    const dueDates = service.spreadDueDates(
+      jobs,
+      dueDateOfFirstJob,
+      dueDateOfLastJob
+    );
     const storageUnitId = await getDefaultStorageUnitForJob(
       ctx.asSystem.supabase,
       job.itemId,
@@ -2061,7 +2003,7 @@ export const createJobs = defineServiceFn({
 
     const jobIds: string[] = [];
     for (let i = 0; i < jobs; i++) {
-      const created = await insertJob(
+      const created = await service.insertJob(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         {
@@ -2110,11 +2052,11 @@ export const createJob = defineServiceFn({
   async run(ctx, { id: _id, configuration: configStr, ...job }) {
     const companyId = ctx.company.id;
 
-    const configuration = parseConfiguration(configStr);
+    const configuration = service.parseConfiguration(configStr);
 
     // insertJob runs as the system: every id the caller sent must be this
     // company's before it is written.
-    const owned = await requireOwnRecords(ctx, [
+    const owned = await service.requireOwnRecords(ctx, [
       ["item", job.itemId, "item"],
       ["location", job.locationId, "location"],
       ["customer", job.customerId, "customer"],
@@ -2151,7 +2093,7 @@ export const createJob = defineServiceFn({
       if (itemError) return ctx.error("rule", itemError);
     }
 
-    const created = await insertJob(
+    const created = await service.insertJob(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       {
@@ -2206,10 +2148,10 @@ export const copyMethodToJob = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { type, configuration, ...method }) {
-    const job = await requireJob(ctx, method.targetId);
+    const job = await service.requireJob(ctx, method.targetId);
     if (job instanceof CarbonError) return job;
 
-    const copied = await upsertJobMethod(
+    const copied = await service.upsertJobMethod(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       type === "item"
@@ -2232,7 +2174,7 @@ export const copyMethodToJob = defineServiceFn({
       );
     }
 
-    const recalculated = await recalculateJob(ctx, method.targetId);
+    const recalculated = await service.recalculateJob(ctx, method.targetId);
     if (recalculated) return recalculated;
     return { jobId: method.targetId };
   }
@@ -2259,7 +2201,7 @@ export const copyMethodToMaterial = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, method) {
-    const copied = await upsertJobMaterialMakeMethod(
+    const copied = await service.upsertJobMaterialMakeMethod(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { ...method, companyId: ctx.company.id, userId: ctx.auditUserId }
@@ -2323,7 +2265,7 @@ export const createJobMaterial = defineServiceFn({
         .eq("id", material.jobId)
         .eq("companyId", companyId)
         .maybeSingle(),
-      requireJobChildren(ctx, material.jobId, {
+      service.requireJobChildren(ctx, material.jobId, {
         jobMakeMethodId: material.jobMakeMethodId,
         jobOperationId: material.jobOperationId
       })
@@ -2333,7 +2275,7 @@ export const createJobMaterial = defineServiceFn({
     if (!job.data) return ctx.error("notFound", "Job not found");
     if (parents) return parents;
 
-    const insert = await upsertJobMaterial(system, {
+    const insert = await service.upsertJobMaterial(system, {
       ...material,
       companyId,
       createdBy: userId
@@ -2348,12 +2290,16 @@ export const createJobMaterial = defineServiceFn({
     const id = insert.data.id;
 
     if (material.methodType === "Make to Order") {
-      const pulled = await pullJobMaterialMakeMethod(system, ctx.asSystem.pg, {
-        jobMaterialId: id,
-        itemId: material.itemId,
-        companyId,
-        userId
-      });
+      const pulled = await service.pullJobMaterialMakeMethod(
+        system,
+        ctx.asSystem.pg,
+        {
+          jobMaterialId: id,
+          itemId: material.itemId,
+          companyId,
+          userId
+        }
+      );
       if (pulled.error) {
         return ctx.error(
           "internal",
@@ -2364,7 +2310,7 @@ export const createJobMaterial = defineServiceFn({
     }
 
     if (!["Draft", "Planned"].includes(job.data.status ?? "")) {
-      const recalculated = await recalculateMaterialMethod(ctx, {
+      const recalculated = await service.recalculateMaterialMethod(ctx, {
         jobId: material.jobId,
         jobMakeMethodId: material.jobMakeMethodId,
         dependencies: true
@@ -2405,7 +2351,7 @@ export const updateJobMaterial = defineServiceFn({
         .eq("jobMakeMethodId", material.jobMakeMethodId)
         .eq("companyId", companyId)
         .maybeSingle(),
-      requireJobChildren(ctx, material.jobId, {
+      service.requireJobChildren(ctx, material.jobId, {
         jobOperationId: material.jobOperationId
       })
     ]);
@@ -2420,7 +2366,7 @@ export const updateJobMaterial = defineServiceFn({
     if (parents) return parents;
     const wasMakeToOrder = existing.data.methodType === "Make to Order";
 
-    const update = await upsertJobMaterial(system, {
+    const update = await service.upsertJobMaterial(system, {
       ...material,
       id,
       companyId,
@@ -2436,12 +2382,16 @@ export const updateJobMaterial = defineServiceFn({
 
     const makeToOrder = material.methodType === "Make to Order";
     if (makeToOrder && !wasMakeToOrder) {
-      const pulled = await pullJobMaterialMakeMethod(system, ctx.asSystem.pg, {
-        jobMaterialId: id,
-        itemId: material.itemId,
-        companyId,
-        userId
-      });
+      const pulled = await service.pullJobMaterialMakeMethod(
+        system,
+        ctx.asSystem.pg,
+        {
+          jobMaterialId: id,
+          itemId: material.itemId,
+          companyId,
+          userId
+        }
+      );
       if (pulled.error) {
         return ctx.error(
           "internal",
@@ -2451,7 +2401,7 @@ export const updateJobMaterial = defineServiceFn({
       }
     }
 
-    const recalculated = await recalculateMaterialMethod(ctx, {
+    const recalculated = await service.recalculateMaterialMethod(ctx, {
       jobId: material.jobId,
       jobMakeMethodId: material.jobMakeMethodId,
       dependencies: makeToOrder && !!material.jobOperationId
@@ -2487,7 +2437,7 @@ export const deleteJobMaterial = defineServiceFn({
         deleted.error
       );
     }
-    const recalculated = await recalculateJob(ctx, jobId, {
+    const recalculated = await service.recalculateJob(ctx, jobId, {
       requirements: false
     });
     if (recalculated) return recalculated;
@@ -2512,14 +2462,14 @@ export const createJobOperation = defineServiceFn({
   permission: { create: "production" },
 
   async run(ctx, operation) {
-    const job = await requireJob(ctx, operation.jobId);
+    const job = await service.requireJob(ctx, operation.jobId);
     if (job instanceof CarbonError) return job;
-    const parents = await requireJobChildren(ctx, operation.jobId, {
+    const parents = await service.requireJobChildren(ctx, operation.jobId, {
       jobMakeMethodId: operation.jobMakeMethodId
     });
     if (parents) return parents;
 
-    const insert = await upsertJobOperation(
+    const insert = await service.upsertJobOperation(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       { ...operation, companyId: ctx.company.id, createdBy: ctx.auditUserId }
@@ -2532,7 +2482,7 @@ export const createJobOperation = defineServiceFn({
       );
     }
 
-    const recalculated = await recalculateMaterialMethod(ctx, {
+    const recalculated = await service.recalculateMaterialMethod(ctx, {
       jobId: operation.jobId,
       jobMakeMethodId: operation.jobMakeMethodId,
       dependencies: true
@@ -2560,7 +2510,7 @@ export const updateJobOperation = defineServiceFn({
   permission: { create: "production" },
 
   async run(ctx, operation) {
-    const update = await upsertJobOperation(
+    const update = await service.upsertJobOperation(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
       { ...operation, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
@@ -2619,7 +2569,7 @@ export const deleteJobOperation = defineServiceFn({
     if (deleted.error) {
       return ctx.error("internal", deleted.error.message, deleted.error);
     }
-    const recalculated = await recalculateJob(ctx, jobId, {
+    const recalculated = await service.recalculateJob(ctx, jobId, {
       requirements: false
     });
     if (recalculated) return recalculated;
@@ -2658,7 +2608,7 @@ export const reorderJobOperations = defineServiceFn({
     if (failed) {
       return ctx.error("internal", "Failed to update sort order", failed);
     }
-    const recalculated = await recalculateJob(ctx, jobId, {
+    const recalculated = await service.recalculateJob(ctx, jobId, {
       requirements: false
     });
     if (recalculated) {
@@ -2705,7 +2655,7 @@ export const setJobOperationStatus = defineServiceFn({
     if (!update.data) return ctx.error("notFound", "Operation not found");
 
     if (status === "Done") {
-      const sweep = await returnPickedRemaindersForOperation(
+      const sweep = await service.returnPickedRemaindersForOperation(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         {
@@ -2759,7 +2709,7 @@ export const setJobOperationDueDate = defineServiceFn({
     if (update.error) {
       return ctx.error("internal", "Failed to update due date", update.error);
     }
-    await notifyScheduleInputsChanged(
+    await service.notifyScheduleInputsChanged(
       ctx.company.id,
       "reorder",
       "Operation due date pinned"
@@ -2883,7 +2833,11 @@ export const mergeBatchOutputs = defineServiceFn({
       );
     }
 
-    const outputs = await getBatchOutputLots(client, batchId, companyId);
+    const outputs = await service.getBatchOutputLots(
+      client,
+      batchId,
+      companyId
+    );
     if (outputs.error) {
       return ctx.error(
         "internal",
@@ -2973,11 +2927,15 @@ export const createBatch = defineServiceFn({
       if (released.error) return released.error;
     }
 
-    const result = await createJobOperationBatch(client, ctx.asSystem.pg, {
-      ...batch,
-      companyId,
-      userId: ctx.auditUserId
-    });
+    const result = await service.createJobOperationBatch(
+      client,
+      ctx.asSystem.pg,
+      {
+        ...batch,
+        companyId,
+        userId: ctx.auditUserId
+      }
+    );
     if (result.error) {
       return ctx.error(
         "rule",
@@ -2988,7 +2946,7 @@ export const createBatch = defineServiceFn({
 
     if (batch.release) {
       // The batch was inserted Active: the wave places it as one unit.
-      await notifyScheduleInputsChanged(
+      await service.notifyScheduleInputsChanged(
         companyId,
         "work-center",
         "batch released at creation",
@@ -3025,7 +2983,7 @@ export const unreleaseBatch = defineServiceFn({
       .eq("id", batchId)
       .eq("companyId", companyId)
       .maybeSingle();
-    const unreleased = await unreleaseJobOperationBatch(
+    const unreleased = await service.unreleaseJobOperationBatch(
       client,
       ctx.asSystem.pg,
       { batchId, companyId, userId: ctx.auditUserId }
@@ -3039,7 +2997,7 @@ export const unreleaseBatch = defineServiceFn({
     }
 
     // After the status flip is persisted: the wave must see the new state.
-    await notifyScheduleInputsChanged(
+    await service.notifyScheduleInputsChanged(
       companyId,
       "work-center",
       "batch unreleased",
@@ -3071,7 +3029,7 @@ export const updateBatch = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { type, workCenterId, ...batch }) {
-    const result = await updateJobOperationBatch(
+    const result = await service.updateJobOperationBatch(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
       {
@@ -3111,7 +3069,7 @@ export const assignPerson = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, assignment) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [assignment.employeeId],
       location: [assignment.locationId],
       shift: [assignment.shiftId],
@@ -3119,16 +3077,19 @@ export const assignPerson = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await attempt(ctx, "Failed to assign people member", () =>
-      upsertPeopleAssignment(ctx.asSystem.pg, {
-        ...assignment,
-        companyId: ctx.company.id,
-        shiftId: assignment.shiftId || null,
-        createdBy: ctx.auditUserId
-      })
+    const written = await service.attempt(
+      ctx,
+      "Failed to assign people member",
+      () =>
+        service.upsertPeopleAssignment(ctx.asSystem.pg, {
+          ...assignment,
+          companyId: ctx.company.id,
+          shiftId: assignment.shiftId || null,
+          createdBy: ctx.auditUserId
+        })
     );
     if (written instanceof CarbonError) return written;
-    await notifyPeopleChange(ctx, "People assignment changed", [
+    await service.notifyPeopleChange(ctx, "People assignment changed", [
       assignment.workCenterId
     ]);
     return { employeeId: assignment.employeeId };
@@ -3148,7 +3109,7 @@ export const unassignPerson = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id }) {
-    const removed = await deletePeopleAssignment(
+    const removed = await service.deletePeopleAssignment(
       ctx.asCaller.supabase,
       id,
       ctx.company.id
@@ -3160,7 +3121,7 @@ export const unassignPerson = defineServiceFn({
         removed.error
       );
     }
-    await notifyPeopleChange(ctx, "People assignment removed", [
+    await service.notifyPeopleChange(ctx, "People assignment removed", [
       removed.data.workCenterId
     ]);
     return { id };
@@ -3181,13 +3142,13 @@ export const markPersonAbsent = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, absence) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [absence.employeeId],
       shift: [absence.shiftId]
     });
     if (refused) return refused;
 
-    const written = await setPeopleAbsence(ctx.asCaller.supabase, {
+    const written = await service.setPeopleAbsence(ctx.asCaller.supabase, {
       ...absence,
       companyId: ctx.company.id,
       shiftId: absence.shiftId || null,
@@ -3196,7 +3157,7 @@ export const markPersonAbsent = defineServiceFn({
     if (written.error) {
       return ctx.error("internal", "Failed to mark absent", written.error);
     }
-    await notifyForEmployeeDate(
+    await service.notifyForEmployeeDate(
       ctx,
       absence.employeeId,
       absence.date,
@@ -3220,7 +3181,7 @@ export const clearPersonAbsence = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, date }) {
-    const cleared = await clearPeopleAbsence(
+    const cleared = await service.clearPeopleAbsence(
       ctx.asCaller.supabase,
       id,
       ctx.company.id
@@ -3233,7 +3194,7 @@ export const clearPersonAbsence = defineServiceFn({
       datetime
         .today(await getCompanyTimeZone(ctx.asCaller.supabase, ctx.company.id))
         .toString();
-    await notifyForEmployeeDate(
+    await service.notifyForEmployeeDate(
       ctx,
       cleared.data.employeeId,
       day,
@@ -3257,20 +3218,20 @@ export const movePerson = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, workCenterId }) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       workCenter: [workCenterId]
     });
     if (refused) return refused;
 
-    const moved = await attempt(ctx, "Failed to move assignment", () =>
-      movePeopleAssignment(ctx.asSystem.pg, {
+    const moved = await service.attempt(ctx, "Failed to move assignment", () =>
+      service.movePeopleAssignment(ctx.asSystem.pg, {
         id,
         companyId: ctx.company.id,
         workCenterId
       })
     );
     if (moved instanceof CarbonError) return moved;
-    await notifyPeopleChange(ctx, "People assignment moved", [
+    await service.notifyPeopleChange(ctx, "People assignment moved", [
       moved.workCenterId,
       moved.previousWorkCenterId
     ]);
@@ -3294,7 +3255,7 @@ export const setPersonDay = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, day) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [day.employeeId],
       location: [day.locationId],
       shift: [day.shiftId],
@@ -3302,16 +3263,19 @@ export const setPersonDay = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await attempt(ctx, "Failed to save working hours", () =>
-      setPeopleDay(ctx.asSystem.pg, ctx.auditUserId, {
-        ...day,
-        companyId: ctx.company.id,
-        shiftId: day.shiftId || null,
-        note: day.note || null
-      })
+    const written = await service.attempt(
+      ctx,
+      "Failed to save working hours",
+      () =>
+        service.setPeopleDay(ctx.asSystem.pg, ctx.auditUserId, {
+          ...day,
+          companyId: ctx.company.id,
+          shiftId: day.shiftId || null,
+          note: day.note || null
+        })
     );
     if (written instanceof CarbonError) return written;
-    await notifyForEmployeeDate(
+    await service.notifyForEmployeeDate(
       ctx,
       day.employeeId,
       day.date,
@@ -3335,7 +3299,7 @@ export const setPersonHours = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, hours }) {
-    const result = await setPeopleAssignmentHours(
+    const result = await service.setPeopleAssignmentHours(
       ctx.asCaller.supabase,
       ctx.company.id,
       { id, hours: hours ?? null, updatedBy: ctx.auditUserId }
@@ -3343,7 +3307,7 @@ export const setPersonHours = defineServiceFn({
     if (result.error) {
       return ctx.error("internal", "Failed to set hours", result.error);
     }
-    await notifyPeopleChange(ctx, "People assignment hours changed", [
+    await service.notifyPeopleChange(ctx, "People assignment hours changed", [
       result.data.workCenterId
     ]);
     return { id };
@@ -3366,15 +3330,15 @@ export const setPeopleOvertime = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, overtime) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       department: [overtime.departmentId],
       location: [overtime.locationId],
       shift: [overtime.shiftId]
     });
     if (refused) return refused;
 
-    const rows = await attempt(ctx, "Failed to set overtime", () =>
-      setPeopleOvertimeBulk(ctx.asSystem.pg, {
+    const rows = await service.attempt(ctx, "Failed to set overtime", () =>
+      service.setPeopleOvertimeBulk(ctx.asSystem.pg, {
         ...overtime,
         companyId: ctx.company.id,
         toDate: overtime.toDate || null,
@@ -3384,7 +3348,7 @@ export const setPeopleOvertime = defineServiceFn({
       })
     );
     if (rows instanceof CarbonError) return rows;
-    await notifyPeopleChange(
+    await service.notifyPeopleChange(
       ctx,
       "People overtime changed",
       rows.map((row) => row.workCenterId)
@@ -3407,22 +3371,28 @@ export const copyPeopleDay = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, copy) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       location: [copy.locationId],
       shift: [copy.shiftId]
     });
     if (refused) return refused;
 
-    const result = await attempt(ctx, "Failed to copy people board", () =>
-      copyPeopleBoard(ctx.asSystem.pg, {
-        ...copy,
-        companyId: ctx.company.id,
-        shiftId: copy.shiftId || null,
-        createdBy: ctx.auditUserId
-      })
+    const result = await service.attempt(
+      ctx,
+      "Failed to copy people board",
+      () =>
+        service.copyPeopleBoard(ctx.asSystem.pg, {
+          ...copy,
+          companyId: ctx.company.id,
+          shiftId: copy.shiftId || null,
+          createdBy: ctx.auditUserId
+        })
     );
     if (result instanceof CarbonError) return result;
-    await notifyPeopleChange(ctx, "People board copied from previous day");
+    await service.notifyPeopleChange(
+      ctx,
+      "People board copied from previous day"
+    );
     return result;
   }
 });
@@ -3441,7 +3411,7 @@ export const assignPersonWeek = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, week) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [week.employeeId],
       location: [week.locationId],
       shift: [week.shiftId],
@@ -3449,15 +3419,15 @@ export const assignPersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await attempt(ctx, "Failed to assign week", () =>
-      assignPeopleWeek(ctx.asSystem.pg, ctx.auditUserId, {
+    const written = await service.attempt(ctx, "Failed to assign week", () =>
+      service.assignPeopleWeek(ctx.asSystem.pg, ctx.auditUserId, {
         ...week,
         companyId: ctx.company.id,
         shiftId: week.shiftId || null
       })
     );
     if (written instanceof CarbonError) return written;
-    await notifyPeopleChange(ctx, "People week assignment", [
+    await service.notifyPeopleChange(ctx, "People week assignment", [
       week.workCenterId
     ]);
     return { employeeId: week.employeeId };
@@ -3477,22 +3447,22 @@ export const unassignPersonWeek = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, week) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [week.employeeId],
       shift: [week.shiftId],
       workCenter: [week.workCenterId]
     });
     if (refused) return refused;
 
-    const written = await attempt(ctx, "Failed to unassign week", () =>
-      unassignPeopleWeek(ctx.asSystem.pg, {
+    const written = await service.attempt(ctx, "Failed to unassign week", () =>
+      service.unassignPeopleWeek(ctx.asSystem.pg, {
         ...week,
         companyId: ctx.company.id,
         shiftId: week.shiftId || null
       })
     );
     if (written instanceof CarbonError) return written;
-    await notifyPeopleChange(ctx, "People week unassignment", [
+    await service.notifyPeopleChange(ctx, "People week unassignment", [
       week.workCenterId
     ]);
     return { employeeId: week.employeeId };
@@ -3512,22 +3482,24 @@ export const movePersonWeek = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, week) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [week.employeeId],
       shift: [week.shiftId],
       workCenter: [week.workCenterId, week.fromWorkCenterId]
     });
     if (refused) return refused;
 
-    const written = await attempt(ctx, "Failed to move week", () =>
-      movePeopleWeek(ctx.asSystem.pg, {
+    const written = await service.attempt(ctx, "Failed to move week", () =>
+      service.movePeopleWeek(ctx.asSystem.pg, {
         ...week,
         companyId: ctx.company.id,
         shiftId: week.shiftId || null
       })
     );
     if (written instanceof CarbonError) return written;
-    await notifyPeopleChange(ctx, "People week move", [week.workCenterId]);
+    await service.notifyPeopleChange(ctx, "People week move", [
+      week.workCenterId
+    ]);
     return { employeeId: week.employeeId };
   }
 });
@@ -3546,22 +3518,28 @@ export const copyPeopleWeekBoard = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, copy) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       location: [copy.locationId],
       shift: [copy.shiftId]
     });
     if (refused) return refused;
 
-    const result = await attempt(ctx, "Failed to copy people week", () =>
-      copyPeopleWeek(ctx.asSystem.pg, {
-        ...copy,
-        companyId: ctx.company.id,
-        shiftId: copy.shiftId || null,
-        createdBy: ctx.auditUserId
-      })
+    const result = await service.attempt(
+      ctx,
+      "Failed to copy people week",
+      () =>
+        service.copyPeopleWeek(ctx.asSystem.pg, {
+          ...copy,
+          companyId: ctx.company.id,
+          shiftId: copy.shiftId || null,
+          createdBy: ctx.auditUserId
+        })
     );
     if (result instanceof CarbonError) return result;
-    await notifyPeopleChange(ctx, "People week copied from previous week");
+    await service.notifyPeopleChange(
+      ctx,
+      "People week copied from previous week"
+    );
     return result;
   }
 });
@@ -3580,21 +3558,24 @@ export const markPersonAbsentRange = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, range) {
-    const refused = await requireBoardReferences(ctx, {
+    const refused = await service.requireBoardReferences(ctx, {
       employee: [range.employeeId],
       shift: [range.shiftId]
     });
     if (refused) return refused;
 
-    const result = await attempt(ctx, "Failed to set absence range", () =>
-      setPeopleAbsenceRange(ctx.asSystem.pg, ctx.auditUserId, {
-        ...range,
-        companyId: ctx.company.id,
-        shiftId: range.shiftId || null
-      })
+    const result = await service.attempt(
+      ctx,
+      "Failed to set absence range",
+      () =>
+        service.setPeopleAbsenceRange(ctx.asSystem.pg, ctx.auditUserId, {
+          ...range,
+          companyId: ctx.company.id,
+          shiftId: range.shiftId || null
+        })
     );
     if (result instanceof CarbonError) return result;
-    await notifyPeopleChange(ctx, "People absence range set");
+    await service.notifyPeopleChange(ctx, "People absence range set");
     return result;
   }
 });
@@ -3734,7 +3715,7 @@ export const orderPlannedJobs = defineServiceFn({
 
       let itemProcessed = false;
       for (const order of item.orders) {
-        const created = await insertJob(
+        const created = await service.insertJob(
           client,
           db,
           {
@@ -3761,7 +3742,7 @@ export const orderPlannedJobs = defineServiceFn({
         }
         const id = created.data.id;
 
-        const method = await upsertJobMethod(client, db, "itemToJob", {
+        const method = await service.upsertJobMethod(client, db, "itemToJob", {
           sourceId: item.id,
           targetId: id,
           companyId,
@@ -3797,7 +3778,7 @@ export const orderPlannedJobs = defineServiceFn({
     }
     for (const error of errors) logger.error(error, { companyId, locationId });
 
-    const settled = await settleNewSupplyPlanningActions(db, {
+    const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
       userId,
@@ -3828,7 +3809,7 @@ export const orderPlannedJobs = defineServiceFn({
     }
 
     for (const job of createdJobs) {
-      const recalc = await recalculateJobRequirements(client, db, {
+      const recalc = await service.recalculateJobRequirements(client, db, {
         id: job.id,
         companyId,
         userId
@@ -3916,13 +3897,13 @@ export const updatePlannedJob = defineServiceFn({
   async run(ctx, { locationId, job }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const target = await readPlanningJob(ctx, job.id, locationId);
+    const target = await service.readPlanningJob(ctx, job.id, locationId);
     if (target instanceof CarbonError) return target;
     if (!isJobEditableFromPlanning(target.status)) {
       return ctx.error("conflict", notEditableFromPlanning);
     }
 
-    const saved = await updatePlanningJob(ctx.asSystem.supabase, {
+    const saved = await service.updatePlanningJob(ctx.asSystem.supabase, {
       id: target.id,
       companyId,
       updatedBy: userId,
@@ -3938,7 +3919,7 @@ export const updatePlannedJob = defineServiceFn({
 
     // Saved from here on: a failure below is a warning on a saved edit.
     if (job.field === "quantity") {
-      const recalc = await recalculateJobRequirements(
+      const recalc = await service.recalculateJobRequirements(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         { id: target.id, companyId, userId }
@@ -3958,7 +3939,7 @@ export const updatePlannedJob = defineServiceFn({
       return { id: target.id, warning: null };
     }
 
-    const notified = await notifyPlanningScheduleChange(
+    const notified = await service.notifyPlanningScheduleChange(
       ctx,
       "Planning changed a job's due date",
       target.id
@@ -3987,7 +3968,7 @@ export const planJobFromPlanning = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { locationId, jobId }) {
-    const target = await readPlanningJob(ctx, jobId, locationId);
+    const target = await service.readPlanningJob(ctx, jobId, locationId);
     if (target instanceof CarbonError) return target;
     if (target.salesOrderId || target.salesOrderLineId) {
       return ctx.error(
@@ -4010,7 +3991,7 @@ const planningActionIdsInput = z
   .transform((ids) => [...new Set(ids)]);
 
 type PlanningActionRow = NonNullable<
-  Awaited<ReturnType<typeof getPlanningActionsByIds>>["data"]
+  Awaited<ReturnType<typeof service.getPlanningActionsByIds>>["data"]
 >[number];
 
 const CHANGE_ACTION_TYPES = [
@@ -4060,7 +4041,7 @@ export const applyPlanningActions = defineServiceFn({
     // A claim that is not given back leaves the action Actioned with nothing
     // applied, so a failed release is reported, never swallowed.
     const releaseClaim = async (planningActionId: string) => {
-      const released = await releasePlanningActionClaim(client, {
+      const released = await service.releasePlanningActionClaim(client, {
         id: planningActionId,
         companyId,
         userId
@@ -4077,7 +4058,7 @@ export const applyPlanningActions = defineServiceFn({
       }
     };
 
-    const actionRows = await getPlanningActionsByIds(db, {
+    const actionRows = await service.getPlanningActionsByIds(db, {
       ids: planningActionIds,
       companyId
     });
@@ -4124,7 +4105,7 @@ export const applyPlanningActions = defineServiceFn({
 
     // One statement: the id list is a parameter, never a PostgREST URL.
     const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
-    const jobs = await attempt(
+    const jobs = await service.attempt(
       ctx,
       "Failed to read the planning actions' jobs",
       async () =>
@@ -4166,10 +4147,10 @@ export const applyPlanningActions = defineServiceFn({
     );
     if (dateActions.length > 0) {
       let outcome: Awaited<
-        ReturnType<typeof applyProductionPlanningDateActions>
+        ReturnType<typeof service.applyProductionPlanningDateActions>
       >;
       try {
-        outcome = await applyProductionPlanningDateActions(db, {
+        outcome = await service.applyProductionPlanningDateActions(db, {
           companyId,
           userId,
           actions: dateActions.map(({ planningActionId, row }) => ({
@@ -4191,7 +4172,7 @@ export const applyPlanningActions = defineServiceFn({
         errors.push(`Planning action ${id} was already applied`);
       }
       if (outcome.applied.length > 0) {
-        const notified = await notifyPlanningScheduleChange(
+        const notified = await service.notifyPlanningScheduleChange(
           ctx,
           `Planning rescheduled ${outcome.applied.length} job(s)`
         );
@@ -4207,7 +4188,7 @@ export const applyPlanningActions = defineServiceFn({
     // here strands at most the actions in flight, which the next MRP run
     // re-emits as fresh Open actions. Resolves to the claimed suggestion.
     const claim = async (planningActionId: string) => {
-      const claimed = await markPlanningActionsActioned(db, {
+      const claimed = await service.markPlanningActionsActioned(db, {
         ids: [planningActionId],
         companyId,
         userId
@@ -4274,7 +4255,7 @@ export const applyPlanningActions = defineServiceFn({
               continue;
             }
           } else {
-            const update = await updatePlanningJob(client, {
+            const update = await service.updatePlanningJob(client, {
               id: jobId,
               companyId,
               updatedBy: userId,
@@ -4295,11 +4276,15 @@ export const applyPlanningActions = defineServiceFn({
               requiresManualAction.push({ id: planningActionId, jobId });
               continue;
             }
-            const recalc = await recalculateJobRequirements(client, db, {
-              id: jobId,
-              companyId,
-              userId
-            });
+            const recalc = await service.recalculateJobRequirements(
+              client,
+              db,
+              {
+                id: jobId,
+                companyId,
+                userId
+              }
+            );
             if (recalc.error) {
               // The quantity change stands, and the action stays Actioned.
               logger.error(
@@ -4334,13 +4319,13 @@ export const dismissProductionPlanningActions = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { planningActionIds }) {
-    const result = await dismissPlanningActions(ctx.asSystem.pg, {
+    const result = await service.dismissPlanningActions(ctx.asSystem.pg, {
       ids: planningActionIds,
       companyId: ctx.company.id,
       userId: ctx.auditUserId,
       kind: "Make"
     });
-    return changedPlanningActions(
+    return service.changedPlanningActions(
       ctx,
       result,
       planningActionIds.length,
@@ -4362,13 +4347,16 @@ export const reopenProductionPlanningActions = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { planningActionIds }) {
-    const result = await reopenDismissedPlanningActions(ctx.asSystem.pg, {
-      ids: planningActionIds,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      kind: "Make"
-    });
-    return changedPlanningActions(
+    const result = await service.reopenDismissedPlanningActions(
+      ctx.asSystem.pg,
+      {
+        ids: planningActionIds,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        kind: "Make"
+      }
+    );
+    return service.changedPlanningActions(
       ctx,
       result,
       planningActionIds.length,
@@ -4405,14 +4393,14 @@ export const assignProductionPlanningActions = defineServiceFn({
     ) {
       return ctx.error("validation", "Choose an employee of this company");
     }
-    const result = await assignPlanningActions(ctx.asSystem.pg, {
+    const result = await service.assignPlanningActions(ctx.asSystem.pg, {
       ids: planningActionIds,
       companyId: ctx.company.id,
       assignee: assignee || null,
       userId: ctx.auditUserId,
       kind: "Make"
     });
-    return changedPlanningActions(
+    return service.changedPlanningActions(
       ctx,
       result,
       planningActionIds.length,
@@ -4459,11 +4447,14 @@ export const createProductionQuantity = defineServiceFn({
 
     const scrapReasonId =
       quantity.type === "Scrap" ? quantity.scrapReasonId : undefined;
-    const insert = await upsertProductionQuantity(ctx.asCaller.supabase, {
-      ...quantity,
-      scrapReasonId,
-      companyId
-    });
+    const insert = await service.upsertProductionQuantity(
+      ctx.asCaller.supabase,
+      {
+        ...quantity,
+        scrapReasonId,
+        companyId
+      }
+    );
     if (insert.error || !insert.data?.id) {
       return ctx.error(
         "internal",
@@ -4507,14 +4498,17 @@ export const updateProductionQuantity = defineServiceFn({
   permission: { update: "accounting" },
 
   async run(ctx, { id, ...quantity }) {
-    const update = await upsertProductionQuantity(ctx.asCaller.supabase, {
-      ...quantity,
-      id,
-      scrapReasonId:
-        quantity.type === "Scrap" ? quantity.scrapReasonId : undefined,
-      companyId: ctx.company.id,
-      updatedBy: ctx.auditUserId
-    });
+    const update = await service.upsertProductionQuantity(
+      ctx.asCaller.supabase,
+      {
+        ...quantity,
+        id,
+        scrapReasonId:
+          quantity.type === "Scrap" ? quantity.scrapReasonId : undefined,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (update.error) {
       return ctx.error(
         "internal",
@@ -4605,7 +4599,7 @@ export const createAssemblyInstruction = defineServiceFn({
       }
     }
 
-    const derived = await getModelForItem(client, itemId, companyId);
+    const derived = await service.getModelForItem(client, itemId, companyId);
     if (!derived.item) {
       return ctx.error("notFound", "Failed to load the selected item");
     }
@@ -4624,12 +4618,12 @@ export const createAssemblyInstruction = defineServiceFn({
     // while the geometry service is down: refuse rather than strand a record.
     const needsConversion =
       modelState === "convertible" || modelState === "failed";
-    const assemblerHealthy = await isAssemblerServiceHealthy();
+    const assemblerHealthy = await service.isAssemblerServiceHealthy();
     if (needsConversion && !assemblerHealthy) {
-      return geometryServiceDown(ctx, "model conversion");
+      return service.geometryServiceDown(ctx, "model conversion");
     }
 
-    const create = await upsertAssemblyInstruction(client, {
+    const create = await service.upsertAssemblyInstruction(client, {
       name: derived.item.name || "Assembly",
       modelUploadId: model.id,
       itemId,
@@ -4654,14 +4648,14 @@ export const createAssemblyInstruction = defineServiceFn({
     } else if (modelState === "converted" && assemblerHealthy) {
       // A model converted before this instruction existed may have no plan
       // yet: start it, so it is ready by the time the steps are generated.
-      const planJob = await getLatestAssemblyPlanJob(client, model.id);
+      const planJob = await service.getLatestAssemblyPlanJob(client, model.id);
       const planStatus = planJob.data?.status;
       if (
         planStatus !== "Success" &&
         planStatus !== "Processing" &&
         planStatus !== "Queued"
       ) {
-        await startAssemblyPlan(ctx, model.id);
+        await service.startAssemblyPlan(ctx, model.id);
       }
     }
 
@@ -4689,7 +4683,7 @@ export const replanAssembly = defineServiceFn({
   async run(ctx, { id, fresh }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const instruction = await readInstructionModel(ctx, id);
+    const instruction = await service.readInstructionModel(ctx, id);
     if (instruction instanceof CarbonError) return instruction;
     const { modelUploadId } = instruction;
 
@@ -4699,11 +4693,14 @@ export const replanAssembly = defineServiceFn({
         "The model must finish converting before planning"
       );
     }
-    if (!(await isAssemblerServiceHealthy())) {
-      return geometryServiceDown(ctx, "motion planning");
+    if (!(await service.isAssemblerServiceHealthy())) {
+      return service.geometryServiceDown(ctx, "motion planning");
     }
 
-    const planJob = await getLatestAssemblyPlanJob(client, modelUploadId);
+    const planJob = await service.getLatestAssemblyPlanJob(
+      client,
+      modelUploadId
+    );
     if (isAssemblyPlanRunning(planJob.data)) {
       return ctx.error("conflict", "Motion planning is already running");
     }
@@ -4754,7 +4751,7 @@ export const replanAssembly = defineServiceFn({
     // `fresh` re-derives the auto-detected units too (the worker omits them
     // for this run); step generation swaps their rows once the plan lands.
     const keepsOrder = !fresh && steps > 0;
-    await startAssemblyPlan(ctx, modelUploadId, {
+    await service.startAssemblyPlan(ctx, modelUploadId, {
       ...(keepsOrder ? { reMotionFor: id } : {}),
       ...(fresh ? { reDetectUnits: true } : {})
     });
@@ -4788,12 +4785,15 @@ export const generateAssemblySteps = defineServiceFn({
     // The service role: the auto-detected units it materializes need create
     // and delete under RLS, which an update-authorized caller may lack. Every
     // read and write is scoped to the company.
-    const result = await generateAssemblyStepsFromPlan(ctx.asSystem.supabase, {
-      assemblyInstructionId: id,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId,
-      mode
-    });
+    const result = await service.generateAssemblyStepsFromPlan(
+      ctx.asSystem.supabase,
+      {
+        assemblyInstructionId: id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        mode
+      }
+    );
     if (result.ok) {
       return {
         planning: false,
@@ -4803,8 +4803,8 @@ export const generateAssemblySteps = defineServiceFn({
     }
 
     if (result.reason === "no-plan" && result.modelUploadId) {
-      if (!(await isAssemblerServiceHealthy())) {
-        return geometryServiceDown(ctx, "motion planning");
+      if (!(await service.isAssemblerServiceHealthy())) {
+        return service.geometryServiceDown(ctx, "motion planning");
       }
       const [model, planJob] = await Promise.all([
         ctx.asSystem.supabase
@@ -4813,13 +4813,16 @@ export const generateAssemblySteps = defineServiceFn({
           .eq("id", result.modelUploadId)
           .eq("companyId", ctx.company.id)
           .maybeSingle(),
-        getLatestAssemblyPlanJob(ctx.asSystem.supabase, result.modelUploadId)
+        service.getLatestAssemblyPlanJob(
+          ctx.asSystem.supabase,
+          result.modelUploadId
+        )
       ]);
       const isConverting =
         model.data?.processingStatus === "Queued" ||
         model.data?.processingStatus === "Processing";
       if (!isConverting && !isAssemblyPlanRunning(planJob.data)) {
-        await startAssemblyPlan(ctx, result.modelUploadId);
+        await service.startAssemblyPlan(ctx, result.modelUploadId);
       }
       return { planning: true, created: 0, unmappedComponentCount: 0 };
     }
@@ -4855,7 +4858,7 @@ export const cancelAssemblyJob = defineServiceFn({
   async run(ctx, { id, kind }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const instruction = await readInstructionModel(ctx, id);
+    const instruction = await service.readInstructionModel(ctx, id);
     if (instruction instanceof CarbonError) return instruction;
     const { modelUploadId } = instruction;
 
@@ -4915,9 +4918,9 @@ export const reconvertAssemblyModel = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id }) {
-    const instruction = await readInstructionModel(ctx, id);
+    const instruction = await service.readInstructionModel(ctx, id);
     if (instruction instanceof CarbonError) return instruction;
-    const invalidated = await invalidateAssemblyModelCache(
+    const invalidated = await service.invalidateAssemblyModelCache(
       ctx.asCaller.supabase,
       instruction.modelUploadId
     );
@@ -4953,7 +4956,7 @@ export const convertAssemblyModel = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id }) {
-    const instruction = await readInstructionModel(ctx, id);
+    const instruction = await service.readInstructionModel(ctx, id);
     if (instruction instanceof CarbonError) return instruction;
     if (!instruction.modelUpload) {
       return ctx.error("notFound", "Could not find the instruction's model");
@@ -4969,8 +4972,8 @@ export const convertAssemblyModel = defineServiceFn({
             : "This model cannot be converted (only STEP files are supported)"
       );
     }
-    if (!(await isAssemblerServiceHealthy())) {
-      return geometryServiceDown(ctx, "model conversion");
+    if (!(await service.isAssemblerServiceHealthy())) {
+      return service.geometryServiceDown(ctx, "model conversion");
     }
     await trigger("assembly-convert", {
       companyId: ctx.company.id,
@@ -5003,12 +5006,12 @@ export const matchAssemblyBom = defineServiceFn({
       companyId: ctx.company.id,
       userId: ctx.auditUserId
     };
-    const result = await autoMatchAssemblyComponents(
+    const result = await service.autoMatchAssemblyComponents(
       ctx.asCaller.supabase,
       args
     );
     if ("error" in result) return ctx.error("rule", result.error);
-    const materials = await syncAssemblyStepMaterialsFromMappings(
+    const materials = await service.syncAssemblyStepMaterialsFromMappings(
       ctx.asCaller.supabase,
       args
     );
@@ -5035,23 +5038,26 @@ export const mapAssemblyComponent = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, modelUploadId, geometryHash, itemId }) {
-    const owned = await requireOwnRecords(ctx, [
+    const owned = await service.requireOwnRecords(ctx, [
       ["modelUpload", modelUploadId, "model"],
       ["item", itemId, "item"]
     ]);
     if (owned) return owned;
-    const upsert = await upsertAssemblyComponentMapping(ctx.asCaller.supabase, {
-      modelUploadId,
-      geometryHash,
-      itemId,
-      confidence: "high",
-      companyId: ctx.company.id,
-      createdBy: ctx.auditUserId
-    });
+    const upsert = await service.upsertAssemblyComponentMapping(
+      ctx.asCaller.supabase,
+      {
+        modelUploadId,
+        geometryHash,
+        itemId,
+        confidence: "high",
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      }
+    );
     if (upsert.error) {
       return ctx.error("internal", "Failed to map part", upsert.error);
     }
-    await syncAssemblyStepMaterialsFromMappings(ctx.asCaller.supabase, {
+    await service.syncAssemblyStepMaterialsFromMappings(ctx.asCaller.supabase, {
       assemblyInstructionId: id,
       companyId: ctx.company.id,
       userId: ctx.auditUserId,
@@ -5077,25 +5083,31 @@ export const reassignAssemblyComponents = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, targetStepId, componentNodeIds, mode }) {
-    const moved = await attempt(ctx, "Failed to assign components", () =>
-      reassignAssemblyStepComponents(ctx.asSystem.pg, {
-        assemblyInstructionId: id,
-        companyId: ctx.company.id,
-        targetStepId,
-        componentNodeIds,
-        mode,
-        updatedBy: ctx.auditUserId
-      })
+    const moved = await service.attempt(
+      ctx,
+      "Failed to assign components",
+      () =>
+        service.reassignAssemblyStepComponents(ctx.asSystem.pg, {
+          assemblyInstructionId: id,
+          companyId: ctx.company.id,
+          targetStepId,
+          componentNodeIds,
+          mode,
+          updatedBy: ctx.auditUserId
+        })
     );
     if (moved instanceof CarbonError) return moved;
     if (targetStepId) {
-      await syncAssemblyStepMaterialsFromMappings(ctx.asCaller.supabase, {
-        assemblyInstructionId: id,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId,
-        stepIds: [targetStepId],
-        onlyComponentNodeIds: componentNodeIds
-      });
+      await service.syncAssemblyStepMaterialsFromMappings(
+        ctx.asCaller.supabase,
+        {
+          assemblyInstructionId: id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          stepIds: [targetStepId],
+          onlyComponentNodeIds: componentNodeIds
+        }
+      );
     }
     return { id };
   }
@@ -5132,7 +5144,7 @@ export const setAssemblyStepComponents = defineServiceFn({
     }
     if (!previous.data) return ctx.error("notFound", "Step not found");
 
-    const update = await updateAssemblyStepComponents(client, {
+    const update = await service.updateAssemblyStepComponents(client, {
       id: stepId,
       componentNodeIds,
       updatedBy: ctx.auditUserId
@@ -5144,7 +5156,7 @@ export const setAssemblyStepComponents = defineServiceFn({
     const before = new Set(previous.data.componentNodeIds ?? []);
     const added = componentNodeIds.filter((nodeId) => !before.has(nodeId));
     if (added.length > 0) {
-      await syncAssemblyStepMaterialsFromMappings(client, {
+      await service.syncAssemblyStepMaterialsFromMappings(client, {
         assemblyInstructionId: id,
         companyId: ctx.company.id,
         userId: ctx.auditUserId,
@@ -5189,7 +5201,7 @@ export const syncAssemblyToOperation = defineServiceFn({
       );
     }
     try {
-      return await syncAssemblyInstructionToOperation(ctx.asSystem.pg, {
+      return await service.syncAssemblyInstructionToOperation(ctx.asSystem.pg, {
         assemblyInstructionId: id,
         operationId,
         companyId: ctx.company.id,
@@ -5202,5 +5214,4786 @@ export const syncAssemblyToOperation = defineServiceFn({
         err
       );
     }
+  }
+});
+/**
+ * Convert sales order lines to jobs
+ *
+ * @mcp
+ */
+export const convertSalesOrderLinesToJobs = defineServiceFn({
+  input: z.looseObject({ orderId: z.string() }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.convertSalesOrderLinesToJobs(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete job operation step
+ *
+ * @mcp destructive
+ */
+export const deleteJobOperationStep = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteJobOperationStep(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete job operation step slide
+ *
+ * @mcp destructive
+ */
+export const deleteJobOperationStepSlide = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteJobOperationStepSlide(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete job operation parameter
+ *
+ * @mcp destructive
+ */
+export const deleteJobOperationParameter = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteJobOperationParameter(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete job operation tool
+ *
+ * @mcp destructive
+ */
+export const deleteJobOperationTool = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteJobOperationTool(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete procedure
+ *
+ * @mcp destructive
+ */
+export const deleteProcedure = defineServiceFn({
+  input: z.looseObject({ procedureId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteProcedure(
+        ctx.asCaller.supabase,
+        input.procedureId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete procedure step
+ *
+ * @mcp destructive
+ */
+export const deleteProcedureStep = defineServiceFn({
+  input: z.looseObject({ procedureStepId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteProcedureStep(
+        ctx.asCaller.supabase,
+        input.procedureStepId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete procedure parameter
+ *
+ * @mcp destructive
+ */
+export const deleteProcedureParameter = defineServiceFn({
+  input: z.looseObject({ procedureParameterId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteProcedureParameter(
+        ctx.asCaller.supabase,
+        input.procedureParameterId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete production event
+ *
+ * @mcp destructive
+ */
+export const deleteProductionEvent = defineServiceFn({
+  input: z.looseObject({ productionEventId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteProductionEvent(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.productionEventId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Delete production quantity
+ *
+ * @mcp destructive
+ */
+export const deleteProductionQuantity = defineServiceFn({
+  input: z.looseObject({ productionQuantityId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteProductionQuantity(
+        ctx.asCaller.supabase,
+        input.productionQuantityId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get active job operation by job id
+ *
+ * @mcp read
+ */
+export const getActiveJobOperationByJobId = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getActiveJobOperationByJobId(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get active job operations by location
+ *
+ * @mcp read
+ */
+export const getActiveJobOperationsByLocation = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    workCenterIds: z.array(z.string()).optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getActiveJobOperationsByLocation(
+        ctx.asCaller.supabase,
+        input.locationId as never,
+        stamp(ctx, input.workCenterIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get jobs by date range
+ *
+ * @mcp read
+ */
+export const getJobsByDateRange = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    startDate: z.string(),
+    endDate: z.string()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobsByDateRange(
+        ctx.asCaller.supabase,
+        input.locationId as never,
+        input.startDate as never,
+        input.endDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get unscheduled jobs
+ *
+ * @mcp read
+ */
+export const getUnscheduledJobs = defineServiceFn({
+  input: z.looseObject({ locationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getUnscheduledJobs(
+        ctx.asCaller.supabase,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get active production events
+ *
+ * @mcp read
+ */
+export const getActiveProductionEvents = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getActiveProductionEvents(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Delete scrap reason
+ *
+ * @mcp destructive
+ */
+export const deleteScrapReason = defineServiceFn({
+  input: z.looseObject({ scrapReasonId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteScrapReason(
+        ctx.asCaller.supabase,
+        input.scrapReasonId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete failure mode
+ *
+ * @mcp destructive
+ */
+export const deleteFailureMode = defineServiceFn({
+  input: z.looseObject({ failureModeId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteFailureMode(
+        ctx.asCaller.supabase,
+        input.failureModeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete maintenance dispatch
+ *
+ * @mcp destructive
+ */
+export const deleteMaintenanceDispatch = defineServiceFn({
+  input: z.looseObject({ dispatchId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaintenanceDispatch(
+        ctx.asCaller.supabase,
+        input.dispatchId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete maintenance dispatch event
+ *
+ * @mcp destructive
+ */
+export const deleteMaintenanceDispatchEvent = defineServiceFn({
+  input: z.looseObject({ eventId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaintenanceDispatchEvent(
+        ctx.asCaller.supabase,
+        input.eventId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete maintenance schedule
+ *
+ * @mcp destructive
+ */
+export const deleteMaintenanceSchedule = defineServiceFn({
+  input: z.looseObject({ scheduleId: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteMaintenanceSchedule(
+        ctx.asCaller.supabase,
+        input.scheduleId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get demand projections
+ *
+ * @mcp read
+ */
+export const getDemandProjections = defineServiceFn({
+  input: z.looseObject({
+    itemId: z.string(),
+    locationId: z.string(),
+    periodIds: z.array(z.string())
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDemandProjections(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job documents
+ *
+ * @mcp read
+ */
+export const getJobDocuments = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().nullable(),
+    salesOrderLineId: z.string().nullable().optional(),
+    quoteLineId: z.string().nullable().optional(),
+    itemId: z.string().nullable().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getJobDocuments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job documents with item id
+ *
+ * @mcp read
+ */
+export const getJobDocumentsWithItemId = defineServiceFn({
+  input: z.looseObject({
+    job: z.looseObject({
+      id: z.string().nullable(),
+      salesOrderLineId: z.string().nullable(),
+      quoteLineId: z.string().nullable()
+    }),
+    itemId: z.string()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getJobDocumentsWithItemId(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.job, ["companyId"]) as never,
+        input.itemId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job
+ *
+ * @mcp read
+ */
+export const getJob = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJob(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get job expedite forecast
+ *
+ * @mcp read
+ */
+export const getJobExpediteForecast = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobExpediteForecast(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        input.jobId as never,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+/**
+ * Get job by operation id
+ *
+ * @mcp read
+ */
+export const getJobByOperationId = defineServiceFn({
+  input: z.looseObject({ operationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobByOperationId(
+        ctx.asCaller.supabase,
+        input.operationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job purchase order lines
+ *
+ * @mcp read
+ */
+export const getJobPurchaseOrderLines = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobPurchaseOrderLines(
+        ctx.asCaller.supabase,
+        input.jobId as never
+      )
+    );
+  }
+});
+
+/**
+ * The Outbound report: open jobs at a location that fill a sales order, with where each one ships (RPC `get_completion_jobs`), ordered by the plant-calendar day…
+ *
+ * @mcp read
+ */
+export const getCompletionJobs = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    timeZone: z.string(),
+    throughDate: z.string().nullable(),
+    search: z.string().nullable()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCompletionJobs(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get capacity reservations for resources
+ *
+ * @mcp read
+ */
+export const getCapacityReservationsForResources = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string().optional(),
+    window: z
+      .looseObject({ from: z.string(), to: z.string() })
+      .describe(
+        "Explicit [from, to) instant window (ISO strings) for the resource Gantt's day/week/shift views — returns reservations that OVERLAP it. Omit to keep the default forward horizon (everything ending within the last day onward)."
+      )
+      .optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getCapacityReservationsForResources(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never,
+        stamp(ctx, input.window, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get maintenance downtime for resources
+ *
+ * @mcp read
+ */
+export const getMaintenanceDowntimeForResources = defineServiceFn({
+  input: z.looseObject({ locationId: z.string().optional() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaintenanceDowntimeForResources(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get jobs
+ *
+ * @mcp read
+ */
+export const getJobs = defineServiceFn({
+  input: z.looseObject({
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getJobs(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get jobs by sales order line
+ *
+ * @mcp read
+ */
+export const getJobsBySalesOrderLine = defineServiceFn({
+  input: z.looseObject({ salesOrderLineId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobsBySalesOrderLine(
+        ctx.asCaller.supabase,
+        input.salesOrderLineId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get jobs list
+ *
+ * @mcp read
+ */
+export const getJobsList = defineServiceFn({
+  input: z.looseObject({
+    statuses: z
+      .array(
+        z.enum([
+          "Draft",
+          "Ready",
+          "In Progress",
+          "Paused",
+          "Completed",
+          "Cancelled",
+          "Overdue",
+          "Due Today",
+          "Planned",
+          "Closed"
+        ])
+      )
+      .optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobsList(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.statuses, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job make method by id
+ *
+ * @mcp read
+ */
+export const getJobMakeMethodById = defineServiceFn({
+  input: z.looseObject({ jobMakeMethodId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobMakeMethodById(
+        ctx.asCaller.supabase,
+        input.jobMakeMethodId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get root make method
+ *
+ * @mcp read
+ */
+export const getRootMakeMethod = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getRootMakeMethod(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get job materials with quantity on hand
+ *
+ * @mcp read
+ */
+export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
+  input: z.looseObject({
+    jobId: z.string(),
+    locationId: z.string(),
+    args: z.looseObject({
+      search: z.string().nullable().optional(),
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0)
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobMaterialsWithQuantityOnHand(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id,
+        input.locationId as never,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job material item ids
+ *
+ * @mcp read
+ */
+export const getJobMaterialItemIds = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobMaterialItemIds(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get job order status map
+ *
+ * @mcp read
+ */
+export const getJobOrderStatusMap = defineServiceFn({
+  input: z.looseObject({
+    jobId: z.string(),
+    locationId: z.string(),
+    jobStatus: z.string().nullable(),
+    materials: z.array(
+      z.looseObject({
+        description: z.string(),
+        estimatedQuantity: z.number(),
+        id: z.string(),
+        itemReadableId: z.string(),
+        itemScrapPercentage: z.number(),
+        itemTrackingType: z.enum([
+          "Inventory",
+          "Non-Inventory",
+          "Serial",
+          "Batch"
+        ]),
+        jobMakeMethodId: z.string(),
+        jobMaterialItemId: z.string(),
+        methodType: z.enum([
+          "Purchase to Order",
+          "Pull from Inventory",
+          "Make to Order"
+        ]),
+        name: z.string(),
+        quantityFromProductionOrderInStorageUnit: z.number(),
+        quantityFromProductionOrderNotInStorageUnit: z.number(),
+        quantityInTransitToStorageUnit: z.number(),
+        quantityIssued: z.number(),
+        quantityOnHandInStorageUnit: z.number(),
+        quantityOnHandNotInStorageUnit: z.number(),
+        quantityOnProductionOrder: z.number(),
+        quantityOnPurchaseOrder: z.number(),
+        quantityOnSalesOrder: z.number(),
+        quantityPerParent: z.number(),
+        storageUnitId: z.string(),
+        storageUnitName: z.string(),
+        substitutedFromItemId: z.string(),
+        thumbnailPath: z.string(),
+        type: z.enum([
+          "Part",
+          "Service",
+          "Material",
+          "Tool",
+          "Fixture",
+          "Consumable"
+        ]),
+        unitOfMeasureCode: z.string()
+      })
+    ),
+    asOfDate: z.string().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getJobOrderStatusMap(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id,
+        input.locationId as never,
+        stamp(ctx, input.jobStatus, ["companyId"]) as never,
+        stamp(ctx, input.materials, ["companyId"]) as never,
+        input.asOfDate as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job method tree
+ *
+ * @mcp read
+ */
+export const getJobMethodTree = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await utils.getJobMethodTree(ctx.asCaller.supabase, input.jobId as never)
+    );
+  }
+});
+
+/**
+ * Get job materials by method id
+ *
+ * @mcp read
+ */
+export const getJobMaterialsByMethodId = defineServiceFn({
+  input: z.looseObject({ jobMakeMethodId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobMaterialsByMethodId(
+        ctx.asCaller.supabase,
+        input.jobMakeMethodId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operations
+ *
+ * @mcp read
+ */
+export const getJobOperations = defineServiceFn({
+  input: z.looseObject({
+    jobId: z.string(),
+    args: z.looseObject({
+      search: z.string().nullable().optional(),
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0)
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getJobOperations(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation dependencies
+ *
+ * @mcp read
+ */
+export const getJobOperationDependencies = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationDependencies(
+        ctx.asCaller.supabase,
+        input.jobId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation attachments
+ *
+ * @mcp read
+ */
+export const getJobOperationAttachments = defineServiceFn({
+  input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getJobOperationAttachments(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.jobOperationIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operations list
+ *
+ * @mcp read
+ */
+export const getJobOperationsList = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationsList(
+        ctx.asCaller.supabase,
+        input.jobId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operations by method id
+ *
+ * @mcp read
+ */
+export const getJobOperationsByMethodId = defineServiceFn({
+  input: z.looseObject({ jobMakeMethodId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationsByMethodId(
+        ctx.asCaller.supabase,
+        input.jobMakeMethodId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation step records
+ *
+ * @mcp read
+ */
+export const getJobOperationStepRecords = defineServiceFn({
+  input: z.looseObject({
+    jobId: z.string(),
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getJobOperationStepRecords(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get outside operations by job id
+ *
+ * @mcp read
+ */
+export const getOutsideOperationsByJobId = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOutsideOperationsByJobId(
+        ctx.asCaller.supabase,
+        input.jobId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get procedure
+ *
+ * @mcp read
+ */
+export const getProcedure = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getProcedure(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get procedure versions
+ *
+ * @mcp read
+ */
+export const getProcedureVersions = defineServiceFn({
+  input: z.looseObject({ name: z.string(), version: z.number() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getProcedureVersions(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get procedures
+ *
+ * @mcp read
+ */
+export const getProcedures = defineServiceFn({
+  input: z.looseObject({
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProcedures(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get procedures list
+ *
+ * @mcp read
+ */
+export const getProceduresList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getProceduresList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get production event
+ *
+ * @mcp read
+ */
+export const getProductionEvent = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getProductionEvent(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Get production events
+ *
+ * @mcp read
+ */
+export const getProductionEvents = defineServiceFn({
+  input: z.looseObject({
+    jobOperationIds: z.array(z.string()),
+    args: z.looseObject({
+      search: z.string().nullable().optional(),
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0)
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProductionEvents(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.jobOperationIds, ["companyId"]) as never,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get production planning
+ *
+ * @mcp read
+ */
+export const getProductionPlanning = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    periods: z.array(z.string()),
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional(),
+      asOf: z.string(),
+      actionTypes: z.array(z.string()).optional(),
+      actionAssignees: z.array(z.string()).optional()
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProductionPlanning(
+        ctx.asCaller.supabase,
+        input.locationId as never,
+        ctx.company.id,
+        stamp(ctx, input.periods, ["companyId"]) as never,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get production projections
+ *
+ * @mcp read
+ */
+export const getProductionProjections = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    periods: z.array(z.string()),
+    args: z.looseObject({
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0),
+      search: z.string().nullable().optional()
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProductionProjections(
+        ctx.asCaller.supabase,
+        input.locationId as never,
+        stamp(ctx, input.periods, ["companyId"]) as never,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get production quantity
+ *
+ * @mcp read
+ */
+export const getProductionQuantity = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getProductionQuantity(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get production quantities
+ *
+ * @mcp read
+ */
+export const getProductionQuantities = defineServiceFn({
+  input: z.looseObject({
+    jobOperationIds: z.array(z.string()),
+    args: z.looseObject({
+      search: z.string().nullable().optional(),
+      limit: z
+        .number()
+        .int()
+        .describe("Rows per page. Left out, the read is not paged.")
+        .optional(),
+      offset: z.number().int().default(0)
+    })
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProductionQuantities(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.jobOperationIds, ["companyId"]) as never,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get production data by operations
+ *
+ * @mcp read
+ */
+export const getProductionDataByOperations = defineServiceFn({
+  input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getProductionDataByOperations(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.jobOperationIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get scrap reasons list
+ *
+ * @mcp read
+ */
+export const getScrapReasonsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getScrapReasonsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get scrap reason
+ *
+ * @mcp read
+ */
+export const getScrapReason = defineServiceFn({
+  input: z.looseObject({ scrapReasonId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getScrapReason(
+        ctx.asCaller.supabase,
+        input.scrapReasonId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get scrap reasons
+ *
+ * @mcp read
+ */
+export const getScrapReasons = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getScrapReasons(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get failure mode
+ *
+ * @mcp read
+ */
+export const getFailureMode = defineServiceFn({
+  input: z.looseObject({ failureModeId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getFailureMode(
+        ctx.asCaller.supabase,
+        input.failureModeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get failure modes
+ *
+ * @mcp read
+ */
+export const getFailureModes = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getFailureModes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get failure modes list
+ *
+ * @mcp read
+ */
+export const getFailureModesList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getFailureModesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get maintenance dispatch
+ *
+ * @mcp read
+ */
+export const getMaintenanceDispatch = defineServiceFn({
+  input: z.looseObject({ dispatchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaintenanceDispatch(
+        ctx.asCaller.supabase,
+        input.dispatchId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get maintenance dispatch comments
+ *
+ * @mcp read
+ */
+export const getMaintenanceDispatchComments = defineServiceFn({
+  input: z.looseObject({ dispatchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaintenanceDispatchComments(
+        ctx.asCaller.supabase,
+        input.dispatchId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get maintenance dispatch events
+ *
+ * @mcp read
+ */
+export const getMaintenanceDispatchEvents = defineServiceFn({
+  input: z.looseObject({ dispatchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaintenanceDispatchEvents(
+        ctx.asCaller.supabase,
+        input.dispatchId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get maintenance dispatch items
+ *
+ * @mcp read
+ */
+export const getMaintenanceDispatchItems = defineServiceFn({
+  input: z.looseObject({ dispatchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaintenanceDispatchItems(
+        ctx.asCaller.supabase,
+        input.dispatchId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get maintenance schedule
+ *
+ * @mcp read
+ */
+export const getMaintenanceSchedule = defineServiceFn({
+  input: z.looseObject({ scheduleId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getMaintenanceSchedule(
+        ctx.asCaller.supabase,
+        input.scheduleId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get tracked entity by job id
+ *
+ * @mcp read
+ */
+export const getTrackedEntityByJobId = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getTrackedEntityByJobId(
+        ctx.asCaller.supabase,
+        input.jobId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get tracked entities by job id
+ *
+ * @mcp read
+ */
+export const getTrackedEntitiesByJobId = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getTrackedEntitiesByJobId(
+        ctx.asCaller.supabase,
+        input.jobId as never
+      )
+    );
+  }
+});
+
+/**
+ * What a job has already received to inventory: its received quantity and the tracked entities its receipts posted
+ *
+ * @mcp read
+ */
+export const getJobReceiptSnapshot = defineServiceFn({
+  input: z.looseObject({ jobId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getJobReceiptSnapshot(
+        ctx.asSystem.pg,
+        input.jobId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Recalculate job requirements
+ *
+ * @mcp
+ */
+export const recalculateJobRequirements = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.recalculateJobRequirements(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Run m r p
+ *
+ * @mcp
+ */
+export const runMRP = defineServiceFn({
+  input: z.looseObject({
+    type: z.enum([
+      "company",
+      "location",
+      "job",
+      "salesOrder",
+      "item",
+      "purchaseOrder"
+    ]),
+    id: z.string()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.runMRP(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update job batch number
+ *
+ * @mcp
+ */
+export const updateJobBatchNumber = defineServiceFn({
+  input: z.looseObject({
+    trackedEntityId: z.string(),
+    value: z.string().nullable()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateJobBatchNumber(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.trackedEntityId as never,
+        input.value as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job release readiness
+ *
+ * @mcp read
+ */
+export const getJobReleaseReadiness = defineServiceFn({
+  input: z.looseObject({ jobIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobReleaseReadiness(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.jobIds, ["companyId"]) as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Update job material order
+ *
+ * @mcp
+ */
+export const updateJobMaterialOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateJobMaterialOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update job operation step order
+ *
+ * @mcp
+ */
+export const updateJobOperationStepOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateJobOperationStepOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update kanban job
+ *
+ * @mcp
+ */
+export const updateKanbanJob = defineServiceFn({
+  input: z.looseObject({ id: z.string(), jobId: z.string().nullable() }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateKanbanJob(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update quote operation step order
+ *
+ * @mcp
+ */
+export const updateQuoteOperationStepOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateQuoteOperationStepOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update method operation step order
+ *
+ * @mcp
+ */
+export const updateMethodOperationStepOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateMethodOperationStepOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update procedure step order
+ *
+ * @mcp
+ */
+export const updateProcedureStepOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateProcedureStepOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * `options.source` is telemetry-only: which surface raised the job
+ *
+ * @mcp
+ */
+export const insertJob = defineServiceFn({
+  input: z.looseObject({
+    input: z.looseObject({
+      itemId: z.string(),
+      quantity: z.number(),
+      jobId: z.string().optional(),
+      locationId: z.string().optional(),
+      dueDate: z.string().optional(),
+      startDate: z.string().optional(),
+      priority: z.number().optional(),
+      status: z
+        .enum([
+          "Draft",
+          "Planned",
+          "Ready",
+          "In Progress",
+          "Paused",
+          "Completed",
+          "Closed",
+          "Cancelled",
+          "Overdue",
+          "Due Today"
+        ])
+        .optional(),
+      deadlineType: z
+        .enum(["ASAP", "Hard Deadline", "Soft Deadline", "No Deadline"])
+        .optional(),
+      storageUnitId: z.string().optional(),
+      unitOfMeasureCode: z.string().optional(),
+      customerId: z.string().optional(),
+      salesOrderId: z.string().optional(),
+      salesOrderLineId: z.string().optional(),
+      quoteId: z.string().optional(),
+      quoteLineId: z.string().optional(),
+      modelUploadId: z.string().optional(),
+      notes: z.string().optional(),
+      customFields: z.unknown().optional(),
+      configuration: z.record(z.string(), z.unknown()).optional(),
+      fixedAssetClassId: z.string().nullable().optional(),
+      fixedAssetId: z.string().nullable().optional()
+    }),
+    options: z
+      .looseObject({
+        skipMethod: z.boolean().optional(),
+        skipRecalculate: z.boolean().optional(),
+        methodSource: z.enum(["item", "quoteLine"]).optional(),
+        source: z
+          .enum([
+            "salesOrder",
+            "kanban",
+            "workflow",
+            "unknown",
+            "erp",
+            "bulk",
+            "mrp",
+            "api"
+          ])
+          .nullable()
+          .optional()
+      })
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertJob(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input.input, [
+          "companyId",
+          "createdBy",
+          "updatedBy"
+        ]) as never,
+        stamp(ctx, input.options, [
+          "companyId",
+          "createdBy",
+          "updatedBy"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a job operation step
+ *
+ * @remarks
+ * Upsert job operation step
+ *
+ * @mcp
+ */
+export const createJobOperationStep = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string().min(1),
+    name: z.string().min(1),
+    description: z.string().min(1),
+    type: z.enum([
+      "Task",
+      "Value",
+      "Measurement",
+      "Checkbox",
+      "Timestamp",
+      "Person",
+      "List",
+      "File",
+      "Inspection"
+    ]),
+    unitOfMeasureCode: z.string().optional(),
+    minValue: z.number().nullable().optional(),
+    maxValue: z.number().nullable().optional(),
+    listValues: z.array(z.string()).optional(),
+    sortOrder: z.number().min(0).optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationStep(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a job operation step
+ *
+ * @remarks
+ * Upsert job operation step
+ *
+ * @mcp
+ */
+export const updateJobOperationStep = defineServiceFn({
+  input: z
+    .looseObject({
+      operationId: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string().min(1),
+      type: z.enum([
+        "Task",
+        "Value",
+        "Measurement",
+        "Checkbox",
+        "Timestamp",
+        "Person",
+        "List",
+        "File",
+        "Inspection"
+      ]),
+      unitOfMeasureCode: z.string().optional(),
+      minValue: z.number().nullable().optional(),
+      maxValue: z.number().nullable().optional(),
+      listValues: z.array(z.string()).optional(),
+      sortOrder: z.number().min(0).optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationStep(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Duplicate job operation step
+ *
+ * @mcp
+ */
+export const duplicateJobOperationStep = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.duplicateJobOperationStep(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a job operation step slide
+ *
+ * @remarks
+ * Upsert job operation step slide
+ *
+ * @mcp
+ */
+export const createJobOperationStepSlide = defineServiceFn({
+  input: z.looseObject({
+    stepId: z.string().min(1),
+    imagePath: z.string().optional(),
+    modelUploadId: z.string().optional(),
+    caption: z.string().optional(),
+    sortOrder: z.number().min(0).optional(),
+    size: z.enum(["small", "medium", "large"]).optional(),
+    annotations: z
+      .array(
+        z.looseObject({
+          id: z.string(),
+          x: z.number(),
+          y: z.number(),
+          label: z.string().nullable().optional(),
+          color: z.string().nullable().optional(),
+          toolId: z.string().nullable().optional()
+        })
+      )
+      .nullable()
+      .optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationStepSlide(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a job operation step slide
+ *
+ * @remarks
+ * Upsert job operation step slide
+ *
+ * @mcp
+ */
+export const updateJobOperationStepSlide = defineServiceFn({
+  input: z
+    .looseObject({
+      stepId: z.string().min(1),
+      imagePath: z.string().optional(),
+      modelUploadId: z.string().optional(),
+      caption: z.string().optional(),
+      sortOrder: z.number().min(0).optional(),
+      size: z.enum(["small", "medium", "large"]).optional(),
+      annotations: z
+        .array(
+          z.looseObject({
+            id: z.string(),
+            x: z.number(),
+            y: z.number(),
+            label: z.string().nullable().optional(),
+            color: z.string().nullable().optional(),
+            toolId: z.string().nullable().optional()
+          })
+        )
+        .nullable()
+        .optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationStepSlide(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a job operation parameter
+ *
+ * @remarks
+ * Upsert job operation parameter
+ *
+ * @mcp
+ */
+export const createJobOperationParameter = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string().min(1),
+    key: z.string().min(1),
+    value: z.string().min(1),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationParameter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a job operation parameter
+ *
+ * @remarks
+ * Upsert job operation parameter
+ *
+ * @mcp
+ */
+export const updateJobOperationParameter = defineServiceFn({
+  input: z
+    .looseObject({
+      operationId: z.string().min(1),
+      key: z.string().min(1),
+      value: z.string().min(1),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationParameter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a job operation tool
+ *
+ * @remarks
+ * Upsert job operation tool
+ *
+ * @mcp
+ */
+export const createJobOperationTool = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string().min(1),
+    toolId: z.string().min(1),
+    quantity: z.number().min(0.000001),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationTool(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a job operation tool
+ *
+ * @remarks
+ * Upsert job operation tool
+ *
+ * @mcp
+ */
+export const updateJobOperationTool = defineServiceFn({
+  input: z
+    .looseObject({
+      operationId: z.string().min(1),
+      toolId: z.string().min(1),
+      quantity: z.number().min(0.000001),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertJobOperationTool(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Set job material step link
+ *
+ * @mcp destructive
+ */
+export const setJobMaterialStepLink = defineServiceFn({
+  input: z.looseObject({
+    jobMaterialId: z.string(),
+    jobOperationStepId: z.string(),
+    linked: z.boolean(),
+    quantity: z.number().nullable().optional()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.setJobMaterialStepLink(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Set job operation tool step link
+ *
+ * @mcp destructive
+ */
+export const setJobOperationToolStepLink = defineServiceFn({
+  input: z.looseObject({
+    operationId: z.string(),
+    toolId: z.string(),
+    jobOperationStepId: z.string(),
+    linked: z.boolean()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.setJobOperationToolStepLink(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert make method from job
+ *
+ * @mcp
+ */
+export const upsertMakeMethodFromJob = defineServiceFn({
+  input: z.looseObject({
+    sourceId: z.string(),
+    targetId: z.string(),
+    parts: z
+      .looseObject({
+        billOfMaterial: z.boolean(),
+        billOfProcess: z.boolean(),
+        parameters: z.boolean(),
+        tools: z.boolean(),
+        steps: z.boolean(),
+        workInstructions: z.boolean()
+      })
+      .optional()
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMakeMethodFromJob(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert make method from job method
+ *
+ * @mcp
+ */
+export const upsertMakeMethodFromJobMethod = defineServiceFn({
+  input: z.looseObject({
+    sourceId: z.string(),
+    targetId: z.string(),
+    parts: z
+      .looseObject({
+        billOfMaterial: z.boolean(),
+        billOfProcess: z.boolean(),
+        parameters: z.boolean(),
+        tools: z.boolean(),
+        steps: z.boolean(),
+        workInstructions: z.boolean()
+      })
+      .optional()
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMakeMethodFromJobMethod(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a procedure
+ *
+ * @remarks
+ * Upsert procedure
+ *
+ * @mcp
+ */
+export const createProcedure = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    version: z.number().min(0),
+    processId: z.string().optional(),
+    content: z.string().optional(),
+    copyFromId: z.string().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProcedure(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a procedure
+ *
+ * @remarks
+ * Upsert procedure
+ *
+ * @mcp
+ */
+export const updateProcedure = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      version: z.number().min(0),
+      processId: z.string().optional(),
+      content: z.string().optional(),
+      copyFromId: z.string().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProcedure(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a procedure step
+ *
+ * @remarks
+ * Upsert procedure step
+ *
+ * @mcp
+ */
+export const createProcedureStep = defineServiceFn({
+  input: z.looseObject({
+    procedureId: z.string().min(1),
+    name: z.string().min(1),
+    description: z.string().optional(),
+    type: z.enum([
+      "Task",
+      "Value",
+      "Measurement",
+      "Checkbox",
+      "Timestamp",
+      "Person",
+      "List",
+      "File",
+      "Inspection"
+    ]),
+    unitOfMeasureCode: z.string().optional(),
+    minValue: z.number().min(0).optional(),
+    maxValue: z.number().min(0).optional(),
+    listValues: z.array(z.string()).optional(),
+    sortOrder: z.number().min(0).optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProcedureStep(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a procedure step
+ *
+ * @remarks
+ * Upsert procedure step
+ *
+ * @mcp
+ */
+export const updateProcedureStep = defineServiceFn({
+  input: z
+    .looseObject({
+      procedureId: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string().optional(),
+      type: z.enum([
+        "Task",
+        "Value",
+        "Measurement",
+        "Checkbox",
+        "Timestamp",
+        "Person",
+        "List",
+        "File",
+        "Inspection"
+      ]),
+      unitOfMeasureCode: z.string().optional(),
+      minValue: z.number().min(0).optional(),
+      maxValue: z.number().min(0).optional(),
+      listValues: z.array(z.string()).optional(),
+      sortOrder: z.number().min(0).optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProcedureStep(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a procedure parameter
+ *
+ * @remarks
+ * Upsert procedure parameter
+ *
+ * @mcp
+ */
+export const createProcedureParameter = defineServiceFn({
+  input: z.looseObject({
+    procedureId: z.string().min(1),
+    key: z.string().min(1),
+    value: z.string().min(1),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProcedureParameter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a procedure parameter
+ *
+ * @remarks
+ * Upsert procedure parameter
+ *
+ * @mcp
+ */
+export const updateProcedureParameter = defineServiceFn({
+  input: z
+    .looseObject({
+      procedureId: z.string().min(1),
+      key: z.string().min(1),
+      value: z.string().min(1),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertProcedureParameter(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a scrap reason
+ *
+ * @remarks
+ * Upsert scrap reason
+ *
+ * @mcp
+ */
+export const createScrapReason = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertScrapReason(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a scrap reason
+ *
+ * @remarks
+ * Upsert scrap reason
+ *
+ * @mcp
+ */
+export const updateScrapReason = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertScrapReason(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a failure mode
+ *
+ * @remarks
+ * Upsert failure mode
+ *
+ * @mcp
+ */
+export const createFailureMode = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertFailureMode(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a failure mode
+ *
+ * @remarks
+ * Upsert failure mode
+ *
+ * @mcp
+ */
+export const updateFailureMode = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertFailureMode(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a maintenance dispatch comment
+ *
+ * @remarks
+ * Upsert maintenance dispatch comment
+ *
+ * @mcp
+ */
+export const createMaintenanceDispatchComment = defineServiceFn({
+  input: z.looseObject({
+    maintenanceDispatchId: z.string().min(1),
+    comment: z.string().min(1),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceDispatchComment(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a maintenance dispatch comment
+ *
+ * @remarks
+ * Upsert maintenance dispatch comment
+ *
+ * @mcp
+ */
+export const updateMaintenanceDispatchComment = defineServiceFn({
+  input: z
+    .looseObject({
+      maintenanceDispatchId: z.string().min(1),
+      comment: z.string().min(1),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceDispatchComment(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a maintenance dispatch event
+ *
+ * @remarks
+ * Upsert maintenance dispatch event
+ *
+ * @mcp
+ */
+export const createMaintenanceDispatchEvent = defineServiceFn({
+  input: z.looseObject({
+    maintenanceDispatchId: z.string().min(1),
+    employeeId: z.string().min(1),
+    workCenterId: z.string().min(1),
+    startTime: z.string().min(1),
+    endTime: z.string().optional(),
+    notes: z.string().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceDispatchEvent(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a maintenance dispatch event
+ *
+ * @remarks
+ * Upsert maintenance dispatch event
+ *
+ * @mcp
+ */
+export const updateMaintenanceDispatchEvent = defineServiceFn({
+  input: z
+    .looseObject({
+      maintenanceDispatchId: z.string().min(1),
+      employeeId: z.string().min(1),
+      workCenterId: z.string().min(1),
+      startTime: z.string().min(1),
+      endTime: z.string().optional(),
+      notes: z.string().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceDispatchEvent(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a maintenance dispatch item
+ *
+ * @remarks
+ * Upsert maintenance dispatch item
+ *
+ * @mcp
+ */
+export const createMaintenanceDispatchItem = defineServiceFn({
+  input: z.looseObject({
+    maintenanceDispatchId: z.string().min(1),
+    itemId: z.string().min(1),
+    quantity: z.number().min(1),
+    unitOfMeasureCode: z.string().min(1),
+    unitCost: z.number().min(0).optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceDispatchItem(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a maintenance dispatch item
+ *
+ * @remarks
+ * Upsert maintenance dispatch item
+ *
+ * @mcp
+ */
+export const updateMaintenanceDispatchItem = defineServiceFn({
+  input: z
+    .looseObject({
+      maintenanceDispatchId: z.string().min(1),
+      itemId: z.string().min(1),
+      quantity: z.number().min(1),
+      unitOfMeasureCode: z.string().min(1),
+      unitCost: z.number().min(0).optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceDispatchItem(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a maintenance schedule
+ *
+ * @remarks
+ * Upsert maintenance schedule
+ *
+ * @mcp
+ */
+export const createMaintenanceSchedule = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    description: z.string().optional(),
+    workCenterId: z.string().min(1),
+    frequency: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Annual"]),
+    priority: z.enum(["Low", "Medium", "High", "Critical"]),
+    estimatedDuration: z.number().optional(),
+    active: z.boolean().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceSchedule(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a maintenance schedule
+ *
+ * @remarks
+ * Upsert maintenance schedule
+ *
+ * @mcp
+ */
+export const updateMaintenanceSchedule = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      description: z.string().optional(),
+      workCenterId: z.string().min(1),
+      frequency: z.enum(["Daily", "Weekly", "Monthly", "Quarterly", "Annual"]),
+      priority: z.enum(["Low", "Medium", "High", "Critical"]),
+      estimatedDuration: z.number().optional(),
+      active: z.boolean().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertMaintenanceSchedule(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get people assignments
+ *
+ * @mcp read
+ */
+export const getPeopleAssignments = defineServiceFn({
+  input: z.looseObject({ locationId: z.string(), date: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeopleAssignments(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get people absences
+ *
+ * @mcp read
+ */
+export const getPeopleAbsences = defineServiceFn({
+  input: z.looseObject({ date: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeopleAbsences(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.date as never
+      )
+    );
+  }
+});
+
+/**
+ * Get people assignments range
+ *
+ * @mcp read
+ */
+export const getPeopleAssignmentsRange = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    startDate: z.string(),
+    endDate: z.string()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeopleAssignmentsRange(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get people absences range
+ *
+ * @mcp read
+ */
+export const getPeopleAbsencesRange = defineServiceFn({
+  input: z.looseObject({ startDate: z.string(), endDate: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeopleAbsencesRange(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Open job-operation hours per work center for the capacity view
+ *
+ * @mcp read
+ */
+export const getPeopleCapacityOperations = defineServiceFn({
+  input: z.looseObject({
+    locationId: z.string(),
+    startDate: z.string().nullable(),
+    endDate: z.string()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeopleCapacityOperations(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * The `workCenterShift` links (rung 1 of the availability ladder) for a set of work centers, in ONE `.in()` query
+ *
+ * @mcp read
+ */
+export const getWorkCenterShifts = defineServiceFn({
+  input: z.looseObject({ workCenterIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getWorkCenterShifts(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.workCenterIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * WorkCenter-kind reservations overlapping a window — the Capacity view's Scheduled series
+ *
+ * @mcp read
+ */
+export const getWorkCenterReservationsRange = defineServiceFn({
+  input: z.looseObject({ startAt: z.string(), endAt: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getWorkCenterReservationsRange(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get location employees
+ *
+ * @mcp read
+ */
+export const getLocationEmployees = defineServiceFn({
+  input: z.looseObject({ locationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getLocationEmployees(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Gated abilities per work center at a location, for the people board's advisory qualification badge
+ *
+ * @mcp read
+ */
+export const getWorkCenterRequiredAbilities = defineServiceFn({
+  input: z.looseObject({ locationId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getWorkCenterRequiredAbilities(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get active employee abilities
+ *
+ * @mcp read
+ */
+export const getActiveEmployeeAbilities = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getActiveEmployeeAbilities(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Reactive replanning: notify that a scheduling INPUT changed (shift, qualification, work center, location)
+ *
+ * @mcp
+ */
+export const notifyScheduleInputsChanged = defineServiceFn({
+  input: z.looseObject({
+    kind: z.enum([
+      "ability",
+      "shift",
+      "employee-shift",
+      "work-center",
+      "location",
+      "reorder",
+      "people"
+    ]),
+    reason: z.string(),
+    entityId: z.string().optional()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.notifyScheduleInputsChanged(
+        ctx.company.id,
+        input.kind as never,
+        input.reason as never,
+        input.entityId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get unbatched batchable operation count
+ *
+ * @mcp read
+ */
+export const getUnbatchedBatchableOperationCount = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getUnbatchedBatchableOperationCount(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation batches
+ *
+ * @mcp read
+ */
+export const getJobOperationBatches = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getJobOperationBatches(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation batch member stats
+ *
+ * @mcp read
+ */
+export const getJobOperationBatchMemberStats = defineServiceFn({
+  input: z.looseObject({ batchIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationBatchMemberStats(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.batchIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation batch members
+ *
+ * @mcp read
+ */
+export const getJobOperationBatchMembers = defineServiceFn({
+  input: z.looseObject({ batchIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationBatchMembers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input.batchIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get batch output lots
+ *
+ * @mcp read
+ */
+export const getBatchOutputLots = defineServiceFn({
+  input: z.looseObject({ batchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getBatchOutputLots(
+        ctx.asCaller.supabase,
+        input.batchId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation batch with members
+ *
+ * @mcp read
+ */
+export const getJobOperationBatchWithMembers = defineServiceFn({
+  input: z.looseObject({ batchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationBatchWithMembers(
+        ctx.asCaller.supabase,
+        input.batchId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get job operation batch events
+ *
+ * @mcp read
+ */
+export const getJobOperationBatchEvents = defineServiceFn({
+  input: z.looseObject({ batchId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getJobOperationBatchEvents(
+        ctx.asCaller.supabase,
+        input.batchId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get batchable operations
+ *
+ * @mcp read
+ */
+export const getBatchableOperations = defineServiceFn({
+  input: z.looseObject({ locationId: z.string(), processId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getBatchableOperations(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get batchable processes
+ *
+ * @mcp read
+ */
+export const getBatchableProcesses = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "production" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getBatchableProcesses(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get assembly instruction
+ *
+ * @mcp read
+ */
+export const getAssemblyInstruction = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstruction(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly instructions
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructions = defineServiceFn({
+  input: z.looseObject({
+    search: z.string().optional(),
+    status: z.enum(["Draft", "Published", "Archived"]).optional(),
+    itemId: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getAssemblyInstructions(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly instructions for item
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructionsForItem = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstructionsForItem(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly instruction steps
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructionSteps = defineServiceFn({
+  input: z.looseObject({ assemblyInstructionId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstructionSteps(
+        ctx.asCaller.supabase,
+        input.assemblyInstructionId as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert assembly instruction
+ *
+ * @mcp
+ */
+export const upsertAssemblyInstruction = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    name: z.string(),
+    modelUploadId: z.string(),
+    itemId: z.string().nullable().optional()
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyInstruction(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update assembly instruction status
+ *
+ * @mcp
+ */
+export const updateAssemblyInstructionStatus = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    data: z.looseObject({ status: z.enum(["Draft", "Published", "Archived"]) })
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateAssemblyInstructionStatus(
+        ctx.asCaller.supabase,
+        input.id as never,
+        stamp(ctx, input.data, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Sibling versions of an instruction, for the header's version switcher
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructionVersions = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    rootInstructionId: z.string().nullable().optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstructionVersions(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a new editable Draft version as a perfect copy of an existing instruction: a fresh assemblyInstruction row (new id, version = max+1, status Draft) plus…
+ *
+ * @mcp
+ */
+export const copyAssemblyInstructionAsVersion = defineServiceFn({
+  input: z.looseObject({ copyFromId: z.string() }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.copyAssemblyInstructionAsVersion(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Make a version the active (Published) one: archive whichever sibling is currently Published, publish the target, and repoint in-flight work to it — but only ac…
+ *
+ * @mcp
+ */
+export const activateAssemblyInstructionVersion = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.activateAssemblyInstructionVersion(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly instruction
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyInstruction = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyInstruction(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert assembly instruction step
+ *
+ * @mcp
+ */
+export const upsertAssemblyInstructionStep = defineServiceFn({
+  input: z.looseObject({
+    data: z.looseObject({
+      title: z.string().nullable().optional(),
+      type: z
+        .enum([
+          "Value",
+          "Measurement",
+          "Checkbox",
+          "Timestamp",
+          "Person",
+          "List",
+          "File",
+          "Task",
+          "Inspection"
+        ])
+        .optional(),
+      description: z.unknown().optional(),
+      required: z.boolean().optional(),
+      unitOfMeasureCode: z.string().nullable().optional(),
+      minValue: z.number().nullable().optional(),
+      maxValue: z.number().nullable().optional(),
+      listValues: z.array(z.string()).nullable().optional(),
+      componentNodeIds: z.array(z.string()).optional(),
+      motion: z
+        .union([
+          z.looseObject({
+            type: z.literal("linear"),
+            direction: z.tuple([z.number(), z.number(), z.number()]),
+            distance: z.number().gt(0)
+          }),
+          z.looseObject({
+            type: z.literal("L"),
+            segments: z
+              .array(
+                z.looseObject({
+                  direction: z.tuple([z.number(), z.number(), z.number()]),
+                  distance: z.number().gt(0)
+                })
+              )
+              .min(2)
+          }),
+          z.looseObject({
+            type: z.literal("helix"),
+            axis: z.tuple([z.number(), z.number(), z.number()]),
+            origin: z.tuple([z.number(), z.number(), z.number()]),
+            pitch: z.number().gt(0),
+            turns: z.number().gt(0),
+            approach: z.number().min(0)
+          }),
+          z.looseObject({
+            type: z.literal("path"),
+            keyframes: z
+              .array(
+                z.looseObject({
+                  t: z.number().min(0).max(1),
+                  position: z.tuple([z.number(), z.number(), z.number()]),
+                  quaternion: z.tuple([
+                    z.number(),
+                    z.number(),
+                    z.number(),
+                    z.number()
+                  ])
+                })
+              )
+              .min(2)
+          }),
+          z.looseObject({
+            type: z.literal("waypoints"),
+            waypoints: z
+              .array(
+                z.looseObject({
+                  offset: z.tuple([z.number(), z.number(), z.number()]),
+                  rotation: z.tuple([
+                    z.number(),
+                    z.number(),
+                    z.number(),
+                    z.number()
+                  ])
+                })
+              )
+              .min(2)
+          }),
+          z.looseObject({ type: z.literal("none") })
+        ])
+        .optional(),
+      camera: z
+        .union([
+          z.looseObject({
+            position: z.tuple([z.number(), z.number(), z.number()]),
+            target: z.tuple([z.number(), z.number(), z.number()]),
+            fov: z.number().gt(0)
+          }),
+          z.looseObject({
+            source: z.literal("plan"),
+            direction: z.tuple([z.number(), z.number(), z.number()])
+          })
+        ])
+        .nullable()
+        .optional(),
+      fastener: z
+        .looseObject({
+          spec: z.string().optional(),
+          count: z.number().int().gt(0).optional(),
+          torqueNm: z.number().gt(0).optional(),
+          tool: z.string().optional()
+        })
+        .nullable()
+        .optional(),
+      durationSeconds: z.number().nullable().optional(),
+      id: z.string().optional(),
+      assemblyInstructionId: z.string(),
+      sortOrder: z.number().optional()
+    })
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyInstructionStep(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.data, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Partial update of a step's viewer-authored motion path and/or camera pose
+ *
+ * @mcp
+ */
+export const updateAssemblyStepMotion = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    motion: z
+      .union([
+        z.looseObject({
+          type: z.literal("linear"),
+          direction: z.tuple([z.number(), z.number(), z.number()]),
+          distance: z.number().gt(0)
+        }),
+        z.looseObject({
+          type: z.literal("L"),
+          segments: z
+            .array(
+              z.looseObject({
+                direction: z.tuple([z.number(), z.number(), z.number()]),
+                distance: z.number().gt(0)
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({
+          type: z.literal("helix"),
+          axis: z.tuple([z.number(), z.number(), z.number()]),
+          origin: z.tuple([z.number(), z.number(), z.number()]),
+          pitch: z.number().gt(0),
+          turns: z.number().gt(0),
+          approach: z.number().min(0)
+        }),
+        z.looseObject({
+          type: z.literal("path"),
+          keyframes: z
+            .array(
+              z.looseObject({
+                t: z.number().min(0).max(1),
+                position: z.tuple([z.number(), z.number(), z.number()]),
+                quaternion: z.tuple([
+                  z.number(),
+                  z.number(),
+                  z.number(),
+                  z.number()
+                ])
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({
+          type: z.literal("waypoints"),
+          waypoints: z
+            .array(
+              z.looseObject({
+                offset: z.tuple([z.number(), z.number(), z.number()]),
+                rotation: z.tuple([
+                  z.number(),
+                  z.number(),
+                  z.number(),
+                  z.number()
+                ])
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({ type: z.literal("none") })
+      ])
+      .optional(),
+    camera: z
+      .union([
+        z.looseObject({
+          position: z.tuple([z.number(), z.number(), z.number()]),
+          target: z.tuple([z.number(), z.number(), z.number()]),
+          fov: z.number().gt(0)
+        }),
+        z.looseObject({
+          source: z.literal("plan"),
+          direction: z.tuple([z.number(), z.number(), z.number()])
+        })
+      ])
+      .nullable()
+      .optional(),
+    orientation: z
+      .tuple([z.number(), z.number(), z.number(), z.number()])
+      .nullable()
+      .optional(),
+    reset: z.boolean().optional()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateAssemblyStepMotion(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update assembly step hidden components
+ *
+ * @mcp
+ */
+export const updateAssemblyStepHiddenComponents = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    assemblyInstructionId: z.string(),
+    hiddenComponentNodeIds: z.array(z.string())
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateAssemblyStepHiddenComponents(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Wrap a top-level step into a new sub-assembly; the step becomes its first step
+ *
+ * @mcp
+ */
+export const makeAssemblySubAssembly = defineServiceFn({
+  input: z.looseObject({
+    assemblyInstructionId: z.string(),
+    stepId: z.string()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.makeAssemblySubAssembly(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Add a step at the end of the instruction, or at the end of the sub-assembly `parentStepId` names (directly before its header)
+ *
+ * @mcp
+ */
+export const insertAssemblyInstructionStep = defineServiceFn({
+  input: z.looseObject({
+    title: z.string().nullable().optional(),
+    type: z
+      .enum([
+        "Value",
+        "Measurement",
+        "Checkbox",
+        "Timestamp",
+        "Person",
+        "List",
+        "File",
+        "Task",
+        "Inspection"
+      ])
+      .optional(),
+    description: z.unknown().optional(),
+    required: z.boolean().optional(),
+    unitOfMeasureCode: z.string().nullable().optional(),
+    minValue: z.number().nullable().optional(),
+    maxValue: z.number().nullable().optional(),
+    listValues: z.array(z.string()).nullable().optional(),
+    componentNodeIds: z.array(z.string()).optional(),
+    motion: z
+      .union([
+        z.looseObject({
+          type: z.literal("linear"),
+          direction: z.tuple([z.number(), z.number(), z.number()]),
+          distance: z.number().gt(0)
+        }),
+        z.looseObject({
+          type: z.literal("L"),
+          segments: z
+            .array(
+              z.looseObject({
+                direction: z.tuple([z.number(), z.number(), z.number()]),
+                distance: z.number().gt(0)
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({
+          type: z.literal("helix"),
+          axis: z.tuple([z.number(), z.number(), z.number()]),
+          origin: z.tuple([z.number(), z.number(), z.number()]),
+          pitch: z.number().gt(0),
+          turns: z.number().gt(0),
+          approach: z.number().min(0)
+        }),
+        z.looseObject({
+          type: z.literal("path"),
+          keyframes: z
+            .array(
+              z.looseObject({
+                t: z.number().min(0).max(1),
+                position: z.tuple([z.number(), z.number(), z.number()]),
+                quaternion: z.tuple([
+                  z.number(),
+                  z.number(),
+                  z.number(),
+                  z.number()
+                ])
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({
+          type: z.literal("waypoints"),
+          waypoints: z
+            .array(
+              z.looseObject({
+                offset: z.tuple([z.number(), z.number(), z.number()]),
+                rotation: z.tuple([
+                  z.number(),
+                  z.number(),
+                  z.number(),
+                  z.number()
+                ])
+              })
+            )
+            .min(2)
+        }),
+        z.looseObject({ type: z.literal("none") })
+      ])
+      .optional(),
+    camera: z
+      .union([
+        z.looseObject({
+          position: z.tuple([z.number(), z.number(), z.number()]),
+          target: z.tuple([z.number(), z.number(), z.number()]),
+          fov: z.number().gt(0)
+        }),
+        z.looseObject({
+          source: z.literal("plan"),
+          direction: z.tuple([z.number(), z.number(), z.number()])
+        })
+      ])
+      .nullable()
+      .optional(),
+    fastener: z
+      .looseObject({
+        spec: z.string().optional(),
+        count: z.number().int().gt(0).optional(),
+        torqueNm: z.number().gt(0).optional(),
+        tool: z.string().optional()
+      })
+      .nullable()
+      .optional(),
+    durationSeconds: z.number().nullable().optional(),
+    assemblyInstructionId: z.string(),
+    parentStepId: z.string().optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.insertAssemblyInstructionStep(
+        ctx.asSystem.pg,
+        stamp(ctx, input, [
+          "companyId",
+          "createdBy",
+          "updatedBy",
+          "userId"
+        ]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Rename a sub-assembly and/or set the step that uses it (`null` = it joins the main build)
+ *
+ * @mcp
+ */
+export const updateAssemblySubAssembly = defineServiceFn({
+  input: z.looseObject({
+    assemblyInstructionId: z.string(),
+    headerId: z.string(),
+    title: z.string().optional(),
+    usedInStepId: z.string().nullable().optional()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.updateAssemblySubAssembly(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Remove the sub-assembly but keep its steps: they return to the top level in place
+ *
+ * @mcp destructive
+ */
+export const ungroupAssemblySubAssembly = defineServiceFn({
+  input: z.looseObject({
+    assemblyInstructionId: z.string(),
+    headerId: z.string()
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.ungroupAssemblySubAssembly(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete a sub-assembly together with its steps
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblySubAssembly = defineServiceFn({
+  input: z.looseObject({
+    assemblyInstructionId: z.string(),
+    headerId: z.string()
+  }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.deleteAssemblySubAssembly(
+        ctx.asSystem.pg,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update assembly instruction step status
+ *
+ * @mcp
+ */
+export const updateAssemblyInstructionStepStatus = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    data: z.looseObject({ status: z.enum(["Todo", "Review", "Done"]) })
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateAssemblyInstructionStepStatus(
+        ctx.asCaller.supabase,
+        input.id as never,
+        stamp(ctx, input.data, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Drag-sort of the step list: each step's new position and sub-assembly (`parentStepId`, `null` = top level; omitted = unchanged)
+ *
+ * @mcp
+ */
+export const updateAssemblyInstructionStepOrder = defineServiceFn({
+  input: z.looseObject({
+    assemblyInstructionId: z.string(),
+    updates: z.array(
+      z.looseObject({
+        id: z.string(),
+        sortOrder: z.number(),
+        parentStepId: z.string().nullable().optional()
+      })
+    )
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.updateAssemblyInstructionStepOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        input.assemblyInstructionId as never,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly instruction step
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyInstructionStep = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyInstructionStep(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly instruction step slides
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructionStepSlides = defineServiceFn({
+  input: z.looseObject({ stepIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstructionStepSlides(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.stepIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a assembly instruction step slide
+ *
+ * @remarks
+ * Upsert assembly instruction step slide
+ *
+ * @mcp
+ */
+export const createAssemblyInstructionStepSlide = defineServiceFn({
+  input: z.looseObject({
+    stepId: z.string().min(1),
+    imagePath: z.string().optional(),
+    modelUploadId: z.string().optional(),
+    caption: z.string().optional(),
+    sortOrder: z.number().min(0).optional(),
+    size: z.enum(["small", "medium", "large"]).optional(),
+    annotations: z
+      .array(
+        z.looseObject({
+          id: z.string(),
+          x: z.number(),
+          y: z.number(),
+          label: z.string().nullable().optional(),
+          color: z.string().nullable().optional(),
+          toolId: z.string().nullable().optional()
+        })
+      )
+      .nullable()
+      .optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional(),
+    updatedAt: z.string().optional()
+  }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyInstructionStepSlide(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a assembly instruction step slide
+ *
+ * @remarks
+ * Upsert assembly instruction step slide
+ *
+ * @mcp
+ */
+export const updateAssemblyInstructionStepSlide = defineServiceFn({
+  input: z
+    .looseObject({
+      stepId: z.string().min(1),
+      imagePath: z.string().optional(),
+      modelUploadId: z.string().optional(),
+      caption: z.string().optional(),
+      sortOrder: z.number().min(0).optional(),
+      size: z.enum(["small", "medium", "large"]).optional(),
+      annotations: z
+        .array(
+          z.looseObject({
+            id: z.string(),
+            x: z.number(),
+            y: z.number(),
+            label: z.string().nullable().optional(),
+            color: z.string().nullable().optional(),
+            toolId: z.string().nullable().optional()
+          })
+        )
+        .nullable()
+        .optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional(),
+      updatedAt: z.string().optional()
+    })
+    .required({ id: true }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyInstructionStepSlide(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly instruction step slide
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyInstructionStepSlide = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyInstructionStepSlide(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly instruction step tools
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructionStepTools = defineServiceFn({
+  input: z.looseObject({ stepIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstructionStepTools(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.stepIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert assembly instruction step tool
+ *
+ * @mcp
+ */
+export const upsertAssemblyInstructionStepTool = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    stepId: z.string(),
+    itemId: z.string(),
+    quantity: z.number().optional(),
+    sortOrder: z.number().optional()
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyInstructionStepTool(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly instruction step tool
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyInstructionStepTool = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyInstructionStepTool(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly instruction step materials
+ *
+ * @mcp read
+ */
+export const getAssemblyInstructionStepMaterials = defineServiceFn({
+  input: z.looseObject({ stepIds: z.array(z.string()) }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyInstructionStepMaterials(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.stepIds, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert assembly instruction step material
+ *
+ * @mcp
+ */
+export const upsertAssemblyInstructionStepMaterial = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    stepId: z.string(),
+    itemId: z.string(),
+    quantity: z.number().nullable().optional(),
+    sortOrder: z.number().optional()
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyInstructionStepMaterial(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update assembly instruction step material order
+ *
+ * @mcp
+ */
+export const updateAssemblyInstructionStepMaterialOrder = defineServiceFn({
+  input: z.looseObject({
+    assemblyInstructionId: z.string(),
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.updateAssemblyInstructionStepMaterialOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        input.assemblyInstructionId as never,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly instruction step material
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyInstructionStepMaterial(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get assembly units
+ *
+ * @mcp read
+ */
+export const getAssemblyUnits = defineServiceFn({
+  input: z.looseObject({ modelUploadId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyUnits(
+        ctx.asCaller.supabase,
+        input.modelUploadId as never
+      )
+    );
+  }
+});
+
+/**
+ * Upsert assembly unit
+ *
+ * @mcp
+ */
+export const upsertAssemblyUnit = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    modelUploadId: z.string(),
+    name: z.string(),
+    componentNodeIds: z.array(z.string()),
+    itemId: z.string().nullable().optional()
+  }),
+  permission: { create: "production", update: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertAssemblyUnit(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly unit
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyUnit = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyUnit(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Latest plan job in any state — used to tell "planning is running" apart from "planning failed" and to avoid enqueueing duplicate plan runs
+ *
+ * @mcp read
+ */
+export const getLatestAssemblyPlanJob = defineServiceFn({
+  input: z.looseObject({ modelUploadId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getLatestAssemblyPlanJob(
+        ctx.asCaller.supabase,
+        input.modelUploadId as never
+      )
+    );
+  }
+});
+
+/**
+ * Downloads and parses plan.json for a model's latest successful plan
+ *
+ * @mcp read
+ */
+export const getAssemblyPlanJson = defineServiceFn({
+  input: z.looseObject({ modelUploadId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getAssemblyPlanJson(
+        ctx.asCaller.supabase,
+        input.modelUploadId as never
+      )
+    );
+  }
+});
+
+/**
+ * Mappings from distinct model components (geometry hashes) to BOM items
+ *
+ * @mcp read
+ */
+export const getAssemblyComponentMappings = defineServiceFn({
+  input: z.looseObject({ modelUploadId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAssemblyComponentMappings(
+        ctx.asCaller.supabase,
+        input.modelUploadId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete assembly component mapping
+ *
+ * @mcp destructive
+ */
+export const deleteAssemblyComponentMapping = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { delete: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAssemblyComponentMapping(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * The engineering bill of materials for a made item, flattened through its Make subassemblies (makeMethod → methodMaterial → materialMakeMethodId), with quantiti…
+ *
+ * @mcp read
+ */
+export const getFlattenedBomMaterials = defineServiceFn({
+  input: z.looseObject({ itemId: z.string() }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    return plain(
+      ctx,
+      await service.getFlattenedBomMaterials(
+        ctx.asCaller.supabase,
+        input.itemId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create a presigned upload URL for a job document
+ *
+ * @mcp
+ */
+export const createJobDocumentUploadUrl = defineServiceFn({
+  input: z.looseObject({ jobId: z.string(), name: z.string() }),
+  permission: { create: "production" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createJobDocumentUploadUrl(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
   }
 });

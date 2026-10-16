@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const memoId = input.params.memoId;
   const api = await carbon(args.request);
-  const result = await api.invoicing.memo.post({ memoId: memoId });
+  const result = await api.invoicing.postMemo({ memoId: memoId });
   return respond(args.request, result).redirect(path.to.memo(memoId), {
     message: "Memo posted"
   });

@@ -3,17 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import { envelope, stamp } from "@carbon/api/service-tools.server";
 import { getLogger } from "@carbon/logger";
 import { isAllowedAvatarValue, isOwnAvatarUpload } from "@carbon/utils";
 import { z } from "zod";
 import { userFlagValidator } from "~/modules/users/users.models";
-import {
-  deleteUserAttributeValue,
-  getCurrentUser,
-  refuseAttributeValueChange,
-  updateAvatar,
-  upsertUserAttributeValue
-} from "./account.service";
+import * as service from "./account.service";
 
 const logger = getLogger("erp", "account");
 // The caller's own account. Every operation acts on the signed-in user (an
@@ -39,14 +34,14 @@ export const updateOwnAvatar = defineServiceFn({
 
     const client = ctx.asCaller.supabase;
     // Only the replaced avatar is needed: the narrow reader, not `select("*")`.
-    const previous = await getCurrentUser(client, userId);
+    const previous = await service.getCurrentUser(client, userId);
     if (previous.error) {
       logger.error("Failed to read the avatar being replaced", {
         userId,
         error: previous.error
       });
     }
-    const saved = await updateAvatar(client, userId, path);
+    const saved = await service.updateAvatar(client, userId, path);
     if (saved.error) {
       return ctx.error("internal", "Failed to update avatar", saved.error);
     }
@@ -86,7 +81,7 @@ export const upsertAttributeValue = defineServiceFn({
   }),
   permission: {},
   async run(ctx, { userId, ...value }) {
-    const refused = await refuseAttributeValueChange(
+    const refused = await service.refuseAttributeValueChange(
       ctx,
       userId,
       value.userAttributeId,
@@ -94,11 +89,14 @@ export const upsertAttributeValue = defineServiceFn({
     );
     if (refused) return refused;
 
-    const saved = await upsertUserAttributeValue(ctx.asCaller.supabase, {
-      ...value,
-      userId,
-      updatedBy: ctx.auditUserId
-    });
+    const saved = await service.upsertUserAttributeValue(
+      ctx.asCaller.supabase,
+      {
+        ...value,
+        userId,
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (saved.error) {
       return ctx.error(
         "internal",
@@ -124,7 +122,7 @@ export const deleteAttributeValue = defineServiceFn({
   }),
   permission: {},
   async run(ctx, value) {
-    const refused = await refuseAttributeValueChange(
+    const refused = await service.refuseAttributeValueChange(
       ctx,
       value.userId,
       value.userAttributeId,
@@ -132,7 +130,7 @@ export const deleteAttributeValue = defineServiceFn({
     );
     if (refused) return refused;
 
-    const deleted = await deleteUserAttributeValue(
+    const deleted = await service.deleteUserAttributeValue(
       ctx.asCaller.supabase,
       value
     );
@@ -175,5 +173,145 @@ export const setOwnFlag = defineServiceFn({
       return ctx.error("internal", "Failed to update flag", updated.error);
     }
     return { flag, value };
+  }
+});
+/**
+ * Get notification preferences
+ *
+ * @mcp read
+ */
+export const getNotificationPreferences = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getNotificationPreferences(
+        ctx.asCaller.supabase,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Upsert notification preference
+ *
+ * @mcp
+ */
+export const upsertNotificationPreference = defineServiceFn({
+  input: z.looseObject({
+    topic: z.string(),
+    channel: z.enum(["email", "slack"]),
+    enabled: z.boolean()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertNotificationPreference(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "userId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get account
+ *
+ * @mcp read
+ */
+export const getAccount = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAccount(ctx.asCaller.supabase, input.id as never)
+    );
+  }
+});
+
+/**
+ * Return the connected user's own profile (id, email, name)
+ *
+ * @mcp read
+ */
+export const getCurrentUser = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getCurrentUser(ctx.asCaller.supabase, ctx.auditUserId)
+    );
+  }
+});
+
+/**
+ * Get all attribute categories
+ *
+ * @mcp read
+ */
+export const getAllAttributeCategories = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: {},
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getAllAttributeCategories(
+        ctx.asCaller.supabase,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get attribute category with values
+ *
+ * @mcp read
+ */
+export const getAttributeCategoryWithValues = defineServiceFn({
+  input: z.looseObject({ categoryId: z.string() }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAttributeCategoryWithValues(
+        ctx.asCaller.supabase,
+        input.categoryId as never,
+        ctx.auditUserId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Update public account
+ *
+ * @mcp
+ */
+export const updatePublicAccount = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    about: z.string().optional(),
+    phone: z.string().optional()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updatePublicAccount(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
   }
 });

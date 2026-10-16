@@ -52,7 +52,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(changeNoticeValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.items.changeNotice.create({
+  const result = await api.items.createChangeNotice({
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });

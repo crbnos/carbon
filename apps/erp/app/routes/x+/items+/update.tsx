@@ -57,7 +57,7 @@ export async function action(args: ActionFunctionArgs) {
 
   switch (field) {
     case "itemTrackingType":
-      return api.item.setTrackingType({
+      return api.setItemTrackingType({
         ids,
         itemTrackingType: value as (typeof itemTrackingTypes)[number]
       });
@@ -65,19 +65,19 @@ export async function action(args: ActionFunctionArgs) {
     case "description":
     case "mpn":
     case "unitOfMeasureCode":
-      return api.item.setFields({ ids, [field]: value });
+      return api.setItemFields({ ids, [field]: value });
     case "replenishmentSystem":
-      return api.item.setSourcing({
+      return api.setItemSourcing({
         ids,
         replenishmentSystem: value as "Buy" | "Make" | "Buy and Make"
       });
     case "defaultMethodType":
-      return api.item.setSourcing({
+      return api.setItemSourcing({
         ids,
         defaultMethodType: value as (typeof methodType)[number]
       });
     case "sourcingType":
-      return api.item.setSourcing({
+      return api.setItemSourcing({
         ids,
         sourcingType: value as (typeof sourcingType)[number]
       });
@@ -87,11 +87,11 @@ export async function action(args: ActionFunctionArgs) {
     case "materialFormId":
     case "materialSubstanceId":
     case "materialTypeId":
-      return api.material.setProperties({ ids, [field]: value || null });
+      return api.setMaterialProperties({ ids, [field]: value || null });
     case "active":
-      return api.item.setActive({ ids, active: value === "on" });
+      return api.setItemActive({ ids, active: value === "on" });
     case "itemPostingGroupId":
-      return api.item.setPostingGroup({
+      return api.setItemPostingGroup({
         ids,
         itemPostingGroupId: value || null
       });
@@ -100,13 +100,13 @@ export async function action(args: ActionFunctionArgs) {
     case "materialId":
     case "toolId":
       if (ids.length > 1) return invalid("Cannot update multiple items");
-      return api.item.setReadableId({
+      return api.setItemReadableId({
         id: ids[0],
         type: renumberType[field],
         readableId: value
       });
     case "serviceName":
       if (ids.length > 1) return invalid("Cannot update multiple items");
-      return api.service.rename({ itemId: ids[0], name: value });
+      return api.renameService({ itemId: ids[0], name: value });
   }
 }

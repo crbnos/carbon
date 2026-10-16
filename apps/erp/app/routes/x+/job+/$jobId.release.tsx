@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.job.release({
+  return api.production.releaseJobs({
     jobIds: [input.params.jobId],
     ...input.data
   });

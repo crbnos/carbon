@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(linesUpdate).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.inventory.stockTransfer.lines.update({
+  return api.inventory.updateStockTransferLines({
     ...input.data,
     value: input.data.value ?? null
   });

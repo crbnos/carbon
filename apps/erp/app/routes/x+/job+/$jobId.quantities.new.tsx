@@ -38,7 +38,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.quantity.create(input.data);
+  const result = await api.production.createProductionQuantity(input.data);
   return respond(args.request, result).redirect(
     `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
     {

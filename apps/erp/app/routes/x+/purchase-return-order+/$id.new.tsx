@@ -19,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id: _id, ...line } = input.data;
   const api = await carbon(args.request);
   // Written to the URL's order, never the form's copy of the id.
-  const result = await api.purchasing.purchaseReturnOrder.addLine({
+  const result = await api.purchasing.addReturnOrderLine({
     ...line,
     purchaseReturnOrderId: orderId,
     customFields: input.formData && setCustomFields(input.formData)

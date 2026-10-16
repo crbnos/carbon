@@ -33,92 +33,92 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // tools; only the read remains.
   settings_getApiKeys: { module: "users", actions: ["update"] },
   // Writes a GL journal: the Reconcile screen requires accounting_create.
-  inventory_inventoryReconciliationJournal_create: {
+  inventory_createInventoryReconciliationJournal: {
     module: "accounting",
     actions: ["create"]
   },
   // Bank accounts: the table's RLS and every bank-account screen are accounting.
-  purchasing_supplierBankAccounts_get: { module: "accounting", actions: ["view"] },
-  purchasing_supplierBankAccount_create: {
+  purchasing_getSupplierBankAccounts: { module: "accounting", actions: ["view"] },
+  purchasing_createSupplierBankAccount: {
     module: "accounting",
     actions: ["create"]
   },
-  purchasing_supplierBankAccount_update: {
+  purchasing_updateSupplierBankAccount: {
     module: "accounting",
     actions: ["update"]
   },
-  purchasing_supplierBankAccount_delete: {
+  purchasing_deleteSupplierBankAccount: {
     module: "accounting",
     actions: ["delete"]
   },
-  sales_customerBankAccounts_get: { module: "accounting", actions: ["view"] },
-  sales_customerBankAccount_create: {
+  sales_getCustomerBankAccounts: { module: "accounting", actions: ["view"] },
+  sales_createCustomerBankAccount: {
     module: "accounting",
     actions: ["create"]
   },
-  sales_customerBankAccount_update: {
+  sales_updateCustomerBankAccount: {
     module: "accounting",
     actions: ["update"]
   },
-  sales_customerBankAccount_delete: {
+  sales_deleteCustomerBankAccount: {
     module: "accounting",
     actions: ["delete"]
   },
   // Issue Credit writes a memo: its route requires invoicing_create.
-  purchasing_purchaseReturnOrderCredit_create: {
+  purchasing_createPurchaseReturnOrderCredit: {
     module: "invoicing",
     actions: ["create"]
   },
-  sales_salesReturnOrderCredit_create: {
+  sales_createSalesReturnOrderCredit: {
     module: "invoicing",
     actions: ["create"]
   },
   // A leased asset's classification is an accounting decision: its route
   // requires accounting_update, not the lease's purchasing permission.
-  purchasing_leaseLine_overrideClassification: {
+  purchasing_overrideLeaseLineClassification: {
     module: "accounting",
     actions: ["update"]
   },
-  purchasing_leaseLine_removeClassificationOverride: {
+  purchasing_removeLeaseLineClassificationOverride: {
     module: "accounting",
     actions: ["update"]
   },
   // Creates a shipment: its route requires inventory_create.
-  sales_order_line_ship: { module: "inventory", actions: ["create"] },
+  sales_shipSalesOrderLine: { module: "inventory", actions: ["create"] },
   // Drafts a purchase return from an issue: its route requires
   // purchasing_create.
-  quality_issue_draftSupplierReturn: {
+  quality_draftIssueSupplierReturn: {
     module: "purchasing",
     actions: ["create"]
   },
   // Opens a quality Issue from an RMA line: quality_create AND sales_update,
   // which the API cannot name as one module, so its own gate checks both.
-  sales_returnOrder_line_escalate: { module: null, actions: [] },
+  sales_escalateReturnOrderLine: { module: null, actions: [] },
   // A rental unit on a shipment or receipt: sales_update AND
   // inventory_create. Selling it: sales and invoicing create.
-  sales_rentalAgreement_unit_deliver: { module: null, actions: [] },
-  sales_rentalAgreement_unit_return: { module: null, actions: [] },
-  sales_rentalAgreement_unit_sell: { module: null, actions: [] },
+  sales_deliverRentalUnit: { module: null, actions: [] },
+  sales_returnRentalUnit: { module: null, actions: [] },
+  sales_sellRentalUnit: { module: null, actions: [] },
   // The classification override is an accounting decision: its route
   // requires accounting_update.
-  sales_rentalAgreement_unit_classify: {
+  sales_classifyRentalUnit: {
     module: "accounting",
     actions: ["update"]
   },
   // A tie-out adjustment drafts a GL journal: its route requires
   // accounting_create.
-  invoicing_receivables_adjust: { module: "accounting", actions: ["create"] },
-  invoicing_payables_adjust: { module: "accounting", actions: ["create"] },
+  invoicing_adjustReceivables: { module: "accounting", actions: ["create"] },
+  invoicing_adjustPayables: { module: "accounting", actions: ["create"] },
   // Buying or selling a fixed asset creates a purchase or sales order: its
   // route requires purchasing_create or sales_create.
-  accounting_fixedAsset_purchase: { module: "purchasing", actions: ["create"] },
-  accounting_fixedAsset_sell: { module: "sales", actions: ["create"] },
+  accounting_purchaseFixedAsset: { module: "purchasing", actions: ["create"] },
+  accounting_sellFixedAsset: { module: "sales", actions: ["create"] },
   // A training's fields are edited on the people side: its route requires
   // people_update.
-  resources_training_updateField: { module: "people", actions: ["update"] },
+  resources_updateTrainingField: { module: "people", actions: ["update"] },
   // Enrolling the company in the Implementation Hub: its route requires
   // settings_update.
-  shared_implementationHub_enroll: { module: "settings", actions: ["update"] }
+  shared_enrollImplementationHub: { module: "settings", actions: ["update"] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

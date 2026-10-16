@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["jobId"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.job.delete({
+  const result = await api.production.deleteJobs({
     ids: [input.params.jobId]
   });
   if (result.error) {

@@ -69,7 +69,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.sales.rfq.mapLines({
+  const result = await api.sales.mapSalesRfqLines({
     ...input.data,
     rfqId: input.params.rfqId
   });

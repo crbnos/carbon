@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id: _id, pickingListId: _readableId, ...fields } = input.data;
 
   const api = await carbon(args.request);
-  const result = await api.inventory.pickingList.update({
+  const result = await api.inventory.updatePickingList({
     pickingListId,
     ...fields,
     customFields: input.formData ? setCustomFields(input.formData) : undefined

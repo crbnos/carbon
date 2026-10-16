@@ -36,7 +36,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(createOperatorValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.users.operator.create(input.data);
+  const result = await api.users.addConsoleOperator(input.data);
   // The PIN is generated on the server and stored only as a hash; the result
   // carries it so the modal can show it to the admin exactly once.
   if (result.error) {

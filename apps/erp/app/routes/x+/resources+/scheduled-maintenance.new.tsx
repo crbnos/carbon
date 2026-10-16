@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(maintenanceScheduleValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.maintenanceSchedule.create(input.data);
+  const result = await api.resources.createMaintenanceSchedule(input.data);
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
   return respond(args.request, result).redirect(

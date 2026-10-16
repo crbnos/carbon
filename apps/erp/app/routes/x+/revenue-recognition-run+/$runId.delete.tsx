@@ -44,7 +44,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { runId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.revenueRecognitionRun.delete({ runId });
+  const result = await api.accounting.deleteRevenueRecognitionRun({ runId });
   // Back to the list of the run's own type.
   return respond(args.request, result).redirect(
     result.data

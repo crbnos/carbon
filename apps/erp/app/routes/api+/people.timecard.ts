@@ -23,8 +23,8 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const form = input.data;
   return form.intent === "clockIn"
-    ? api.people.ownTimecard.clockIn({})
-    : api.people.ownTimecard.clockOut({
+    ? api.people.clockInSelf({})
+    : api.people.clockOutSelf({
         clockOut: form.clockOut,
         note: form.note
       });

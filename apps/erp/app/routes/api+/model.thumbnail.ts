@@ -20,5 +20,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(thumbnailForm).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.documents.model.regenerateThumbnail(input.data);
+  return api.documents.regenerateModelThumbnail(input.data);
 }

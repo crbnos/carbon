@@ -17,7 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const { quoteId } = input.params;
 
   const api = await carbon(args.request);
-  const result = await api.sales.quote.setStatus({
+  const result = await api.sales.setQuoteStatus({
     quoteId,
     status: input.data.status
   });

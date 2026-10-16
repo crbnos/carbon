@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.operation.delete({
+  return api.production.deleteJobOperation({
     jobId: input.params.jobId,
     id: input.data.id
   });

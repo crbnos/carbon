@@ -53,7 +53,7 @@ export async function action(args: ActionFunctionArgs) {
   const { invoiceId, lineId } = input.params;
   const formData = input.formData ?? new FormData();
   const api = await carbon(args.request);
-  const result = await api.invoicing.salesInvoice.line.update({
+  const result = await api.invoicing.updateSalesInvoiceLine({
     ...input.data,
     id: lineId,
     invoiceId,

@@ -11,7 +11,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.printerRoute.delete({
+  const result = await api.settings.removePrinterRoute({
     id: input.params.id
   });
   return respond(args.request, result).redirect(path.to.printingSettings, {

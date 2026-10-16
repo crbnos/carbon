@@ -18,7 +18,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.employeeAbility.remove({
+  const result = await api.resources.removeEmployeeAbility({
     abilityId: input.params.id,
     employeeAbilityId: input.params.employeeAbilityId
   });

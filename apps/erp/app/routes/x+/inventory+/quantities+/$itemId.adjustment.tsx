@@ -25,7 +25,7 @@ export async function action(args: ActionFunctionArgs) {
   // A form-only flag: the serial quantity cap has been checked.
   const { requiresSerialTracking: _serial, ...adjustment } = input.data;
   const api = await carbon(args.request);
-  const result = await api.inventory.item.adjust(adjustment);
+  const result = await api.inventory.adjustInventory(adjustment);
   // An error is toasted by the rule-violation fetcher that sent it.
   if (!result.data) return result;
   // A blocking rule: the violation modal reads these.

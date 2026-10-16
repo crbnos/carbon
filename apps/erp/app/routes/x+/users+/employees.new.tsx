@@ -41,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { ip, city } = originOf(args.request);
   const api = await carbon(args.request);
-  const result = await api.users.employee.invite({ ...input.data, ip, city });
+  const result = await api.users.inviteEmployee({ ...input.data, ip, city });
   if (result.error?.category === "validation") {
     return validationError({
       fieldErrors: { usPersonAttestation: result.error.message }

@@ -30,7 +30,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const move = input.data;
   const api = await carbon(args.request);
-  return api.production.schedule.reorder({
+  return api.production.reorderScheduleOperations({
     columnId: move.columnId,
     updates:
       "updates" in move

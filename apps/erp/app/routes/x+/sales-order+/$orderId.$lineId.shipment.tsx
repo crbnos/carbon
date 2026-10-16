@@ -15,7 +15,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { orderId, lineId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.order.line.ship({ salesOrderLineId: lineId });
+  const result = await api.sales.shipSalesOrderLine({
+    salesOrderLineId: lineId
+  });
   if (!result.data) {
     return respond(args.request, result).redirect(
       path.to.salesOrderLine(orderId, lineId),

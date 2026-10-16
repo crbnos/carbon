@@ -10,5 +10,5 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator().request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.assembly.convertModel({ id: input.params.id });
+  return api.production.convertAssemblyModel({ id: input.params.id });
 }

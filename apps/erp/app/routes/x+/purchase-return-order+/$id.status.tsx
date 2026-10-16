@@ -21,14 +21,14 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
 
   if (input.data.status === "Cancelled") {
-    const result = await api.purchasing.purchaseReturnOrder.cancel({
+    const result = await api.purchasing.cancelReturnOrder({
       purchaseReturnOrderId: id
     });
     return respond(args.request, result).redirect(to, {
       message: "Cancelled return order"
     });
   }
-  const result = await api.purchasing.purchaseReturnOrder.reopen({
+  const result = await api.purchasing.reopenReturnOrder({
     purchaseReturnOrderId: id
   });
   return respond(args.request, result).redirect(to, {

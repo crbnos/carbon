@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(workCenterValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.resources.workCenter.create({
+  const result = await api.resources.createWorkCenter({
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });

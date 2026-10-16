@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(createLinearIssue.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.shared.linear.createIssue(input.data);
+  return api.shared.createLinearIssue(input.data);
 }
 
 export const loader: LoaderFunction = async ({ request }) => {

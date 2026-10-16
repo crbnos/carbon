@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const { jobId } = input.params;
   const configuration = await args.request.json();
   const api = await carbon(args.request);
-  const result = await api.production.job.configure({ jobId, configuration });
+  const result = await api.production.configureJob({ jobId, configuration });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.job(jobId),
     { message: "Updated job" }

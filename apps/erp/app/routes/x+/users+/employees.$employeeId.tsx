@@ -156,7 +156,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id, employeeType, data: permissions } = input.data;
   const api = await carbon(args.request);
-  const result = await api.users.employee.update({
+  const result = await api.users.updateEmployeePermissions({
     id,
     employeeType,
     permissions: JSON.parse(permissions),

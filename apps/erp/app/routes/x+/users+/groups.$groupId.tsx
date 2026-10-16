@@ -61,7 +61,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(groupValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.users.group.update(input.data);
+  const result = await api.users.updateGroup(input.data);
   return respond(args.request, result).redirect(path.to.groups, {
     message: "Group updated successfully"
   });

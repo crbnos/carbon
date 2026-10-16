@@ -177,7 +177,7 @@ export async function action(args: ActionFunctionArgs) {
       formData
     );
     if (validation.error) return validationError(validation.error);
-    const result = await api.items.manufacturing.update({
+    const result = await api.items.updateItemManufacturing({
       ...validation.data,
       requiresConfiguration: validation.data.requiresConfiguration ?? false,
       itemId,
@@ -191,7 +191,7 @@ export async function action(args: ActionFunctionArgs) {
 
   const validation = await validator(partValidator).validate(formData);
   if (validation.error) return validationError(validation.error);
-  const result = await api.items.part.update({
+  const result = await api.items.updatePart({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData)

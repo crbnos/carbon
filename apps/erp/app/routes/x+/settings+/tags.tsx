@@ -21,5 +21,5 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const { ids, table, value } = input.data;
-  return api.settings.tags.set({ table, ids, tags: value });
+  return api.settings.setRecordTags({ table, ids, tags: value });
 }

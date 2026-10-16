@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(createJiraIssue.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.shared.jira.createIssue(input.data);
+  return api.shared.createJiraIssue(input.data);
 }
 
 export const loader: LoaderFunction = async ({ request }) => {

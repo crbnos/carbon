@@ -13,7 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(cancelForm).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.production.assembly.cancelJob({
+  return api.production.cancelAssemblyJob({
     id: input.params.id,
     kind: input.data.kind
   });

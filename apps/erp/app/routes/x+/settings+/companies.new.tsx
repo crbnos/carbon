@@ -23,7 +23,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(subsidiaryValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.settings.subsidiary.create(input.data);
+  const result = await api.settings.createSubsidiary(input.data);
   return respond(args.request, result).redirect(path.to.companies, {
     message: "Created company"
   });

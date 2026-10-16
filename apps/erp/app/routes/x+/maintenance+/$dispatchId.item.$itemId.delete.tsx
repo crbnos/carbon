@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { dispatchId, itemId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.resources.maintenancePart.unissue({
+  const result = await api.resources.unissueMaintenancePart({
     dispatchId,
     maintenanceDispatchItemId: itemId
   });

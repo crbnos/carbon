@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(form).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.purchasing.supplierQuote.update({
+  return api.purchasing.updateSupplierQuotes({
     ...input.data,
     value: input.data.value || null
   });

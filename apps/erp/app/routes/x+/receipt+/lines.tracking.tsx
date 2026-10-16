@@ -54,12 +54,12 @@ export async function action(args: ActionFunctionArgs) {
   const { data } = input;
   switch (data.trackingType) {
     case "batch":
-      return api.inventory.receipt.line.setBatch(data);
+      return api.inventory.setReceiptLineBatch(data);
     case "serial":
-      return api.inventory.receipt.line.setSerial(data);
+      return api.inventory.setReceiptLineSerial(data);
     case "returnEntity":
       return data.intent === "remove"
-        ? api.inventory.receipt.line.removeReturnEntity(data)
-        : api.inventory.receipt.line.assignReturnEntity(data);
+        ? api.inventory.removeReceiptReturnEntity(data)
+        : api.inventory.assignReceiptReturnEntity(data);
   }
 }

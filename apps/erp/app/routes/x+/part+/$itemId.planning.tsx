@@ -123,7 +123,7 @@ export async function action(args: ActionFunctionArgs) {
       formData
     );
     if (validation.error) return validationError(validation.error);
-    const result = await api.items.supersession.set({
+    const result = await api.items.setItemSupersession({
       ...validation.data,
       itemId
     });
@@ -147,7 +147,7 @@ export async function action(args: ActionFunctionArgs) {
       predecessorSupersessionValidator
     ).validate(formData);
     if (validation.error) return validationError(validation.error);
-    const result = await api.items.supersession.addPredecessor({
+    const result = await api.items.addItemPredecessor({
       ...validation.data,
       itemId
     });
@@ -165,7 +165,7 @@ export async function action(args: ActionFunctionArgs) {
 
   const validation = await validator(itemPlanningValidator).validate(formData);
   if (validation.error) return validationError(validation.error);
-  const result = await api.items.planning.update({
+  const result = await api.items.updateItemPlanning({
     ...validation.data,
     itemId,
     customFields: setCustomFields(formData)

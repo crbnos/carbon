@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.inventory.shipment.fixedAssetLine.update(input.data);
+  return api.inventory.updateShipmentFixedAssetLine(input.data);
 }

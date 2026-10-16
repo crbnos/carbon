@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const { name, description } = input.data;
-  return api.workflows.workflow.create({ name, description });
+  return api.workflows.createWorkflow({ name, description });
 }

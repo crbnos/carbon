@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { ip, city } = originOf(args.request);
   const api = await carbon(args.request);
-  return api.users.invite.resend({ userIds: input.data.users, ip, city });
+  return api.users.resendInvites({ userIds: input.data.users, ip, city });
 }

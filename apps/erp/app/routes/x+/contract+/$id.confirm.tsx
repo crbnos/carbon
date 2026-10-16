@@ -65,7 +65,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.contract.confirm({ id, ...input.data });
+  const result = await api.sales.confirmContract({ id, ...input.data });
   // Straight to the contract page, never back to the referrer: from the
   // setup wizard that is a second redirect, and the contract layout does not
   // reload on a redirect that no longer carries the submission.

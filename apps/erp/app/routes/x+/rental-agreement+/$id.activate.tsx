@@ -12,7 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.sales.rentalAgreement.activate({ id });
+  const result = await api.sales.activateRentalAgreement({ id });
   // From the setup wizard (Draft only), straight to the agreement's page.
   const referrer = requestReferrer(args.request);
   return respond(args.request, result).redirect(

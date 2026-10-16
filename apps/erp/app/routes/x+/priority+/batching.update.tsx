@@ -54,27 +54,27 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(batchingForm).request(args);
   if ("invalid" in input) return input.invalid;
   const form = input.data;
-  const batch = (await carbon(args.request)).production.batch;
+  const batch = (await carbon(args.request)).production;
 
   switch (form.intent) {
     case "reprioritize":
-      return batch.reprioritize(form);
+      return batch.reprioritizeBatch(form);
     case "mergeOutputs":
-      return batch.mergeOutputs(form);
+      return batch.mergeBatchOutputs(form);
     case "create": {
       const { intent: _intent, ...create } = form;
-      return batch.create(create);
+      return batch.createBatch(create);
     }
     case "release":
-      return batch.release({
+      return batch.releaseBatches({
         batchIds: [form.batchId],
         purchaseOrdersBySupplierId: form.purchaseOrdersBySupplierId
       });
     case "unrelease":
-      return batch.unrelease({ batchId: form.batchId });
+      return batch.unreleaseBatch({ batchId: form.batchId });
     default: {
       const { intent: type, ...update } = form;
-      return batch.update({ ...update, type });
+      return batch.updateBatch({ ...update, type });
     }
   }
 }

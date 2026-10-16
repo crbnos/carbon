@@ -15,7 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
   const api = await carbon(args.request);
-  const result = await api.purchasing.supplierQuote.send({
+  const result = await api.purchasing.sendSupplierQuoteToSupplier({
     ...input.data,
     supplierQuoteId: id
   });

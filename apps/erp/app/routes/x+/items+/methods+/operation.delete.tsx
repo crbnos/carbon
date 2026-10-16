@@ -16,7 +16,7 @@ export async function action(args: ActionFunctionArgs) {
   );
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.items.methodOperation.delete(input.data);
+  const result = await api.items.deleteMethodOperation(input.data);
   if (result.data?.notice) {
     return data(result, await flash(args.request, success(result.data.notice)));
   }

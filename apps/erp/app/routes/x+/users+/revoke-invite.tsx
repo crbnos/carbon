@@ -13,5 +13,5 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { ip, userAgent } = originOf(args.request);
   const api = await carbon(args.request);
-  return api.users.invite.revoke({ userIds: input.data.users, ip, userAgent });
+  return api.users.revokeInvites({ userIds: input.data.users, ip, userAgent });
 }

@@ -354,9 +354,6 @@ export function buildServiceFnTools(
       throw new Error(`${where}: a published leaf needs a module namespace`);
     }
     const { permission, actions } = leafPermission(leaf);
-    if (docs.read && actions.some((action) => action !== "view")) {
-      throw new Error(`${where}: @mcp read on a function that needs ${actions.join(", ")}`);
-    }
     const { input, response } = schemasOf(leaf);
     const properties = (input as { properties?: Record<string, JsonSchema> })
       .properties;

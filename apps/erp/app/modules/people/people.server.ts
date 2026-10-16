@@ -3,19 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
+import {
+  envelope,
+  envelopes,
+  paged,
+  stamp
+} from "@carbon/api/service-tools.server";
 import { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { employeeJobValidator } from "./people.models";
-import {
-  clockIn,
-  clockOut,
-  createTimeCardEntry,
-  deleteTimeCardEntry,
-  timeCardError,
-  updateEmployeeJob,
-  updateTimeCardEntry,
-  upsertShift
-} from "./people.service";
+import * as service from "./people.service";
 
 /** Custom field values, as `setCustomFields` reads them off a form. */
 const customFieldValues = z.record(
@@ -51,7 +48,7 @@ export const createShift = defineServiceFn({
   input: shiftInput,
   permission: { create: "people" },
   async run(ctx, shift) {
-    const created = await upsertShift(ctx.asCaller.supabase, {
+    const created = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId
@@ -77,7 +74,7 @@ export const updateShift = defineServiceFn({
   // The route always required create, not update, to edit a shift.
   permission: { create: "people" },
   async run(ctx, shift) {
-    const updated = await upsertShift(ctx.asCaller.supabase, {
+    const updated = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
       updatedBy: ctx.auditUserId
     });
@@ -113,11 +110,15 @@ export const updatePersonJob = defineServiceFn({
   }),
   permission: { update: "people" },
   async run(ctx, { employeeId, ...job }) {
-    const updated = await updateEmployeeJob(ctx.asSystem.pg, employeeId, {
-      ...job,
-      companyId: ctx.company.id,
-      updatedBy: ctx.auditUserId
-    });
+    const updated = await service.updateEmployeeJob(
+      ctx.asSystem.pg,
+      employeeId,
+      {
+        ...job,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      }
+    );
     if (updated.error) {
       return ctx.error("internal", "Failed to update job", updated.error);
     }
@@ -138,13 +139,13 @@ export const clockInPerson = defineServiceFn({
   input: z.object({ employeeId: z.string().min(1) }),
   permission: { view: "people" },
   async run(ctx, { employeeId }) {
-    const result = await clockIn(ctx.asCaller.supabase, {
+    const result = await service.clockIn(ctx.asCaller.supabase, {
       employeeId,
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId
     });
     if (result.error)
-      return timeCardError(ctx, result.error, "Failed to clock in");
+      return service.timeCardError(ctx, result.error, "Failed to clock in");
     return { employeeId };
   }
 });
@@ -157,14 +158,14 @@ export const clockOutPerson = defineServiceFn({
   }),
   permission: { view: "people" },
   async run(ctx, { employeeId, note }) {
-    const result = await clockOut(ctx.asCaller.supabase, {
+    const result = await service.clockOut(ctx.asCaller.supabase, {
       employeeId,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId,
       note
     });
     if (result.error) {
-      return timeCardError(ctx, result.error, "Failed to clock out");
+      return service.timeCardError(ctx, result.error, "Failed to clock out");
     }
     return { employeeId };
   }
@@ -179,7 +180,7 @@ export const addPersonTimeCardEntry = defineServiceFn({
   }),
   permission: { view: "people" },
   async run(ctx, entry) {
-    const created = await createTimeCardEntry(ctx.asCaller.supabase, {
+    const created = await service.createTimeCardEntry(ctx.asCaller.supabase, {
       employeeId: entry.employeeId,
       companyId: ctx.company.id,
       clockIn: entry.clockIn,
@@ -203,7 +204,7 @@ export const updatePersonTimeCardEntry = defineServiceFn({
   }),
   permission: { view: "people" },
   async run(ctx, entry) {
-    const updated = await updateTimeCardEntry(ctx.asCaller.supabase, {
+    const updated = await service.updateTimeCardEntry(ctx.asCaller.supabase, {
       entryId: entry.entryId,
       clockIn: entry.clockIn,
       clockOut: entry.clockOut || null,
@@ -222,7 +223,10 @@ export const deletePersonTimeCardEntry = defineServiceFn({
   input: z.object({ entryId: z.string().min(1) }),
   permission: { view: "people" },
   async run(ctx, { entryId }) {
-    const deleted = await deleteTimeCardEntry(ctx.asCaller.supabase, entryId);
+    const deleted = await service.deleteTimeCardEntry(
+      ctx.asCaller.supabase,
+      entryId
+    );
     if (deleted.error) {
       return ctx.error("internal", "Failed to delete entry", deleted.error);
     }
@@ -235,13 +239,13 @@ export const clockInSelf = defineServiceFn({
   input: z.object({}),
   permission: {},
   async run(ctx) {
-    const result = await clockIn(ctx.asCaller.supabase, {
+    const result = await service.clockIn(ctx.asCaller.supabase, {
       employeeId: ctx.auditUserId,
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId
     });
     if (result.error)
-      return timeCardError(ctx, result.error, "Failed to clock in");
+      return service.timeCardError(ctx, result.error, "Failed to clock in");
     return { employeeId: ctx.auditUserId };
   }
 });
@@ -257,7 +261,7 @@ export const clockOutSelf = defineServiceFn({
   }),
   permission: {},
   async run(ctx, { clockOut: at, note }) {
-    const result = await clockOut(ctx.asCaller.supabase, {
+    const result = await service.clockOut(ctx.asCaller.supabase, {
       employeeId: ctx.auditUserId,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId,
@@ -265,8 +269,916 @@ export const clockOutSelf = defineServiceFn({
       note: note || undefined
     });
     if (result.error) {
-      return timeCardError(ctx, result.error, "Failed to clock out");
+      return service.timeCardError(ctx, result.error, "Failed to clock out");
     }
     return { employeeId: ctx.auditUserId };
+  }
+});
+/**
+ * Delete attribute
+ *
+ * @mcp destructive
+ */
+export const deleteAttribute = defineServiceFn({
+  input: z.looseObject({ attributeId: z.string() }),
+  permission: { delete: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAttribute(
+        ctx.asCaller.supabase,
+        input.attributeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete attribute category
+ *
+ * @mcp destructive
+ */
+export const deleteAttributeCategory = defineServiceFn({
+  input: z.looseObject({ attributeCategoryId: z.string() }),
+  permission: { delete: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteAttributeCategory(
+        ctx.asCaller.supabase,
+        input.attributeCategoryId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete department
+ *
+ * @mcp destructive
+ */
+export const deleteDepartment = defineServiceFn({
+  input: z.looseObject({ departmentId: z.string() }),
+  permission: { delete: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteDepartment(
+        ctx.asCaller.supabase,
+        input.departmentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete holiday
+ *
+ * @mcp destructive
+ */
+export const deleteHoliday = defineServiceFn({
+  input: z.looseObject({ holidayId: z.string() }),
+  permission: { delete: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteHoliday(
+        ctx.asCaller.supabase,
+        input.holidayId as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete shift
+ *
+ * @mcp destructive
+ */
+export const deleteShift = defineServiceFn({
+  input: z.looseObject({ shiftId: z.string() }),
+  permission: { delete: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteShift(ctx.asCaller.supabase, input.shiftId as never)
+    );
+  }
+});
+
+/**
+ * Get attribute
+ *
+ * @mcp read
+ */
+export const getAttribute = defineServiceFn({
+  input: z.looseObject({ attributeId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAttribute(
+        ctx.asCaller.supabase,
+        input.attributeId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get attribute categories
+ *
+ * @mcp read
+ */
+export const getAttributeCategories = defineServiceFn({
+  input: z.looseObject({
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getAttributeCategories(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get attribute category
+ *
+ * @mcp read
+ */
+export const getAttributeCategory = defineServiceFn({
+  input: z.looseObject({ id: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getAttributeCategory(
+        ctx.asCaller.supabase,
+        input.id as never
+      )
+    );
+  }
+});
+
+/**
+ * Get attribute data types
+ *
+ * @mcp read
+ */
+export const getAttributeDataTypes = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "people" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getAttributeDataTypes(ctx.asCaller.supabase)
+    );
+  }
+});
+
+/**
+ * Get department
+ *
+ * @mcp read
+ */
+export const getDepartment = defineServiceFn({
+  input: z.looseObject({ departmentId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getDepartment(
+        ctx.asCaller.supabase,
+        input.departmentId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get departments list
+ *
+ * @mcp read
+ */
+export const getDepartmentsList = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "people" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getDepartmentsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get departments tree
+ *
+ * @mcp read
+ */
+export const getDepartmentsTree = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "people" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getDepartmentsTree(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get employee job
+ *
+ * @mcp read
+ */
+export const getEmployeeJob = defineServiceFn({
+  input: z.looseObject({ employeeId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getEmployeeJob(
+        ctx.asCaller.supabase,
+        input.employeeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get employee summary
+ *
+ * @mcp read
+ */
+export const getEmployeeSummary = defineServiceFn({
+  input: z.looseObject({ employeeId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getEmployeeSummary(
+        ctx.asCaller.supabase,
+        input.employeeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get holiday
+ *
+ * @mcp read
+ */
+export const getHoliday = defineServiceFn({
+  input: z.looseObject({ holidayId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getHoliday(ctx.asCaller.supabase, input.holidayId as never)
+    );
+  }
+});
+
+/**
+ * Get holidays
+ *
+ * @mcp read
+ */
+export const getHolidays = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getHolidays(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get holiday years
+ *
+ * @mcp read
+ */
+export const getHolidayYears = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "people" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getHolidayYears(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get people
+ *
+ * @mcp read
+ */
+export const getPeople = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getPeople(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get shift
+ *
+ * @mcp read
+ */
+export const getShift = defineServiceFn({
+  input: z.looseObject({ shiftId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getShift(ctx.asCaller.supabase, input.shiftId as never)
+    );
+  }
+});
+
+/**
+ * Get shifts
+ *
+ * @mcp read
+ */
+export const getShifts = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getShifts(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get shifts list
+ *
+ * @mcp read
+ */
+export const getShiftsList = defineServiceFn({
+  input: z.looseObject({ locationId: z.string().nullable() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getShiftsList(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get employee shifts
+ *
+ * @mcp read
+ */
+export const getEmployeeShifts = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "people" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getEmployeeShifts(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get employee departments
+ *
+ * @mcp read
+ */
+export const getEmployeeDepartments = defineServiceFn({
+  input: z.record(z.string(), z.unknown()),
+  permission: { view: "people" },
+  async run(ctx) {
+    return envelope(
+      ctx,
+      await service.getEmployeeDepartments(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get shifts with times
+ *
+ * @mcp read
+ */
+export const getShiftsWithTimes = defineServiceFn({
+  input: z.looseObject({ locationId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getShiftsWithTimes(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.locationId as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert attribute
+ *
+ * @mcp
+ */
+export const insertAttribute = defineServiceFn({
+  input: z.looseObject({
+    name: z.string(),
+    attributeDataTypeId: z.number(),
+    userAttributeCategoryId: z.string(),
+    listOptions: z.array(z.string()).optional(),
+    canSelfManage: z.boolean()
+  }),
+  permission: { create: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertAttribute(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert attribute category
+ *
+ * @mcp
+ */
+export const insertAttributeCategory = defineServiceFn({
+  input: z.looseObject({
+    name: z.string(),
+    emoji: z.string().optional(),
+    public: z.boolean()
+  }),
+  permission: { create: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertAttributeCategory(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Insert employee job
+ *
+ * @mcp
+ */
+export const insertEmployeeJob = defineServiceFn({
+  input: z.looseObject({ id: z.string(), locationId: z.string() }),
+  permission: { create: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.insertEmployeeJob(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update attribute
+ *
+ * @mcp
+ */
+export const updateAttribute = defineServiceFn({
+  input: z.looseObject({
+    id: z.string().optional(),
+    name: z.string(),
+    listOptions: z.array(z.string()).optional(),
+    canSelfManage: z.boolean()
+  }),
+  permission: { update: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateAttribute(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update attribute category
+ *
+ * @mcp
+ */
+export const updateAttributeCategory = defineServiceFn({
+  input: z.looseObject({
+    id: z.string(),
+    name: z.string(),
+    emoji: z.string().optional(),
+    public: z.boolean()
+  }),
+  permission: { update: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateAttributeCategory(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update attribute sort order
+ *
+ * @mcp
+ */
+export const updateAttributeSortOrder = defineServiceFn({
+  input: z.looseObject({
+    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+  }),
+  permission: { update: "people" },
+  async run(ctx, input) {
+    return envelopes(
+      ctx,
+      await service.updateAttributeSortOrder(
+        ctx.asCaller.supabase,
+        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a department
+ *
+ * @remarks
+ * Upsert department
+ *
+ * @mcp
+ */
+export const createDepartment = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    parentDepartmentId: z.string().optional(),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertDepartment(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a department
+ *
+ * @remarks
+ * Upsert department
+ *
+ * @mcp
+ */
+export const updateDepartment = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      parentDepartmentId: z.string().optional(),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertDepartment(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create a holiday
+ *
+ * @remarks
+ * Upsert holiday
+ *
+ * @mcp
+ */
+export const createHoliday = defineServiceFn({
+  input: z.looseObject({
+    name: z.string().min(1),
+    date: z.string().min(1),
+    customFields: z.unknown().optional(),
+    id: z
+      .string()
+      .describe("Send to update that record; omit to create a new one.")
+      .optional()
+  }),
+  permission: { create: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertHoliday(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "create"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update a holiday
+ *
+ * @remarks
+ * Upsert holiday
+ *
+ * @mcp
+ */
+export const updateHoliday = defineServiceFn({
+  input: z
+    .looseObject({
+      name: z.string().min(1),
+      date: z.string().min(1),
+      customFields: z.unknown().optional(),
+      id: z
+        .string()
+        .describe("Send to update that record; omit to create a new one.")
+        .optional()
+    })
+    .required({ id: true }),
+  permission: { update: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.upsertHoliday(
+        ctx.asCaller.supabase,
+        stamp(
+          ctx,
+          input,
+          ["companyId", "createdBy", "updatedBy"],
+          "update"
+        ) as never
+      )
+    );
+  }
+});
+
+/**
+ * Create time card entry
+ *
+ * @mcp
+ */
+export const createTimeCardEntry = defineServiceFn({
+  input: z.looseObject({
+    employeeId: z.string(),
+    clockIn: z.string(),
+    clockOut: z.string().nullable().optional(),
+    note: z.string().nullable().optional()
+  }),
+  permission: { create: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.createTimeCardEntry(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Delete time card entry
+ *
+ * @mcp destructive
+ */
+export const deleteTimeCardEntry = defineServiceFn({
+  input: z.looseObject({ entryId: z.string() }),
+  permission: { delete: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.deleteTimeCardEntry(
+        ctx.asCaller.supabase,
+        input.entryId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get open clock entry
+ *
+ * @mcp read
+ */
+export const getOpenClockEntry = defineServiceFn({
+  input: z.looseObject({ employeeId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getOpenClockEntry(
+        ctx.asCaller.supabase,
+        input.employeeId as never,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get time card entry
+ *
+ * @mcp read
+ */
+export const getTimeCardEntry = defineServiceFn({
+  input: z.looseObject({ entryId: z.string() }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getTimeCardEntry(
+        ctx.asCaller.supabase,
+        input.entryId as never
+      )
+    );
+  }
+});
+
+/**
+ * Get time card entries
+ *
+ * @mcp read
+ */
+export const getTimeCardEntries = defineServiceFn({
+  input: z.looseObject({
+    employeeId: z.string(),
+    from: z.string().optional(),
+    to: z.string().optional()
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.getTimeCardEntries(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Get timecard entries
+ *
+ * @mcp read
+ */
+export const getTimecardEntries = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getTimecardEntries(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        stamp(ctx, input, ["companyId"]) as never
+      )
+    );
+  }
+});
+
+/**
+ * Update time card entry
+ *
+ * @mcp
+ */
+export const updateTimeCardEntry = defineServiceFn({
+  input: z.looseObject({
+    entryId: z.string(),
+    clockIn: z.string().optional(),
+    clockOut: z.string().nullable().optional(),
+    note: z.string().nullable().optional()
+  }),
+  permission: { update: "people" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateTimeCardEntry(
+        ctx.asCaller.supabase,
+        stamp(ctx, input, ["companyId", "updatedBy"]) as never
+      )
+    );
   }
 });

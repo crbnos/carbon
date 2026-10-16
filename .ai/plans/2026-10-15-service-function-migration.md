@@ -27,7 +27,7 @@ Deviations from the approved plan, with the reason:
 - Phase 2: a refusal uses oRPC's own error body with `data.category`, not a new `{ error }` envelope, so every v1 error has one shape. Input schemas come from the leaf's TypeScript type, like the legacy tools, not from `z.toJSONSchema`. The generator does not drop legacy tools by itself: a module's migration removes `@mcp` from the primitives it replaces.
 - Phase 3: release is one operation for the job page, bulk release, planning and the API (`production.job.release`), with every check inside; batch release likewise (`production.batch.release`). The Make to Asset and "nothing to make" rules moved into `getJobReleaseReadiness`, so batch release now applies them too. The status route lost its release branch and a dead plan-and-schedule branch. `planDraftJob` stays unpublished: its checks depend on the planning drawer's location.
 - Phase 4: the waves moved the composed route actions (two or more writes) only. A route that makes one service call keeps it; its function stays a legacy tool until the codemod converts it.
-- Phase 4: the codemod (`legacy-to-leaves.mjs`, scratchpad) writes `<module>.tools.server.ts`. Each leaf has a zod input from the published schema, the same permission, a typed positional call, the auth stamping (`stamp`) and the result reader (`envelope`, `paged`, `plain`, `envelopes`, `flag`) in `service-tools.server.ts`. An upsert with an id rule splits into `create` and `update`. Names are mechanical: `getCustomers` becomes `sales_customers_get`.
+- Phase 4: the codemod (`legacy-to-leaves.mjs`, scratchpad) writes `<module>.tools.server.ts`. Each leaf has a zod input from the published schema, the same permission, a typed positional call, the auth stamping (`stamp`) and the result reader (`envelope`, `paged`, `plain`, `envelopes`, `flag`) in `service-tools.server.ts`. An upsert with an id rule splits into `create` and `update`. Names are mechanical: `getCustomers` becomes `sales_getCustomers`.
 - Phase 4: the dispatcher's sales-rule gate is deleted. Every tool it checked is unpublished; `sales.quote.setStatus` and `sales.order.setStatus` hold the gate for every caller now.
 - Phase 4: an operation called through the API, MCP or a workflow gets the company-scoped client the dispatcher used (`scopedToCompany`).
 
@@ -97,7 +97,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 ```
 
-- MCP tool `production_job_cancel`, API path `POST /api/v1/production/job/cancel`.
+- MCP tool `production_cancelJob`, API path `POST /api/v1/production/job/cancel`.
 - The component uses `useAction`; an error shows a toast by default.
 - Side effect of validator-first: an unauthenticated caller with a bad request gets 400 or 405, not a login redirect.
 

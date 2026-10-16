@@ -71,8 +71,8 @@ export async function action(args: ActionFunctionArgs) {
   const { data } = input;
   const result =
     data.type === "delete"
-      ? await api.inventory.warehouseTransfer.line.delete({ transferId, id })
-      : await api.inventory.warehouseTransfer.line.update({
+      ? await api.inventory.removeWarehouseTransferLine({ transferId, id })
+      : await api.inventory.updateWarehouseTransferLine({
           transferId,
           id,
           ...data

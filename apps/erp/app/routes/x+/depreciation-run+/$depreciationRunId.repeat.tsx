@@ -14,7 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { depreciationRunId } = input.params;
   const api = await carbon(args.request);
-  const result = await api.accounting.depreciationRun.repeat({
+  const result = await api.accounting.repeatDepreciationRun({
     depreciationRunId
   });
   return respond(args.request, result).redirect(

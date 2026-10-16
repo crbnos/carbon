@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { AssemblyStep } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
@@ -10,9 +14,6 @@ import {
 } from "./production.models";
 import type { AssemblyInstructionStepRow } from "./types";
 
-// SPDX-License-Identifier: AGPL-3.0-only
-// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
-// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 export async function getJobMethodTree(
   client: SupabaseClient<Database>,
   jobId: string

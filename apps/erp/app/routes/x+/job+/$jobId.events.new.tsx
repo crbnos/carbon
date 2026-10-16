@@ -39,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  const result = await api.production.event.create(input.data);
+  const result = await api.production.createProductionEvent(input.data);
   const postingError = result.data?.postingError;
   return respond(
     args.request,

@@ -159,7 +159,7 @@ export async function action(args: ActionFunctionArgs) {
       formData
     );
     if (validation.error) return validationError(validation.error);
-    const result = await api.items.manufacturing.update({
+    const result = await api.items.updateItemManufacturing({
       ...validation.data,
       itemId,
       customFields: setCustomFields(formData)
@@ -172,7 +172,7 @@ export async function action(args: ActionFunctionArgs) {
 
   const validation = await validator(toolValidator).validate(formData);
   if (validation.error) return validationError(validation.error);
-  const result = await api.items.tool.update({
+  const result = await api.items.updateTool({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData)
