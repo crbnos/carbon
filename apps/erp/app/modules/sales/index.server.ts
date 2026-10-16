@@ -43,17 +43,21 @@ import {
   setContractInvoiceAutomation,
   setContractTerm,
   setContractType,
+  setQuoteStatus,
   setRentalAgreementStatus,
   setRentalAgreementTerm,
   setRentalInvoiceAutomation,
+  setSalesOrderStatus,
   setSalesRfqStatus,
   shipSalesOrderLine,
   updateContractTerms,
+  updateQuoteDetails,
   updateQuoteField,
   updateQuoteLine,
   updateQuoteMaterial,
   updateQuoteOperation,
   updateReturnOrderLine,
+  updateSalesOrderDetails,
   updateSalesOrderField,
   updateSalesOrderLine,
   updateSalesReturnOrderField,
@@ -71,6 +75,8 @@ export const sales = {
     mapLines: mapSalesRfqLines
   },
   quote: {
+    update: updateQuoteDetails,
+    setStatus: setQuoteStatus,
     updateField: updateQuoteField,
     finalize: finalizeAndSendQuote,
     convert: convertQuote,
@@ -96,6 +102,8 @@ export const sales = {
     digital: { accept: acceptDigitalQuote, reject: rejectDigitalQuote }
   },
   order: {
+    update: updateSalesOrderDetails,
+    setStatus: setSalesOrderStatus,
     updateField: updateSalesOrderField,
     confirm: confirmSalesOrder,
     line: {

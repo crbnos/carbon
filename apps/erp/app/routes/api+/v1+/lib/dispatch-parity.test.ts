@@ -118,9 +118,6 @@ vi.mock("@lingui/core/macro", () => ({
 // `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
 // validation at import). Dispatch behavior under a gate block is not what
 // these golden tests pin, so stub it as "no block".
-vi.mock("./sales-rules-gate.server", () => ({
-  checkSalesRulesForOperation: vi.fn(async () => null)
-}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 // The ERP router reaches every module's operations, and through them the same
 // server-only graphs. These tests pin the legacy tools, which never touch it.
@@ -754,31 +751,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         { updates: [{ id: "a", order: 1 }] }
       );
       expect(passed.dispatch).toEqual({ data: [ok, ok] });
-    });
-
-    it("a { success: false } flag", async () => {
-      spies.cancelSalesOrder.mockResolvedValue({
-        success: false,
-        message: "Order has posted shipments",
-        cancelledJobIds: []
-      });
-      const refused = await runDispatch(
-        "sales_cancelSalesOrder",
-        spies.cancelSalesOrder,
-        { salesOrderId: "so1" }
-      );
-      expect(refused.dispatchError).toMatchObject({
-        message: "Order has posted shipments"
-      });
-
-      const done = { success: true, message: "Cancelled", cancelledJobIds: [] };
-      spies.cancelSalesOrder.mockResolvedValue(done);
-      const cancelled = await runDispatch(
-        "sales_cancelSalesOrder",
-        spies.cancelSalesOrder,
-        { salesOrderId: "so1" }
-      );
-      expect(cancelled.dispatch).toEqual({ data: done });
     });
   });
 

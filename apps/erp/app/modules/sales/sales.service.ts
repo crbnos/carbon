@@ -3485,7 +3485,6 @@ export async function updateSalesRFQFavorite(
   }
 }
 
-/** @mcp update */
 export async function updateQuoteExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -3529,7 +3528,6 @@ export async function updateQuoteLinePrecision(
   });
 }
 
-/** @mcp update */
 export async function updateSalesOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -3623,7 +3621,6 @@ export async function updateQuoteOperationOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp update */
 export async function updateQuoteStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -5914,7 +5911,6 @@ export async function updateSalesOrderFavorite(
   }
 }
 
-/** @mcp update */
 export async function updateSalesOrderStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -6191,7 +6187,6 @@ export const LIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
   "Paused"
 ];
 
-/** @mcp action */
 export async function cancelSalesOrder(
   client: SupabaseClient<Database>,
   args: {

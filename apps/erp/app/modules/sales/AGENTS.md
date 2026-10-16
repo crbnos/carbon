@@ -90,12 +90,12 @@ Every route action that writes calls one `defineServiceFn` operation through
 listed by entity in `index.server.ts` (tool name `sales_<entity>_<verb>`):
 
 - `rfq`: `create`, `updateField`, `setStatus`, `convert`, `attachFile`, `mapLines`
-- `quote`: `updateField`, `finalize`, `convert`, `attachFile`; `line.create` /
+- `quote`: `update`, `setStatus`, `updateField`, `finalize`, `convert`, `attachFile`; `line.create` /
   `update` / `configure` / `copyItemMethod` / `copyLineMethod`;
   `material.create` / `update` / `delete` / `copyItemMethod`;
   `operation.create` / `update` / `delete`; `digital.accept` / `reject`
   (system only: the public share link runs them through `shareLinkContext`, `~/modules/service-context.server`)
-- `order`: `updateField`, `confirm`; `line.create` / `update` / `ship`
+- `order`: `update`, `setStatus`, `updateField`, `confirm`; `line.create` / `update` / `ship`
 - `returnOrder`: `updateField`, `confirm`; `line.create` / `update` / `escalate`
 - `contract`: `create`, `updateTerms`, `setTerm`, `setType`,
   `setInvoiceAutomation`, `confirm`, `previewAmendment`, `amend`,
@@ -105,6 +105,9 @@ listed by entity in `index.server.ts` (tool name `sales_<entity>_<verb>`):
 
 How they behave:
 
+- A status past a document's finalize / confirm gate (`quote.setStatus`,
+  `order.setStatus`, or a status in `update`) is refused when the document
+  breaks an error-severity sales rule (`advancingStatusRefusal`).
 - A sales-rule gate (`salesDocumentGate` for a whole document, `salesLineGate`
   for one line) returns `{ violations, ruleNames }` as the result's data when
   it blocks, and the route returns that data to `useRuleViolations`. The
@@ -153,7 +156,7 @@ Distinct from **storage rules** (`~/modules/inventory`, warehouse/MES surfaces) 
 | `enforcementRuleItemAssignment` | Explicit per-item pins, PK `(itemId, ruleId)` — SHARED with storage rules |
 | `enforcementRuleAcknowledgment` | Append-only override/block evidence (INSERT via `sales_create`) |
 
-Service functions: the admin CRUD is NOT in `sales.service.ts`. The read helpers (`getEnforcementRules` / `getEnforcementRule` / `getEnforcementRuleAssignmentCounts`) share one parametrized implementation in `~/modules/shared`, called with `"sales"` as the family. The entitlement-gated WRITES (`upsertEnforcementRule` / `deleteEnforcementRule`) moved to `@carbon/ee/rules.server` (`packages/ee/src/rules/service.server.ts`) — they embed `requireEntitlement("SALES_RULES")`. Cross-app READ queries `getActiveSalesRulesForItems` / `getSalesRuleAssignmentsForItem` / `getSalesRulesList` are imported from `@carbon/ee/rules` DIRECTLY at the call site; the gated writes `assignSalesRule` / `unassignSalesRule` are imported from `@carbon/ee/rules.server` — this module's barrel deliberately does not re-export any of them. Routes: `x+/sales+/sales-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useSalesSubmodules`, per-item "Sales rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote, sales-order, and sales-invoice line create + edit actions, plus document gates (quote finalize/convert, RFQ convert, order confirm, shipment post, invoice post — the invoice-post gate runs in `invoicing.salesInvoice.post` (`invoicing/invoicing.server.ts`) BEFORE the optimistic `Pending` write). Every blocked or acknowledged outcome (line checks, gates, and the MCP backstops' blocks) is recorded through `recordSalesRuleOutcome` in `sales.server.ts` — one `enforcementRuleAcknowledgment` row per violation plus the `sales-rule-violation` notification; the RFQ-convert gate is the one exception (the table's documentType CHECK has no `salesRfq`; the minted quote re-records downstream).
+Service functions: the admin CRUD is NOT in `sales.service.ts`. The read helpers (`getEnforcementRules` / `getEnforcementRule` / `getEnforcementRuleAssignmentCounts`) share one parametrized implementation in `~/modules/shared`, called with `"sales"` as the family. The entitlement-gated WRITES (`upsertEnforcementRule` / `deleteEnforcementRule`) moved to `@carbon/ee/rules.server` (`packages/ee/src/rules/service.server.ts`) — they embed `requireEntitlement("SALES_RULES")`. Cross-app READ queries `getActiveSalesRulesForItems` / `getSalesRuleAssignmentsForItem` / `getSalesRulesList` are imported from `@carbon/ee/rules` DIRECTLY at the call site; the gated writes `assignSalesRule` / `unassignSalesRule` are imported from `@carbon/ee/rules.server` — this module's barrel deliberately does not re-export any of them. Routes: `x+/sales+/sales-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useSalesSubmodules`, per-item "Sales rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote, sales-order, and sales-invoice line create + edit actions, plus document gates (quote finalize/convert, RFQ convert, order confirm, shipment post, invoice post — the invoice-post gate runs in `invoicing.salesInvoice.post` (`invoicing/invoicing.server.ts`) BEFORE the optimistic `Pending` write). Every blocked or acknowledged outcome (line checks and document gates) is recorded through `recordSalesRuleOutcome` in `sales.server.ts` — one `enforcementRuleAcknowledgment` row per violation plus the `sales-rule-violation` notification; the RFQ-convert gate is the one exception (the table's documentType CHECK has no `salesRfq`; the minted quote re-records downstream).
 
 ## Rentals (sub-area)
 

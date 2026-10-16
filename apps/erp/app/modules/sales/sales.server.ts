@@ -78,7 +78,7 @@ import {
   insertIssue
 } from "~/modules/quality/quality.service";
 import {
-  type CarbonError,
+  CarbonError,
   defineServiceFn,
   type ServiceContext
 } from "~/modules/service-fn.server";
@@ -125,9 +125,13 @@ import {
   quoteLineValidator,
   quoteMaterialValidator,
   quoteOperationValidator,
+  quoteStatusType,
+  quoteValidator,
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
+  salesOrderStatusType,
+  salesOrderValidator,
   salesReturnOrderLineValidator,
   salesRFQStatusType,
   salesRfqDragValidator,
@@ -139,6 +143,7 @@ import {
   buildPullFromInventoryPriceRows,
   buildPurchaseToOrderPriceRows,
   calculatePricesForQuantities,
+  cancelSalesOrder,
   confirmSalesReturnOrder,
   convertQuoteToOrder,
   convertSalesRfqToQuote,
@@ -171,8 +176,12 @@ import {
   updateContractInvoiceAutomation,
   updateContractNotes,
   updateContractType,
+  updateQuote,
+  updateQuoteStatus,
   updateRentalAgreement,
   updateRentalAgreementInvoiceAutomation,
+  updateSalesOrder,
+  updateSalesOrderStatus,
   updateSalesRFQStatus,
   upsertQuoteLine,
   upsertQuoteLineMethod,
@@ -3588,6 +3597,193 @@ export const rejectDigitalQuote = defineServiceFn({
   }
 });
 
+// --- Document status ---------------------------------------------------------
+
+/**
+ * A status past a document's finalize or confirm gate is checked against the
+ * sales rules first: an error-severity rule the document breaks refuses it.
+ * Warnings pass (a status change has no acknowledgment step).
+ */
+const NON_ADVANCING_QUOTE_STATUSES = new Set([
+  "Draft",
+  "Lost",
+  "Cancelled",
+  "Expired"
+]);
+const NON_ADVANCING_SALES_ORDER_STATUSES = new Set([
+  "Draft",
+  "Needs Approval",
+  "Cancelled",
+  "Closed"
+]);
+
+async function advancingStatusRefusal(
+  ctx: ServiceContext,
+  documentType: "quote" | "salesOrder",
+  documentId: string
+): Promise<CarbonError | null> {
+  const gate = await salesDocumentGate(ctx, {
+    documentType,
+    documentId,
+    acknowledged: true
+  });
+  if (!gate.blocked) return null;
+  const errors = gate.blocked.violations.filter((v) => v.severity === "error");
+  return ctx.error(
+    "rule",
+    errors.map((v) => v.message).join("; ") || "A sales rule blocks this status"
+  );
+}
+
+/**
+ * Set a quote's status.
+ *
+ * @remarks
+ * A status past Draft, Lost, Cancelled and Expired is refused when the quote
+ * breaks an error-severity sales rule.
+ *
+ * @mcp
+ */
+export const setQuoteStatus = defineServiceFn({
+  input: z.object({ quoteId: z.string(), status: z.enum(quoteStatusType) }),
+  permission: { update: "sales" },
+
+  async run(ctx, { quoteId, status }) {
+    const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
+    if (refused) return refused;
+    if (!NON_ADVANCING_QUOTE_STATUSES.has(status)) {
+      const blocked = await advancingStatusRefusal(ctx, "quote", quoteId);
+      if (blocked) return blocked;
+    }
+    const update = await updateQuoteStatus(ctx.asCaller.supabase, {
+      id: quoteId,
+      status,
+      assignee: undefined,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update quote status",
+        update.error
+      );
+    }
+    return { quoteId, status };
+  }
+});
+
+/**
+ * Update a quote's details.
+ *
+ * @remarks
+ * Refused while the quote is locked. A status past Draft, Lost, Cancelled and
+ * Expired is checked against the sales rules as `quote.setStatus` does. A new
+ * currency re-reads the exchange rate; a new customer moves the opportunity.
+ *
+ * @mcp
+ */
+export const updateQuoteDetails = defineServiceFn({
+  input: quoteValidator.safeExtend({
+    id: z.string(),
+    customFields: customFieldValues.optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, customFields, ...quote }) {
+    const unlocked = await unlockedQuote(ctx, id);
+    if (unlocked instanceof CarbonError) return unlocked;
+    if (quote.status && !NON_ADVANCING_QUOTE_STATUSES.has(quote.status)) {
+      const blocked = await advancingStatusRefusal(ctx, "quote", id);
+      if (blocked) return blocked;
+    }
+    const result = await updateQuote(ctx.asCaller.supabase, {
+      id,
+      status: quote.status,
+      currencyCode: quote.currencyCode,
+      expirationDate: quote.expirationDate || null,
+      customerId: quote.customerId,
+      customerContactId: quote.customerContactId || null,
+      customerLocationId: quote.customerLocationId || null,
+      customerEngineeringContactId: quote.customerEngineeringContactId || null,
+      customerReference: quote.customerReference || null,
+      salesPersonId: quote.salesPersonId || null,
+      estimatorId: quote.estimatorId || null,
+      locationId: quote.locationId,
+      dueDate: quote.dueDate || null,
+      digitalQuoteAcceptedBy: quote.digitalQuoteAcceptedBy || null,
+      digitalQuoteAcceptedByEmail: quote.digitalQuoteAcceptedByEmail || null,
+      notes: quote.notes,
+      customFields: customFields as Json | undefined,
+      updatedBy: ctx.auditUserId
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to update quote", result.error);
+    }
+    return { quoteId: id };
+  }
+});
+
+/**
+ * Set a sales order's status.
+ *
+ * @remarks
+ * Cancelling cancels the order through `cancelSalesOrder`: with `cancelJobIds`
+ * only those jobs are cancelled (an empty list cancels none), without it every
+ * open job of the order. A status past Draft, Needs Approval, Cancelled and
+ * Closed is refused when the order breaks an error-severity sales rule.
+ * Closing an order clears its assignee.
+ *
+ * @mcp
+ */
+export const setSalesOrderStatus = defineServiceFn({
+  input: z.object({
+    salesOrderId: z.string(),
+    status: z.enum(salesOrderStatusType),
+    cancelJobIds: z.array(z.string()).optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { salesOrderId, status, cancelJobIds }) {
+    const refused = await refuseUnlessOwned(ctx, "salesOrder", {
+      id: salesOrderId
+    });
+    if (refused) return refused;
+
+    if (status === "Cancelled") {
+      const result = await cancelSalesOrder(ctx.asCaller.supabase, {
+        id: salesOrderId,
+        userId: ctx.auditUserId,
+        jobs: cancelJobIds
+      });
+      if (!result.success) return ctx.error("rule", result.message);
+      return { salesOrderId, status, message: result.message };
+    }
+
+    if (!NON_ADVANCING_SALES_ORDER_STATUSES.has(status)) {
+      const blocked = await advancingStatusRefusal(
+        ctx,
+        "salesOrder",
+        salesOrderId
+      );
+      if (blocked) return blocked;
+    }
+    const update = await updateSalesOrderStatus(ctx.asCaller.supabase, {
+      id: salesOrderId,
+      status,
+      assignee: status === "Closed" ? null : undefined,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update sales order status",
+        update.error
+      );
+    }
+    return { salesOrderId, status, message: "Updated sales order status" };
+  }
+});
+
 // --- Sales orders -------------------------------------------------------------
 
 const salesOrderFields = [
@@ -3848,6 +4044,54 @@ function withLineTarget<
   }
   return { ...line, accountId: undefined, assetId: undefined };
 }
+
+/**
+ * Update a sales order's details.
+ *
+ * @remarks
+ * Refused while the order is locked. A status past Draft, Needs Approval,
+ * Cancelled and Closed is checked against the sales rules as
+ * `order.setStatus` does. A new currency re-reads the exchange rate; a new
+ * customer moves the opportunity.
+ *
+ * @mcp
+ */
+export const updateSalesOrderDetails = defineServiceFn({
+  input: salesOrderValidator.safeExtend({
+    id: z.string(),
+    customFields: customFieldValues.optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, customFields, ...order }) {
+    const locked = await unlockedSalesOrder(
+      ctx,
+      id,
+      "Cannot modify a locked sales order. Reopen it first."
+    );
+    if (locked) return locked;
+    if (order.status && !NON_ADVANCING_SALES_ORDER_STATUSES.has(order.status)) {
+      const blocked = await advancingStatusRefusal(ctx, "salesOrder", id);
+      if (blocked) return blocked;
+    }
+    const result = await updateSalesOrder(ctx.asCaller.supabase, {
+      id,
+      status: order.status,
+      currencyCode: order.currencyCode,
+      orderDate: order.orderDate,
+      customerId: order.customerId,
+      customerContactId: order.customerContactId || null,
+      customerLocationId: order.customerLocationId || null,
+      notes: order.notes,
+      customFields: customFields as Json | undefined,
+      updatedBy: ctx.auditUserId
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to update order", result.error);
+    }
+    return { salesOrderId: id };
+  }
+});
 
 /** An unlocked sales order this company owns, or why it cannot be changed. */
 async function unlockedSalesOrder(

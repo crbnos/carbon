@@ -47,7 +47,7 @@ vi.mock("../app/modules/shared/timezone.server", () => ({
 
 import { createServiceContext } from "../app/modules/service-fn.server";
 
-const { cancelContract, convertQuote, convertSalesRfq } = await import(
+const { cancelContract, convertQuote, convertSalesRfq, setQuoteStatus } = await import(
   "../app/modules/sales/sales.server"
 );
 
@@ -72,7 +72,7 @@ const grant = (...modules: string[]): Permissions =>
 function serviceRole() {
   const from = (table: string) => {
     const chain: Record<string, any> = {};
-    for (const method of ["select", "eq", "in", "limit", "order", "not"]) {
+    for (const method of ["select", "eq", "in", "limit", "order", "not", "update"]) {
       chain[method] = () => chain;
     }
     chain.insert = (rows: { outcome: string }[]) => {
@@ -163,6 +163,28 @@ describe("the document sales-rule gate", () => {
     expect(recorded.map((row) => row.outcome)).toEqual(["blocked"]);
 
     expect((await convertLines(0)).data).toEqual({ salesOrderId: "converted-1" });
+  });
+});
+
+describe("setting a document status", () => {
+  const set = (status: "Sent" | "Lost") =>
+    setQuoteStatus(contextFor(grant("sales")), { quoteId: "quote-1", status });
+
+  it("refuses a status past the finalize gate when an error rule is broken", async () => {
+    evaluate.mockResolvedValue({ violations: [error()], ruleNames: {} });
+    expect((await set("Sent")).error).toMatchObject({
+      category: "rule",
+      message: "Not to this country"
+    });
+    expect(recorded.map((row) => row.outcome)).toEqual(["blocked"]);
+  });
+
+  it("lets a warning through, and never checks a status that does not advance", async () => {
+    evaluate.mockResolvedValue({ violations: [warning], ruleNames: {} });
+    expect((await set("Sent")).data).toEqual({ quoteId: "quote-1", status: "Sent" });
+    evaluate.mockClear();
+    expect((await set("Lost")).data).toEqual({ quoteId: "quote-1", status: "Lost" });
+    expect(evaluate).not.toHaveBeenCalled();
   });
 });
 

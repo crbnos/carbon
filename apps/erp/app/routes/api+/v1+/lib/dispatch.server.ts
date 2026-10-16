@@ -20,7 +20,6 @@ import type { AuthedContext } from "./base.server";
 import { scopedToCompany } from "./company-scope.server";
 import { COMPANY_TABLES } from "./operations.server";
 import { functionRegistry } from "./registry.server";
-import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
 export interface DispatchResult {
   data: unknown;
@@ -605,19 +604,6 @@ export async function dispatchOperation(
       );
     }
     // else: optional param with nothing to fill — skip.
-  }
-
-  // Sales-rule gate — evaluates the RESOLVED payload for the gated sales
-  // operations (line writes + finalize/convert transitions) and refuses on
-  // error-severity violations, mirroring the route actions. Covers every
-  // dispatch caller: HTTP v1, MCP, the in-app agent, and workflows.
-  const salesRuleBlock = await checkSalesRulesForOperation(
-    meta,
-    context,
-    functionArgs
-  );
-  if (salesRuleBlock) {
-    throw new ORPCError("FORBIDDEN", { message: salesRuleBlock });
   }
 
   let result = await (func as (...args: any[]) => any)(...functionArgs);

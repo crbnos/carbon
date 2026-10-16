@@ -226,21 +226,6 @@ describe("mcp tool-metadata generator", () => {
     expect(ability?.required).toBeUndefined();
   });
 
-  // Insert-vs-update discriminator, BOTH directions, gets an upsert rule.
-  // upsertQuoteMaterial / upsertJobMaterial branch on `if ("updatedBy" in …)` — the
-  // generator used to detect only the `"createdBy" in` convention, so the dispatch
-  // always stamped updatedBy and every create was forced down the UPDATE branch
-  // (0 rows → PGRST116, silent no-op). The rule is what lets the dispatcher stamp
-  // exactly one audit field without the caller saying which.
-  // `assignee: null | undefined` published as a REQUIRED null on the status
-  // tools, so every status change had to send `assignee: null` and cleared it.
-  it("does not require a field whose type admits undefined", () => {
-    expect(get("sales_updateQuoteStatus").schema.required).toEqual([
-      "id",
-      "status"
-    ]);
-  });
-
   // The rpc advances `sequence.next`, so calling it consumes a document number.
   // It was published as a READ gated on `settings:view`.
   it("publishes getNextSequence as a write gated on settings:update", () => {
