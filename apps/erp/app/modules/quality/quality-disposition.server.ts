@@ -4,7 +4,11 @@
 
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { lockIssueDispositions } from "@carbon/database/quality";
+import {
+  errResult,
+  lockIssueDispositions,
+  type Result
+} from "@carbon/database/quality";
 import { serverFns } from "@carbon/server-functions";
 import {
   buildBatchSplitRecords,
@@ -17,7 +21,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
 import { isIssueLocked } from "./quality.models";
-import { errResult, type Result } from "./quality.server";
 
 type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
 

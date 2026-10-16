@@ -21571,6 +21571,9 @@ msgstr "成功复制报价"
 msgid "Successfully created a new revision"
 msgstr "成功创建新修订版"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "后继物料生效日期"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "更新成功"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "升级"

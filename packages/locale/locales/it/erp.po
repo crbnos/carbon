@@ -21571,6 +21571,9 @@ msgstr "Preventivo copiato con successo"
 msgid "Successfully created a new revision"
 msgstr "Revisione creata con successo"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "Data di efficacia del successore"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "Aggiornato con successo"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Aggiorna"

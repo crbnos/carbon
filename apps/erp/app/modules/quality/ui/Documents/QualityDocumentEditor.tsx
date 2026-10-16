@@ -3,13 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { useFetcher, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import type { loader } from "~/routes/x+/quality-document+/$id";
 import type { action } from "~/routes/x+/quality-document+/update";
@@ -49,7 +50,7 @@ export default function QualityDocumentEditor() {
     true
   );
 
-  const nameFetcher = useFetcher<typeof action>();
+  const nameFetcher = useAction<typeof action>();
   const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
 
   const updateName = useDebounce(

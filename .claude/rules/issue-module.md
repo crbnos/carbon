@@ -17,7 +17,10 @@ in the migrations — **newest wins**; core tables created in
 
 - `quality.service.ts` — issue/task/association/reviewer service functions.
 - `quality.models.ts` — zod validators + status/enum const arrays.
-- `quality.server.ts` — server helpers (e.g. `closeIssue`, task creation glue).
+- `quality.server.ts` — the operations (`defineServiceFn`, listed in
+  `index.server.ts` as `quality.issue.*`, `quality.inspection.reject`, …) and
+  the inspection engine bindings. `closeIssue` and the disposition writers are in
+  `quality-disposition.server.ts`.
 - `ui/Issue/` — `IssueHeader`, `IssueContent`, `IssueForm`, `IssueProperties`,
   `IssueStatus`, `DispositionStatus`, `IssueTask`, `ActionTasksList`,
   `ReviewersList`, `AssociatedItemsList`, `IssueAssociations`, `IssuesTable`
@@ -51,7 +54,8 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
   an inline-editable quantity + disposition `Select` (no entity chips; "Move entities"
   stays gated on `links.length > 0`). The quantity saves through `item+/update.tsx`
-  (`field: "quantity"`) → `updateIssueItemQuantity` (`quality-disposition.server.ts`),
+  (`field: "quantity"`) → `quality.issue.item.updateField` → `updateIssueItemQuantity`
+  (`quality-disposition.server.ts`),
   which refuses rows with entity links (their quantity is the link sum) and any NCR with
   a `nonConformanceInspection` link (the reject already wrote off the lot, and
   `closeIssue` restores `row.quantity` on Use As Is / Rework). The write is a
@@ -63,8 +67,9 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItemTrackedEntity` / `nonConformanceInspection` rows or changes
   `nonConformanceItem.quantity` takes it first, inside its transaction, before touching
   any item row: the quantity edit, `assignEntitiesToIssueItem`, `splitIssueItem`, the
-  inspection association (`$id.association.new.tsx`), `new.tsx` job-operation
-  auto-link, the ERP inspection reject, sales-return escalation, and MES
+  inspection association (`createIssueAssociation`), the job-operation auto-link of
+  `createIssue`, the ERP inspection reject (`rejectInspection`), sales-return
+  escalation, and MES
   `linkIssueDispositionContext` (which also writes the MES reject's inspection link, via
   `createQualityIssue({ inspectionId })`). `linkEntitiesToIssueItemRow` is the shared
   find-or-create-row + link + grow-quantity step. A new writer of those tables must take
@@ -86,15 +91,16 @@ in the migrations — **newest wins**; core tables created in
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
   (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
   no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
-  once a `Non-Conformance` `itemLedger` row exists (`$id.status.tsx`). See
+  once a `Non-Conformance` `itemLedger` row exists (`setIssueStatus`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 
 ## Workflow (header buttons → routes)
 
 `IssueHeader.tsx` (all gated by `permissions.can("update","quality")`):
-- **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`.
-- **Complete** (when `In Progress`) → `path.to.closeIssue(id)` (sets `Closed`, clears
-  assignee, sets `closeDate`).
+- **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`
+  → `quality.issue.setStatus`, which takes only Registered / In Progress.
+- **Complete** (when `In Progress`) → `path.to.closeIssue(id)` → `quality.issue.close`
+  (posts the dispositions, sets `Closed`, clears assignee, sets `closeDate`).
 - **Reopen** (when `In Progress`/`Closed`, not locked) → `issueStatus` `{status:"Registered"}`.
 - **Delete Issue** → `path.to.deleteIssue(id)`.
 
@@ -103,8 +109,8 @@ the issue is still `Registered` (`IssueTask.tsx`, one-shot).
 
 Tasks (`IssueTask.tsx` `statusActions`): **Start** (`Pending`→`In Progress`),
 **Complete** (`In Progress`→`Completed`), **Reopen** (`Completed`/`Skipped`→`Pending`).
-Task status writes go to `path.to.issueTaskStatus`; `updateIssueTaskStatus` sets
-`completedDate` on `Completed`.
+Task status writes go to `path.to.issueTaskStatus` → `quality.issue.task.setStatus`;
+`updateIssueTaskStatus` sets `completedDate` on `Completed`.
 
 ## Required actions & system action types
 

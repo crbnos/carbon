@@ -21571,6 +21571,9 @@ msgstr "Pomyślnie skopiowano ofertę"
 msgid "Successfully created a new revision"
 msgstr "Pomyślnie utworzono nową rewizję"
 
+msgid "Successfully seeded documents"
+msgstr ""
+
 msgid "Successor effectivity"
 msgstr "Data obowiązywania następnika"
 
@@ -24729,6 +24732,9 @@ msgstr ""
 
 msgid "Updated successfully"
 msgstr "Pomyślnie zaktualizowano"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Uaktualnij"

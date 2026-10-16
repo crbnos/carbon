@@ -21571,6 +21571,9 @@ msgstr "Successfully copied quote"
 msgid "Successfully created a new revision"
 msgstr "Successfully created a new revision"
 
+msgid "Successfully seeded documents"
+msgstr "Successfully seeded documents"
+
 msgid "Successor effectivity"
 msgstr "Successor effectivity"
 
@@ -24729,6 +24732,9 @@ msgstr "Updated job status"
 
 msgid "Updated successfully"
 msgstr "Updated successfully"
+
+msgid "Updated task status"
+msgstr "Updated task status"
 
 msgid "Upgrade"
 msgstr "Upgrade"
