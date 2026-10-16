@@ -1743,9 +1743,6 @@ export const path = {
     newExchangeRate: `${x}/accounting/exchange-rates/new`,
     newFailureMode: `${x}/resources/failure-modes/new`,
     newFixedAsset: `${x}/accounting/fixed-assets/new`,
-    newFixture: `${x}/fixture/new`,
-    newFixtureSupplier: (id: string) =>
-      generatePath(`${x}/fixture/${id}/purchasing/new`),
     newGauge: `${x}/quality/gauges/new`,
     newGaugeCalibrationRecord: `${x}/quality/calibrations/new`,
     newGaugeType: `${x}/quality/gauge-types/new`,

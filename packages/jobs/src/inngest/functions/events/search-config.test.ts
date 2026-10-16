@@ -139,7 +139,7 @@ describe("search links", () => {
   it.each(Object.entries(SEARCH_ENTITY_CONFIGS))(
     "%s links to an ERP route",
     (_table, config) => {
-      // An item links by its type; a fixture has no page of its own yet.
+      // An item links by its type.
       const records =
         config.entityType === "item"
           ? itemTypes.map((type) => ({ id: "r1", type }))

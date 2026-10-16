@@ -112702,41 +112702,6 @@ export default {
         tags: ["(rpc) sync_create_supplier_org_group"]
       }
     },
-    "/rpc/populate_sales_search_results": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                p_company_id: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["p_company_id"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) populate_sales_search_results"]
-      }
-    },
     "/rpc/sync_add_customer_account_to_group": {
       post: {
         parameters: [
