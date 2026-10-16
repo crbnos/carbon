@@ -18,7 +18,7 @@ import {
   fixedAssetTakeOutOfService,
   journalEntrySave
 } from "../app/modules/accounting/accounting.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 /** A client whose every read of a table answers `rows[table]`. It has no
  *  write methods, so a test that gets past the refusal to a write fails. */

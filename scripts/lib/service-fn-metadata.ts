@@ -129,6 +129,8 @@ export interface LeafDocs {
   params: Record<string, string>;
   published: boolean;
   destructive: boolean;
+  /** `@mcp read`: changes nothing, whatever its permission names. */
+  read: boolean;
 }
 
 /** The leaf's TSDoc: the summary, `@remarks`, and `@mcp [destructive]`. */
@@ -164,9 +166,9 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
   const mcp = tags.filter((tag) => tag.getTagName() === "mcp");
   if (mcp.length > 1) throw new Error(`${where}: more than one @mcp tag`);
   const modifier = mcp[0]?.getCommentText()?.trim() ?? "";
-  if (modifier !== "" && modifier !== "destructive") {
+  if (modifier !== "" && modifier !== "destructive" && modifier !== "read") {
     throw new Error(
-      `${where}: @mcp takes nothing or "destructive", not "${modifier}"`
+      `${where}: @mcp takes nothing, "read" or "destructive", not "${modifier}"`
     );
   }
   if (mcp.length > 0 && !title) {
@@ -179,7 +181,8 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
     description: parts.filter(Boolean).join("\n\n"),
     params,
     published: mcp.length > 0,
-    destructive: modifier === "destructive"
+    destructive: modifier === "destructive",
+    read: modifier === "read"
   };
 }
 
@@ -199,8 +202,8 @@ function stringsOf(node: Node | undefined): string[] | null {
 /**
  * The API gate's view of the declared permission. The gate checks one module;
  * a permission naming several modules publishes module `null` (membership
- * only) and the function's own gate decides. A published function must name
- * its permission: `"system"`, `{}` and a keyed rule are refused.
+ * only) and the function's own gate decides, as it does for `{}` (any member
+ * of the company). `"system"` and a keyed rule are refused.
  */
 export function leafPermission(leaf: ServiceFnLeaf): {
   permission: ToolPermission;
@@ -241,9 +244,8 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     for (const name of names) modules.add(name);
     actions.push(action);
   }
-  if (actions.length === 0) {
-    throw new Error(`${where}: a published service function names its permission, not {}`);
-  }
+  // `{}`: any member of the company (the caller's own account, a membership
+  // read). The API gate then checks only that the key is the company's.
   const [module] = modules;
   return {
     permission:
@@ -254,8 +256,10 @@ export function leafPermission(leaf: ServiceFnLeaf): {
 
 function classify(
   actions: PermissionAction[],
-  destructive: boolean
+  destructive: boolean,
+  read = false
 ): Classification {
+  if (read) return "READ";
   if (destructive || actions.includes("delete")) return "DESTRUCTIVE";
   return actions.length > 0 && actions.every((a) => a === "view")
     ? "READ"
@@ -327,6 +331,9 @@ export function buildServiceFnTools(
       throw new Error(`${where}: a published leaf needs a module namespace`);
     }
     const { permission, actions } = leafPermission(leaf);
+    if (docs.read && actions.some((action) => action !== "view")) {
+      throw new Error(`${where}: @mcp read on a function that needs ${actions.join(", ")}`);
+    }
     const { input, response } = schemasOf(leaf);
     const properties = (input as { properties?: Record<string, JsonSchema> })
       .properties;
@@ -341,7 +348,7 @@ export function buildServiceFnTools(
       {
         name: leaf.path.join("_"),
         module: leaf.path[0]!,
-        classification: classify(actions, docs.destructive),
+        classification: classify(actions, docs.destructive, docs.read),
         title: docs.title,
         description: docs.description,
         paramCount: 1,

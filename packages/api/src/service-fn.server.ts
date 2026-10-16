@@ -16,7 +16,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-const logger = getLogger("erp", "service-fn");
+const logger = getLogger("api", "service-fn");
 
 /** Every way a service function refuses, and the HTTP status it maps to. */
 export const ERROR_STATUS = {
@@ -397,4 +397,32 @@ export function toResult<T, E extends CarbonError>(
     data: null,
     error: { category, message, status }
   } as RouteResult<Result<T, E>>;
+}
+
+/** A tree of service functions, each bound to one caller. */
+export type Api<T> = {
+  [K in keyof T]: T[K] extends ServiceFn<infer I, infer _R>
+    ? (input: z.input<I>) => Promise<RouteResult<Awaited<ReturnType<T[K]>>>>
+    : Api<T[K]>;
+};
+
+// ponytail: a Proxy per namespace read; bind eagerly if a hot path ever shows it.
+/** Every service function under `node`, called with `ctx` and returned as a route sends it. */
+export function bindServiceFns<T extends object>(
+  node: T,
+  ctx: ServiceContext
+): Api<T> {
+  return new Proxy(node, {
+    get(target, key) {
+      const child = Reflect.get(target, key);
+      if (typeof child === "function") {
+        const fn = child as unknown as ServiceFn<z.ZodType, unknown>;
+        return (input: unknown) => fn(ctx, input).then(toResult);
+      }
+      if (child !== null && typeof child === "object") {
+        return bindServiceFns(child, ctx);
+      }
+      return child;
+    }
+  }) as Api<T>;
 }

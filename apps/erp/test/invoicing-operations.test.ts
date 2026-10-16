@@ -42,7 +42,7 @@ vi.mock("../app/modules/settings/party-contact.server", () => ({
   checkPartyContactRequirement: vi.fn(async () => null)
 }));
 
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const { postSalesInvoice, tieOutAdjustmentLines, voidCharge } = await import(
   "../app/modules/invoicing/invoicing.server"

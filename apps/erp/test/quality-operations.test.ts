@@ -26,7 +26,7 @@ vi.mock("@carbon/server-functions", () => ({
   serverFns: { as: () => ({ invoke }), system: () => ({ invoke }) }
 }));
 
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const {
   createIssue,

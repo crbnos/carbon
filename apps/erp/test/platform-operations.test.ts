@@ -22,7 +22,7 @@ import { uploadModel } from "../app/modules/documents/documents.server";
 import {
   type Actor,
   createServiceContext
-} from "../app/modules/service-fn.server";
+} from "@carbon/api/service-fn.server";
 import {
   createJiraIssue,
   importCsvFile

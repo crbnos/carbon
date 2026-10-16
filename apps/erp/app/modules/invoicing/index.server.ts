@@ -33,6 +33,63 @@ import {
   voidReimbursement,
   voidSalesInvoice
 } from "./invoicing.server";
+import {
+  applyCreditsToInvoicesTool,
+  createPurchaseInvoiceFromPurchaseOrderTool,
+  createSalesInvoiceFromSalesOrderTool,
+  createSalesInvoiceFromShipmentTool,
+  deletePaymentTool,
+  getApAgingTool,
+  getApOpenBySupplierTool,
+  getApTieOutTool,
+  getArAgingTool,
+  getArOpenByCustomerTool,
+  getArTieOutTool,
+  getAvailableCreditsForPartyTool,
+  getAvailableOnAccountCreditSourcesTool,
+  getChargesTool,
+  getChargeTool,
+  getCompanyHasOpenCreditsTool,
+  getInvoiceSettlementsForInvoiceTool,
+  getInvoiceSettlementsTool,
+  getMemoApplicationsTool,
+  getMemosTool,
+  getMemoTool,
+  getOpenPurchaseInvoicesForSupplierTool,
+  getOpenReimbursementsForEmployeeTool,
+  getOpenSalesInvoicesForCustomerTool,
+  getPaymentCurrencyConfigurationTool,
+  getPaymentsTool,
+  getPaymentTool,
+  getPurchaseInvoiceDeliveryTool,
+  getPurchaseInvoiceLinesTool,
+  getPurchaseInvoiceLineTool,
+  getPurchaseInvoicesTool,
+  getPurchaseInvoiceTool,
+  getReimbursementRelatedItemsTool,
+  getReimbursementsTool,
+  getReimbursementTool,
+  getSalesInvoiceLinesTool,
+  getSalesInvoiceLineTool,
+  getSalesInvoiceShipmentTool,
+  getSalesInvoicesTool,
+  getSalesInvoiceTool,
+  getStagedCreditsForPaymentTool,
+  insertSalesInvoiceTool,
+  replaceInvoiceSettlementsTool,
+  updatePurchaseInvoiceExchangeRateTool,
+  updatePurchaseInvoiceLineOrderTool,
+  updatePurchaseInvoiceTool,
+  updateSalesInvoiceExchangeRateTool,
+  updateSalesInvoiceLineOrderTool,
+  upsertMemoCreateTool,
+  upsertMemoUpdateTool,
+  upsertPaymentUpdateTool,
+  upsertPurchaseInvoiceDeliveryTool,
+  upsertPurchaseInvoiceLineCreateTool,
+  upsertPurchaseInvoiceLineUpdateTool,
+  upsertSalesInvoiceShipmentTool
+} from "./invoicing.tools.server";
 
 /** The invoicing module's operations, by entity. */
 export const invoicing = {
@@ -46,7 +103,9 @@ export const invoicing = {
       create: createSalesInvoiceLine,
       update: updateSalesInvoiceLine,
       delete: deleteDraftSalesInvoiceLine
-    }
+    },
+    get: getSalesInvoiceTool,
+    insert: insertSalesInvoiceTool
   },
   purchaseInvoice: {
     create: createPurchaseInvoice,
@@ -57,20 +116,29 @@ export const invoicing = {
     mapLines: mapPurchaseInvoiceLines,
     line: {
       delete: deleteDraftPurchaseInvoiceLine
-    }
+    },
+    get: getPurchaseInvoiceTool,
+    update: updatePurchaseInvoiceTool
   },
   payment: {
     create: createPayment,
     post: postPayment,
-    void: voidPayment
+    void: voidPayment,
+    get: getPaymentTool,
+    update: upsertPaymentUpdateTool,
+    delete: deletePaymentTool
   },
   memo: {
     post: postMemo,
     void: voidMemo,
-    delete: deleteDraftMemo
+    delete: deleteDraftMemo,
+    get: getMemoTool,
+    create: upsertMemoCreateTool,
+    update: upsertMemoUpdateTool
   },
   charge: {
-    void: voidCharge
+    void: voidCharge,
+    get: getChargeTool
   },
   receivables: {
     adjust: adjustReceivables
@@ -83,6 +151,126 @@ export const invoicing = {
     updateAndPost: saveAndPostReimbursement,
     post: postReimbursement,
     void: voidReimbursement,
-    pay: payReimbursement
+    pay: payReimbursement,
+    get: getReimbursementTool
+  },
+  purchaseInvoiceFromPurchaseOrder: {
+    create: createPurchaseInvoiceFromPurchaseOrderTool
+  },
+  salesInvoiceFromSalesOrder: {
+    create: createSalesInvoiceFromSalesOrderTool
+  },
+  salesInvoiceFromShipment: {
+    create: createSalesInvoiceFromShipmentTool
+  },
+  purchaseInvoices: {
+    get: getPurchaseInvoicesTool
+  },
+  purchaseInvoiceDelivery: {
+    get: getPurchaseInvoiceDeliveryTool,
+    upsert: upsertPurchaseInvoiceDeliveryTool
+  },
+  purchaseInvoiceLines: {
+    get: getPurchaseInvoiceLinesTool
+  },
+  purchaseInvoiceLine: {
+    get: getPurchaseInvoiceLineTool,
+    create: upsertPurchaseInvoiceLineCreateTool,
+    update: upsertPurchaseInvoiceLineUpdateTool
+  },
+  salesInvoices: {
+    get: getSalesInvoicesTool
+  },
+  salesInvoiceShipment: {
+    get: getSalesInvoiceShipmentTool,
+    upsert: upsertSalesInvoiceShipmentTool
+  },
+  salesInvoiceLines: {
+    get: getSalesInvoiceLinesTool
+  },
+  salesInvoiceLine: {
+    get: getSalesInvoiceLineTool
+  },
+  purchaseInvoiceExchangeRate: {
+    update: updatePurchaseInvoiceExchangeRateTool
+  },
+  salesInvoiceExchangeRate: {
+    update: updateSalesInvoiceExchangeRateTool
+  },
+  purchaseInvoiceLineOrder: {
+    update: updatePurchaseInvoiceLineOrderTool
+  },
+  salesInvoiceLineOrder: {
+    update: updateSalesInvoiceLineOrderTool
+  },
+  payments: {
+    get: getPaymentsTool
+  },
+  charges: {
+    get: getChargesTool
+  },
+  reimbursements: {
+    get: getReimbursementsTool
+  },
+  reimbursementRelatedItems: {
+    get: getReimbursementRelatedItemsTool
+  },
+  invoiceSettlements: {
+    get: getInvoiceSettlementsTool,
+    replace: replaceInvoiceSettlementsTool
+  },
+  invoiceSettlementsForInvoice: {
+    get: getInvoiceSettlementsForInvoiceTool
+  },
+  memoApplications: {
+    get: getMemoApplicationsTool
+  },
+  openSalesInvoicesForCustomer: {
+    get: getOpenSalesInvoicesForCustomerTool
+  },
+  openPurchaseInvoicesForSupplier: {
+    get: getOpenPurchaseInvoicesForSupplierTool
+  },
+  openReimbursementsForEmployee: {
+    get: getOpenReimbursementsForEmployeeTool
+  },
+  paymentCurrencyConfiguration: {
+    get: getPaymentCurrencyConfigurationTool
+  },
+  availableOnAccountCreditSources: {
+    get: getAvailableOnAccountCreditSourcesTool
+  },
+  memos: {
+    get: getMemosTool
+  },
+  availableCreditsForParty: {
+    get: getAvailableCreditsForPartyTool
+  },
+  companyHasOpenCredits: {
+    get: getCompanyHasOpenCreditsTool
+  },
+  stagedCreditsForPayment: {
+    get: getStagedCreditsForPaymentTool
+  },
+  creditsToInvoices: {
+    apply: applyCreditsToInvoicesTool
+  },
+  arTieOut: {
+    get: getArTieOutTool
+  },
+  apTieOut: {
+    get: getApTieOutTool
+  },
+  arOpenByCustomer: {
+    get: getArOpenByCustomerTool
+  },
+  apOpenBySupplier: {
+    get: getApOpenBySupplierTool
+  },
+  arAging: {
+    get: getArAgingTool
+  },
+  apAging: {
+    get: getApAgingTool
   }
 };

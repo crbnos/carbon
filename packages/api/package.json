@@ -5,7 +5,9 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./service-fn.server": "./src/service-fn.server.ts",
+    "./service-tools.server": "./src/service-tools.server.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
@@ -14,9 +16,14 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@carbon/database": "workspace:*",
+    "@carbon/kv": "workspace:*",
+    "@carbon/logger": "workspace:*",
+    "@carbon/server-functions": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",
     "@orpc/openapi-client": "catalog:",
+    "@supabase/supabase-js": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

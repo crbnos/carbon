@@ -23,7 +23,7 @@ vi.mock("@carbon/server-functions", () => ({
 }));
 vi.mock("@carbon/jobs", () => ({ trigger }));
 
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const {
   createMaintenanceEvent,

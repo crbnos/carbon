@@ -2034,6 +2034,18 @@ importers:
 
   packages/api:
     dependencies:
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/kv':
+        specifier: workspace:*
+        version: link:../kv
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@carbon/server-functions':
+        specifier: workspace:*
+        version: link:../server-functions
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.15.0(@opentelemetry/api@1.9.0)
@@ -2043,6 +2055,9 @@ importers:
       '@orpc/openapi-client':
         specifier: 'catalog:'
         version: 1.15.0(@opentelemetry/api@1.9.0)
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       zod:
         specifier: 'catalog:'
         version: 4.5.4

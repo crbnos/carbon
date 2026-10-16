@@ -39,7 +39,7 @@ apps/erp/app/modules/{module}/
 ## Operations: `defineServiceFn` (migration in progress)
 
 The ERP is moving every operation a route, the API or MCP can run into one
-`defineServiceFn` const (`apps/erp/app/modules/service-fn.server.ts`), so a
+`defineServiceFn` const (`@carbon/api/service-fn.server`), so a
 tool does exactly what the button does. Plan:
 `.ai/plans/2026-10-15-service-function-migration.md`. Migrated so far: the
 production, purchasing, inventory and sales `*.server.ts`. The functions below

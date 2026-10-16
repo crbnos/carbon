@@ -11,6 +11,10 @@
  * Below them, the quality module's operations (`defineServiceFn`).
  */
 import { openai } from "@ai-sdk/openai";
+import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -45,10 +49,6 @@ import {
   upsertPurchaseReturnOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { systemContext } from "~/modules/service-context.server";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { refuseUnlessOwned } from "~/modules/shared/shared.server";
 import { getExternalLink } from "~/modules/shared/shared.service";

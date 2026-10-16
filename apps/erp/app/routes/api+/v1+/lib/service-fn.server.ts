@@ -6,16 +6,16 @@
 // workflow caller: the same function, with the same checks, the route calls.
 
 import type { ManifestEntry } from "@carbon/api";
+import type {
+  ErrorCategory,
+  ServiceContext,
+  ServiceFn
+} from "@carbon/api/service-fn.server";
 import { permissionsFromClaims } from "@carbon/server-functions/permissions";
 import { ORPCError } from "@orpc/server";
 import type { z } from "zod";
 import { router as services } from "~/modules/router.server";
 import { contextFor } from "~/modules/service-context.server";
-import type {
-  ErrorCategory,
-  ServiceContext,
-  ServiceFn
-} from "~/modules/service-fn.server";
 import type { AuthedContext } from "./base.server";
 import { scopedToCompany } from "./company-scope.server";
 import { COMPANY_TABLES } from "./operations.server";

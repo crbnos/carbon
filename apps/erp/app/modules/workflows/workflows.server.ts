@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
@@ -21,10 +25,6 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { z } from "zod";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { createNode, TRIGGER_POSITION } from "./ui/Builder/graph";
 import {

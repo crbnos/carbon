@@ -149,7 +149,7 @@ const {
   deactivateUsers,
   resetConsoleOperatorPin
 } = await import("./users.server");
-const { createServiceContext } = await import("../service-fn.server");
+const { createServiceContext } = await import("@carbon/api/service-fn.server");
 
 const USER = "usr_1";
 const COMPANY = "cmp_1";

@@ -31,7 +31,7 @@ import {
   moveScheduleJob,
   reorderScheduleOperations
 } from "../app/modules/production/production.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 type Answer = { data: unknown; error: { message: string } | null };
 

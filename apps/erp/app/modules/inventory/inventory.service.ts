@@ -62,7 +62,6 @@ import {
 
 const logger = getLogger("erp", "inventory");
 
-/** @mcp delete */
 export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
   id: string
@@ -70,7 +69,6 @@ export async function deleteBatchProperty(
   return client.from("batchProperty").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteKanban(
   client: SupabaseClient<Database>,
   kanbanId: string
@@ -78,7 +76,6 @@ export async function deleteKanban(
   return client.from("kanban").delete().eq("id", kanbanId);
 }
 
-/** @mcp delete */
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -86,7 +83,6 @@ export async function deleteReceipt(
   return client.from("receipt").delete().eq("id", receiptId);
 }
 
-/** @mcp delete */
 export async function deleteReceiptLine(
   client: SupabaseClient<Database>,
   receiptLineId: string
@@ -138,7 +134,6 @@ export async function deleteStorageUnitCascade(
   return client.from("storageUnit").delete().in("id", ids);
 }
 
-/** @mcp delete */
 export async function deleteShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -146,7 +141,6 @@ export async function deleteShipment(
   return client.from("shipment").delete().eq("id", shipmentId);
 }
 
-/** @mcp delete */
 export async function deleteShipmentLine(
   client: SupabaseClient<Database>,
   shipmentLineId: string
@@ -154,7 +148,6 @@ export async function deleteShipmentLine(
   return client.from("shipmentLine").delete().eq("id", shipmentLineId);
 }
 
-/** @mcp delete */
 export async function deleteShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
@@ -165,7 +158,6 @@ export async function deleteShippingMethod(
     .eq("id", shippingMethodId);
 }
 
-/** @mcp delete */
 export async function deleteStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -173,7 +165,6 @@ export async function deleteStockTransfer(
   return client.from("stockTransfer").delete().eq("id", stockTransferId);
 }
 
-/** @mcp delete */
 export async function deleteStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLineId: string
@@ -184,7 +175,6 @@ export async function deleteStockTransferLine(
     .eq("id", stockTransferLineId);
 }
 
-/** @mcp delete */
 export async function deleteWarehouseTransfer(
   client: SupabaseClient<Database>,
   transferId: string
@@ -248,7 +238,6 @@ export async function getItemLedgerPage(
  *
  * Returns rows newest→oldest regardless of direction. No `count` — `hasMore` is
  * inferred from a full page, so there's no whole-table count per request.
- * @mcp read
  */
 export async function getItemLedgerActivity(
   client: SupabaseClient<Database>,
@@ -304,7 +293,6 @@ export async function getItemLedgerActivity(
  * inventory table's On Hand column. The Activity panel fetches this once for
  * its newest loaded entry and derives every other row's balance from the
  * contiguous pages — see `withRunningBalance`.
- * @mcp read
  */
 export async function getItemLedgerBalance(
   client: SupabaseClient<Database>,
@@ -323,7 +311,6 @@ export async function getItemLedgerBalance(
   });
 }
 
-/** @mcp read */
 export async function getBatchProperties(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -337,7 +324,6 @@ export async function getBatchProperties(
     .order("sortOrder");
 }
 
-/** @mcp read */
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -395,7 +381,6 @@ export async function getInventoryItemsCount(
   return query;
 }
 
-/** @mcp read */
 export async function getInventoryValuation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -408,7 +393,6 @@ export async function getInventoryValuation(
   });
 }
 
-/** @mcp read */
 export async function getInventoryValuationTieOut(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -435,8 +419,6 @@ export async function getInventoryValuationTieOut(
  *
  * Gated on accounting, as the Reconcile screen is: it writes a journal, not
  * inventory.
- * @mcp create
- * @mcp permission accounting:create
  */
 export async function createInventoryReconciliationJournal(
   client: SupabaseClient<Database>,
@@ -532,7 +514,6 @@ export async function createInventoryReconciliationJournal(
   }
 }
 
-/** @mcp read */
 export async function getKanbans(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -561,7 +542,6 @@ export async function getKanbans(
   return query;
 }
 
-/** @mcp read */
 export async function getKanban(
   client: SupabaseClient<Database>,
   kanbanId: string,
@@ -577,7 +557,6 @@ export async function getKanban(
     .single();
 }
 
-/** @mcp read */
 export async function getKanbanProjectedQuantities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -591,7 +570,6 @@ export async function getKanbanProjectedQuantities(
   });
 }
 
-/** @mcp read */
 export async function getStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -614,7 +592,6 @@ export async function getStockTransferLine(
     .single();
 }
 
-/** @mcp read */
 export async function getStockTransferLines(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -640,7 +617,6 @@ export async function getStockTransferTracking(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getStockTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -722,7 +698,6 @@ export async function getDefaultStorageUnitOrStorageUnitWithHighestQuantity(
   return storageUnitWithHighestQuantity?.storageUnitId ?? null;
 }
 
-/** @mcp read */
 export async function getReceipts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -750,7 +725,6 @@ export async function getReceipts(
   return query;
 }
 
-/** @mcp read */
 export async function getReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -758,7 +732,6 @@ export async function getReceipt(
   return client.from("receipt").select("*").eq("id", receiptId).single();
 }
 
-/** @mcp read */
 export async function getReceiptLines(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -771,7 +744,6 @@ export async function getReceiptLines(
  * invoices raised against its supplier interaction (the PO's, so every
  * receipt of that order shares them), and — for a customer return — the
  * customer it came back from.
- * @mcp read
  */
 export async function getReceiptRelatedItems(
   client: SupabaseClient<Database>,
@@ -819,7 +791,6 @@ export async function getReceiptRelatedItems(
   };
 }
 
-/** @mcp read */
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,
@@ -903,7 +874,6 @@ export async function reconcileReceiptSerialEntities(
   }
 }
 
-/** @mcp read */
 export async function getReceiptFiles(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -938,7 +908,6 @@ export async function getReceiptFiles(
   };
 }
 
-/** @mcp read */
 export async function getSerialNumbersForItem(
   client: SupabaseClient<Database>,
   args: {
@@ -969,7 +938,6 @@ export async function getSerialNumbersForItem(
  * warehouse). `excludeAllocated` nets out quantities already allocated to other
  * non-cancelled picking lines so the same lot is never recommended twice;
  * `excludeLineId` keeps the current line's own allocation visible.
- * @mcp read
  */
 export async function getAvailableTrackedEntities(
   client: SupabaseClient<Database>,
@@ -999,7 +967,6 @@ export async function getAvailableTrackedEntities(
 /**
  * The configured tracked-entity pick order for an item at a location, used as
  * the picker's default sort. Falls back to "Default" (smart) when unset.
- * @mcp read
  */
 export async function getPickOrder(
   client: SupabaseClient<Database>,
@@ -1015,7 +982,6 @@ export async function getPickOrder(
   return data?.sortMethod ?? "Default";
 }
 
-/** @mcp read */
 export async function getBatchNumbersForItem(
   client: SupabaseClient<Database>,
   args: {
@@ -1035,7 +1001,6 @@ export async function getBatchNumbersForItem(
     .order("createdAt", { ascending: true });
 }
 
-/** @mcp read */
 export async function getStorageUnitsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1048,7 +1013,6 @@ export async function getStorageUnitsList(
   );
 }
 
-/** @mcp read */
 export async function getStorageUnitsListForLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1069,7 +1033,6 @@ export async function getStorageUnitsListForLocation(
 // Tree shape from storageUnits_recursive view: each row has its 1-based depth
 // and the full ancestorPath (root → node ids). Sort by ancestorPath so the
 // caller can render a flat list that visually nests by depth.
-/** @mcp read */
 export async function getStorageUnitsTreeForLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1122,7 +1085,6 @@ export async function getStorageUnits(
   return query;
 }
 
-/** @mcp read */
 export async function getStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -1134,7 +1096,6 @@ export async function getStorageUnit(
     .single();
 }
 
-/** @mcp read */
 export async function getEffectiveWorkCenterId(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -1146,7 +1107,6 @@ export async function getEffectiveWorkCenterId(
 
 // Roots only (depth = 1). Honors search/filter/pagination so the table can
 // paginate top-level storage units while children load lazily on demand.
-/** @mcp read */
 export async function getStorageUnitRoots(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1173,7 +1133,6 @@ export async function getStorageUnitRoots(
 
 // Immediate children of a single parent (one level deep). Used by the lazy
 // expand handler in the StorageUnits table.
-/** @mcp read */
 export async function getStorageUnitChildren(
   client: SupabaseClient<Database>,
   parentId: string
@@ -1191,7 +1150,6 @@ export async function getStorageUnitChildren(
 // subtrees in one round trip. Used to render the tree expanded by default;
 // the depth cap keeps very deep trees from loading their entire subtree
 // eagerly — anything below `maxDepth` still lazy-loads on demand.
-/** @mcp read */
 export async function getStorageUnitSubtrees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1215,7 +1173,6 @@ export async function getStorageUnitSubtrees(
 
 // Set of storageUnit ids that have at least one child in the given location.
 // Drives whether the table renders an expand chevron on a row.
-/** @mcp read */
 export async function getStorageUnitParentIdsWithChildren(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1241,7 +1198,6 @@ export async function getStorageUnitParentIdsWithChildren(
 // every ancestor of each match, so the tree path renders intact. Returns the
 // flat ordered row set + the parentIds that should be pre-expanded so that
 // matches are visible to the user.
-/** @mcp read */
 export async function searchStorageUnitsWithAncestors(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1292,7 +1248,6 @@ export async function searchStorageUnitsWithAncestors(
   };
 }
 
-/** @mcp read */
 export async function getStockMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1324,7 +1279,6 @@ export async function getStockMovements(
   return query;
 }
 
-/** @mcp read */
 export async function getShipments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1352,7 +1306,6 @@ export async function getShipments(
   return query;
 }
 
-/** @mcp read */
 export async function getShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -1360,7 +1313,6 @@ export async function getShipment(
   return client.from("shipment").select("*").eq("id", shipmentId).single();
 }
 
-/** @mcp read */
 export async function getShipmentLines(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -1412,7 +1364,6 @@ export async function getShipmentFiles(
   };
 }
 
-/** @mcp read */
 export async function getShipmentRelatedItems(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -1453,7 +1404,6 @@ export async function getShipmentRelatedItems(
   };
 }
 
-/** @mcp read */
 export async function getShipmentTracking(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -1466,7 +1416,6 @@ export async function getShipmentTracking(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getRentalShipmentLines(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -1488,7 +1437,6 @@ export async function getRentalShipmentLines(
   );
 }
 
-/** @mcp read */
 export async function getRentalReceiptLines(
   client: SupabaseClient<Database>,
   receiptId: string,
@@ -1522,7 +1470,6 @@ export async function getShipmentLineTracking(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
@@ -1534,7 +1481,6 @@ export async function getShippingMethod(
     .single();
 }
 
-/** @mcp read */
 export async function getShippingMethods(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1562,7 +1508,6 @@ export async function getShippingMethods(
   return query;
 }
 
-/** @mcp read */
 export async function getShippingMethodsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1575,7 +1520,6 @@ export async function getShippingMethodsList(
     .order("name", { ascending: true });
 }
 
-/** @mcp read */
 export async function getShippingTermsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1645,7 +1589,6 @@ export async function mergeTrackedEntities(
     });
 }
 
-/** @mcp read */
 export async function getTrackedEntities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1673,7 +1616,6 @@ export async function getTrackedEntities(
   return query;
 }
 
-/** @mcp read */
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string,
@@ -1694,7 +1636,6 @@ export async function getTrackedEntitiesByMakeMethodId(
     .order("id", { ascending: true });
 }
 
-/** @mcp read */
 export async function getTrackedEntity(
   client: SupabaseClient<Database>,
   trackedEntityId: string
@@ -1722,7 +1663,6 @@ export async function getTrackedEntity(
  *     },
  *     ...
  *   ]
- * @mcp update
  */
 export async function updateTrackedEntityExpiry(
   client: SupabaseClient<Database>,
@@ -1805,7 +1745,6 @@ export async function getTrackedEntitiesByOperationId(
   );
 }
 
-/** @mcp read */
 export async function getWarehouseTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1835,7 +1774,6 @@ export async function getWarehouseTransfers(
   return query;
 }
 
-/** @mcp read */
 export async function getWarehouseTransfer(
   client: SupabaseClient<Database>,
   transferId: string
@@ -1853,7 +1791,6 @@ export async function getWarehouseTransfer(
  * The documents a warehouse transfer has raised: the shipments that send it
  * out of the source location and the receipts that take it in at the
  * destination.
- * @mcp read
  */
 export async function getWarehouseTransferRelatedItems(
   client: SupabaseClient<Database>,
@@ -1898,7 +1835,6 @@ export async function getWarehouseTransferRelatedItems(
   };
 }
 
-/** @mcp read */
 export async function getWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferId: string,
@@ -1914,7 +1850,6 @@ export async function getWarehouseTransferLine(
     .single();
 }
 
-/** @mcp read */
 export async function getWarehouseTransferLines(
   client: SupabaseClient<Database>,
   transferId: string
@@ -1978,7 +1913,6 @@ export async function insertManualInventoryAdjustment(
 // fix→fix). Mirrors the walk inside the correct-stock-movement server function;
 // the modal pre-fills from this so the user never submits a value derived from
 // an incomplete page of movements.
-/** @mcp read */
 export async function getStockMovementEffectiveQuantity(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2032,7 +1966,6 @@ export async function getStockMovementEffectiveQuantity(
 // Books ONE opposite (delta) movement linked to the corrected movement via
 // correctionOfItemLedgerId, dated with the original's postingDate and posted
 // into the original's accounting period (the correct-stock-movement operation).
-/** @mcp action */
 export async function correctStockMovement(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -2064,7 +1997,6 @@ export async function correctStockMovement(
 // Inventory Count / Cycle Count
 // ===========================================================================
 
-/** @mcp read */
 export async function getInventoryCounts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2085,7 +2017,6 @@ export async function getInventoryCounts(
   return query;
 }
 
-/** @mcp read */
 export async function getInventoryCount(
   client: SupabaseClient<Database>,
   id: string,
@@ -2099,7 +2030,6 @@ export async function getInventoryCount(
     .single();
 }
 
-/** @mcp read */
 export async function getInventoryCountLines(
   client: SupabaseClient<Database>,
   inventoryCountId: string,
@@ -2138,7 +2068,6 @@ export async function getInventoryCountLines(
 
 // Aggregate counts for the confirm dialog. Computed server-side so the warnings
 // stay accurate regardless of which page of lines is currently loaded.
-/** @mcp read */
 export async function getInventoryCountLineSummary(
   client: SupabaseClient<Database>,
   inventoryCountId: string,
@@ -2166,7 +2095,6 @@ export async function getInventoryCountLineSummary(
 // corrections, which copy the count's documentType/documentId), found via the
 // movement's `documentType`/`documentId` back-reference. Used to show a posted
 // count what it actually did to inventory. Chronological.
-/** @mcp read */
 export async function getInventoryCountMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2205,7 +2133,6 @@ export async function insertInventoryCount(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteInventoryCount(
   client: SupabaseClient<Database>,
   id: string,
@@ -2357,7 +2284,6 @@ export async function generateInventoryCountLines(
 // read-then-update would leave open (a concurrent Confirm can't slip in between).
 // Returns the updated row id, or undefined when the line doesn't exist or the
 // count is no longer Draft. Kysely bypasses RLS — authorize at the route first.
-/** @mcp update */
 export async function updateInventoryCountLine(
   db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inventoryCountLineValidator> & {
@@ -2401,7 +2327,6 @@ export async function updateInventoryCountLine(
     .executeTakeFirst();
 }
 
-/** @mcp update */
 export async function updateInventoryCountStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -2426,7 +2351,6 @@ export async function updateInventoryCountStatus(
   return query.select("id").single();
 }
 
-/** @mcp update */
 export async function updateBatchPropertyOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2469,7 +2393,6 @@ export async function updateStockTransferStatus(
     .eq("id", id);
 }
 
-/** @mcp upsert */
 export async function upsertBatchProperty(
   client: SupabaseClient<Database>,
   batchProperty: z.infer<typeof batchPropertyValidator> & {
@@ -2501,7 +2424,6 @@ export async function upsertBatchProperty(
   });
 }
 
-/** @mcp upsert */
 export async function upsertKanban(
   client: SupabaseClient<Database>,
   kanban:
@@ -2587,7 +2509,6 @@ export async function upsertReceipt(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertStorageUnit(
   client: SupabaseClient<Database>,
   storageUnit:
@@ -2623,7 +2544,6 @@ export async function upsertStorageUnit(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethod:
@@ -2724,7 +2644,6 @@ export async function upsertStockTransfer(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLine:
@@ -2919,7 +2838,6 @@ export async function getStorageUnitTree(
     .order("ancestorPath");
 }
 
-/** @mcp read */
 export async function getStorageUnitDescendants(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -2932,7 +2850,6 @@ export async function getStorageUnitDescendants(
     .contains("ancestorPath", [storageUnitId]);
 }
 
-/** @mcp action */
 export async function expandStorageUnitIdsWithDescendants(
   client: SupabaseClient<Database>,
   storageUnitIds: string[]
@@ -2953,7 +2870,6 @@ export async function expandStorageUnitIdsWithDescendants(
 // storageType CRUD (mirrors materialType in items.service.ts)
 // ----------------------------------------------------------------------------
 
-/** @mcp read */
 export async function getStorageTypeUsage(
   client: SupabaseClient<Database>,
   id: string,
@@ -2967,7 +2883,6 @@ export async function getStorageTypeUsage(
     .limit(5);
 }
 
-/** @mcp delete */
 export async function deleteStorageTypeWithCascade(
   client: SupabaseClient<Database>,
   id: string,
@@ -2993,7 +2908,6 @@ export async function deleteStorageTypeWithCascade(
   return client.from("storageType").delete().eq("id", id);
 }
 
-/** @mcp read */
 export async function getStorageTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3014,7 +2928,6 @@ export async function getStorageTypes(
   return query;
 }
 
-/** @mcp read */
 export async function getStorageType(
   client: SupabaseClient<Database>,
   id: string
@@ -3022,7 +2935,6 @@ export async function getStorageType(
   return client.from("storageType").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getStorageTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -3035,7 +2947,6 @@ export async function getStorageTypesList(
   );
 }
 
-/** @mcp upsert */
 export async function upsertStorageType(
   client: SupabaseClient<Database>,
   storageType:
@@ -3068,7 +2979,6 @@ export async function upsertStorageType(
     .single();
 }
 
-/** @mcp read */
 export async function getShelfLifeForItems(
   client: SupabaseClient<Database>,
   itemIds: string[]
@@ -3084,7 +2994,6 @@ export async function getShelfLifeForItems(
  * Map of trackedEntityId → expirationDate (or null) for a set of ids.
  * Used by the inventory adjustment modal to prefill the date picker when
  * editing an existing batch / serial.
- * @mcp read
  */
 export async function getTrackedEntityExpirations(
   client: SupabaseClient<Database>,
@@ -3108,7 +3017,6 @@ export async function getTrackedEntityExpirations(
 // Picking List CRUD
 // ----------------------------------------------------------------------------
 
-/** @mcp read */
 export async function getPickingLists(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3151,7 +3059,6 @@ export async function getPickingLists(
   return query;
 }
 
-/** @mcp read */
 export async function getPickingList(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -3165,7 +3072,6 @@ export async function getPickingList(
     .single();
 }
 
-/** @mcp read */
 export async function getPicksByJobMaterial(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -3220,7 +3126,6 @@ export type JobMaterialPick = {
   pickingListStatus: string;
 };
 
-/** @mcp read */
 export async function getPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -3238,7 +3143,6 @@ export async function getPickingListLines(
 /**
  * The documents around a picking list that its own row doesn't name: the
  * jobs its lines pick for, with their status.
- * @mcp read
  */
 export async function getPickingListRelatedItems(
   client: SupabaseClient<Database>,
@@ -3274,7 +3178,6 @@ export async function getPickingListRelatedItems(
  * Per-line WAREHOUSE (non-lineside, incl. the unassigned/null bin) on-hand for
  * a picking list's items — drives the "No Stock" warning. Returns a map of
  * pickingListLineId → availableQuantity.
- * @mcp read
  */
 export async function getPickingListAvailability(
   client: SupabaseClient<Database>,
@@ -3307,7 +3210,6 @@ export type PickingListRecommendation = {
  * greedily assign distinct lots to lines in pick order so the same serial is never
  * recommended to two lines, and a batch lot is split across lines by remaining qty.
  * Returns a map of pickingListLineId → recommended lots (empty/partial if short).
- * @mcp read
  */
 export async function getPickingListRecommendations(
   client: SupabaseClient<Database>,
@@ -3376,7 +3278,6 @@ export async function getPickingListRecommendations(
   return recommendations;
 }
 
-/** @mcp read */
 export async function getPickingListLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -3695,7 +3596,6 @@ export async function upsertPickingListLine(
     .single();
 }
 
-/** @mcp delete */
 export async function deletePickingList(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -3714,7 +3614,6 @@ export async function deletePickingListLine(
 // Picking List Business Logic
 // ----------------------------------------------------------------------------
 
-/** @mcp read */
 export async function getPickingSchedule(
   client: SupabaseClient<Database>,
   args: {
@@ -3886,7 +3785,6 @@ class PickingReadError extends Error {
   }
 }
 
-/** @mcp create destructive */
 export async function generatePickingList(
   client: SupabaseClient<Database>,
   args: {
@@ -4634,7 +4532,6 @@ export async function insertStockTransfer(
   };
 }
 
-/** @mcp create */
 export async function insertWarehouseTransfer(
   client: SupabaseClient<Database>,
   input: {
@@ -4739,7 +4636,6 @@ export async function updateStockTransfer(
     .single();
 }
 
-/** @mcp update */
 export async function updateWarehouseTransfer(
   client: SupabaseClient<Database>,
   input: {

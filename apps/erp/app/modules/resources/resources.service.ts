@@ -50,7 +50,6 @@ export async function deleteAbility(
     : client.from("ability").update({ active: false }).eq("id", abilityId);
 }
 
-/** @mcp delete */
 export async function deleteContractor(
   client: SupabaseClient<Database>,
   contractorId: string
@@ -58,7 +57,6 @@ export async function deleteContractor(
   return client.from("contractor").delete().eq("id", contractorId);
 }
 
-/** @mcp delete */
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
@@ -66,7 +64,6 @@ export async function deleteFailureMode(
   return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
 }
 
-/** @mcp delete */
 export async function deleteLocation(
   client: SupabaseClient<Database>,
   locationId: string
@@ -74,7 +71,6 @@ export async function deleteLocation(
   return client.from("location").delete().eq("id", locationId);
 }
 
-/** @mcp delete */
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -106,7 +102,6 @@ export async function deleteMaintenanceDispatchWorkCenter(
     .eq("id", workCenterId);
 }
 
-/** @mcp delete */
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
@@ -121,7 +116,6 @@ export async function deleteMaintenanceScheduleItem(
   return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
 }
 
-/** @mcp delete */
 export async function deletePartner(
   client: SupabaseClient<Database>,
   partnerId: string
@@ -129,7 +123,6 @@ export async function deletePartner(
   return client.from("partner").delete().eq("id", partnerId);
 }
 
-/** @mcp action */
 export async function activateProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -137,7 +130,6 @@ export async function activateProcess(
   return client.from("process").update({ active: true }).eq("id", processId);
 }
 
-/** @mcp action */
 export async function processDeactivate(
   client: SupabaseClient<Database>,
   processId: string
@@ -145,7 +137,6 @@ export async function processDeactivate(
   return client.from("process").update({ active: false }).eq("id", processId);
 }
 
-/** @mcp delete */
 export async function deleteProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -153,7 +144,6 @@ export async function deleteProcess(
   return client.from("process").delete().eq("id", processId);
 }
 
-/** @mcp delete */
 export async function deleteShift(
   client: SupabaseClient<Database>,
   shiftId: string
@@ -162,7 +152,6 @@ export async function deleteShift(
   return client.from("shift").update({ active: false }).eq("id", shiftId);
 }
 
-/** @mcp delete */
 export async function deleteSuggestion(
   client: SupabaseClient<Database>,
   suggestionId: string
@@ -170,7 +159,6 @@ export async function deleteSuggestion(
   return client.from("suggestion").delete().eq("id", suggestionId);
 }
 
-/** @mcp delete */
 export async function deleteTraining(
   client: SupabaseClient<Database>,
   trainingId: string
@@ -178,7 +166,6 @@ export async function deleteTraining(
   return client.from("training").delete().eq("id", trainingId);
 }
 
-/** @mcp delete */
 export async function deleteTrainingAssignment(
   client: SupabaseClient<Database>,
   assignmentId: string
@@ -186,7 +173,6 @@ export async function deleteTrainingAssignment(
   return client.from("trainingAssignment").delete().eq("id", assignmentId);
 }
 
-/** @mcp delete */
 export async function deleteTrainingQuestion(
   client: SupabaseClient<Database>,
   trainingQuestionId: string,
@@ -207,7 +193,6 @@ export async function deleteWorkCenter(
   return client.from("workCenter").update({ active: false }).eq("id", id);
 }
 
-/** @mcp read */
 export async function getAbilities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -281,7 +266,6 @@ export async function getAbilities(
   };
 }
 
-/** @mcp read */
 export async function getAbilitiesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -294,7 +278,6 @@ export async function getAbilitiesList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getAbility(
   client: SupabaseClient<Database>,
   abilityId: string
@@ -328,7 +311,6 @@ export async function getAbility(
   };
 }
 
-/** @mcp read */
 export async function getContractor(
   client: SupabaseClient<Database>,
   contractorId: string
@@ -340,7 +322,6 @@ export async function getContractor(
     .single();
 }
 
-/** @mcp read */
 export async function getContractors(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -367,7 +348,6 @@ export async function getContractors(
   return query;
 }
 
-/** @mcp read */
 export async function getEmployeeAbilities(
   client: SupabaseClient<Database>,
   employeeId: string,
@@ -380,7 +360,6 @@ export async function getEmployeeAbilities(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getEmployeeAbility(
   client: SupabaseClient<Database>,
   employeeAbilityId: string
@@ -392,7 +371,6 @@ export async function getEmployeeAbility(
     .single();
 }
 
-/** @mcp read */
 export async function getFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
@@ -404,7 +382,6 @@ export async function getFailureMode(
     .single();
 }
 
-/** @mcp read */
 export async function getFailureModes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -428,7 +405,6 @@ export async function getFailureModes(
   return query;
 }
 
-/** @mcp read */
 export async function getFailureModesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -440,7 +416,6 @@ export async function getFailureModesList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getLocation(
   client: SupabaseClient<Database>,
   locationId: string
@@ -448,7 +423,6 @@ export async function getLocation(
   return client.from("location").select("*").eq("id", locationId).single();
 }
 
-/** @mcp read */
 export async function getLocations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -472,7 +446,6 @@ export async function getLocations(
   return query;
 }
 
-/** @mcp read */
 export async function getLocationsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -484,7 +457,6 @@ export async function getLocationsList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -503,7 +475,6 @@ export async function getMaintenanceDispatch(
     .single();
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchComments(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -518,7 +489,6 @@ export async function getMaintenanceDispatchComments(
     .order("createdAt", { ascending: false });
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchEvents(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -534,7 +504,6 @@ export async function getMaintenanceDispatchEvents(
     .order("startTime", { ascending: false });
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchItems(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -586,7 +555,6 @@ export async function getMaintenanceDispatches(
   return query;
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchesByLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -628,7 +596,6 @@ export async function getMaintenanceDispatchWorkCenters(
     .eq("maintenanceDispatchId", dispatchId);
 }
 
-/** @mcp read */
 export async function getMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
@@ -683,7 +650,6 @@ export async function getMaintenanceSchedules(
   return query;
 }
 
-/** @mcp read */
 export async function getMaintenanceSchedulesByLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -716,7 +682,6 @@ export async function getMaintenanceSchedulesByLocation(
   return query;
 }
 
-/** @mcp read */
 export async function getOutstandingTrainingsForUser(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -746,7 +711,6 @@ export async function getOutstandingTrainingsForUser(
   return { data: filteredData, error: null };
 }
 
-/** @mcp read */
 export async function getTrainingAssignmentStatusForEmployee(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -778,7 +742,6 @@ export async function getTrainingAssignmentStatusForEmployee(
   return { data: sorted, error: null };
 }
 
-/** @mcp read */
 export async function getPartner(
   client: SupabaseClient<Database>,
   partnerId: string,
@@ -792,7 +755,6 @@ export async function getPartner(
     .single();
 }
 
-/** @mcp read */
 export async function getPartnerBySupplierId(
   client: SupabaseClient<Database>,
   partnerId: string
@@ -804,7 +766,6 @@ export async function getPartnerBySupplierId(
     .single();
 }
 
-/** @mcp read */
 export async function getPartners(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -829,7 +790,6 @@ export async function getPartners(
   return query;
 }
 
-/** @mcp read */
 export async function getProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -837,7 +797,6 @@ export async function getProcess(
   return client.from("processes").select("*").eq("id", processId).single();
 }
 
-/** @mcp read */
 export async function getProcesses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -861,7 +820,6 @@ export async function getProcesses(
   return query;
 }
 
-/** @mcp read */
 export async function getProcessesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -874,7 +832,6 @@ export async function getProcessesList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getSuggestion(
   client: SupabaseClient<Database>,
   suggestionId: string
@@ -882,7 +839,6 @@ export async function getSuggestion(
   return client.from("suggestions").select("*").eq("id", suggestionId).single();
 }
 
-/** @mcp read */
 export async function getSuggestions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -906,7 +862,6 @@ export async function getSuggestions(
   return query;
 }
 
-/** @mcp read */
 export async function getTraining(
   client: SupabaseClient<Database>,
   id: string
@@ -918,7 +873,6 @@ export async function getTraining(
     .single();
 }
 
-/** @mcp read */
 export async function getTrainingAssignment(
   client: SupabaseClient<Database>,
   assignmentId: string
@@ -930,7 +884,6 @@ export async function getTrainingAssignment(
     .single();
 }
 
-/** @mcp read */
 export async function getTrainingAssignmentForCompletion(
   client: SupabaseClient<Database>,
   assignmentId: string
@@ -956,7 +909,6 @@ export async function getTrainingAssignmentForCompletion(
     .single();
 }
 
-/** @mcp read */
 export async function getTrainingAssignments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -974,7 +926,6 @@ export async function getTrainingAssignments(
   return query;
 }
 
-/** @mcp read */
 export async function getTrainingAssignmentStatus(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1035,7 +986,6 @@ export async function getTrainingAssignmentStatus(
   return { data: filteredData, error: null, count };
 }
 
-/** @mcp read */
 export async function getTrainingAssignmentSummary(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1056,7 +1006,6 @@ export async function getTrainingQuestions(
     .order("sortOrder", { ascending: true });
 }
 
-/** @mcp read */
 export async function getTrainings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1082,7 +1031,6 @@ export async function getTrainings(
   return query;
 }
 
-/** @mcp read */
 export async function getTrainingsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1095,7 +1043,6 @@ export async function getTrainingsList(
     .order("name", { ascending: true });
 }
 
-/** @mcp read */
 export async function getWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -1129,7 +1076,6 @@ export async function getWorkCenter(
   };
 }
 
-/** @mcp read */
 export async function getWorkCenters(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1155,7 +1101,6 @@ export async function getWorkCenters(
   return query;
 }
 
-/** @mcp read */
 export async function getWorkCentersByLocation(
   client: SupabaseClient<Database>,
   locationId: string
@@ -1198,7 +1143,6 @@ export async function getWorkCentersByLocation(
   return { data: mergedData, error: null };
 }
 
-/** @mcp read */
 export async function getWorkCentersList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1211,7 +1155,6 @@ export async function getWorkCentersList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getWorkCentersListWithBlockingStatus(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1228,7 +1171,6 @@ export async function getWorkCentersListWithBlockingStatus(
  * Processes that do not yet have an ability. Feeds the New Ability picker so a
  * planner can only mint an ability for a process that lacks one — an ability is
  * a process's qualification, and a process may have at most one.
- * @mcp read
  */
 export async function getProcessesWithoutAbility(
   client: SupabaseClient<Database>,
@@ -1324,7 +1266,6 @@ export async function getTrainingGrantedAbilityId(
   return training.data?.grantsAbilityId ?? null;
 }
 
-/** @mcp update */
 export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
@@ -1433,7 +1374,6 @@ export async function ensureProcessAbility(
     .single();
 }
 
-/** @mcp update */
 export async function updateSuggestionEmoji(
   client: SupabaseClient<Database>,
   suggestionId: string,
@@ -1450,7 +1390,6 @@ export async function updateSuggestionTags(
   return client.from("suggestion").update({ tags }).eq("id", suggestionId);
 }
 
-/** @mcp update */
 export async function updateTrainingQuestionOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -1468,10 +1407,6 @@ export async function updateTrainingQuestionOrder(
   return Promise.all(updatePromises);
 }
 
-/**
- * @mcp upsert destructive
- * @mcp key contractor id
- */
 export async function upsertContractor(
   client: SupabaseClient<Database>,
   contractorWithAbilities:
@@ -1530,7 +1465,6 @@ export async function upsertContractor(
   return client.from("contractorAbility").insert(contractorAbilities);
 }
 
-/** @mcp upsert */
 export async function upsertFailureMode(
   client: SupabaseClient<Database>,
   failureMode:
@@ -1665,7 +1599,6 @@ export async function insertMaintenanceDispatch(
   };
 }
 
-/** @mcp upsert */
 export async function upsertMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
   comment:
@@ -1719,7 +1652,6 @@ export async function upsertMaintenanceDispatchEvent(
   }
 }
 
-/** @mcp upsert */
 export async function upsertMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   item:
@@ -1825,10 +1757,6 @@ export async function upsertMaintenanceScheduleItem(
   }
 }
 
-/**
- * @mcp upsert
- * @mcp key partner id
- */
 export async function upsertPartner(
   client: SupabaseClient<Database>,
   partner:
@@ -1986,7 +1914,6 @@ export async function upsertProcess(
   return processUpdate;
 }
 
-/** @mcp upsert */
 export async function upsertTraining(
   client: SupabaseClient<Database>,
   training:
@@ -2052,7 +1979,6 @@ export async function upsertTrainingAssignment(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertTrainingQuestion(
   client: SupabaseClient<Database>,
   trainingQuestion:

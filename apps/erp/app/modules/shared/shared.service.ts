@@ -40,7 +40,6 @@ export async function deleteNote(
   return client.from("note").update({ active: false }).eq("id", noteId);
 }
 
-/** @mcp delete */
 export async function deleteSavedView(
   client: SupabaseClient<Database>,
   viewId: string
@@ -71,7 +70,6 @@ export async function generateEmbedding(
   return response.data.embedding as number[];
 }
 
-/** @mcp read */
 export async function getBase64ImageFromSupabase(
   client: SupabaseClient<Database>,
   path: string
@@ -111,7 +109,6 @@ export async function getBase64ImageFromSupabase(
   return `data:${mimeType};base64,${base64String}`;
 }
 
-/** @mcp read */
 export async function getCountries(client: SupabaseClient<Database>) {
   return client.from("country").select("*").order("name");
 }
@@ -131,7 +128,6 @@ export { getDocumentType } from "@carbon/files";
  * The item's CAD model in the same shape the line views expose it, so it drops
  * straight into `<CadModel modelUpload={...} />`. Always the full shape — an item
  * with no model is every field null, never a narrower branch.
- * @mcp read
  */
 export async function getModelByItemId(
   client: SupabaseClient<Database>,
@@ -172,7 +168,6 @@ export async function getModelByItemId(
   };
 }
 
-/** @mcp read */
 export async function getNotes(
   client: SupabaseClient<Database>,
   documentId: string
@@ -212,7 +207,6 @@ export async function getSavedViews(
     .order("name");
 }
 
-/** @mcp read */
 export async function getTagsList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -250,7 +244,6 @@ export async function importCsv(
     .invoke("import-csv", args as unknown as ServerFnInput<"import-csv">);
 }
 
-/** @mcp create */
 export async function insertNote(
   client: SupabaseClient<Database>,
   note: {
@@ -263,7 +256,6 @@ export async function insertNote(
   return client.from("note").insert([note]).select("*").single();
 }
 
-/** @mcp create */
 export async function insertTag(
   client: SupabaseClient<Database>,
   tag: Database["public"]["Tables"]["tag"]["Insert"]
@@ -271,7 +263,6 @@ export async function insertTag(
   return client.from("tag").insert(tag).select("*").single();
 }
 
-/** @mcp read */
 export async function getExternalLink(
   client: SupabaseClient<Database>,
   id: string
@@ -304,7 +295,6 @@ export async function upsertExternalLink(
     .single();
 }
 
-/** @mcp read */
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -329,7 +319,6 @@ export async function getCustomerPortals(
   return query;
 }
 
-/** @mcp read */
 export async function getCustomerPortal(
   client: SupabaseClient<Database>,
   id: string
@@ -386,7 +375,6 @@ export async function updateNote(
   return client.from("note").update({ note }).eq("id", id);
 }
 
-/** @mcp upsert */
 export async function upsertSavedView(
   client: SupabaseClient<Database>,
   view: {
@@ -441,7 +429,6 @@ export async function upsertSavedView(
     .single();
 }
 
-/** @mcp update */
 export async function updateSavedViewOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -574,7 +561,6 @@ export type EnforcementRuleRow =
 // they embed the commercial `requireEntitlement` gate. The read helpers below
 // stay here (ERP admin surface, client-safe).
 
-/** @mcp read */
 export async function getEnforcementRules(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
@@ -607,7 +593,6 @@ export async function getEnforcementRules(
   ]) as unknown as Promise<PostgrestResponse<EnforcementRuleRow>>;
 }
 
-/** @mcp read */
 export async function getEnforcementRule(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
@@ -636,7 +621,6 @@ export async function getEnforcementRule(
  * no family predicate even though the item table is shared between families.
  * Work-center pins only exist for the storage family; passing sales ids simply
  * matches nothing there.
- * @mcp read
  */
 export async function getEnforcementRuleAssignmentCounts(
   client: SupabaseClient<Database>,

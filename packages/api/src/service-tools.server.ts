@@ -7,7 +7,7 @@
 // and read the service's `{ data, error }` as a service function's result.
 
 import { ServerFnError } from "@carbon/server-functions/errors";
-import { SERVICE_RULE_ERROR_CODE } from "~/utils/supabase";
+import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
 import type {
   CarbonError,
   ErrorCategory,

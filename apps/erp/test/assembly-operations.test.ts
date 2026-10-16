@@ -45,7 +45,7 @@ import {
   mapAssemblyComponent,
   syncAssemblyToOperation
 } from "../app/modules/production/production.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 /** A client that answers every table's single-row read with `rows[table]`. */
 function clientWith(rows: Record<string, unknown>) {

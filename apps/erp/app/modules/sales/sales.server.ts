@@ -3,6 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { openai } from "@ai-sdk/openai";
+import {
+  CarbonError,
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
@@ -77,11 +82,6 @@ import {
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality/quality.service";
-import {
-  CarbonError,
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import {
   getCompany,

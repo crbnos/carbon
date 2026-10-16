@@ -1,8 +1,10 @@
 # @carbon/api
 
-The Carbon API contract layer: the types for the generated operation manifest, and
-the Standard-Schema wrapper that lets oRPC carry precomputed JSON Schemas without a
-zod round-trip. Internal workspace package — never published to npm.
+The Carbon API contract layer: `defineServiceFn` (one operation, with its input,
+permission and body), the helpers a single-function leaf uses, the types for the
+generated operation manifest, and the Standard-Schema wrapper that lets oRPC carry
+precomputed JSON Schemas without a zod round-trip. Internal workspace package —
+never published to npm.
 
 ## Always
 
@@ -30,12 +32,18 @@ zod round-trip. Internal workspace package — never published to npm.
 
 - Hand-edit `tool-metadata.json` or `tool-manifest.digest.json` — both are generated;
   `pnpm check:manifest` (pre-commit gated) fails on a stale digest.
-- Add runtime dependencies beyond the `@orpc/*` client-side packages without asking.
+- Add runtime dependencies beyond the `@orpc/*` client-side packages and the ones
+  `defineServiceFn` needs (`@carbon/database`, `@carbon/kv`, `@carbon/logger`,
+  `@carbon/server-functions`, `@supabase/supabase-js`) without asking.
+- Import app code (`~/…`). What wires an app in — its database pool, its router,
+  its session flash — stays in the app (`apps/erp/app/modules/service-context.server.ts`,
+  `carbon.server.ts`, `router.server.ts`).
 
 ## Validation Commands
 
 ```bash
 pnpm exec turbo run typecheck --filter=@carbon/api
+pnpm --filter @carbon/api test
 pnpm run check:manifest        # digest current?
 ```
 
@@ -43,8 +51,10 @@ pnpm run check:manifest        # digest current?
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `AuthField`, `PermissionAction` (re-exports `./schema` too) |
+| `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `AuthField`, `PermissionAction`, and `SERVICE_RULE_ERROR_CODE` (re-exports `./schema` too). Client-safe |
 | `./schema` | `jsonSchema()` pass-through Standard Schema wrapper, `CarbonJsonSchemaConverter` (OpenAPI generator plugin), `CARBON_VENDOR` |
+| `./service-fn.server` | `defineServiceFn`, `CarbonError`, `ERROR_STATUS`, `createServiceContext`, `ServiceContext`, `Result`, `RouteResult`, `toResult`, `bindServiceFns` / `Api` (the tree a route calls through `carbon(request)`) |
+| `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag` |
 
 ## Consumers
 

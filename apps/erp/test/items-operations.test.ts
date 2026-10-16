@@ -47,7 +47,7 @@ import {
   upsertItemPlanning,
   upsertItemSupersession
 } from "../app/modules/items/items.service";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 type Write = {
   table: string;

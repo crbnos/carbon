@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { toResult } from "@carbon/api/service-fn.server";
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
@@ -47,7 +48,6 @@ import {
 } from "~/modules/quality/quality.server";
 import { TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { toResult } from "~/modules/service-fn.server";
 import { getCompany } from "~/modules/settings";
 import { getExternalLink } from "~/modules/shared";
 import { path } from "~/utils/path";

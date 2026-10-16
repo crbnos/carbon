@@ -119,7 +119,6 @@ export async function closePurchaseOrder(
     .single();
 }
 
-/** @mcp update */
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -179,7 +178,6 @@ async function clearPlanningOrigin(
   return { error: cleared.error };
 }
 
-/** @mcp delete */
 export async function deletePurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLineId: string
@@ -195,7 +193,6 @@ export async function deletePurchaseOrderLine(
 // Creates a new Draft PO header + delivery + payment via insertPurchaseOrder
 // and copies the source PO's lines into it. Receipt/invoice progress is
 // reset; only the order/line definition is duplicated.
-/** @mcp create */
 export async function duplicatePurchaseOrder(
   client: SupabaseClient<Database>,
   {
@@ -287,7 +284,6 @@ export async function duplicatePurchaseOrder(
   return insertResult;
 }
 
-/** @mcp delete */
 export async function deleteSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -295,7 +291,6 @@ export async function deleteSupplier(
   return client.from("supplier").delete().eq("id", supplierId);
 }
 
-/** @mcp delete */
 export async function deleteSupplierContact(
   client: SupabaseClient<Database>,
   supplierId: string,
@@ -320,7 +315,6 @@ export async function deleteSupplierContact(
   return supplierContact;
 }
 
-/** @mcp delete */
 export async function deleteSupplierLocation(
   client: SupabaseClient<Database>,
   supplierId: string,
@@ -345,10 +339,6 @@ export async function deleteSupplierLocation(
   }
 }
 
-/**
- * @mcp delete
- * @mcp permission accounting:delete
- */
 export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
@@ -361,8 +351,6 @@ export async function deleteSupplierBankAccount(
  *
  * Gated on accounting, as the table's RLS and every bank-account screen are:
  * a changed payee account is how payment fraud starts.
- * @mcp read
- * @mcp permission accounting:view
  */
 export async function getSupplierBankAccounts(
   client: SupabaseClient<Database>,
@@ -375,10 +363,6 @@ export async function getSupplierBankAccounts(
     .order("name");
 }
 
-/**
- * @mcp upsert
- * @mcp permission accounting:create+update
- */
 export async function upsertSupplierBankAccount(
   db: Kysely<KyselyDatabase>,
   bankAccount:
@@ -419,7 +403,6 @@ export async function upsertSupplierBankAccount(
     .executeTakeFirstOrThrow();
 }
 
-/** @mcp delete */
 export async function deleteSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcessId: string
@@ -427,7 +410,6 @@ export async function deleteSupplierProcess(
   return client.from("supplierProcess").delete().eq("id", supplierProcessId);
 }
 
-/** @mcp delete */
 export async function deleteSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -435,7 +417,6 @@ export async function deleteSupplierQuote(
   return client.from("supplierQuote").delete().eq("id", supplierQuoteId);
 }
 
-/** @mcp delete */
 export async function deleteSupplierQuoteLine(
   client: SupabaseClient<Database>,
   id: string
@@ -443,7 +424,6 @@ export async function deleteSupplierQuoteLine(
   return client.from("supplierQuoteLine").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
@@ -451,7 +431,6 @@ export async function deleteSupplierType(
   return client.from("supplierType").delete().eq("id", supplierTypeId);
 }
 
-/** @mcp read */
 export async function getPurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -487,7 +466,6 @@ export async function finalizePurchasingRfq(
     .invoke("finalize-purchasing-rfq", input);
 }
 
-/** @mcp read */
 export async function getPurchaseOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -519,7 +497,6 @@ export async function getPurchaseOrders(
   return query;
 }
 
-/** @mcp read */
 export async function getPurchaseOrderDelivery(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -542,7 +519,6 @@ export async function getPurchaseOrderLocations(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderPayment(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -554,7 +530,6 @@ export async function getPurchaseOrderPayment(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderLines(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -567,7 +542,6 @@ export async function getPurchaseOrderLines(
     .order("createdAt", { ascending: true });
 }
 
-/** @mcp read */
 export async function getPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLineId: string
@@ -590,7 +564,6 @@ export async function getPurchaseOrderSuppliers(
     .order("name");
 }
 
-/** @mcp read */
 export async function getPurchasingDocumentsAssignedToMe(
   client: SupabaseClient<Database>,
   userId: string,
@@ -632,7 +605,6 @@ export async function getPurchasingDocumentsAssignedToMe(
   return merged;
 }
 
-/** @mcp read */
 export async function getPurchasingPlanning(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -699,7 +671,6 @@ export async function getPurchasingTerms(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -707,7 +678,6 @@ export async function getSupplier(
   return client.from("suppliers").select("*").eq("id", supplierId).single();
 }
 
-/** @mcp read */
 export async function getSupplierContact(
   client: SupabaseClient<Database>,
   supplierContactId: string,
@@ -723,7 +693,6 @@ export async function getSupplierContact(
   return query.single();
 }
 
-/** @mcp read */
 export async function getSupplierContacts(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -736,7 +705,6 @@ export async function getSupplierContacts(
     .eq("supplierId", supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierInteraction(
   client: SupabaseClient<Database>,
   opportunityId: string | null
@@ -778,7 +746,6 @@ export async function getSupplierInteraction(
   }>;
 }
 
-/** @mcp read */
 export async function getSupplierInteractionDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -801,7 +768,6 @@ export async function getSupplierInteractionDocuments(
   }));
 }
 
-/** @mcp read */
 export async function getSupplierInteractionLineDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -859,7 +825,6 @@ export async function getSupplierInteractionLineAttachments(
     .flatMap((attachment) => (attachment ? [attachment] : []));
 }
 
-/** @mcp read */
 export async function getSupplierLocations(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -872,7 +837,6 @@ export async function getSupplierLocations(
     .eq("supplierId", supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierLocation(
   client: SupabaseClient<Database>,
   supplierContactId: string
@@ -886,7 +850,6 @@ export async function getSupplierLocation(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierPayment(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -909,7 +872,6 @@ export async function getSupplierProcessById(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierProcessesByProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -920,7 +882,6 @@ export async function getSupplierProcessesByProcess(
     .eq("processId", processId);
 }
 
-/** @mcp read */
 export async function getSupplierProcessesBySupplier(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -931,7 +892,6 @@ export async function getSupplierProcessesBySupplier(
     .eq("supplierId", supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -954,7 +914,6 @@ export async function getSupplierQuoteByInteractionId(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuoteByExternalLinkId(
   client: SupabaseClient<Database>,
   externalLinkId: string
@@ -966,7 +925,6 @@ export async function getSupplierQuoteByExternalLinkId(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -991,7 +949,6 @@ export async function getSupplierQuotes(
   return query;
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLine(
   client: SupabaseClient<Database>,
   supplierQuoteLineId: string
@@ -1003,7 +960,6 @@ export async function getSupplierQuoteLine(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLines(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -1015,7 +971,6 @@ export async function getSupplierQuoteLines(
     .order("sortOrder", { ascending: true });
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLinePrices(
   client: SupabaseClient<Database>,
   supplierQuoteLineId: string
@@ -1026,7 +981,6 @@ export async function getSupplierQuoteLinePrices(
     .eq("supplierQuoteLineId", supplierQuoteLineId);
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLinePricesByQuoteId(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -1050,7 +1004,6 @@ export async function getSupplierQuotesList(
   );
 }
 
-/** @mcp read */
 export async function getSupplierShipping(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -1069,7 +1022,6 @@ export async function getSupplierShipping(
 // (supplierId, companyId), which supabase-js's type generator marks `isOneToOne:
 // false` even though supplierId alone is the real PK, so a reverse embed would type
 // (and risk behaving) as an array instead of a single object.
-/** @mcp read */
 export async function getSupplierReportContacts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1104,7 +1056,6 @@ export async function getSupplierReportContacts(
   ]);
 }
 
-/** @mcp read */
 export async function getSuppliers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1142,7 +1093,6 @@ export async function getSuppliers(
   return query;
 }
 
-/** @mcp read */
 export async function getSuppliersList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1155,7 +1105,6 @@ export async function getSuppliersList(
   );
 }
 
-/** @mcp read */
 export async function getSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
@@ -1167,7 +1116,6 @@ export async function getSupplierType(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1191,7 +1139,6 @@ export async function getSupplierTypes(
   return query;
 }
 
-/** @mcp read */
 export async function getSupplierTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1214,7 +1161,6 @@ export async function insertSupplier(
   return client.from("supplier").insert([supplier]).select("*").single();
 }
 
-/** @mcp create */
 export async function insertSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
@@ -1273,7 +1219,6 @@ export async function insertSupplierInteraction(
     .single();
 }
 
-/** @mcp create */
 export async function insertSupplierLocation(
   client: SupabaseClient<Database>,
   supplierLocation: {
@@ -1392,7 +1337,6 @@ export async function updatePurchaseOrderStatusLegacy(
     .eq("id", purchaseOrder.id);
 }
 
-/** @mcp update */
 export async function updatePurchaseOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1409,7 +1353,6 @@ export async function updatePurchaseOrderExchangeRate(
   return client.from("purchaseOrder").update(update).eq("id", update.id);
 }
 
-/** @mcp update destructive */
 export async function updatePurchaseOrderFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1499,7 +1442,6 @@ export async function updateSupplierAccounting(
     .eq("id", supplierAccounting.id);
 }
 
-/** @mcp update */
 export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
@@ -1537,7 +1479,6 @@ export async function updateSupplierContact(
     .single();
 }
 
-/** @mcp update */
 export async function updateSupplierLocation(
   client: SupabaseClient<Database>,
   supplierLocation: {
@@ -1575,7 +1516,6 @@ export async function updateSupplierLocation(
     .single();
 }
 
-/** @mcp update */
 export async function updateSupplierPayment(
   client: SupabaseClient<Database>,
   supplierPayment: z.infer<typeof supplierPaymentValidator> & {
@@ -1589,7 +1529,6 @@ export async function updateSupplierPayment(
     .eq("supplierId", supplierPayment.supplierId);
 }
 
-/** @mcp update */
 export async function updateSupplierQuoteExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1628,7 +1567,6 @@ export async function updateSupplierQuoteFavorite(
   }
 }
 
-/** @mcp update */
 export async function updateSupplierQuoteStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1641,7 +1579,6 @@ export async function updateSupplierQuoteStatus(
   return client.from("supplierQuote").update(update).eq("id", update.id);
 }
 
-/** @mcp update */
 export async function updateSupplierShipping(
   client: SupabaseClient<Database>,
   supplierShipping: z.infer<typeof supplierShippingValidator> & {
@@ -1655,7 +1592,6 @@ export async function updateSupplierShipping(
     .eq("supplierId", supplierShipping.supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierTax(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -1667,7 +1603,6 @@ export async function getSupplierTax(
     .maybeSingle();
 }
 
-/** @mcp update */
 export async function updateSupplierTax(
   client: SupabaseClient<Database>,
   supplierTax: z.infer<typeof supplierTaxValidator> & {
@@ -1683,7 +1618,6 @@ export async function updateSupplierTax(
     .eq("companyId", supplierTax.companyId);
 }
 
-/** @mcp create */
 export async function insertPurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -1835,7 +1769,6 @@ export async function insertPurchaseOrder(
   return { data: { id: orderId, purchaseOrderId, exchangeRate }, error: null };
 }
 
-/** @mcp update */
 export async function updatePurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -2043,7 +1976,6 @@ export async function upsertPurchaseOrder(
   return order;
 }
 
-/** @mcp upsert */
 export async function upsertPurchaseOrderDelivery(
   client: SupabaseClient<Database>,
   purchaseOrderDelivery:
@@ -2114,7 +2046,6 @@ function normalizePurchaseOrderLineReferences<
   return { ...line, itemId: null, accountId: null, assetId: null };
 }
 
-/** @mcp upsert */
 export async function upsertPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLine:
@@ -2163,7 +2094,6 @@ export async function upsertPurchaseOrderLine(
     .single();
 }
 
-/** @mcp update */
 export async function updatePurchaseOrderLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2194,7 +2124,6 @@ export async function updatePurchaseOrderLineOrder(
  * received quantity is already fully invoiced gets `invoicedComplete` too —
  * otherwise the order could never reach Completed. Reopening restores the
  * natural rule (fully invoiced = ordered quantity).
- * @mcp action
  */
 export async function shortClosePurchaseOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -2597,7 +2526,6 @@ export async function applyPurchasingPlanningActions(
   return result;
 }
 
-/** @mcp upsert */
 export async function upsertPurchaseOrderPayment(
   client: SupabaseClient<Database>,
   purchaseOrderPayment:
@@ -2626,7 +2554,6 @@ export async function upsertPurchaseOrderPayment(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertSupplier(
   client: SupabaseClient<Database>,
   supplier:
@@ -2659,7 +2586,6 @@ export async function upsertSupplier(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcess:
@@ -2689,7 +2615,6 @@ export async function upsertSupplierProcess(
     .single();
 }
 
-/** @mcp create */
 export async function insertSupplierQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -2806,7 +2731,6 @@ export async function insertSupplierQuote(
   return { data: { id: createdQuoteId, supplierQuoteId }, error: null };
 }
 
-/** @mcp update */
 export async function updateSupplierQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -3012,7 +2936,6 @@ export async function upsertSupplierQuote(
   }
 }
 
-/** @mcp upsert */
 export async function upsertSupplierQuoteLine(
   client: SupabaseClient<Database>,
   supplierQuoteLine:
@@ -3059,7 +2982,6 @@ export async function upsertSupplierQuoteLine(
     .single();
 }
 
-/** @mcp update */
 export async function updateSupplierQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -3077,7 +2999,6 @@ export async function updateSupplierQuoteLineOrder(
   });
 }
 
-/** @mcp upsert */
 export async function upsertSupplierType(
   client: SupabaseClient<Database>,
   supplierType:
@@ -3110,7 +3031,6 @@ export async function upsertSupplierType(
 // PURCHASING RFQ FUNCTIONS
 // ============================================================
 
-/** @mcp delete */
 export async function deletePurchasingRFQ(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3118,7 +3038,6 @@ export async function deletePurchasingRFQ(
   return client.from("purchasingRfq").delete().eq("id", purchasingRfqId);
 }
 
-/** @mcp delete */
 export async function deletePurchasingRFQLine(
   client: SupabaseClient<Database>,
   purchasingRfqLineId: string
@@ -3129,7 +3048,6 @@ export async function deletePurchasingRFQLine(
     .eq("id", purchasingRfqLineId);
 }
 
-/** @mcp read */
 export async function getPurchasingRFQ(
   client: SupabaseClient<Database>,
   id: string
@@ -3137,7 +3055,6 @@ export async function getPurchasingRFQ(
   return client.from("purchasingRfqs").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getPurchasingRFQs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3160,7 +3077,6 @@ export async function getPurchasingRFQs(
   return query;
 }
 
-/** @mcp read */
 export async function getPurchasingRFQLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -3172,7 +3088,6 @@ export async function getPurchasingRFQLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchasingRFQLines(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3310,7 +3225,6 @@ export async function updatePurchasingRFQ(
 
 /**
  * @deprecated Use insertPurchasingRFQ for new RFQs, updatePurchasingRFQ for existing RFQs
- * @mcp upsert
  */
 export async function upsertPurchasingRFQ(
   client: SupabaseClient<Database>,
@@ -3343,7 +3257,6 @@ export async function upsertPurchasingRFQ(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertPurchasingRFQLine(
   client: SupabaseClient<Database>,
   purchasingRfqLine:
@@ -3390,7 +3303,6 @@ export async function upsertPurchasingRFQLine(
     .single();
 }
 
-/** @mcp update */
 export async function updatePurchasingRFQLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -3408,7 +3320,6 @@ export async function updatePurchasingRFQLineOrder(
   });
 }
 
-/** @mcp upsert destructive */
 export async function upsertPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string,
@@ -3440,7 +3351,6 @@ export async function upsertPurchasingRFQSuppliers(
     .select("id");
 }
 
-/** @mcp update */
 export async function updatePurchasingRFQStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -3463,7 +3373,6 @@ export async function updatePurchasingRFQStatus(
     .single();
 }
 
-/** @mcp read */
 export async function getLinkedSupplierQuotes(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3523,7 +3432,6 @@ export async function getLinkedPurchasingRfqsForInteraction(
 }
 
 // Get sibling quotes (quotes sharing any RFQ with current quote)
-/** @mcp read */
 export async function getSiblingQuotesForQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -3572,7 +3480,6 @@ export async function getLinkedPurchasingRfqsForOrder(
     .eq("purchaseOrderId", purchaseOrderId);
 }
 
-/** @mcp read */
 export async function getSupplierQuotesForComparison(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3637,7 +3544,6 @@ export async function getSupplierQuotesForComparison(
 }
 
 // Get RFQ suppliers with their supplier info
-/** @mcp read */
 export async function getPurchasingRFQSuppliersWithLinks(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3655,7 +3561,6 @@ export type PoDefaultAttachment = {
   path: string;
 };
 
-/** @mcp read */
 export async function getDefaultAttachmentsForPO(
   client: SupabaseClient<Database>,
   args: {
@@ -3836,7 +3741,6 @@ export async function updatePurchaseOrderLineSchedule(
 
 // ─── Purchase Return Orders (Supplier Returns) ───
 
-/** @mcp read */
 export async function getPurchaseReturnOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3874,7 +3778,6 @@ export async function getPurchaseReturnOrders(
   return query;
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrder(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string
@@ -3886,7 +3789,6 @@ export async function getPurchaseReturnOrder(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderLines(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -3902,7 +3804,6 @@ export async function getPurchaseReturnOrderLines(
     .order("lineNumber");
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -3914,7 +3815,6 @@ export async function getPurchaseReturnOrderLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineIds: string[]
@@ -3925,7 +3825,6 @@ export async function getPurchaseReturnOrderLineTrackedEntities(
     .in("purchaseReturnOrderLineId", lineIds);
 }
 
-/** @mcp create */
 export async function insertPurchaseReturnOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -4100,7 +3999,6 @@ export async function upsertPurchaseReturnOrderLine(
     .single();
 }
 
-/** @mcp delete */
 export async function deletePurchaseReturnOrder(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string
@@ -4111,7 +4009,6 @@ export async function deletePurchaseReturnOrder(
     .eq("id", purchaseReturnOrderId);
 }
 
-/** @mcp delete */
 export async function deletePurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -4146,7 +4043,6 @@ export async function setPurchaseReturnOrderLineTrackedEntities(
   );
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderShipments(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -4161,7 +4057,6 @@ export async function getPurchaseReturnOrderShipments(
     .order("createdAt", { ascending: false });
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderCredits(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -4175,7 +4070,6 @@ export async function getPurchaseReturnOrderCredits(
     .order("createdAt", { ascending: false });
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderIssues(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -4550,7 +4444,6 @@ export async function cancelPurchaseReturnOrder(
  * shortClosePurchaseOrderLine mechanic. The header status is derived from the
  * lines afterwards, so short-closing the last open line completes the return
  * (there is no separate manual Complete action, mirroring the Purchase Order).
- * @mcp action
  */
 export async function shortClosePurchaseReturnOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -4642,7 +4535,6 @@ export async function shortClosePurchaseReturnOrderLine(
  * receipt" modal stays responsive when a supplier has thousands of receipt
  * lines. Each row carries `totalCount` — the size of the full returnable set
  * before limit/offset — so the UI can page through the rest.
- * @mcp read
  */
 export async function getReturnableLinesForSupplier(
   client: SupabaseClient<Database>,
@@ -4670,7 +4562,6 @@ export async function getReturnableLinesForSupplier(
  * that were received from this supplier. Provenance is the Receipt attribute
  * (written by the receipt tracking route) resolved to the receipt's supplier
  * — no code writes a Supplier attribute onto tracked entities.
- * @mcp read
  */
 export async function getReturnableEntitiesForSupplier(
   client: SupabaseClient<Database>,
@@ -4724,7 +4615,6 @@ export async function getReturnableEntitiesForReceiptLine(
  * Per-line creditable pool = shipped − already credited. Draft memos count
  * against the pool (two Drafts must not double-credit); the VIEW's displayed
  * quantityCredited still derives from Posted memos only.
- * @mcp read
  */
 export async function getCreditableQuantitiesForPurchaseReturn(
   client: SupabaseClient<Database>,
@@ -4797,9 +4687,6 @@ export async function getCreditableQuantitiesForPurchaseReturn(
  * `getCompanyHasOpenCredits` select supplier memos with
  * `direction = "Debit"`, so a Credit-direction memo here is also invisible to
  * "Apply Credit" on a supplier invoice.
- * @mcp create
- * @mcp permission invoicing:create
- * @mcp audit companyGroupId, createdBy, updatedBy, userId
  */
 export async function createPurchaseReturnOrderCredit(
   client: SupabaseClient<Database>,
@@ -4984,7 +4871,6 @@ export async function createPurchaseReturnOrderCredit(
  * Create Replacement Purchase Order: a draft PO from the return lines,
  * priced from the linked PO line (purchase-UOM price + conversion factor
  * copied) else the supplierPart default. One replacement per return.
- * @mcp create
  */
 export async function createReplacementPurchaseOrder(
   client: SupabaseClient<Database>,
@@ -5218,7 +5104,6 @@ export async function createReplacementPurchaseOrder(
  * the returned `signedUrl`, then call `documents_insertUploadedDocument` with the
  * returned `path`, the document type as `sourceDocument`, and the document id as
  * `sourceDocumentId`. The storage folder is scoped by `interactionId`.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */
@@ -5239,7 +5124,6 @@ export async function createSupplierInteractionDocumentUploadUrl(
  * of the two-step upload flow: PUT the file bytes to the returned `signedUrl`, then
  * call `documents_insertUploadedDocument` with the returned `path`, the line's
  * document type as `sourceDocument`, and the line id as `sourceDocumentId`.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */
@@ -5271,7 +5155,6 @@ function leaseRefusal(code: string, message: string) {
   };
 }
 
-/** @mcp read */
 export async function getLeases(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5294,7 +5177,6 @@ export async function getLeases(
   return query;
 }
 
-/** @mcp read */
 export async function getLease(
   client: SupabaseClient<Database>,
   leaseId: string,
@@ -5311,7 +5193,7 @@ export async function getLease(
 /** `leaseId` (the readable LSE number) comes from the caller — the route
  *  draws it from the sequence. The leased assets are added, and their
  *  payment rows cut, by `saveDraftLeaseLine` (`purchasing.server.ts`).
- *  @mcp create */
+ */
 export async function insertLease(
   client: SupabaseClient<Database>,
   lease: Omit<z.infer<typeof leaseValidator>, "id"> & {
@@ -5341,7 +5223,7 @@ export async function insertLease(
  *  measured from them. A Draft's terms are saved with `updateDraftLease`
  *  (`purchasing.server.ts`), which cuts the payment rows again in the same
  *  transaction; an active lease's terms change only with Modify.
- *  @mcp update */
+ */
 export async function updateLeaseDetails(
   client: SupabaseClient<Database>,
   lease: {
@@ -5379,7 +5261,7 @@ export async function updateLeaseDetails(
   return updated;
 }
 
-/** Only a Draft lease can be deleted; cancel an active one. @mcp delete */
+/** Only a Draft lease can be deleted; cancel an active one. */
 export async function deleteLease(
   client: SupabaseClient<Database>,
   leaseId: string,
@@ -5402,7 +5284,7 @@ export async function deleteLease(
   return deleted;
 }
 
-/** The lease's assets in their order. @mcp read */
+/** The lease's assets in their order. */
 export async function getLeaseLines(
   client: SupabaseClient<Database>,
   leaseId: string,
@@ -5421,7 +5303,7 @@ export async function getLeaseLines(
 }
 
 /** Every payment row of every asset: a long lease of many assets runs past
- *  PostgREST's 1,000-row page. @mcp read */
+ *  PostgREST's 1,000-row page. */
 export async function getLeasePayments(
   client: SupabaseClient<Database>,
   leaseId: string,
@@ -5464,8 +5346,7 @@ async function requireDraftLease(
   return { lease: lease.data, refusal: null };
 }
 
-/** Removes an asset, and its payment rows with it, from a Draft lease.
- *  @mcp delete */
+/** Removes an asset, and its payment rows with it, from a Draft lease. */
 export async function deleteLeaseLine(
   client: SupabaseClient<Database>,
   args: { leaseId: string; leaseLineId: string; companyId: string }
@@ -5493,7 +5374,7 @@ export async function deleteLeaseLine(
 
 /** Add or change one payment row of a Draft lease's asset (a rent holiday,
  *  an irregular step). A row due before the lease's invoice-from date was
- *  paid outside Carbon and is Skipped. @mcp update */
+ *  paid outside Carbon and is Skipped. */
 export async function upsertLeasePayment(
   client: SupabaseClient<Database>,
   payment: z.infer<typeof leasePaymentValidator> & {
@@ -5557,7 +5438,6 @@ export async function upsertLeasePayment(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteLeasePayment(
   client: SupabaseClient<Database>,
   args: { leaseId: string; paymentId: string; companyId: string }
@@ -5584,7 +5464,7 @@ export async function deleteLeasePayment(
 
 /** The monthly schedule of every asset, each line with whether its lease run
  *  rows have posted: a long lease of many assets runs past PostgREST's
- *  1,000-row page. @mcp read */
+ *  1,000-row page. */
 export async function getLeaseSchedule(
   client: SupabaseClient<Database>,
   leaseId: string,
@@ -5603,7 +5483,6 @@ export async function getLeaseSchedule(
   );
 }
 
-/** @mcp read */
 export async function getLeaseEvents(
   client: SupabaseClient<Database>,
   leaseId: string,
@@ -5620,8 +5499,7 @@ export async function getLeaseEvents(
   );
 }
 
-/** The purchase invoices that bill the lease, and the journals that name it.
- *  @mcp read */
+/** The purchase invoices that bill the lease, and the journals that name it. */
 export async function getLeaseRelatedDocuments(
   client: SupabaseClient<Database>,
   leaseId: string,

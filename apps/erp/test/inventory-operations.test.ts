@@ -50,7 +50,7 @@ import {
   adjustInventory,
   postInventoryCount
 } from "../app/modules/inventory/inventory.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const ctx = () =>
   createServiceContext({

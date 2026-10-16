@@ -2,16 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { z } from "zod";
 import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { refuseUnlessOwned } from "~/modules/shared/shared.server";
 import { modelViewDirection } from "./documents.models";
 

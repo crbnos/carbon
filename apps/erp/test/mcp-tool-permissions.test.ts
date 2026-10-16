@@ -33,35 +33,43 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   // tools; only the read remains.
   settings_getApiKeys: { module: "users", actions: ["update"] },
   // Writes a GL journal: the Reconcile screen requires accounting_create.
-  inventory_createInventoryReconciliationJournal: {
+  inventory_inventoryReconciliationJournal_create: {
     module: "accounting",
     actions: ["create"]
   },
   // Bank accounts: the table's RLS and every bank-account screen are accounting.
-  purchasing_getSupplierBankAccounts: { module: "accounting", actions: ["view"] },
-  purchasing_upsertSupplierBankAccount: {
+  purchasing_supplierBankAccounts_get: { module: "accounting", actions: ["view"] },
+  purchasing_supplierBankAccount_create: {
     module: "accounting",
-    actions: ["create", "update"]
+    actions: ["create"]
   },
-  purchasing_deleteSupplierBankAccount: {
+  purchasing_supplierBankAccount_update: {
+    module: "accounting",
+    actions: ["update"]
+  },
+  purchasing_supplierBankAccount_delete: {
     module: "accounting",
     actions: ["delete"]
   },
-  sales_getCustomerBankAccounts: { module: "accounting", actions: ["view"] },
-  sales_upsertCustomerBankAccount: {
+  sales_customerBankAccounts_get: { module: "accounting", actions: ["view"] },
+  sales_customerBankAccount_create: {
     module: "accounting",
-    actions: ["create", "update"]
+    actions: ["create"]
   },
-  sales_deleteCustomerBankAccount: {
+  sales_customerBankAccount_update: {
+    module: "accounting",
+    actions: ["update"]
+  },
+  sales_customerBankAccount_delete: {
     module: "accounting",
     actions: ["delete"]
   },
   // Issue Credit writes a memo: its route requires invoicing_create.
-  purchasing_createPurchaseReturnOrderCredit: {
+  purchasing_purchaseReturnOrderCredit_create: {
     module: "invoicing",
     actions: ["create"]
   },
-  sales_createSalesReturnOrderCredit: {
+  sales_salesReturnOrderCredit_create: {
     module: "invoicing",
     actions: ["create"]
   },
@@ -176,18 +184,34 @@ describe("permission actions in the manifest", () => {
   const verbActions = Object.values(MCP_VERBS).map((rule) =>
     rule.actions.join("+")
   );
+  // `{}`: any member of the company. Published as no module and no actions.
+  const membershipOnly = (t: Tool) =>
+    t.permission.module === null && t.permission.actions.length === 0;
 
-  it("every op gates on exactly one verb's actions", () => {
-    for (const t of tools) {
+  it("every op gates on one verb's actions, or on membership alone", () => {
+    for (const t of tools.filter((t) => !membershipOnly(t))) {
       expect(verbActions, t.name).toContain(t.permission.actions.join("+"));
     }
   });
 
-  it("a READ gates on view, and nothing else does", () => {
-    for (const t of tools) {
-      expect(t.permission.actions.includes("view"), t.name).toBe(
-        t.classification === "READ"
-      );
+  it("only account and shared tools gate on membership alone", () => {
+    for (const t of tools.filter(membershipOnly)) {
+      expect(["account", "shared"], t.name).toContain(t.module);
+    }
+  });
+
+  it("a tool that gates on view is a READ", () => {
+    for (const t of tools.filter((t) =>
+      t.permission.actions.includes("view")
+    )) {
+      expect(t.classification, t.name).toBe("READ");
+    }
+  });
+
+  it("a READ gates on view only, or on membership alone", () => {
+    for (const t of tools.filter((t) => t.classification === "READ")) {
+      if (membershipOnly(t)) continue;
+      expect(t.permission.actions, t.name).toEqual(["view"]);
     }
   });
 
@@ -196,12 +220,6 @@ describe("permission actions in the manifest", () => {
       t.permission.actions.includes("delete")
     )) {
       expect(t.classification, t.name).toBe("DESTRUCTIVE");
-    }
-  });
-
-  it("every op has a non-empty actions array", () => {
-    for (const t of tools) {
-      expect(t.permission.actions.length, t.name).toBeGreaterThan(0);
     }
   });
 });

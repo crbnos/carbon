@@ -2,6 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  type CarbonError,
+  defineServiceFn,
+  type ErrorCategory,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
@@ -49,12 +55,6 @@ import {
   getOnRentLineForAsset,
   insertSalesOrder
 } from "~/modules/sales/sales.service";
-import {
-  type CarbonError,
-  defineServiceFn,
-  type ErrorCategory,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import {
   ACCOUNTING_NOT_STARTED,

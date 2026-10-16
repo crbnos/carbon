@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { error } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -26,10 +30,6 @@ import { data } from "react-router";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { methodType, sourcingType } from "~/modules/shared/shared.models";
 import {

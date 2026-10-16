@@ -17,7 +17,6 @@ const logger = getLogger("erp", "users");
  * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this
  * company, and a valid user attestation for this user? Both are required before
  * a person can enter a controlled environment.
- * @mcp read
  */
 export async function getItarCertificationStatus(
   client: SupabaseClient<Database>,
@@ -60,7 +59,6 @@ export async function getItarCertificationStatus(
  *
  * Carbon staff never appear here: the Rider binds the customer's own
  * organization, so only the customer's admin can produce this row.
- * @mcp read
  */
 export async function getItarEntityCertification(
   client: SupabaseClient<Database>,
@@ -85,7 +83,6 @@ export async function getItarEntityCertification(
  * certifications) don't silently lose rows; certs are already company-scoped, so
  * we fetch them all and group in memory rather than passing an unbounded `userId`
  * array to `.in()`. Last login is layered on in the route from the Auth admin API.
- * @mcp read
  */
 export async function getItarCertificationReport(
   client: SupabaseClient<Database>,
@@ -153,7 +150,6 @@ export async function getItarCertificationReport(
   return { data, error: null };
 }
 
-/** @mcp delete */
 export async function deleteGroup(
   client: SupabaseClient<Database>,
   groupId: string
@@ -178,7 +174,6 @@ export async function getCompaniesForUser(
   return data?.map((row) => row.companyId) ?? [];
 }
 
-/** @mcp read */
 export async function getCustomers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -206,7 +201,6 @@ export async function getCustomers(
   return query;
 }
 
-/** @mcp read */
 export async function getEmployee(
   client: SupabaseClient<Database>,
   id: string,
@@ -222,7 +216,6 @@ export async function getEmployee(
 
 // Pending only (mirrors the 'Invited' condition in the `employees` view): counting
 // accepted invites would leave a deactivated employee with no way to be re-invited.
-/** @mcp read */
 export async function getUnrevokedInviteEmails(
   client: SupabaseClient<Database>,
   companyId: string
@@ -241,7 +234,6 @@ export async function getUnrevokedInviteEmails(
  * One RPC rather than a per-row lookup: TOTP factors live in Supabase's
  * `auth.mfa_factors`, so the alternative is an admin-API call per employee —
  * an N+1 that degrades with headcount.
- * @mcp read
  */
 export async function getUsersWithVerifiedMfa(
   client: SupabaseClient<Database>,
@@ -250,7 +242,6 @@ export async function getUsersWithVerifiedMfa(
   return client.rpc("users_with_verified_mfa", { company_id: companyId });
 }
 
-/** @mcp read */
 export async function getEmployees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -290,7 +281,6 @@ export async function getEmployees(
  *
  * TODO: After running db:generate, replace email pattern filter with
  * .eq("isConsoleOperator", true) once the column is in the employees view.
- * @mcp read
  */
 export async function getConsoleOperators(
   client: SupabaseClient<Database>,
@@ -315,7 +305,6 @@ export async function getConsoleOperators(
   return query;
 }
 
-/** @mcp read */
 export async function getEmployeeType(
   client: SupabaseClient<Database>,
   employeeTypeId: string
@@ -327,7 +316,6 @@ export async function getEmployeeType(
     .single();
 }
 
-/** @mcp read */
 export async function getEmployeeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -351,7 +339,6 @@ export async function getEmployeeTypes(
   return query;
 }
 
-/** @mcp read */
 export async function getInvitable(
   client: SupabaseClient<Database>,
   companyId: string
@@ -364,12 +351,10 @@ export async function getInvitable(
     .order("lastName");
 }
 
-/** @mcp read */
 export async function getModules(client: SupabaseClient<Database>) {
   return client.from("modules").select("name").order("name");
 }
 
-/** @mcp read */
 export async function getGroup(
   client: SupabaseClient<Database>,
   groupId: string
@@ -377,7 +362,6 @@ export async function getGroup(
   return client.from("group").select("id, name").eq("id", groupId).single();
 }
 
-/** @mcp read */
 export async function getGroupMembers(
   client: SupabaseClient<Database>,
   groupId: string
@@ -388,7 +372,6 @@ export async function getGroupMembers(
     .eq("groupId", groupId);
 }
 
-/** @mcp read */
 export async function getGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -409,7 +392,6 @@ export async function getGroups(
   return query;
 }
 
-/** @mcp read */
 export async function getGroupEmails(
   client: SupabaseClient<Database>,
   groupIds: string[]
@@ -425,7 +407,6 @@ export async function getGroupEmails(
   return getUserEmails(client, userIdsResult.data);
 }
 
-/** @mcp read */
 export async function getUserSelectGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -440,7 +421,6 @@ export async function getUserSelectGroups(
   });
 }
 
-/** @mcp read */
 export async function getUserSelectGroupMembers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -459,7 +439,6 @@ export async function getUserSelectGroupMembers(
   };
 }
 
-/** @mcp read */
 export async function searchUsersForSelect(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -507,7 +486,6 @@ export async function searchUsersForSelect(
   return query;
 }
 
-/** @mcp action */
 export async function resolveUserSelectIds(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -528,7 +506,6 @@ export async function resolveUserSelectIds(
   return { users, groups };
 }
 
-/** @mcp read */
 export async function getPermissionsByEmployeeType(
   client: SupabaseClient<Database>,
   employeeTypeId: string
@@ -539,7 +516,6 @@ export async function getPermissionsByEmployeeType(
     .eq("employeeTypeId", employeeTypeId);
 }
 
-/** @mcp read */
 export async function getSuppliers(
   client: SupabaseClient<Database>,
   companyId: string,

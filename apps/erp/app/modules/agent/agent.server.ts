@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -29,7 +30,6 @@ import {
   type UIMessage
 } from "ai";
 import { z } from "zod";
-import { CarbonError, defineServiceFn } from "~/modules/service-fn.server";
 import { toStoredParts } from "./agent.history";
 import { chatRequest } from "./agent.models";
 import { buildSystemPrompt } from "./agent.prompt";

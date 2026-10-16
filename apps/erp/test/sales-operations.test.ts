@@ -45,7 +45,7 @@ vi.mock("../app/modules/shared/timezone.server", () => ({
   getLocationTimeZone: vi.fn(async () => "UTC")
 }));
 
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const { cancelContract, convertQuote, convertSalesRfq, setQuoteStatus } = await import(
   "../app/modules/sales/sales.server"

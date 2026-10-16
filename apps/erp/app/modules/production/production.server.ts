@@ -2,6 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  CarbonError,
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Json } from "@carbon/database";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
@@ -28,11 +33,6 @@ import {
 } from "~/modules/inventory/inventory.service";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
-import {
-  CarbonError,
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";

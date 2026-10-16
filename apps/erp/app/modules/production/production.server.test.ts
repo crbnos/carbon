@@ -26,8 +26,8 @@ vi.mock("./production.service", () => ({
   updateJobStatus: vi.fn()
 }));
 
+import { createServiceContext } from "@carbon/api/service-fn.server";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
-import { createServiceContext } from "~/modules/service-fn.server";
 import { cancelJob } from "./production.server";
 import {
   returnPickedRemaindersForJob,

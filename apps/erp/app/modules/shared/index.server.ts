@@ -16,6 +16,24 @@ import {
   unlinkJiraIssue,
   unlinkLinearIssue
 } from "./shared.server";
+import {
+  deleteSavedViewTool,
+  getBase64ImageFromSupabaseTool,
+  getCountriesTool,
+  getCustomerPortalsTool,
+  getCustomerPortalTool,
+  getEnforcementRuleAssignmentCountsTool,
+  getEnforcementRulesTool,
+  getEnforcementRuleTool,
+  getExternalLinkTool,
+  getModelByItemIdTool,
+  getNotesTool,
+  getTagsListTool,
+  insertNoteTool,
+  insertTagTool,
+  updateSavedViewOrderTool,
+  upsertSavedViewTool
+} from "./shared.tools.server";
 
 /** The shared module's operations, by entity. */
 export const shared = {
@@ -33,5 +51,51 @@ export const shared = {
     createIssue: createLinearIssue,
     linkIssue: linkLinearIssue,
     unlinkIssue: unlinkLinearIssue
+  },
+  savedView: {
+    delete: deleteSavedViewTool,
+    upsert: upsertSavedViewTool
+  },
+  base64ImageFromSupabase: {
+    get: getBase64ImageFromSupabaseTool
+  },
+  countries: {
+    get: getCountriesTool
+  },
+  modelByItemId: {
+    get: getModelByItemIdTool
+  },
+  notes: {
+    get: getNotesTool
+  },
+  tagsList: {
+    get: getTagsListTool
+  },
+  note: {
+    insert: insertNoteTool
+  },
+  tag: {
+    insert: insertTagTool
+  },
+  externalLink: {
+    get: getExternalLinkTool
+  },
+  customerPortals: {
+    get: getCustomerPortalsTool
+  },
+  customerPortal: {
+    get: getCustomerPortalTool
+  },
+  savedViewOrder: {
+    update: updateSavedViewOrderTool
+  },
+  enforcementRules: {
+    get: getEnforcementRulesTool
+  },
+  enforcementRule: {
+    get: getEnforcementRuleTool
+  },
+  enforcementRuleAssignmentCounts: {
+    get: getEnforcementRuleAssignmentCountsTool
   }
 };

@@ -18,7 +18,7 @@ vi.mock("~/services/database.server", () => ({
 // A real service function stands in for the ERP router.
 vi.mock("~/modules/router.server", async () => {
   const { z } = await import("zod");
-  const { defineServiceFn } = await import("~/modules/service-fn.server");
+  const { defineServiceFn } = await import("@carbon/api/service-fn.server");
   return {
     router: {
       production: {

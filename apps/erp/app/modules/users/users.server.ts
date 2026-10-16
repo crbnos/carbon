@@ -48,6 +48,10 @@ import { z } from "zod";
 export { getUserClaims } from "@carbon/auth/users.server";
 
 import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
+import {
   emailDomain,
   getSsoAwareInviteLink,
   getSsoConnection,
@@ -70,10 +74,6 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { getCustomerContact } from "~/modules/sales/sales.service";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users";
 import {
   deleteGroup,

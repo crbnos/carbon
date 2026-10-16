@@ -132,7 +132,6 @@ const SERVICES_LIST_COLUMNS =
 
 const logger = getLogger("erp", "items");
 
-/** @mcp action */
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -414,7 +413,6 @@ async function copyItemPlanningAndPurchasing(
     .execute();
 }
 
-/** @mcp create */
 export async function createRevision(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -555,7 +553,6 @@ export function getNextRevision(maxRevision: string): string {
   return maxRevision;
 }
 
-/** @mcp delete */
 export async function deleteConfigurationParameter(
   client: SupabaseClient<Database>,
   id: string
@@ -563,7 +560,6 @@ export async function deleteConfigurationParameter(
   return client.from("configurationParameter").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteConfigurationRule(
   client: SupabaseClient<Database>,
   field: string,
@@ -576,7 +572,6 @@ export async function deleteConfigurationRule(
     .eq("itemId", itemId);
 }
 
-/** @mcp delete */
 export async function deleteItemCustomerPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -589,7 +584,6 @@ export async function deleteItemCustomerPart(
     .eq("companyId", companyId);
 }
 
-/** @mcp delete */
 export async function deleteSupplierPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -602,7 +596,6 @@ export async function deleteSupplierPart(
     .eq("companyId", companyId);
 }
 
-/** @mcp delete */
 export async function deleteConfigurationParameterGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -662,7 +655,6 @@ async function deleteItemsWithPriceBreaks(
     .execute();
 }
 
-/** @mcp delete */
 export async function deleteItem(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -690,7 +682,6 @@ export async function deleteItem(
   return { data: null, error: null };
 }
 
-/** @mcp delete */
 export async function deleteItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -698,7 +689,6 @@ export async function deleteItemPostingGroup(
   return client.from("itemPostingGroup").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
@@ -706,7 +696,6 @@ export async function deleteMaterialDimension(
   return client.from("materialDimension").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
@@ -714,7 +703,6 @@ export async function deleteMaterialFinish(
   return client.from("materialFinish").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMaterialForm(
   client: SupabaseClient<Database>,
   id: string
@@ -722,7 +710,6 @@ export async function deleteMaterialForm(
   return client.from("materialForm").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMaterialGrade(
   client: SupabaseClient<Database>,
   id: string
@@ -730,7 +717,6 @@ export async function deleteMaterialGrade(
   return client.from("materialGrade").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMaterialSubstance(
   client: SupabaseClient<Database>,
   id: string
@@ -738,7 +724,6 @@ export async function deleteMaterialSubstance(
   return client.from("materialSubstance").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMethodMaterial(
   client: SupabaseClient<Database>,
   id: string
@@ -746,7 +731,6 @@ export async function deleteMethodMaterial(
   return client.from("methodMaterial").delete().eq("id", id);
 }
 
-/** @mcp action */
 export async function assertMethodOperationIsDraft(
   client: SupabaseClient<Database>,
   operationId: string
@@ -776,7 +760,6 @@ export async function deleteMethodOperation(
   return client.from("methodOperation").delete().eq("id", methodOperationId);
 }
 
-/** @mcp delete */
 export async function deleteMethodOperationStep(
   client: SupabaseClient<Database>,
   id: string
@@ -784,7 +767,6 @@ export async function deleteMethodOperationStep(
   return client.from("methodOperationStep").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
@@ -792,7 +774,6 @@ export async function deleteMethodOperationStepSlide(
   return client.from("methodOperationStepSlide").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMethodOperationParameter(
   client: SupabaseClient<Database>,
   id: string
@@ -800,7 +781,6 @@ export async function deleteMethodOperationParameter(
   return client.from("methodOperationParameter").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteMethodOperationTool(
   client: SupabaseClient<Database>,
   id: string
@@ -808,7 +788,6 @@ export async function deleteMethodOperationTool(
   return client.from("methodOperationTool").delete().eq("id", id);
 }
 
-/** @mcp delete */
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
@@ -816,7 +795,6 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
-/** @mcp read */
 export async function getConfigurationParameters(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -852,7 +830,6 @@ export async function getConfigurationParameters(
   return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
 }
 
-/** @mcp read */
 export async function getConfigurationRules(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -870,7 +847,6 @@ export async function getConfigurationRules(
   return result.data ?? [];
 }
 
-/** @mcp read */
 export async function getConsumable(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -883,7 +859,6 @@ export async function getConsumable(
     .single();
 }
 
-/** @mcp read */
 export async function getConsumables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -934,12 +909,10 @@ export async function getConsumablesList(
   );
 }
 
-/** @mcp read */
 export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getItemCost(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -953,7 +926,6 @@ export async function getItemCost(
     .single();
 }
 
-/** @mcp read */
 export async function getItemCostHistory(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -974,7 +946,6 @@ export async function getItemCostHistory(
     .limit(500);
 }
 
-/** @mcp read */
 export async function getItemCustomerPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -988,7 +959,6 @@ export async function getItemCustomerPart(
     .single();
 }
 
-/** @mcp read */
 export async function getItemCustomerParts(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1001,7 +971,6 @@ export async function getItemCustomerParts(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getItemDemand(
   client: SupabaseClient<Database>,
   {
@@ -1091,7 +1060,6 @@ export type DemandForecastSourceRow = {
   } | null;
 };
 
-/** @mcp read */
 export async function getDemandForecastSources(
   client: SupabaseClient<Database>,
   {
@@ -1152,7 +1120,6 @@ export async function getDemandForecastSources(
   };
 }
 
-/** @mcp read */
 export async function getItemFiles(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1164,7 +1131,6 @@ export async function getItemFiles(
   return result.data ?? [];
 }
 
-/** @mcp read */
 export async function getItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -1172,7 +1138,6 @@ export async function getItemPostingGroup(
   return client.from("itemPostingGroup").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getItemPostingGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1198,7 +1163,6 @@ export async function getItemPostingGroups(
   return query;
 }
 
-/** @mcp read */
 export async function getItemPostingGroupsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1210,7 +1174,6 @@ export async function getItemPostingGroupsList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getItemManufacturing(
   client: SupabaseClient<Database>,
   id: string,
@@ -1224,7 +1187,6 @@ export async function getItemManufacturing(
     .single();
 }
 
-/** @mcp read */
 export async function getItemPlanning(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1240,7 +1202,6 @@ export async function getItemPlanning(
     .maybeSingle();
 }
 
-/** @mcp read */
 export async function getItemQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1269,7 +1230,6 @@ export async function getItemQuantities(
  * location is in play. Zero rows are dropped — the picker renders no badge for
  * an item it has no row for, so they carry no information and are the bulk of
  * the table on a tenant with history.
- * @mcp read
  */
 export async function getItemStockQuantitiesByLocation(
   client: SupabaseClient<Database>,
@@ -1303,7 +1263,6 @@ export async function getItemStockQuantitiesByLocation(
   return { data: quantities, error: null };
 }
 
-/** @mcp read */
 export async function getItemReplenishment(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1317,7 +1276,6 @@ export async function getItemReplenishment(
     .single();
 }
 
-/** @mcp read */
 export async function getItemSupersession(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1334,7 +1292,6 @@ export async function getItemSupersession(
     .maybeSingle();
 }
 
-/** @mcp read */
 export async function getItemSupersessionsForItems(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -1365,7 +1322,6 @@ export async function getItemSupersededBy(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getSupersessionChain(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1407,7 +1363,6 @@ export async function getSupersessionChain(
   return { chain, supersededBy: supersededBy.data ?? [] };
 }
 
-/** @mcp read */
 export async function getItemStorageUnitQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1460,7 +1415,6 @@ export async function getItemSupply(
   };
 }
 
-/** @mcp read */
 export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
   id: string,
@@ -1509,7 +1463,6 @@ export async function getJobMaterialUsageForItem(
 
 /**
  * Where a material or consumable is used.
- * @mcp read
  */
 export async function getMaterialUsedIn(
   client: SupabaseClient<Database>,
@@ -1533,7 +1486,6 @@ export async function getMaterialUsedIn(
   };
 }
 
-/** @mcp read */
 export async function getMakeMethods(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1546,7 +1498,6 @@ export async function getMakeMethods(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getMakeMethodById(
   client: SupabaseClient<Database>,
   makeMethodId: string,
@@ -1560,7 +1511,6 @@ export async function getMakeMethodById(
     .single();
 }
 
-/** @mcp read */
 export async function getMaterial(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1573,7 +1523,6 @@ export async function getMaterial(
     .single();
 }
 
-/** @mcp read */
 export async function getMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1629,7 +1578,6 @@ function buildSearchFilter(search: string, columns: string[]) {
   return columns.map((column) => `${column}.ilike.${value}`).join(",");
 }
 
-/** @mcp read */
 export async function getMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
@@ -1637,7 +1585,6 @@ export async function getMaterialDimension(
   return client.from("materialDimension").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getMaterialDimensions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1667,7 +1614,6 @@ export async function getMaterialDimensions(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialDimensionList(
   client: SupabaseClient<Database>,
   materialFormId: string,
@@ -1682,7 +1628,6 @@ export async function getMaterialDimensionList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
-/** @mcp read */
 export async function getMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
@@ -1690,7 +1635,6 @@ export async function getMaterialFinish(
   return client.from("materialFinish").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getMaterialFinishes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1719,7 +1663,6 @@ export async function getMaterialFinishes(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialFinishList(
   client: SupabaseClient<Database>,
   materialSubstanceId: string,
@@ -1732,7 +1675,6 @@ export async function getMaterialFinishList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
-/** @mcp read */
 export async function getMaterialForm(
   client: SupabaseClient<Database>,
   id: string
@@ -1740,7 +1682,6 @@ export async function getMaterialForm(
   return client.from("materialForm").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getMaterialForms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1766,7 +1707,6 @@ export async function getMaterialForms(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialFormsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1778,7 +1718,6 @@ export async function getMaterialFormsList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getMaterialGrades(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1807,7 +1746,6 @@ export async function getMaterialGrades(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialGrade(
   client: SupabaseClient<Database>,
   id: string
@@ -1815,7 +1753,6 @@ export async function getMaterialGrade(
   return client.from("materialGrade").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getMaterialGradeList(
   client: SupabaseClient<Database>,
   materialSubstanceId: string,
@@ -1828,7 +1765,6 @@ export async function getMaterialGradeList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
-/** @mcp read */
 export async function getMaterialSubstance(
   client: SupabaseClient<Database>,
   id: string
@@ -1836,7 +1772,6 @@ export async function getMaterialSubstance(
   return client.from("materialSubstance").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getMaterialSubstances(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1862,7 +1797,6 @@ export async function getMaterialSubstances(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialSubstancesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1885,7 +1819,6 @@ export async function getMethodMaterial(
     .single();
 }
 
-/** @mcp read */
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1924,7 +1857,6 @@ function isMissingQuantityColumn(
   return error?.code === "42703" || error?.code === "PGRST204";
 }
 
-/** @mcp read */
 export async function getMethodMaterialsByMakeMethod(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -1948,7 +1880,6 @@ export async function getMethodMaterialsByMakeMethod(
   return result;
 }
 
-/** @mcp read */
 export async function getMethodOperations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1977,7 +1908,6 @@ export async function getMethodOperations(
   return query;
 }
 
-/** @mcp read */
 export async function getMethodOperationsByMakeMethodId(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -2000,7 +1930,6 @@ type MethodTreeItem = {
   children: MethodTreeItem[];
 };
 
-/** @mcp read */
 export async function getMethodTree(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -2071,7 +2000,6 @@ export type BomItemAttributes = {
   leadTime: number | null;
 };
 
-/** @mcp read */
 export async function getBomItemAttributes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2123,7 +2051,6 @@ export async function getBomItemAttributes(
   return { data, error: null };
 }
 
-/** @mcp read */
 export async function getOpenJobMaterials(
   client: SupabaseClient<Database>,
   {
@@ -2142,7 +2069,6 @@ export async function getOpenJobMaterials(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getOpenProductionOrders(
   client: SupabaseClient<Database>,
   {
@@ -2171,7 +2097,6 @@ export async function getOpenProductionOrders(
   );
 }
 
-/** @mcp read */
 export async function getOpenPurchaseOrderLines(
   client: SupabaseClient<Database>,
   {
@@ -2202,7 +2127,6 @@ export async function getOpenPurchaseOrderLines(
   );
 }
 
-/** @mcp read */
 export async function getOpenSalesOrderLines(
   client: SupabaseClient<Database>,
   {
@@ -2221,7 +2145,6 @@ export async function getOpenSalesOrderLines(
     .eq("locationId", locationId);
 }
 
-/** @mcp read */
 export async function getPart(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2234,7 +2157,6 @@ export async function getPart(
     .single();
 }
 
-/** @mcp read */
 export async function getParts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2270,7 +2192,6 @@ export async function getParts(
 
 // Distinct manufacturer part numbers for the company, used to populate the MPN
 // column filter in the item list tables. Deduping happens in the route loader.
-/** @mcp read */
 export async function getItemMpnsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2284,7 +2205,6 @@ export async function getItemMpnsList(
   );
 }
 
-/** @mcp read */
 export async function getPartsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2385,7 +2305,6 @@ async function readUsedIn(
 
 /**
  * Where a part, tool or service is used.
- * @mcp read
  */
 export async function getPartUsedIn(
   client: SupabaseClient<Database>,
@@ -2395,7 +2314,6 @@ export async function getPartUsedIn(
   return readUsedIn(client, itemId, companyId);
 }
 
-/** @mcp read */
 export async function getPickMethod(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2411,7 +2329,6 @@ export async function getPickMethod(
     .maybeSingle();
 }
 
-/** @mcp read */
 export async function getPickMethods(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2424,7 +2341,6 @@ export async function getPickMethods(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getServices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2462,7 +2378,6 @@ export async function getServices(
   return query;
 }
 
-/** @mcp read */
 export async function getService(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2479,7 +2394,6 @@ export async function getService(
     .single();
 }
 
-/** @mcp read */
 export async function getServicesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2497,7 +2411,6 @@ export async function getServicesList(
   );
 }
 
-/** @mcp read */
 export async function getSupplierParts(
   client: SupabaseClient<Database>,
   id: string,
@@ -2511,7 +2424,6 @@ export async function getSupplierParts(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getSupplierPartsBySupplier(
   client: SupabaseClient<Database>,
   supplierId: string,
@@ -2531,7 +2443,6 @@ export async function getSupplierPartsBySupplier(
   );
 }
 
-/** @mcp read */
 export async function getTool(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2544,7 +2455,6 @@ export async function getTool(
     .single();
 }
 
-/** @mcp read */
 export async function getTools(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2595,7 +2505,6 @@ export async function getToolsList(
   );
 }
 
-/** @mcp read */
 export async function getUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string,
@@ -2613,7 +2522,6 @@ export async function getUnitOfMeasure(
  * Which tables still reference a unit of measure, and how many rows each;
  * empty means safe to delete (or id not visible to the caller). RPC-backed so
  * the answer doesn't depend on the caller's module permissions.
- * @mcp read
  */
 export async function getUnitOfMeasureUsage(
   client: SupabaseClient<Database>,
@@ -2622,7 +2530,6 @@ export async function getUnitOfMeasureUsage(
   return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
-/** @mcp read */
 export async function getUnitOfMeasures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2645,7 +2552,6 @@ export async function getUnitOfMeasures(
   return query;
 }
 
-/** @mcp read */
 export async function getUnitOfMeasuresList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2657,7 +2563,6 @@ export async function getUnitOfMeasuresList(
     .order("name");
 }
 
-/** @mcp update */
 export async function updateConfigurationParameterGroupOrder(
   client: SupabaseClient<Database>,
   data: z.infer<typeof configurationParameterGroupOrderValidator>
@@ -2668,7 +2573,6 @@ export async function updateConfigurationParameterGroupOrder(
     .eq("id", data.id);
 }
 
-/** @mcp update */
 export async function updateDefaultRevision(
   client: SupabaseClient<Database>,
   data: {
@@ -2709,7 +2613,6 @@ export async function updateDefaultRevision(
     .in("itemId", itemIds);
 }
 
-/** @mcp update */
 export async function updateConfigurationParameterOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2726,7 +2629,6 @@ export async function updateConfigurationParameterOrder(
     .eq("id", data.id);
 }
 
-/** @mcp update */
 export async function updateItemCost(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2746,7 +2648,6 @@ export async function updateItemCost(
     .single();
 }
 
-/** @mcp update */
 export async function updateMaterialOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -2761,7 +2662,6 @@ export async function updateMaterialOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp update */
 export async function updateOperationOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -2776,7 +2676,6 @@ export async function updateOperationOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp update */
 export async function updateRevision(
   client: SupabaseClient<Database>,
   revision: {
@@ -2794,7 +2693,6 @@ export async function updateRevision(
     .eq("id", revision.id);
 }
 
-/** @mcp upsert */
 export async function upsertConfigurationParameter(
   client: SupabaseClient<Database>,
   configurationParameter: z.infer<typeof configurationParameterValidator> & {
@@ -2857,7 +2755,6 @@ export async function upsertConfigurationParameter(
   });
 }
 
-/** @mcp upsert */
 export async function upsertConfigurationParameterGroup(
   client: SupabaseClient<Database>,
   configurationParameterGroup: z.infer<
@@ -2896,7 +2793,6 @@ export async function upsertConfigurationParameterGroup(
   });
 }
 
-/** @mcp upsert */
 export async function upsertConfigurationRule(
   client: SupabaseClient<Database>,
   configurationRule: z.infer<typeof configurationRuleValidator> & {
@@ -2989,7 +2885,6 @@ export async function upsertItemDefaultPickMethod(
  * picker to processes the recipe will actually run, so users can't pick a
  * process the trigger never matches against (the set-shelf-life helper short-circuits
  * on processId mismatch). Empty array when the item has no active recipe.
- * @mcp read
  */
 export async function getRecipeProcessIdsForItem(
   client: SupabaseClient<Database>,
@@ -3024,7 +2919,6 @@ export async function getRecipeProcessIdsForItem(
  * Fetch the shelf-life policy for an item. Returns `data: null` (without
  * an error) when the item has no row, since absence = "not managed" and
  * that's a valid state we don't want to treat as an error path.
- * @mcp read
  */
 export async function getItemShelfLife(
   client: SupabaseClient<Database>,
@@ -3047,7 +2941,6 @@ export async function getItemShelfLife(
  * Returns false when there is no make-method, no materials, or every
  * material has shelf-life NotManaged. Errors are coerced to false — this
  * is a UI hint, not a correctness gate.
- * @mcp read
  */
 export async function getBomHasShelfLifeManagedInput(
   client: SupabaseClient<Database>,
@@ -3192,7 +3085,6 @@ export async function upsertItemShelfLife(
  * two independent Supabase calls means a failure between the two leaves a
  * partial update committed. This helper runs both writes inside a single
  * Postgres transaction via Kysely.
- * @mcp upsert destructive
  */
 export async function upsertPickMethodWithShelfLife(
   db: Kysely<KyselyDatabase>,
@@ -3757,9 +3649,6 @@ const typedItemTables = {
  * Creates a consumable (item row and consumable row) or updates one; on update
  * `id` is the item id (uuid) or the consumable's readable id and the write is
  * a full replace, so omitted optional fields are cleared.
- * @mcp upsert
- * @mcp key item id
- * @mcp key item readableId=id
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
@@ -3993,7 +3882,6 @@ export async function matchItemIdByText(
  * Resolve extracted document line text to an item id: first through the
  * party's part mapping (customerPartToItem / supplierPart), then by exact
  * readableId/name match. Returns null when nothing matches directly.
- * @mcp action
  */
 export async function resolveItemIdFromExtractedText(
   client: SupabaseClient<Database>,
@@ -4183,7 +4071,6 @@ export async function upsertPart(
   return updated;
 }
 
-/** @mcp update */
 export async function updateItem(
   client: SupabaseClient<Database>,
   item: z.infer<typeof itemValidator> & {
@@ -4211,7 +4098,6 @@ export async function updateItem(
     .eq("companyId", item.companyId);
 }
 
-/** @mcp upsert */
 export async function upsertItemCost(
   client: SupabaseClient<Database>,
   itemCost: z.infer<typeof itemCostValidator> & {
@@ -4225,10 +4111,6 @@ export async function upsertItemCost(
     .eq("itemId", itemCost.itemId);
 }
 
-/**
- * @mcp upsert
- * @mcp key pickMethod itemId, locationId
- */
 export async function upsertPickMethod(
   client: SupabaseClient<Database>,
   pickMethod:
@@ -4294,7 +4176,6 @@ export async function upsertItemPlanning(
     .eq("locationId", partPlanning.locationId);
 }
 
-/** @mcp upsert */
 export async function upsertItemPurchasing(
   client: SupabaseClient<Database>,
   itemPurchasing: z.infer<typeof itemPurchasingValidator> & {
@@ -4491,7 +4372,6 @@ export async function upsertItemSupersession(
     .insert({ ...row, itemId, companyId, createdBy });
 }
 
-/** @mcp upsert */
 export async function upsertItemPostingGroup(
   client: SupabaseClient<Database>,
   itemPostingGroup:
@@ -4553,7 +4433,6 @@ export async function upsertSupplierPart(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertItemCustomerPart(
   client: SupabaseClient<Database>,
   customerPart:
@@ -4579,7 +4458,6 @@ export async function upsertItemCustomerPart(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertItemUnitSalePrice(
   client: SupabaseClient<Database>,
   itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
@@ -4711,10 +4589,6 @@ async function resolveMethodMaterialStorageUnitIds(
   return current;
 }
 
-/**
- * @mcp upsert
- * @mcp key methodMaterial id
- */
 export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
@@ -4820,10 +4694,6 @@ export async function upsertMethodMaterial(
     .single();
 }
 
-/**
- * @mcp upsert
- * @mcp key methodOperation id
- */
 export async function upsertMethodOperation(
   client: SupabaseClient<Database>,
 
@@ -4859,7 +4729,6 @@ export async function upsertMethodOperation(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertMethodOperationStep(
   client: SupabaseClient<Database>,
   methodOperationStep:
@@ -4898,7 +4767,6 @@ export async function upsertMethodOperationStep(
 // carrying its reference slides (image + caption + size + annotations, incl. tool
 // hotspots). Sequential supabase writes — a step is created first, then its slides,
 // so a slide-copy failure surfaces without a half-written step blocking the editor.
-/** @mcp create */
 export async function duplicateMethodOperationStep(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; createdBy: string }
@@ -5029,7 +4897,6 @@ export async function duplicateMethodOperationStep(
   return { data: { id: newStepId }, error: null };
 }
 
-/** @mcp upsert */
 export async function upsertMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
@@ -5071,7 +4938,6 @@ export async function upsertMethodOperationStepSlide(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertMethodOperationParameter(
   client: SupabaseClient<Database>,
   methodOperationParameter:
@@ -5101,7 +4967,6 @@ export async function upsertMethodOperationParameter(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertMethodOperationTool(
   client: SupabaseClient<Database>,
   methodOperationTool:
@@ -5177,7 +5042,6 @@ export async function replaceMethodMaterialSteps(
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
 // `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
 // re-linking an existing link updates the quantity, so the same call edits a split.
-/** @mcp update destructive */
 export async function setMethodMaterialStepLink(
   client: SupabaseClient<Database>,
   args: {
@@ -5216,7 +5080,6 @@ export async function setMethodMaterialStepLink(
 // row the operation's Tools tab would create) before linking it to the step. Unlink
 // removes only the step link; the operation tool row stays (the Tools tab owns it).
 // Twin of setMethodMaterialStepLink.
-/** @mcp update destructive */
 export async function setMethodOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
@@ -5619,9 +5482,6 @@ async function getNewMaterialSizes(
  * IDs are typed by hand. An update's material, item and item cost writes land
  * together or not at all; the pick method, shelf life and new sizes are
  * written after them.
- * @mcp upsert
- * @mcp key item id
- * @mcp key item readableId=id
  */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
@@ -6047,7 +5907,6 @@ export async function updateMaterialProperties(
 /**
  * Creates a dimension (a named size) for a material shape, or updates the one
  * whose `id` is sent; a new dimension's id is generated.
- * @mcp upsert
  */
 export async function upsertMaterialDimension(
   client: SupabaseClient<Database>,
@@ -6082,7 +5941,6 @@ export async function upsertMaterialDimension(
 /**
  * Creates a finish for a material substance, or updates the one whose `id` is
  * sent; a new finish's id is generated.
- * @mcp upsert
  */
 export async function upsertMaterialFinish(
   client: SupabaseClient<Database>,
@@ -6112,7 +5970,6 @@ export async function upsertMaterialFinish(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertMaterialForm(
   client: SupabaseClient<Database>,
   materialForm:
@@ -6145,7 +6002,6 @@ export async function upsertMaterialForm(
 /**
  * Creates a grade for a material substance, or updates the one whose `id` is
  * sent; a new grade's id is generated.
- * @mcp upsert
  */
 export async function upsertMaterialGrade(
   client: SupabaseClient<Database>,
@@ -6175,7 +6031,6 @@ export async function upsertMaterialGrade(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteMaterialType(
   client: SupabaseClient<Database>,
   id: string
@@ -6183,7 +6038,6 @@ export async function deleteMaterialType(
   return client.from("materialType").delete().eq("id", id);
 }
 
-/** @mcp read */
 export async function getMaterialTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6209,7 +6063,6 @@ export async function getMaterialTypes(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialType(
   client: SupabaseClient<Database>,
   id: string
@@ -6217,7 +6070,6 @@ export async function getMaterialType(
   return client.from("materialType").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
 export async function getMaterialTypeList(
   client: SupabaseClient<Database>,
   materialSubstanceId: string,
@@ -6235,7 +6087,6 @@ export async function getMaterialTypeList(
 /**
  * Creates a material type for a substance and shape pair, or updates the one
  * whose `id` is sent; a new type's id is generated.
- * @mcp upsert
  */
 export async function upsertMaterialType(
   client: SupabaseClient<Database>,
@@ -6265,7 +6116,6 @@ export async function upsertMaterialType(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertMaterialSubstance(
   client: SupabaseClient<Database>,
   materialSubstance:
@@ -6302,9 +6152,6 @@ export async function upsertMaterialSubstance(
  * is refused). On update `id` is the item id (uuid) or the
  * service's readable id and the write is a full replace, so omitted optional
  * fields are cleared.
- * @mcp upsert
- * @mcp key item id
- * @mcp key item readableId=id
  */
 export async function upsertService(
   client: SupabaseClient<Database>,
@@ -6499,7 +6346,6 @@ export async function updateServiceName(
   });
 }
 
-/** @mcp upsert */
 export async function upsertUnitOfMeasure(
   client: SupabaseClient<Database>,
   unitOfMeasure:
@@ -6534,9 +6380,6 @@ export async function upsertUnitOfMeasure(
  * Creates a tool (item row and tool row) or updates one; on update `id` is the
  * item id (uuid) or the tool's readable id and the write is a full replace, so
  * omitted optional fields are cleared.
- * @mcp upsert
- * @mcp key item id
- * @mcp key item readableId=id
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
@@ -6676,7 +6519,6 @@ export async function upsertTool(
  *
  * Used by the quote loader to pre-load pricing data for BOM costing.
  * Mirrored in `packages/database/src/methods.ts`.
- * @mcp read
  */
 export async function getSupplierPriceBreaksForItems(
   client: SupabaseClient<Database>,
@@ -6836,7 +6678,6 @@ export async function getSupplierPartPriceBreaks(
 // -----------------------------------------------------------------------------
 // Reads
 // -----------------------------------------------------------------------------
-/** @mcp read */
 export async function getChangeNotice(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -6850,7 +6691,6 @@ export async function getChangeNotice(
     .single();
 }
 
-/** @mcp read */
 export async function getChangeNotices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6956,7 +6796,6 @@ export async function insertChangeNotice(
   };
 }
 
-/** @mcp update */
 export async function updateChangeNotice(
   client: SupabaseClient<Database>,
   input: {
@@ -6991,7 +6830,6 @@ export async function updateChangeNotice(
   return { data: { id: result.data.id }, error: null };
 }
 
-/** @mcp delete */
 export async function deleteChangeNotice(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7094,7 +6932,6 @@ export async function updateChangeNoticeStatus(
 // -----------------------------------------------------------------------------
 // Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
-/** @mcp read */
 export async function getChangeNoticeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7118,7 +6955,6 @@ export async function getChangeNoticeTypes(
   return query;
 }
 
-/** @mcp read */
 export async function getChangeNoticeTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -7130,7 +6966,6 @@ export async function getChangeNoticeTypesList(
     .order("name", { ascending: true });
 }
 
-/** @mcp read */
 export async function getChangeNoticeType(
   client: SupabaseClient<Database>,
   id: string,
@@ -7144,7 +6979,6 @@ export async function getChangeNoticeType(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertChangeNoticeType(
   client: SupabaseClient<Database>,
   changeNoticeType:
@@ -7182,7 +7016,6 @@ export async function upsertChangeNoticeType(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteChangeNoticeType(
   client: SupabaseClient<Database>,
   id: string,
@@ -7821,7 +7654,6 @@ async function discardChangeNoticeDrafts(
 // Add an affected item to a CO: insert the row, then spin its CO-owned Draft
 // make method per the change type and write the draft refs back. Rolls the row
 // back if draft creation fails (get-method runs its own transaction — G2).
-/** @mcp create destructive */
 export async function addChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7986,7 +7818,6 @@ export async function addChangeNoticeAffectedItem(
 
 // Switch an affected item's change type: discard its current draft and rebuild
 // for the new type (Q2 — the editable surface differs per type, so edits reset).
-/** @mcp update */
 export async function updateChangeNoticeAffectedItemChangeType(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -8079,7 +7910,6 @@ export async function updateChangeNoticeAffectedItemChangeType(
 
 // Update the per-item revision cutover config (mode + dates). The existence of
 // the oldRev→newRev supersession is automatic at release; this only tunes it.
-/** @mcp update */
 export async function updateChangeNoticeAffectedItemCutover(
   client: SupabaseClient<Database>,
   input: {
@@ -8157,7 +7987,6 @@ async function stitchItemLabels(
 }
 
 // The affected items of a CO, each stitched to a minimal item label.
-/** @mcp read */
 export async function getChangeNoticeAffectedItems(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -8193,7 +8022,6 @@ export async function getChangeNoticeAffectedItems(
 
 // Remove an affected item + discard its CO-owned Draft (delete the new item for
 // Revision/New Part, or the Draft method for Version) so no orphan draft leaks.
-/** @mcp action destructive */
 export async function removeChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -8278,7 +8106,6 @@ export async function findChangeNoticesForItem(
 // Reverse of the Linked-NCR cross-link (4a): every change notice that references
 // a given non-conformance. Read-only, minimal columns; rendered on the Issue
 // detail. Flat select (no embeds — TS2589 budget).
-/** @mcp read */
 export async function getChangeNoticesForNonConformance(
   client: SupabaseClient<Database>,
   nonConformanceId: string,
@@ -8333,7 +8160,6 @@ export async function getItemChangeNoticeData(
 // user, any stage; non-gating. Kept as its own section of items.service.ts to
 // keep each area focused and under the module's 1000-line budget (G4).
 // =============================================================================
-/** @mcp read */
 export async function getChangeNoticeActions(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -8391,7 +8217,6 @@ export async function getChangeNoticeActions(
   };
 }
 
-/** @mcp update */
 export async function updateChangeNoticeActionStatus(
   client: SupabaseClient<Database>,
   input: {
@@ -8413,7 +8238,6 @@ export async function updateChangeNoticeActionStatus(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteChangeNoticeAction(
   client: SupabaseClient<Database>,
   id: string
@@ -8421,7 +8245,6 @@ export async function deleteChangeNoticeAction(
   return client.from("changeOrderActionTask").delete().eq("id", id);
 }
 
-/** @mcp update */
 export async function updateChangeNoticeActionOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -8443,7 +8266,6 @@ export async function updateChangeNoticeActionOrder(
 // Change Notice Required Actions (the configurable default-action templates the
 // config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
-/** @mcp read */
 export async function getChangeNoticeRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8467,7 +8289,6 @@ export async function getChangeNoticeRequiredActions(
   return query;
 }
 
-/** @mcp read */
 export async function getChangeNoticeRequiredActionsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -8480,7 +8301,6 @@ export async function getChangeNoticeRequiredActionsList(
     .order("name", { ascending: true });
 }
 
-/** @mcp read */
 export async function getChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   id: string,
@@ -8494,7 +8314,6 @@ export async function getChangeNoticeRequiredAction(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   input: {
@@ -8531,7 +8350,6 @@ export async function upsertChangeNoticeRequiredAction(
     .single();
 }
 
-/** @mcp delete */
 export async function deleteChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   id: string,
@@ -8549,7 +8367,6 @@ export async function deleteChangeNoticeRequiredAction(
 // Quality's requiredActionIds field). Templates newly selected are instantiated
 // (appended); templates deselected have their task removed. Tasks with no
 // template link (actionTypeId IS NULL) are left untouched.
-/** @mcp update destructive */
 export async function setChangeNoticeActionTasks(
   client: SupabaseClient<Database>,
   input: {
@@ -9376,7 +9193,6 @@ async function stampOperationRefNames(
 // CO-owned Draft method as `target` (both REAL method tables), correlate by
 // natural keys, run the pure `diffMethod`, and collect. Also returns the manual
 // supersession declarations. Flat selects scoped by companyId (no embeds).
-/** @mcp read */
 export async function getChangeNoticeDiff(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -9567,7 +9383,6 @@ export async function getChangeNoticeDiff(
  * returned `signedUrl`, then call `documents_insertUploadedDocument` with the
  * returned `path`, the item's type as `sourceDocument`, and
  * `sourceDocumentId: itemId`.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */

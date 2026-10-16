@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { z } from "zod";
-import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import {
   defineServiceFn,
   type ServiceContext
-} from "~/modules/service-fn.server";
+} from "@carbon/api/service-fn.server";
+import { z } from "zod";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { employeeJobValidator } from "./people.models";
 import {
   clockIn,

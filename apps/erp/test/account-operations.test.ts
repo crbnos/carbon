@@ -32,7 +32,7 @@ import {
   upsertUserAttributeValue
 } from "../app/modules/account/account.service";
 import { getAttribute } from "../app/modules/people/people.service";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 // Saving the avatar saves the new value, then deletes the photo it replaced.
 // The order is the point: deleting first and then failing the save left

@@ -22,7 +22,7 @@ vi.mock("../app/modules/people/people.service", () => ({
 
 import { clockInPerson } from "../app/modules/people/people.server";
 import { clockIn } from "../app/modules/people/people.service";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const unreachable = () => {
   throw new Error("must not be reached");

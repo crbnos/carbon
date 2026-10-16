@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  type CarbonError,
+  defineServiceFn,
+  ERROR_STATUS,
+  type ErrorCategory,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Json } from "@carbon/database";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import {
@@ -47,13 +54,6 @@ import {
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
-import {
-  type CarbonError,
-  defineServiceFn,
-  ERROR_STATUS,
-  type ErrorCategory,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import {
   getCompanySettings,
   getNextSequence

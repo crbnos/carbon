@@ -37,7 +37,6 @@ export async function getChangelogPanelEntry(
   };
 }
 
-/** @mcp read */
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,
   userId: string,
@@ -50,7 +49,6 @@ export async function getNotificationPreferences(
     .eq("companyId", companyId);
 }
 
-/** @mcp upsert */
 export async function upsertNotificationPreference(
   client: SupabaseClient<Database>,
   preference: {
@@ -149,7 +147,6 @@ export async function deleteUserAttributeValue(
     .eq("userId", args.userId);
 }
 
-/** @mcp read */
 export async function getAccount(client: SupabaseClient<Database>, id: string) {
   return client.from("user").select("*").eq("id", id).single();
 }
@@ -159,7 +156,6 @@ export async function getAccount(client: SupabaseClient<Database>, id: string) {
  * executor from the OAuth token, so this always resolves to the caller — it is the identity source
  * an OS deployment can use for sign-in (a user who completed Carbon's OAuth has proven control of
  * this account, so its email is a verified sign-in identity).
- * @mcp read
  */
 export async function getCurrentUser(
   client: SupabaseClient<Database>,
@@ -213,7 +209,6 @@ export async function getPublicAttributes(
   return getAttributes(client, userId, companyId, true);
 }
 
-/** @mcp read */
 export async function getAllAttributeCategories(
   client: SupabaseClient<Database>,
   userId: string,
@@ -237,7 +232,6 @@ export async function getAllAttributeCategories(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
-/** @mcp read */
 export async function getAttributeCategoryWithValues(
   client: SupabaseClient<Database>,
   categoryId: string,
@@ -280,7 +274,6 @@ export async function updateAvatar(
     .eq("id", userId);
 }
 
-/** @mcp update */
 export async function updatePublicAccount(
   client: SupabaseClient<Database>,
   account: {

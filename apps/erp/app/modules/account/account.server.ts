@@ -2,16 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  defineServiceFn,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { isAllowedAvatarValue, isOwnAvatarUpload } from "@carbon/utils";
 import { z } from "zod";
 import { getAttribute } from "~/modules/people/people.service";
-import {
-  defineServiceFn,
-  type ServiceContext
-} from "~/modules/service-fn.server";
 import { userFlagValidator } from "~/modules/users/users.models";
 import {
   type ChangelogPanelEntry,

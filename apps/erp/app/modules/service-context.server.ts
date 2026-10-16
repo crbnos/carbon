@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  createServiceContext,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
@@ -9,7 +13,6 @@ import { redis } from "@carbon/kv";
 import type { ModulePermissions } from "@carbon/server-functions/permissions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
-import { createServiceContext, type ServiceContext } from "./service-fn.server";
 
 /** An authenticated caller, as every entry point states it. */
 export type Caller = {

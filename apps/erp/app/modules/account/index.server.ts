@@ -8,6 +8,15 @@ import {
   updateOwnAvatar,
   upsertAttributeValue
 } from "./account.server";
+import {
+  getAccountTool,
+  getAllAttributeCategoriesTool,
+  getAttributeCategoryWithValuesTool,
+  getCurrentUserTool,
+  getNotificationPreferencesTool,
+  updatePublicAccountTool,
+  upsertNotificationPreferenceTool
+} from "./account.tools.server";
 
 /** The account module's operations, by entity. */
 export const account = {
@@ -16,5 +25,26 @@ export const account = {
     upsert: upsertAttributeValue,
     delete: deleteAttributeValue
   },
-  flag: { set: setOwnFlag }
+  flag: { set: setOwnFlag },
+  notificationPreferences: {
+    get: getNotificationPreferencesTool
+  },
+  notificationPreference: {
+    upsert: upsertNotificationPreferenceTool
+  },
+  account: {
+    get: getAccountTool
+  },
+  currentUser: {
+    get: getCurrentUserTool
+  },
+  allAttributeCategories: {
+    get: getAllAttributeCategoriesTool
+  },
+  attributeCategoryWithValues: {
+    get: getAttributeCategoryWithValuesTool
+  },
+  publicAccount: {
+    update: updatePublicAccountTool
+  }
 };

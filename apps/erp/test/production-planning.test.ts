@@ -45,7 +45,7 @@ import {
   planJobFromPlanning,
   updatePlannedJob
 } from "../app/modules/production/production.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 type Job = {
   id: string;

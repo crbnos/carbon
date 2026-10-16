@@ -50,7 +50,7 @@ import {
   createJobMaterial,
   updateJobMaterial
 } from "../app/modules/production/production.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 /** The service-role client: each table's one row, or none. */
 function systemWith(rows: Record<string, unknown>) {

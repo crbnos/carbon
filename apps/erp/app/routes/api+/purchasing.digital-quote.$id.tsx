@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { toResult } from "@carbon/api/service-fn.server";
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
@@ -20,7 +21,6 @@ import {
 } from "~/modules/purchasing/purchasing.server";
 import { getSupplierQuoteByExternalLinkId } from "~/modules/purchasing/purchasing.service";
 import { shareLinkContext } from "~/modules/service-context.server";
-import { toResult } from "~/modules/service-fn.server";
 
 const logger = getLogger("erp", "purchasing", "digital-quote");
 

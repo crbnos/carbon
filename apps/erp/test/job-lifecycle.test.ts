@@ -49,7 +49,7 @@ import {
   reopenJob,
   resumeJob
 } from "../app/modules/production/production.server";
-import { createServiceContext } from "../app/modules/service-fn.server";
+import { createServiceContext } from "@carbon/api/service-fn.server";
 
 /** The user client: the job as read, and the completion RPC's answer. */
 function callerWith(
