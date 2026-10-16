@@ -11,6 +11,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
@@ -66,6 +67,7 @@ import { getTheme, setTheme } from "./services/theme.server";
 export const middleware = [
   requestIdMiddleware,
   securityMiddleware,
+  maintenanceMiddleware,
   formBodyMiddleware,
   flashMiddleware,
   prefetchCacheMiddleware

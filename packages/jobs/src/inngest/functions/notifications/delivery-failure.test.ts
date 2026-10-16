@@ -17,28 +17,28 @@ const coded = (code: string, message = "boom") =>
 describe("email delivery failure", () => {
   // Raised during connect/greet/auth — before a recipient or any DATA is sent,
   // so the relay provably has nothing and a replay cannot duplicate.
-  it.each([
-    "ECONNECTION",
-    "EDNS",
-    "EAUTH",
-    "ETLS"
-  ])("retries %s — nothing reached the relay", (code) => {
-    const error = emailDeliveryFailure(coded(code));
-    expect(isRetryableEmailFailure(coded(code))).toBe(true);
-    expect(error).not.toBeInstanceOf(NonRetriableError);
-    expect(error.message).toContain(code);
-  });
+  it.each(["ECONNECTION", "EDNS", "EAUTH", "ETLS"])(
+    "retries %s — nothing reached the relay",
+    (code) => {
+      const error = emailDeliveryFailure(coded(code));
+      expect(isRetryableEmailFailure(coded(code))).toBe(true);
+      expect(error).not.toBeInstanceOf(NonRetriableError);
+      expect(error.message).toContain(code);
+    }
+  );
 
   // The regression this whole PR exists for: nodemailer raises these at ANY
   // phase, so one can mean "relay accepted it, then the connection dropped".
   // Retrying that is how one quote becomes three copies in an inbox.
-  it.each([
-    "ETIMEDOUT",
-    "ESOCKET"
-  ])("does NOT retry %s — delivery is ambiguous", (code) => {
-    expect(isRetryableEmailFailure(coded(code))).toBe(false);
-    expect(emailDeliveryFailure(coded(code))).toBeInstanceOf(NonRetriableError);
-  });
+  it.each(["ETIMEDOUT", "ESOCKET"])(
+    "does NOT retry %s — delivery is ambiguous",
+    (code) => {
+      expect(isRetryableEmailFailure(coded(code))).toBe(false);
+      expect(emailDeliveryFailure(coded(code))).toBeInstanceOf(
+        NonRetriableError
+      );
+    }
+  );
 
   it("does not retry a rejected envelope — deterministic, never succeeds", () => {
     expect(emailDeliveryFailure(coded("EENVELOPE"))).toBeInstanceOf(
@@ -62,16 +62,13 @@ describe("email delivery failure", () => {
     );
   });
 
-  it.each([
-    null,
-    undefined,
-    "a string",
-    42,
-    {}
-  ])("treats a non-Error rejection (%s) as terminal rather than throwing", (thrown) => {
-    expect(isRetryableEmailFailure(thrown)).toBe(false);
-    expect(emailDeliveryFailure(thrown)).toBeInstanceOf(NonRetriableError);
-  });
+  it.each([null, undefined, "a string", 42, {}])(
+    "treats a non-Error rejection (%s) as terminal rather than throwing",
+    (thrown) => {
+      expect(isRetryableEmailFailure(thrown)).toBe(false);
+      expect(emailDeliveryFailure(thrown)).toBeInstanceOf(NonRetriableError);
+    }
+  );
 });
 
 describe("slack delivery failure", () => {

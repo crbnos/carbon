@@ -728,6 +728,10 @@ msgstr "<0>이 품목에 공급업체 부품 추가</0>하여 우선 공급업�
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 안내: {0}에 계정이 erp.try.carbon.ms(으)로 이전됩니다"
+
 msgid "0 operations"
 msgstr "0개 공정"
 
@@ -2906,6 +2910,9 @@ msgstr "보관"
 
 msgid "Archive all"
 msgstr "전체 보관"
+
+msgid "Archive Training"
+msgstr "교육 보관"
 
 msgid "Archived"
 msgstr "보관됨"
@@ -8742,6 +8749,15 @@ msgstr "직원"
 msgid "Employees"
 msgstr "직원"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "이 교육에 할당된 직원들이 그것을 열 수 있습니다. 콘텐츠, 가이드 및 질문을 더 이상 변경할 수 없습니다."
+
+msgid "Employees can no longer open this training."
+msgstr "직원들은 더 이상 이 교육을 열 수 없습니다."
+
+msgid "Employees complete a training in Carbon"
+msgstr "직원들이 Carbon에서 교육을 완료합니다"
+
 msgid "Empty"
 msgstr "비어있음"
 
@@ -9482,6 +9498,9 @@ msgstr "외부 참조"
 
 msgid "External Reference"
 msgstr "외부 참조"
+
+msgid "External training"
+msgstr "외부 교육"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbon이 기본적으로 추적하지 않는 데이터를 담기 위한 추가 필드"
@@ -13024,6 +13043,10 @@ msgstr "매핑된 값"
 msgid "Mark \"{0}\" as passed?"
 msgstr "\"{0}\"을(를) 통과로 표시하시겠습니까?"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "{0}를 완료 처리합니다. 인증서가 있으면 첨부하세요."
+
 msgid "Mark absent"
 msgstr "부재 표시"
 
@@ -14346,6 +14369,9 @@ msgstr "아직 구성 요소 없음"
 msgid "No condition may match"
 msgstr "조건이 하나도 일치하지 않을 수 있습니다"
 
+msgid "No content"
+msgstr "콘텐츠 없음"
+
 msgid "No control account has a balance at the cutover."
 msgstr "정산일에 제어 계정의 잔액이 없습니다."
 
@@ -14429,9 +14455,6 @@ msgstr "이 고객의 이메일 주소가 없습니다."
 
 msgid "No employees assigned this week"
 msgstr "이번 주에 배치된 직원이 없습니다"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "아직 배정된 직원이 없습니다. 그룹을 추가하면 상태를 확인할 수 있습니다."
 
 msgid "No employees found"
 msgstr "직원이 없습니다"
@@ -14700,6 +14723,9 @@ msgstr "지불 라인 없음"
 
 msgid "No payments yet."
 msgstr "아직 지불이 없습니다."
+
+msgid "No PDF uploaded"
+msgstr "업로드된 PDF 없음"
 
 msgid "No planned invoices are removed."
 msgstr "계획된 송장이 제거되지 않습니다."
@@ -15760,14 +15786,14 @@ msgstr "주문 날짜"
 msgid "Order Date"
 msgstr "주문일"
 
+msgid "Order Items"
+msgstr "품목 발주"
+
 msgid "Order Multiple"
 msgstr "주문 배수"
 
 msgid "Order Multiple:"
 msgstr "주문 배수:"
-
-msgid "Order Parts"
-msgstr "부품 발주"
 
 msgid "Order Qty"
 msgstr "주문 수량"
@@ -17167,6 +17193,9 @@ msgstr "공개"
 msgid "Publish"
 msgstr "게시"
 
+msgid "Publish Training"
+msgstr "교육 발행"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "버전 {0}을(를) 게시하시겠습니까?"
@@ -18244,6 +18273,9 @@ msgstr "인증 앱 제거"
 msgid "Remove clause"
 msgstr "절 제거"
 
+msgid "Remove Completion"
+msgstr "완료 제거"
+
 msgid "Remove condition"
 msgstr "조건 제거"
 
@@ -18294,6 +18326,9 @@ msgstr "부품 제거"
 
 msgid "Remove path"
 msgstr "경로 제거"
+
+msgid "Remove PDF"
+msgstr "PDF 제거"
 
 msgid "Remove row"
 msgstr "행 제거"
@@ -18401,6 +18436,9 @@ msgstr "다시 열기"
 msgid "Reopen as Revision"
 msgstr "리비전으로 다시 열기"
 
+msgid "Reopen Training"
+msgstr "교육 다시 열기"
+
 msgid "Reorder"
 msgstr "재주문"
 
@@ -18445,6 +18483,9 @@ msgstr "반복 실행"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel}의 각 항목에 대해 한 번씩 반복됩니다"
+
+msgid "Replace"
+msgstr "바꾸기"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "회계를 설정하기 전에 Carbon의 기본 계정과목표를 자신의 것으로 교체합니다."
@@ -21691,6 +21732,9 @@ msgstr "팬 모드로 전환"
 msgid "Switch to select mode"
 msgstr "선택 모드로 전환"
 
+msgid "Switch to Written Content"
+msgstr "작성된 콘텐츠로 전환"
+
 msgid "Switch users over and confirm access"
 msgstr "사용자를 전환하고 접근 권한을 확인하세요"
 
@@ -21754,6 +21798,9 @@ msgstr "이 품목을 만드는 데 소비되는 자재 중 가장 짧은 보존
 
 msgid "taken"
 msgstr "사용됨"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Carbon 외부에서 수행됨. 각 직원을 완료 처리합니다."
 
 msgid "Takes Effect"
 msgstr "발효됨"
@@ -23010,6 +23057,12 @@ msgstr "이 대량 배치에서 생성된 모든 작업 지시에서 만들 총�
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "교정 값이 비교된 추적 가능한 기준 (예: NIST 표준, 표준기 일련번호)"
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "교육이 초안으로 돌아가서 변경할 수 있습니다. 직원들은 다시 발행할 때까지 열 수 없습니다."
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "교육이 {employeeName}에 대해 대기 중으로 돌아갑니다. 직원은 이 교육이 부여한 모든 역량을 유지합니다. 필요한 경우 해당 직원의 역량 페이지에서 제거하십시오."
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "작업 이동표는 자재 명세서의 각 품목을 수량과 함께 나열합니다."
 
@@ -23407,6 +23460,9 @@ msgstr "이 발주서"
 
 msgid "This Quarter"
 msgstr "이번 분기"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "이렇게 하면 PDF가 제거됩니다. 직원들은 대신 작성된 콘텐츠를 보게 됩니다."
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
@@ -24001,8 +24057,14 @@ msgstr "교육"
 msgid "Training Assignments"
 msgstr "교육 배정"
 
+msgid "Training not recorded"
+msgstr "교육이 기록되지 않음"
+
 msgid "Training Plan"
 msgstr "교육 계획"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Carbon 외부에서 수행된 교육(예: 공급업체 과정). 할당은 이름만 있습니다. 관리자가 각 직원을 완료 처리하고 인증서를 첨부할 수 있습니다."
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
@@ -24560,6 +24622,9 @@ msgstr "업로드에 실패했습니다. 다시 시도해 주세요."
 
 msgid "Upload new backup…"
 msgstr "새 백업 업로드…"
+
+msgid "Upload PDF"
+msgstr "PDF 업로드"
 
 msgid "Uploaded model"
 msgstr "업로드된 모델"
@@ -25330,6 +25395,9 @@ msgstr "각 자산의 가치, 지속 기간, 계약 종료 시 처리 방법입�
 msgid "What each period's payment is for this asset in the first year"
 msgstr "첫 해에 이 자산에 대한 각 기간의 지불액"
 
+msgid "What employees read before the questions"
+msgstr "직원들이 질문 전에 읽는 내용"
+
 msgid "What happens to an invoice once it is created"
 msgstr "송장이 생성된 후 어떤 일이 일어나는지"
 
@@ -25868,6 +25936,9 @@ msgstr "설정 및 데이터에 대한 작업 세션"
 
 msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
+
+msgid "Write"
+msgstr "작성"
 
 msgid "Write a note…"
 msgstr "메모 작성…"

@@ -728,6 +728,10 @@ msgstr "<0>Добавить поставщика деталей</0> для эт�
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Внимание: {0} ваша учётная запись будет перенесена на erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0 операций"
 
@@ -2906,6 +2910,9 @@ msgstr "Архив"
 
 msgid "Archive all"
 msgstr "Архивировать все"
+
+msgid "Archive Training"
+msgstr "Архивировать обучение"
 
 msgid "Archived"
 msgstr "Архивировано"
@@ -8742,6 +8749,15 @@ msgstr "сотрудники"
 msgid "Employees"
 msgstr "Сотрудники"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "Сотрудники, назначенные на это обучение, могут открыть его. Содержание, руководство и вопросы больше нельзя менять."
+
+msgid "Employees can no longer open this training."
+msgstr "Сотрудники больше не могут открыть это обучение."
+
+msgid "Employees complete a training in Carbon"
+msgstr "Сотрудники завершают обучение в Carbon"
+
 msgid "Empty"
 msgstr "Пусто"
 
@@ -9482,6 +9498,9 @@ msgstr "Внешняя ссылка"
 
 msgid "External Reference"
 msgstr "Внешняя ссылка"
+
+msgid "External training"
+msgstr "Внешнее обучение"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Дополнительные поля для сбора данных, которые Carbon не отслеживает по умолчанию"
@@ -13024,6 +13043,10 @@ msgstr "Отображенные значения"
 msgid "Mark \"{0}\" as passed?"
 msgstr "Отметить \"{0}\" как пройденный?"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "Отметьте {0} завершённым. Прикрепите его сертификат, если он есть."
+
 msgid "Mark absent"
 msgstr "Отметить отсутствующим"
 
@@ -14346,6 +14369,9 @@ msgstr "Компонентов еще нет"
 msgid "No condition may match"
 msgstr "Ни одно условие не должно совпадать"
 
+msgid "No content"
+msgstr "Нет содержания"
+
 msgid "No control account has a balance at the cutover."
 msgstr "Ни один контрольный счет не имеет остатка на дату переходу."
 
@@ -14429,9 +14455,6 @@ msgstr "Нет адреса электронной почты для этого 
 
 msgid "No employees assigned this week"
 msgstr "На эту неделю не назначены сотрудники"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "Сотрудники еще не назначены. Добавьте группы, чтобы увидеть статус."
 
 msgid "No employees found"
 msgstr "Сотрудники не найдены"
@@ -14700,6 +14723,9 @@ msgstr "Нет строк платежей."
 
 msgid "No payments yet."
 msgstr "Платежей пока нет."
+
+msgid "No PDF uploaded"
+msgstr "PDF не загружен"
 
 msgid "No planned invoices are removed."
 msgstr "Запланированные счета-фактуры не удаляются."
@@ -15760,14 +15786,14 @@ msgstr "Дата заказа"
 msgid "Order Date"
 msgstr "Дата заказа"
 
+msgid "Order Items"
+msgstr "Заказать товары"
+
 msgid "Order Multiple"
 msgstr "Кратность заказа"
 
 msgid "Order Multiple:"
 msgstr "Кратность заказа:"
-
-msgid "Order Parts"
-msgstr "Заказать детали"
 
 msgid "Order Qty"
 msgstr "Кол-во заказа"
@@ -17167,6 +17193,9 @@ msgstr "Публичный"
 msgid "Publish"
 msgstr "Опубликовать"
 
+msgid "Publish Training"
+msgstr "Опубликовать обучение"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "Опубликовать версию {0}?"
@@ -18244,6 +18273,9 @@ msgstr "Удалить приложение аутентификации"
 msgid "Remove clause"
 msgstr "Убрать условие"
 
+msgid "Remove Completion"
+msgstr "Убрать завершение"
+
 msgid "Remove condition"
 msgstr "Убрать условие"
 
@@ -18294,6 +18326,9 @@ msgstr "Убрать деталь"
 
 msgid "Remove path"
 msgstr "Убрать путь"
+
+msgid "Remove PDF"
+msgstr "Убрать PDF"
 
 msgid "Remove row"
 msgstr "Убрать строку"
@@ -18401,6 +18436,9 @@ msgstr "Открыть заново"
 msgid "Reopen as Revision"
 msgstr "Открыть заново как ревизию"
 
+msgid "Reopen Training"
+msgstr "Открыть заново обучение"
+
 msgid "Reorder"
 msgstr "Переупорядочить"
 
@@ -18445,6 +18483,9 @@ msgstr "Повторный запуск"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Повторяется один раз для каждого элемента в {inputLabel}"
+
+msgid "Replace"
+msgstr "Заменить"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "Замените стандартный план счетов Carbon на ваш, перед настройкой бухгалтерии"
@@ -21691,6 +21732,9 @@ msgstr "Переключиться в режим панорамы"
 msgid "Switch to select mode"
 msgstr "Переключиться в режим выделения"
 
+msgid "Switch to Written Content"
+msgstr "Переключиться на письменный контент"
+
 msgid "Switch users over and confirm access"
 msgstr "Переключите пользователей и подтвердите доступ"
 
@@ -21754,6 +21798,9 @@ msgstr "Возьмите кратчайший оставшийся срок хр
 
 msgid "taken"
 msgstr "взято"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Пройдено вне Carbon. Вы отмечаете каждого сотрудника завершённым."
 
 msgid "Takes Effect"
 msgstr "Вступает в силу"
@@ -23010,6 +23057,12 @@ msgstr "Общее количество для производства по в�
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "Прослеживаемый эталон (например, стандарт NIST, серийный номер эталонного средства измерения), с которым сравнивались значения калибровки."
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "Обучение возвращается в черновик, чтобы вы могли его изменить. Сотрудники не смогут открыть его, пока вы не опубликуете его снова."
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "Обучение возвращается в статус «В ожидании» для {employeeName}. Сотрудник сохраняет любой навык, который предоставило это обучение. Уберите его на странице навыков, если это необходимо."
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "Маршрутный лист содержит каждый элемент спецификации материалов с его количеством."
 
@@ -23407,6 +23460,9 @@ msgstr "этот заказ поставщику"
 
 msgid "This Quarter"
 msgstr "Этот квартал"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "Это удаляет PDF. Сотрудники вместо этого увидят письменный контент."
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Это удаляет их приложение аутентификатора, поэтому их следующий вход требует только волшебной ссылки. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход для каждой организации, которой они принадлежат."
@@ -24001,8 +24057,14 @@ msgstr "Обучение"
 msgid "Training Assignments"
 msgstr "Назначения обучения"
 
+msgid "Training not recorded"
+msgstr "Обучение не записано"
+
 msgid "Training Plan"
 msgstr "План обучения"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Обучение, пройденное вне Carbon, например курс поставщика. Задание содержит только название. Администратор отмечает каждого сотрудника завершённым и может прикрепить его сертификат."
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Обучение вашей команды через Academy и встроенные руководства"
@@ -24560,6 +24622,9 @@ msgstr "Не удалось загрузить файл. Попробуйте е
 
 msgid "Upload new backup…"
 msgstr "Загрузить новую резервную копию…"
+
+msgid "Upload PDF"
+msgstr "Загрузить PDF"
 
 msgid "Uploaded model"
 msgstr "Модель загружена"
@@ -25330,6 +25395,9 @@ msgstr "Стоимость каждого актива, продолжитель
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Размер платежа каждого периода для этого актива в первый год"
 
+msgid "What employees read before the questions"
+msgstr "То, что сотрудники читают перед вопросами"
+
 msgid "What happens to an invoice once it is created"
 msgstr "Что происходит со счетом-фактурой после его создания"
 
@@ -25868,6 +25936,9 @@ msgstr "Рабочие сессии по конфигурации и данны�
 
 msgid "Worst Performing Machines"
 msgstr "Худшие станки"
+
+msgid "Write"
+msgstr "Написать"
 
 msgid "Write a note…"
 msgstr "Написать примечание…"

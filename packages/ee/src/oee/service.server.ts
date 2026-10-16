@@ -5,6 +5,8 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { endSensorMachineTime } from "@carbon/database/machine-time";
+import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EntitlementError, requireEntitlement } from "../entitlements.server";
@@ -20,6 +22,8 @@ import type { OeeProvider } from "./types";
  * `requireEntitlement("INTEGRATIONS")`; `getOeeProvider` is the runtime path
  * and degrades through `companyHasFeature` instead of throwing.
  */
+
+const logger = getLogger("ee", "oee");
 
 type Result<T> = { data: T; error: null } | { data: null; error: string };
 
@@ -67,6 +71,38 @@ export async function getOeeProvider(
   }
 }
 
+/**
+ * Posts the Machine events that sensor time ended (machine and overhead cost
+ * to WIP), as an operator's press posts the events it ends. Call it after the
+ * transaction that ended them commits. A failure is logged, never thrown: the
+ * operation-finish and job-completion catch-ups post what is still unposted.
+ */
+export async function postEndedMachineEvents(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; productionEventIds: string[] }
+) {
+  if (args.productionEventIds.length === 0) return;
+  const functions = serverFns.system({
+    db,
+    companyId: args.companyId,
+    userId: args.userId
+  });
+  for (const productionEventId of args.productionEventIds) {
+    const posted = await functions.invoke("post-production-event", {
+      productionEventId
+    });
+    // `success: false` is an event with nothing to post yet (no duration):
+    // the catch-ups take it once it has one.
+    if (posted.error) {
+      logger.error("Failed to post a Machine event", {
+        companyId: args.companyId,
+        productionEventId,
+        error: posted.error.message
+      });
+    }
+  }
+}
+
 export async function upsertWorkCenterDevice(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -92,7 +128,8 @@ export async function upsertWorkCenterDevice(
         error: `${args.integration} is not an OEE provider`
       };
     }
-    return await db.transaction().execute(async (trx) => {
+    let endedEventIds: string[] = [];
+    const result = await db.transaction().execute(async (trx) => {
       const integration = await trx
         .selectFrom("companyIntegration")
         .select("active")
@@ -154,12 +191,12 @@ export async function upsertWorkCenterDevice(
       // time the device opened on its old work center ends now; no later
       // sync of the old mapping will close it.
       if (current) {
-        await endSensorMachineTime(trx, {
+        ({ endedEventIds } = await endSensorMachineTime(trx, {
           workCenterId: current.workCenterId,
           companyId: args.companyId,
           userId: args.userId,
           at: datetime.timestamp()
-        });
+        }));
         await trx
           .deleteFrom("workCenterDevice")
           .where("id", "=", current.id)
@@ -183,6 +220,12 @@ export async function upsertWorkCenterDevice(
         .executeTakeFirstOrThrow();
       return { data: { id: inserted.id }, error: null };
     });
+    await postEndedMachineEvents(db, {
+      companyId: args.companyId,
+      userId: args.userId,
+      productionEventIds: endedEventIds
+    });
+    return result;
   } catch (error) {
     return fail(error);
   }
@@ -200,7 +243,7 @@ export async function deleteWorkCenterDevice(
 ): Promise<Result<null>> {
   await requireEntitlement(client, args.companyId, "INTEGRATIONS");
   try {
-    await db.transaction().execute(async (trx) => {
+    const endedEventIds = await db.transaction().execute(async (trx) => {
       const device = await trx
         .selectFrom("workCenterDevice")
         .select(["id", "workCenterId"])
@@ -209,11 +252,11 @@ export async function deleteWorkCenterDevice(
         .where("companyId", "=", args.companyId)
         .forUpdate()
         .executeTakeFirst();
-      if (!device) return;
+      if (!device) return [];
 
       // Nothing syncs this work center after the delete, so the time its
       // sensor opened ends now instead of staying open forever.
-      await endSensorMachineTime(trx, {
+      const ended = await endSensorMachineTime(trx, {
         workCenterId: device.workCenterId,
         companyId: args.companyId,
         userId: args.userId,
@@ -224,6 +267,12 @@ export async function deleteWorkCenterDevice(
         .where("id", "=", device.id)
         .where("companyId", "=", args.companyId)
         .execute();
+      return ended.endedEventIds;
+    });
+    await postEndedMachineEvents(db, {
+      companyId: args.companyId,
+      userId: args.userId,
+      productionEventIds: endedEventIds
     });
     return { data: null, error: null };
   } catch (error) {
@@ -233,8 +282,8 @@ export async function deleteWorkCenterDevice(
 
 /**
  * Assign unattributed time to an operation: insert a Machine event for its
- * interval and delete the row. The event is the record; the row was only a
- * question waiting for an answer.
+ * interval and delete the row, then post the event. The event is the record;
+ * the row was only a question waiting for an answer.
  */
 export async function assignUnattributedMachineTime(
   client: SupabaseClient<Database>,
@@ -248,7 +297,7 @@ export async function assignUnattributedMachineTime(
 ): Promise<Result<{ productionEventId: string }>> {
   await requireEntitlement(client, args.companyId, "INTEGRATIONS");
   try {
-    return await db.transaction().execute(async (trx) => {
+    const result = await db.transaction().execute(async (trx) => {
       const row = await trx
         .selectFrom("unattributedMachineTime")
         .select(["workCenterId", "startTime", "endTime"])
@@ -308,6 +357,14 @@ export async function assignUnattributedMachineTime(
 
       return { data: { productionEventId: event.id }, error: null };
     });
+    if (result.data) {
+      await postEndedMachineEvents(db, {
+        companyId: args.companyId,
+        userId: args.userId,
+        productionEventIds: [result.data.productionEventId]
+      });
+    }
+    return result;
   } catch (error) {
     return fail(error);
   }

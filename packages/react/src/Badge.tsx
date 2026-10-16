@@ -76,4 +76,5 @@ const BadgeCloseButton = forwardRef<
   </button>
 ));
 BadgeCloseButton.displayName = "BadgeCloseButton";
+
 export { Badge, BadgeCloseButton, badgeVariants };

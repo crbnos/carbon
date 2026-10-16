@@ -91,17 +91,68 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - `userToCompany.role` (membership type) is distinct from `employeeType` (which permission set);
   don't conflate "role" the enum with "role" the job title (`employeeJob.title`).
 - Permission company-ID array `"0"` means "all companies" — don't string-match a literal company id only.
-- Deactivating an employee (`deactivateEmployee` in `users.server.ts`) removes the company from
-  `userPermission.permissions`, deletes the `userToCompany` and `employeeJob` rows, sets
-  `employee.active = false`, and invalidates the Redis claims cache. It does **not** clear
-  `user.active` or scrub stored userId references (assignee columns, `workCenterEmployee`,
-  notification-group settings arrays).
+- Deactivating an employee (`deactivateEmployee` in `packages/auth/src/services/users.server.ts`)
+  removes the company from `userPermission.permissions`, deletes the `userToCompany` row and every
+  `membership` in groups owned by that company, and sets `employee.active = false`.
+  It does **not** clear `user.active`, delete the `employee` or `employeeJob` rows, or scrub stored
+  userId references (assignee columns, `workCenterEmployee`, notification-group settings arrays).
+- **The claims cache is invalidated by the deactivate\* functions themselves**, not by their
+  callers. `deactivateEmployee`/`Customer`/`Supplier` each `redis.del(getPermissionCacheKey(userId))`
+  on success, and `deactivateUser` deletes it again after delegating. That matters because
+  `requirePermissions` reads the cache (1h TTL) before the database, and the `create*Account`
+  rollback paths in the ERP call the role-specific functions directly rather than going through
+  `deactivateUser` — a caller that skipped the invalidation would leave revoked grants live.
+  `employeeJob` is kept on purpose — it is org placement, not access — so title, start date,
+  department, shift, manager, location, tags and custom fields survive a deactivate/re-invite
+  round trip. Group memberships do not: acceptance restores only the employee-type group, so
+  a re-invited person must be added back to any custom group by hand. Because the row
+  survives, a reader of `employeeJob` that means "current staff" must also check
+  `employee.active` (`getScheduledEmployeesToday` does; `employeeJob` has no FK to `employee`
+  to embed).
 - Planning stores more user ids the deactivation does not scrub: `itemPlanning.responsibleEmployee`,
   `location.responsibleEmployee`, `companySettings.defaultResponsibleEmployee`,
   `itemPostingGroupResponsibility.responsibleEmployee` and `planningAction.assignee` (all
   `TEXT REFERENCES "user"("id")`, so the database accepts any user's id, including another
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
   (`apps/erp/app/modules/shared/shared.server.ts`), which fails closed on a read error.
+- Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
+  rows rather than failing: it refuses only when the existing `employee` row is `active`. A person
+  whose invite is still pending is re-added the same way, which issues a new code and invalidates
+  the link already emailed. The reuse path (`reinviteDeactivatedEmployee`) is one Kysely
+  transaction: it locks the `employee` row and re-checks `active` under the lock, updates
+  `employeeTypeId`, upserts `employeeJob` (only `locationId`, `updatedBy` and `updatedAt` on
+  conflict) and upserts the `invite` on `(email, companyId)` — so the invite's permissions and the
+  row's employee type cannot diverge, and a failed write leaves no redeemable invite. It never
+  inserts a first-time `employee` row; that stays under the caller's RLS client.
+- **The re-add writes outside RLS, so it checks what RLS would have.** The route requires only
+  `users_create`, but a first-time add inserts `employee` and `employeeJob` under the caller's
+  client, whose INSERT policies require `users_update` and `people_create`. Before the reuse
+  transaction, `createEmployeeAccount` reads the inviter's claims (`getUserClaims`) and refuses
+  unless both are held — otherwise a `users_create`-only admin could re-add someone they could
+  never have added. The writes stamp the inviter in `updatedBy` (`employeeJob`, `invite`) because
+  the Kysely connection has no `auth.uid()` for the audit log; `employee` has no audit columns.
+- **A re-used invite row restarts `createdAt`** (`insertInvite` and the reuse path both set it). The
+  controlled-environment expiry (`isControlledInviteExpired`) counts from it, and the reused row is
+  the person's original invite, so keeping it expired the new invite on arrival.
+- Re-activation happens on invite acceptance — `acceptInvite` (`apps/erp/app/modules/users/users.server.ts`) restores the
+  employee-type `membership` the deactivation removed (the `sync_add_employee_to_type_group` trigger
+  fires on INSERT only, so an UPDATE cannot rely on it), flips `active` back to true, and stamps
+  `acceptedAt` in one Kysely transaction, so a failed restore leaves the invite unaccepted and
+  retryable rather than an active employee outside their type's group. The `acceptedAt` update also
+  requires `revokedAt IS NULL`, so a revoke that commits after the invite was looked up still wins.
+  Before merging `userPermission`, the transaction locks the `user` row `FOR NO KEY UPDATE`
+  (`migrateUserToSso` does the same), so two first acceptances for one user in different companies
+  cannot drop each other's grants. The membership insert uses
+  `ON CONFLICT ("groupId", "memberUserId") DO NOTHING` against `membership_groupId_memberUserId_key`
+  (`20261015074817`), which is what makes it safe against the trigger racing the same insert.
+- **Every writer of a user membership must tolerate that index.** Before it, `uq_membership`
+  (`groupId, memberGroupId, memberUserId`) never deduped user memberships (`memberGroupId` is NULL
+  on all of them), so duplicates were silent. The insert interceptors
+  (`sync_add_employee_to_type_group`, `sync_add_customer_account_to_group`,
+  `sync_add_supplier_account_to_group`) use `ON CONFLICT … DO NOTHING`, and
+  `sync_update_employee_type_membership` drops the old membership instead of moving it when the
+  user is already in the new type's group (`20261015075112`). A new writer needs the same, or a
+  leftover membership fails the insert or update that fired it.
 - Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved
   recipients against `userToCompany` for the notification's company — a missing membership row
   (i.e. a deactivated user) is dropped before any in-app/email/Slack delivery, regardless of how

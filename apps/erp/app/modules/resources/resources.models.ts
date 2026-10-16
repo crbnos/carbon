@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isUnsafeStoragePath } from "@carbon/files";
 import {
   type BatchRules,
   isValidTimeZone,
@@ -384,13 +385,34 @@ export const trainingAssignmentStatusOptions = [
   "Not Required"
 ] as const;
 
-export const trainingAssignmentValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  trainingId: z.string().min(1, { message: "Training is required" }),
-  groupIds: z
-    .array(z.string())
-    .min(1, { message: "At least one group is required" })
-});
+// An internal assignment points at a training; an external one only has a
+// name, because the training happens in an outside system.
+export const trainingAssignmentValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    isExternal: zfd.checkbox(),
+    trainingId: zfd.text(z.string().optional()),
+    name: zfd.text(z.string().trim().optional()),
+    groupIds: z
+      .array(z.string())
+      .min(1, { message: "At least one group is required" })
+  })
+  .superRefine((value, ctx) => {
+    if (value.isExternal && !value.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["name"],
+        message: "Name is required"
+      });
+    }
+    if (!value.isExternal && !value.trainingId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["trainingId"],
+        message: "Training is required"
+      });
+    }
+  });
 
 export const trainingCompletionValidator = z.object({
   trainingAssignmentId: z
@@ -399,6 +421,89 @@ export const trainingCompletionValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
   period: zfd.text(z.string().optional())
 });
+
+// Guide key: `{companyId}/training/{trainingId}/{uploadId}/{file name}` — the
+// last segment is the name the author uploaded.
+export function trainingGuideKeyPrefix(companyId: string, trainingId: string) {
+  return `${companyId}/training/${trainingId}/`;
+}
+
+// The browser posts the guide's key, so the server must not trust its shape.
+export function isValidTrainingGuideKey(key: string, prefix: string) {
+  if (!key.startsWith(prefix) || isUnsafeStoragePath(key)) return false;
+  const segments = key.slice(prefix.length).split("/");
+  return segments.length === 2 && segments.every((segment) => segment !== "");
+}
+
+export function trainingCertificateKeyPrefix(
+  companyId: string,
+  trainingAssignmentId: string,
+  employeeId: string
+) {
+  return `${companyId}/training-certificates/${trainingAssignmentId}/${employeeId}/`;
+}
+
+// A certificate is a PDF or a photo of one. HEIC is never stored: the ERP
+// dropzone converts it to JPEG first, and phone browsers hand a JPEG to a file
+// input that does not list HEIC.
+export const trainingCertificateAccept = {
+  "application/pdf": [".pdf"],
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"]
+};
+
+export const TRAINING_CERTIFICATE_MAX_BYTES = 10 * 1024 * 1024;
+
+const trainingCertificateExtensions = Object.values(trainingCertificateAccept)
+  .flat()
+  .map((extension) => extension.slice(1));
+
+// The first bytes of each accepted type. The extension alone can be renamed
+// onto any file.
+const trainingCertificateSignatures: Record<string, number[]> = {
+  pdf: [0x25, 0x50, 0x44, 0x46, 0x2d], // %PDF-
+  png: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  jpg: [0xff, 0xd8, 0xff],
+  jpeg: [0xff, 0xd8, 0xff]
+};
+
+export async function validateTrainingCertificate(
+  file: FormDataEntryValue | null
+): Promise<
+  | { file: File; extension: string; error: null }
+  | { file: null; extension: null; error: string }
+> {
+  if (!(file instanceof File) || file.size === 0) {
+    return { file: null, extension: null, error: "Upload a certificate file" };
+  }
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const signature = trainingCertificateSignatures[extension];
+  if (!trainingCertificateExtensions.includes(extension) || !signature) {
+    return {
+      file: null,
+      extension: null,
+      error: "The certificate must be a PDF, PNG or JPG"
+    };
+  }
+  if (file.size > TRAINING_CERTIFICATE_MAX_BYTES) {
+    return {
+      file: null,
+      extension: null,
+      error: "The certificate must be 10 MB or smaller"
+    };
+  }
+  const head = new Uint8Array(
+    await file.slice(0, signature.length).arrayBuffer()
+  );
+  if (!signature.every((byte, index) => head[index] === byte)) {
+    return {
+      file: null,
+      extension: null,
+      error: "The certificate must be a PDF, PNG or JPG"
+    };
+  }
+  return { file, extension, error: null };
+}
 
 export const trainingFrequency = ["Once", "Quarterly", "Annual"] as const;
 

@@ -28,9 +28,10 @@ import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
-import { RouteRealtime } from "@carbon/query";
+import { RouteRealtime, useLoaderQuery } from "@carbon/query";
 import { setClientCompanyId } from "@carbon/query/cache";
 import {
+  AnnouncementBar,
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
@@ -43,11 +44,14 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  formatDate,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -88,6 +92,7 @@ import {
 } from "~/modules/shared/shared.server";
 import { getItarCertificationStatus } from "~/modules/users";
 import { getUserClaims } from "~/modules/users/users.server";
+import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -389,6 +394,22 @@ export default function AuthenticatedRoute() {
   } = loaderData;
   // During render, not in an effect: clientLoaders and the first child read it.
   setClientCompanyId(company?.id ?? null, user?.id ?? null);
+  const { t } = useLingui();
+  const systemStatus = useLoaderQuery<typeof systemStatusLoader>(
+    path.to.api.systemStatus
+  );
+  const { locale } = useLocale();
+  const moveDate = systemStatus.data?.accountMoveDate;
+  // The account move outranks the deployment-wide announcement, and cannot
+  // be dismissed: it stays until the date is cleared on the company.
+  const announcement = moveDate
+    ? {
+        id: `account-move:${moveDate}`,
+        severity: "warning" as const,
+        message: t`🚨 Heads up: on ${formatDate(moveDate, { dateStyle: "long" }, locale)} your account will be moved to erp.try.carbon.ms`,
+        dismissible: false
+      }
+    : systemStatus.data?.announcement;
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();
@@ -543,6 +564,12 @@ export default function AuthenticatedRoute() {
                         (notifications, sheets) never run on desktop. */}
                     {isPhone && <MobileAppBar />}
                     <Topbar />
+                    <AnnouncementBar
+                      announcement={announcement}
+                      userId={user?.id ?? ""}
+                      dismissLabel={t`Dismiss`}
+                      defaultLinkLabel={t`Learn more`}
+                    />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <ModuleSidebarLayout>
                         {/* A company switch stays on the same page. Without the key the page

@@ -90,20 +90,20 @@ describe("released model exports", () => {
     expect(result.thumbnailAttached).toBe(false);
   });
 
-  it.each([
-    undefined,
-    null,
-    "",
-    " ",
-    "part-one,part-two"
-  ])("refuses unsafe individual-part selection %s before any export or attach", async (partId) => {
-    const invalid = { ...input, partId } as unknown as SyncOnshapeElementInput;
-    await expect(
-      syncOnshapeElementAssetsToItem(carbon, invalid)
-    ).rejects.toThrow(/part/i);
-    expect(mocks.client.createPartStudioTranslation).not.toHaveBeenCalled();
-    expect(mocks.attach).not.toHaveBeenCalled();
-  });
+  it.each([undefined, null, "", " ", "part-one,part-two"])(
+    "refuses unsafe individual-part selection %s before any export or attach",
+    async (partId) => {
+      const invalid = {
+        ...input,
+        partId
+      } as unknown as SyncOnshapeElementInput;
+      await expect(
+        syncOnshapeElementAssetsToItem(carbon, invalid)
+      ).rejects.toThrow(/part/i);
+      expect(mocks.client.createPartStudioTranslation).not.toHaveBeenCalled();
+      expect(mocks.attach).not.toHaveBeenCalled();
+    }
+  );
 
   it("keeps whole-assembly exports and forwards their configuration", async () => {
     const assembly = {

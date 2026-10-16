@@ -21,18 +21,18 @@ import TrialBalanceEditor, {
 } from "./TrialBalanceEditor";
 
 export {
-  type ActivationStep,
-  type MigrationClearingItem,
-  type TrialBalanceImportResult,
-  type TrialBalancePullResult,
   ActivationFooter,
+  type ActivationStep,
   ActivationSteps,
   ApplyCarbonButton,
   activationStepPath,
   activationSteps,
   FixedAssetDepreciationTable,
   InventoryCostTable,
+  type MigrationClearingItem,
   MigrationClearingTable,
   ReadinessChecklist,
-  TrialBalanceEditor
+  TrialBalanceEditor,
+  type TrialBalanceImportResult,
+  type TrialBalancePullResult
 };

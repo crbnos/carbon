@@ -728,6 +728,10 @@ msgstr "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0 operations"
 
@@ -2906,6 +2910,9 @@ msgstr "Archive"
 
 msgid "Archive all"
 msgstr "Archive all"
+
+msgid "Archive Training"
+msgstr "Archive Training"
 
 msgid "Archived"
 msgstr "Archived"
@@ -8742,6 +8749,15 @@ msgstr "employees"
 msgid "Employees"
 msgstr "Employees"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+
+msgid "Employees can no longer open this training."
+msgstr "Employees can no longer open this training."
+
+msgid "Employees complete a training in Carbon"
+msgstr "Employees complete a training in Carbon"
+
 msgid "Empty"
 msgstr "Empty"
 
@@ -9482,6 +9498,9 @@ msgstr "External Ref."
 
 msgid "External Reference"
 msgstr "External Reference"
+
+msgid "External training"
+msgstr "External training"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Extra fields to capture data Carbon doesn't track by default"
@@ -13024,6 +13043,10 @@ msgstr "Mapped values"
 msgid "Mark \"{0}\" as passed?"
 msgstr "Mark \"{0}\" as passed?"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "Mark {0} complete. Attach their certificate if you have one."
+
 msgid "Mark absent"
 msgstr "Mark absent"
 
@@ -14346,6 +14369,9 @@ msgstr "No components yet"
 msgid "No condition may match"
 msgstr "No condition may match"
 
+msgid "No content"
+msgstr "No content"
+
 msgid "No control account has a balance at the cutover."
 msgstr "No control account has a balance at the cutover."
 
@@ -14429,9 +14455,6 @@ msgstr "No email address for this customer"
 
 msgid "No employees assigned this week"
 msgstr "No employees assigned this week"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "No employees assigned yet. Add groups to see status."
 
 msgid "No employees found"
 msgstr "No employees found"
@@ -14700,6 +14723,9 @@ msgstr "No payment rows."
 
 msgid "No payments yet."
 msgstr "No payments yet."
+
+msgid "No PDF uploaded"
+msgstr "No PDF uploaded"
 
 msgid "No planned invoices are removed."
 msgstr "No planned invoices are removed."
@@ -15760,14 +15786,14 @@ msgstr "Order date"
 msgid "Order Date"
 msgstr "Order Date"
 
+msgid "Order Items"
+msgstr "Order Items"
+
 msgid "Order Multiple"
 msgstr "Order Multiple"
 
 msgid "Order Multiple:"
 msgstr "Order Multiple:"
-
-msgid "Order Parts"
-msgstr "Order Parts"
 
 msgid "Order Qty"
 msgstr "Order Qty"
@@ -17167,6 +17193,9 @@ msgstr "Public"
 msgid "Publish"
 msgstr "Publish"
 
+msgid "Publish Training"
+msgstr "Publish Training"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "Publish Version {0}?"
@@ -18244,6 +18273,9 @@ msgstr "Remove authenticator app"
 msgid "Remove clause"
 msgstr "Remove clause"
 
+msgid "Remove Completion"
+msgstr "Remove Completion"
+
 msgid "Remove condition"
 msgstr "Remove condition"
 
@@ -18294,6 +18326,9 @@ msgstr "Remove part"
 
 msgid "Remove path"
 msgstr "Remove path"
+
+msgid "Remove PDF"
+msgstr "Remove PDF"
 
 msgid "Remove row"
 msgstr "Remove row"
@@ -18401,6 +18436,9 @@ msgstr "Reopen"
 msgid "Reopen as Revision"
 msgstr "Reopen as Revision"
 
+msgid "Reopen Training"
+msgstr "Reopen Training"
+
 msgid "Reorder"
 msgstr "Reorder"
 
@@ -18445,6 +18483,9 @@ msgstr "Repeat Run"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Repeats once for each item in {inputLabel}"
+
+msgid "Replace"
+msgstr "Replace"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "Replace Carbon's default chart with your own, before you set up accounting"
@@ -21691,6 +21732,9 @@ msgstr "Switch to pan mode"
 msgid "Switch to select mode"
 msgstr "Switch to select mode"
 
+msgid "Switch to Written Content"
+msgstr "Switch to Written Content"
+
 msgid "Switch users over and confirm access"
 msgstr "Switch users over and confirm access"
 
@@ -21754,6 +21798,9 @@ msgstr "Take the shortest remaining shelf life across the materials consumed to 
 
 msgid "taken"
 msgstr "taken"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Taken outside Carbon. You mark each employee complete."
 
 msgid "Takes Effect"
 msgstr "Takes Effect"
@@ -23010,6 +23057,12 @@ msgstr "The total to make across all jobs created in this bulk batch; combined w
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "The traveler lists each item on the bill of materials with its quantity."
 
@@ -23407,6 +23460,9 @@ msgstr "this purchase order"
 
 msgid "This Quarter"
 msgstr "This Quarter"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "This removes the PDF. Employees will see the written content instead."
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
@@ -24001,8 +24057,14 @@ msgstr "Training"
 msgid "Training Assignments"
 msgstr "Training Assignments"
 
+msgid "Training not recorded"
+msgstr "Training not recorded"
+
 msgid "Training Plan"
 msgstr "Training Plan"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Training your team via the Academy and in-app guides"
@@ -24560,6 +24622,9 @@ msgstr "Upload failed. Please try again."
 
 msgid "Upload new backup…"
 msgstr "Upload new backup…"
+
+msgid "Upload PDF"
+msgstr "Upload PDF"
 
 msgid "Uploaded model"
 msgstr "Uploaded model"
@@ -25330,6 +25395,9 @@ msgstr "What each asset is worth, how long it lasts, and what happens to it at t
 msgid "What each period's payment is for this asset in the first year"
 msgstr "What each period's payment is for this asset in the first year"
 
+msgid "What employees read before the questions"
+msgstr "What employees read before the questions"
+
 msgid "What happens to an invoice once it is created"
 msgstr "What happens to an invoice once it is created"
 
@@ -25868,6 +25936,9 @@ msgstr "Working sessions on configuration and data"
 
 msgid "Worst Performing Machines"
 msgstr "Worst Performing Machines"
+
+msgid "Write"
+msgstr "Write"
 
 msgid "Write a note…"
 msgstr "Write a note…"

@@ -4,7 +4,6 @@
 
 import redis from "./client";
 
-export { redis };
 export type {
   AccountLockoutOptions,
   LockDurationOptions,
@@ -27,3 +26,4 @@ export type {
   RatelimitResponse
 } from "./ratelimit";
 export { Ratelimit } from "./ratelimit";
+export { redis };

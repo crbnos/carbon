@@ -266,7 +266,7 @@ export default function TrainingExplorer() {
                   questionDisclosure.onOpen();
                 }}
               >
-                Add Question
+                <Trans>Add Question</Trans>
               </Button>
             </TooltipTrigger>
             <TooltipContent>

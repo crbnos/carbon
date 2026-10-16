@@ -137,6 +137,10 @@ export async function syncOeeDevice({
   // the next sync's 10-minute overlap. With nothing stored it stays put.
   const lastEventAt = inserted.reduce(later, toInstant(device.lastEventAt));
 
+  // The Machine events this sync ended (closed, or inserted closed). The
+  // caller posts them to the GL once the transaction commits.
+  const endedEventIds: string[] = [];
+
   await db.transaction().execute(async (trx) => {
     const locked = await lockWorkCenterDevice(trx, {
       workCenterId: device.workCenterId,
@@ -371,8 +375,8 @@ export async function syncOeeDevice({
 
     for (const write of plan.writes) {
       switch (write.kind) {
-        case "insertMachineEvent":
-          await trx
+        case "insertMachineEvent": {
+          const inserted = await trx
             .insertInto("productionEvent")
             .values({
               type: "Machine",
@@ -384,10 +388,15 @@ export async function syncOeeDevice({
               companyId: device.companyId,
               createdBy: "system"
             })
-            .execute();
+            .returning("id")
+            .executeTakeFirstOrThrow();
+          if (write.endTime !== null) endedEventIds.push(inserted.id);
           break;
-        case "closeMachineEvent":
-          await trx
+        }
+        case "closeMachineEvent": {
+          // Matches only while open: an event a press ended meanwhile is the
+          // press's to post.
+          const closed = await trx
             .updateTable("productionEvent")
             .set({
               endTime: write.endTime,
@@ -397,8 +406,11 @@ export async function syncOeeDevice({
             .where("id", "=", write.productionEventId)
             .where("companyId", "=", device.companyId)
             .where("endTime", "is", null)
-            .execute();
+            .returning("id")
+            .executeTakeFirst();
+          if (closed) endedEventIds.push(closed.id);
           break;
+        }
         case "insertUnattributed":
           await trx
             .insertInto("unattributedMachineTime")
@@ -478,5 +490,5 @@ export async function syncOeeDevice({
       .execute();
   });
 
-  return { changes: changes.length };
+  return { changes: changes.length, endedEventIds };
 }

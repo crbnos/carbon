@@ -271,7 +271,7 @@ describe.skipIf(!url)("machine time against a migrated database", () => {
       await unattributed("running");
       await unattributed("stopped", { endTime: before });
 
-      await db.transaction().execute((trx) =>
+      const result = await db.transaction().execute((trx) =>
         endSensorMachineTime(trx, {
           workCenterId,
           companyId,
@@ -280,6 +280,8 @@ describe.skipIf(!url)("machine time against a migrated database", () => {
         })
       );
 
+      // The caller posts exactly the events it ended.
+      expect(result.endedEventIds).toEqual([id("sensor")]);
       expect(await endedAt("productionEvent", "sensor")).toBe(true);
       expect(await endedAt("productionEvent", "operator")).toBeNull();
       expect(await endedAt("productionEvent", "other-wc")).toBeNull();

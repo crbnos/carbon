@@ -31114,6 +31114,9 @@ export default {
             $ref: "#/parameters/rowFilter.trainingCompletion.period"
           },
           {
+            $ref: "#/parameters/rowFilter.trainingCompletion.certificatePath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -31206,6 +31209,9 @@ export default {
             $ref: "#/parameters/rowFilter.trainingCompletion.period"
           },
           {
+            $ref: "#/parameters/rowFilter.trainingCompletion.certificatePath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -31250,6 +31256,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.trainingCompletion.period"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trainingCompletion.certificatePath"
           },
           {
             $ref: "#/parameters/body.trainingCompletion"
@@ -63412,6 +63421,9 @@ export default {
             $ref: "#/parameters/rowFilter.trainingAssignment.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.trainingAssignment.name"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -63495,6 +63507,9 @@ export default {
             $ref: "#/parameters/rowFilter.trainingAssignment.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.trainingAssignment.name"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -63530,6 +63545,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.trainingAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.trainingAssignment.name"
           },
           {
             $ref: "#/parameters/body.trainingAssignment"
@@ -67993,6 +68011,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.companyPlan.apiRateLimit"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -68088,6 +68109,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.companyPlan.apiRateLimit"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -68135,6 +68159,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companyPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companyPlan.apiRateLimit"
           },
           {
             $ref: "#/parameters/body.companyPlan"
@@ -96769,6 +96796,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.grantsAbilityId"
           },
           {
+            $ref: "#/parameters/rowFilter.training.guidePath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -96882,6 +96912,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.grantsAbilityId"
           },
           {
+            $ref: "#/parameters/rowFilter.training.guidePath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96947,6 +96980,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.training.grantsAbilityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
             $ref: "#/parameters/body.training"
@@ -132660,6 +132696,10 @@ export default {
         period: {
           format: "text",
           type: "string"
+        },
+        certificatePath: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -147726,7 +147766,7 @@ export default {
       type: "object"
     },
     trainingAssignment: {
-      required: ["id", "trainingId", "companyId", "createdAt", "createdBy"],
+      required: ["id", "companyId", "createdAt", "createdBy"],
       properties: {
         id: {
           default: "public.id('ta'::text)",
@@ -147771,6 +147811,10 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
           format: "text",
           type: "string"
         }
@@ -149814,6 +149858,12 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string"
+        },
+        apiRateLimit: {
+          description:
+            "Requests per minute across all of the company's API keys. NULL is the platform default (60).",
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -164175,6 +164225,10 @@ export default {
         grantsAbilityId: {
           description:
             "Note:\nThis is a Foreign Key to `ability.id`.<fk table='ability' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        guidePath: {
           format: "text",
           type: "string"
         }
@@ -184314,6 +184368,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.trainingCompletion.certificatePath": {
+      name: "certificatePath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.nonConformanceCustomer": {
       name: "nonConformanceCustomer",
       description: "nonConformanceCustomer",
@@ -201115,6 +201175,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.trainingAssignment.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.configurationRule": {
       name: "configurationRule",
       description: "configurationRule",
@@ -203398,6 +203464,14 @@ export default {
     },
     "rowFilter.companyPlan.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companyPlan.apiRateLimit": {
+      name: "apiRateLimit",
+      description:
+        "Requests per minute across all of the company's API keys. NULL is the platform default (60).",
       required: false,
       in: "query",
       type: "string"
@@ -219491,6 +219565,12 @@ export default {
     },
     "rowFilter.training.grantsAbilityId": {
       name: "grantsAbilityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.training.guidePath": {
+      name: "guidePath",
       required: false,
       in: "query",
       type: "string"

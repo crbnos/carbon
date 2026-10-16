@@ -37,14 +37,14 @@ checks it first ("Work center not found"). `machineStateChange` and
 | `packages/ee/src/oee/engine.ts` | `planMachineTime`: the pure attribution engine. No database, no env. Pinned by `engine.test.ts` |
 | `packages/ee/src/oee/assignable.ts` | `machineTimeRefusal(operationStatus, jobStatus)`: `"Done"`, `"Canceled"`, `"Locked"` or null. The one rule for "can this operation take machine time", used by the sync (a load's `assignable`), `assignUnattributedMachineTime` and the review's suggestion cards. Built on `isJobLocked` / `JOB_LOCKED_STATUSES` (`packages/utils/src/job-status.ts`, re-exported by the ERP's `production.models.ts`) |
 | `packages/ee/src/oee/registry.ts` | `OEE_PROVIDERS` (keyed by `OeeProviderId`): provider id → factory, the one place a provider is named. `isOeeProviderId`, and `createOeeProvider(integrationId, metadata)`: the one resolution (id check, "No API key", the `DEFAULT_MINIMUM_STATE_SECONDS` default, the factory) behind `getOeeProvider` and the Sense healthcheck |
-| `packages/ee/src/oee/service.server.ts` | `getOeeProvider` (runtime, degrades through `companyHasFeature("INTEGRATIONS")`), and 4 authoring writes that embed `requireEntitlement("INTEGRATIONS")`: `upsertWorkCenterDevice`, `deleteWorkCenterDevice`, `assignUnattributedMachineTime`, `dismissUnattributedMachineTime` |
+| `packages/ee/src/oee/service.server.ts` | `getOeeProvider` (runtime, degrades through `companyHasFeature("INTEGRATIONS")`), `postEndedMachineEvents` (runtime: posts ended Machine events through `post-production-event`, logs failures, never throws), and 4 authoring writes that embed `requireEntitlement("INTEGRATIONS")`: `upsertWorkCenterDevice`, `deleteWorkCenterDevice`, `assignUnattributedMachineTime`, `dismissUnattributedMachineTime` |
 | `packages/ee/src/sense/provider.ts` | `SenseProvider`, the Sense HTTP adapter. Pinned by `provider.test.ts` |
 | `packages/ee/src/sense/config.tsx` | The descriptor: `apiKey` (secret), `environment`, `minimumStateSeconds` (default 60) |
 | `packages/ee/src/sense/hooks.server.ts` | `senseHealthcheck` (calls `provider.validate()`) and `senseOnUninstall` (registered in `packages/ee/src/hooks.server.ts`; see "Uninstalling Sense") |
 | `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | Cron `*/2 * * * *`. Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 mapped device |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | `carbon/oee-sync`, concurrency 1 per company, `singleton` (skip) per company and integration. Syncs every device of the integration in ONE `step.run` |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock. Pinned by `oee-sync-device.database.test.ts` (needs `SUPABASE_DB_URL`) |
-| `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `lockMachinePress` (the device lock, then a transaction advisory lock per work center), `recordManualMachinePress` and `endSensorMachineTime`. Shared by the sync, the MES, the device mapping writes and the Sense uninstall hook. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
+| `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `lockMachinePress` (the device lock, then a transaction advisory lock per work center), `recordManualMachinePress` and `endSensorMachineTime` (both return the ended event ids for the caller to post after commit). Shared by the sync, the MES, the device mapping writes and the Sense uninstall hook. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
 | `apps/mes/app/services/operations.service.ts` | `startMachineProductionEvent` (press, event and tracked activity in one Kysely transaction), `endMachineProductionEvent` (press locks, then the open event's row lock), `postEndedProductionEvents` (posts the events a press ended), `endProductionEvent` (ends an open event, scoped by `companyId`) |
 | `packages/database/src/event-system/handlers/sync_load_work_center_operation.sql` | `productionEvent` AFTER INSERT: writes a load into `workCenterLoad` (see "The loaded operation") |
 | `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE / DELETE: ends the operation's open `workCenterLoad` row when it becomes Done or Canceled, is deleted, or moves to another work center |
@@ -225,14 +225,15 @@ has left. So `deleteWorkCenterDevice` and the remap path of
 `upsertWorkCenterDevice` first call `endSensorMachineTime` on the OLD work
 center, under the device row lock: it ends, at now, the open Machine events
 created by `system` and the unattributed rows with no `endTime`. An
-operator's own open Machine event stays open.
+operator's own open Machine event stays open. The ended events post once the
+transaction commits (`postEndedMachineEvents`).
 
 **Uninstalling Sense.** The integration card's **Uninstall** posts to
 `x+/settings+/integrations.deactivate.$id.tsx`, which deactivates the
 integration and runs its `onUninstall` hook.
 `senseOnUninstall` ends the sensor time of every Sense device of the company
 at one instant: per device, `lockWorkCenterDevice` then
-`endSensorMachineTime` (`userId` `system`). The mappings stay, so a
+`endSensorMachineTime` (`userId` `system`), then posts the ended events. The mappings stay, so a
 reconnect resumes each device from its cursor.
 
 **Steady state.** After the changes, if the device is `Running`, nothing is
@@ -264,7 +265,8 @@ more cases:
   `Running` change, else to the last press): `deleteUnattributed` when
   nothing is left, `updateUnattributed` (plus an `insertUnattributed` for the
   part after the idle stretch) otherwise. Queue rows are not posted, so this
-  is safe. The engine never trims a Machine event.
+  is safe. The engine never trims a Machine event: a closed one may already
+  be posted.
 
 **Running past a press.** A machine that is `Running` at the press
 (`currentStateAt <= lastManualChangeAt`) and runs on after it: the press, a
@@ -390,19 +392,36 @@ After a Pause on a running machine, the time until it stops goes to the queue
 Kysely returns `timestamptz` as a JS `Date`. `syncOeeDevice` normalizes every
 instant with `toInstant` before the engine compares it.
 
-**GL posting.** The sync never posts. There is no scheduled sweep that posts
-production events. An event posts at one of three moments:
+**GL posting.** A Machine event posts when it ends (Dr WIP, Cr labor/machine
+and overhead absorption, `post-production-event`). There is no scheduled
+sweep. The writers that end sensor time post what they ended, after their
+transaction commits:
 
-1. At a press: the MES routes post every event the press ended
-   (`postEndedProductionEvents`, skipping batch events).
-2. At operation finish: MES `finishJobOperation` and ERP `completeOperation`
-   post the operation's ended, unposted events.
-3. At job completion: `complete_job_to_inventory` posts every ended,
-   unposted event of the job with a duration.
+1. The sync: `syncOeeDevice` returns `endedEventIds` (a `closeMachineEvent`
+   that matched, or an `insertMachineEvent` with an `endTime`), and
+   `oee-sync` passes them to `postEndedMachineEvents` (`userId` `system`).
+2. Assign: `assignUnattributedMachineTime` posts the event it inserted.
+3. Unmap, remap and uninstall: `deleteWorkCenterDevice`,
+   `upsertWorkCenterDevice` and `senseOnUninstall` post what
+   `endSensorMachineTime` ended.
+4. A press: the MES routes post every event the press ended
+   (`postEndedProductionEvents`, skipping batch events). So does a Down
+   maintenance dispatch (`dispatch.new.tsx`), which ends every event on the
+   work center.
 
-A sensor event that the sync closes is an ordinary Machine event with no
-employee: it posts at operation finish or job completion. An assigned
-unattributed row also does not post at assign time.
+`postEndedMachineEvents` logs a failure and never throws, so the cursor
+still moves. Two catch-ups post what a failure left: operation finish (MES
+`finishJobOperation`, ERP `completeOperation`) and job completion
+(`complete_job_to_inventory`). Two callers can post one event at once (the
+sync and an operation finish): `post-production-event` locks the event row in
+its transaction and refuses with 409 (`PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR`)
+when `postedToGL` changed since it read the event, or, for a repost, when the
+net already posted for the event (`readPostedNet`, re-read under the lock)
+changed: the flag stays true across reposts, so it alone cannot tell two
+concurrent edit reposts apart. `complete_job_to_inventory`
+selects its unposted events `FOR UPDATE OF pe` (migration `20261014135003`),
+so it waits for a concurrent post and skips an event that one posted. An edit on the job's
+Events tab reposts the difference (reversal, then the new amount).
 
 ## Unattributed machine time
 

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import { MAINTENANCE_MODE, POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
 import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
 import {
   getNonce,
@@ -136,6 +136,8 @@ export function handleError(
 ) {
   // Client navigated away / cancelled mid-flight — not a real failure.
   if (request.signal.aborted) return;
+  // Every request is a 503 during maintenance; that is not a failure to log.
+  if (MAINTENANCE_MODE) return;
   // Redirects and intentional Response throws are control flow, not errors.
   if (error instanceof Response && error.status < 500) return;
   if (isRouteErrorResponse(error) && error.status < 500) return;

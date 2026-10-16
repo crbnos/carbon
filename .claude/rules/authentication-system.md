@@ -247,7 +247,18 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
 - `createCookieSessionStorage`, cookie name **`carbon`**, `httpOnly`, `sameSite: "lax"`
   (`"none"` in Test edition, always with `Secure` — browsers drop `None` without it),
   `secure`/`domain` from `DOMAIN` in non-test. Payload stored
-  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`.
+  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`. Every write of this
+  cookie passes `SESSION_MAX_AGE`, flash writes included: the toast shares the
+  cookie, and a write without it turned the session into one that ends when the
+  browser closes.
+- **Cookie names are per deployment.** `authCookieName` (`utils/cookie.ts`) appends
+  `AUTH_COOKIE_SUFFIX` to `carbon`, `companyId`, `carbon-push` and
+  `carbon-oauth-state`. US and EU production both set `DOMAIN` to `carbon.ms`, so
+  with one name each region overwrote the other's cookie and failed its signature
+  (EU has its own `SESSION_SECRET`), signing users out. EU sets the suffix (`eu`) on
+  its ERP and MES; unset keeps the plain names. Changing `DOMAIN` instead is not a
+  fix: the browser still sends the parent-domain cookie, and it changes the passkey
+  `RP_ID`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
@@ -420,12 +431,24 @@ writer is the 30s TTL. Then:
 - Rate-limit via `checkApiKeyRateLimit` (`@carbon/database/ratelimit`, Postgres function
   `check_api_key_rate_limit`) using per-key `rateLimit` + `rateLimitWindow`
   (`"1m"|"1h"|"1d"`). 429 with `X-RateLimit-*` + `Retry-After` headers on exceed.
-  The same function also holds a company to **60/minute across all its keys** (constant
-  in the function, migration `20261002153217`): it sums the keys' counters for the
-  current minute, each capped at its own limit so requests refused on one key do not
-  lock out the others. No separate table — so deleting a key drops its share, and a key
-  on an hourly/daily window is not counted (none exist). A company refusal returns
-  `limit: 60`. Pinned by `supabase/tests/api-key-rate-limit.test.sql`.
+  The same function also holds a company to a per-minute total across all its keys:
+  `companyPlan.apiRateLimit`, or **60** when that is NULL or the company has no
+  `companyPlan` row (`v_default_company_limit`, migration `20261015143857`). It sums the
+  keys' counters for the current minute, each capped at its own limit so requests refused
+  on one key do not lock out the others. No separate table — so deleting a key drops its
+  share, and a key on an hourly/daily window is not counted (none exist). A company
+  refusal returns the company's limit as `limit`. Pinned by
+  `supabase/tests/api-key-rate-limit.test.sql`.
+- **Raising a limit is a support operation, not a setting.** One key: `apiKey.rateLimit`
+  (tenants with `settings_update` can also write it through the Data API, so the company
+  total is the real ceiling). A company: `companyPlan.apiRateLimit`, which only the
+  service role writes (the table has a SELECT policy and no other) and which company
+  backups never carry. A key's limit above its company's total is capped by the total.
+  Both are read per request through the 30s key cache. Only a company with a
+  `companyPlan` row (every paying Cloud company) can be given an override: do not insert
+  one just for this, since `company-cleanup` treats a plan row as a paying company. The
+  Stripe `customer.subscription.deleted` webhook deletes the row, override included;
+  the subscription sync upserts named columns only, so a plan change keeps it.
 - `lastUsedAt` is written by `check_api_key_rate_limit` itself, at most once a minute per
   key, so the Node path and the edge functions both record it. (The app used to build
   this update with `void client.from(…).update(…)`, which never sends: a supabase-js

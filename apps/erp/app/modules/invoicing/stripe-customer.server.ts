@@ -29,14 +29,16 @@ import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
+export type { StripeCustomerSources };
 // The connected-account lookup lives in @carbon/stripe so invoice automation
 // (in @carbon/jobs) reads it the same way the ERP does.
-export { getStripeConnectAccountId, STRIPE_CONNECT_INTEGRATION };
-
 // The pure Carbon → Stripe field mapping lives in its own module so it can be
 // unit tested without this file's database and Stripe imports.
-export { buildStripeCustomerInput };
-export type { StripeCustomerSources };
+export {
+  buildStripeCustomerInput,
+  getStripeConnectAccountId,
+  STRIPE_CONNECT_INTEGRATION
+};
 
 /**
  * Gather every table a Stripe customer is assembled from.

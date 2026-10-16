@@ -458,6 +458,7 @@ function LineItems({
             : line.itemReadableId;
         const description = distinctItemText(title, line.description);
 
+        const isService = line.salesOrderLineType === "Service";
         const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
           // @ts-expect-error TS2345 - TODO: fix type
           salesOrder?.jobs as SalesOrderJob[] | undefined,
@@ -755,7 +756,7 @@ function LineItems({
                           )}
                         >
                           {/* @ts-expect-error TS2739 */}
-                          <SalesOrderJobItem job={job} />
+                          <SalesOrderJobItem job={job} isService={isService} />
                         </div>
                       ))}
                   </div>

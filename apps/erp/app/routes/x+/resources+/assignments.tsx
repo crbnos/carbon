@@ -36,10 +36,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import {
-  getTrainingAssignmentSummary,
-  getTrainingAssignments
-} from "~/modules/resources";
+import { getTrainingAssignmentSummary } from "~/modules/resources";
 import type { TrainingAssignmentSummaryItem } from "~/modules/resources/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -55,10 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const [summary, assignments] = await Promise.all([
-    getTrainingAssignmentSummary(client, companyId),
-    getTrainingAssignments(client, companyId)
-  ]);
+  const summary = await getTrainingAssignmentSummary(client, companyId);
 
   if (summary.error) {
     throw redirect(
@@ -70,32 +64,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // Create a map of trainingId to assignment id for edit/delete links
-  const assignmentsByTraining = (assignments.data ?? []).reduce(
-    (acc, assignment) => {
-      if (!acc[assignment.trainingId]) {
-        acc[assignment.trainingId] = [];
-      }
-      acc[assignment.trainingId].push(assignment.id);
-      return acc;
-    },
-    {} as Record<string, string[]>
-  );
-
   return {
-    summary: (summary.data ?? []) as TrainingAssignmentSummaryItem[],
-    assignmentsByTraining
+    summary: (summary.data ?? []) as TrainingAssignmentSummaryItem[]
   };
 }
 
 const TrainingAssignmentsTable = memo(
-  ({
-    data,
-    assignmentsByTraining
-  }: {
-    data: TrainingAssignmentSummaryItem[];
-    assignmentsByTraining: Record<string, string[]>;
-  }) => {
+  ({ data }: { data: TrainingAssignmentSummaryItem[] }) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const fetcher = useFetcher();
@@ -106,9 +81,18 @@ const TrainingAssignmentsTable = memo(
           header: t`Training`,
           cell: ({ row }) => (
             <Hyperlink
-              to={path.to.trainingAssignmentDetail(row.original.trainingId)}
+              to={path.to.trainingAssignmentDetail(
+                row.original.trainingAssignmentId
+              )}
             >
-              {row.original.trainingName}
+              <HStack spacing={2}>
+                <span>{row.original.trainingName}</span>
+                {row.original.isExternal && (
+                  <Badge variant="outline">
+                    <Trans>External</Trans>
+                  </Badge>
+                )}
+              </HStack>
             </Hyperlink>
           ),
           meta: {
@@ -215,17 +199,12 @@ const TrainingAssignmentsTable = memo(
 
     const renderContextMenu = useMemo(() => {
       return (row: TrainingAssignmentSummaryItem) => {
-        const assignmentIds = assignmentsByTraining[row.trainingId] ?? [];
-        // If there are multiple assignments for this training, we need a different approach
-        // For now, we'll use the first one (or show nothing if no assignments)
-        const assignmentId = assignmentIds[0];
-
-        if (!assignmentId) return null;
+        const assignmentId = row.trainingAssignmentId;
 
         return (
           <>
             <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
-              <Link to={path.to.trainingAssignmentDetail(row.trainingId)}>
+              <Link to={path.to.trainingAssignmentDetail(assignmentId)}>
                 <MenuIcon icon={<LuEye />} />
                 <Trans>View Status</Trans>
               </Link>
@@ -254,7 +233,7 @@ const TrainingAssignmentsTable = memo(
           </>
         );
       };
-    }, [assignmentsByTraining, permissions, fetcher]);
+    }, [permissions, fetcher]);
 
     return (
       <Table<TrainingAssignmentSummaryItem>
@@ -277,14 +256,11 @@ const TrainingAssignmentsTable = memo(
 TrainingAssignmentsTable.displayName = "TrainingAssignmentsTable";
 
 export default function TrainingAssignmentsRoute() {
-  const { summary, assignmentsByTraining } = useLoaderData<typeof loader>();
+  const { summary } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <TrainingAssignmentsTable
-        data={summary}
-        assignmentsByTraining={assignmentsByTraining}
-      />
+      <TrainingAssignmentsTable data={summary} />
       <RecordOutlet />
     </VStack>
   );

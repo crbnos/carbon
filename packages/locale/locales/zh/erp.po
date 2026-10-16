@@ -728,6 +728,10 @@ msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0个工序"
 
@@ -2906,6 +2910,9 @@ msgstr "存档"
 
 msgid "Archive all"
 msgstr "全部存档"
+
+msgid "Archive Training"
+msgstr "存档培训"
 
 msgid "Archived"
 msgstr "已归档"
@@ -8742,6 +8749,15 @@ msgstr "员工"
 msgid "Employees"
 msgstr "员工"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "已分配此培训的员工可以打开它。内容、指南和问题不再能更改。"
+
+msgid "Employees can no longer open this training."
+msgstr "员工无法再打开此培训"
+
+msgid "Employees complete a training in Carbon"
+msgstr "员工在 Carbon 中完成培训"
+
 msgid "Empty"
 msgstr "空"
 
@@ -9482,6 +9498,9 @@ msgstr "外部参考"
 
 msgid "External Reference"
 msgstr "外部参考"
+
+msgid "External training"
+msgstr "外部培训"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "用于捕获 Carbon 默认不跟踪的额外数据的字段"
@@ -13024,6 +13043,10 @@ msgstr "已映射的值"
 msgid "Mark \"{0}\" as passed?"
 msgstr "将\"{0}\"标记为已通过？"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "将 {0} 标记为完成。如有证书，请附加。"
+
 msgid "Mark absent"
 msgstr "标记缺席"
 
@@ -14346,6 +14369,9 @@ msgstr "还没有组件"
 msgid "No condition may match"
 msgstr "没有条件可以匹配"
 
+msgid "No content"
+msgstr "无内容"
+
 msgid "No control account has a balance at the cutover."
 msgstr "截至结转日期，无控制帐户有余额"
 
@@ -14429,9 +14455,6 @@ msgstr "此客户没有电子邮件地址"
 
 msgid "No employees assigned this week"
 msgstr "本周没有分配员工"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "尚未分配员工。添加群组以查看状态。"
 
 msgid "No employees found"
 msgstr "未找到员工"
@@ -14700,6 +14723,9 @@ msgstr "无付款行。"
 
 msgid "No payments yet."
 msgstr "还没有付款。"
+
+msgid "No PDF uploaded"
+msgstr "未上传 PDF"
 
 msgid "No planned invoices are removed."
 msgstr "未删除已计划的发票。"
@@ -15760,14 +15786,14 @@ msgstr "订单日期"
 msgid "Order Date"
 msgstr "订单日期"
 
+msgid "Order Items"
+msgstr "订购物料"
+
 msgid "Order Multiple"
 msgstr "订购倍数"
 
 msgid "Order Multiple:"
 msgstr "订购倍数："
-
-msgid "Order Parts"
-msgstr "订购零件"
 
 msgid "Order Qty"
 msgstr "订单数量"
@@ -17167,6 +17193,9 @@ msgstr "公开"
 msgid "Publish"
 msgstr "发布"
 
+msgid "Publish Training"
+msgstr "发布培训"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "发布版本{0}?"
@@ -18244,6 +18273,9 @@ msgstr "移除身份验证器应用"
 msgid "Remove clause"
 msgstr "移除条款"
 
+msgid "Remove Completion"
+msgstr "移除完成"
+
 msgid "Remove condition"
 msgstr "移除条件"
 
@@ -18294,6 +18326,9 @@ msgstr "移除零件"
 
 msgid "Remove path"
 msgstr "移除路径"
+
+msgid "Remove PDF"
+msgstr "移除 PDF"
 
 msgid "Remove row"
 msgstr "移除行"
@@ -18401,6 +18436,9 @@ msgstr "重新打开"
 msgid "Reopen as Revision"
 msgstr "作为修订版重新打开"
 
+msgid "Reopen Training"
+msgstr "重新打开培训"
+
 msgid "Reorder"
 msgstr "重新排序"
 
@@ -18445,6 +18483,9 @@ msgstr "重复运行"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "为 {inputLabel} 中的每个项目重复一次"
+
+msgid "Replace"
+msgstr "替换"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "在设置会计之前，将 Carbon 的默认科目表替换为您自己的"
@@ -21691,6 +21732,9 @@ msgstr "切换到平移模式"
 msgid "Switch to select mode"
 msgstr "切换到选择模式"
 
+msgid "Switch to Written Content"
+msgstr "切换到书面内容"
+
 msgid "Switch users over and confirm access"
 msgstr "切换用户并确认访问权限"
 
@@ -21754,6 +21798,9 @@ msgstr "采用制造此物料所消耗的原材料中最短的保质期。当产
 
 msgid "taken"
 msgstr "已采取"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "在 Carbon 外进行。您将每位员工标记为完成。"
 
 msgid "Takes Effect"
 msgstr "生效"
@@ -23010,6 +23057,12 @@ msgstr "在此批量批次中创建的所有工单中要生产的总计;与每�
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "校准值进行比对的可追溯参考(例如NIST标准、标准器序列号)。"
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "培训返回草稿，以便您可以更改它。员工无法打开它，直到您再次发布它。"
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "培训对 {employeeName} 返回待处理。员工保留此培训授予的任何技能。如果需要，在其技能页面上移除它。"
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "流转卡列出物料清单上的每个物料及其数量。"
 
@@ -23407,6 +23460,9 @@ msgstr "此采购订单"
 
 msgid "This Quarter"
 msgstr "本季度"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "这将移除 PDF。员工将改为查看书面内容。"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
@@ -24001,8 +24057,14 @@ msgstr "培训"
 msgid "Training Assignments"
 msgstr "培训分配"
 
+msgid "Training not recorded"
+msgstr "培训未记录"
+
 msgid "Training Plan"
 msgstr "培训计划"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "在 Carbon 外进行的培训，例如供应商课程。该作业仅有名称。管理员将每位员工标记为完成，并可附加其证书。"
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "通过 Academy 和应用内指南培训班组"
@@ -24560,6 +24622,9 @@ msgstr "上传失败。请重试。"
 
 msgid "Upload new backup…"
 msgstr "上传新备份…"
+
+msgid "Upload PDF"
+msgstr "上传 PDF"
 
 msgid "Uploaded model"
 msgstr "已上传模型"
@@ -25330,6 +25395,9 @@ msgstr "每项资产的价值、使用期限以及租期结束时的处理方式
 msgid "What each period's payment is for this asset in the first year"
 msgstr "第一年内该资产每个期间的付款是多少"
 
+msgid "What employees read before the questions"
+msgstr "员工答题前阅读的内容"
+
 msgid "What happens to an invoice once it is created"
 msgstr "发票创建后会发生什么"
 
@@ -25868,6 +25936,9 @@ msgstr "配置和数据工作会议"
 
 msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
+
+msgid "Write"
+msgstr "撰写"
 
 msgid "Write a note…"
 msgstr "输入备注…"

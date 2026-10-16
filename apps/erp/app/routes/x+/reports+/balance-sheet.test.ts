@@ -360,15 +360,15 @@ describe("balance sheet configured CTA", () => {
     });
   });
 
-  it.each([
-    "cross-group",
-    "non-root"
-  ])("refuses %s configuration before reading defaults", async (caseName) => {
-    if (caseName === "cross-group") rootGroup = "other-group";
-    else rootParent = "another-parent";
-    await expect(runLoader("child")).rejects.toMatchObject({ status: 302 });
-    expect(reads.some((read) => read.table === "accountDefault")).toBe(false);
-  });
+  it.each(["cross-group", "non-root"])(
+    "refuses %s configuration before reading defaults",
+    async (caseName) => {
+      if (caseName === "cross-group") rootGroup = "other-group";
+      else rootParent = "another-parent";
+      await expect(runLoader("child")).rejects.toMatchObject({ status: 302 });
+      expect(reads.some((read) => read.table === "accountDefault")).toBe(false);
+    }
+  );
 
   it("does not escalate an API key when auth returns an RLS client", async () => {
     defaultError = {
@@ -388,23 +388,23 @@ describe("balance sheet configured CTA", () => {
     expect(reads).toEqual([]);
   });
 
-  it.each([
-    "all",
-    "child"
-  ])("uses the reporting parent's renamed account and recomputes every total for %s", async (companySelection) => {
-    const result = await runLoader(companySelection);
-    expect(amount(result.balanceSheet, "custom-cta")).toBe(40);
-    expect(amount(result.balanceSheet, "child-cta")).toBe(0);
-    expect(amount(result.balanceSheet, "reserves")).toBe(40);
-    expect(amount(result.balanceSheet, "equity")).toBe(160);
-    expect(amount(result.balanceSheet, "balance-sheet")).toBe(0);
-    expect(amount(result.balanceSheet, "equity", "2026-08")).toBe(80);
-    expect(amount(result.balanceSheet, "balance-sheet", "2026-08")).toBe(0);
-    expect(reads).toContainEqual({
-      table: "accountDefault",
-      filters: { companyId: "parent" }
-    });
-  });
+  it.each(["all", "child"])(
+    "uses the reporting parent's renamed account and recomputes every total for %s",
+    async (companySelection) => {
+      const result = await runLoader(companySelection);
+      expect(amount(result.balanceSheet, "custom-cta")).toBe(40);
+      expect(amount(result.balanceSheet, "child-cta")).toBe(0);
+      expect(amount(result.balanceSheet, "reserves")).toBe(40);
+      expect(amount(result.balanceSheet, "equity")).toBe(160);
+      expect(amount(result.balanceSheet, "balance-sheet")).toBe(0);
+      expect(amount(result.balanceSheet, "equity", "2026-08")).toBe(80);
+      expect(amount(result.balanceSheet, "balance-sheet", "2026-08")).toBe(0);
+      expect(reads).toContainEqual({
+        table: "accountDefault",
+        filters: { companyId: "parent" }
+      });
+    }
+  );
 
   it("fills single-company translated synthetic income from the full income statement", async () => {
     const income = sourceChart.find((row) => row.id === NET_INCOME_ACCOUNT_ID)!;
@@ -488,16 +488,17 @@ describe("balance sheet configured CTA", () => {
         defaultError = { message: "Default lookup failed" };
       }
     }
-  ])("refuses $label without returning a partial report", async ({
-    change
-  }) => {
-    change();
-    await expect(runLoader()).rejects.toMatchObject({ status: 302 });
-    expect(flash).toHaveBeenCalledWith(
-      expect.any(Request),
-      expect.objectContaining({ success: false })
-    );
-  });
+  ])(
+    "refuses $label without returning a partial report",
+    async ({ change }) => {
+      change();
+      await expect(runLoader()).rejects.toMatchObject({ status: 302 });
+      expect(flash).toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.objectContaining({ success: false })
+      );
+    }
+  );
 
   it("propagates a subsidiary error before applying CTA", async () => {
     vi.mocked(getConsolidatedPeriodSeriesForReport).mockResolvedValue({

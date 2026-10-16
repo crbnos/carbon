@@ -214,38 +214,37 @@ describe("translateCompanyBalances", () => {
     expect(outside.error).toEqual(expect.stringMatching(/source.*balanc/i));
   });
 
-  it.each([
-    "Unknown",
-    null
-  ])("rejects invalid leaf account class %s", async (accountClass) => {
-    const result = await translate(
-      balanced.map((row) =>
-        row.id === "cash" ? { ...row, class: accountClass } : row
-      )
-    );
-    expect(result).toEqual({
-      data: null,
-      cta: 0,
-      error: expect.stringMatching(/class.*cash|cash.*class/i)
-    });
-  });
+  it.each(["Unknown", null])(
+    "rejects invalid leaf account class %s",
+    async (accountClass) => {
+      const result = await translate(
+        balanced.map((row) =>
+          row.id === "cash" ? { ...row, class: accountClass } : row
+        )
+      );
+      expect(result).toEqual({
+        data: null,
+        cta: 0,
+        error: expect.stringMatching(/class.*cash|cash.*class/i)
+      });
+    }
+  );
 
-  it.each([
-    Number.NaN,
-    Number.POSITIVE_INFINITY,
-    Number.NEGATIVE_INFINITY
-  ])("rejects nonfinite source balance %s", async (balanceAtDate) => {
-    const result = await translate(
-      balanced.map((row) =>
-        row.id === "cash" ? { ...row, balanceAtDate } : row
-      )
-    );
-    expect(result).toEqual({
-      data: null,
-      cta: 0,
-      error: expect.stringMatching(/balanc.*cash|cash.*balanc/i)
-    });
-  });
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "rejects nonfinite source balance %s",
+    async (balanceAtDate) => {
+      const result = await translate(
+        balanced.map((row) =>
+          row.id === "cash" ? { ...row, balanceAtDate } : row
+        )
+      );
+      expect(result).toEqual({
+        data: null,
+        cta: 0,
+        error: expect.stringMatching(/balanc.*cash|cash.*balanc/i)
+      });
+    }
+  );
 
   it("excludes groups and synthetic income before both validation and translation", async () => {
     const result = await translate(
@@ -297,49 +296,44 @@ describe("translateCompanyBalances", () => {
     });
   });
 
-  it.each([
-    null,
-    "",
-    "   "
-  ])("rejects missing source currency %j", async (sourceCurrency) => {
-    const result = await translate(balanced, [{ ...rates, sourceCurrency }]);
-    expect(result).toEqual({
-      data: null,
-      cta: 0,
-      error: expect.stringMatching(/source currency/i)
-    });
-  });
+  it.each([null, "", "   "])(
+    "rejects missing source currency %j",
+    async (sourceCurrency) => {
+      const result = await translate(balanced, [{ ...rates, sourceCurrency }]);
+      expect(result).toEqual({
+        data: null,
+        cta: 0,
+        error: expect.stringMatching(/source currency/i)
+      });
+    }
+  );
 
-  it.each([
-    null,
-    undefined,
-    0,
-    -1,
-    Number.NaN,
-    Number.POSITIVE_INFINITY
-  ])("rejects invalid applicable rate %s", async (closingRate) => {
-    const result = await translate(balanced, [{ ...rates, closingRate }]);
-    expect(result).toEqual({
-      data: null,
-      cta: 0,
-      error: expect.stringMatching(/rate/i)
-    });
-  });
+  it.each([null, undefined, 0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid applicable rate %s",
+    async (closingRate) => {
+      const result = await translate(balanced, [{ ...rates, closingRate }]);
+      expect(result).toEqual({
+        data: null,
+        cta: 0,
+        error: expect.stringMatching(/rate/i)
+      });
+    }
+  );
 
-  it.each([
-    "Average",
-    "Historical"
-  ])("validates applicable %s rates", async (consolidatedRate) => {
-    const result = await translate(
-      balanced.map((row) => ({ ...row, consolidatedRate })),
-      [{ ...rates, averageRate: 0, historicalRate: Number.NaN }]
-    );
-    expect(result).toEqual({
-      data: null,
-      cta: 0,
-      error: expect.stringMatching(/rate/i)
-    });
-  });
+  it.each(["Average", "Historical"])(
+    "validates applicable %s rates",
+    async (consolidatedRate) => {
+      const result = await translate(
+        balanced.map((row) => ({ ...row, consolidatedRate })),
+        [{ ...rates, averageRate: 0, historicalRate: Number.NaN }]
+      );
+      expect(result).toEqual({
+        data: null,
+        cta: 0,
+        error: expect.stringMatching(/rate/i)
+      });
+    }
+  );
 
   it("uses identity when the source currency equals the requested currency", async () => {
     const result = await translate(balanced, [
@@ -443,237 +437,239 @@ describe("translateCompanyPeriodSeries", () => {
 });
 
 describe("single-company period series and configured CTA", () => {
-  it.each([
-    "active",
-    "inactive leaf",
-    "inactive group",
-    "paged history"
-  ])("derives translated synthetic income including %s history, then rolls CTA into Equity", async (state) => {
-    const buckets = computeReportPeriodBuckets(
-      "2026-08-01",
-      "2026-08-31",
-      "month",
-      1
-    );
-    const row = (
-      id: string,
-      parentId: string | null,
-      accountClass: ChartPeriodSeries["class"],
-      extra: Partial<ChartPeriodSeries> = {}
-    ) => ({
-      id,
-      parentId,
-      class: accountClass,
-      companyGroupId: "group",
-      active: true,
-      isGroup: false,
-      isSystem: false,
-      incomeBalance: "Balance Sheet",
-      consolidatedRate: "Current",
-      ...extra
-    });
-    const emptyHistory =
-      state === "paged history"
-        ? Array.from({ length: 1000 }, (_, index) =>
-            row(`old-${index}`, "assets", "Asset", { active: false })
-          )
-        : [];
-    const chart = [
-      ...emptyHistory,
-      row("balance-sheet", null, "Asset", { isGroup: true, isSystem: true }),
-      row("assets", "balance-sheet", "Asset", { isGroup: true }),
-      row("cash", "assets", "Asset"),
-      row("equity", "balance-sheet", "Equity", { isGroup: true }),
-      row("reserves", "equity", "Equity", { isGroup: true }),
-      row("custom-cta", "reserves", "Equity", {
-        number: "3999",
-        name: "Renamed FX Reserve"
-      }),
-      row("income-statement", null, "Revenue", {
-        isGroup: true,
-        isSystem: true,
-        incomeBalance: "Income Statement"
-      }),
-      row("sales", "income-statement", "Revenue", {
-        consolidatedRate: "Average",
-        incomeBalance: "Income Statement"
-      }),
-      row("expense-group", "income-statement", "Expense", {
-        isGroup: true,
-        active: state !== "inactive group",
-        incomeBalance: "Income Statement"
-      }),
-      row("expenses", "expense-group", "Expense", {
-        active: state !== "inactive leaf",
-        consolidatedRate: "Average",
-        incomeBalance: "Income Statement"
-      })
-    ];
-    const sourceBalances = [
-      ...emptyHistory.map((account) => ({ ...account, balanceAtDate: 0 })),
-      ...balanced
-    ];
-    const paged = (data: unknown[]) => {
-      let start = 0,
-        end = 999;
-      const query = {
-        order: () => query,
-        range: (from: number, to: number) => {
-          start = from;
-          end = to;
-          return query;
-        },
-        then: (resolve: (value: unknown) => unknown) =>
-          resolve({ data: data.slice(start, end + 1), error: null })
-      };
-      return query;
-    };
-    const client = {
-      rpc(name: string, args: RateArgs) {
-        if (name === "getConsolidationRates") {
-          expect(args.p_company_id).toBe("subsidiary");
-          expect(args.p_target_currency).toBe("USD");
-          return Promise.resolve({
-            data: [{ ...rates, closingRate: 2, averageRate: 1.5 }],
-            error: null
-          });
-        }
-        if (name === "accountTreeBalancesByCompany") {
-          return paged(
-            sourceBalances.map((account) => ({
-              accountId: account.id,
-              balance: account.balanceAtDate,
-              balanceAtDate: account.balanceAtDate,
-              netChange: account.balanceAtDate
-            }))
-          );
-        }
-        if (name === "accountTreeBalancePeriodSeries") {
-          return paged(
-            sourceBalances.map((account) => ({
-              accountId: account.id,
-              periodEnd: "2026-08-31",
-              netChange: account.balanceAtDate,
-              balanceAtDate: account.balanceAtDate
-            }))
-          );
-        }
-        throw new Error(`Unexpected RPC ${name}`);
-      },
-      from(table: string) {
-        const filters: Record<string, unknown> = {};
-        let pageStart = 0,
-          pageEnd = 999;
-        const builder = {
+  it.each(["active", "inactive leaf", "inactive group", "paged history"])(
+    "derives translated synthetic income including %s history, then rolls CTA into Equity",
+    async (state) => {
+      const buckets = computeReportPeriodBuckets(
+        "2026-08-01",
+        "2026-08-31",
+        "month",
+        1
+      );
+      const row = (
+        id: string,
+        parentId: string | null,
+        accountClass: ChartPeriodSeries["class"],
+        extra: Partial<ChartPeriodSeries> = {}
+      ) => ({
+        id,
+        parentId,
+        class: accountClass,
+        companyGroupId: "group",
+        active: true,
+        isGroup: false,
+        isSystem: false,
+        incomeBalance: "Balance Sheet",
+        consolidatedRate: "Current",
+        ...extra
+      });
+      const emptyHistory =
+        state === "paged history"
+          ? Array.from({ length: 1000 }, (_, index) =>
+              row(`old-${index}`, "assets", "Asset", { active: false })
+            )
+          : [];
+      const chart = [
+        ...emptyHistory,
+        row("balance-sheet", null, "Asset", { isGroup: true, isSystem: true }),
+        row("assets", "balance-sheet", "Asset", { isGroup: true }),
+        row("cash", "assets", "Asset"),
+        row("equity", "balance-sheet", "Equity", { isGroup: true }),
+        row("reserves", "equity", "Equity", { isGroup: true }),
+        row("custom-cta", "reserves", "Equity", {
+          number: "3999",
+          name: "Renamed FX Reserve"
+        }),
+        row("income-statement", null, "Revenue", {
+          isGroup: true,
+          isSystem: true,
+          incomeBalance: "Income Statement"
+        }),
+        row("sales", "income-statement", "Revenue", {
+          consolidatedRate: "Average",
+          incomeBalance: "Income Statement"
+        }),
+        row("expense-group", "income-statement", "Expense", {
+          isGroup: true,
+          active: state !== "inactive group",
+          incomeBalance: "Income Statement"
+        }),
+        row("expenses", "expense-group", "Expense", {
+          active: state !== "inactive leaf",
+          consolidatedRate: "Average",
+          incomeBalance: "Income Statement"
+        })
+      ];
+      const sourceBalances = [
+        ...emptyHistory.map((account) => ({ ...account, balanceAtDate: 0 })),
+        ...balanced
+      ];
+      const paged = (data: unknown[]) => {
+        let start = 0,
+          end = 999;
+        const query = {
+          order: () => query,
           range: (from: number, to: number) => {
-            pageStart = from;
-            pageEnd = to;
-            return builder;
+            start = from;
+            end = to;
+            return query;
           },
-          select: () => builder,
-          eq: (field: string, value: unknown) => {
-            filters[field] = value;
-            return builder;
-          },
-          order: () => builder,
-          single: async () => {
-            expect(table).toBe("accountDefault");
-            expect(filters.companyId).toBe("parent");
-            return {
-              data: { currencyTranslationAccount: "custom-cta" },
-              error: null
-            };
-          },
-          then: (resolve: (value: unknown) => unknown) => {
-            expect(table).toBe("accounts");
-            expect(filters.companyGroupId).toBe("group");
-            return resolve({
-              data: chart
-                .filter((row) =>
-                  Object.entries(filters).every(
-                    ([key, value]) => row[key as keyof typeof row] === value
-                  )
-                )
-                .slice(pageStart, pageEnd + 1),
+          then: (resolve: (value: unknown) => unknown) =>
+            resolve({ data: data.slice(start, end + 1), error: null })
+        };
+        return query;
+      };
+      const client = {
+        rpc(name: string, args: RateArgs) {
+          if (name === "getConsolidationRates") {
+            expect(args.p_company_id).toBe("subsidiary");
+            expect(args.p_target_currency).toBe("USD");
+            return Promise.resolve({
+              data: [{ ...rates, closingRate: 2, averageRate: 1.5 }],
               error: null
             });
           }
-        };
-        return builder;
-      }
-    } as unknown as SupabaseClient<Database>;
+          if (name === "accountTreeBalancesByCompany") {
+            return paged(
+              sourceBalances.map((account) => ({
+                accountId: account.id,
+                balance: account.balanceAtDate,
+                balanceAtDate: account.balanceAtDate,
+                netChange: account.balanceAtDate
+              }))
+            );
+          }
+          if (name === "accountTreeBalancePeriodSeries") {
+            return paged(
+              sourceBalances.map((account) => ({
+                accountId: account.id,
+                periodEnd: "2026-08-31",
+                netChange: account.balanceAtDate,
+                balanceAtDate: account.balanceAtDate
+              }))
+            );
+          }
+          throw new Error(`Unexpected RPC ${name}`);
+        },
+        from(table: string) {
+          const filters: Record<string, unknown> = {};
+          let pageStart = 0,
+            pageEnd = 999;
+          const builder = {
+            range: (from: number, to: number) => {
+              pageStart = from;
+              pageEnd = to;
+              return builder;
+            },
+            select: () => builder,
+            eq: (field: string, value: unknown) => {
+              filters[field] = value;
+              return builder;
+            },
+            order: () => builder,
+            single: async () => {
+              expect(table).toBe("accountDefault");
+              expect(filters.companyId).toBe("parent");
+              return {
+                data: { currencyTranslationAccount: "custom-cta" },
+                error: null
+              };
+            },
+            then: (resolve: (value: unknown) => unknown) => {
+              expect(table).toBe("accounts");
+              expect(filters.companyGroupId).toBe("group");
+              return resolve({
+                data: chart
+                  .filter((row) =>
+                    Object.entries(filters).every(
+                      ([key, value]) => row[key as keyof typeof row] === value
+                    )
+                  )
+                  .slice(pageStart, pageEnd + 1),
+                error: null
+              });
+            }
+          };
+          return builder;
+        }
+      } as unknown as SupabaseClient<Database>;
 
-    const source = await getFinancialStatementPeriodSeries(
-      client,
-      "group",
-      "subsidiary",
-      {
-        buckets,
-        includeCurrentYearEarnings: true,
-        translate: { targetCurrency: "USD" }
-      }
-    );
-    expect(source.error).toBeNull();
-    expect(
-      source.data?.find((account) => account.id === "expense-group")?.periods[
-        "2026-08"
-      ]?.translatedBalance
-    ).toBe(30);
-    const singlePeriod = await getFinancialStatementBalances(
-      client,
-      "group",
-      "subsidiary",
-      {
-        startDate: "2026-08-01",
-        endDate: "2026-08-31",
-        includeCurrentYearEarnings: true
-      }
-    );
-    expect(singlePeriod.error).toBeNull();
-    expect(
-      singlePeriod.data?.find((account) => account.id === "expenses")
-        ?.balanceAtDate
-    ).toBe(20);
-    expect(
-      singlePeriod.data?.find((account) => account.id === NET_INCOME_ACCOUNT_ID)
-        ?.balanceAtDate
-    ).toBe(80);
-    expect(source.ctaByBucket).toEqual({ "2026-08": 40 });
-    if (!source.data) throw new Error("Missing source report");
-    const original = structuredClone(source.data);
-    const args = {
-      accounts: source.data,
-      bucketKeys: ["2026-08"],
-      ctaByBucket: source.ctaByBucket
-    };
-    const adjusted = await applyCtaToReportPeriodSeries(
-      client,
-      "group",
-      "parent",
-      args
-    );
-    const repeated = await applyCtaToReportPeriodSeries(
-      client,
-      "group",
-      "parent",
-      args
-    );
-    expect(adjusted.error).toBeNull();
-    const cells = new Map(
-      adjusted.data?.map((account) => [account.id, account.periods["2026-08"]])
-    );
-    expect(cells.get("cash")?.translatedBalance).toBe(160);
-    expect(cells.get(NET_INCOME_ACCOUNT_ID)).toMatchObject({
-      balanceAtDate: 80,
-      netChange: 80,
-      translatedBalance: 120,
-      translatedNetChange: 120
-    });
-    expect(cells.get("custom-cta")?.translatedBalance).toBe(40);
-    expect(cells.get("reserves")?.translatedBalance).toBe(40);
-    expect(cells.get("equity")?.translatedBalance).toBe(160);
-    expect(cells.get("balance-sheet")?.translatedBalance).toBe(0);
-    expect(repeated).toEqual(adjusted);
-    expect(source.data).toEqual(original);
-  });
+      const source = await getFinancialStatementPeriodSeries(
+        client,
+        "group",
+        "subsidiary",
+        {
+          buckets,
+          includeCurrentYearEarnings: true,
+          translate: { targetCurrency: "USD" }
+        }
+      );
+      expect(source.error).toBeNull();
+      expect(
+        source.data?.find((account) => account.id === "expense-group")?.periods[
+          "2026-08"
+        ]?.translatedBalance
+      ).toBe(30);
+      const singlePeriod = await getFinancialStatementBalances(
+        client,
+        "group",
+        "subsidiary",
+        {
+          startDate: "2026-08-01",
+          endDate: "2026-08-31",
+          includeCurrentYearEarnings: true
+        }
+      );
+      expect(singlePeriod.error).toBeNull();
+      expect(
+        singlePeriod.data?.find((account) => account.id === "expenses")
+          ?.balanceAtDate
+      ).toBe(20);
+      expect(
+        singlePeriod.data?.find(
+          (account) => account.id === NET_INCOME_ACCOUNT_ID
+        )?.balanceAtDate
+      ).toBe(80);
+      expect(source.ctaByBucket).toEqual({ "2026-08": 40 });
+      if (!source.data) throw new Error("Missing source report");
+      const original = structuredClone(source.data);
+      const args = {
+        accounts: source.data,
+        bucketKeys: ["2026-08"],
+        ctaByBucket: source.ctaByBucket
+      };
+      const adjusted = await applyCtaToReportPeriodSeries(
+        client,
+        "group",
+        "parent",
+        args
+      );
+      const repeated = await applyCtaToReportPeriodSeries(
+        client,
+        "group",
+        "parent",
+        args
+      );
+      expect(adjusted.error).toBeNull();
+      const cells = new Map(
+        adjusted.data?.map((account) => [
+          account.id,
+          account.periods["2026-08"]
+        ])
+      );
+      expect(cells.get("cash")?.translatedBalance).toBe(160);
+      expect(cells.get(NET_INCOME_ACCOUNT_ID)).toMatchObject({
+        balanceAtDate: 80,
+        netChange: 80,
+        translatedBalance: 120,
+        translatedNetChange: 120
+      });
+      expect(cells.get("custom-cta")?.translatedBalance).toBe(40);
+      expect(cells.get("reserves")?.translatedBalance).toBe(40);
+      expect(cells.get("equity")?.translatedBalance).toBe(160);
+      expect(cells.get("balance-sheet")?.translatedBalance).toBe(0);
+      expect(repeated).toEqual(adjusted);
+      expect(source.data).toEqual(original);
+    }
+  );
 });
