@@ -15,6 +15,7 @@ import {
   imageTransformErrorMessage,
   storage
 } from "@carbon/files";
+import { parseCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type {
@@ -24,7 +25,23 @@ import type {
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { ruleError } from "~/utils/supabase";
+import {
+  CSV_ID_ENTITY_TYPES,
+  enumMappingsForCsv,
+  fetchedImportOption,
+  withCsvIdMatches
+} from "./import-enum-mappings";
+import { defaultsForNewRows, splitRefusedRows } from "./import-report";
+import {
+  columnMappingsFromHeaders,
+  enumDefault,
+  fieldMappings,
+  importSchemas,
+  parseCsvHeader
+} from "./imports.models";
 import type {
+  CsvImportTable,
   PriceBreak,
   SupplierPartPricing,
   SupplierPriceMap
@@ -127,6 +144,116 @@ export async function getTimezoneNames(client: SupabaseClient<Database>) {
 }
 
 export { getDocumentType } from "@carbon/files";
+
+// How rows of the method files refer to each other (`import-csv/method-import.ts`).
+const METHOD_IMPORT_TABLES: ReadonlySet<CsvImportTable> = new Set([
+  "partWithMethod",
+  "bom",
+  "operations"
+]);
+const METHOD_IMPORT_NOTES = [
+  "One row per record, told apart by `rowType`. PART rows create or update a part (its Part Number in `readableId`).",
+  "BOM rows add a component to the part named in `parentId` (a Part Number); `componentId` is the component's Part Number. A component must already exist or be a PART row in the same file.",
+  "BOP rows add an operation to the part in `parentId`, numbered by `opNo` (unique per part). STEP, TOOL and PARAM rows attach to an operation by its `opNo`.",
+  "`process` and `workCenter` are matched by name and must already exist. In-house operations (anything but Outside Processing) need setup, labor and machine units.",
+  "`supplier` is for Outside Processing operations only, and must already offer the operation's `process`."
+];
+
+type OptionFetcher = (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => Promise<{ data: { id: string; name: string }[] | null }>;
+
+type ImportFieldDefinition = {
+  label: string;
+  required: boolean;
+  type: string;
+  default?: string;
+  enumData?: {
+    description?: string;
+    options?: readonly string[];
+    default?: string;
+    fetcher?: OptionFetcher;
+  };
+};
+
+/**
+ * Get the columns a CSV import accepts for one table: each field's key, label, whether it is required, its type, default and allowed values.
+ *
+ * Allowed values that come from company data (units of measure, locations,
+ * material substances and forms) are read live. Use the keys or labels as CSV
+ * headers for `importCsvText`.
+ * @mcp read
+ */
+export async function getCsvImportFields(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  table: CsvImportTable
+) {
+  const fields = Object.entries(
+    fieldMappings[table] as Record<string, ImportFieldDefinition>
+  );
+
+  // One read per distinct fetcher, not per field.
+  const fetchers = [
+    ...new Set(
+      fields.flatMap(([, field]) =>
+        field.enumData?.fetcher ? [field.enumData.fetcher] : []
+      )
+    )
+  ];
+  const fetched = new Map(
+    await Promise.all(
+      fetchers.map(
+        async (fetcher) => [fetcher, await fetcher(client, companyId)] as const
+      )
+    )
+  );
+
+  const schemaFields = importSchemas[table].shape as Record<
+    string,
+    { description?: string }
+  >;
+
+  return {
+    data: {
+      table,
+      notes: [
+        ...(fields.some(([key]) => key === "id")
+          ? [
+              "Unique ID (`id`) is the key rows are matched on: use a stable value such as the part number, so sending a row again updates it.",
+              "An update writes only the cells a row holds: an empty cell or a missing column keeps the saved value, and cannot clear it."
+            ]
+          : []),
+        "Headers may be field keys or labels. On a new record, a blank optional cell takes the default.",
+        ...(METHOD_IMPORT_TABLES.has(table) ? METHOD_IMPORT_NOTES : [])
+      ],
+      fields: fields.map(([key, field]) => {
+        const enumData = field.enumData;
+        // Company data is listed by the label the import matches first (a
+        // name, or an employee's email); its id is accepted too.
+        const fetchedOptions = enumData?.fetcher
+          ? (fetched.get(enumData.fetcher)?.data ?? []).map(fetchedImportOption)
+          : undefined;
+        const fallback = field.default ?? enumDefault(enumData);
+        return {
+          key,
+          label: field.label,
+          required: field.required,
+          type: field.type,
+          default:
+            fetchedOptions?.find((option) => option.value === fallback)
+              ?.label ?? fallback,
+          description: enumData?.description ?? schemaFields[key]?.description,
+          options: fetchedOptions
+            ? fetchedOptions.map((option) => option.label)
+            : enumData?.options
+        };
+      })
+    },
+    error: null
+  };
+}
 
 /**
  * The item's CAD model in the same shape the line views expose it, so it drops
@@ -248,6 +375,222 @@ export async function importCsv(
   return serverFns
     .as({ client, db, companyId: args.companyId, userId: args.userId })
     .invoke("import-csv", args as unknown as ServerFnInput<"import-csv">);
+}
+
+/**
+ * Import many records from CSV text in one call: parts with their bill of materials and routing, materials, tools, customers, suppliers, work centers, processes, opening stock and more.
+ *
+ * For callers that cannot upload a file, such as an agent over MCP. Without
+ * `columnMappings`, the CSV's headers must name the table's fields by key or
+ * label (see `getCsvImportFields`), and a header that matches no field is
+ * refused rather than dropped. The mapping is validated against the table's
+ * import schema, as the app's import route does. Returns the importer's
+ * report: rows inserted, updated and skipped, the refused rows in two lists,
+ * each row with its reason and cells, `missing` (a required value is empty)
+ * and `mismatched` (a value that matches no option or record, or has the
+ * wrong form), and `defaults`: per field, the value new records take where
+ * the file leaves it empty, and how many rows take it. Rows are matched on their Unique ID, so sending a row again
+ * updates it rather than duplicating it. On a new record an empty or missing
+ * enum cell takes the field's default; on an update, an empty cell or a
+ * missing column keeps the saved value, so a row needs only the columns that
+ * change. A value is matched to an option by its label or id in any case; a
+ * row holding a value that matches no option is refused as mismatched unless
+ * `enumMappings` maps the value. A supplier may also be named by the Unique ID
+ * it was imported with. With
+ * `dryRun`, the import runs and rolls back: the report shows what it would
+ * insert, update, skip and refuse, and nothing is written.
+ * @mcp action
+ */
+export async function importCsvText(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    table: CsvImportTable;
+    csv: string;
+    columnMappings?: Record<string, string>;
+    enumMappings?: Record<string, Record<string, string>>;
+    /** Report what the import would do, row by row, without writing anything. */
+    dryRun?: boolean;
+    companyId: string;
+    userId: string;
+  }
+) {
+  let columnMappings = args.columnMappings;
+  if (!columnMappings) {
+    const fromHeaders = columnMappingsFromHeaders(
+      args.table,
+      parseCsvHeader(args.csv)
+    );
+    if (fromHeaders.unknownHeaders.length > 0) {
+      return {
+        data: null,
+        error: ruleError(
+          `Columns not recognized for ${args.table}: ${fromHeaders.unknownHeaders.join(", ")}. Rename them to field keys listed by shared_getCsvImportFields, remove them, or pass columnMappings.`
+        )
+      };
+    }
+    const ambiguous = Object.entries(fromHeaders.ambiguousHeaders);
+    if (ambiguous.length > 0) {
+      return {
+        data: null,
+        error: ruleError(
+          `Columns that name more than one field of ${args.table}: ${ambiguous.map(([header, keys]) => `${header} (${keys.join(" or ")})`).join("; ")}. Use the field key as the header.`
+        )
+      };
+    }
+    columnMappings = fromHeaders.columnMappings;
+  }
+
+  const mapping = importSchemas[args.table].safeParse(columnMappings);
+  if (!mapping.success) {
+    const fields = [
+      ...new Set(mapping.error.issues.map((issue) => issue.path.join(".")))
+    ];
+    return {
+      data: null,
+      error: ruleError(
+        `Missing or invalid columns for ${args.table}: ${fields.join(", ")}`
+      )
+    };
+  }
+
+  const validMappings = mapping.data as Record<string, string>;
+
+  // The wizard sends enum mappings for every enum field; the importer needs
+  // them for defaults such as a process's standard factor.
+  const fields = Object.entries(
+    fieldMappings[args.table] as Record<string, ImportFieldDefinition>
+  );
+  const fetches = new Map<OptionFetcher, ReturnType<OptionFetcher>>();
+  for (const [key, field] of fields) {
+    const fetcher = field.enumData?.fetcher;
+    if (fetcher && validMappings[key] && !fetches.has(fetcher)) {
+      fetches.set(fetcher, fetcher(client, args.companyId));
+    }
+  }
+  const optionsByField = Object.fromEntries(
+    await Promise.all(
+      fields.flatMap(([key, field]) => {
+        const fetch = field.enumData?.fetcher
+          ? fetches.get(field.enumData.fetcher)
+          : undefined;
+        return fetch
+          ? [
+              fetch.then(
+                ({ data }) =>
+                  [key, (data ?? []).map(fetchedImportOption)] as const
+              )
+            ]
+          : [];
+      })
+    )
+  );
+  const byOption = enumMappingsForCsv(
+    args.table,
+    parseCsv<Record<string, string>>(args.csv).rows,
+    validMappings,
+    optionsByField,
+    args.enumMappings
+  );
+  const { enumMappings, unmatched } = withCsvIdMatches(
+    byOption.enumMappings,
+    byOption.unmatched,
+    await csvIdMatches(client, args.companyId, byOption.unmatched),
+    optionsByField
+  );
+  // A value that matches no option refuses its row, not the whole file: the
+  // report lists it as mismatched beside the rows that are missing values.
+  const tableFields = fieldMappings[args.table] as Record<
+    string,
+    ImportFieldDefinition
+  >;
+  const refusedValues = Object.fromEntries(
+    Object.entries(unmatched).map(([key, values]) => [
+      key,
+      { label: tableFields[key]?.label ?? key, values }
+    ])
+  );
+
+  // Send the validated mapping, as the app's import route does: the schema
+  // drops keys it does not declare. Unlike the wizard, an update keeps every
+  // value the CSV does not hold: an agent sends only what changes.
+  const result = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("import-csv", {
+      table: args.table,
+      csv: args.csv,
+      columnMappings: validMappings,
+      enumMappings,
+      dryRun: args.dryRun,
+      keepSavedValues: true,
+      refusedValues
+    });
+  if (!result.data) return { data: null, error: result.error };
+  // Updated and skipped rows take no defaults; refused rows take them once fixed.
+  const defaults = defaultsForNewRows({
+    table: args.table,
+    rows: parseCsv<Record<string, string>>(args.csv).rows,
+    columnMappings: validMappings,
+    enumMappings,
+    excludedRows: [
+      ...(result.data.existingRows ?? []),
+      ...result.data.skipped.map((issue) => issue.row)
+    ]
+  });
+  return {
+    data: splitRefusedRows(result.data, defaults),
+    error: result.error
+  };
+}
+
+/**
+ * The records an earlier import gave a CSV Unique ID, for the unmatched values
+ * of fields that can name one (CSV_ID_ENTITY_TYPES): per field, Unique ID →
+ * record id. One read per entity type; today that is suppliers only.
+ */
+async function csvIdMatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  unmatched: Record<string, string[]>
+): Promise<Record<string, Map<string, string>>> {
+  const fields = Object.entries(unmatched).flatMap(([key, values]) => {
+    const entityType = CSV_ID_ENTITY_TYPES[key];
+    return entityType ? [{ key, entityType, values }] : [];
+  });
+  const entityTypes = [...new Set(fields.map((field) => field.entityType))];
+  const found = await Promise.all(
+    entityTypes.map(async (entityType) => {
+      const values = [
+        ...new Set(
+          fields
+            .filter((field) => field.entityType === entityType)
+            .flatMap((field) => field.values)
+        )
+      ];
+      const { data } = await client
+        .from("externalIntegrationMapping")
+        .select("externalId, entityId")
+        .eq("companyId", companyId)
+        .eq("integration", "csv")
+        .eq("entityType", entityType)
+        .in("externalId", values);
+      return [
+        entityType,
+        new Map(
+          (data ?? []).flatMap((row) =>
+            row.externalId ? [[row.externalId, row.entityId] as const] : []
+          )
+        )
+      ] as const;
+    })
+  );
+  const byEntityType = new Map(found);
+  return Object.fromEntries(
+    fields.map((field) => [
+      field.key,
+      byEntityType.get(field.entityType) ?? new Map<string, string>()
+    ])
+  );
 }
 
 /** @mcp create */

@@ -14,7 +14,13 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
-import type { Kysely, Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
+import {
+  collectItemExtras,
+  emptyItemExtras,
+  writeItemExtras
+} from "./item-extras";
+import { inTransaction } from "./transaction";
 
 type Rec = Record<string, string>;
 type Summary = {
@@ -22,6 +28,8 @@ type Summary = {
   updated: number;
   errors: Array<{ row: number; reason: string }>;
   skipped: Array<{ row: number; reason: string }>;
+  /** Rows that updated an existing record, so took no defaults. */
+  existingRows?: number[];
 };
 
 const ROW_TYPES = ["PART", "BOM", "BOP", "STEP", "TOOL", "PARAM"] as const;
@@ -69,6 +77,10 @@ type ItemInfo = {
 const key = (readableId: string, revision: string) =>
   `${readableId} ${revision || "0"}`;
 
+/** The key of a supplier's process: a supplier and a process. */
+const supplierProcessKey = (supplierId: string, processId: string) =>
+  `${supplierId} ${processId}`;
+
 const num = (s: string | undefined): number | undefined => {
   if (s === undefined || s.trim() === "") return undefined;
   const n = Number(s);
@@ -87,6 +99,35 @@ const normalizeOperationType = (value: string): string =>
     : value === "Outside"
       ? "Outside Processing"
       : value;
+
+/**
+ * The order to write a file's part groups in: each part after the parts of the
+ * same file it uses as a material or tool, so a component's PART row may come
+ * after the assembly that uses it. Otherwise file order. A part that uses
+ * itself through others (A in B, B in A) is written in file order, and its
+ * missing component then fails the row as before.
+ */
+export function componentsFirst(
+  keys: string[],
+  usesOf: (key: string) => string[]
+): string[] {
+  const inFile = new Set(keys);
+  const placed = new Set<string>();
+  const visiting = new Set<string>();
+  const order: string[] = [];
+  const visit = (k: string) => {
+    if (placed.has(k) || visiting.has(k)) return;
+    visiting.add(k);
+    for (const used of usesOf(k)) {
+      if (used !== k && inFile.has(used)) visit(used);
+    }
+    visiting.delete(k);
+    placed.add(k);
+    order.push(k);
+  };
+  for (const k of keys) visit(k);
+  return order;
+}
 
 // The `row` reported on each error: the 0-based index of the data row. This must
 // match how the results modal keys errors to rows (by array index into the parsed
@@ -119,17 +160,23 @@ function normalizeRowType(
 // entry point
 // ---------------------------------------------------------------------------
 
+/**
+ * Imports a method file's parts, BOMs and operations one parent part at a time.
+ * Each part's group is written whole or not at all.
+ */
 export async function importMethods(
   db: Kysely<KyselyDatabase>,
   args: {
     table: "bom" | "operations" | "partWithMethod";
-    mappedRecords: Rec[];
+    // The file's rows as [row number, record]: a row rejected earlier (a
+    // reference outside the company) is left out but keeps its number.
+    rows: Array<[number, Rec]>;
     companyId: string;
     userId: string;
     summary: Summary;
   }
 ): Promise<void> {
-  const { table, mappedRecords, companyId, userId, summary } = args;
+  const { table, rows, companyId, userId, summary } = args;
 
   // 1. classify + group by parent part ------------------------------------
   const groups = new Map<string, Group>();
@@ -156,14 +203,14 @@ export async function importMethods(
     return b;
   };
 
-  mappedRecords.forEach((record, index) => {
+  for (const [index, record] of rows) {
     const rowType = normalizeRowType(record.rowType, table);
     if (!rowType) {
       summary.errors.push({
         row: rowOf(index),
         reason: `Unknown or missing Row Type "${text(record.rowType)}"`
       });
-      return;
+      continue;
     }
 
     if (rowType === "PART") {
@@ -173,11 +220,11 @@ export async function importMethods(
           row: rowOf(index),
           reason: "PART row is missing Part Number"
         });
-        return;
+        continue;
       }
       const g = getGroup(readableId, text(record.revision), index);
       g.partRow = { record, index };
-      return;
+      continue;
     }
 
     // BOM / BOP / STEP / TOOL / PARAM — keyed to a parent part.
@@ -187,7 +234,7 @@ export async function importMethods(
         row: rowOf(index),
         reason: `${rowType} row is missing Parent ID`
       });
-      return;
+      continue;
     }
     const g = getGroup(parentId, text(record.parentRevision), index);
     const bucket = getBucket(g, text(record.makeMethodVersion));
@@ -197,7 +244,7 @@ export async function importMethods(
     else if (rowType === "STEP") bucket.step.push(entry);
     else if (rowType === "TOOL") bucket.tool.push(entry);
     else if (rowType === "PARAM") bucket.param.push(entry);
-  });
+  }
 
   if (groups.size === 0) return;
 
@@ -299,6 +346,28 @@ export async function importMethods(
     }
   }
 
+  // The named suppliers' processes, by supplier and process: what an Outside
+  // Processing operation links to.
+  const supplierProcessMap = new Map<string, string>();
+  const namedSupplierIds = [
+    ...new Set(
+      [...supplierNames].flatMap((name) => supplierMap.get(name) ?? [])
+    )
+  ];
+  if (namedSupplierIds.length > 0) {
+    const rows = await db
+      .selectFrom("supplierProcess")
+      .select(["id", "supplierId", "processId"])
+      .where("companyId", "=", companyId)
+      .where("supplierId", "in", namedSupplierIds)
+      .orderBy("id")
+      .execute();
+    for (const r of rows) {
+      const k = supplierProcessKey(r.supplierId, r.processId);
+      if (!supplierProcessMap.has(k)) supplierProcessMap.set(k, r.id);
+    }
+  }
+
   // Set of parts that this file will create (so a same-file sub-assembly counts
   // as resolvable during validation even though it doesn't exist yet).
   const fileCreatedParts = new Set<string>();
@@ -306,8 +375,22 @@ export async function importMethods(
     if (g.partRow) fileCreatedParts.add(key(g.readableId, g.revision));
   }
 
-  // 3 + 4. validate and write each part group ------------------------------
-  for (const g of groups.values()) {
+  // 3 + 4. validate and write each part group, components first ------------
+  const writeOrder = componentsFirst([...groups.keys()], (k) => {
+    const uses: string[] = [];
+    for (const bucket of groups.get(k)!.versions.values()) {
+      for (const e of bucket.bom) {
+        uses.push(
+          key(text(e.record.componentId), text(e.record.componentRevision))
+        );
+      }
+      for (const e of bucket.tool) {
+        uses.push(key(text(e.record.toolId), text(e.record.toolRevision)));
+      }
+    }
+    return uses;
+  });
+  for (const g of writeOrder.map((k) => groups.get(k)!)) {
     const partLabel = `${g.readableId} rev ${g.revision}`;
     const errors = validateGroup(g, {
       itemMap,
@@ -316,7 +399,9 @@ export async function importMethods(
       processAmbiguous,
       workCenterMap,
       workCenterAmbiguous,
-      uomSet
+      uomSet,
+      supplierMap,
+      supplierProcessMap
     });
 
     if (errors.length > 0) {
@@ -331,22 +416,25 @@ export async function importMethods(
         itemMap,
         processMap,
         workCenterMap,
-        supplierMap
+        supplierMap,
+        supplierProcessMap
       });
-      if (result.filledAny) {
-        // A new part counts as imported; an existing part as updated.
-        if (g.partRow) summary.inserted++;
-        else summary.updated++;
-      } else if (result.skippedExisting) {
-        // The targeted version already had content — create-only, never clobber.
-        // Benign: not something the user needs to fix, so it's a skip, not an error.
+      // Every row counts once: the PART row as inserted (a new item) or
+      // updated (an existing one), each method row written as inserted, and
+      // each row of a version that already had content as skipped.
+      if (result.partCreated === true) summary.inserted++;
+      else if (result.partCreated === false) {
+        summary.updated++;
+        if (g.partRow) summary.existingRows?.push(rowOf(g.partRow.index));
+      }
+      summary.inserted += result.rowsInserted;
+      for (const { index, version } of result.skippedRows) {
+        // Create-only, never clobber. Benign: not something the user needs to
+        // fix, so it is a skip, not an error.
         summary.skipped.push({
-          row: rowOf(g.firstIndex),
-          reason: `Part ${partLabel} already has a method; skipped`
+          row: rowOf(index),
+          reason: `Part ${partLabel} already has a method${version ? ` (version ${version})` : ""}; skipped`
         });
-      } else if (g.partRow) {
-        // A PART row with no BOM/BOP rows — only the part itself was created.
-        summary.inserted++;
       }
     } catch (err) {
       summary.errors.push({
@@ -398,8 +486,11 @@ type Lookups = {
   workCenterMap: Map<string, string>;
   workCenterAmbiguous: Set<string>;
   uomSet: Set<string>;
+  supplierMap: Map<string, string>;
+  supplierProcessMap: Map<string, string>;
 };
 
+/** Every reason a part's group cannot be written; empty when it can. */
 function validateGroup(
   g: Group,
   lk: Lookups
@@ -481,6 +572,35 @@ function validateGroup(
       // In-house operations need time units.
       const opType =
         normalizeOperationType(text(e.record.operationType)) || "Process";
+
+      // The supplier of an Outside Processing operation must offer its
+      // process; before, an unmatched one left the operation without a
+      // supplier and no report.
+      const supplierName = text(e.record.supplier);
+      if (supplierName) {
+        const supplierId = lk.supplierMap.get(supplierName.toLowerCase());
+        const processId = lk.processMap.get(proc);
+        if (opType !== "Outside Processing") {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Operation Supplier is only for Outside Processing operations`
+          });
+        } else if (!supplierId) {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Operation Supplier "${supplierName}" not found`
+          });
+        } else if (
+          processId &&
+          !lk.supplierProcessMap.has(supplierProcessKey(supplierId, processId))
+        ) {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Operation Supplier "${supplierName}" has no "${text(e.record.process)}" process`
+          });
+        }
+      }
+
       if (opType !== "Outside Processing") {
         if (
           !text(e.record.setupUnit) ||
@@ -622,6 +742,10 @@ function validateGroup(
 // write (one transaction per part group → atomic per part, ADR-0001)
 // ---------------------------------------------------------------------------
 
+/**
+ * Writes one part's group in its own transaction: the PART row's item, then its
+ * materials, operations, steps, tools and parameters.
+ */
 async function writeGroup(
   db: Kysely<KyselyDatabase>,
   g: Group,
@@ -632,14 +756,22 @@ async function writeGroup(
     processMap: Map<string, string>;
     workCenterMap: Map<string, string>;
     supplierMap: Map<string, string>;
+    supplierProcessMap: Map<string, string>;
   }
-): Promise<{ filledAny: boolean; skippedExisting: boolean }> {
+): Promise<{
+  // Whether the PART row created the item (false: it already existed); null
+  // when the group has no PART row.
+  partCreated: boolean | null;
+  rowsInserted: number;
+  skippedRows: Array<{ index: number; version: string }>;
+}> {
   const { companyId, userId } = ctx;
   const now = () => datetime.timestamp();
 
-  return await db.transaction().execute(async (trx) => {
-    let filledAny = false;
-    let skippedExisting = false;
+  return await inTransaction(db, async (trx) => {
+    let partCreated: boolean | null = null;
+    let rowsInserted = 0;
+    const skippedRows: Array<{ index: number; version: string }> = [];
 
     // Resolve (or create) the parent item.
     let parentItemId: string;
@@ -671,9 +803,11 @@ async function writeGroup(
             updatedBy: userId
           } as never)
         )
-        .returning(["id"])
+        // xmax = 0 only on a freshly inserted row, not on a conflict update.
+        .returning(["id", sql<boolean>`xmax = 0`.as("created")])
         .execute();
       parentItemId = inserted[0]!.id;
+      partCreated = Boolean(inserted[0]!.created);
 
       // The makeMethod Draft v1 is created by the AFTER INSERT trigger on item.
       // The part row links to the item by readableId (part.id = item.readableId).
@@ -690,6 +824,12 @@ async function writeGroup(
         ])
         .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
         .execute();
+
+      // The supplier part, lead time, unit cost and order multiple the PART
+      // row carries, written as the part import writes them.
+      const extras = emptyItemExtras();
+      collectItemExtras(extras, parentItemId, r);
+      await writeItemExtras(trx, extras, companyId, userId);
     } else {
       const parent = ctx.itemMap.get(key(g.readableId, g.revision));
       parentItemId = parent!.id;
@@ -718,7 +858,15 @@ async function writeGroup(
         .limit(1)
         .executeTakeFirst();
       if (hasMaterial || hasOperation) {
-        skippedExisting = true;
+        for (const e of [
+          ...bucket.bom,
+          ...bucket.bop,
+          ...bucket.step,
+          ...bucket.tool,
+          ...bucket.param
+        ]) {
+          skippedRows.push({ index: e.index, version });
+        }
         continue;
       }
 
@@ -769,7 +917,7 @@ async function writeGroup(
           ])
           .execute();
         order++;
-        filledAny = true;
+        rowsInserted++;
       }
 
       // --- operations (BOP), keyed by Op No ---
@@ -785,15 +933,16 @@ async function writeGroup(
           ? ctx.workCenterMap.get(text(r.workCenter).toLowerCase())
           : undefined;
 
-        let operationSupplierProcessId: string | undefined;
-        if (opType === "Outside Processing" && text(r.supplier)) {
-          operationSupplierProcessId = await resolveSupplierProcess(
-            trx,
-            companyId,
-            ctx.supplierMap.get(text(r.supplier).toLowerCase()),
-            processId
-          );
-        }
+        // Validation made sure a named supplier offers the process.
+        const supplierId = text(r.supplier)
+          ? ctx.supplierMap.get(text(r.supplier).toLowerCase())
+          : undefined;
+        const operationSupplierProcessId =
+          opType === "Outside Processing" && supplierId
+            ? ctx.supplierProcessMap.get(
+                supplierProcessKey(supplierId, processId)
+              )
+            : undefined;
 
         const inserted = await trx
           .insertInto("methodOperation")
@@ -826,7 +975,7 @@ async function writeGroup(
           .execute();
         opIdByNo.set(opNo, inserted[0]!.id);
         opIndex++;
-        filledAny = true;
+        rowsInserted++;
       }
 
       // --- steps / tools / parameters per operation ---
@@ -866,6 +1015,7 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        rowsInserted++;
       }
 
       for (const e of bucket.tool) {
@@ -891,6 +1041,7 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        rowsInserted++;
       }
 
       for (const e of bucket.param) {
@@ -909,10 +1060,11 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        rowsInserted++;
       }
     }
 
-    return { filledAny, skippedExisting };
+    return { partCreated, rowsInserted, skippedRows };
   });
 }
 
@@ -1059,23 +1211,4 @@ async function seedStorageUnitIds(
     }
   }
   return current;
-}
-
-// Optional supplier-process link for an Outside Processing operation (by supplier + process).
-async function resolveSupplierProcess(
-  trx: Transaction<KyselyDatabase>,
-  companyId: string,
-  supplierId: string | undefined,
-  processId: string
-): Promise<string | undefined> {
-  if (!supplierId) return undefined;
-  const row = await trx
-    .selectFrom("supplierProcess")
-    .select(["id"])
-    .where("companyId", "=", companyId)
-    .where("supplierId", "=", supplierId)
-    .where("processId", "=", processId)
-    .limit(1)
-    .executeTakeFirst();
-  return row?.id;
 }

@@ -4,6 +4,7 @@
 
 import type { ManifestEntry } from "@carbon/api";
 import {
+  BULK_DATA_TOOLS,
   deriveNameDescription,
   formatParamSummary,
   formatToolDescription,
@@ -160,5 +161,13 @@ describe("getServerInstructions", () => {
 
   test("documents describe_tool batching", () => {
     expect(instructions).toContain('names: ["sales_getCustomers"');
+  });
+
+  test("points bulk writes at tools the catalog publishes", () => {
+    const published = new Set(toolMetadata.tools.map((t) => t.name));
+    for (const name of BULK_DATA_TOOLS) {
+      expect(published.has(name)).toBe(true);
+      expect(instructions).toContain(name);
+    }
   });
 });

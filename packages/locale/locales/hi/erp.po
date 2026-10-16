@@ -6636,6 +6636,9 @@ msgstr "ग्राहक स्थान"
 msgid "Customer Location"
 msgstr "ग्राहक स्थान"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "ग्राहक अवलोकन"
 
@@ -6647,6 +6650,9 @@ msgstr "ग्राहक पार्ट आईडी"
 
 msgid "Customer Part Number"
 msgstr "ग्राहक भाग संख्या"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "ग्राहक पार्ट रिवीजन"
@@ -11942,6 +11948,12 @@ msgstr "आइटम नाम"
 
 msgid "Item pages"
 msgstr "आइटम पृष्ठ"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
@@ -21559,6 +21571,9 @@ msgstr "आपूर्तिकर्ता स्थान"
 msgid "Supplier Location"
 msgstr "आपूर्तिकर्ता स्थान"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "आपूर्तिकर्ता ऑर्डर संख्या"
 
@@ -21591,6 +21606,9 @@ msgstr "आपूर्तिकर्ता भुगतान छूट (ड�
 
 msgid "Supplier Prepayments"
 msgstr "आपूर्तिकर्ता अग्रिम भुगतान"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "आपूर्तिकर्ता प्रक्रिया"

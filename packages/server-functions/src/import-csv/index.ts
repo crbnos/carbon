@@ -12,54 +12,103 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import type { RequiredPermissions } from "../permissions";
+import type { ServerFnContext } from "../server-fn-context";
 import { inChunks } from "./chunks";
 import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";
+import { importCustomerParts } from "./customer-part-import";
+import {
+  collectItemExtras,
+  emptyItemExtras,
+  writeItemExtras
+} from "./item-extras";
+import { importItemPlanning } from "./item-planning-import";
+import { importItemSalePrices } from "./item-sale-price-import";
 import { importMaterialProperties } from "./material-property-import";
 import { importMethods } from "./method-import";
+import { importPartnerLocations } from "./partner-location-import";
+import { rowsWithoutRefusedValues } from "./refused-values";
+import { withSavedValuesKept } from "./saved-values";
 import { importStockQuantities } from "./stock-quantity-import";
+import { importSupplierPrices } from "./supplier-price-import";
+import { inTransaction } from "./transaction";
+import { processIdsByName, resolveProcessNames } from "./work-center-processes";
 
 const logger = getLogger("server-functions", "import-csv");
 
-export const importCsvInput = z.object({
-  table: z.enum([
-    "consumable",
-    "customer",
-    "customerContact",
-    "fixture",
-    "material",
-    "bom",
-    "operations",
-    "partWithMethod",
-    "part",
-    "service",
-    "supplier",
-    "supplierContact",
-    "tool",
-    "workCenter",
-    "process",
-    "storageUnit",
-    "unitOfMeasure",
-    "itemPostingGroup",
-    "storageType",
-    "scrapReason",
-    "department",
-    "materialSubstance",
-    "materialForm",
-    "materialFinish",
-    "materialGrade",
-    "materialType",
-    "materialDimension",
-    "inventoryQuantity",
-    "batchQuantity",
-    "serialQuantity"
-  ]),
-  filePath: z.string(),
-  columnMappings: z.record(z.string(), z.string()),
-  enumMappings: z
-    .record(z.string(), z.record(z.string(), z.string()))
-    .optional()
-});
+// Inline CSV text is capped so one request stays small; larger loads go in
+// several calls.
+const MAX_CSV_TEXT_LENGTH = 1_000_000;
+
+export const importCsvInput = z
+  .object({
+    table: z.enum([
+      "consumable",
+      "customer",
+      "customerContact",
+      "fixture",
+      "material",
+      "bom",
+      "operations",
+      "partWithMethod",
+      "part",
+      "service",
+      "supplier",
+      "supplierContact",
+      "tool",
+      "workCenter",
+      "process",
+      "storageUnit",
+      "unitOfMeasure",
+      "itemPostingGroup",
+      "storageType",
+      "scrapReason",
+      "department",
+      "materialSubstance",
+      "materialForm",
+      "materialFinish",
+      "materialGrade",
+      "materialType",
+      "materialDimension",
+      "inventoryQuantity",
+      "batchQuantity",
+      "serialQuantity",
+      "supplierPartPrice",
+      "itemUnitSalePrice",
+      "itemPlanning",
+      "customerPartToItem",
+      "customerLocation",
+      "supplierLocation"
+    ]),
+    // The CSV either sits in the company's storage (the app's upload flow) or
+    // arrives as text in the request (callers that cannot upload a file, such as
+    // an agent over MCP). Exactly one of the two.
+    filePath: z.string().optional(),
+    csv: z.string().max(MAX_CSV_TEXT_LENGTH).optional(),
+    columnMappings: z.record(z.string(), z.string()),
+    enumMappings: z
+      .record(z.string(), z.record(z.string(), z.string()))
+      .optional(),
+    // Run the import and report what it would do without writing anything.
+    dryRun: z.boolean().optional(),
+    // An update writes only the values the row holds (see keepSavedValues).
+    // Off for the import wizard, which applies its Default to every row.
+    keepSavedValues: z.boolean().optional(),
+    // Per field, cell values the caller could not match to an option (the
+    // wizard maps every value instead). A row holding one is reported as an
+    // error and not written, as a row naming an unknown record is.
+    refusedValues: z
+      .record(
+        z.string(),
+        z.object({ label: z.string(), values: z.array(z.string()) })
+      )
+      .optional()
+  })
+  .refine(
+    (payload) =>
+      (payload.filePath === undefined) !== (payload.csv === undefined),
+    { message: "Pass exactly one of filePath or csv" }
+  );
 
 const EXTERNAL_ID_KEY = "csv";
 
@@ -97,7 +146,13 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
   materialDimension: "parts",
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
-  serialQuantity: "inventory"
+  serialQuantity: "inventory",
+  supplierPartPrice: "parts",
+  itemUnitSalePrice: "parts",
+  itemPlanning: "parts",
+  customerPartToItem: "parts",
+  customerLocation: "sales",
+  supplierLocation: "purchasing"
 };
 
 // Imports that post new records also need `create`, as the ERP's import route
@@ -105,7 +160,11 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
 const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
   "inventoryQuantity",
   "batchQuantity",
-  "serialQuantity"
+  "serialQuantity",
+  "supplierPartPrice",
+  "customerPartToItem",
+  "customerLocation",
+  "supplierLocation"
 ]);
 
 const IMPORT_PERMISSION_RULES = Object.fromEntries(
@@ -193,6 +252,7 @@ function pickColumns<
 // system rows (companyId IS NULL) that every company may use.
 type ReferencedTable =
   | "employee"
+  | "customer"
   | "customerStatus"
   | "customerType"
   | "supplierType"
@@ -216,9 +276,18 @@ const GLOBAL_REFERENCED_TABLES = new Set<ReferencedTable>([
 
 type ReferenceSpec = { column: string; table: ReferencedTable; label: string };
 
-const itemReferences: ReferenceSpec[] = [
-  { column: "supplierId", table: "supplier", label: "Supplier" }
-];
+const supplierReference: ReferenceSpec = {
+  column: "supplierId",
+  table: "supplier",
+  label: "Supplier"
+};
+const customerReference: ReferenceSpec = {
+  column: "customerId",
+  table: "customer",
+  label: "Customer"
+};
+
+const itemReferences: ReferenceSpec[] = [supplierReference];
 
 // Id-valued columns per import. The wizard resolves these through
 // company-scoped fetchers, but the ids arrive in the request body, so each is
@@ -241,6 +310,7 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     }
   ],
   part: itemReferences,
+  partWithMethod: itemReferences,
   tool: itemReferences,
   fixture: itemReferences,
   consumable: itemReferences,
@@ -258,7 +328,14 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     { column: "dimensionId", table: "materialDimension", label: "Dimensions" }
   ],
   workCenter: [{ column: "locationId", table: "location", label: "Location" }],
-  storageUnit: [{ column: "locationId", table: "location", label: "Location" }]
+  storageUnit: [{ column: "locationId", table: "location", label: "Location" }],
+  supplierPartPrice: [supplierReference],
+  itemPlanning: [
+    { column: "locationId", table: "location", label: "Location" }
+  ],
+  customerPartToItem: [customerReference],
+  customerLocation: [customerReference],
+  supplierLocation: [supplierReference]
 };
 
 type CsvRecord = Record<string, string>;
@@ -738,6 +815,36 @@ function hasAnyAddressField(ext: PartnerExtensionData): boolean {
   return !!ext.addressLine1;
 }
 
+// The cells of a partner row that go to its location's address.
+const ADDRESS_FIELDS = [
+  "addressLine1",
+  "addressLine2",
+  "city",
+  "state",
+  "postalCode",
+  "countryCode"
+] as const;
+
+/** Whether a partner row fills any address cell. */
+function hasAddressCells(ext: PartnerExtensionData): boolean {
+  return ADDRESS_FIELDS.some((field) => !!ext[field]?.trim());
+}
+
+/**
+ * With keepSavedValues, why a partner row's location cannot be written: a new
+ * location needs Address Line 1, which also names it when Location Name is
+ * blank. Without the check the row's other address cells were dropped.
+ */
+function partnerLocationError(
+  ext: PartnerExtensionData,
+  hasLocation: boolean
+): string | undefined {
+  if (hasLocation || ext.addressLine1?.trim()) return undefined;
+  return hasAddressCells(ext) || ext.locationName?.trim()
+    ? "Address Line 1 is required"
+    : undefined;
+}
+
 function buildAddressFields(ext: PartnerExtensionData): {
   addressLine1: string | null;
   addressLine2: string | null;
@@ -758,6 +865,30 @@ function buildAddressFields(ext: PartnerExtensionData): {
     // post-20240928155702_country-codes.
     countryCode: ext.countryCode || null
   };
+}
+
+/**
+ * Whether a partner row writes its location's address. The wizard writes it
+ * when Address Line 1 is given, replacing every address field. Keeping saved
+ * values, an existing address takes the cells the row holds, so a blank one
+ * keeps its saved value; a new one still needs Address Line 1.
+ */
+function writesAddress(
+  ext: PartnerExtensionData,
+  existingAddressId: string | undefined,
+  keepSaved: boolean
+): boolean {
+  if (!keepSaved) return hasAnyAddressField(ext);
+  return existingAddressId ? hasAddressCells(ext) : hasAnyAddressField(ext);
+}
+
+/** The fields that are not null, so an update leaves the others as they are. */
+function withoutNulls<T extends Record<string, unknown>>(
+  fields: T
+): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== null)
+  ) as Partial<T>;
 }
 
 /**
@@ -797,6 +928,10 @@ async function preloadPrimaryLocationAddressIds(
   return map;
 }
 
+/**
+ * Writes a supplier row's side tables: its primary location's address, its
+ * payment terms and its shipping terms.
+ */
 async function writeSupplierExtensions(
   trx: Kysely<KyselyDatabase>,
   supplierId: string,
@@ -806,17 +941,18 @@ async function writeSupplierExtensions(
   // Pre-fetched addressId of the supplier's existing primary location, if
   // any. Caller bulk-loads these for the whole batch to avoid an N+1
   // SELECT per supplier. undefined means "no existing location → insert".
-  existingAddressId: string | undefined
+  existingAddressId: string | undefined,
+  keepSaved: boolean
 ): Promise<void> {
   const now = datetime.timestamp();
 
-  if (hasAnyAddressField(ext)) {
+  if (writesAddress(ext, existingAddressId, keepSaved)) {
     const addressFields = buildAddressFields(ext);
 
     if (existingAddressId) {
       await trx
         .updateTable("address")
-        .set(addressFields)
+        .set(keepSaved ? withoutNulls(addressFields) : addressFields)
         .where("id", "=", existingAddressId)
         .where("companyId", "=", companyId)
         .execute();
@@ -905,23 +1041,28 @@ async function writeSupplierExtensions(
   }
 }
 
+/**
+ * Writes a customer row's side tables: its primary location's address, its
+ * payment terms and its tax ID.
+ */
 async function writeCustomerExtensions(
   trx: Kysely<KyselyDatabase>,
   customerId: string,
   ext: PartnerExtensionData,
   companyId: string,
   userId: string,
-  existingAddressId: string | undefined
+  existingAddressId: string | undefined,
+  keepSaved: boolean
 ): Promise<void> {
   const now = datetime.timestamp();
 
-  if (hasAnyAddressField(ext)) {
+  if (writesAddress(ext, existingAddressId, keepSaved)) {
     const addressFields = buildAddressFields(ext);
 
     if (existingAddressId) {
       await trx
         .updateTable("address")
-        .set(addressFields)
+        .set(keepSaved ? withoutNulls(addressFields) : addressFields)
         .where("id", "=", existingAddressId)
         .where("companyId", "=", companyId)
         .execute();
@@ -964,205 +1105,6 @@ async function writeCustomerExtensions(
           updatedBy: userId
         })
       )
-      .execute();
-  }
-}
-
-/**
- * Idempotent supplierPart writes for the part/material/tool/fixture/consumable
- * import flow. One CSV row optionally creates one supplierPart link; re-imports
- * UPDATE the existing row (matched by (itemId, supplierId) per company).
- */
-type SupplierPartImportLink = {
-  itemId: string;
-  supplierId: string;
-  supplierPartId?: string;
-  supplierUnitOfMeasureCode?: string;
-  minimumOrderQuantity?: string;
-  orderMultiple?: string;
-  conversionFactor?: string;
-  unitPrice?: string;
-};
-
-type ItemPurchasingLeadTime = {
-  itemId: string;
-  leadTime: string;
-};
-
-type ItemUnitCost = {
-  itemId: string;
-  unitCost: string;
-};
-
-type ItemPlanningOrderMultiple = {
-  itemId: string;
-  orderMultiple: string;
-};
-
-async function writeSupplierPartLinks(
-  trx: Kysely<KyselyDatabase>,
-  links: SupplierPartImportLink[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (links.length === 0) return;
-  const itemIds = [...new Set(links.map((l) => l.itemId))];
-  const supplierIds = [...new Set(links.map((l) => l.supplierId))];
-  const existing = await trx
-    .selectFrom("supplierPart")
-    .select(["id", "itemId", "supplierId"])
-    .where("itemId", "in", itemIds)
-    .where("supplierId", "in", supplierIds)
-    .where("companyId", "=", companyId)
-    .execute();
-  const existingByPair = new Map(
-    existing.map((e) => [`${e.itemId}:${e.supplierId}`, e.id])
-  );
-
-  const now = datetime.timestamp();
-  for (const link of links) {
-    const key = `${link.itemId}:${link.supplierId}`;
-    const existingId = existingByPair.get(key);
-    const numericMOQ = link.minimumOrderQuantity
-      ? Number.parseInt(link.minimumOrderQuantity, 10)
-      : null;
-    const numericOrderMultiple = link.orderMultiple
-      ? Number.parseInt(link.orderMultiple, 10)
-      : null;
-    const numericConversion = link.conversionFactor
-      ? Number.parseFloat(link.conversionFactor)
-      : 1;
-    // The price is in the supplier part's currency: an existing part keeps
-    // its own, a new one is created in base (currencyCode NULL), which is
-    // what an imported price has always meant.
-    const numericPrice = link.unitPrice
-      ? Number.parseFloat(link.unitPrice)
-      : null;
-
-    if (existingId) {
-      await trx
-        .updateTable("supplierPart")
-        .set({
-          supplierPartId: link.supplierPartId || null,
-          supplierUnitOfMeasureCode: link.supplierUnitOfMeasureCode || null,
-          minimumOrderQuantity: numericMOQ,
-          orderMultiple: numericOrderMultiple,
-          conversionFactor: numericConversion,
-          supplierUnitPrice: numericPrice,
-          updatedAt: now,
-          updatedBy: userId
-        })
-        .where("id", "=", existingId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      await trx
-        .insertInto("supplierPart")
-        .values({
-          itemId: link.itemId,
-          supplierId: link.supplierId,
-          supplierPartId: link.supplierPartId || null,
-          supplierUnitOfMeasureCode: link.supplierUnitOfMeasureCode || null,
-          minimumOrderQuantity: numericMOQ,
-          orderMultiple: numericOrderMultiple,
-          conversionFactor: numericConversion,
-          supplierUnitPrice: numericPrice,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
-    }
-  }
-}
-
-// Set the item-level purchasing lead time (the "Purchasing" tab field).
-// The itemReplenishment row is created by the create_item_related_records
-// AFTER INSERT trigger on item (default leadTime 7, per migration
-// 20250610000433_demand-planning.sql which renamed purchasingLeadTime →
-// leadTime), so within this transaction the row already exists for every
-// item we just upserted — we only need to UPDATE it.
-async function writeItemPurchasingLeadTimes(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemPurchasingLeadTime[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericLeadTime = Number.parseInt(entry.leadTime, 10);
-    if (Number.isNaN(numericLeadTime)) continue;
-    await trx
-      .updateTable("itemReplenishment")
-      .set({
-        leadTime: numericLeadTime,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-}
-
-// Set the item-level unit cost (the "Costing" tab field). The itemCost row is
-// created by the create_item_related_records AFTER INSERT trigger on item, so
-// within this transaction the row already exists for every item we upserted —
-// we only need to UPDATE it. Non-numeric/blank values are skipped.
-async function writeItemUnitCosts(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemUnitCost[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericUnitCost = Number.parseFloat(entry.unitCost);
-    if (Number.isNaN(numericUnitCost)) continue;
-    await trx
-      .updateTable("itemCost")
-      .set({
-        unitCost: numericUnitCost,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-}
-
-// Set the item-level planning order multiple. itemPlanning has one row per
-// (item, location) pair, all created by create_item_related_records at item
-// insert time (SELECT FROM location WHERE companyId = ...). A single UPDATE
-// scoped by itemId + companyId therefore covers every location row for that
-// item — matching the "order multiple is unique across every location"
-// expectation. Mirrors the same CSV value already written to
-// supplierPart.orderMultiple in writeSupplierPartLinks; both are intentionally
-// kept in sync at import time even though they're structurally distinct
-// fields (supplier case-pack vs MRP preferred multiple).
-async function writeItemPlanningOrderMultiples(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemPlanningOrderMultiple[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericOrderMultiple = Number.parseInt(entry.orderMultiple, 10);
-    if (Number.isNaN(numericOrderMultiple) || numericOrderMultiple < 1)
-      continue;
-    await trx
-      .updateTable("itemPlanning")
-      .set({
-        orderMultiple: numericOrderMultiple,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
       .execute();
   }
 }
@@ -1224,17 +1166,36 @@ async function upsertTaxIdentifiers(
   );
 }
 
-/** Imports an uploaded CSV into `table`, per the caller's column and enum mappings. */
-const importCsv = defineServerFn({
-  name: "import-csv",
-  input: importCsvInput,
-  permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
-  async run(ctx, { table, filePath, columnMappings, enumMappings = {} }) {
-    const { db, companyId, userId } = ctx;
+/**
+ * Imports a CSV into `table`, per the caller's column and enum mappings. The CSV
+ * is an uploaded file (`filePath`) or inline text (`csv`).
+ */
+// The import itself. `db` is the context's database, or the transaction a dry
+// run rolls back.
+const importer = {
+  /**
+   * Runs the import on `db`, the database or a dry run's transaction, and
+   * returns the report.
+   */
+  async run(
+    ctx: ServerFnContext,
+    db: Kysely<KyselyDatabase>,
+    {
+      table,
+      filePath,
+      csv,
+      columnMappings,
+      enumMappings = {},
+      keepSavedValues: keepSaved = false,
+      refusedValues
+    }: z.infer<typeof importCsvInput>
+  ) {
+    const { companyId, userId } = ctx;
 
     logger.info({
       table,
       filePath,
+      csvLength: csv?.length,
       columnMappings,
       enumMappings,
       companyId,
@@ -1243,36 +1204,66 @@ const importCsv = defineServerFn({
 
     const client = await ctx.supabase();
 
-    // The client is service-role and the legacy bucket is shared across
-    // tenants, so the `${companyId}/` key prefix is the tenant boundary on the
-    // caller-supplied path — refuse anything outside it.
-    if (!filePath.startsWith(`${companyId}/`)) {
-      throw new Error("File path is outside the company's storage prefix");
-    }
+    let csvText: string;
+    if (csv !== undefined) {
+      csvText = csv;
+    } else {
+      const path = filePath as string;
 
-    // Try the company bucket first; fall back to the legacy shared bucket
-    // for files uploaded before the per-company bucket migration.
-    let csvFile = await client.storage.from(companyId).download(filePath);
-    if (csvFile.error || !csvFile.data) {
-      csvFile = await client.storage.from("private").download(filePath);
+      // The client is service-role and the legacy bucket is shared across
+      // tenants, so the `${companyId}/` key prefix is the tenant boundary on
+      // the caller-supplied path — refuse anything outside it.
+      if (!path.startsWith(`${companyId}/`)) {
+        throw new Error("File path is outside the company's storage prefix");
+      }
+
+      // Try the company bucket first; fall back to the legacy shared bucket
+      // for files uploaded before the per-company bucket migration.
+      let csvFile = await client.storage.from(companyId).download(path);
+      if (csvFile.error || !csvFile.data) {
+        csvFile = await client.storage.from("private").download(path);
+      }
+      if (!csvFile.data) {
+        throw new Error("Failed to download file");
+      }
+      csvText = new TextDecoder().decode(
+        new Uint8Array(await csvFile.data.arrayBuffer())
+      );
     }
-    if (!csvFile.data) {
-      throw new Error("Failed to download file");
-    }
-    const csvText = new TextDecoder().decode(
-      new Uint8Array(await csvFile.data.arrayBuffer())
-    );
     // A row whose field count disagrees with the header falls back to the
     // permissive parser for real-world CSVs with quoting/comma issues.
     const strict = parseCsv<Record<string, string>>(csvText);
-    const parsedCsv: Record<string, string>[] = strict.errors.some(
+    const fileRows: Record<string, string>[] = strict.errors.some(
       (e) => e.type === "FieldMismatch"
     )
       ? parsePermissiveCsv(csvText)
       : strict.rows;
+    // The rows to import; `keptRows[i]` is the file row of parsedCsv[i].
+    const { kept: keptRows, refused: refusedRows } = rowsWithoutRefusedValues(
+      fileRows,
+      columnMappings,
+      refusedValues
+    );
+    const parsedCsv = keptRows.map((fileRow) => fileRows[fileRow]!);
+    if (parsedCsv.length === 0) {
+      return {
+        success: true,
+        inserted: 0,
+        updated: 0,
+        errors: refusedRows.map((issue) => ({
+          ...issue,
+          values: fileRows[issue.row] ?? {}
+        })),
+        skipped: [],
+        existingRows: []
+      };
+    }
 
+    // The fields each row took from an enum's Default rather than its cell.
+    const defaultedByRow: Set<string>[] = [];
     let mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
+      const defaulted = new Set<string>();
       for (const [key, value] of Object.entries(columnMappings)) {
         if (key in enumMappings) {
           const enumMapping = enumMappings[key];
@@ -1281,11 +1272,13 @@ const importCsv = defineServerFn({
             record[key] = enumMapping![csvValue!]!;
           } else {
             record[key] = enumMapping!["Default"]!;
+            defaulted.add(key);
           }
         } else if (value && value !== "N/A") {
           record[key] = row[value] || "";
         }
       }
+      defaultedByRow.push(defaulted);
       return record;
     });
 
@@ -1303,7 +1296,38 @@ const importCsv = defineServerFn({
 
         return processedRecord;
       });
+      for (const defaulted of defaultedByRow) {
+        for (const key of missingEnumKeys) defaulted.add(key);
+      }
     }
+
+    // What each row holds: a field with a non-empty cell that did not come
+    // from a Default. keepSavedValues writes only these on an update.
+    const heldByRow = mappedRecords.map(
+      (record, rowIndex) =>
+        new Set(
+          Object.keys(record).filter(
+            (key) =>
+              record[key] !== undefined &&
+              record[key] !== "" &&
+              !defaultedByRow[rowIndex]!.has(key)
+          )
+        )
+    );
+    /**
+     * Every update payload built from a row passes through here, which is
+     * also where the report learns the row named an existing record.
+     */
+    const keepSavedValues = <T extends Record<string, unknown>>(
+      data: T,
+      rowIndex: number,
+      sources: Record<string, string> = {}
+    ): T => {
+      summary.existingRows.push(rowIndex);
+      return keepSaved
+        ? withSavedValuesKept(data, heldByRow[rowIndex], sources)
+        : data;
+    };
 
     const summary = {
       inserted: 0,
@@ -1311,7 +1335,10 @@ const importCsv = defineServerFn({
       // Rows the user should fix and re-import (validation / missing required data).
       errors: [] as Array<{ row: number; reason: string }>,
       // Rows intentionally not written (duplicates, already-existing) — informational.
-      skipped: [] as Array<{ row: number; reason: string }>
+      skipped: [] as Array<{ row: number; reason: string }>,
+      // Rows that updated an existing record, so took no defaults. Reported
+      // by the importers whose fields have defaults.
+      existingRows: [] as number[]
     };
 
     const acceptedRows = await rejectForeignReferences(
@@ -1337,6 +1364,22 @@ const importCsv = defineServerFn({
           )
         );
         const nameMap = await getNameMap(db, "customer", companyId, csvNames);
+        // The primary location of every customer a row may update, read before
+        // the rows are classified so a row can be checked against it.
+        const customerAddressByEntity = await preloadPrimaryLocationAddressIds(
+          db,
+          "customer",
+          [
+            ...new Set(
+              mappedRecords.flatMap(
+                (r) =>
+                  (r.id ? externalIdMap.get(r.id) : undefined) ??
+                  (r.name ? nameMap.get(r.name) : undefined) ??
+                  []
+              )
+            )
+          ]
+        );
         const customerIds = new Set<string>();
         // Tracks names queued for INSERT in this batch so a second CSV row
         // with the same name doesn't trip the (name, companyId) unique
@@ -1344,7 +1387,7 @@ const importCsv = defineServerFn({
         // per name per company, so duplicates within the CSV collapse.
         const namesQueuedForInsert = new Set<string>();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const customerInserts: Database["public"]["Tables"]["customer"]["Insert"][] =
             [];
           const customerTaxForInserts: Array<{
@@ -1409,6 +1452,18 @@ const importCsv = defineServerFn({
               continue;
             }
 
+            const locationError = keepSaved
+              ? partnerLocationError(
+                  ext,
+                  decision.action === "update" &&
+                    customerAddressByEntity.has(decision.entityId)
+                )
+              : undefined;
+            if (locationError) {
+              summary.errors.push({ row: rowIndex, reason: locationError });
+              continue;
+            }
+
             if (id) customerIds.add(id);
             if (decision.action === "insert")
               namesQueuedForInsert.add(rest.name!);
@@ -1424,7 +1479,11 @@ const importCsv = defineServerFn({
                   updatedBy: userId
                 }
               });
-              customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+              // Keeping saved values, a blank or missing Tax ID keeps the
+              // saved one; the wizard writes it, clearing a saved one.
+              if (!keepSaved || taxId?.trim()) {
+                customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+              }
               extForUpdates.push({ entityId: decision.entityId, ext });
               // Only attach a CSV->entity mapping when there is a real external id.
               if (matchedByCsvId === undefined && id) {
@@ -1489,7 +1548,8 @@ const importCsv = defineServerFn({
                 extForInserts[i] ?? {},
                 companyId,
                 userId,
-                undefined
+                undefined,
+                keepSaved
               );
             }
           }
@@ -1509,12 +1569,6 @@ const importCsv = defineServerFn({
               companyId,
               userId
             );
-            const customerAddressByEntity =
-              await preloadPrimaryLocationAddressIds(
-                trx,
-                "customer",
-                extForUpdates.map((u) => u.entityId)
-              );
             for (const { entityId, ext } of extForUpdates) {
               await writeCustomerExtensions(
                 trx,
@@ -1522,7 +1576,8 @@ const importCsv = defineServerFn({
                 ext,
                 companyId,
                 userId,
-                customerAddressByEntity.get(entityId)
+                customerAddressByEntity.get(entityId),
+                keepSaved
               );
             }
           }
@@ -1552,10 +1607,26 @@ const importCsv = defineServerFn({
           )
         );
         const nameMap = await getNameMap(db, "supplier", companyId, csvNames);
+        // The primary location of every supplier a row may update, read before
+        // the rows are classified so a row can be checked against it.
+        const supplierAddressByEntity = await preloadPrimaryLocationAddressIds(
+          db,
+          "supplier",
+          [
+            ...new Set(
+              mappedRecords.flatMap(
+                (r) =>
+                  (r.id ? externalIdMap.get(r.id) : undefined) ??
+                  (r.name ? nameMap.get(r.name) : undefined) ??
+                  []
+              )
+            )
+          ]
+        );
         const supplierIds = new Set<string>();
         const namesQueuedForInsert = new Set<string>();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const supplierInserts: Database["public"]["Tables"]["supplier"]["Insert"][] =
             [];
           const supplierTaxForInserts: Array<{
@@ -1620,6 +1691,18 @@ const importCsv = defineServerFn({
               continue;
             }
 
+            const locationError = keepSaved
+              ? partnerLocationError(
+                  ext,
+                  decision.action === "update" &&
+                    supplierAddressByEntity.has(decision.entityId)
+                )
+              : undefined;
+            if (locationError) {
+              summary.errors.push({ row: rowIndex, reason: locationError });
+              continue;
+            }
+
             if (id) supplierIds.add(id);
             if (decision.action === "insert")
               namesQueuedForInsert.add(rest.name!);
@@ -1635,7 +1718,11 @@ const importCsv = defineServerFn({
                   updatedBy: userId
                 }
               });
-              supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+              // Keeping saved values, a blank or missing Tax ID keeps the
+              // saved one; the wizard writes it, clearing a saved one.
+              if (!keepSaved || taxId?.trim()) {
+                supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+              }
               extForUpdates.push({ entityId: decision.entityId, ext });
               // Only attach a CSV->entity mapping when there is a real external id.
               if (matchedByCsvId === undefined && id) {
@@ -1700,7 +1787,8 @@ const importCsv = defineServerFn({
                 extForInserts[i] ?? {},
                 companyId,
                 userId,
-                undefined
+                undefined,
+                keepSaved
               );
             }
           }
@@ -1720,12 +1808,6 @@ const importCsv = defineServerFn({
               companyId,
               userId
             );
-            const supplierAddressByEntity =
-              await preloadPrimaryLocationAddressIds(
-                trx,
-                "supplier",
-                extForUpdates.map((u) => u.entityId)
-              );
             for (const { entityId, ext } of extForUpdates) {
               await writeSupplierExtensions(
                 trx,
@@ -1733,7 +1815,8 @@ const importCsv = defineServerFn({
                 ext,
                 companyId,
                 userId,
-                supplierAddressByEntity.get(entityId)
+                supplierAddressByEntity.get(entityId),
+                keepSaved
               );
             }
           }
@@ -1788,7 +1871,7 @@ const importCsv = defineServerFn({
         const externalIdMap = await getCsvExternalIdMap(db, "item", companyId);
         const readableIds = new Set();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const itemInserts: Database["public"]["Tables"]["item"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -1806,34 +1889,15 @@ const importCsv = defineServerFn({
             data: Database["public"]["Tables"]["material"]["Update"];
           }[] = [];
 
-          // Optional supplier-part fields ride along on each row. Parallel to
-          // itemInserts; supplierPartLinks accumulates the full resolved
-          // links (with the item's actual DB id) as the inserts/updates land.
-          const supplierPartForInserts: Array<{
-            supplierId?: string;
-            supplierPartId?: string;
-            supplierUnitOfMeasureCode?: string;
-            minimumOrderQuantity?: string;
-            orderMultiple?: string;
-            conversionFactor?: string;
-            unitPrice?: string;
-          }> = [];
-          const supplierPartLinks: SupplierPartImportLink[] = [];
-          // Item-level purchasing lead times. leadTimeForInserts is parallel to
-          // itemInserts (filled in the insert branch); purchasingLeadTimes
-          // collects the final {itemId, leadTime} entries once item ids are
-          // known (immediately for updates, post-insert for new items).
-          const leadTimeForInserts: Array<string | undefined> = [];
-          const purchasingLeadTimes: ItemPurchasingLeadTime[] = [];
-          // Item-level unit cost — same parallel-array pattern as lead time.
-          const unitCostForInserts: Array<string | undefined> = [];
-          const itemUnitCosts: ItemUnitCost[] = [];
-          // Same shape for the item-level planning order multiple. CSV's
-          // "Order Multiple" column populates both supplierPart.orderMultiple
-          // (per-supplier case-pack) and itemPlanning.orderMultiple
-          // (per-(item, location) MRP setting) at import time.
-          const orderMultipleForInserts: Array<string | undefined> = [];
-          const itemPlanningOrderMultiples: ItemPlanningOrderMultiple[] = [];
+          // The supplier part, lead time, unit cost and order multiple each
+          // row carries (item-extras.ts). An existing item's extras are queued
+          // at once; a new item's row waits in extrasForInserts, parallel to
+          // itemInserts, until the insert returns its id. The CSV's "Order
+          // Multiple" populates both supplierPart.orderMultiple (per-supplier
+          // case-pack) and itemPlanning.orderMultiple (per-(item, location)
+          // MRP setting).
+          const extrasForInserts: CsvRecord[] = [];
+          const itemExtras = emptyItemExtras();
 
           const itemValidator = z.object({
             // Unique ID is the external-integration mapping key and the upsert
@@ -2067,54 +2131,25 @@ const importCsv = defineServerFn({
               }
               itemUpdates.push({
                 id: existingEntityId,
-                data: {
-                  ...rest,
-                  revision,
-                  active: rest.active?.toLowerCase() !== "false",
-                  unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
-                  description: rest.description || undefined,
-                  replenishmentSystem: rest.replenishmentSystem || undefined,
-                  defaultMethodType: rest.defaultMethodType || undefined,
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                }
+                data: keepSavedValues(
+                  {
+                    ...rest,
+                    revision,
+                    active: rest.active?.toLowerCase() !== "false",
+                    unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
+                    description: rest.description || undefined,
+                    replenishmentSystem: rest.replenishmentSystem || undefined,
+                    defaultMethodType: rest.defaultMethodType || undefined,
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  },
+                  rowIndex
+                )
               });
 
-              // Existing item: we already know its id, so the supplierPart
-              // link can be queued directly.
-              if (record.supplierId) {
-                supplierPartLinks.push({
-                  itemId: existingEntityId,
-                  supplierId: record.supplierId,
-                  supplierPartId: record.supplierPartId,
-                  supplierUnitOfMeasureCode: record.supplierUnitOfMeasureCode,
-                  minimumOrderQuantity: record.minimumOrderQuantity,
-                  orderMultiple: record.orderMultiple,
-                  conversionFactor: record.conversionFactor,
-                  unitPrice: record.unitPrice
-                });
-              }
-
-              if (record.leadTime) {
-                purchasingLeadTimes.push({
-                  itemId: existingEntityId,
-                  leadTime: record.leadTime
-                });
-              }
-
-              if (record.unitCost) {
-                itemUnitCosts.push({
-                  itemId: existingEntityId,
-                  unitCost: record.unitCost
-                });
-              }
-
-              if (record.orderMultiple) {
-                itemPlanningOrderMultiples.push({
-                  itemId: existingEntityId,
-                  orderMultiple: record.orderMultiple
-                });
-              }
+              // Existing item: we already know its id, so its extras can be
+              // queued directly.
+              collectItemExtras(itemExtras, existingEntityId, record);
 
               if (table === "material") {
                 const material = materialValidator.safeParse(record);
@@ -2177,21 +2212,9 @@ const importCsv = defineServerFn({
               };
               itemInserts.push(newItem);
               csvIdsForInserts.push(getExternalId(id));
-              // New item: id will come back from the bulk insert. Capture
-              // supplier-part data and lead time in parallel arrays so we can
-              // build the link / lead-time entry once the id is known.
-              supplierPartForInserts.push({
-                supplierId: record.supplierId,
-                supplierPartId: record.supplierPartId,
-                supplierUnitOfMeasureCode: record.supplierUnitOfMeasureCode,
-                minimumOrderQuantity: record.minimumOrderQuantity,
-                orderMultiple: record.orderMultiple,
-                conversionFactor: record.conversionFactor,
-                unitPrice: record.unitPrice
-              });
-              leadTimeForInserts.push(record.leadTime);
-              orderMultipleForInserts.push(record.orderMultiple);
-              unitCostForInserts.push(record.unitCost);
+              // New item: its id comes back from the bulk insert, so the
+              // row's extras are queued once the id is known.
+              extrasForInserts.push(record);
 
               if (table === "material") {
                 const material = materialValidator.safeParse(record);
@@ -2333,44 +2356,13 @@ const importCsv = defineServerFn({
               );
             }
 
-            // Build supplier-part links and lead-time entries for the items we
-            // just inserted. supplierPartForInserts / leadTimeForInserts are
-            // parallel to itemInserts; only rows with a supplier produce a
-            // link, only rows with a lead time produce a lead-time entry.
+            // Queue the extras of the items just inserted. extrasForInserts is
+            // parallel to itemInserts.
             for (let i = 0; i < insertedItems.length; i++) {
-              const sp = supplierPartForInserts[i];
-              if (sp?.supplierId && insertedItems[i]!.id) {
-                supplierPartLinks.push({
-                  itemId: insertedItems[i]!.id!,
-                  supplierId: sp.supplierId,
-                  supplierPartId: sp.supplierPartId,
-                  supplierUnitOfMeasureCode: sp.supplierUnitOfMeasureCode,
-                  minimumOrderQuantity: sp.minimumOrderQuantity,
-                  orderMultiple: sp.orderMultiple,
-                  conversionFactor: sp.conversionFactor,
-                  unitPrice: sp.unitPrice
-                });
-              }
-              const leadTime = leadTimeForInserts[i];
-              if (leadTime && insertedItems[i]!.id) {
-                purchasingLeadTimes.push({
-                  itemId: insertedItems[i]!.id!,
-                  leadTime
-                });
-              }
-              const orderMultiple = orderMultipleForInserts[i];
-              if (orderMultiple && insertedItems[i]!.id) {
-                itemPlanningOrderMultiples.push({
-                  itemId: insertedItems[i]!.id!,
-                  orderMultiple
-                });
-              }
-              const unitCost = unitCostForInserts[i];
-              if (unitCost && insertedItems[i]!.id) {
-                itemUnitCosts.push({
-                  itemId: insertedItems[i]!.id!,
-                  unitCost
-                });
+              const itemId = insertedItems[i]?.id;
+              const record = extrasForInserts[i];
+              if (itemId && record) {
+                collectItemExtras(itemExtras, itemId, record);
               }
             }
           }
@@ -2435,28 +2427,7 @@ const importCsv = defineServerFn({
             }
           }
 
-          await writeSupplierPartLinks(
-            trx,
-            supplierPartLinks,
-            companyId,
-            userId
-          );
-
-          await writeItemPurchasingLeadTimes(
-            trx,
-            purchasingLeadTimes,
-            companyId,
-            userId
-          );
-
-          await writeItemPlanningOrderMultiples(
-            trx,
-            itemPlanningOrderMultiples,
-            companyId,
-            userId
-          );
-
-          await writeItemUnitCosts(trx, itemUnitCosts, companyId, userId);
+          await writeItemExtras(trx, itemExtras, companyId, userId);
 
           // Items were silently uncounted before — only customer/supplier
           // incremented the summary. Count inserts/updates here so the toast
@@ -2479,7 +2450,7 @@ const importCsv = defineServerFn({
           companyId
         );
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
             [];
           const csvIdsForContactInserts: string[] = [];
@@ -2511,9 +2482,7 @@ const importCsv = defineServerFn({
               if (isContactValid(contactData)) {
                 contactUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...contactData
-                  }
+                  data: keepSavedValues({ ...contactData }, rowIndex)
                 });
               }
             } else if (
@@ -2606,7 +2575,7 @@ const importCsv = defineServerFn({
           companyId
         );
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
             [];
           const csvIdsForContactInserts: string[] = [];
@@ -2638,9 +2607,7 @@ const importCsv = defineServerFn({
               if (isContactValid(contactData)) {
                 contactUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...contactData
-                  }
+                  data: keepSavedValues({ ...contactData }, rowIndex)
                 });
               }
             } else if (
@@ -2727,8 +2694,15 @@ const importCsv = defineServerFn({
           companyId
         );
         const workCenterIds = new Set();
+        const activeProcesses = await db
+          .selectFrom("process")
+          .select(["id", "name"])
+          .where("companyId", "=", companyId)
+          .where("active", "=", true)
+          .execute();
+        const processesByName = processIdsByName(activeProcesses);
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const workCenterInserts: Database["public"]["Tables"]["workCenter"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -2736,6 +2710,14 @@ const importCsv = defineServerFn({
             id: string;
             data: Database["public"]["Tables"]["workCenter"]["Update"];
           }[] = [];
+          // The processes a filled Processes cell names: replaces the work
+          // center's links, as the form's Processes field does. Parallel to
+          // workCenterInserts for new work centers (null: leave them alone).
+          const processLinks: Array<{
+            workCenterId: string;
+            processIds: string[];
+          }> = [];
+          const processIdsForInserts: Array<string[] | null> = [];
 
           const isWorkCenterValid = (
             record: Record<string, string>
@@ -2751,26 +2733,45 @@ const importCsv = defineServerFn({
             );
           };
 
-          for (const [, record] of acceptedRows) {
+          for (const [rowIndex, record] of acceptedRows) {
             const { id, ...rest } = record;
+            const processes = resolveProcessNames(
+              rest.processes,
+              processesByName
+            );
+            if (processes && "error" in processes) {
+              summary.errors.push({ row: rowIndex, reason: processes.error });
+              continue;
+            }
             if (externalIdMap.has(id!)) {
               const existingEntityId = externalIdMap.get(id!)!;
               if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
                 workCenterIds.add(id);
+                if (processes) {
+                  processLinks.push({
+                    workCenterId: existingEntityId,
+                    processIds: processes.processIds
+                  });
+                }
                 workCenterUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...pickColumns("workCenter", rest, WORK_CENTER_COLUMNS),
-                    laborRate: rest.laborRate ? parseFloat(rest.laborRate) : 0,
-                    machineRate: rest.machineRate
-                      ? parseFloat(rest.machineRate)
-                      : 0,
-                    overheadRate: rest.overheadRate
-                      ? parseFloat(rest.overheadRate)
-                      : 0,
-                    updatedAt: datetime.timestamp(),
-                    updatedBy: userId
-                  }
+                  data: keepSavedValues(
+                    {
+                      ...pickColumns("workCenter", rest, WORK_CENTER_COLUMNS),
+                      laborRate: rest.laborRate
+                        ? parseFloat(rest.laborRate)
+                        : 0,
+                      machineRate: rest.machineRate
+                        ? parseFloat(rest.machineRate)
+                        : 0,
+                      overheadRate: rest.overheadRate
+                        ? parseFloat(rest.overheadRate)
+                        : 0,
+                      updatedAt: datetime.timestamp(),
+                      updatedBy: userId
+                    },
+                    rowIndex
+                  )
                 });
               }
             } else if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
@@ -2789,6 +2790,7 @@ const importCsv = defineServerFn({
                 createdBy: userId
               } as never);
               csvIdsForInserts.push(id!);
+              processIdsForInserts.push(processes?.processIds ?? null);
             }
           }
 
@@ -2797,6 +2799,8 @@ const importCsv = defineServerFn({
             workCenterInserts: workCenterInserts.length,
             workCenterUpdates: workCenterUpdates.length
           });
+          summary.inserted += workCenterInserts.length;
+          summary.updated += workCenterUpdates.length;
 
           if (workCenterInserts.length > 0) {
             const inserted = await inChunks(workCenterInserts, (rows) =>
@@ -2816,6 +2820,12 @@ const importCsv = defineServerFn({
               companyId,
               userId
             );
+            inserted.forEach((row, i) => {
+              const processIds = processIdsForInserts[i];
+              if (row.id && processIds) {
+                processLinks.push({ workCenterId: row.id, processIds });
+              }
+            });
           }
           if (workCenterUpdates.length > 0) {
             for (const update of workCenterUpdates) {
@@ -2826,6 +2836,29 @@ const importCsv = defineServerFn({
                 .where("companyId", "=", companyId)
                 .execute();
             }
+          }
+          if (processLinks.length > 0) {
+            // Replace the links, as upsertWorkCenter does on an edit.
+            await trx
+              .deleteFrom("workCenterProcess")
+              .where(
+                "workCenterId",
+                "in",
+                processLinks.map((link) => link.workCenterId)
+              )
+              .where("companyId", "=", companyId)
+              .execute();
+            const links = processLinks.flatMap((link) =>
+              link.processIds.map((processId) => ({
+                workCenterId: link.workCenterId,
+                processId,
+                companyId,
+                createdBy: userId
+              }))
+            );
+            await inChunks(links, (rows) =>
+              trx.insertInto("workCenterProcess").values(rows).execute()
+            );
           }
         });
         break;
@@ -2838,7 +2871,7 @@ const importCsv = defineServerFn({
         );
         const processIds = new Set();
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const processInserts: Database["public"]["Tables"]["process"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -2878,7 +2911,7 @@ const importCsv = defineServerFn({
             );
           };
 
-          for (const record of mappedRecords) {
+          for (const [rowIndex, record] of mappedRecords.entries()) {
             const { id, ...rest } = record;
             if (externalIdMap.has(id!)) {
               const existingEntityId = externalIdMap.get(id!)!;
@@ -2886,14 +2919,17 @@ const importCsv = defineServerFn({
                 processIds.add(id);
                 processUpdates.push({
                   id: existingEntityId,
-                  data: {
-                    ...pickColumns("process", rest, PROCESS_COLUMNS),
-                    processType: normalizeProcessType(rest.processType),
-                    completeAllOnScan:
-                      rest.completeAllOnScan?.toLowerCase() === "true",
-                    updatedAt: datetime.timestamp(),
-                    updatedBy: userId
-                  }
+                  data: keepSavedValues(
+                    {
+                      ...pickColumns("process", rest, PROCESS_COLUMNS),
+                      processType: normalizeProcessType(rest.processType),
+                      completeAllOnScan:
+                        rest.completeAllOnScan?.toLowerCase() === "true",
+                      updatedAt: datetime.timestamp(),
+                      updatedBy: userId
+                    },
+                    rowIndex
+                  )
                 });
               }
             } else if (isProcessValid(rest) && !processIds.has(id)) {
@@ -2916,6 +2952,8 @@ const importCsv = defineServerFn({
             processInserts: processInserts.length,
             processUpdates: processUpdates.length
           });
+          summary.inserted += processInserts.length;
+          summary.updated += processUpdates.length;
 
           if (processInserts.length > 0) {
             const inserted = await inChunks(processInserts, (rows) =>
@@ -3044,7 +3082,7 @@ const importCsv = defineServerFn({
           rowIndex: number;
         }> = [];
 
-        await db.transaction().execute(async (trx) => {
+        await inTransaction(db, async (trx) => {
           const inserts: Database["public"]["Tables"]["storageUnit"]["Insert"][] =
             [];
           const csvIdsForInserts: string[] = [];
@@ -3178,13 +3216,17 @@ const importCsv = defineServerFn({
               // to avoid the "cannot move a unit with children" interceptor.
               updates.push({
                 id: existingEntityId,
-                data: {
-                  name,
-                  storageTypeIds,
-                  active,
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId
-                }
+                data: keepSavedValues(
+                  {
+                    name,
+                    storageTypeIds,
+                    active,
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  },
+                  rowIndex,
+                  { storageTypeIds: "storageTypeNames" }
+                )
               });
               if (
                 matchedByCsvId === undefined &&
@@ -3289,17 +3331,21 @@ const importCsv = defineServerFn({
             });
             continue;
           }
+          // One transaction per row: a refused parent fails only its row,
+          // in a dry run too (inTransaction).
           try {
-            await db
-              .updateTable("storageUnit")
-              .set({
-                parentId,
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
-              .where("id", "=", childId)
-              .where("companyId", "=", companyId)
-              .execute();
+            await inTransaction(db, (trx) =>
+              trx
+                .updateTable("storageUnit")
+                .set({
+                  parentId,
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                })
+                .where("id", "=", childId)
+                .where("companyId", "=", companyId)
+                .execute()
+            );
           } catch (parentErr) {
             summary.errors.push({
               row: intent.rowIndex,
@@ -3314,9 +3360,11 @@ const importCsv = defineServerFn({
       case "bom":
       case "operations":
       case "partWithMethod": {
+        // Only the rows whose references passed the company check; each
+        // keeps its file row number.
         await importMethods(db, {
           table,
-          mappedRecords,
+          rows: acceptedRows,
           companyId,
           userId,
           summary
@@ -3364,25 +3412,131 @@ const importCsv = defineServerFn({
         });
         break;
       }
+      case "supplierPartPrice": {
+        await importSupplierPrices(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary,
+          keepSavedValues: keepSaved
+        });
+        break;
+      }
+      case "itemUnitSalePrice": {
+        await importItemSalePrices(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary
+        });
+        break;
+      }
+      case "itemPlanning": {
+        await importItemPlanning(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary
+        });
+        break;
+      }
+      case "customerPartToItem": {
+        await importCustomerParts(db, {
+          rows: acceptedRows,
+          companyId,
+          summary,
+          keepSavedValues: keepSaved
+        });
+        break;
+      }
+      case "customerLocation":
+      case "supplierLocation": {
+        await importPartnerLocations(db, {
+          table,
+          rows: acceptedRows,
+          companyId,
+          summary,
+          keepSavedValues: keepSaved
+        });
+        break;
+      }
       default: {
         throw new Error(`Invalid table: ${table}`);
       }
     }
 
-    // Attach each failed/skipped row's original CSV cells (keyed by the user's
-    // headers) so the results UI renders the exact rows the server parsed — no
-    // dependence on a second, client-side parse. `row` is the 0-based index into
-    // parsedCsv for both the standard and method importers.
+    /**
+     * Attach each failed/skipped row's original CSV cells (keyed by the user's
+     * headers) so the results UI renders the exact rows the server parsed — no
+     * dependence on a second, client-side parse. The importers report `row` as
+     * the 0-based index into parsedCsv; the report gives the file row.
+     */
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
-      issues.map((issue) => ({ ...issue, values: parsedCsv[issue.row] ?? {} }));
+      issues.map((issue) => {
+        const fileRow = keptRows[issue.row] ?? issue.row;
+        return { ...issue, row: fileRow, values: fileRows[fileRow] ?? {} };
+      });
 
     return {
       success: true,
       inserted: summary.inserted,
       updated: summary.updated,
-      errors: withValues(summary.errors),
-      skipped: withValues(summary.skipped)
+      errors: [
+        ...refusedRows.map((issue) => ({
+          ...issue,
+          values: fileRows[issue.row] ?? {}
+        })),
+        ...withValues(summary.errors)
+      ].sort((a, b) => a.row - b.row),
+      skipped: withValues(summary.skipped),
+      existingRows: [
+        ...new Set(summary.existingRows.map((row) => keptRows[row] ?? row))
+      ].sort((a, b) => a - b)
     };
+  }
+};
+
+const importCsv = defineServerFn({
+  name: "import-csv",
+  input: importCsvInput,
+  permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
+  /**
+   * Runs the import, or with `dryRun` runs it in a transaction that is always
+   * rolled back.
+   */
+  async run(ctx, input) {
+    if (!input.dryRun) return importer.run(ctx, ctx.db, input);
+
+    // A dry run imports inside one transaction and always rolls it back: the
+    // counts and row errors are the ones a real run would report, and nothing
+    // is written. Each step's own transaction becomes a savepoint
+    // (inTransaction). Postgres cannot nest a transaction, so a caller that is
+    // already inside one cannot dry-run.
+    if (ctx.db.isTransaction) {
+      throw new Error("A dry run cannot start inside a transaction");
+    }
+    const trx = await ctx.db.startTransaction().execute();
+    let failed = false;
+    try {
+      const result = await importer.run(ctx, trx, input);
+      return { ...result, dryRun: true };
+    } catch (error) {
+      failed = true;
+      throw error;
+    } finally {
+      try {
+        await trx.rollback().execute();
+      } catch (rollbackError) {
+        logger.error("Rolling back a dry-run import failed", {
+          companyId: ctx.companyId,
+          table: input.table,
+          error: rollbackError
+        });
+        // Keep the import's own error; a failed rollback after a clean run
+        // means the dry run cannot vouch that nothing was written.
+        if (!failed) throw rollbackError;
+      }
+    }
   }
 });
 

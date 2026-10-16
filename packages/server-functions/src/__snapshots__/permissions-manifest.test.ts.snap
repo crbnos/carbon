@@ -157,6 +157,14 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       "customerContact": {
         "update": "sales",
       },
+      "customerLocation": {
+        "create": "sales",
+        "update": "sales",
+      },
+      "customerPartToItem": {
+        "create": "parts",
+        "update": "parts",
+      },
       "department": {
         "update": "people",
       },
@@ -167,8 +175,14 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
         "create": "inventory",
         "update": "inventory",
       },
+      "itemPlanning": {
+        "update": "parts",
+      },
       "itemPostingGroup": {
         "update": "accounting",
+      },
+      "itemUnitSalePrice": {
+        "update": "parts",
       },
       "material": {
         "update": "parts",
@@ -224,6 +238,14 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
       "supplierContact": {
         "update": "purchasing",
+      },
+      "supplierLocation": {
+        "create": "purchasing",
+        "update": "purchasing",
+      },
+      "supplierPartPrice": {
+        "create": "parts",
+        "update": "parts",
       },
       "tool": {
         "update": "parts",

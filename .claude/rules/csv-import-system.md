@@ -69,14 +69,22 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 
 ### Tables & permissions
 
-`customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
+`customer`, `customerContact`, `customerLocation` → `sales`; `supplier`,
+`supplierContact`, `supplierLocation` → `purchasing`;
 `part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
-`storageType` → `parts`;
+`storageType`, `supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning`,
+`customerPartToItem` → `parts`;
 `workCenter`, `process`, `scrapReason` → `production`; `storageUnit`,
 `inventoryQuantity`, `batchQuantity`, `serialQuantity` → `inventory`;
 `department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+
+`importRequiresCreate` (also `create` on the module): the three stock imports,
+`supplierPartPrice`, `customerPartToItem`, `customerLocation` and
+`supplierLocation`, matching the `create` gate of the single-record routes they
+mirror. `imports.models.test.ts` pins both maps to the server function's
+`permissions` rules.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
 the one that opens its list page. The server function writes through a service-role
@@ -91,8 +99,9 @@ The server function's own `table` enum (`import-csv/index.ts`) accepts: `consuma
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
 `storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
 `materialFinish`, `materialGrade`, `materialType`, `materialDimension`,
-`inventoryQuantity`, `batchQuantity`, `serialQuantity`. Note it does
-**not** list `fixedAsset` (see Gotchas).
+`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `supplierPartPrice`,
+`itemUnitSalePrice`, `itemPlanning`, `customerPartToItem`, `customerLocation`,
+`supplierLocation`. Note it does **not** list `fixedAsset` (see Gotchas).
 
 ### Service import (rides the item path)
 
@@ -105,6 +114,44 @@ column, and the item validator requires one), and the type-row insert writes the
 legacy `serviceType: "External"` instead of `approved: true`. Both mirror
 `upsertService` in `items.service.ts`; the wizard's replenishment options are
 narrowed to `Buy | Make`, since "Buy and Make" is not a service.
+
+### Item extras (`import-csv/item-extras.ts`)
+
+An item row may also carry a supplier part (Supplier, Supplier Part ID,
+Supplier Unit of Measure, MOQ, Order Multiple, Conversion Factor, Unit Price),
+a purchasing Lead Time, a Unit Cost and an Order Multiple. `collectItemExtras`
+queues them once the item id is known and `writeItemExtras` writes them inside
+the caller's transaction: the supplier part is updated by (item, supplier) or
+inserted, `itemReplenishment.leadTime`, `itemCost.unitCost` and every
+location's `itemPlanning.orderMultiple` are updated (the item insert trigger
+created those rows). The item imports and the PART rows of `partWithMethod`
+share these functions, so a PART row writes exactly what a `part` row writes
+for the same columns. The PART row's item itself is still insert-or-touch:
+on a conflict only `updatedAt` / `updatedBy` change.
+
+### Method imports (`bom`, `operations`, `partWithMethod`)
+
+`method-import.ts`, atomic per parent part and create-only: a version that
+already has materials or operations is left alone. `partWithMethod` is in
+`REFERENCES` (its Supplier column), and `importMethods` receives only the rows
+that passed `rejectForeignReferences`, each with its file row number. Every row
+is counted once: a PART row as inserted (new item, `xmax = 0`) or updated, each
+BOM, BOP, STEP, TOOL and PARAM row written as inserted, and each row of a
+version that already had content as skipped. Part groups are written in
+`componentsFirst` order: a part after the parts of the same file it uses as a
+material or tool, otherwise file order. So an assembly may come before the PART
+rows of its new components; before this, its BOM failed with "Item … not found".
+A part that uses itself through others keeps file order.
+
+### Work center processes
+
+The `workCenter` import's Processes column holds comma-separated process names
+(`work-center-processes.ts`). Names resolve case- and whitespace-insensitively
+against the company's active processes, the list the form offers; an unknown
+or ambiguous name makes the row an error. A filled cell replaces the work
+center's `workCenterProcess` links, as `upsertWorkCenter` does on an edit; a
+blank cell leaves them alone. The import does not call
+`notifyScheduleInputsChanged`, which the work center routes call after a save.
 
 ### Storage-unit import (natural-key match + two-pass parent linking)
 
@@ -207,6 +254,115 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   "Inventory Adjustment — CSV import" (no per-row comment), and a zero-cost row
   posts no journal lines.
 
+### Imports onto existing items (prices, planning, customer parts)
+
+`supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning` and `customerPartToItem`
+are surfaced from the Parts list (`PartsTable.tsx`), each handled by its own
+file under `import-csv/` with its per-row decision exported and tested
+(`*-import.test.ts`). Shared pieces live in `import-csv/existing-item.ts`:
+
+- **Item resolution** (`resolveItem`): Part Number + Revision (blank → `"0"`;
+  a stored `''`/NULL revision is `"0"` too) against the company's items of the
+  types whose page has the mirrored tab. A key naming items of two accepted
+  types (`item_unique` includes `type`) is a row error naming the types; an
+  item of another type, or none, is a row error.
+- Rows are the `acceptedRows` left by `rejectForeignReferences`, so each row
+  is counted once: inserted, updated, skipped or errors. A key repeated in the
+  file is a row error on the later row. Every write runs in one
+  `db.transaction()`; reads happen before it.
+- Updates of existing rows are one `UPDATE … FROM (VALUES …)` per chunk
+  (`updateRowsByKey`, `set-based-update.ts`), never one statement per row:
+  each row carries, per column, its value and whether to write it.
+- Numbers are rounded to the storage scale (`round`) before they are checked,
+  as the app's inputs commit them. A whole number above `MAX_INTEGER` (the
+  INTEGER column limit) is a row error; written, it would abort the
+  transaction.
+
+#### `supplierPartPrice` (Supplier Price Breaks)
+
+Mirrors the supplier part drawer (`$itemId.purchasing.$supplierPartId.tsx`):
+for each (item, supplier) pair in the file, the file's rows replace that
+supplier part's whole ladder (delete, then insert as `"Manual Entry"`). A pair
+with no supplier part gets one first, as `$itemId.purchasing.new.tsx` creates
+it: item, supplier, `conversionFactor: 1`, other columns at their defaults
+(supplier unit of measure NULL, not the drawer's "EA" pre-fill). Columns:
+Part Number, Revision, Supplier (`supplierFetcher`, in `REFERENCES`),
+Quantity and Unit Price (> 0, as the drawer refuses ≤ 0), Lead Time (blank →
+0, what the routes write). Item types: Part, Material, Tool, Consumable,
+Service. The drawer will not save a ladder with an invalid break, so a pair
+with any bad row (including a repeated quantity) is not written at all and its
+good rows are reported as errors. A row at a quantity the ladder already had
+counts as updated, any other as inserted; a dropped break is not counted.
+Prices are written to `supplierPartPrice.supplierUnitPrice`, per purchase
+unit in the supplier part's `currencyCode`: an existing part keeps its
+currency, and a part the import creates has `currencyCode` NULL (the company's
+base currency), as the part import's supplier columns do.
+`supplierPart.supplierUnitPrice` and the other supplier part fields are not
+touched.
+Replacing a ladder needs no `delete` permission: the edit route deletes it
+through Kysely under `update: parts` as well.
+
+#### `itemUnitSalePrice` (Item Sale Prices)
+
+Mirrors the Sales tab's sale price card (`itemUnitSalePriceValidator`,
+`upsertItemUnitSalePrice`): sets `unitSalePrice` (0 or more) on the item's one
+`itemUnitSalePrice` row. Update only: an item without that row (it is created
+by the item insert trigger) is a row error. Item types: Part, Material, Tool,
+Consumable, Service.
+
+#### `itemPlanning` (Item Planning)
+
+Mirrors the Planning tab (`itemPlanningValidator`, `upsertItemPlanning`):
+updates the (item, Location) row; a missing row is a row error, never an
+insert. Location is an enum through `locationFetcher`, re-checked in
+`REFERENCES`. Columns are the form's: reordering policy, reorder point and
+quantity, accumulation period and safety stock, minimum/maximum order
+quantity, order multiple, maximum inventory quantity, planning horizon. The
+responsible employee is not imported. A blank cell leaves the column as it is
+(so an import cannot clear a planning horizon back to the company default).
+The validator lives in the app, so `item-planning-import.ts` restates it:
+`PLANNING_COLUMNS` holds each field's minimum (plus a whole-number check and
+`MAX_INTEGER` for the INTEGER columns) and
+`planningRuleError` the two refinements, word for word including their
+truthiness (Maximum Quantity with a reorder point of 0 is refused). The
+refinements run on the row merged over the stored values, as the form submits
+the stored values of the fields it shows. Item types: Part, Material, Tool,
+Consumable. **MRP is not run**: the route re-plans the one item after saving;
+the import leaves that to the scheduled MRP run.
+
+#### `customerPartToItem` (Customer Part Numbers)
+
+Mirrors the part's New Customer Part drawer (`customerPartValidator`,
+`upsertItemCustomerPart`). Columns: Part Number, Revision, Customer
+(`customerFetcher`, in `REFERENCES`), Customer Part Number (required),
+Customer Part Revision (blank → `''`, the column default). Upserts on the
+`(customerId, itemId)` unique key: a pair that already has a customer part
+number is updated. Only parts have the drawer. The table has no audit columns.
+
+### Partner-location imports (`customerLocation`, `supplierLocation`)
+
+Surfaced from the Customers and Suppliers lists; handled by
+`import-csv/partner-location-import.ts`. Mirrors the Locations tab's drawer
+(`customerLocationValidator` / `supplierLocationValidator`,
+`insertCustomerLocation` / `insertSupplierLocation`): an `address` row, then
+the location row pointing at it. Columns: Customer / Supplier (fetcher, in
+`REFERENCES`), Location Name (required), and the address columns of the
+customer and supplier imports (`partnerLocationImportFields`: Address Line
+1/2, City, State / Region → `stateProvince`, Postal Code, Country as alpha-2)
+plus Phone and Fax. An unknown country code is a row error, not a failed
+transaction (`address.countryCode` references `country.alpha2`).
+
+- **Natural key**: (partner, lower(trimmed name)). A match updates that
+  location's address as the edit drawer does: each mapped column is replaced,
+  a blank cell with NULL; a column the file does not map is left alone (an
+  enum column the wizard did not map arrives as `undefined` and counts as
+  unmapped). The name is never changed. Two existing locations sharing the
+  normalized name make the row an error; a match with no address columns is
+  skipped.
+- The customer and supplier imports' primary-location address handling
+  (lowest location id) is unchanged. Location ids are random, so a location
+  added by this import or the app can become that "primary" one.
+
 ### Configuration-lookup imports (skip-duplicate, create-only)
 
 `unitOfMeasure`, `itemPostingGroup`, `storageType`, `scrapReason` and `department`
@@ -253,7 +409,7 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
 Action only (no loader). Steps:
 1. `notFound` if `tableId` missing or not a key of `importPermissions`.
-2. `requirePermissions(request, { update: importPermissions[table] })`, plus `create` on the same module for tables in `importRequiresCreate` (the three stock imports, matching the single-record adjustment's `create: inventory` route gate and `update: inventory` Save button).
+2. `requirePermissions(request, { update: importPermissions[table] })`, plus `create` on the same module for tables in `importRequiresCreate` (the three stock imports, matching the single-record adjustment's `create: inventory` route gate and `update: inventory` Save button, and the supplier price, customer part and location imports, matching their create routes).
 3. Validate form against `importSchemas[table].extend({ filePath, enumMappings })`.
    `enumMappings` arrives as a JSON **string** and is `JSON.parse`d before the service call.
 4. `columnMappings` = the remaining validated form fields after destructuring `filePath`
@@ -265,16 +421,106 @@ Action only (no loader). Steps:
 it lazily imports `@carbon/server-functions/import-csv` and calls
 `serverFns.as({ client, db, companyId, userId }).invoke("import-csv", args)`.
 
+## CSV text import (MCP and other callers that cannot upload)
+
+`importCsvText` (`shared.service.ts`, MCP tool `shared_importCsvText`) sends the CSV as
+text instead of a storage path, for callers with no upload step, such as an agent over
+MCP. Without `columnMappings` it builds them from the headers with
+`columnMappingsFromHeaders` (field key or label, any case) and refuses a header that
+matches no field rather than dropping the column, and a label two fields share
+(`partWithMethod`'s item `unitCost` and `operationUnitCost`, both "Unit Cost"), naming
+the keys to use instead. It validates the mapping with
+`importSchemas[table]` and sends the validated (stripped) mapping, as the route does.
+It invokes the server function with `serverFns.as` on the caller's own client, so the
+function's permission check runs against the caller's credential (user or API key).
+Tables are limited to `csvImportTables` (`shared.models.ts`), which
+`imports.models.test.ts` pins to the server function's `table` enum.
+
+An enum value that matches no option by label, readable id or id gets one more
+try for fields in `CSV_ID_ENTITY_TYPES` (`import-enum-mappings.ts`; today the
+Supplier column): the Unique ID an earlier import gave the record, read from
+`externalIntegrationMapping` (integration "csv"). It runs only after the
+option match, so a Unique ID that equals another record's name changes
+nothing, and an id whose record is gone is not used (`withCsvIdMatches`). The
+wizard does not do this.
+
+A value that matches no option is not refused for the whole call: it goes to the server
+function as `refusedValues` (per field, its label and the values), so only the rows
+holding one are refused, as a row naming an unknown record is. The call also sets
+`keepSavedValues` (below). The reply is the importer's report with its `errors` split by
+`splitRefusedRows` (`import-report.ts`) into `missing` (the reason says a required value
+is empty: "Missing required …", "… is required") and `mismatched` (everything else: no
+matching option or record, wrong form), plus `defaults` from `defaultsForNewRows`: per
+field and value, how many rows leave the field empty and so take the default (the
+`enumMappings` Default for an enum, the field's `default` otherwise). Rows the server
+function reports in `existingRows` (updates, which keep their saved values) and skipped
+rows are not counted; refused rows are, since they take the same defaults once fixed.
+Reference revisions (`parentRevision`, `componentRevision`, `toolRevision`, and
+`revision` outside the item tables) are not defaults. In a method file a row counts only
+for its row type's fields (`methodRowTypeFields`). The server instructions tell the agent
+to settle missing values, unclear mismatches and the defaults with the user in one
+message before importing, and to correct a mismatched value itself only when the right
+one is clear.
+
+`dryRun: true` runs the import and rolls it back (below); the reply is the same
+report, with `dryRun: true`.
+`getCsvImportFields` (`shared_getCsvImportFields`) lists a table's columns from
+`fieldMappings`, reading fetcher-backed enum values live (one read per distinct
+fetcher), plus notes on how method-file rows link. A fetched option is listed by the
+label the matcher tries first (`fetchedImportOption`: a name, or an employee's email),
+not its id, and a fetched default likewise; ids are still accepted. A field without an
+`enumData.description` takes its `importSchemas` description, which is where
+instructions such as the Processes separator live. The Unique ID notes appear only on
+tables with an `id` field. One of them states the update rule `keepSavedValues` gives
+this path: an empty cell or a missing column keeps the saved value, and cannot clear it.
+
 ## Server function (`packages/server-functions/src/import-csv/index.ts`)
 
-Built with `defineServerFn`; input validated by `importCsvInput` (table enum, `filePath`,
-`columnMappings`, optional `enumMappings`).
+Built with `defineServerFn`; input validated by `importCsvInput` (table enum, exactly one
+of `filePath` or `csv`, `columnMappings`, optional `enumMappings`, optional `dryRun`,
+optional `keepSavedValues`, optional `refusedValues`).
+
+- **`keepSavedValues`** (set by `importCsvText`, never by the wizard). Each row records
+  the fields it holds: a non-empty cell that did not come from an enum's `Default`. An
+  update writes only those, through `withSavedValuesKept` (`saved-values.ts`) at every
+  update site that builds its payload from the row: items, contacts, work centers,
+  processes, storage units. Customer and supplier location imports get it as an
+  argument and leave a blank address cell as it is instead of clearing it. So a missing column or an empty cell keeps the saved value
+  instead of resetting it (Replenishment System to its default, Active to true, work
+  center rates to 0, Complete All On Scan to false). Inserts still take the defaults.
+  Customers and suppliers already kept blanks (`nullifyEmptyStrings`), and their enum
+  fields have no default. In the wizard the Default still applies to every row,
+  updates included.
+- **`refusedValues`** (set by `importCsvText`). `rowsWithoutRefusedValues`
+  (`refused-values.ts`) takes out every row holding one of a field's refused values
+  (compared trimmed) before the records are built, and reports it as
+  `{Label} "{value}" matches no option`. The importers see only the kept rows;
+  the report maps their row numbers back to file rows (`keptRows`).
+- **`existingRows`** in the report: the file rows that updated an existing record. Every
+  update site that goes through `keepSavedValues` records its row, as do the method
+  import (a PART row whose part already existed) and the supplier price import (a break
+  at a quantity the ladder had). Importers whose fields have no defaults do not report.
+- With `keepSavedValues`, a re-sent price break with a blank Lead Time keeps the break's
+  saved lead time instead of 0.
+
+- **Dry run.** The body is `importer.run(ctx, db, input)`. With `dryRun` the server
+  function opens one `ControlledTransaction`, runs the import on it and always rolls
+  it back, so the counts and row errors are a real run's and nothing is written.
+  Every write goes through `inTransaction` (`import-csv/transaction.ts`): a
+  transaction on the database, a savepoint inside the dry run, so a step that fails
+  rolls back only its own writes either way. The storage-unit and department parent
+  passes give each row its own `inTransaction` for the same reason: a caught error
+  would otherwise abort the dry run's transaction for every later row. A caller
+  already inside a transaction cannot dry-run (Postgres has no nested transactions).
+  New import code must write only through `inTransaction`. Locks taken during a dry
+  run (the journal sequence row, an accounting period) are held until the rollback.
 
 - Checks the caller via `permissions: { by: "table", rules }`: `update` on
   `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
   models, so a new import type adds its table to both sides.
-- Refuses a `filePath` outside the `${companyId}/` prefix, then downloads it from the
-  company bucket, falling back to the legacy `private` bucket.
+- Reads the CSV from `csv` (text in the request, capped at `MAX_CSV_TEXT_LENGTH`, 1 MB)
+  or downloads `filePath` from the company bucket, falling back to the legacy `private`
+  bucket; a path outside `${companyId}/` is refused.
 - Parses with `parseCsv` (`@carbon/files/csv`, PapaParse), falling back to a custom
   `parsePermissiveCsv()` when a row's field count disagrees with the header.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);

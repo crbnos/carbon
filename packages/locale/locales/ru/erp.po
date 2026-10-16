@@ -6636,6 +6636,9 @@ msgstr "Площадка покупателя"
 msgid "Customer Location"
 msgstr "Площадка покупателя"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "Обзор покупателя"
 
@@ -6647,6 +6650,9 @@ msgstr "Артикул покупателя"
 
 msgid "Customer Part Number"
 msgstr "Номер детали покупателя"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "Ревизия детали покупателя"
@@ -11942,6 +11948,12 @@ msgstr "Название позиции"
 
 msgid "Item pages"
 msgstr "Страницы номенклатуры"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "Область применения товара"
@@ -21559,6 +21571,9 @@ msgstr "Место расположения поставщика"
 msgid "Supplier Location"
 msgstr "Местоположение поставщика"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "Номер заказа поставщика"
 
@@ -21591,6 +21606,9 @@ msgstr "Скидки по платежам поставщика (по умолч
 
 msgid "Supplier Prepayments"
 msgstr "Предоплаты поставщику"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "Процесс поставщика"

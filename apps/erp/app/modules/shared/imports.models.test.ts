@@ -2,8 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import importCsv, { importCsvInput } from "@carbon/server-functions/import-csv";
 import { describe, expect, it } from "vitest";
-import { fieldMappings, importSchemas } from "./imports.models";
+import { itemReorderingPolicies } from "../items/items.models";
+import {
+  columnMappingsFromHeaders,
+  enumDefault,
+  fieldMappings,
+  importPermissions,
+  importRequiresCreate,
+  importSchemas,
+  parseCsvHeader
+} from "./imports.models";
+import { csvImportTables } from "./shared.models";
 
 // The import route builds `columnMappings` from `validator(importSchemas[table]
 // .extend({...})).validate(formData)`, and a zod object strips keys it does not
@@ -45,5 +56,132 @@ describe("item revision survives route validation", () => {
     });
 
     expect(parsed).toHaveProperty("revision", "B");
+  });
+});
+
+describe("CSV text import", () => {
+  // A table added on one side only would either be refused by the importer or
+  // never offered over MCP.
+  it("offers exactly the tables the import-csv server function accepts", () => {
+    expect([...csvImportTables].sort()).toEqual(
+      [...importCsvInput.shape.table.options].sort()
+    );
+  });
+
+  it("describes every table it offers", () => {
+    for (const table of csvImportTables) {
+      expect(fieldMappings, table).toHaveProperty(table);
+    }
+  });
+
+  // The route checks `importPermissions` / `importRequiresCreate`; the server
+  // function checks its own copy. A table added to one side only is either
+  // refused by the importer or checked against a different permission.
+  it("asks the same permissions as the import-csv server function", () => {
+    const rules = (
+      importCsv.permissions as {
+        rules: Record<string, Record<string, string>>;
+      }
+    ).rules;
+    for (const table of csvImportTables) {
+      expect(rules[table], table).toEqual({
+        update: importPermissions[table],
+        ...(importRequiresCreate.has(table)
+          ? { create: importPermissions[table] }
+          : {})
+      });
+    }
+  });
+
+  it("reads a header row, quotes and all", () => {
+    expect(parseCsvHeader("id,readableId,name\nP-1,P-1,Frame")).toEqual([
+      "id",
+      "readableId",
+      "name"
+    ]);
+    expect(
+      parseCsvHeader('﻿"Part Number", "Description, long" ,"Say ""hi"""\r\nx')
+    ).toEqual(["Part Number", "Description, long", 'Say "hi"']);
+    expect(parseCsvHeader("id,,name")).toEqual(["id", "name"]);
+  });
+
+  it("maps headers by field key or label and reports the rest", () => {
+    expect(
+      columnMappingsFromHeaders("part", [
+        "id",
+        "part number",
+        "Description",
+        "Colour"
+      ])
+    ).toEqual({
+      columnMappings: {
+        id: "id",
+        readableId: "part number",
+        name: "Description"
+      },
+      unknownHeaders: ["Colour"],
+      ambiguousHeaders: {}
+    });
+  });
+
+  it("refuses a label two fields share and names their keys", () => {
+    expect(
+      columnMappingsFromHeaders("partWithMethod", [
+        "Unit Cost",
+        "operationUnitCost",
+        "Lead Time (Days)"
+      ])
+    ).toEqual({
+      columnMappings: {
+        operationUnitCost: "operationUnitCost",
+        leadTime: "Lead Time (Days)"
+      },
+      unknownHeaders: [],
+      ambiguousHeaders: { "Unit Cost": ["unitCost", "operationUnitCost"] }
+    });
+  });
+});
+
+// The wizard sends an enum field's default for every blank or missing cell, so
+// a default the importer rejects fails every such row. The Default Method
+// defaults read "Make" after the method types were renamed to "Make to Order"
+// and its siblings, and every part imported without that column failed.
+describe("item planning import", () => {
+  // The models restate the planning form's policies to avoid importing the
+  // items module; this keeps the copy honest.
+  it("offers the planning form's reordering policies", () => {
+    expect(
+      fieldMappings.itemPlanning.reorderingPolicy.enumData.options
+    ).toEqual(itemReorderingPolicies);
+  });
+});
+
+describe("enum defaults", () => {
+  const tables = Object.keys(fieldMappings) as (keyof typeof fieldMappings)[];
+
+  it.each(tables)("%s offers only defaults among its options", (table) => {
+    const invalid = Object.entries(
+      fieldMappings[table] as Record<
+        string,
+        {
+          type: string;
+          enumData?: { options?: readonly string[]; default?: string };
+        }
+      >
+    ).filter(
+      ([, field]) =>
+        field.type === "enum" &&
+        // An empty default means "leave the cell blank".
+        Boolean(field.enumData?.default) &&
+        enumDefault(field.enumData) === undefined
+    );
+
+    expect(invalid.map(([key]) => key)).toEqual([]);
+  });
+
+  it("drops a default that is not one of the options", () => {
+    expect(enumDefault({ options: ["A", "B"], default: "C" })).toBeUndefined();
+    expect(enumDefault({ options: ["A", "B"], default: "B" })).toBe("B");
+    expect(enumDefault({ default: "EA" })).toBe("EA");
   });
 });

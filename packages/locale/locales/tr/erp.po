@@ -6636,6 +6636,9 @@ msgstr "Müşteri konumu"
 msgid "Customer Location"
 msgstr "Müşteri Konumu"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "Müşteri Genel Bakışı"
 
@@ -6647,6 +6650,9 @@ msgstr "Müşteri parça numarası"
 
 msgid "Customer Part Number"
 msgstr "Müşteri Parça Numarası"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "Müşteri Parça Revizyonu"
@@ -11942,6 +11948,12 @@ msgstr "Kalem Adı"
 
 msgid "Item pages"
 msgstr "Stok kartı sayfaları"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "Ürün Kapsamı"
@@ -21559,6 +21571,9 @@ msgstr "Tedarikçi konumu"
 msgid "Supplier Location"
 msgstr "Tedarikçi Konumu"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "Tedarikçi Sipariş Numarası"
 
@@ -21591,6 +21606,9 @@ msgstr "Tedarikçi ödeme iskontoları (varsayılan)"
 
 msgid "Supplier Prepayments"
 msgstr "Tedarikçi avansları"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "tedarikçi prosesi"

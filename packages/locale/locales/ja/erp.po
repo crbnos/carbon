@@ -6636,6 +6636,9 @@ msgstr "得意先拠点"
 msgid "Customer Location"
 msgstr "得意先拠点"
 
+msgid "Customer Locations"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "得意先概要"
 
@@ -6647,6 +6650,9 @@ msgstr "得意先品番"
 
 msgid "Customer Part Number"
 msgstr "得意先品番"
+
+msgid "Customer Part Numbers"
+msgstr ""
 
 msgid "Customer Part Revision"
 msgstr "得意先品番リビジョン"
@@ -11942,6 +11948,12 @@ msgstr "品目名"
 
 msgid "Item pages"
 msgstr "品目ページ"
+
+msgid "Item Planning"
+msgstr ""
+
+msgid "Item Sale Prices"
+msgstr ""
 
 msgid "Item Scope"
 msgstr "アイテムスコープ"
@@ -21559,6 +21571,9 @@ msgstr "仕入先所在地"
 msgid "Supplier Location"
 msgstr "仕入先の場所"
 
+msgid "Supplier Locations"
+msgstr ""
+
 msgid "Supplier Order Number"
 msgstr "仕入先注文番号"
 
@@ -21591,6 +21606,9 @@ msgstr "仕入先支払値引（デフォルト）"
 
 msgid "Supplier Prepayments"
 msgstr "仕入先前払金"
+
+msgid "Supplier Price Breaks"
+msgstr ""
 
 msgid "supplier process"
 msgstr "仕入先工法"

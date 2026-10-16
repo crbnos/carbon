@@ -34,6 +34,8 @@ Bulk import is available only for supported entities. Import each entity from th
   <Field name="Work Centers">From the work centers list, including labor, machine, and overhead rates and a location.</Field>
   <Field name="Processes">From the processes list.</Field>
   <Field name="Inventory, Batch, and Serial Quantities">From **Inventory → Quantities**. Adds opening stock for items that already exist, one import per <Term id="item-tracking-type">tracking type</Term>. See [Opening stock](#opening-stock).</Field>
+  <Field name="Supplier Price Breaks, Item Sale Prices, Item Planning, Customer Part Numbers">From the parts list. Set prices, planning settings and customer part numbers on items that already exist. See [Item prices, planning and customer part numbers](#item-prices-planning-and-customer-part-numbers).</Field>
+  <Field name="Customer Locations, Supplier Locations">From the customers and suppliers lists. Add or update the locations of existing customers and suppliers. See [Customer and supplier locations](#customer-and-supplier-locations).</Field>
 </FieldTable>
 
 Beyond these table buttons, the importer also understands three **method** formats used to load bills of materials and operations against parts: a focused BOM file, a focused Operations file, and a combined part-with-method file that creates parts and their full BOM and routing together. These are richer, row-typed CSVs (each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM`) driven from the method-building UI rather than a plain list screen.
@@ -106,6 +108,23 @@ Rules shared by all three:
 Inventory-tracked rows have no natural key, so every valid row posts, every time. Importing the same file twice doubles the quantities. Batch and serial rows are protected: a batch or serial number that already exists on that item (in any status) is **skipped**, and a number repeated in the file is skipped after its first row. The same serial number on two different items is allowed.
 </Callout>
 
+## Item prices, planning and customer part numbers
+
+Four imports on the parts list fill in the tabs of items that already exist. Each row names its item by **Part Number + Revision** (a blank Revision means `0`); an unknown item is an error, and so is a part number that matches two items of different types.
+
+<FieldTable>
+  <Field name="Supplier Price Breaks">Columns: Part Number, Revision, Supplier, Quantity, Unit Price, Lead Time (Days). For each item and supplier in the file, the file's rows **replace** that supplier part's price breaks, as saving the supplier part drawer on the **Purchasing** tab does. If the item has no supplier part for that supplier yet, one is created with a conversion factor of 1, in your base currency. Unit Price is per purchase unit, in the supplier part's currency. Quantity and Unit Price must be greater than 0, and a quantity can appear once per item and supplier. If any row for an item and supplier is invalid, none of that pair's rows are imported and its price breaks stay as they were. Works for parts, materials, tools, consumables and services.</Field>
+  <Field name="Item Sale Prices">Columns: Part Number, Revision, Unit Sale Price (0 or more). Updates the sale price on the item's **Sales** tab. Works for parts, materials, tools, consumables and services.</Field>
+  <Field name="Item Planning">Columns: Part Number, Revision, Location, and the **Planning** tab's fields (reordering policy, reorder point and quantity, accumulation period, safety stock, minimum and maximum order quantity, order multiple, maximum inventory quantity, planning horizon). Updates the item's planning at that location with the same rules as the tab; a blank cell leaves that field as it is. The import does not re-run planning: the next scheduled MRP run uses the new settings. Works for parts, materials, tools and consumables.</Field>
+  <Field name="Customer Part Numbers">Columns: Part Number, Revision, Customer, Customer Part Number, Customer Part Revision. Adds the customer's part number for a part, or updates it if that customer already has one for the part.</Field>
+</FieldTable>
+
+## Customer and supplier locations
+
+**Customer Locations** (customers list) and **Supplier Locations** (suppliers list) add locations to customers and suppliers that already exist. Columns: Customer or Supplier, Location Name, Address Line 1, Address Line 2, City, State / Region, Postal Code, Country, Phone, Fax.
+
+A row whose location name matches an existing location of that customer or supplier, ignoring case, updates that location's address instead of adding a second one: every address column in the file is replaced, and a blank cell clears that field (a blank Country is left as it is). Columns you leave out of the file are not changed.
+
 ## Errors and partial failures
 
 Import handles validation failures per row. Invalid rows are reported while valid rows continue. Results include:
@@ -117,7 +136,7 @@ Import handles validation failures per row. Invalid rows are reported while vali
 Because the results carry each failed row's original cells, the wizard's results view shows you exactly which rows to fix without re-parsing your file. A hard failure (the file can't be downloaded, or an unexpected database error) is the only case that fails the whole import and returns an error message instead of a per-row report.
 
 <Callout type="warn" title="Import bypasses row-level security by design">
-The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment.
+The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers and customer locations, purchasing for suppliers and supplier locations, parts for items, methods, prices, planning and customer part numbers, production for work centers and processes, inventory for storage units and opening stock. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment, and the supplier price break, customer part number and location imports need create permission on their module.
 </Callout>
 
 ## Related

@@ -6636,6 +6636,9 @@ msgstr "Customer location"
 msgid "Customer Location"
 msgstr "Customer Location"
 
+msgid "Customer Locations"
+msgstr "Customer Locations"
+
 msgid "Customer Overview"
 msgstr "Customer Overview"
 
@@ -6647,6 +6650,9 @@ msgstr "Customer Part ID"
 
 msgid "Customer Part Number"
 msgstr "Customer Part Number"
+
+msgid "Customer Part Numbers"
+msgstr "Customer Part Numbers"
 
 msgid "Customer Part Revision"
 msgstr "Customer Part Revision"
@@ -11942,6 +11948,12 @@ msgstr "Item Name"
 
 msgid "Item pages"
 msgstr "Item pages"
+
+msgid "Item Planning"
+msgstr "Item Planning"
+
+msgid "Item Sale Prices"
+msgstr "Item Sale Prices"
 
 msgid "Item Scope"
 msgstr "Item Scope"
@@ -21559,6 +21571,9 @@ msgstr "Supplier location"
 msgid "Supplier Location"
 msgstr "Supplier Location"
 
+msgid "Supplier Locations"
+msgstr "Supplier Locations"
+
 msgid "Supplier Order Number"
 msgstr "Supplier Order Number"
 
@@ -21591,6 +21606,9 @@ msgstr "Supplier Payment Discounts (default)"
 
 msgid "Supplier Prepayments"
 msgstr "Supplier Prepayments"
+
+msgid "Supplier Price Breaks"
+msgstr "Supplier Price Breaks"
 
 msgid "supplier process"
 msgstr "supplier process"
