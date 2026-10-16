@@ -762,6 +762,10 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           {
             table: "material" as const,
             label: t`Materials`
+          },
+          {
+            table: "supplierPart" as const,
+            label: t`Supplier Parts`
           }
         ]}
         primaryAction={

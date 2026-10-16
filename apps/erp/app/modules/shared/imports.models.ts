@@ -113,66 +113,6 @@ const customerFetcher = async (
   };
 };
 
-// Shared supplier-part import fields. Spread into every item-type entry
-// (part / material / tool / fixture / consumable) so a single CSV row can
-// optionally create a supplierPart link alongside the item itself. All
-// optional — rows without a Supplier column import as items only.
-const supplierPartImportFields = {
-  supplierId: {
-    label: "Supplier",
-    required: false,
-    type: "enum",
-    enumData: {
-      description:
-        "Optional — link this item to a supplier (match by Supplier ID or name)",
-      fetcher: supplierFetcher
-    }
-  },
-  supplierPartId: {
-    label: "Supplier Part Number",
-    required: false,
-    type: "string"
-  },
-  supplierUnitOfMeasureCode: {
-    label: "Supplier Unit of Measure",
-    required: false,
-    type: "enum",
-    enumData: {
-      description: "How the supplier sells this part (e.g., BOX)",
-      fetcher: async (client: SupabaseClient<Database>, companyId: string) => {
-        const { data, error } = await client
-          .from("unitOfMeasure")
-          .select("name, code")
-          .eq("companyId", companyId);
-        if (error) return { data: null, error };
-        return {
-          data: data.map((u) => ({ id: u.code, name: u.name }))
-        };
-      }
-    }
-  },
-  minimumOrderQuantity: {
-    label: "Minimum Order Quantity",
-    required: false,
-    type: "string"
-  },
-  orderMultiple: {
-    label: "Order Multiple",
-    required: false,
-    type: "string"
-  },
-  conversionFactor: {
-    label: "Conversion Factor",
-    required: false,
-    type: "string"
-  },
-  unitPrice: {
-    label: "Supplier Unit Price",
-    required: false,
-    type: "string"
-  }
-} as const;
-
 // Item-level purchasing fields. Spread into every real item-type entry
 // (part / material / tool / fixture / consumable). These write to the
 // item's "itemReplenishment" row (auto-created by the create_item_related_records
@@ -657,7 +597,6 @@ const partImportFields = {
       default: "EA"
     }
   },
-  ...supplierPartImportFields,
   ...itemPurchasingImportFields
 } as const;
 
@@ -1267,7 +1206,6 @@ export const fieldMappings = {
         default: "EA"
       }
     },
-    ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
   },
@@ -1364,7 +1302,6 @@ export const fieldMappings = {
         default: "EA"
       }
     },
-    ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
   },
@@ -1461,7 +1398,6 @@ export const fieldMappings = {
         default: "EA"
       }
     },
-    ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
   },
@@ -1501,7 +1437,6 @@ export const fieldMappings = {
     // the column would admit both an invalid method and one that contradicts
     // the replenishment system on the same row.
     // No Unit of Measure column: a service is always counted in Each (EA).
-    ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
   },
@@ -1640,7 +1575,6 @@ export const fieldMappings = {
         default: "EA"
       }
     },
-    ...supplierPartImportFields,
     ...itemPurchasingImportFields,
     ...itemCostImportFields
   },
@@ -2128,6 +2062,61 @@ export const fieldMappings = {
     ...stockImportExpirationField,
     ...stockImportCommentField
   },
+  supplierPart: {
+    ...existingItemImportFields,
+    supplierId: {
+      label: "Supplier",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The supplier the item is bought from — match by Supplier ID or name",
+        fetcher: supplierFetcher
+      }
+    },
+    supplierPartId: {
+      label: "Supplier Part Number",
+      required: false,
+      type: "string"
+    },
+    supplierUnitOfMeasureCode: {
+      label: "Supplier Unit of Measure",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "How the supplier sells the item (e.g., BOX)",
+        fetcher: unitOfMeasureFetcher
+      }
+    },
+    minimumOrderQuantity: {
+      label: "Minimum Order Quantity",
+      required: false,
+      type: "number",
+      default: "1"
+    },
+    orderMultiple: {
+      label: "Order Multiple",
+      required: false,
+      type: "number",
+      default: "1"
+    },
+    conversionFactor: {
+      label: "Conversion Factor",
+      required: false,
+      type: "number",
+      default: "1"
+    },
+    currencyCode: {
+      label: "Currency Code",
+      required: false,
+      type: "string"
+    },
+    unitPrice: {
+      label: "Unit Price",
+      required: false,
+      type: "number"
+    }
+  },
   supplierPartPrice: {
     ...existingItemImportFields,
     supplierId: {
@@ -2317,6 +2306,7 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
   serialQuantity: "inventory",
+  supplierPart: "parts",
   supplierPartPrice: "parts",
   itemUnitSalePrice: "parts",
   itemPlanning: "parts",
@@ -2335,6 +2325,7 @@ export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
     "inventoryQuantity",
     "batchQuantity",
     "serialQuantity",
+    "supplierPart",
     "supplierPartPrice",
     "customerPartToItem",
     "customerLocation",
@@ -2423,13 +2414,6 @@ const methodPartSchema = {
   replenishmentSystem: z.string().optional(),
   defaultMethodType: z.string().optional(),
   itemTrackingType: z.string().optional(),
-  supplierId: z.string().optional(),
-  supplierPartId: z.string().optional(),
-  supplierUnitOfMeasureCode: z.string().optional(),
-  minimumOrderQuantity: z.string().optional(),
-  orderMultiple: z.string().optional(),
-  conversionFactor: z.string().optional(),
-  unitPrice: z.string().optional(),
   leadTime: z.string().optional(),
   unitCost: z.string().optional()
 };
@@ -2721,13 +2705,6 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The item tracking type of the part"),
-    supplierId: z.string().optional(),
-    supplierPartId: z.string().optional(),
-    supplierUnitOfMeasureCode: z.string().optional(),
-    minimumOrderQuantity: z.string().optional(),
-    orderMultiple: z.string().optional(),
-    conversionFactor: z.string().optional(),
-    unitPrice: z.string().optional(),
     leadTime: z.string().optional(),
     unitCost: z.string().optional()
   }),
@@ -2775,13 +2752,6 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The item tracking type of the tool"),
-    supplierId: z.string().optional(),
-    supplierPartId: z.string().optional(),
-    supplierUnitOfMeasureCode: z.string().optional(),
-    minimumOrderQuantity: z.string().optional(),
-    orderMultiple: z.string().optional(),
-    conversionFactor: z.string().optional(),
-    unitPrice: z.string().optional(),
     leadTime: z.string().optional(),
     unitCost: z.string().optional()
   }),
@@ -2829,13 +2799,6 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The item tracking type of the fixture"),
-    supplierId: z.string().optional(),
-    supplierPartId: z.string().optional(),
-    supplierUnitOfMeasureCode: z.string().optional(),
-    minimumOrderQuantity: z.string().optional(),
-    orderMultiple: z.string().optional(),
-    conversionFactor: z.string().optional(),
-    unitPrice: z.string().optional(),
     leadTime: z.string().optional(),
     unitCost: z.string().optional()
   }),
@@ -2880,13 +2843,6 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The item tracking type of the part"),
-    supplierId: z.string().optional(),
-    supplierPartId: z.string().optional(),
-    supplierUnitOfMeasureCode: z.string().optional(),
-    minimumOrderQuantity: z.string().optional(),
-    orderMultiple: z.string().optional(),
-    conversionFactor: z.string().optional(),
-    unitPrice: z.string().optional(),
     leadTime: z.string().optional(),
     unitCost: z.string().optional()
   }),
@@ -2941,13 +2897,6 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("The unit of measure of the material"),
-    supplierId: z.string().optional(),
-    supplierPartId: z.string().optional(),
-    supplierUnitOfMeasureCode: z.string().optional(),
-    minimumOrderQuantity: z.string().optional(),
-    orderMultiple: z.string().optional(),
-    conversionFactor: z.string().optional(),
-    unitPrice: z.string().optional(),
     leadTime: z.string().optional(),
     unitCost: z.string().optional()
   }),
@@ -3105,34 +3054,6 @@ export const importSchemas: Record<
       .describe(
         "Whether the service is bought from a supplier or performed in-house"
       ),
-    supplierId: z
-      .string()
-      .optional()
-      .describe("The supplier that performs the service"),
-    supplierPartId: z
-      .string()
-      .optional()
-      .describe("The supplier's own identifier for the service"),
-    supplierUnitOfMeasureCode: z
-      .string()
-      .optional()
-      .describe("How the supplier sells the service"),
-    minimumOrderQuantity: z
-      .string()
-      .optional()
-      .describe("The minimum order quantity for the service"),
-    orderMultiple: z
-      .string()
-      .optional()
-      .describe("The order multiple for the service"),
-    conversionFactor: z
-      .string()
-      .optional()
-      .describe("The supplier-to-internal unit conversion factor"),
-    unitPrice: z
-      .string()
-      .optional()
-      .describe("The supplier's unit price for the service"),
     leadTime: z
       .string()
       .optional()
@@ -3326,6 +3247,51 @@ export const importSchemas: Record<
       .describe("The serial number of the unit; each row is one unit"),
     ...stockImportExpirationSchema,
     ...stockImportCommentSchema
+  }),
+  supplierPart: z.object({
+    ...existingItemImportSchema,
+    supplierId: z
+      .string()
+      .min(1, { message: "Supplier is required" })
+      .describe("The supplier the item is bought from"),
+    supplierPartId: z
+      .string()
+      .optional()
+      .describe("The supplier's own part number for the item"),
+    supplierUnitOfMeasureCode: z
+      .string()
+      .optional()
+      .describe(
+        "How the supplier sells the item; blank uses the item's own unit"
+      ),
+    minimumOrderQuantity: z
+      .string()
+      .optional()
+      .describe(
+        "The minimum order quantity — a whole number, 0 or more (defaults to 1)"
+      ),
+    orderMultiple: z
+      .string()
+      .optional()
+      .describe(
+        "The order multiple — a whole number, 1 or more (defaults to 1)"
+      ),
+    conversionFactor: z
+      .string()
+      .optional()
+      .describe(
+        "Inventory units per supplier unit — 0 or more (defaults to 1)"
+      ),
+    currencyCode: z
+      .string()
+      .optional()
+      .describe(
+        "The ISO code of the price's currency, e.g. EUR. Blank: a new supplier part takes the supplier's currency, an existing one keeps its own"
+      ),
+    unitPrice: z
+      .string()
+      .optional()
+      .describe("The price per supplier unit, in that currency — 0 or more")
   }),
   supplierPartPrice: z.object({
     ...existingItemImportSchema,

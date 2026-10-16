@@ -74,14 +74,14 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
-`storageType`, `supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning`,
-`customerPartToItem` → `parts`;
+`storageType`, `supplierPart`, `supplierPartPrice`, `itemUnitSalePrice`,
+`itemPlanning`, `customerPartToItem` → `parts`;
 `workCenter`, `process`, `scrapReason` → `production`; `storageUnit`,
 `inventoryQuantity`, `batchQuantity`, `serialQuantity` → `inventory`;
 `department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
 
 `importRequiresCreate` (also `create` on the module): the three stock imports,
-`supplierPartPrice`, `customerPartToItem`, `customerLocation` and
+`supplierPart`, `supplierPartPrice`, `customerPartToItem`, `customerLocation` and
 `supplierLocation`, matching the `create` gate of the single-record routes they
 mirror. `imports.models.test.ts` pins both maps to the server function's
 `permissions` rules.
@@ -99,8 +99,8 @@ The server function's own `table` enum (`import-csv/index.ts`) accepts: `consuma
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
 `storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
 `materialFinish`, `materialGrade`, `materialType`, `materialDimension`,
-`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `supplierPartPrice`,
-`itemUnitSalePrice`, `itemPlanning`, `customerPartToItem`, `customerLocation`,
+`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `supplierPart`,
+`supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning`, `customerPartToItem`, `customerLocation`,
 `supplierLocation`. Note it does **not** list `fixedAsset` (see Gotchas).
 
 ### Service import (rides the item path)
@@ -117,24 +117,34 @@ narrowed to `Buy | Make`, since "Buy and Make" is not a service.
 
 ### Item extras (`import-csv/item-extras.ts`)
 
-An item row may also carry a supplier part (Supplier, Supplier Part ID,
-Supplier Unit of Measure, MOQ, Order Multiple, Conversion Factor, Unit Price),
-a purchasing Lead Time, a Unit Cost and an Order Multiple. `collectItemExtras`
-queues them once the item id is known and `writeItemExtras` writes them inside
-the caller's transaction: the supplier part is updated by (item, supplier) or
-inserted, `itemReplenishment.leadTime`, `itemCost.unitCost` and every
-location's `itemPlanning.orderMultiple` are updated (the item insert trigger
-created those rows). The item imports and the PART rows of `partWithMethod`
-share these functions, so a PART row writes exactly what a `part` row writes
-for the same columns. The PART row's item itself is still insert-or-touch:
-on a conflict only `updatedAt` / `updatedBy` change.
+An item row may also carry a purchasing Lead Time and a Unit Cost.
+`collectItemExtras` queues them once the item id is known and `writeItemExtras`
+writes them inside the caller's transaction: `itemReplenishment.leadTime` and
+`itemCost.unitCost` are updated (the item insert trigger created those rows).
+The item imports and the PART rows of `partWithMethod` share these functions,
+so a PART row writes exactly what a `part` row writes for the same columns. The
+PART row's item itself is still insert-or-touch: on a conflict only
+`updatedAt` / `updatedBy` change.
+
+- `itemExtrasError` refuses a Lead Time that is not a whole number from 0 to
+  `MAX_INTEGER` and a Unit Cost below 0, the purchasing and costing forms' bounds. Before, a
+  fraction was cut by `parseInt` and a non-number was skipped.
+- Item rows carry no supplier columns: supplier parts are the `supplierPart`
+  import, one row per item and supplier. Until 2026-10 the item imports took
+  Supplier, Supplier Part Number, Supplier Unit of Measure, MOQ, Order
+  Multiple (also written to every location's `itemPlanning.orderMultiple`),
+  Conversion Factor and Supplier Unit Price, which allowed one supplier per
+  item; the Item Planning import now sets the planning order multiple.
+- An item is described once per file: a later row for the same Part Number and
+  Revision is reported as skipped, and in `partWithMethod` a later PART row for
+  the same part likewise. Before, the item import dropped it with no report and
+  a later PART row replaced the first.
 
 ### Method imports (`bom`, `operations`, `partWithMethod`)
 
 `method-import.ts`, atomic per parent part and create-only: a version that
-already has materials or operations is left alone. `partWithMethod` is in
-`REFERENCES` (its Supplier column), and `importMethods` receives only the rows
-that passed `rejectForeignReferences`, each with its file row number. Every row
+already has materials or operations is left alone. `importMethods` receives
+the rows with their file row numbers. Every row
 is counted once: a PART row as inserted (new item, `xmax = 0`) or updated, each
 BOM, BOP, STEP, TOOL and PARAM row written as inserted, and each row of a
 version that already had content as skipped. Part groups are written in
@@ -142,6 +152,14 @@ version that already had content as skipped. Part groups are written in
 material or tool, otherwise file order. So an assembly may come before the PART
 rows of its new components; before this, its BOM failed with "Item … not found".
 A part that uses itself through others keeps file order.
+
+A BOP row's Operation Supplier (matched by name or readable id) is for an Outside
+Processing operation and links the supplier's process for the operation's Process,
+as the operation form's Supplier field does. An in-house operation with a supplier,
+an unknown supplier, or a supplier without that process makes the part's group an
+error; before, the operation imported without a supplier. The suppliers' processes
+are read once per file. There is no Supplier Process column: the one the field list
+had was never read.
 
 ### Work center processes
 
@@ -254,10 +272,12 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   "Inventory Adjustment — CSV import" (no per-row comment), and a zero-cost row
   posts no journal lines.
 
-### Imports onto existing items (prices, planning, customer parts)
+### Imports onto existing items (supplier parts, prices, planning, customer parts)
 
-`supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning` and `customerPartToItem`
-are surfaced from the Parts list (`PartsTable.tsx`), each handled by its own
+`supplierPart`, `supplierPartPrice`, `itemUnitSalePrice`, `itemPlanning` and
+`customerPartToItem` are surfaced from the Parts list (`PartsTable.tsx`);
+`supplierPart` also from the Materials, Tools, Consumables, Services and
+Suppliers lists, and `customerPartToItem` from the Customers list. Each is handled by its own
 file under `import-csv/` with its per-row decision exported and tested
 (`*-import.test.ts`). Shared pieces live in `import-csv/existing-item.ts`:
 
@@ -278,14 +298,46 @@ file under `import-csv/` with its per-row decision exported and tested
   INTEGER column limit) is a row error; written, it would abort the
   transaction.
 
+#### `supplierPart` (Supplier Parts)
+
+Mirrors the New Supplier Part drawer on an item's Purchasing tab and a
+supplier's Parts tab (`supplierPartValidator`, `upsertSupplierPart`), in
+`supplier-part-import.ts`. Columns: Part Number, Revision, Supplier
+(`supplierFetcher`, in `REFERENCES`), Supplier Part Number, Supplier Unit of
+Measure (`unitOfMeasureFetcher`), Minimum Order Quantity, Order Multiple,
+Conversion Factor, Currency Code (an ISO code checked against `currencyCode`,
+not an enum, so the field list does not carry every currency) and Unit Price
+(`supplierPart.supplierUnitPrice`). Item types: Part, Material, Tool,
+Consumable, Service.
+
+- One supplier part per (item, supplier) (`buyMethod_part_supplier_unique`):
+  a row for a pair that has one updates it, and a pair repeated in the file is
+  an error on the later row. An item bought from several suppliers takes one
+  row per supplier.
+- Numbers as the drawer bounds them: MOQ a whole number of 0 or more, Order
+  Multiple a whole number of 1 or more, Conversion Factor and Unit Price 0 or
+  more, rounded to the storage scale.
+- A blank cell takes the drawer's default: MOQ, Order Multiple and Conversion
+  Factor 1 (also the column defaults), and the supplier's `currencyCode` (NULL,
+  base, when the supplier has none). A blank Supplier Unit of Measure is NULL,
+  which the PO, quote and invoice line forms read as the item's own unit,
+  rather than the drawer's "EA" pre-fill; a blank Unit Price is NULL.
+- An update writes the fields `writtenFields` names: the columns the wizard
+  maps (a blank cell as its default), or with `keepSavedValues` only the cells
+  the row holds. A blank Currency Code never changes an existing supplier
+  part's currency, since its price and price breaks are in it.
+- Inserts are chunked; updates go through `updateRowsByKey`
+  (`supplierPartUpdate` decides each row's columns). Updated rows are reported in `existingRows`.
+
 #### `supplierPartPrice` (Supplier Price Breaks)
 
 Mirrors the supplier part drawer (`$itemId.purchasing.$supplierPartId.tsx`):
 for each (item, supplier) pair in the file, the file's rows replace that
 supplier part's whole ladder (delete, then insert as `"Manual Entry"`). A pair
 with no supplier part gets one first, as `$itemId.purchasing.new.tsx` creates
-it: item, supplier, `conversionFactor: 1`, other columns at their defaults
-(supplier unit of measure NULL, not the drawer's "EA" pre-fill). Columns:
+it: item, supplier, `conversionFactor: 1`, the supplier's `currencyCode`
+(`loadSupplierCurrencies`, shared with `supplierPart`), other columns at their
+defaults (supplier unit of measure NULL, not the drawer's "EA" pre-fill). Columns:
 Part Number, Revision, Supplier (`supplierFetcher`, in `REFERENCES`),
 Quantity and Unit Price (> 0, as the drawer refuses ≤ 0), Lead Time (blank →
 0, what the routes write). Item types: Part, Material, Tool, Consumable,
@@ -295,8 +347,7 @@ good rows are reported as errors. A row at a quantity the ladder already had
 counts as updated, any other as inserted; a dropped break is not counted.
 Prices are written to `supplierPartPrice.supplierUnitPrice`, per purchase
 unit in the supplier part's `currencyCode`: an existing part keeps its
-currency, and a part the import creates has `currencyCode` NULL (the company's
-base currency), as the part import's supplier columns do.
+currency, and a part the import creates takes the supplier's.
 `supplierPart.supplierUnitPrice` and the other supplier part fields are not
 touched.
 Replacing a ladder needs no `delete` permission: the edit route deletes it
@@ -337,7 +388,8 @@ Mirrors the part's New Customer Part drawer (`customerPartValidator`,
 (`customerFetcher`, in `REFERENCES`), Customer Part Number (required),
 Customer Part Revision (blank → `''`, the column default). Upserts on the
 `(customerId, itemId)` unique key: a pair that already has a customer part
-number is updated. Only parts have the drawer. The table has no audit columns.
+number is updated; with `keepSavedValues` a blank Customer Part Revision keeps
+the saved one. Only parts have the drawer. The table has no audit columns.
 
 ### Partner-location imports (`customerLocation`, `supplierLocation`)
 
@@ -485,12 +537,23 @@ optional `keepSavedValues`, optional `refusedValues`).
   update writes only those, through `withSavedValuesKept` (`saved-values.ts`) at every
   update site that builds its payload from the row: items, contacts, work centers,
   processes, storage units. Customer and supplier location imports get it as an
-  argument and leave a blank address cell as it is instead of clearing it. So a missing column or an empty cell keeps the saved value
-  instead of resetting it (Replenishment System to its default, Active to true, work
-  center rates to 0, Complete All On Scan to false). Inserts still take the defaults.
-  Customers and suppliers already kept blanks (`nullifyEmptyStrings`), and their enum
-  fields have no default. In the wizard the Default still applies to every row,
-  updates included.
+  argument and leave a blank address cell as it is instead of clearing it. So a
+  missing column or an empty cell keeps the saved value instead of resetting it
+  (Replenishment System to its default, Active to true, work center rates to 0,
+  Complete All On Scan to false). Inserts still take the defaults. In the wizard the
+  Default still applies to every row, updates included. It also covers:
+  - supplier parts (see `supplierPart`);
+  - a customer part number's blank Customer Part Revision;
+  - customers and suppliers. Their main fields already kept blanks
+    (`nullifyEmptyStrings`) and their enum fields have no default. A blank or
+    missing Tax ID keeps the saved one; the wizard writes it, clearing the saved
+    one. The primary location's address takes only the cells the row holds, with
+    or without Address Line 1; the wizard writes it only when Address Line 1 is
+    given, and then replaces every field. A row with address cells or a Location
+    Name but no Address Line 1, for a partner with no location yet, is refused
+    with "Address Line 1 is required", which names the location when Location
+    Name is blank; the wizard drops those cells. The primary locations are read
+    before the rows are classified (`preloadPrimaryLocationAddressIds`).
 - **`refusedValues`** (set by `importCsvText`). `rowsWithoutRefusedValues`
   (`refused-values.ts`) takes out every row holding one of a field's refused values
   (compared trimmed) before the records are built, and reports it as

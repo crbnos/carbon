@@ -8,7 +8,8 @@
 // the sent one in one transaction, as "Manual Entry" rows. So for every
 // (item, supplier) pair in the file, the file's rows ARE that supplier part's
 // ladder. A pair without a supplier part gets one first, as the New Supplier
-// Part route creates it: the item and the supplier, conversion factor 1.
+// Part drawer creates it: the item and the supplier, conversion factor 1, in
+// the supplier's currency.
 //
 // The drawer refuses to save a ladder with an invalid break, so a pair with
 // any bad row is not written at all; its good rows are reported with it.
@@ -27,18 +28,13 @@ import {
   numberCell,
   resolveItem
 } from "./existing-item";
+import {
+  loadSupplierCurrencies,
+  SUPPLIER_PART_ITEM_TYPES
+} from "./supplier-part-import";
 import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
-
-// Every item type whose page has a Purchasing tab with supplier parts.
-export const SUPPLIER_PRICE_ITEM_TYPES = [
-  "Part",
-  "Material",
-  "Tool",
-  "Consumable",
-  "Service"
-] as const;
 
 export type PriceBreak = {
   itemId: string;
@@ -63,7 +59,7 @@ export function classifySupplierPriceRow(
   record: ImportRecord,
   itemIndex: Map<string, ItemCandidate[]>
 ): PriceRowDecision {
-  const item = resolveItem(itemIndex, record, SUPPLIER_PRICE_ITEM_TYPES);
+  const item = resolveItem(itemIndex, record, SUPPLIER_PART_ITEM_TYPES);
   if ("error" in item) return { action: "error", reason: item.error };
 
   const supplierId = cell(record.supplierId);
@@ -239,10 +235,14 @@ export async function importSupplierPrices(
     ])
   );
 
+  const missing = ladders.filter(
+    (l) => !supplierPartByPair.has(pairKey(l.itemId, l.supplierId))
+  );
+  const supplierCurrencies = await loadSupplierCurrencies(db, companyId, [
+    ...new Set(missing.map((l) => l.supplierId))
+  ]);
+
   await inTransaction(db, async (trx) => {
-    const missing = ladders.filter(
-      (l) => !supplierPartByPair.has(pairKey(l.itemId, l.supplierId))
-    );
     if (missing.length > 0) {
       const created = await inChunks(missing, (chunk) =>
         trx
@@ -252,6 +252,7 @@ export async function importSupplierPrices(
               itemId: l.itemId,
               supplierId: l.supplierId,
               conversionFactor: 1,
+              currencyCode: supplierCurrencies.get(l.supplierId) ?? null,
               companyId,
               createdBy: userId
             }))
@@ -292,8 +293,7 @@ export async function importSupplierPrices(
             ? savedLeadTime
             : b.leadTime;
         // The price is in the supplier part's currency, per purchase unit: an
-        // existing part keeps its own, a new one is created in base
-        // (currencyCode NULL), as the part import's supplier columns do.
+        // existing part keeps its own, a new one takes the supplier's.
         return {
           supplierPartId,
           quantity: b.quantity,

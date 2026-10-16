@@ -18,6 +18,7 @@ import { type Kysely, sql, type Transaction } from "kysely";
 import {
   collectItemExtras,
   emptyItemExtras,
+  itemExtrasError,
   writeItemExtras
 } from "./item-extras";
 import { inTransaction } from "./transaction";
@@ -223,7 +224,14 @@ export async function importMethods(
         continue;
       }
       const g = getGroup(readableId, text(record.revision), index);
-      g.partRow = { record, index };
+      // The first PART row describes the part. Before, a later one replaced
+      // it with no report.
+      if (g.partRow) {
+        summary.skipped.push({
+          row: rowOf(index),
+          reason: `${g.readableId} rev ${g.revision} is already on an earlier PART row`
+        });
+      } else g.partRow = { record, index };
       continue;
     }
 
@@ -498,6 +506,14 @@ function validateGroup(
   const errors: Array<{ row: number; reason: string }> = [];
   const parentKey = key(g.readableId, g.revision);
   const partLabel = `${g.readableId} rev ${g.revision}`;
+
+  // The PART row's lead time and unit cost.
+  if (g.partRow) {
+    const extrasError = itemExtrasError(g.partRow.record);
+    if (extrasError) {
+      errors.push({ row: rowOf(g.partRow.index), reason: extrasError });
+    }
+  }
 
   // Parent must be makeable (Part or Tool). A part created by this file is makeable.
   if (!g.partRow) {
@@ -825,8 +841,8 @@ async function writeGroup(
         .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
         .execute();
 
-      // The supplier part, lead time, unit cost and order multiple the PART
-      // row carries, written as the part import writes them.
+      // The lead time and unit cost the PART row carries, written as the
+      // part import writes them.
       const extras = emptyItemExtras();
       collectItemExtras(extras, parentItemId, r);
       await writeItemExtras(trx, extras, companyId, userId);

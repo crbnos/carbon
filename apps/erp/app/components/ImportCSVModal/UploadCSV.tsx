@@ -29,6 +29,10 @@ import { useUser } from "~/hooks/useUser";
 import { fieldMappings, type importSchemas } from "~/modules/shared";
 import { useCsvContext } from "./useCsvContext";
 
+/**
+ * The import wizard's first step: download the table's template, or pick a CSV,
+ * which is parsed for the mapping step and uploaded for the import.
+ */
 export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
   const { t } = useLingui();
   const { carbon } = useCarbon();
@@ -44,7 +48,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
     const fields = Object.values(mapping) as Array<{
       label: string;
       required?: boolean;
-      type: "string" | "boolean" | "enum" | "numeric";
+      type: "string" | "boolean" | "enum" | "number";
       enumData?: {
         description?: string;
         options?: readonly string[];
@@ -64,7 +68,7 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
         return `${prefix} — ${f.enumData.description ?? "see your configured options"}`;
       }
       if (f.type === "boolean") return `${prefix} — true | false`;
-      if (f.type === "numeric") return `${prefix} — number`;
+      if (f.type === "number") return `${prefix} — number`;
       return prefix;
     });
     downloadText(

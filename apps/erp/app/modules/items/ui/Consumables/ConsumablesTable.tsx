@@ -610,6 +610,10 @@ const ConsumablesTable = memo(
             {
               table: "consumable",
               label: t`Consumables`
+            },
+            {
+              table: "supplierPart" as const,
+              label: t`Supplier Parts`
             }
           ]}
           primaryAction={

@@ -20,6 +20,7 @@ import { importCustomerParts } from "./customer-part-import";
 import {
   collectItemExtras,
   emptyItemExtras,
+  itemExtrasError,
   writeItemExtras
 } from "./item-extras";
 import { importItemPlanning } from "./item-planning-import";
@@ -30,6 +31,7 @@ import { importPartnerLocations } from "./partner-location-import";
 import { rowsWithoutRefusedValues } from "./refused-values";
 import { withSavedValuesKept } from "./saved-values";
 import { importStockQuantities } from "./stock-quantity-import";
+import { importSupplierParts } from "./supplier-part-import";
 import { importSupplierPrices } from "./supplier-price-import";
 import { inTransaction } from "./transaction";
 import { processIdsByName, resolveProcessNames } from "./work-center-processes";
@@ -73,6 +75,7 @@ export const importCsvInput = z
       "inventoryQuantity",
       "batchQuantity",
       "serialQuantity",
+      "supplierPart",
       "supplierPartPrice",
       "itemUnitSalePrice",
       "itemPlanning",
@@ -147,6 +150,7 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
   serialQuantity: "inventory",
+  supplierPart: "parts",
   supplierPartPrice: "parts",
   itemUnitSalePrice: "parts",
   itemPlanning: "parts",
@@ -161,6 +165,7 @@ const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
   "inventoryQuantity",
   "batchQuantity",
   "serialQuantity",
+  "supplierPart",
   "supplierPartPrice",
   "customerPartToItem",
   "customerLocation",
@@ -287,8 +292,6 @@ const customerReference: ReferenceSpec = {
   label: "Customer"
 };
 
-const itemReferences: ReferenceSpec[] = [supplierReference];
-
 // Id-valued columns per import. The wizard resolves these through
 // company-scoped fetchers, but the ids arrive in the request body, so each is
 // re-checked against the caller's company before anything is written.
@@ -309,14 +312,7 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
       label: "Shipping Method"
     }
   ],
-  part: itemReferences,
-  partWithMethod: itemReferences,
-  tool: itemReferences,
-  fixture: itemReferences,
-  consumable: itemReferences,
-  service: itemReferences,
   material: [
-    ...itemReferences,
     {
       column: "materialSubstanceId",
       table: "materialSubstance",
@@ -329,6 +325,7 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
   ],
   workCenter: [{ column: "locationId", table: "location", label: "Location" }],
   storageUnit: [{ column: "locationId", table: "location", label: "Location" }],
+  supplierPart: [supplierReference],
   supplierPartPrice: [supplierReference],
   itemPlanning: [
     { column: "locationId", table: "location", label: "Location" }
@@ -1869,7 +1866,7 @@ const importer = {
         }
 
         const externalIdMap = await getCsvExternalIdMap(db, "item", companyId);
-        const readableIds = new Set();
+        const readableIds = new Set<string>();
 
         await inTransaction(db, async (trx) => {
           const itemInserts: Database["public"]["Tables"]["item"]["Insert"][] =
@@ -1889,13 +1886,10 @@ const importer = {
             data: Database["public"]["Tables"]["material"]["Update"];
           }[] = [];
 
-          // The supplier part, lead time, unit cost and order multiple each
-          // row carries (item-extras.ts). An existing item's extras are queued
-          // at once; a new item's row waits in extrasForInserts, parallel to
-          // itemInserts, until the insert returns its id. The CSV's "Order
-          // Multiple" populates both supplierPart.orderMultiple (per-supplier
-          // case-pack) and itemPlanning.orderMultiple (per-(item, location)
-          // MRP setting).
+          // The lead time and unit cost each row carries (item-extras.ts). An
+          // existing item's extras are queued at once; a new item's row waits
+          // in extrasForInserts, parallel to itemInserts, until the insert
+          // returns its id. Supplier parts have their own import.
           const extrasForInserts: CsvRecord[] = [];
           const itemExtras = emptyItemExtras();
 
@@ -2085,6 +2079,8 @@ const importer = {
           }
 
           for (const [rowIndex, record] of acceptedRows) {
+            const extrasError = itemExtrasError(record);
+
             const item = itemValidator.safeParse(record);
 
             if (!item.success) {
@@ -2109,13 +2105,26 @@ const importer = {
               revision
             );
 
-            if (
-              externalIdMap.has(getExternalId(id)) &&
-              !readableIds.has(readableIdWithRevision)
-            ) {
+            if (extrasError) {
+              summary.errors.push({ row: rowIndex, reason: extrasError });
+              continue;
+            }
+
+            // An item is described once: a later row for the same Part
+            // Number and Revision is reported, not written. Before, it was
+            // dropped with no report. A row claims its key only once it is
+            // queued, so a refused row does not hold it from a later one.
+            if (readableIds.has(readableIdWithRevision)) {
+              summary.skipped.push({
+                row: rowIndex,
+                reason: `${readableIdWithRevision} is already on an earlier row`
+              });
+              continue;
+            }
+
+            if (externalIdMap.has(getExternalId(id))) {
               const existingEntityId = externalIdMap.get(getExternalId(id))!;
 
-              readableIds.add(readableIdWithRevision);
               // Renaming onto another item's readable id would violate
               // item_unique and abort the whole import; refuse just this row.
               const owner = existingItemKeys.get(readableIdWithRevision);
@@ -2129,6 +2138,7 @@ const importer = {
                 });
                 continue;
               }
+              readableIds.add(readableIdWithRevision);
               itemUpdates.push({
                 id: existingEntityId,
                 data: keepSavedValues(
@@ -2179,8 +2189,7 @@ const importer = {
                   });
                 }
               }
-            } else if (!readableIds.has(readableIdWithRevision)) {
-              readableIds.add(readableIdWithRevision);
+            } else {
               if (existingItemKeys.has(readableIdWithRevision)) {
                 summary.errors.push({
                   row: rowIndex,
@@ -2191,6 +2200,7 @@ const importer = {
                 });
                 continue;
               }
+              readableIds.add(readableIdWithRevision);
               const newItem = {
                 ...rest,
                 replenishmentSystem: rest.replenishmentSystem ?? "Buy",
@@ -3409,6 +3419,24 @@ const importer = {
           companyId,
           userId,
           summary
+        });
+        break;
+      }
+      case "supplierPart": {
+        // The wizard writes every column it maps; keeping saved values, an
+        // update writes only the cells a row holds.
+        const mappedFields = new Set(
+          Object.entries(columnMappings)
+            .filter(([, column]) => column && column !== "N/A")
+            .map(([field]) => field)
+        );
+        await importSupplierParts(db, {
+          rows: acceptedRows,
+          companyId,
+          userId,
+          summary,
+          writtenFields: (rowIndex) =>
+            keepSaved ? (heldByRow[rowIndex] ?? new Set()) : mappedFields
         });
         break;
       }
