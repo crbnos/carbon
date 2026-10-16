@@ -1303,13 +1303,6 @@ function SerialForm({
   const updateSerialNumber = useCallback(
     async (serialNumber: { index: number; number: string }) => {
       const { index } = serialNumber;
-      const localError = validateSerialNumber(serialNumber.number, index);
-      if (localError) {
-        setErrors((prev) => ({ ...prev, [index]: localError }));
-        await saveSerialNumber(index, "");
-        return;
-      }
-
       const saved = await saveSerialNumber(index, serialNumber.number.trim());
       setErrors((prev) => {
         const next = { ...prev };
@@ -1318,7 +1311,7 @@ function SerialForm({
         return next;
       });
     },
-    [validateSerialNumber, saveSerialNumber]
+    [saveSerialNumber]
   );
 
   const propertiesDisclosure = useDisclosure();

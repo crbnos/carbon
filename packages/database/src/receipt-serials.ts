@@ -17,6 +17,23 @@ export function planReceiptSerialRelease<T extends { id: string }>(
   };
 }
 
+/** The tracked entities among `entityIds` that have stock movements. */
+export async function idsWithStockHistory(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  entityIds: string[]
+): Promise<Set<string>> {
+  if (entityIds.length === 0) return new Set();
+  const rows = await db
+    .selectFrom("itemLedger")
+    .select("trackedEntityId")
+    .distinct()
+    .where("trackedEntityId", "in", entityIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  return new Set(rows.flatMap((row) => row.trackedEntityId ?? []));
+}
+
 /**
  * Takes serial tracked entities off a receipt: one with no stock history is
  * deleted, one with history only loses its receipt link. Run it inside a
@@ -29,17 +46,9 @@ export async function releaseReceiptSerialEntities(
 ): Promise<void> {
   if (entityIds.length === 0) return;
 
-  const history = await db
-    .selectFrom("itemLedger")
-    .select("trackedEntityId")
-    .distinct()
-    .where("trackedEntityId", "in", entityIds)
-    .where("companyId", "=", companyId)
-    .execute();
-
   const { deleteIds, unlink } = planReceiptSerialRelease(
     entityIds.map((id) => ({ id })),
-    new Set(history.flatMap((row) => row.trackedEntityId ?? []))
+    await idsWithStockHistory(db, companyId, entityIds)
   );
 
   if (deleteIds.length > 0) {

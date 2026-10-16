@@ -50,8 +50,12 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   exist on purchase receipts of new units (outside-processing lines ask for none, inbound
   transfers never touch serials), so writing into an existing unit is never right: it wiped a
   shipped unit's `Shipment` link, which the RMA provenance check reads. `ReceiptLines` sends every
-  blur, an empty value or a value it refuses itself included (as an empty save); Enter only moves
-  focus (`data-serial-boxes`) so the blur is the one save. Refused on a Posted or Voided receipt.
+  blur as typed, an empty value included, and shows the server's error: the server, not the page,
+  decides a duplicate, so a box is never cleared because another box holds the same text. Enter
+  only moves focus (`data-serial-boxes`) so the blur is the one save. The reads, the write
+  (`update_receipt_line_serial_tracking`, called through Kysely) and the release run in one
+  transaction; a failed write empties the box in a second one. Refused on a Posted or Voided
+  receipt.
   `$id.post.tsx` refuses a Posted or Voided receipt before any write, and refuses the post when
   `reconcileReceiptSerialEntities` reports a line still
   missing serials, returned to the modal as `{ error: { message } }` rather than flashed: a

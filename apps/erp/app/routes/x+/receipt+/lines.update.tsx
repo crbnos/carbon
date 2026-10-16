@@ -36,9 +36,10 @@ export async function action({ request }: ActionFunctionArgs) {
   // Per-line saves go straight through.
   if (field === "receivedQuantity") {
     if (ids.length === 0) return { error: null, data: null };
-    if (!value) {
+    const receivedQuantity = Number(value);
+    if (!value || !Number.isFinite(receivedQuantity)) {
       return {
-        error: { message: "Received quantity is required" },
+        error: { message: "Received quantity must be a number" },
         data: null
       };
     }
@@ -49,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const lines = await trx
             .updateTable("receiptLine")
             .set({
-              receivedQuantity: Number(value),
+              receivedQuantity,
               updatedBy: userId,
               updatedAt: datetime.timestamp()
             })
@@ -62,6 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
               "requiresSerialTracking"
             ])
             .execute();
+          if (lines.length === 0) return;
 
           const receipts = await trx
             .selectFrom("receipt")

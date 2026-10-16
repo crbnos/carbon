@@ -4,11 +4,15 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database, Json } from "@carbon/database";
-import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
+import type { Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  idsWithStockHistory,
+  releaseReceiptSerialEntities
+} from "@carbon/database/receipt-serials";
 import { getLogger } from "@carbon/logger";
 import { isUniqueViolation } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { planSerialBoxWrite } from "~/modules/inventory";
@@ -16,28 +20,6 @@ import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "receipt", "tracking");
-
-async function getIdsWithHistory(
-  serviceRole: SupabaseClient<Database>,
-  companyId: string,
-  ids: string[]
-): Promise<{ data: Set<string>; error: unknown }> {
-  if (ids.length === 0) return { data: new Set(), error: null };
-  const history = await serviceRole
-    .from("itemLedger")
-    .select("trackedEntityId")
-    .in("trackedEntityId", ids)
-    .eq("companyId", companyId);
-  if (history.error) return { data: new Set(), error: history.error };
-  return {
-    data: new Set(
-      history.data.flatMap((row) =>
-        row.trackedEntityId ? [row.trackedEntityId] : []
-      )
-    ),
-    error: null
-  };
-}
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -135,165 +117,145 @@ export async function action({ request, context }: ActionFunctionArgs) {
     ).trim();
     const index = Number(formData.get("index"));
     const expiryDate = formData.get("expiryDate") as string | null;
+    if (!Number.isInteger(index) || index < 0) {
+      return data({ error: "Invalid serial position" }, { status: 400 });
+    }
+    const db = getDatabaseClient();
+    const selectSerialBox = (trx: Kysely<KyselyDatabase>) =>
+      trx
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("companyId", "=", companyId)
+        .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+        .where(
+          sql<string>`attributes->>'Receipt Line Index'`,
+          "=",
+          String(index)
+        )
+        .execute();
 
-    const serviceRole = await getCarbonServiceRole();
+    type SerialWrite =
+      | { ok: true }
+      | { ok: false; status: 400 | 404; error: string };
 
-    const { data: receipt, error: receiptError } = await serviceRole
-      .from("receipt")
-      .select("status")
-      .eq("id", receiptId)
-      .eq("companyId", companyId)
-      .single();
-    if (receiptError) {
-      logger.error("Failed to load receipt for serial tracking", {
-        companyId,
-        receiptId,
-        error: receiptError
+    const writeSerialBox = (): Promise<SerialWrite> =>
+      db.transaction().execute(async (trx) => {
+        const receipt = await trx
+          .selectFrom("receipt")
+          .select("status")
+          .where("id", "=", receiptId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!receipt) {
+          return { ok: false, status: 404, error: "Receipt not found" };
+        }
+        if (receipt.status === "Posted" || receipt.status === "Voided") {
+          return {
+            ok: false,
+            status: 400,
+            error: "A posted receipt can no longer be changed"
+          };
+        }
+
+        const box = await selectSerialBox(trx);
+
+        const withSerial = serialNumber
+          ? await trx
+              .selectFrom("trackedEntity")
+              .select(["id", "attributes"])
+              .where("sourceDocumentId", "=", itemId)
+              .where("readableId", "=", serialNumber)
+              .where("companyId", "=", companyId)
+              .execute()
+          : [];
+
+        const history = await idsWithStockHistory(trx, companyId, [
+          ...box.map((entity) => entity.id),
+          ...withSerial.map((entity) => entity.id)
+        ]);
+
+        const plan = planSerialBoxWrite({
+          receiptLineId,
+          index,
+          serialNumber,
+          box: box.map((entity) => ({
+            id: entity.id,
+            hasHistory: history.has(entity.id)
+          })),
+          withSerial: withSerial.map((entity) => ({
+            id: entity.id,
+            hasHistory: history.has(entity.id),
+            attributes: (entity.attributes ?? {}) as Record<string, unknown>
+          }))
+        });
+
+        if (plan.kind === "write") {
+          await sql`SELECT update_receipt_line_serial_tracking(
+            p_receipt_line_id => ${receiptLineId},
+            p_receipt_id => ${receiptId},
+            p_serial_number => ${serialNumber},
+            p_index => ${index}::int,
+            p_tracked_entity_id => ${plan.targetId ?? null}::text,
+            p_expiry_date => ${expiryDate || null}::text
+          )`.execute(trx);
+        }
+
+        await releaseReceiptSerialEntities(trx, companyId, plan.releaseIds);
+
+        if (plan.kind === "taken") {
+          return {
+            ok: false,
+            status: 400,
+            error:
+              plan.reason === "unit"
+                ? "Serial number already belongs to an existing unit"
+                : "Serial number is already used for a different item or position"
+          };
+        }
+        return { ok: true };
       });
-      return data({ error: "Failed to update tracking" }, { status: 500 });
-    }
-    if (receipt.status === "Posted" || receipt.status === "Voided") {
-      return data(
-        { error: "A posted receipt can no longer be changed" },
-        { status: 400 }
-      );
-    }
 
-    const { data: boxEntities, error: boxError } = await serviceRole
-      .from("trackedEntity")
-      .select("id")
-      .eq("attributes ->> Receipt Line", receiptLineId)
-      .eq("attributes ->> Receipt Line Index", String(index))
-      .eq("companyId", companyId);
-    if (boxError) {
-      logger.error("Failed to load serial box", {
+    let result: SerialWrite;
+    try {
+      result = await writeSerialBox();
+    } catch (error) {
+      logger.error("Failed to update serial tracking", {
         companyId,
         receiptLineId,
         index,
-        error: boxError
+        error
       });
-      return data({ error: "Failed to update tracking" }, { status: 500 });
-    }
-
-    let withSerial: { id: string; attributes: Json }[] = [];
-    if (serialNumber) {
-      const { data: entities, error: serialQueryError } = await serviceRole
-        .from("trackedEntity")
-        .select("id, attributes")
-        .eq("sourceDocumentId", itemId)
-        .eq("readableId", serialNumber)
-        .eq("companyId", companyId);
-      if (serialQueryError) {
-        logger.error("Failed to check serial number", {
-          companyId,
-          receiptLineId,
-          index,
-          error: serialQueryError
-        });
-        return data(
-          { error: "Failed to check serial number index" },
-          { status: 500 }
+      // The box shows a value that did not save; empty it so its previous
+      // serial cannot post in its place.
+      await db
+        .transaction()
+        .execute(async (trx) => {
+          const box = await selectSerialBox(trx);
+          await releaseReceiptSerialEntities(
+            trx,
+            companyId,
+            box.map((entity) => entity.id)
+          );
+        })
+        .catch((clearError) =>
+          logger.error("Failed to clear the serial box", {
+            companyId,
+            receiptLineId,
+            index,
+            error: clearError
+          })
         );
-      }
-      withSerial = entities;
-    }
-
-    const history = await getIdsWithHistory(serviceRole, companyId, [
-      ...boxEntities.map((entity) => entity.id),
-      ...withSerial.map((entity) => entity.id)
-    ]);
-    if (history.error) {
-      logger.error("Failed to check serial stock history", {
-        companyId,
-        receiptLineId,
-        index,
-        error: history.error
-      });
-      return data({ error: "Failed to update tracking" }, { status: 500 });
-    }
-
-    const plan = planSerialBoxWrite({
-      receiptLineId,
-      index,
-      serialNumber,
-      box: boxEntities.map((entity) => ({
-        id: entity.id,
-        hasHistory: history.data.has(entity.id)
-      })),
-      withSerial: withSerial.map((entity) => ({
-        id: entity.id,
-        hasHistory: history.data.has(entity.id),
-        attributes: (entity.attributes ?? {}) as Record<string, unknown>
-      }))
-    });
-
-    const releaseBox = async (ids = plan.releaseIds) => {
-      try {
-        await getDatabaseClient()
-          .transaction()
-          .execute((trx) => releaseReceiptSerialEntities(trx, companyId, ids));
-        return { error: null };
-      } catch (error) {
-        logger.error("Failed to clear the serial box", {
-          companyId,
-          receiptLineId,
-          index,
-          error
-        });
-        return { error };
-      }
-    };
-
-    if (plan.kind === "clear") {
-      const released = await releaseBox();
-      if (released.error) {
-        return data({ error: "Failed to update tracking" }, { status: 500 });
-      }
-      return { success: true };
-    }
-
-    if (plan.kind === "taken") {
-      await releaseBox();
       return data(
         {
-          error:
-            plan.reason === "unit"
-              ? "Serial number already belongs to an existing unit"
-              : "Serial number is already used for a different item or position"
+          error: isUniqueViolation(error)
+            ? "Serial number already exists for this item"
+            : "Failed to update tracking"
         },
-        { status: 400 }
+        { status: isUniqueViolation(error) ? 400 : 500 }
       );
     }
-
-    // Use a transaction to ensure data consistency
-    const { error } = await serviceRole.rpc(
-      "update_receipt_line_serial_tracking",
-      {
-        p_tracked_entity_id: plan.targetId,
-        p_receipt_line_id: receiptLineId,
-        p_receipt_id: receiptId,
-        p_serial_number: serialNumber,
-        p_index: index,
-        p_expiry_date: expiryDate || undefined
-      }
-    );
-
-    if (error) {
-      logger.error("Failed to update serial tracking", { error });
-      await releaseBox(boxEntities.map((entity) => entity.id));
-      // Check if error is due to unique constraint violation
-      if (isUniqueViolation(error)) {
-        return data(
-          { error: "Serial number already exists for this item" },
-          { status: 400 }
-        );
-      }
-      return data({ error: "Failed to update tracking" }, { status: 500 });
-    }
-
-    const released = await releaseBox();
-    if (released.error) {
-      return data({ error: "Failed to update tracking" }, { status: 500 });
+    if (!result.ok) {
+      return data({ error: result.error }, { status: result.status });
     }
   } else if (trackingType === "returnEntity") {
     // Sales-return receipts re-tag an EXISTING (Consumed) tracked entity with
