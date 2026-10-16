@@ -71,7 +71,7 @@ rentals persist `rentalBillingPeriod` rows per unit.
   days in the anniversary period. Write the tests first in `rental-periods.test.ts`:
   the 7th → 6th grid; the same amount every month; the 31 Jan clamp; return and end
   cuts; holdover; Arrears due dates; horizon.
-- [ ] **3. Lease valuation (TDD).** In `packages/utils/src/lessor-lease.ts`:
+- [x] **3. Lease valuation (TDD).** In `packages/utils/src/lessor-lease.ts`:
   `leasePaymentTerms` treats Monthly like Calendar Month, and
   `salesTypeRequirementError` gets the Monthly whole-months rule. Add tests in the
   lessor-lease tests and `post-rental-agreement/lessor.test.ts`: a mid-month 12-month
