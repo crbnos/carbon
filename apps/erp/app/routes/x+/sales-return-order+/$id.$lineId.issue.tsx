@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, respond } from "~/modules/carbon.server";
 import { escalateReturnOrderLine } from "~/modules/sales/sales.server";
 import { path, requestReferrer } from "~/utils/path";
 

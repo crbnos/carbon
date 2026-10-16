@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -22,7 +23,6 @@ import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { carbon, respond } from "~/modules/carbon.server";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

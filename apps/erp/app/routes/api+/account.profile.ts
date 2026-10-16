@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AccountProfileData } from "@carbon/account";
+import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,7 +17,6 @@ import {
   getAccount,
   updatePublicAccount
 } from "~/modules/account";
-import { carbon } from "~/modules/carbon.server";
 
 const logger = getLogger("erp", "account-profile");
 

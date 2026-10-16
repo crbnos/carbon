@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
@@ -66,7 +67,6 @@ import { zfd } from "zod-form-data";
 import { DateTime } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
-import { carbon } from "~/modules/carbon.server";
 import {
   clockInValidator,
   clockOutValidator,

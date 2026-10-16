@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -24,7 +25,6 @@ import { z } from "zod";
 import { Customer, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { getFixedAsset } from "~/modules/accounting";
-import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 const sellAssetValidator = z.object({

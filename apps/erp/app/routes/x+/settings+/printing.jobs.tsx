@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import {
@@ -21,7 +22,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { z } from "zod";
 import { useRealtime } from "~/hooks";
-import { carbon } from "~/modules/carbon.server";
 import { PrintJobsTable } from "~/modules/settings";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

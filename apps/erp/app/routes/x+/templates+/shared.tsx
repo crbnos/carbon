@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   DocumentSectionPlacement,
@@ -29,7 +30,6 @@ import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SectionFormModal } from "~/components/DocumentTemplateEditor/SectionFormModal";
 import { usePermissions } from "~/hooks";
-import { carbon } from "~/modules/carbon.server";
 import {
   documentSectionValidator,
   getDocumentSections

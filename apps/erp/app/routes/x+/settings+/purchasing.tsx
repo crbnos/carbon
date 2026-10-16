@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -42,7 +43,6 @@ import Country from "~/components/Form/Country";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
-import { carbon } from "~/modules/carbon.server";
 import {
   accountsPayableBillingAddressValidator,
   billingAddressFields,

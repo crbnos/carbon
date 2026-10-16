@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   SelectControlled,
@@ -32,7 +33,6 @@ import { Form, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 import { SettingsPage } from "~/components/SettingsPage";
 import { usePermissions, useUser } from "~/hooks";
-import { carbon, respond } from "~/modules/carbon.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

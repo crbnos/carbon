@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ValidatedForm, validator } from "@carbon/form";
 import {
@@ -23,7 +24,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useNavigate } from "react-router";
 import { Input, Location, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
-import { carbon, respond } from "~/modules/carbon.server";
 import { createOperatorValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 

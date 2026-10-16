@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -15,7 +16,6 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { carbon, respond } from "~/modules/carbon.server";
 import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
   getConfigurationParameters,

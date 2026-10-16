@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon } from "~/modules/carbon.server";
 
 // Any taggable record's properties panel posts here: the record ids, its
 // table and the tags, each id and tag repeated.

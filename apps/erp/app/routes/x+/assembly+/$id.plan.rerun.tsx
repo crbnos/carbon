@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon } from "~/modules/carbon.server";
 
 // `fresh=1` is Regenerate Steps: a from-scratch plan.
 const rerunForm = z.object({ fresh: z.string().optional() });

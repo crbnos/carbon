@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, respond } from "~/modules/carbon.server";
 import { salesRfqDragValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 

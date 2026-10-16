@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -48,7 +49,6 @@ import { useDateFormatter, usePermissions } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
 import { getDefaultAccounts } from "~/modules/accounting";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import { carbon } from "~/modules/carbon.server";
 import { getCompanySettings, settingsToggle } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";

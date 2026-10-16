@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
@@ -9,7 +10,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
-import { carbon, respond } from "~/modules/carbon.server";
 import {
   changeNoticeValidator,
   getChangeNoticeTypesList

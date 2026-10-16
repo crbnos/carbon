@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   documentTemplateTypeSchema,
@@ -15,7 +16,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
-import { carbon } from "~/modules/carbon.server";
 import {
   documentTemplateValidator,
   getCompany,

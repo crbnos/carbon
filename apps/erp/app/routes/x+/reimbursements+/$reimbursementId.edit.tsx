@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,7 +13,6 @@ import { data, useParams } from "react-router";
 import type { ClientDocumentLine } from "~/components/DocumentLineEditor";
 import { useRouteData } from "~/hooks";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
-import { carbon, respond } from "~/modules/carbon.server";
 import {
   isReimbursementLocked,
   ReimbursementEditForm,

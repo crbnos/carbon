@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { carbon, respond } from "~/modules/carbon.server";
 import { WorkCenterForm, workCenterValidator } from "~/modules/resources";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -15,7 +16,6 @@ import type {
   DimensionWithValues,
   JournalLineDimensionValue
 } from "~/modules/accounting/ui/JournalEntries/types";
-import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The lines ride as one JSON field; the operation checks each of them.

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -26,7 +27,6 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
-import { carbon, respond } from "~/modules/carbon.server";
 import { getStorageUnit } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
 

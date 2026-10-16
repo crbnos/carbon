@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { carbon, respond } from "~/modules/carbon.server";
 import { stripeCustomerChoiceValidator } from "~/modules/invoicing";
 import { getContract } from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";

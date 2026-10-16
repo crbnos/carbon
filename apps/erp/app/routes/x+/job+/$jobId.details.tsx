@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -32,7 +33,6 @@ import {
 } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import { carbon, respond } from "~/modules/carbon.server";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,

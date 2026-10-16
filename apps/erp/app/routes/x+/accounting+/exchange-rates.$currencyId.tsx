@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
@@ -16,7 +17,6 @@ import {
   getExchangeRates
 } from "~/modules/accounting";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
-import { carbon, respond } from "~/modules/carbon.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

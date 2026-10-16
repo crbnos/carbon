@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon } from "~/modules/carbon.server";
 import { workflowValidator } from "~/modules/workflows";
 
 // The New Workflow modal opens the builder on success.

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import {
   Button,
@@ -24,7 +25,6 @@ import { AppBarActions } from "~/components/Layout/Mobile";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import { carbon, respond } from "~/modules/carbon.server";
 import type { Company as CompanyType } from "~/modules/settings";
 import { CompanyForm, companyValidator } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";

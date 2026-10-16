@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon } from "~/modules/carbon.server";
 import type { importCsvFile } from "~/modules/shared/shared.server";
 
 // Every field but these two is a column mapping: field → CSV column.

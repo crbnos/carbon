@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   dayBeforeCutover,
@@ -36,7 +37,6 @@ import {
   ActivationFooter,
   activationStepPath
 } from "~/modules/accounting/ui/Activation";
-import { carbon, respond } from "~/modules/carbon.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

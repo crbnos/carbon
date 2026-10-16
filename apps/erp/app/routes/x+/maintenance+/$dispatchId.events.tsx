@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -20,7 +21,6 @@ import { useParams } from "react-router";
 import { z } from "zod";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { carbon } from "~/modules/carbon.server";
 import { maintenanceDispatchEventValidator } from "~/modules/resources";
 import type { MaintenanceDispatchEvent } from "~/modules/resources/types";
 import { path } from "~/utils/path";

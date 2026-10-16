@@ -33,11 +33,12 @@ never published to npm.
 - Hand-edit `tool-metadata.json` or `tool-manifest.digest.json` — both are generated;
   `pnpm check:manifest` (pre-commit gated) fails on a stale digest.
 - Add runtime dependencies beyond the `@orpc/*` client-side packages and the ones
-  `defineServiceFn` needs (`@carbon/database`, `@carbon/kv`, `@carbon/logger`,
-  `@carbon/server-functions`, `@supabase/supabase-js`) without asking.
-- Import app code (`~/…`). What wires an app in — its database pool, its router,
-  its session flash — stays in the app (`apps/erp/app/modules/service-context.server.ts`,
-  `carbon.server.ts`, `router.server.ts`).
+  the service-function layer needs (`@carbon/auth`, `@carbon/database`, `@carbon/kv`,
+  `@carbon/logger`, `@carbon/server-functions`, `@carbon/utils`,
+  `@supabase/supabase-js`) without asking.
+- Import app code (`~/…`). An app hands in what is its own — its router and the
+  context its callers run with — through `registerCarbon`, and its router's type
+  through `Register` (`apps/erp/app/modules/carbon.server.ts`).
 
 ## Validation Commands
 
@@ -53,7 +54,8 @@ pnpm run check:manifest        # digest current?
 |---------|----------|
 | `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `AuthField`, `PermissionAction`, and `SERVICE_RULE_ERROR_CODE` (re-exports `./schema` too). Client-safe |
 | `./schema` | `jsonSchema()` pass-through Standard Schema wrapper, `CarbonJsonSchemaConverter` (OpenAPI generator plugin), `CARBON_VENDOR` |
-| `./service-fn.server` | `defineServiceFn`, `CarbonError`, `ERROR_STATUS`, `createServiceContext`, `ServiceContext`, `Result`, `RouteResult`, `toResult`, `bindServiceFns` / `Api` (the tree a route calls through `carbon(request)`) |
+| `./service-fn.server` | `defineServiceFn`, `CarbonError`, `ERROR_STATUS`, `createServiceContext`, `ServiceContext`, `Result`, `RouteResult`, `toResult` |
+| `./carbon.server` | What a route calls: `carbon(request)` (the operations bound to the caller, typed through the app's `Register` augmentation), `respond(request, result).redirect(to, { message, onError })`, `registerCarbon` (the app's router and context, called once from `entry.server.tsx` via `apps/erp/app/modules/carbon.server.ts`), `bindServiceFns` / `Api` |
 | `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag` |
 
 ## Consumers

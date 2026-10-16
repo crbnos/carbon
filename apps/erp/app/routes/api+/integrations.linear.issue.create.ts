@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyEmployees, getLinearClient } from "@carbon/ee/linear.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunction } from "react-router";
-import { carbon } from "~/modules/carbon.server";
 import { createLinearIssue } from "~/modules/shared/shared.server";
 
 const linear = getLinearClient();

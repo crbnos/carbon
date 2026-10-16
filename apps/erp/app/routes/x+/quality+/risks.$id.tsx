@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
-import { carbon, respond } from "~/modules/carbon.server";
 import { riskRegisterValidator } from "~/modules/quality/quality.models";
 import { getRisk } from "~/modules/quality/quality.service";
 import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm";

@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { getThreads } from "~/modules/agent";
 import { deleteAgentThread } from "~/modules/agent/agent.server";
-import { carbon } from "~/modules/carbon.server";
 
 const logger = getLogger("erp", "agent-threads");
 

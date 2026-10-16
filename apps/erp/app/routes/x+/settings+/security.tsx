@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -52,7 +53,6 @@ import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import { carbon } from "~/modules/carbon.server";
 import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

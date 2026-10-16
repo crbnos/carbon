@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -17,7 +18,6 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
-import { carbon } from "~/modules/carbon.server";
 import type {
   Quotation,
   QuotationOperation,

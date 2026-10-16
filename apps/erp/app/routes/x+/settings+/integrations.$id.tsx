@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -93,7 +94,6 @@ import {
   getActiveDimensionsWithValues
 } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import { carbon } from "~/modules/carbon.server";
 import {
   getIntegration,
   IntegrationForm,

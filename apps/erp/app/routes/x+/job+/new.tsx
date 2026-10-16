@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
@@ -14,7 +15,6 @@ import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
   getFixedAssets
 } from "~/modules/accounting";
-import { carbon, respond } from "~/modules/carbon.server";
 import { jobValidator } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared";

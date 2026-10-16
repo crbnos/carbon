@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -62,7 +63,6 @@ import {
   LOCK_PERIOD_TASK_NAME
 } from "~/modules/accounting";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
-import { carbon, respond } from "~/modules/carbon.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

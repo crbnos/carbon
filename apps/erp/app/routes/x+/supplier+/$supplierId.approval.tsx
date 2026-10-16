@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The supplier header posts an intent, or the approval dialog's decision.

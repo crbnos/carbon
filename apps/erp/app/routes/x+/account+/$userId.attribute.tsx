@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -14,7 +15,6 @@ import {
   attributeTextValidator,
   attributeUserValidator
 } from "~/modules/account";
-import { carbon } from "~/modules/carbon.server";
 
 /** The value's form, by the attribute's data type. */
 const attributeValueForm = z.discriminatedUnion("type", [
