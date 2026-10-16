@@ -321,8 +321,8 @@ The asset is Draft, Under Construction, or Disposed.
 ### "No week rate is set for this item; enter the rate"
 A unit was added without a rate (from the Fleet register's **"Rent"** action, or through the API) and no customer, customer type, or item rate is on file for its frequency. Enter the rate on the unit, or set one on the part's Sales tab.
 
-### "UNIT is treated as a sale, which on a Monthly agreement needs a monthly rate" / "… on a Calendar Month agreement needs a monthly rate"
-A Daily or Weekly unit bills a different amount each month, and a sale is valued as a level monthly payment that its invoices must match. Make the unit Monthly, or use a 28 Days agreement. *Calendar Month* is a Monthly agreement with **"Align to calendar periods"** ticked.
+### "UNIT is treated as a sale, which on a CYCLE agreement needs a monthly rate"
+CYCLE is Monthly or Calendar Month. A Daily or Weekly unit bills a different amount each month, and a sale is valued as a level monthly payment that its invoices must match. Make the unit Monthly, or use a 28 Days agreement. *Calendar Month* is a Monthly agreement with **"Align to calendar periods"** ticked.
 
 ### "UNIT has no rate; enter its rate before activating"
 A unit at a rate of zero would go on rent and bill nothing. Set its **"Rate"** on the setup's Units step, or on the unit's page.
@@ -393,8 +393,8 @@ After the accounting cutover, activation or the return of a unit treated as a sa
 ### "UNIT is treated as a sale, which needs an agreement end date" / "UNIT is treated as a sale; enter the unit's fair value"
 Activation refuses a line that classifies (or is overridden to) `Sale` without `rentalAgreement.endDate` or `rentalAgreementLine.fairValue` > 0. Set the end date on the agreement or the Fair Value on the unit, or override the treatment to Rental.
 
-### "UNIT is treated as a sale, which runs whole billing periods: end it the day before a monthly anniversary of its start date, such as DATE" / "UNIT is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end" / "UNIT is treated as a sale, which runs whole billing periods: the term must be a whole number of 28-day periods (it is N days)"
-A unit treated as a sale (a sales-type lease) must bill exactly the rent stream it was valued on (`salesTypeRequirementError`, `lessor-lease` in `@carbon/utils`). Monthly: the end date is the day before `start + n months` (`leaseMonthEnd`), any start day; the message names the next such date. Calendar Month: start date on the 1st and end date on a month end. 28 Days: start to end inclusive is a multiple of 28 days. The Activate confirmation (`RentalCommencementPreview`) shows the same message per unit before activation refuses it. Fix the dates or override the treatment to Rental.
+### "UNIT is treated as a sale, which runs whole billing periods: …"
+The message ends, by billing cycle: Monthly, "end it the day before a monthly anniversary of its start date, such as DATE"; Calendar Month, "start on the first of a month and end on a month end"; 28 Days, "the term must be a whole number of 28-day periods (it is N days)". A unit treated as a sale (a sales-type lease) must bill exactly the rent stream it was valued on (`salesTypeRequirementError`, `lessor-lease` in `@carbon/utils`). Monthly: the end date is the day before `start + n months` (`leaseMonthEnd`), any start day; the message names the next such date. Calendar Month: start date on the 1st and end date on a month end. 28 Days: start to end inclusive is a multiple of 28 days. The Activate confirmation (`RentalCommencementPreview`) shows the same message per unit before activation refuses it. Fix the dates or override the treatment to Rental.
 
 ### "UNIT is treated as a sale, which commences when the agreement is activated: start it in YYYY-MM or later (it starts DATE)"
 A unit treated as a sale whose agreement starts before the first of the activation month (company timezone) is refused (`salesTypeRequirementError`). The commencement journal is dated the activation day, while the schedule's interest is dated from the start date. Move the start date into the current month, or override the treatment to Rental.
