@@ -10,7 +10,7 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, round } from "@carbon/utils";
+import { round } from "@carbon/utils";
 import type { Kysely } from "kysely";
 import {
   type ImportRecord,
@@ -20,6 +20,7 @@ import {
   numberCell,
   resolveItem
 } from "./existing-item";
+import { updateRowsByKey } from "./set-based-update";
 import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
@@ -129,20 +130,18 @@ export async function importItemSalePrices(
 
   if (updates.length === 0) return;
 
-  const now = datetime.timestamp();
   await inTransaction(db, async (trx) => {
-    for (const update of updates) {
-      await trx
-        .updateTable("itemUnitSalePrice")
-        .set({
-          unitSalePrice: update.unitSalePrice,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("itemId", "=", update.itemId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+    await updateRowsByKey(trx, {
+      table: "itemUnitSalePrice",
+      companyId,
+      userId,
+      keys: [{ name: "itemId", type: "text" }],
+      columns: [{ name: "unitSalePrice", type: "numeric" }],
+      rows: updates.map(({ itemId, unitSalePrice }) => ({
+        key: { itemId },
+        set: { unitSalePrice }
+      }))
+    });
     summary.updated += updates.length;
   });
 }

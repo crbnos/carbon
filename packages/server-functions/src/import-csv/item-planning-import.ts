@@ -21,7 +21,7 @@
 import { Constants, type Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, round } from "@carbon/utils";
+import { round } from "@carbon/utils";
 import type { Kysely } from "kysely";
 import {
   cell,
@@ -29,9 +29,11 @@ import {
   type ImportSummary,
   type ItemCandidate,
   loadItemIndex,
+  MAX_INTEGER,
   numberCell,
   resolveItem
 } from "./existing-item";
+import { type ColumnType, updateRowsByKey } from "./set-based-update";
 import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
@@ -87,6 +89,19 @@ export const PLANNING_COLUMNS = {
 } as const;
 
 type PlanningColumn = keyof typeof PLANNING_COLUMNS;
+
+// Every column a row can set, typed for the set-based update.
+const PLANNING_UPDATE_COLUMNS: ColumnType[] = [
+  { name: "reorderingPolicy", type: '"itemReorderingPolicy"' },
+  ...(
+    Object.entries(PLANNING_COLUMNS) as Array<
+      [PlanningColumn, (typeof PLANNING_COLUMNS)[PlanningColumn]]
+    >
+  ).map(([name, rule]) => ({
+    name,
+    type: rule.integer ? ("integer" as const) : ("numeric" as const)
+  }))
+];
 
 export type PlanningUpdate = Partial<Record<PlanningColumn, number>> & {
   reorderingPolicy?: ReorderingPolicy;
@@ -147,6 +162,9 @@ export function readPlanningUpdate(
     if (Number.isNaN(raw)) return { error: `${rule.label} must be a number` };
     if (rule.integer && !Number.isInteger(raw)) {
       return { error: `${rule.label} must be a whole number` };
+    }
+    if (rule.integer && raw > MAX_INTEGER) {
+      return { error: `${rule.label} must be ${MAX_INTEGER} or less` };
     }
     const value = rule.integer ? raw : round(raw);
     if (value < rule.min) {
@@ -298,17 +316,21 @@ export async function importItemPlanning(
 
   if (updates.length === 0) return;
 
-  const now = datetime.timestamp();
   await inTransaction(db, async (trx) => {
-    for (const { itemId, locationId, update } of updates) {
-      await trx
-        .updateTable("itemPlanning")
-        .set({ ...update, updatedBy: userId, updatedAt: now })
-        .where("itemId", "=", itemId)
-        .where("locationId", "=", locationId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+    await updateRowsByKey(trx, {
+      table: "itemPlanning",
+      companyId,
+      userId,
+      keys: [
+        { name: "itemId", type: "text" },
+        { name: "locationId", type: "text" }
+      ],
+      columns: PLANNING_UPDATE_COLUMNS,
+      rows: updates.map(({ itemId, locationId, update }) => ({
+        key: { itemId, locationId },
+        set: update
+      }))
+    });
     summary.updated += updates.length;
   });
 }

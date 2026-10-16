@@ -9,7 +9,10 @@
 // step that fails rolls back only its own writes, as its own transaction would.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import { ControlledTransaction, type Kysely, type Transaction } from "kysely";
+
+const logger = getLogger("server-functions", "import-csv");
 
 let savepoints = 0;
 
@@ -31,7 +34,16 @@ export async function inTransaction<T>(
     await savepoint.releaseSavepoint(name).execute();
     return result;
   } catch (error) {
-    await savepoint.rollbackToSavepoint(name).execute();
+    // A failed rollback must not hide why the step failed; the dry run's own
+    // rollback discards the transaction either way.
+    try {
+      await savepoint.rollbackToSavepoint(name).execute();
+    } catch (rollbackError) {
+      logger.error("Rolling back an import step failed", {
+        savepoint: name,
+        error: rollbackError
+      });
+    }
     throw error;
   }
 }
