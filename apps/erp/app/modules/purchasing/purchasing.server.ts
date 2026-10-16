@@ -6739,7 +6739,11 @@ export const getLease = defineServiceFn({
 });
 
 /**
- * `leaseId` (the readable LSE number) comes from the caller — the route draws it from the sequence
+ * Create a lease.
+ *
+ * @remarks
+ * The caller supplies `leaseId`, the readable LSE number. The app draws it from
+ * the sequence.
  *
  * @mcp
  */
@@ -6780,7 +6784,11 @@ export const insertLease = defineServiceFn({
 });
 
 /**
- * A lease's details — its name, notes, owner and notice date (`leaseDetailFields`) — which stay editable in every status: nothing was measured from them
+ * Update a lease's details.
+ *
+ * @remarks
+ * The details are its name, notes, owner and notice date (`leaseDetailFields`).
+ * They stay editable in every status, because nothing is measured from them.
  *
  * @mcp
  */

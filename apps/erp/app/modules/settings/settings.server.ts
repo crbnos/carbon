@@ -2414,7 +2414,7 @@ export const getApiKeys = defineServiceFn({
 });
 
 /**
- * The view already carries `companyGroupName`, so there is nothing to embed
+ * List the companies the caller belongs to, with their logo URLs.
  *
  * @mcp read
  */

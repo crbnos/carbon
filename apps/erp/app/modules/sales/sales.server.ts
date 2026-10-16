@@ -9747,7 +9747,11 @@ export const updateRentalAgreementCharge = defineServiceFn({
 });
 
 /**
- * A charge that has been invoiced stays — void or delete the invoice first — and only an open (Draft or Active) agreement's charges can be removed
+ * Delete a rental agreement charge.
+ *
+ * @remarks
+ * Only an open (Draft or Active) agreement's charges can be removed. A charge
+ * that has been invoiced stays: void or delete the invoice first.
  *
  * @mcp destructive
  */

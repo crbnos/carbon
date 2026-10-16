@@ -7036,7 +7036,10 @@ export const updateProcedureStepOrder = defineServiceFn({
 });
 
 /**
- * `options.source` is telemetry-only: which surface raised the job
+ * Create a job for an item.
+ *
+ * @remarks
+ * `options.source` is telemetry only: it records which surface raised the job.
  *
  * @mcp
  */
