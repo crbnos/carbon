@@ -47,7 +47,8 @@ Billing Cycle cards: "Monthly" and "28 Days", with the "Align to calendar
 periods" checkbox under them (enabled for Monthly only). A new agreement is
 Monthly + ticked (`billingCycle = 'Calendar Month'`); click the checkbox to
 untick it → `billingCycle = 'Monthly'` (each period from the start date's day).
-Picking "Monthly" from "28 Days" stores Calendar Month (ticked) again.
+Picking "Monthly" from "28 Days" restores the alignment it had before 28 Days
+(ticked when the page has not seen one, e.g. after a reload).
 Click text "Arrears"; Deposit / Tax Percent textboxes (`8.25%`) fill + Tab. Each
 saves on its own (`rental-agreement/update`).
 
