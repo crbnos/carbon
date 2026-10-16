@@ -1267,7 +1267,8 @@ function SerialForm({
 
   const updateSerialNumber = useCallback(
     async (serialNumber: { index: number; number: string }) => {
-      if (!receipt?.id || !serialNumber.number.trim()) return;
+      // An empty value is sent too: it clears the serial saved for this box.
+      if (!receipt?.id) return;
 
       const error = validateSerialNumber(
         serialNumber.number,
@@ -1394,16 +1395,12 @@ function SerialForm({
                 onSerialNumbersChange(newSerialNumbers);
               }}
               onBlur={() => {
-                if (serialNumber.number.trim()) {
-                  updateSerialNumber(serialNumber);
-                }
+                updateSerialNumber(serialNumber);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  if (serialNumber.number.trim()) {
-                    updateSerialNumber(serialNumber);
-                  }
+                  updateSerialNumber(serialNumber);
                   const nextInput = e.currentTarget
                     .closest("div")
                     ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);

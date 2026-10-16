@@ -856,6 +856,9 @@ export async function getReceiptLineTracking(
  * (edited serial) entities would otherwise become phantom Available serials.
  * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
  * stays in lockstep with the post-time validation in ReceiptPostModal.
+ * Returns the ids of the lines that still miss a serial, so the post can be
+ * refused on the server and not only in the modal. A sales-return receipt
+ * picks existing units, so an assigned unit counts without a serial number.
  * @mcp action destructive
  */
 export async function reconcileReceiptSerialEntities(
@@ -863,22 +866,25 @@ export async function reconcileReceiptSerialEntities(
   args: {
     receiptId: string;
     companyId: string;
+    isSalesReturn?: boolean;
     lines: {
       id: string;
       receivedQuantity: number | null;
       requiresSerialTracking?: boolean | null;
     }[];
   }
-) {
+): Promise<{ linesMissingSerials: string[]; error: unknown }> {
   const serialLines = args.lines.filter((line) => line.requiresSerialTracking);
-  if (serialLines.length === 0) return;
+  if (serialLines.length === 0) return { linesMissingSerials: [], error: null };
 
-  const { data: serialEntities } = await client
+  const { data: serialEntities, error } = await client
     .from("trackedEntity")
     .select("id, attributes, createdAt, readableId")
     .eq("attributes ->> Receipt", args.receiptId)
     .eq("companyId", args.companyId);
+  if (error) return { linesMissingSerials: [], error };
 
+  const linesMissingSerials: string[] = [];
   const idsToDelete = serialLines.flatMap((line) => {
     const entities = (serialEntities ?? [])
       .filter(
@@ -891,22 +897,84 @@ export async function reconcileReceiptSerialEntities(
         index: (e.attributes as TrackedEntityAttributes)?.[
           "Receipt Line Index"
         ],
-        hasSerial: !!e.readableId,
+        hasSerial: !!args.isSalesReturn || !!e.readableId,
         createdAt: e.createdAt
       }));
-    return reconcileReceiptLineSerials(
+    const { missingIndexes, surplusEntityIds } = reconcileReceiptLineSerials(
       entities,
       Number(line.receivedQuantity ?? 0)
-    ).surplusEntityIds;
+    );
+    if (missingIndexes.length > 0) linesMissingSerials.push(line.id);
+    return surplusEntityIds;
   });
 
-  if (idsToDelete.length > 0) {
-    await client
+  const released = await releaseReceiptSerialEntities(
+    client,
+    args.companyId,
+    idsToDelete
+  );
+  if (released.error) return { linesMissingSerials, error: released.error };
+
+  return { linesMissingSerials, error: null };
+}
+
+/**
+ * Takes serial tracked entities off a receipt. An entity the receipt created
+ * has no stock history and is deleted. One with history is a real unit — a
+ * sales return re-tags a shipped unit — so it keeps living and only loses its
+ * receipt link: deleting it would null `itemLedger.trackedEntityId` on its
+ * past movements.
+ */
+export async function releaseReceiptSerialEntities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  entityIds: string[]
+): Promise<{ error: unknown }> {
+  if (entityIds.length === 0) return { error: null };
+
+  const [entities, history] = await Promise.all([
+    client
+      .from("trackedEntity")
+      .select("id, attributes")
+      .in("id", entityIds)
+      .eq("companyId", companyId),
+    client
+      .from("itemLedger")
+      .select("trackedEntityId")
+      .in("trackedEntityId", entityIds)
+      .eq("companyId", companyId)
+  ]);
+  if (entities.error) return { error: entities.error };
+  if (history.error) return { error: history.error };
+
+  const withHistory = new Set(history.data.map((row) => row.trackedEntityId));
+
+  const unposted = entities.data
+    .filter((entity) => !withHistory.has(entity.id))
+    .map((entity) => entity.id);
+  if (unposted.length > 0) {
+    const { error } = await client
       .from("trackedEntity")
       .delete()
-      .in("id", idsToDelete)
-      .eq("companyId", args.companyId);
+      .in("id", unposted)
+      .eq("companyId", companyId);
+    if (error) return { error };
   }
+
+  for (const entity of entities.data.filter((e) => withHistory.has(e.id))) {
+    const attributes = { ...(entity.attributes as Record<string, unknown>) };
+    delete attributes["Receipt"];
+    delete attributes["Receipt Line"];
+    delete attributes["Receipt Line Index"];
+    const { error } = await client
+      .from("trackedEntity")
+      .update({ attributes: attributes as Json })
+      .eq("id", entity.id)
+      .eq("companyId", companyId);
+    if (error) return { error };
+  }
+
+  return { error: null };
 }
 
 /** @mcp read */

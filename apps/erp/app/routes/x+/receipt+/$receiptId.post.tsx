@@ -173,11 +173,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // quantity leaves orphans, edited serials leave duplicates) that would
   // otherwise be flipped to Available as phantom serials. Clear them before
   // posting.
-  await reconcileReceiptSerialEntities(serviceRole, {
+  const serials = await reconcileReceiptSerialEntities(serviceRole, {
     receiptId,
     companyId,
+    isSalesReturn: receiptForSurface?.sourceDocument === "Sales Return Order",
     lines: lines ?? []
   });
+
+  if (serials.error) {
+    logger.error("Failed to check the receipt's serial numbers", {
+      companyId,
+      receiptId,
+      error: serials.error
+    });
+    return {
+      error: { message: "Failed to post receipt" },
+      data: null,
+      violations: [],
+      ruleNames: {}
+    };
+  }
+
+  // The post modal checks this too, but only the server sees what is saved
+  // at the moment of posting. Returned rather than flashed on a redirect:
+  // the modal submits through a fetcher, and a redirect back to this page
+  // does not reload the root, so a flashed message is never shown.
+  if (serials.linesMissingSerials.length > 0) {
+    return {
+      error: { message: "Serial numbers are missing" },
+      data: null,
+      violations: [],
+      ruleNames: {}
+    };
+  }
 
   // Conditional on a postable status, so a concurrent void or post is not
   // flipped back to Pending.

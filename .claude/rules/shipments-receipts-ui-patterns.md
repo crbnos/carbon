@@ -42,6 +42,17 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
   sales-return receipts (same-serial re-entry, guarded by provenance: the entity must be the
   return line's item and shipped to that return's customer on a posted shipment).
+  A receipt serial write is keyed by its box (`Receipt Line` + `Receipt Line Index`), not by the
+  serial number: an empty value clears the box (deletes its unposted entity), a new value renames
+  the box's unposted entity, and an entity with `itemLedger` history only loses its receipt link.
+  `ReceiptLines` sends the empty value on blur. Refused on a Posted or Voided receipt.
+  `$id.post.tsx` refuses the post when `reconcileReceiptSerialEntities` reports a line still
+  missing serials, returned to the modal as `{ error: { message } }` rather than flashed: a
+  fetcher redirect back to the same page does not reload the root, so a flash is never shown.
+  Lowering `receivedQuantity` (`lines.update`) runs the same cleanup on a Draft receipt. Every
+  removal goes through `releaseReceiptSerialEntities`: an entity with no `itemLedger` history is
+  deleted, one with history only loses its receipt attributes — a sales return re-tags real
+  shipped units.
 - `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
 - `fixed-asset-lines.update.tsx` — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
