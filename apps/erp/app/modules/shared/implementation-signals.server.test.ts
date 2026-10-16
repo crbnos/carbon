@@ -20,6 +20,10 @@ vi.mock("@carbon/onboarding/server", () => ({
 
 // shared.server.ts also holds the sales-order/return PDF and email helpers;
 // stub their imports so this test loads only what it exercises.
+// Its operations' imports reach the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 vi.mock("@carbon/documents/email", () => ({}));
 vi.mock("@carbon/jobs", () => ({}));
 vi.mock("~/modules/accounting/accounting.service", () => ({}));
