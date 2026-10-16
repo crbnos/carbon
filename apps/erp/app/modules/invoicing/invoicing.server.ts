@@ -45,6 +45,7 @@ import {
 } from "~/modules/settings/settings.service";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { stripSpecialCharacters } from "~/utils/string";
+import * as accountingPostings from "../accounting/accounting.service";
 import * as purchasingPostings from "../purchasing/purchasing.service";
 import { invokePosting } from "../shared/shared.service";
 import {
@@ -484,10 +485,15 @@ export const voidSalesInvoice = defineServiceFn({
       return ctx.error("rule", "Can only void posted invoices");
     }
 
-    const voided = await service.invoker(ctx).invoke("post-sales-invoice", {
-      type: "void",
-      invoiceId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-sales-invoice",
+      {
+        type: "void",
+        invoiceId
+      },
+      service.postSalesInvoice
+    );
     if (voided.error) {
       return service.fromServerFn(
         ctx,
@@ -699,9 +705,14 @@ export const postSalesInvoice = defineServiceFn({
       );
     }
 
-    const posted = await service.invoker(ctx).invoke("post-sales-invoice", {
-      invoiceId
-    });
+    const posted = await invokePosting(
+      ctx,
+      "post-sales-invoice",
+      {
+        invoiceId
+      },
+      service.postSalesInvoice
+    );
     if (posted.error) {
       // Put back OUR claim only: a failed response can still have posted, so
       // a bare reset to Draft could un-post a posted invoice.
@@ -1065,12 +1076,15 @@ export const postPurchaseInvoice = defineServiceFn({
 
     let receiptIds: string[] | undefined;
     try {
-      const posted = await service
-        .invoker(ctx)
-        .invoke("post-purchase-invoice", {
+      const posted = await invokePosting(
+        ctx,
+        "post-purchase-invoice",
+        {
           invoiceId,
           skipReceiptPost
-        });
+        },
+        service.postPurchaseInvoice
+      );
       if (posted.error) {
         await backToDraft();
         return service.fromServerFn(
@@ -1173,10 +1187,15 @@ export const voidPurchaseInvoice = defineServiceFn({
       );
     }
 
-    const voided = await service.invoker(ctx).invoke("post-purchase-invoice", {
-      type: "void",
-      invoiceId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-purchase-invoice",
+      {
+        type: "void",
+        invoiceId
+      },
+      service.postPurchaseInvoice
+    );
     if (voided.error) {
       return service.fromServerFn(
         ctx,
@@ -1516,10 +1535,15 @@ export const postPayment = defineServiceFn({
   async run(ctx, { paymentId }) {
     const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
     if (refused) return refused;
-    const posted = await service.invoker(ctx).invoke("post-payment", {
-      type: "post",
-      paymentId
-    });
+    const posted = await invokePosting(
+      ctx,
+      "post-payment",
+      {
+        type: "post",
+        paymentId
+      },
+      service.postPayment
+    );
     if (posted.error) {
       return service.fromServerFn(ctx, posted.error, "Failed to post payment");
     }
@@ -1543,10 +1567,15 @@ export const voidPayment = defineServiceFn({
   async run(ctx, { paymentId }) {
     const refused = await refuseUnlessOwned(ctx, "payment", { id: paymentId });
     if (refused) return refused;
-    const voided = await service.invoker(ctx).invoke("post-payment", {
-      type: "void",
-      paymentId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-payment",
+      {
+        type: "void",
+        paymentId
+      },
+      service.postPayment
+    );
     if (voided.error) {
       return service.fromServerFn(ctx, voided.error, "Failed to void payment");
     }
@@ -1572,10 +1601,15 @@ export const postMemo = defineServiceFn({
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
     if (refused) return refused;
-    const posted = await service.invoker(ctx).invoke("post-memo", {
-      type: "post",
-      memoId
-    });
+    const posted = await invokePosting(
+      ctx,
+      "post-memo",
+      {
+        type: "post",
+        memoId
+      },
+      service.postMemo
+    );
     if (posted.error) {
       return service.fromServerFn(ctx, posted.error, "Failed to post memo");
     }
@@ -1599,10 +1633,15 @@ export const voidMemo = defineServiceFn({
   async run(ctx, { memoId }) {
     const refused = await refuseUnlessOwned(ctx, "memo", { id: memoId });
     if (refused) return refused;
-    const voided = await service.invoker(ctx).invoke("post-memo", {
-      type: "void",
-      memoId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-memo",
+      {
+        type: "void",
+        memoId
+      },
+      service.postMemo
+    );
     if (voided.error) {
       return service.fromServerFn(ctx, voided.error, "Failed to void memo");
     }
@@ -1678,10 +1717,15 @@ export const voidCharge = defineServiceFn({
   async run(ctx, { chargeId }) {
     const refused = await refuseUnlessOwned(ctx, "charge", { id: chargeId });
     if (refused) return refused;
-    const voided = await service.invoker(ctx).invoke("post-charge", {
-      type: "void",
-      chargeId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-charge",
+      {
+        type: "void",
+        chargeId
+      },
+      accountingPostings.postCharge
+    );
     if (voided.error) {
       return service.fromServerFn(ctx, voided.error, "Failed to void charge");
     }
@@ -1854,10 +1898,15 @@ export const postReimbursement = defineServiceFn({
       return ctx.error("rule", REIMBURSEMENT_UNBALANCED_MESSAGE);
     }
 
-    const posted = await service.invoker(ctx).invoke("post-reimbursement", {
-      type: "post",
-      reimbursementId
-    });
+    const posted = await invokePosting(
+      ctx,
+      "post-reimbursement",
+      {
+        type: "post",
+        reimbursementId
+      },
+      accountingPostings.postReimbursement
+    );
     if (posted.error) {
       return service.fromServerFn(
         ctx,
@@ -1887,10 +1936,15 @@ export const voidReimbursement = defineServiceFn({
       id: reimbursementId
     });
     if (refused) return refused;
-    const voided = await service.invoker(ctx).invoke("post-reimbursement", {
-      type: "void",
-      reimbursementId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-reimbursement",
+      {
+        type: "void",
+        reimbursementId
+      },
+      accountingPostings.postReimbursement
+    );
     if (voided.error) {
       return service.fromServerFn(
         ctx,
@@ -2032,10 +2086,15 @@ export const payReimbursement = defineServiceFn({
       };
     }
 
-    const posted = await service.invoker(ctx).invoke("post-payment", {
-      type: "post",
-      paymentId
-    });
+    const posted = await invokePosting(
+      ctx,
+      "post-payment",
+      {
+        type: "post",
+        paymentId
+      },
+      service.postPayment
+    );
     if (posted.error) {
       logger.error("Failed to post a reimbursement payout", {
         companyId,

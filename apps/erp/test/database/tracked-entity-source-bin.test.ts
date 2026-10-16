@@ -17,15 +17,16 @@ import {
   seed,
   USER,
   unwrap
-} from "@carbon/server-functions/always-post-test-fixture";
+} from "./fixtures/always-post";
 import create from "@carbon/server-functions/create";
 import {
   databaseTest,
   hasLocalDatabase
 } from "@carbon/server-functions/local-database-test-fixture";
-import postShipment from "@carbon/server-functions/post-shipment";
+import { postShipment } from "../../app/modules/inventory/inventory.service";
 import { postStockTransfer } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
+import { handlesOf } from "./fixtures/handles";
 
 describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
   let f: Fixture;
@@ -234,10 +235,10 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
       const serial = await stockIn("ship", aftersales);
       const shipmentId = await shipmentFor("ship", serial);
 
-      unwrap(await postShipment(f.ctx, { type: "post", shipmentId }));
+      unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId }, postShipment));
       expect(await onHand(serial)).toEqual({ [aftersales]: 0 });
 
-      unwrap(await postShipment(f.ctx, { type: "void", shipmentId }));
+      unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "void", shipmentId }, postShipment));
       expect(await onHand(serial)).toEqual({ [aftersales]: 1 });
     }
   );
@@ -248,7 +249,7 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
       const serial = await stockIn("ship-unassigned", null);
       const shipmentId = await shipmentFor("ship-unassigned", serial);
 
-      unwrap(await postShipment(f.ctx, { type: "post", shipmentId }));
+      unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId }, postShipment));
       expect(await onHand(serial)).toEqual({ none: 0 });
     }
   );
@@ -263,7 +264,7 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
         quantity: 4
       });
 
-      unwrap(await postShipment(f.ctx, { type: "post", shipmentId }));
+      unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId }, postShipment));
 
       const byBin = await f.db
         .selectFrom("itemLedger")
@@ -315,7 +316,7 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
         quantity: 8
       });
 
-      const result = await postShipment(f.ctx, { type: "post", shipmentId });
+      const result = await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId }, postShipment);
       expect(result.error?.message).toMatch(
         /SN-ship-batch-spread has only 6 in one storage unit, 8 needed/
       );
@@ -330,7 +331,7 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
     const serial = await stockIn("ship-empty", "none");
     const shipmentId = await shipmentFor("ship-empty", serial);
 
-    const result = await postShipment(f.ctx, { type: "post", shipmentId });
+    const result = await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId }, postShipment);
     expect(result.error?.message).toMatch(/SN-ship-empty has no stock/);
     expect(await onHand(serial)).toEqual({});
   });

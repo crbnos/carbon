@@ -937,7 +937,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** When applying a uniform transformation across N sibling branches, diff each branch against its own pre-change body — don't assume they were symmetric. A branch that posted no ledger, sent no email, fired no event before your change must still post/send/fire nothing after, unless the spec explicitly says otherwise. "It typechecks and the other four branches do it" is not evidence the fifth should. Preserve per-branch behavior; the flip's mandate was which id departs, not to newly introduce inventory movements.
 
-**Applies to:** `packages/server-functions/src/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
+**Applies to:** `apps/erp/app/modules/inventory/inventory.service.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
 
 ## Carbon journal amounts are natural-balance-signed, not debit-signed
 
@@ -1283,7 +1283,7 @@ entry balances.
 
 **Applies to:** `apps/erp/app/modules/purchasing/purchasing.service.ts`
 (`createPurchaseReturnOrderCredit`), `apps/erp/app/modules/sales/sales.service.ts`
-(`createSalesReturnOrderCredit`), `packages/server-functions/src/post-memo/*`,
+(`createSalesReturnOrderCredit`), `apps/erp/app/modules/invoicing/invoicing.service.ts`,
 any new `memo` writer.
 
 ## A bare FormLabel outside FormControl 500s the whole route
@@ -3142,7 +3142,7 @@ documents card crashed on `opportunity.id` (shown as "Couldn't load documents", 
 creates an opportunity for it in the same transaction. Nullable in the schema does not
 mean optional in the app.
 
-**Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
+**Applies to:** `apps/erp/app/modules/sales/sales.service.ts`, any Kysely/server-function writer
 of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backfill.sql`.
 
 ## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
@@ -3478,17 +3478,17 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 ## A value two layers must agree on lives once, in the client-safe pure module
 
-**Context:** The accounting enable wizard (ERP) and the `activate-accounting` server function both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
+**Context:** The accounting enable wizard (ERP) and `activateAccounting` (`accounting.service.ts`, ported from the `activate-accounting` server function) both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
 
 **Problem:** Until 2026-10-09 each layer kept its own copy. `MigrationClearingTable.tsx` defined `MIGRATION_CLEARING_TOLERANCE = 0.01` and `isMigrationClearingZero`. `activate-accounting/index.ts` defined a second `MIGRATION_CLEARING_TOLERANCE`. `accounting.server.ts` defined `ACTIVATION_CUTOVER_PARAM`. The copies matched, but nothing kept them matched. If one copy changes, the wizard offers an enable that the server refuses, or hides one that the server accepts. Typecheck cannot see a drift between two literals.
 
 **Rule:** Put a value that two layers must agree on in one place: the client-safe pure module that both layers already import. Export the predicate, not only the number, so every caller compares the same way. The accounting cutover keeps `MIGRATION_CLEARING_TOLERANCE`, `isMigrationClearingZero`, `MIGRATION_CLEARING_ACCOUNT_CLASS` and `ACTIVATION_CUTOVER_PARAM` in `@carbon/database/accounting-cutover` (commits 38602af774, b9f897608c, f1fe2b6c81). That module reads no database, so the browser can import it.
 
-**Applies to:** `packages/database/src/accounting-cutover.ts`; `apps/erp/app/modules/accounting/ui/Activation/MigrationClearingTable.tsx`; `apps/erp/app/routes/x+/accounting+/activation.enable.tsx`; `packages/server-functions/src/activate-accounting/index.ts`; any check that a wizard previews and a server function enforces.
+**Applies to:** `packages/database/src/accounting-cutover.ts`; `apps/erp/app/modules/accounting/ui/Activation/MigrationClearingTable.tsx`; `apps/erp/app/routes/x+/accounting+/activation.enable.tsx`; `apps/erp/app/modules/accounting/accounting.service.ts`; any check that a wizard previews and a server function enforces.
 
 ## A detector and the builder it feeds share one zero-value rule
 
-**Context:** The accounting enable, and the "Write missing journals" repair, find legacy documents: posted on or after the cutover with no journal (`packages/database/src/legacy-documents.ts`). A builder then writes each document's journal (`packages/server-functions/src/activate-accounting/legacy/`). After that, the enable's re-cost (`activate-accounting/recost.ts`) adjusts the inventory journal pair of each outbound movement whose cost changed.
+**Context:** The accounting enable, and the "Write missing journals" repair, find legacy documents: posted on or after the cutover with no journal (`packages/database/src/legacy-documents.ts`). A builder then writes each document's journal (`apps/erp/app/modules/accounting/accounting.service.ts`). After that, the enable's re-cost (`activate-accounting/recost.ts`) adjusts the inventory journal pair of each outbound movement whose cost changed.
 
 **Problem:** The detection and the builders used different zero rules, in both directions:
 
@@ -3499,7 +3499,7 @@ Commit b9f897608c removed zero-value documents from the detection. Commits b9f89
 
 **Rule:** Write the zero rule once and apply it on both sides. If the builder writes no line for a document, the detection leaves the document out. If a later step adjusts a line, the builder writes that line even at zero. Pin the pair with a test that runs the detection, the builder, and the detection again: the second detection must find nothing (`activate-accounting/legacy/detection.test.ts`).
 
-**Applies to:** `packages/database/src/legacy-documents.ts`; `packages/server-functions/src/activate-accounting/legacy/*`; `packages/server-functions/src/activate-accounting/recost.ts`; `valueMovement` in `packages/server-functions/src/lib/post-adjustment.ts`; any detect-then-repair pair.
+**Applies to:** `packages/database/src/legacy-documents.ts`; `apps/erp/app/modules/accounting/accounting.service.ts`; `apps/erp/app/modules/accounting/accounting.service.ts`; `valueMovement` in `packages/server-functions/src/lib/post-adjustment.ts`; any detect-then-repair pair.
 
 ## A migration that re-scopes companies uses the company test of the migration it follows
 
@@ -3519,7 +3519,7 @@ Commit b9f897608c removed zero-value documents from the detection. Commits b9f89
 
 **Rule:** When you remove a flag, read every condition that used the flag. A null check that meant "feature off" becomes a silent error check when the flag goes. Turn a failed read into a throw before any write. Keep only business conditions, such as `cost > 0`, in the `if`.
 
-**Applies to:** `packages/server-functions/src/post-shipment/index.ts` (return shipments); `packages/server-functions/src/post-receipt/index.ts` (sales return receipt); any flag removal, such as `accountingEnabled` or a plan gate.
+**Applies to:** `apps/erp/app/modules/inventory/inventory.service.ts` (return shipments); `apps/erp/app/modules/inventory/inventory.service.ts` (sales return receipt); any flag removal, such as `accountingEnabled` or a plan gate.
 
 ## The pre-commit Lingui extract reads the working tree, not the commit
 
@@ -3668,7 +3668,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Rule:** Leave an item out only when the sub-ledger can say it is closed: an invoice is marked Paid the day before the cutover by the enable. Refuse it when Carbon settles it on or after the cutover (`settledFromCutoverIds`). Any other item type (memo, payment, WIP, lease, inventory, fixed asset) has no such state and stays in the opening journal.
 
-**Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `packages/server-functions/src/activate-accounting/`.
+**Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `apps/erp/app/modules/accounting/accounting.service.ts`.
 
 ## A second foreign key between two tables breaks every PostgREST embed between them
 

@@ -6,9 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { batchTrigger } from "@carbon/jobs";
-import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import type { DraftedContractInvoice } from "~/modules/sales/sales.service";
 import {
   generateContractInvoicesNow,
   getContract

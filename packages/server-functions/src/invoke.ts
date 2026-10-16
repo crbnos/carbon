@@ -13,35 +13,14 @@ import type { ServerFnResult } from "./define-server-fn";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
-  "activate-accounting": () => import("./activate-accounting"),
   "batch-operations": () => import("./batch-operations"),
-  "create-contract-invoices": () => import("./create-contract-invoices"),
-  "create-lease-invoices": () => import("./create-lease-invoices"),
   create: () => import("./create"),
   issue: () => import("./issue"),
-  "journal-legacy-documents": () => import("./journal-legacy-documents"),
-  "post-charge": () => import("./post-charge"),
-  "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
-  "post-lease": () => import("./post-lease"),
   "post-maintenance-event": () => import("./post-maintenance-event"),
-  "post-memo": () => import("./post-memo"),
-  "post-payment": () => import("./post-payment"),
   "post-picking": () => import("./post-picking"),
   "post-production-event": () => import("./post-production-event"),
-  "post-purchase-invoice": () => import("./post-purchase-invoice"),
-  "post-receipt": () => import("./post-receipt"),
-  "post-reimbursement": () => import("./post-reimbursement"),
-  "post-rental-agreement": () => import("./post-rental-agreement"),
-  "post-sales-invoice": () => import("./post-sales-invoice"),
-  "post-shipment": () => import("./post-shipment"),
-  "preview-revenue-recognition-run": () =>
-    import("./preview-revenue-recognition-run"),
-  "propose-revenue-recognition-run": () =>
-    import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),
-  "recalculate-revenue-recognition-run": () =>
-    import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
   "trigger-rework": () => import("./trigger-rework")
 } as const;

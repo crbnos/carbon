@@ -31,7 +31,7 @@ vi.mock("@carbon/content/glossary", () => ({
 }));
 
 import { leaseFixture } from "../../../../../packages/server-functions/src/post-lease/lease-test-fixture";
-import { holdInDraftRun } from "../../../../../packages/server-functions/src/propose-revenue-recognition-run/run-test-fixture";
+import { holdInDraftRun } from "../../../test/database/fixtures/run";
 import {
   postRevenueRecognitionRun,
   reverseRevenueRecognitionRun

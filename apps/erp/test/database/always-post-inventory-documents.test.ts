@@ -20,7 +20,7 @@ import {
   stockPart,
   USER,
   unwrap
-} from "@carbon/server-functions/always-post-test-fixture";
+} from "./fixtures/always-post";
 import type { Database } from "@carbon/database";
 import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
 import type { SupabaseClient } from "@supabase/supabase-js";

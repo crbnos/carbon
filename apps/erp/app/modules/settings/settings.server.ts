@@ -68,7 +68,6 @@ import {
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
 import { datetime, unchecked } from "@carbon/utils";
@@ -82,6 +81,7 @@ import {
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
+import * as accountingPostings from "../accounting/accounting.service";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -200,14 +200,18 @@ export const writeMissingJournals = defineServiceFn({
   input: z.object({}),
   permission: { update: ["settings", "accounting"] },
   async run(ctx) {
-    const result = await serverFns
-      .as({
+    const result = await invokePosting(
+      {
         client: ctx.asCaller.supabase,
         db: ctx.asSystem.pg,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
-      })
-      .invoke("journal-legacy-documents", {});
+      },
+      "journal-legacy-documents",
+      {},
+      accountingPostings.repairLegacyJournals,
+      { as: accountingPostings.journalLegacyDocumentsPermission }
+    );
     if (result.error) {
       return service.fromServerFn(
         ctx,

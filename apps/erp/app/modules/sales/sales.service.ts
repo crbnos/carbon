@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { openai } from "@ai-sdk/openai";
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
   CarbonError,
@@ -14,7 +15,54 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  applyContractMovement,
+  EMPTY_POSITION
+} from "@carbon/database/contract-position";
+import {
+  type ContractRevenueRow,
+  type ContractRevenueStatus,
+  monthStart,
+  planRevenueSchedule,
+  type RevenuePlanLine,
+  reconcileRevenueSchedule,
+  validateRevenueEdit
+} from "@carbon/database/contract-revenue-schedule";
+import {
+  amendmentEffectiveDate,
+  type ContractLineTerms,
+  type ContractPlannedInvoice,
+  type ContractScheduleReconciliation,
+  type ContractTerms,
+  discountEndSplits,
+  type ExistingRow,
+  horizon,
+  invoiceLinePricing,
+  lastRecurringPeriodEnd,
+  lineTotals,
+  type PlannedRow,
+  periodEndContaining,
+  planInvoiceSchedule,
+  reconcileContractSchedule,
+  recurringValuePerPeriod,
+  renewedEndDate,
+  suggestAmendmentType,
+  validateScheduleEdit
+} from "@carbon/database/contract-schedule";
+import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
+import { toJson } from "@carbon/database/json";
+import {
+  assertBalanced,
+  distributeRoundingResidual,
+  equals
+} from "@carbon/database/precision";
 import { lockIssueDispositions } from "@carbon/database/quality";
+import { monthEnd } from "@carbon/database/revenue-schedule";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -32,23 +80,46 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import type { ServerFnInput } from "@carbon/server-functions";
-import { serverFns } from "@carbon/server-functions";
-import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
+import { currencyDecimals } from "@carbon/server-functions/lib/currency-decimals";
+import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
+import { resolveInventoryAccount } from "@carbon/server-functions/lib/get-posting-group";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "@carbon/server-functions/lib/post-adjustment";
 import type { PickPartial, Violation } from "@carbon/utils";
 import {
   billingHorizon,
+  buildJournalLineDimensionInserts,
+  buildLessorSchedule,
+  type ClassificationInputs,
+  certainPurchaseOption,
+  classifyRentalLine,
+  contractInvoiceHold,
   datetime,
   EPSILON,
+  type ExistingBillingPeriod,
+  earnsInterest,
   effectiveInvoiceAutomation,
+  formatDate,
+  formatPercent,
   generateRentalBillingPeriods,
   getSalesReturnOrderStatus,
   type InvoiceAutomation,
+  type LeasePaymentTerms,
+  type LessorClassification,
+  type LessorScheduleLine,
+  leasePaymentTerms,
+  lineRevenueDates,
+  type PeriodSpec,
   planRentalInvoices,
+  type RentalBillingCycle,
   round,
+  salesTypeRequirementError,
   suggestContractType,
   wholeRateUnits
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
 import type {
@@ -57,7 +128,7 @@ import type {
   SupabaseClient
 } from "@supabase/supabase-js";
 import { generateText, Output } from "ai";
-import { type Selectable, sql } from "kysely";
+import { type Selectable, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -99,6 +170,7 @@ import * as sharedPostings from "../shared/shared.service";
 import {
   getModelByItemId,
   invokePosting,
+  invokePostingOrThrow,
   upsertExternalLink
 } from "../shared/shared.service";
 import {
@@ -11514,9 +11586,12 @@ export async function generateContractInvoicesNow(
   }
 ): Promise<{ invoices: DraftedContractInvoice[]; invoiceIds: string[] }> {
   const { companyId, userId, asOf, customerContractId } = args;
-  const { invoices, invoiceIds, failures } = await serverFns
-    .system({ db, companyId, userId })
-    .invokeOrThrow("create-contract-invoices", { asOf, customerContractId });
+  const { invoices, invoiceIds, failures } = await invokePostingOrThrow(
+    { db, companyId, userId },
+    "create-contract-invoices",
+    { asOf, customerContractId },
+    createContractInvoices
+  );
   // One contract is billed here, so its failure is the action's failure.
   if (failures.length > 0) {
     throw new Error(failures.map((f) => f.error).join("; "));
@@ -11606,9 +11681,15 @@ export function runContractAction(
     companyId: string;
     userId: string;
   },
-  input: ServerFnInput<"post-customer-contract">
+  input: z.input<typeof postCustomerContractInput>
 ) {
-  return serverFns.as(caller).invoke("post-customer-contract", input);
+  return invokePosting(
+    caller,
+    "post-customer-contract",
+    input,
+    postCustomerContract,
+    { as: postCustomerContractPermission }
+  );
 }
 
 type SalesOrderStatus = Database["public"]["Enums"]["salesOrderStatus"];
@@ -13089,7 +13170,7 @@ export async function companyToday(ctx: ServiceContext) {
 /** The contract lifecycle server function, run as the caller. */
 export function postContract(
   ctx: ServiceContext,
-  input: ServerFnInput<"post-customer-contract">
+  input: z.input<typeof postCustomerContractInput>
 ) {
   return runContractAction(
     {
@@ -13103,20 +13184,6 @@ export function postContract(
 }
 
 // --- Rental agreements ------------------------------------------------------
-
-/** The rental lifecycle server function, run as the system for the caller. */
-export function postRentalAgreement(
-  ctx: ServiceContext,
-  input: ServerFnInput<"post-rental-agreement">
-) {
-  return serverFns
-    .system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    })
-    .invoke("post-rental-agreement", input);
-}
 
 /** A rental agreement of this company, or why not. */
 export async function ownRentalAgreement(ctx: ServiceContext, id: string) {
@@ -13301,7 +13368,7 @@ async function createRentalInvoicesForDuePeriods(
   };
 }
 
-type AgreementRow = Selectable<KyselyDatabase["rentalAgreement"]>;
+type RentalAgreementRecord = Selectable<KyselyDatabase["rentalAgreement"]>;
 
 /** Statuses with something left to bill: an Active agreement, and a Closed
  *  one whose voided invoice returned rows to unbilled. */
@@ -13570,7 +13637,7 @@ async function draftAgreementInvoices(
 async function insertRentalCreditMemo(
   trx: KyselyTx,
   args: RentalInvoiceGenerationArgs,
-  agreement: AgreementRow,
+  agreement: RentalAgreementRecord,
   credit: {
     adjustments: {
       id: string;
@@ -13651,7 +13718,7 @@ async function insertRentalCreditMemo(
 async function insertRentalInvoice(
   trx: KyselyTx,
   args: RentalInvoiceGenerationArgs,
-  agreement: AgreementRow,
+  agreement: RentalAgreementRecord,
   lines: LineValues[],
   holdReason: string | null
 ): Promise<string> {
@@ -13941,5 +14008,6614 @@ export async function createRentalInvoices(
     userId,
     asOf,
     rentalAgreementId
+  });
+}
+export type Db = Kysely<KyselyDatabase>;
+
+export type Trx = Transaction<KyselyDatabase>;
+
+export type Enums = Database["public"]["Enums"];
+
+export type AgreementRow = {
+  id: string;
+  rentalAgreementId: string;
+  status: Enums["rentalAgreementStatus"];
+  customerId: string;
+  locationId: string;
+  startDate: string;
+  endDate: string | null;
+  billingCycle: Enums["rentalBillingCycle"];
+  billingTiming: Enums["rentalBillingTiming"];
+  currencyCode: string;
+  discountRate: number;
+  ownershipTransfers: boolean;
+  specializedAsset: boolean;
+  purchaseOptionAmount: number | null;
+  purchaseOptionReasonablyCertain: boolean;
+};
+
+// Re-read under the caller's company and lock: the id comes from the payload,
+// and the permission check proves nothing about it. The lock serializes two
+// actions on one agreement (a double-clicked Activate, a return racing a
+// cancel). DATE columns decode to JS Dates through the driver, so they are
+// selected as text — the billing math works on `YYYY-MM-DD` strings.
+export async function lockAgreement(
+  trx: Trx,
+  companyId: string,
+  id: string
+): Promise<AgreementRow> {
+  const agreement = await trx
+    .selectFrom("rentalAgreement")
+    .select([
+      "id",
+      "rentalAgreementId",
+      "status",
+      "customerId",
+      "locationId",
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string | null>`"endDate"::text`.as("endDate"),
+      "billingCycle",
+      "billingTiming",
+      "currencyCode",
+      "discountRate",
+      "ownershipTransfers",
+      "specializedAsset",
+      "purchaseOptionAmount",
+      "purchaseOptionReasonablyCertain"
+    ])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!agreement) throw new NotFoundError("Rental agreement not found");
+  return {
+    ...agreement,
+    discountRate: Number(agreement.discountRate),
+    purchaseOptionAmount:
+      agreement.purchaseOptionAmount === null
+        ? null
+        : Number(agreement.purchaseOptionAmount)
+  };
+}
+
+export function billingPeriodRow(
+  spec: PeriodSpec,
+  rentalAgreementLineId: string,
+  companyId: string,
+  userId: string
+) {
+  return {
+    rentalAgreementLineId,
+    periodStart: spec.periodStart,
+    periodEnd: spec.periodEnd,
+    days: spec.days,
+    amount: spec.amount,
+    rateUnitApplied: spec.rateUnitApplied,
+    isAdjustment: spec.isAdjustment,
+    dueOn: spec.dueOn,
+    status: "Pending" as const,
+    companyId,
+    createdBy: userId
+  };
+}
+
+// What the 'Lease' journals need, resolved once per request inside the
+// transaction. The status read holds FOR SHARE on the company's settings
+// until commit; the period resolver reuses the caller's transaction and locks
+// the period row, so a close cannot slip in between.
+export type LeaseAccounting = {
+  // Provisional before the company's accounting cutover, Posted after it.
+  postingStatus: AutomaticJournalStatus;
+  // null for a Provisional journal: it has no accounting period
+  accountingPeriodId: string | null;
+  // The accounts journal lines use. Before the cutover an empty lease default
+  // is a stand-in on retained earnings (resolveDefaultAccount).
+  accounts: {
+    netInvestmentInLeasesAccount: string;
+    leaseRevenueAccount: string;
+    costOfGoodsSoldAccount: string;
+    finishedGoodsAccount: string;
+    rawMaterialsAccount: string;
+  };
+  // The default each lease account stands in for; the lessor builders put
+  // it on the line that uses the account (journalLine.accountDefaultRole).
+  accountDefaultRoles: LeaseStandInRoles;
+  // The accounts a Planned Interest recognition row names. A schedule row is
+  // not re-pointed at the cutover, so it never takes a stand-in: null when
+  // either default is empty.
+  interestAccounts: { debitAccountId: string; creditAccountId: string } | null;
+  // active dimensions for the company group, entityType → dimension id
+  dimensionMap: Map<string, string>;
+};
+
+export const LEASE_ACCOUNTS_REQUIRED =
+  "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale";
+
+export async function loadLeaseAccounting(
+  trx: Trx,
+  args: { companyId: string; companyGroupId: string | null; today: string }
+): Promise<LeaseAccounting> {
+  const { companyId } = args;
+  const postingStatus = await journalPostingStatus(trx, companyId);
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .select([
+      "netInvestmentInLeasesAccount",
+      "leaseRevenueAccount",
+      "leaseInterestIncomeAccount",
+      "costOfGoodsSoldAccount",
+      "finishedGoodsAccount",
+      "rawMaterialsAccount",
+      "retainedEarningsAccount"
+    ])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults) throw new Error("Error getting account defaults");
+  const {
+    netInvestmentInLeasesAccount,
+    leaseRevenueAccount,
+    leaseInterestIncomeAccount
+  } = defaults;
+  // After the cutover every lease default is required, as it always was.
+  if (
+    postingStatus === "Posted" &&
+    (!netInvestmentInLeasesAccount ||
+      !leaseRevenueAccount ||
+      !leaseInterestIncomeAccount)
+  ) {
+    throw new InvalidInputError(LEASE_ACCOUNTS_REQUIRED);
+  }
+  const netInvestment = resolveDefaultAccount(
+    defaults,
+    "netInvestmentInLeasesAccount",
+    postingStatus
+  );
+  const leaseRevenue = resolveDefaultAccount(
+    defaults,
+    "leaseRevenueAccount",
+    postingStatus
+  );
+
+  // Dimensions are configured per company group; a company outside one
+  // tags nothing.
+  const dimensions =
+    args.companyGroupId === null
+      ? []
+      : await trx
+          .selectFrom("dimension")
+          .select(["id", "entityType"])
+          .where("companyGroupId", "=", args.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "in", ["Customer", "Item", "Location"])
+          .execute();
+
+  // A Provisional journal has no period, and no posting creates one before
+  // the cutover.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, trx, args.today)
+      : null;
+
+  return {
+    postingStatus,
+    accountingPeriodId,
+    accounts: {
+      netInvestmentInLeasesAccount: netInvestment.accountId,
+      leaseRevenueAccount: leaseRevenue.accountId,
+      costOfGoodsSoldAccount: defaults.costOfGoodsSoldAccount,
+      finishedGoodsAccount: defaults.finishedGoodsAccount,
+      rawMaterialsAccount: defaults.rawMaterialsAccount
+    },
+    accountDefaultRoles: {
+      netInvestmentInLeases: netInvestment.accountDefaultRole,
+      leaseRevenue: leaseRevenue.accountDefaultRole
+    },
+    interestAccounts:
+      netInvestmentInLeasesAccount && leaseInterestIncomeAccount
+        ? {
+            debitAccountId: netInvestmentInLeasesAccount,
+            creditAccountId: leaseInterestIncomeAccount
+          }
+        : null,
+    dimensionMap: new Map(
+      dimensions.map((dimension) => [dimension.entityType, dimension.id])
+    )
+  };
+}
+
+// One 'Lease' journal from already-balanced lines, Provisional before the
+// accounting cutover and Posted after it. Every line carries
+// the agreement as its document and the agreement line as the line
+// reference, tagged with the Customer / Item / Location dimensions the
+// company group has active.
+export async function postLeaseJournal(
+  trx: Trx,
+  args: {
+    accounting: LeaseAccounting;
+    companyId: string;
+    userId: string;
+    postingDate: string;
+    description: string;
+    lines: PostingLine[];
+    rentalAgreementId: string;
+    rentalAgreementLineId: string;
+    tags: { customerId: string; itemId: string; locationId: string };
+  }
+): Promise<string> {
+  const { accounting, companyId, userId } = args;
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId: accounting.accountingPeriodId,
+    status: accounting.postingStatus,
+    description: args.description,
+    postingDate: args.postingDate,
+    userId,
+    sourceType: "Lease"
+  });
+
+  const journalLineReference = nanoid();
+  const journalLines = await trx
+    .insertInto("journalLine")
+    .values(
+      args.lines.map((line) => ({
+        journalId,
+        accountId: line.accountId,
+        description: line.description,
+        amount: round(line.amount),
+        quantity: 1,
+        documentType: "Rental Agreement" as const,
+        documentId: args.rentalAgreementId,
+        documentLineReference: args.rentalAgreementLineId,
+        journalLineReference,
+        accountDefaultRole: line.accountDefaultRole ?? null,
+        companyId
+      }))
+    )
+    .returning(["id"])
+    .execute();
+
+  const dimensionInserts = buildJournalLineDimensionInserts({
+    journalLineIds: journalLines.map((line) => line.id),
+    meta: journalLines.map(() => args.tags),
+    dimensionMap: accounting.dimensionMap,
+    companyId
+  });
+  if (dimensionInserts.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionInserts)
+      .execute();
+  }
+
+  return journalId;
+}
+
+// The traceability graph records the lease as the consumer of the unit at
+// commencement, and as its producer when it comes back to stock.
+export async function insertUnitActivity(
+  trx: Trx,
+  args: {
+    type:
+      | "Lease Commencement"
+      | "Return to Inventory"
+      | "Capitalize"
+      | "Rental Delivery"
+      | "Rental Return"
+      | "Void Shipment";
+    direction: "input" | "output";
+    sourceDocument: "Rental Agreement" | "Fixed Asset" | "Shipment" | "Receipt";
+    sourceDocumentId: string;
+    sourceDocumentReadableId: string;
+    attributes: Record<string, string>;
+    trackedEntityId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const activityId = nanoid();
+  await trx
+    .insertInto("trackedActivity")
+    .values({
+      id: activityId,
+      type: args.type,
+      sourceDocument: args.sourceDocument,
+      sourceDocumentId: args.sourceDocumentId,
+      sourceDocumentReadableId: args.sourceDocumentReadableId,
+      attributes: args.attributes,
+      companyId: args.companyId,
+      createdBy: args.userId
+    })
+    .execute();
+  await trx
+    .insertInto(
+      args.direction === "input"
+        ? "trackedActivityInput"
+        : "trackedActivityOutput"
+    )
+    .values({
+      trackedActivityId: activityId,
+      trackedEntityId: args.trackedEntityId,
+      quantity: 1,
+      companyId: args.companyId,
+      createdBy: args.userId
+    })
+    .execute();
+}
+/** The classification a line is booked under: an overridden line keeps the
+ *  value the override stored; every other line takes the tests' answer. */
+export function settledClassification(
+  computed: LessorClassification,
+  line: {
+    classificationOverride: boolean;
+    lessorClassification: LessorClassification | null;
+  }
+): LessorClassification {
+  return line.classificationOverride && line.lessorClassification !== null
+    ? line.lessorClassification
+    : computed;
+}
+
+/**
+ * How far activation cuts a line's billing periods. An operating line goes
+ * to the billing horizon (today plus one cycle) like the daily pass, which
+ * rolls it on from there — past the end date as holdover. A sales-type line
+ * bills exactly its term: capped at the end date, so no period past it is
+ * ever cut (a holdover period would bill rent against a net investment the
+ * schedule has already closed). The daily pass never rolls a sales-type line.
+ */
+export function activationBillingThrough(args: {
+  classification: LessorClassification;
+  cycle: RentalBillingCycle;
+  today: string;
+  endDate: string | null;
+}): string {
+  const horizon = billingHorizon(args.cycle, args.today);
+  if (args.classification !== "Sale") return horizon;
+  if (args.endDate === null) {
+    throw new Error("A rental treated as a sale needs an end date");
+  }
+  return args.endDate < horizon ? args.endDate : horizon;
+}
+
+/** The balance the schedule must close on: what the lessor still expects at
+ *  the end of the term — a reasonably certain purchase option plus both
+ *  residuals. */
+export function leaseClosingTarget(args: {
+  purchaseOption: number;
+  guaranteedResidualValue: number;
+  unguaranteedResidualValue: number;
+}): number {
+  return round(
+    args.purchaseOption +
+      args.guaranteedResidualValue +
+      args.unguaranteedResidualValue
+  );
+}
+
+/** The billing periods the schedule's lines follow: the first `periods`
+ *  regular (non-adjustment) periods of the term, in date order. A fixed term
+ *  is generated in full at activation, so there are always enough. */
+export function scheduleBillingPeriods(
+  generated: Pick<PeriodSpec, "periodStart" | "periodEnd" | "isAdjustment">[],
+  periods: number
+): Array<{ periodStart: string; periodEnd: string }> {
+  const regular = generated
+    .filter((period) => !period.isAdjustment)
+    .map(({ periodStart, periodEnd }) => ({ periodStart, periodEnd }))
+    .sort((a, b) => (a.periodStart < b.periodStart ? -1 : 1));
+  if (regular.length < periods) {
+    throw new Error(
+      `A ${periods}-period lease schedule needs ${periods} billing periods, got ${regular.length}`
+    );
+  }
+  return regular.slice(0, periods);
+}
+
+/** One Interest recognition row per schedule line that earns interest,
+ *  spanning the billing period the line belongs to. */
+export function interestRows(
+  schedule: LessorScheduleLine[],
+  spans: Array<{ periodStart: string; periodEnd: string }>
+): Array<{
+  index: number;
+  periodStart: string;
+  periodEnd: string;
+  scheduledDate: string;
+  amount: number;
+}> {
+  if (schedule.length !== spans.length) {
+    throw new Error("Every schedule line needs its billing period");
+  }
+  return schedule.flatMap((line, index) =>
+    !earnsInterest(line.interestAmount)
+      ? []
+      : [
+          {
+            index,
+            periodStart: spans[index]!.periodStart,
+            periodEnd: spans[index]!.periodEnd,
+            scheduledDate: line.periodDate,
+            amount: round(line.interestAmount)
+          }
+        ]
+  );
+}
+
+/** The amounts a fleet unit's commencement books (spec §4). C is the unit's
+ *  carrying amount (net book value); the gain the disposal records is the
+ *  selling profit. */
+export function commencementAmounts(args: {
+  pvPayments: number;
+  pvResidual: number;
+  acquisitionCost: number;
+  accumulatedDepreciation: number;
+}): {
+  netInvestment: number;
+  carryingAmount: number;
+  costOfGoodsSold: number;
+  sellingProfit: number;
+} {
+  const values = [
+    args.pvPayments,
+    args.pvResidual,
+    args.acquisitionCost,
+    args.accumulatedDepreciation
+  ];
+  if (values.some((value) => !Number.isFinite(value))) {
+    throw new Error("Lease commencement amounts must be finite");
+  }
+  const cost = round(args.acquisitionCost);
+  const accumulated = round(args.accumulatedDepreciation);
+  if (cost < 0 || accumulated < 0 || accumulated > cost) {
+    throw new Error(
+      "The unit's accumulated depreciation must be between zero and its cost"
+    );
+  }
+  const pvPayments = round(args.pvPayments);
+  const pvResidual = round(args.pvResidual);
+  const carryingAmount = round(cost - accumulated);
+  const costOfGoodsSold = round(carryingAmount - pvResidual);
+  return {
+    netInvestment: round(pvPayments + pvResidual),
+    carryingAmount,
+    costOfGoodsSold,
+    sellingProfit: round(pvPayments - costOfGoodsSold)
+  };
+}
+
+/** A journal line as the posting functions store it: `amount` is signed by
+ *  the account's NATURAL balance (`journalLine.amount` convention). Same
+ *  shape as `PostingLine` in lib/asset-transfer.ts. */
+export type PostingLine = {
+  accountId: string;
+  description: string;
+  amount: number;
+  /** The default a stand-in line wanted (journalLine.accountDefaultRole). */
+  accountDefaultRole?: OptionalDefaultRole | null;
+};
+
+/** The default a lease account stands in for before the accounting cutover,
+ *  or null when the default is set (resolveDefaultAccount). */
+export type LeaseStandInRoles = {
+  netInvestmentInLeases?: OptionalDefaultRole | null;
+  leaseRevenue?: OptionalDefaultRole | null;
+};
+
+type AccountType = "asset" | "expense" | "revenue";
+
+/** `debit()` / `credit()` (`@carbon/database/ledger`) for the three account
+ *  classes a lease journal touches: a debit is + on an asset or expense
+ *  account, − on revenue. */
+function naturalAmount(
+  side: "debit" | "credit",
+  accountType: AccountType,
+  amount: number
+): number {
+  const debitPositive = accountType === "asset" || accountType === "expense";
+  return (side === "debit") === debitPositive ? amount : -amount;
+}
+
+type Leg = {
+  side: "debit" | "credit";
+  accountType: AccountType;
+  accountId: string;
+  description: string;
+  amount: number;
+  accountDefaultRole?: OptionalDefaultRole | null;
+};
+
+/** Legs → natural-balance-signed journal lines, dropping zero legs and
+ *  refusing an unbalanced set. A negative leg amount flips its side. */
+function toPostingLines(legs: Leg[], label: string): PostingLine[] {
+  let debits = 0;
+  let credits = 0;
+  const lines: PostingLine[] = [];
+  for (const leg of legs) {
+    const amount = round(leg.amount);
+    if (amount === 0) continue;
+    const side =
+      amount > 0 ? leg.side : leg.side === "debit" ? "credit" : "debit";
+    const value = Math.abs(amount);
+    if (side === "debit") debits += value;
+    else credits += value;
+    lines.push({
+      accountId: leg.accountId,
+      description: leg.description,
+      amount: naturalAmount(side, leg.accountType, value),
+      ...(leg.accountDefaultRole
+        ? { accountDefaultRole: leg.accountDefaultRole }
+        : {})
+    });
+  }
+  assertBalanced(round(debits), round(credits), EPSILON, label);
+  return lines;
+}
+
+/**
+ * The commencement journal of a sales-type line whose unit comes off the
+ * fleet (spec §4):
+ *
+ *   Dr Net Investment in Leases        NI
+ *   Dr Cost of Goods Sold              C − PVres
+ *   Dr Accumulated Depreciation        accumulated depreciation
+ *       Cr Lease Revenue                       PVpay
+ *       Cr fleet class asset account           cost
+ *
+ * Balanced by construction: NI + (C − PVres) + AD = PVpay + PVres + C − PVres
+ * + AD = PVpay + cost. Zero legs are omitted; a residual worth more than the
+ * carrying amount turns the COGS leg into a credit.
+ */
+export function buildCommencementLines(args: {
+  pvPayments: number;
+  pvResidual: number;
+  acquisitionCost: number;
+  accumulatedDepreciation: number;
+  accounts: {
+    netInvestmentInLeasesAccountId: string;
+    costOfGoodsSoldAccountId: string;
+    leaseRevenueAccountId: string;
+    assetAccountId: string;
+    accumulatedDepreciationAccountId: string;
+  };
+  /** The default each lease account stands in for, when it is a stand-in. */
+  accountDefaultRoles?: LeaseStandInRoles;
+}): PostingLine[] {
+  const amounts = commencementAmounts(args);
+  const { accounts } = args;
+  return toPostingLines(
+    [
+      {
+        side: "debit",
+        accountType: "asset",
+        accountId: accounts.netInvestmentInLeasesAccountId,
+        description: "Net Investment in Leases",
+        amount: amounts.netInvestment,
+        accountDefaultRole: args.accountDefaultRoles?.netInvestmentInLeases
+      },
+      {
+        side: "debit",
+        accountType: "expense",
+        accountId: accounts.costOfGoodsSoldAccountId,
+        description: "Cost of Goods Sold",
+        amount: amounts.costOfGoodsSold
+      },
+      {
+        side: "credit",
+        accountType: "revenue",
+        accountId: accounts.leaseRevenueAccountId,
+        description: "Lease Revenue",
+        amount: args.pvPayments,
+        accountDefaultRole: args.accountDefaultRoles?.leaseRevenue
+      },
+      {
+        side: "debit",
+        accountType: "asset",
+        accountId: accounts.accumulatedDepreciationAccountId,
+        description: "Accumulated Depreciation",
+        amount: args.accumulatedDepreciation
+      },
+      {
+        side: "credit",
+        accountType: "asset",
+        accountId: accounts.assetAccountId,
+        description: "Fixed Asset Cost",
+        amount: args.acquisitionCost
+      }
+    ],
+    "Lease commencement journal"
+  );
+}
+
+/**
+ * The net investment the SCHEDULE carries on `asOf`: the closing balance of
+ * the last schedule line dated on or before it, or the initial NI when none
+ * is (a lease with no schedule lines keeps its initial NI).
+ *
+ * Read off the schedule, not off what has posted. A sales-type unit comes
+ * back only on or after its end date, when the final month's interest
+ * usually has not been through a recognition run yet — netting only posted
+ * principal overstated the residual by that month and dropped its interest,
+ * and with accounting off (no Interest rows ever post) it left the residual
+ * at the initial NI. The schedule's lines dated on or before the return keep
+ * posting through recognition runs after the return, and complete the Net
+ * Investment in Leases account: initial NI + Σ interest − Σ rent − closing = 0.
+ */
+export function netInvestmentAt(args: {
+  initialNetInvestment: number;
+  schedule: Array<{ periodDate: string; closingNetInvestment: number }>;
+  asOf: string;
+}): number {
+  let last: { periodDate: string; closingNetInvestment: number } | null = null;
+  for (const line of args.schedule) {
+    // `YYYY-MM-DD` compares chronologically as text.
+    if (line.periodDate > args.asOf) continue;
+    if (last === null || line.periodDate > last.periodDate) last = line;
+  }
+  return round(
+    Number(
+      last === null ? args.initialNetInvestment : last.closingNetInvestment
+    )
+  );
+}
+
+/** Dr the account the returned unit now sits in (the fleet class asset
+ *  account, or inventory) / Cr Net Investment in Leases, for the closing net
+ *  investment. Nothing to post when it is zero. */
+export function buildResidualReturnLines(args: {
+  closing: number;
+  debitAccountId: string;
+  debitDescription: string;
+  netInvestmentInLeasesAccountId: string;
+  /** The default each lease account stands in for, when it is a stand-in. */
+  accountDefaultRoles?: LeaseStandInRoles;
+}): PostingLine[] {
+  if (!Number.isFinite(args.closing)) {
+    throw new Error("The closing net investment must be finite");
+  }
+  if (round(args.closing) < 0) {
+    throw new Error("The closing net investment is negative");
+  }
+  return toPostingLines(
+    [
+      {
+        side: "debit",
+        accountType: "asset",
+        accountId: args.debitAccountId,
+        description: args.debitDescription,
+        amount: args.closing
+      },
+      {
+        side: "credit",
+        accountType: "asset",
+        accountId: args.netInvestmentInLeasesAccountId,
+        description: "Net Investment in Leases",
+        amount: args.closing,
+        accountDefaultRole: args.accountDefaultRoles?.netInvestmentInLeases
+      }
+    ],
+    "Lease residual return journal"
+  );
+}
+
+/**
+ * Why a unit cannot be returned the way the payload asks, or null. Only a
+ * sales-type line is checked; an operating return ignores the destination.
+ * A sales-type unit comes back at the END of the term — before it, the net
+ * investment still carries unpaid rent, and booking that into the fleet or
+ * stock would overstate the unit, so early termination stays a manual
+ * journal (spec §4).
+ */
+export function salesTypeReturnError(args: {
+  classification: string | null;
+  residualDestination: ResidualDestination | null | undefined;
+  returnedAt: string;
+  endDate: string | null;
+  takeOutOfService: boolean;
+}): string | null {
+  if (args.classification !== "Sale") return null;
+  if (!args.residualDestination) {
+    return "Choose where the returned unit goes: back to the fleet or into inventory";
+  }
+  if (args.endDate !== null && args.returnedAt < args.endDate) {
+    return "Ending a rental treated as a sale early is a manual journal";
+  }
+  if (args.takeOutOfService && args.residualDestination === "Inventory") {
+    return "A unit returned to inventory cannot be taken out of service; return it to the fleet instead";
+  }
+  return null;
+}
+export type RentalUnitReturn = {
+  rentalAgreementLineId: string;
+  returnedAt: string; // YYYY-MM-DD
+  meterIn?: number | null;
+  returnNotes?: string | null;
+  takeOutOfService?: boolean;
+  outOfServiceReason?: string | null;
+  residualDestination?: ResidualDestination | null;
+};
+
+/** Returns one unit of a locked, Active agreement. The caller locks the
+ *  agreement, checks it is Active and refuses a future return date. */
+export async function returnRentalUnit(
+  trx: Trx,
+  args: {
+    agreement: AgreementRow;
+    unit: RentalUnitReturn;
+    companyId: string;
+    userId: string;
+    today: string;
+    /** Where a `Sale` line's residual lands (stock or new fleet asset).
+     *  Without it, the agreement's location, as today. */
+    locationId?: string;
+  }
+): Promise<{ fixedAssetId: string | null }> {
+  const { agreement, unit, companyId, userId, today } = args;
+  const { returnedAt } = unit;
+
+  const line = await trx
+    .selectFrom("rentalAgreementLine")
+    .select([
+      "id",
+      "status",
+      "fixedAssetId",
+      "itemId",
+      "trackedEntityId",
+      "rateUnit",
+      "rate",
+      "lessorClassification",
+      "initialNetInvestment",
+      sql<string | null>`"deliveredAt"::text`.as("deliveredAt")
+    ])
+    .where("id", "=", unit.rentalAgreementLineId)
+    .where("rentalAgreementId", "=", agreement.id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!line) throw new NotFoundError("Rental agreement line not found");
+  if (!RETURNABLE_LINE_STATUSES.has(line.status)) {
+    throw new InvalidInputError(
+      `The unit is ${line.status}; only a Pending or On Rent unit can be returned`
+    );
+  }
+  // `YYYY-MM-DD` compares chronologically as text.
+  if (returnedAt < agreement.startDate) {
+    throw new InvalidInputError(
+      `The return date is before the agreement starts (${agreement.startDate})`
+    );
+  }
+  if (line.deliveredAt && returnedAt < line.deliveredAt) {
+    throw new InvalidInputError(
+      `The return date is before the unit was delivered (${line.deliveredAt})`
+    );
+  }
+  // A sales-type unit is off the books until it comes back: where it goes
+  // (fleet or stock) is the caller's choice and has to be made. An
+  // operating return ignores the destination.
+  const salesTypeProblem = salesTypeReturnError({
+    classification: line.lessorClassification,
+    residualDestination: unit.residualDestination,
+    returnedAt,
+    endDate: agreement.endDate,
+    takeOutOfService: !!unit.takeOutOfService
+  });
+  if (salesTypeProblem) throw new InvalidInputError(salesTypeProblem);
+  const salesType = line.lessorClassification === "Sale";
+  if (salesType && line.initialNetInvestment === null) {
+    throw new InvalidInputError(
+      "This line is treated as a sale but has no commencement booked; it cannot be returned"
+    );
+  }
+
+  const now = datetime.timestamp();
+
+  // A sales-type line's billing is its term, cut in full at activation, and
+  // the unit comes back only on or after the end date — there is nothing to
+  // re-cut. Regenerating would cut holdover periods past the end date that
+  // bill rent against a net investment the schedule has already closed.
+  if (!salesType) {
+    const existingRows = await trx
+      .selectFrom("rentalBillingPeriod")
+      .select([
+        sql<string>`"periodStart"::text`.as("periodStart"),
+        sql<string>`"periodEnd"::text`.as("periodEnd"),
+        "amount",
+        "status",
+        "isAdjustment"
+      ])
+      .where("rentalAgreementLineId", "=", line.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const existing: ExistingBillingPeriod[] = existingRows.map((row) => ({
+      periodStart: row.periodStart,
+      periodEnd: row.periodEnd,
+      amount: Number(row.amount),
+      status: row.status,
+      isAdjustment: row.isAdjustment
+    }));
+
+    const plan = generateRentalBillingPeriods({
+      cycle: agreement.billingCycle,
+      timing: agreement.billingTiming,
+      rateUnit: line.rateUnit,
+      rate: Number(line.rate),
+      startDate: agreement.startDate,
+      endDate: agreement.endDate,
+      returnedAt,
+      through: returnedAt,
+      existing,
+      decimals: await currencyDecimals(trx, companyId, agreement.currencyCode)
+    });
+
+    // The generation stops at the return, so every unbilled period starting
+    // after it is gone. An invoiced one is credited through `adjustments`.
+    await trx
+      .deleteFrom("rentalBillingPeriod")
+      .where("rentalAgreementLineId", "=", line.id)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Pending")
+      .where("isAdjustment", "=", false)
+      .where("periodStart", ">", returnedAt)
+      .execute();
+
+    // The unbilled period the return falls inside ends on the return date.
+    for (const recut of plan.recut) {
+      await trx
+        .updateTable("rentalBillingPeriod")
+        .set({
+          periodEnd: recut.periodEnd,
+          days: recut.days,
+          amount: recut.amount,
+          rateUnitApplied: recut.rateUnitApplied,
+          dueOn: recut.dueOn,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("rentalAgreementLineId", "=", line.id)
+        .where("companyId", "=", companyId)
+        .where("periodStart", "=", recut.periodStart)
+        .where("isAdjustment", "=", false)
+        .where("status", "=", "Pending")
+        .execute();
+    }
+
+    // `create` is non-empty when the return falls in a period not generated
+    // yet; `adjustments` credits advance billing past the return.
+    const inserts = [...plan.create, ...plan.adjustments].map((spec) =>
+      billingPeriodRow(spec, line.id, companyId, userId)
+    );
+    if (inserts.length > 0) {
+      await trx.insertInto("rentalBillingPeriod").values(inserts).execute();
+    }
+  }
+
+  await trx
+    .updateTable("rentalAgreementLine")
+    .set({
+      status: "Returned",
+      returnedAt,
+      meterIn: unit.meterIn ?? null,
+      returnNotes: unit.returnNotes ?? null,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", line.id)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  // A sales-type unit's closing net investment moves back onto the books
+  // — as a new Rental Fleet asset or into stock. The asset the line names
+  // was disposed at commencement, so a fleet return's unit is the new one.
+  let fleetAssetId = line.fixedAssetId;
+  if (salesType) {
+    const residual = await returnResidual(trx, {
+      agreement,
+      line: {
+        id: line.id,
+        itemId: line.itemId,
+        fixedAssetId: line.fixedAssetId,
+        trackedEntityId: line.trackedEntityId,
+        initialNetInvestment: Number(line.initialNetInvestment)
+      },
+      destination: unit.residualDestination as ResidualDestination,
+      returnedAt,
+      companyId,
+      userId,
+      today,
+      locationId: args.locationId ?? agreement.locationId
+    });
+    fleetAssetId = residual.fixedAssetId;
+  }
+
+  // Straight to maintenance: the fleet status reads In Maintenance and the
+  // unit cannot go back on rent until it is returned to service.
+  if (unit.takeOutOfService && fleetAssetId) {
+    await trx
+      .updateTable("fixedAsset")
+      .set({
+        outOfServiceSince: returnedAt,
+        outOfServiceReason: (unit.outOfServiceReason ?? "").trim(),
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", fleetAssetId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+
+  return { fixedAssetId: fleetAssetId };
+}
+
+/**
+ * End of a sales-type term with the unit coming back (spec §4): the closing
+ * net investment — the schedule's balance on the return date
+ * (`netInvestmentAt`: the closing of the last schedule line dated on or
+ * before it, which at or after the end date is the closing target; the
+ * initial NI when the line has no schedule) — leaves Net Investment in
+ * Leases for either
+ *
+ *   Fleet      a new asset in the class named "Rental Fleet" (else the class
+ *              the unit left at commencement) at that amount, with a Posted
+ *              Capitalization transfer; Dr class asset / Cr net investment.
+ *              The unit is consumed into the new asset.
+ *   Inventory  stock at that unit cost (`bookAdjustment` +1, no variance
+ *              journal); Dr the item's inventory account / Cr net investment.
+ *              The unit is Available again.
+ *
+ * The schedule lines and Interest rows dated on or before the return stay,
+ * posted or not: they are the term the lease ran, the closing already counts
+ * them, and their interest posts through recognition runs after the return,
+ * bringing Net Investment in Leases to zero. Only what is dated AFTER the
+ * return is dropped — nothing accrues on a lease that has ended (normally
+ * nothing, since a unit comes back on or after the end date). Before the
+ * accounting cutover the journal is Provisional.
+ */
+async function returnResidual(
+  trx: Trx,
+  args: {
+    agreement: AgreementRow;
+    line: {
+      id: string;
+      itemId: string;
+      fixedAssetId: string | null;
+      trackedEntityId: string | null;
+      initialNetInvestment: number;
+    };
+    destination: ResidualDestination;
+    returnedAt: string;
+    companyId: string;
+    userId: string;
+    today: string;
+    locationId: string;
+  }
+): Promise<{ fixedAssetId: string | null }> {
+  const { agreement, line, destination, returnedAt, companyId, userId, today } =
+    args;
+
+  // A Draft recognition run that already claimed interest dated after the
+  // return would be left pointing at deleted rows. Interest on or before the
+  // return is kept, so a run holding it is no obstacle.
+  const claimed = await trx
+    .selectFrom("revenueRecognitionSchedule")
+    .select(sql<number>`count(*)::int`.as("count"))
+    .where("rentalAgreementLineId", "=", line.id)
+    .where("companyId", "=", companyId)
+    .where("type", "=", "Interest")
+    .where("status", "=", "Planned")
+    .where("scheduledDate", ">", returnedAt)
+    .where("runLineId", "is not", null)
+    .executeTakeFirstOrThrow();
+  if (Number(claimed.count) > 0) {
+    throw new InvalidInputError(
+      "A draft lease run includes this lease's interest; post or delete the run before returning the unit"
+    );
+  }
+
+  const schedule = await trx
+    .selectFrom("rentalLeaseScheduleLine")
+    .select([
+      sql<string>`"periodDate"::text`.as("periodDate"),
+      "closingNetInvestment"
+    ])
+    .where("rentalAgreementLineId", "=", line.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const closing = netInvestmentAt({
+    initialNetInvestment: line.initialNetInvestment,
+    schedule: schedule.map((row) => ({
+      periodDate: row.periodDate,
+      closingNetInvestment: Number(row.closingNetInvestment)
+    })),
+    asOf: returnedAt
+  });
+  if (closing < 0) {
+    throw new InvalidInputError(
+      `The lease's closing net investment is negative (${closing})`
+    );
+  }
+
+  // Sequential on purpose: one transaction is one connection.
+  const company = await trx
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const item = await trx
+    .selectFrom("item")
+    .select([
+      "id",
+      "name",
+      "readableId",
+      "itemTrackingType",
+      "replenishmentSystem"
+    ])
+    .where("id", "=", line.itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const itemCost = await trx
+    .selectFrom("itemCost")
+    .select(["costingMethod", "unitCost", "standardCost", "itemPostingGroupId"])
+    .where("itemId", "=", line.itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  // The serial left the line's asset at commencement when the line named
+  // only the asset (as `commenceSalesTypeLines` resolves it), so a line
+  // without its own serial takes the disposed asset's.
+  const disposedAsset =
+    !line.trackedEntityId && line.fixedAssetId
+      ? await trx
+          .selectFrom("fixedAsset")
+          .select("trackedEntityId")
+          .where("id", "=", line.fixedAssetId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+  const trackedEntityId =
+    line.trackedEntityId ?? disposedAsset?.trackedEntityId ?? null;
+  const entity = trackedEntityId
+    ? await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "readableId"])
+        .where("id", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+    : undefined;
+  if (!item) throw new NotFoundError("Item not found");
+  const serial = entity?.readableId ?? item.readableId;
+  const accounting = await loadLeaseAccounting(trx, {
+    companyId,
+    companyGroupId: company.companyGroupId,
+    today
+  });
+  const tags = {
+    customerId: agreement.customerId,
+    itemId: line.itemId,
+    locationId: agreement.locationId
+  };
+  const description = `Lease return ${agreement.rentalAgreementId} ${serial}`;
+
+  let fixedAssetId: string | null = null;
+  if (destination === "Fleet") {
+    // The class the fleet register and capitalization default to; a company
+    // that renamed it falls back to the class the unit was leased out of.
+    const byName = await trx
+      .selectFrom("fixedAssetClass")
+      .select([
+        "id",
+        "assetAccountId",
+        "depreciationMethod",
+        "usefulLifeMonths",
+        "residualValuePercent"
+      ])
+      .where("companyId", "=", companyId)
+      .where("name", "=", "Rental Fleet")
+      .where("isConstructionInProgress", "=", false)
+      .executeTakeFirst();
+    const original =
+      byName || !line.fixedAssetId
+        ? undefined
+        : await trx
+            .selectFrom("fixedAsset as fa")
+            .innerJoin("fixedAssetClass as fac", (join) =>
+              join
+                .onRef("fac.id", "=", "fa.fixedAssetClassId")
+                .onRef("fac.companyId", "=", "fa.companyId")
+            )
+            .select([
+              "fac.id",
+              "fac.assetAccountId",
+              "fac.depreciationMethod",
+              "fac.usefulLifeMonths",
+              "fac.residualValuePercent"
+            ])
+            .where("fa.id", "=", line.fixedAssetId)
+            .where("fa.companyId", "=", companyId)
+            .where("fac.isConstructionInProgress", "=", false)
+            .executeTakeFirst();
+    const assetClass = byName ?? original;
+    if (!assetClass) {
+      throw new InvalidInputError(
+        "No Rental Fleet asset class to return the unit into; create one or return the unit to inventory"
+      );
+    }
+
+    let journalId: string | null = null;
+    if (closing > 0) {
+      journalId = await postLeaseJournal(trx, {
+        accounting,
+        companyId,
+        userId,
+        postingDate: today,
+        description,
+        lines: buildResidualReturnLines({
+          closing,
+          debitAccountId: assetClass.assetAccountId,
+          debitDescription: "Fixed Asset Acquisition",
+          netInvestmentInLeasesAccountId:
+            accounting.accounts.netInvestmentInLeasesAccount,
+          accountDefaultRoles: accounting.accountDefaultRoles
+        }),
+        rentalAgreementId: agreement.id,
+        rentalAgreementLineId: line.id,
+        tags
+      });
+    }
+
+    const assetReadableId = await getNextSequence(trx, "fixedAsset", companyId);
+    const asset = await trx
+      .insertInto("fixedAsset")
+      .values({
+        fixedAssetId: assetReadableId,
+        fixedAssetClassId: assetClass.id,
+        name: `${item.name} ${serial}`,
+        itemId: line.itemId,
+        trackedEntityId,
+        serialNumber: entity?.readableId ?? null,
+        locationId: args.locationId,
+        quantity: 1,
+        acquisitionCost: closing,
+        acquisitionDate: today,
+        depreciationStartDate: today,
+        depreciationMethod: assetClass.depreciationMethod,
+        usefulLifeMonths: assetClass.usefulLifeMonths,
+        residualValuePercent: assetClass.residualValuePercent,
+        status: "Active",
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+    fixedAssetId = asset.id;
+
+    const transferId = await getNextSequence(
+      trx,
+      "fixedAssetTransfer",
+      companyId
+    );
+    const now = datetime.timestamp();
+    await trx
+      .insertInto("fixedAssetTransfer")
+      .values({
+        transferId,
+        type: "Capitalization",
+        sourceType: "Inventory",
+        fixedAssetId: asset.id,
+        itemId: line.itemId,
+        trackedEntityId,
+        locationId: args.locationId,
+        quantity: 1,
+        transferDate: today,
+        amount: closing,
+        journalId,
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    if (trackedEntityId) {
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          status: "Consumed",
+          attributes: sql<Json>`(COALESCE("attributes", '{}'::jsonb) - 'Rental Agreement' - 'Customer') || jsonb_build_object('Fixed Asset', ${asset.id}::text)`
+        })
+        .where("id", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await insertUnitActivity(trx, {
+        type: "Capitalize",
+        direction: "input",
+        sourceDocument: "Fixed Asset",
+        sourceDocumentId: asset.id,
+        sourceDocumentReadableId: assetReadableId,
+        attributes: { "Fixed Asset": asset.id },
+        trackedEntityId,
+        companyId,
+        userId
+      });
+    }
+  } else {
+    if (!itemCost) throw new NotFoundError("Item cost not found");
+    // Into stock at the closing net investment: a cost layer at that amount,
+    // so the unit is later sold like any other stock. accounting: null keeps
+    // the core from posting a variance journal; the lease journal is below.
+    await bookAdjustment(trx, {
+      ledger: {
+        postingDate: today,
+        itemId: line.itemId,
+        quantity: 1,
+        locationId: args.locationId,
+        storageUnitId: null,
+        trackedEntityId,
+        entryType: "Positive Adjmt.",
+        documentType: "Rental Agreement",
+        documentId: agreement.id,
+        companyId,
+        createdBy: userId
+      },
+      item: {
+        itemTrackingType: item.itemTrackingType,
+        replenishmentSystem: item.replenishmentSystem,
+        itemPostingGroupId: itemCost.itemPostingGroupId
+      },
+      itemCost: {
+        costingMethod: itemCost.costingMethod,
+        unitCost: itemCost.unitCost,
+        standardCost: itemCost.standardCost
+      },
+      accounting: null,
+      fixedUnitCost: closing
+    });
+
+    if (closing > 0) {
+      const inventoryAccount = resolveInventoryAccount(
+        item.replenishmentSystem,
+        accounting.accounts
+      );
+      await postLeaseJournal(trx, {
+        accounting,
+        companyId,
+        userId,
+        postingDate: today,
+        description,
+        lines: buildResidualReturnLines({
+          closing,
+          debitAccountId: inventoryAccount.account,
+          debitDescription: inventoryAccount.description,
+          netInvestmentInLeasesAccountId:
+            accounting.accounts.netInvestmentInLeasesAccount,
+          accountDefaultRoles: accounting.accountDefaultRoles
+        }),
+        rentalAgreementId: agreement.id,
+        rentalAgreementLineId: line.id,
+        tags
+      });
+    }
+
+    if (trackedEntityId) {
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          status: "Available",
+          attributes: sql<Json>`COALESCE("attributes", '{}'::jsonb) - 'Rental Agreement' - 'Customer'`
+        })
+        .where("id", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await insertUnitActivity(trx, {
+        type: "Return to Inventory",
+        direction: "output",
+        sourceDocument: "Rental Agreement",
+        sourceDocumentId: agreement.id,
+        sourceDocumentReadableId: agreement.rentalAgreementId,
+        attributes: { "Rental Agreement": agreement.id },
+        trackedEntityId,
+        companyId,
+        userId
+      });
+    }
+  }
+
+  // The lease has ended: nothing dated after the return will ever accrue.
+  // Everything on or before it stays and posts through recognition runs.
+  await trx
+    .deleteFrom("revenueRecognitionSchedule")
+    .where("rentalAgreementLineId", "=", line.id)
+    .where("companyId", "=", companyId)
+    .where("type", "=", "Interest")
+    .where("status", "=", "Planned")
+    .where("scheduledDate", ">", returnedAt)
+    .execute();
+  await trx
+    .deleteFrom("rentalLeaseScheduleLine")
+    .where("rentalAgreementLineId", "=", line.id)
+    .where("companyId", "=", companyId)
+    .where("postedAt", "is", null)
+    .where("periodDate", ">", returnedAt)
+    .execute();
+
+  return { fixedAssetId };
+}
+/**
+ * Payload contract and pure helpers for `post-rental-agreement`. No I/O and
+ * no imports beyond zod, the generated types and the pure date / billing
+ * modules, so the server function's decisions can be pinned without a
+ * database.
+ */
+
+type validatorsEnums = Database["public"]["Enums"];
+
+// Calendar dates travel as `YYYY-MM-DD` text end to end: the line and the
+// billing periods store DATE columns, and a JavaScript Date would shift the
+// day by the runtime timezone.
+const calendarDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a YYYY-MM-DD date");
+
+// companyId and userId come from the server function's context, not the input.
+const scope = {
+  rentalAgreementId: z.string().min(1)
+};
+
+/** Draft → Active: check every unit is available, classify each unit's
+ *  accounting treatment, cut the first periods at each unit's rate. */
+export const activateValidator = z.object({
+  type: z.literal("activate"),
+  ...scope
+});
+
+/** Where a sales-type unit goes when it comes back at the end of the term. */
+export const RESIDUAL_DESTINATIONS = ["Fleet", "Inventory"] as const;
+
+export type ResidualDestination = (typeof RESIDUAL_DESTINATIONS)[number];
+
+/** One unit coming back, without the agreement: the fields a rental receipt
+ *  line and the agreement's return action share. */
+const unitReturnFields = {
+  rentalAgreementLineId: z.string().min(1),
+  returnedAt: calendarDate,
+  meterIn: z.number().min(0).optional().nullable(),
+  returnNotes: z.string().optional().nullable(),
+  takeOutOfService: z.boolean().optional(),
+  outOfServiceReason: z.string().optional().nullable(),
+  residualDestination: z.enum(RESIDUAL_DESTINATIONS).optional().nullable()
+};
+
+export const unitReturnValidator = z
+  .object(unitReturnFields)
+  .refine(
+    (data) => !data.takeOutOfService || !!data.outOfServiceReason?.trim(),
+    {
+      message: "A reason is required to take the unit out of service",
+      path: ["outOfServiceReason"]
+    }
+  );
+
+/** A Pending unit that never left the yard: stop its billing at
+ *  `returnedAt` and free the unit, with no document (spec Q8). */
+export const releaseValidator = z.object({
+  type: z.literal("release"),
+  rentalAgreementLineId: z.string().min(1),
+  returnedAt: calendarDate,
+  ...scope
+});
+
+/** Every unit is back (or sold) and everything is billed. */
+export const closeValidator = z.object({
+  type: z.literal("close"),
+  ...scope
+});
+
+/** Nothing delivered and nothing billed: the agreement is void. */
+export const cancelValidator = z.object({
+  type: z.literal("cancel"),
+  ...scope
+});
+
+export const payloadValidator = z.discriminatedUnion("type", [
+  activateValidator,
+  releaseValidator,
+  closeValidator,
+  cancelValidator
+]);
+
+export type RentalAgreementPayload = z.infer<typeof payloadValidator>;
+
+/** A line holds its unit while it is in one of these statuses — the same set
+ *  the `rentalAgreementLine_asset_live_idx` unique index and the
+ *  `fleetAssets` view key on. */
+export const LIVE_LINE_STATUSES: ReadonlyArray<
+  validatorsEnums["rentalAgreementLineStatus"]
+> = ["Pending", "On Rent"];
+
+/** Line statuses a unit can be returned from. A Pending line was never
+ *  delivered: returning it just stops its billing at the return date. */
+export const RETURNABLE_LINE_STATUSES: ReadonlySet<
+  validatorsEnums["rentalAgreementLineStatus"]
+> = new Set(["Pending", "On Rent"] as const);
+
+/** Line statuses an agreement can close with. */
+export const CLOSABLE_LINE_STATUSES: ReadonlySet<
+  validatorsEnums["rentalAgreementLineStatus"]
+> = new Set(["Returned", "Sold"] as const);
+
+/** Asset statuses a unit can go on rent from (spec §2 "Fleet register":
+ *  Available means Active / Fully Depreciated with nothing else holding it —
+ *  the view's `fleetStatus` alone reads a Draft asset as Available). */
+export const RENTABLE_ASSET_STATUSES: ReadonlySet<
+  validatorsEnums["fixedAssetStatus"]
+> = new Set(["Active", "Fully Depreciated"] as const);
+
+/** A NUMERIC rate as the billing math reads it: null stays null (no rate),
+ *  anything else is a number. */
+export function toRate(
+  value: number | string | null | undefined
+): number | null {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+/** What `fleetAssets` says about one unit a line names. */
+export type FleetUnit = {
+  fixedAssetId: string;
+  status: validatorsEnums["fixedAssetStatus"] | null;
+  fleetStatus: string | null;
+  outOfServiceReason: string | null;
+  /** Row id of the agreement holding the unit's live line, if any. */
+  liveAgreementId: string | null;
+  /** Readable number of that agreement. */
+  liveAgreementReadableId: string | null;
+};
+
+/**
+ * Why a unit cannot go on rent under `agreementId`, or null when it can.
+ * The agreement's OWN Draft line is already Pending (the column default), so
+ * the view reads the unit as `Reserved` by this very agreement — that is the
+ * one Reserved state that is available here.
+ */
+export function unitAvailabilityError(
+  unit: FleetUnit,
+  agreementId: string
+): string | null {
+  const name = unit.fixedAssetId;
+  const heldBySelf = unit.liveAgreementId === agreementId;
+  switch (unit.fleetStatus) {
+    case "On Rent":
+    case "Reserved":
+      if (heldBySelf && unit.fleetStatus === "Reserved") break;
+      return `${name} is ${unit.fleetStatus} on rental agreement ${
+        unit.liveAgreementReadableId ?? unit.liveAgreementId ?? "unknown"
+      }`;
+    case "In Maintenance":
+      return `${name} is out of service: ${
+        unit.outOfServiceReason ?? "no reason given"
+      }`;
+    case "Available":
+      break;
+    default:
+      return `${name} is ${unit.fleetStatus ?? "unavailable"}`;
+  }
+  if (unit.status === null || !RENTABLE_ASSET_STATUSES.has(unit.status)) {
+    return `${name} is ${
+      unit.status ?? "not registered"
+    }; only an Active or Fully Depreciated asset can go on rent`;
+  }
+  return null;
+}
+
+/** Why a unit cannot be activated at its rate, or null: a unit at no rate
+ *  would go on rent and bill nothing. */
+export function unpricedUnitError(name: string, rate: number): string | null {
+  return rate > 0
+    ? null
+    : `${name} has no rate; enter its rate before activating`;
+}
+
+/** Why a unit cannot be returned on `returnedAt`, or null: a return records
+ *  what has happened, so it is never dated after the company's today — an
+ *  operating return would otherwise cut billing short ahead of time, and a
+ *  sales-type one would close the lease before its last month. */
+export function futureReturnError(
+  returnedAt: string,
+  today: string
+): string | null {
+  // `YYYY-MM-DD` compares chronologically as text.
+  return returnedAt > today ? "The return date cannot be in the future" : null;
+}
+
+/** Why an Active agreement cannot close, or null when it can. */
+export function closeBlocker(args: {
+  lineStatuses: validatorsEnums["rentalAgreementLineStatus"][];
+  pendingPeriods: number;
+  unbilledCharges: number;
+}): string | null {
+  if (args.lineStatuses.some((status) => !CLOSABLE_LINE_STATUSES.has(status))) {
+    return "Every unit must be returned or sold before the agreement closes";
+  }
+  if (args.pendingPeriods > 0) {
+    return "Every billing period must be invoiced before the agreement closes";
+  }
+  if (args.unbilledCharges > 0) {
+    return "Every charge must be invoiced before the agreement closes";
+  }
+  return null;
+}
+
+/** Why an agreement cannot be cancelled, or null when it can. A Draft always
+ *  can; an Active one only while nothing is on rent, sold, billed or
+ *  recognized — cancelling drops the unbilled periods, so anything a later
+ *  document already relies on must not exist. A sales-type line that has
+ *  commenced has already sold the unit (derecognized, lease revenue booked):
+ *  unwinding that is an early termination, which v1 leaves to a manual
+ *  journal. */
+export function cancelBlocker(args: {
+  status: validatorsEnums["rentalAgreementStatus"];
+  lineStatuses: validatorsEnums["rentalAgreementLineStatus"][];
+  invoicedPeriods: number;
+  billedCharges: number;
+  /** `revenueRecognitionSchedule` rows (accruals, interest) against the lines. */
+  recognizedRows: number;
+  /** Sales-type lines whose commencement was booked at activation. */
+  commencedSalesTypeLines: number;
+}): string | null {
+  if (args.status === "Draft") return null;
+  if (args.status !== "Active") {
+    return `The agreement is ${args.status}`;
+  }
+  if (args.commencedSalesTypeLines > 0) {
+    return "Ending a rental treated as a sale early is a manual journal";
+  }
+  if (args.lineStatuses.includes("On Rent")) {
+    return "A unit is on rent; return it before cancelling the agreement";
+  }
+  if (args.lineStatuses.includes("Sold")) {
+    return "A unit on this agreement was sold";
+  }
+  if (args.invoicedPeriods > 0 || args.billedCharges > 0) {
+    return "The agreement has been invoiced; it can be closed, not cancelled";
+  }
+  if (args.recognizedRows > 0) {
+    return "Rental income has been recognized on this agreement; it can be closed, not cancelled";
+  }
+  return null;
+}
+
+/** The unit's name in a refusal: its asset number, else its asset name, else the line id. */
+export function unitLabel(
+  asset: { fixedAssetId: string | null; name: string | null } | undefined,
+  lineId: string
+): string {
+  return asset?.fixedAssetId || asset?.name || lineId;
+}
+
+/** Why a delivery cannot be dated `deliveredOn`, or null. */
+export function futureDeliveryError(
+  deliveredOn: string,
+  today: string
+): string | null {
+  // `YYYY-MM-DD` compares chronologically as text.
+  return deliveredOn > today
+    ? "The delivery date cannot be in the future"
+    : null;
+}
+
+/** Why a rental shipment cannot be voided, or null. `accrual` is the worst
+ *  Accrual row of the unit: "Posted", "Draft run" (Planned with a runLineId), or null. */
+export function rentalShipmentVoidBlocker(
+  units: {
+    label: string;
+    status: validatorsEnums["rentalAgreementLineStatus"];
+    accrual: "Posted" | "Draft run" | null;
+  }[]
+): string | null {
+  const notOnRent = units.find((unit) => unit.status !== "On Rent");
+  if (notOnRent) {
+    return `${notOnRent.label} is ${notOnRent.status}; a rental shipment can be voided only while every unit is On Rent`;
+  }
+  for (const unit of units) {
+    if (unit.accrual === "Posted") {
+      return `A posted run holds accrued rent for ${unit.label}; the shipment cannot be voided`;
+    }
+    if (unit.accrual === "Draft run") {
+      return `A draft lease run holds accrued rent for ${unit.label}; delete the run before voiding the shipment`;
+    }
+  }
+  return null;
+}
+
+/** Why an agreement cannot close while a rental document is still open, or null. */
+export function openRentalDocumentBlocker(args: {
+  shipmentId: string | null; // readable id of an open shipment that has a line
+  receiptId: string | null; // readable id of an open receipt that has a line
+}): string | null {
+  if (args.shipmentId) {
+    return `Shipment ${args.shipmentId} is still open; post or delete it before closing the agreement`;
+  }
+  if (args.receiptId) {
+    return `Receipt ${args.receiptId} is still open; post or delete it before closing the agreement`;
+  }
+  return null;
+}
+
+/** Why a unit on a rental receipt cannot be returned, or null.
+ *  A receipt returns a Pending or an On Rent unit (spec Q8). */
+export function receiptReturnError(
+  label: string,
+  status: validatorsEnums["rentalAgreementLineStatus"]
+): string | null {
+  return RETURNABLE_LINE_STATUSES.has(status)
+    ? null
+    : `${label} is ${status}; only a Pending or On Rent unit can be returned`;
+}
+
+/** Why a release date is refused, or null. */
+export function futureReleaseError(
+  releasedOn: string,
+  today: string
+): string | null {
+  // `YYYY-MM-DD` compares chronologically as text.
+  return releasedOn > today ? "The release date cannot be in the future" : null;
+}
+
+/** Why a unit cannot be released, or null (spec Q8, plan decisions P1 and P2). */
+export function releaseBlocker(args: {
+  label: string;
+  status: validatorsEnums["rentalAgreementLineStatus"];
+  classification: validatorsEnums["lessorClassification"] | null;
+  openDocument: string | null; // e.g. "shipment SHP-000004" or "receipt RCV-000002"
+}): string | null {
+  if (args.status !== "Pending") {
+    return `${args.label} is ${args.status}; only a Pending unit can be released`;
+  }
+  if (args.classification === "Sale") {
+    return `${args.label} is treated as a sale; return it on a rental receipt instead`;
+  }
+  if (args.openDocument) {
+    return `${args.label} is on ${args.openDocument}; remove it there before releasing the unit`;
+  }
+  return null;
+}
+// The lifecycle of a rental agreement (spec §3, §4). Four actions, each ONE
+// transaction that locks the agreement row first:
+//
+//   activate  Draft → Active: every unit Available and priced (its own
+//             frequency and rate, already on the line), each line classified (ASC 842, `lessor.ts`),
+//             first billing periods cut. An operating line posts nothing — the
+//             unit simply stops being Available. A sales-type line commences:
+//             the fleet unit is derecognized (asset Disposed by Sale), the
+//             'Lease' journal books net investment / COGS / lease revenue, and
+//             the effective-interest schedule plus its Interest recognition
+//             rows are written.
+//   A unit comes back through a rental receipt (`post-receipt`), which calls `returnRentalUnit`.
+//   release   a Pending unit that never left the yard stops billing at the release date and is free again.
+//   close     Active → Closed once every unit is back and everything billed.
+//   cancel    Draft, or Active with nothing on rent / billed / recognized /
+//             commenced → Cancelled; the Pending lines are deleted so their
+//             units are free.
+
+// Business-validation failures are 400s (InvalidInputError) with the exact
+// message the app shows; a referenced record the caller's company does not own
+// is a 404 (NotFoundError); everything else is a 500 so real outages surface in
+// monitoring.
+
+type ActivationPlan = {
+  lineId: string;
+  name: string;
+  itemId: string;
+  fixedAssetId: string;
+  trackedEntityId: string | null;
+  deliveredAt: string | null;
+  periods: PeriodSpec[];
+  classification: "Rental" | "Sale";
+  classificationInputs: ClassificationInputs;
+  terms: LeasePaymentTerms;
+  closingTarget: number;
+};
+
+type RentalScope = { db: Db; companyId: string; userId: string };
+
+async function activate(
+  { db, companyId, userId }: RentalScope,
+  payload: Extract<RentalAgreementPayload, { type: "activate" }>,
+  today: string
+): Promise<{ id: string }> {
+  return db.transaction().execute(async (trx) => {
+    const agreement = await lockAgreement(
+      trx,
+      companyId,
+      payload.rentalAgreementId
+    );
+    if (agreement.status !== "Draft") {
+      throw new InvalidInputError(
+        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; only a Draft agreement can be activated`
+      );
+    }
+
+    // Accrual and deferral amounts are posted in base currency (Task 40), so
+    // until the agreement's exchange rate is carried through them a foreign
+    // currency agreement would post document amounts as base. The same holds
+    // for a sales-type line's net investment and lease revenue.
+    const company = await trx
+      .selectFrom("company")
+      .select(["baseCurrencyCode", "companyGroupId"])
+      .where("id", "=", companyId)
+      .executeTakeFirst();
+    if (!company) throw new NotFoundError("Company not found");
+    if (agreement.currencyCode !== company.baseCurrencyCode) {
+      throw new InvalidInputError(
+        "Rental agreements in a foreign currency are not supported yet"
+      );
+    }
+    const decimals = await currencyDecimals(
+      trx,
+      companyId,
+      agreement.currencyCode
+    );
+
+    // The classification thresholds.
+    const settings = await trx
+      .selectFrom("companySettings")
+      .select([
+        "leaseMajorPartThresholdPercent",
+        "leaseSubstantiallyAllThresholdPercent"
+      ])
+      .where("id", "=", companyId)
+      .executeTakeFirst();
+    if (!settings) throw new NotFoundError("Company settings not found");
+    const thresholds = {
+      majorPartPercent: Number(settings.leaseMajorPartThresholdPercent),
+      substantiallyAllPercent: Number(
+        settings.leaseSubstantiallyAllThresholdPercent
+      )
+    };
+
+    const lines = await trx
+      .selectFrom("rentalAgreementLine")
+      .select([
+        "id",
+        "fixedAssetId",
+        "itemId",
+        "trackedEntityId",
+        "rateUnit",
+        "rate",
+        "fairValue",
+        "economicLifeMonths",
+        "guaranteedResidualValue",
+        "unguaranteedResidualValue",
+        "lessorClassification",
+        "classificationOverride",
+        sql<string | null>`"deliveredAt"::text`.as("deliveredAt")
+      ])
+      .where("rentalAgreementId", "=", agreement.id)
+      .where("companyId", "=", companyId)
+      .orderBy("createdAt")
+      .forUpdate()
+      .execute();
+    if (lines.length === 0) {
+      throw new InvalidInputError(
+        "Add at least one fleet unit before activating the agreement"
+      );
+    }
+    // Every line rents a fleet unit (spec §3). A sales-type lease straight
+    // out of stock — a line with a tracked entity and no asset — has no
+    // entry point in v1, so it is refused here with every other asset-less
+    // line rather than half-supported.
+    if (lines.some((line) => !line.fixedAssetId)) {
+      throw new InvalidInputError("Every line needs a fleet unit");
+    }
+    const assetIds = [
+      ...new Set(lines.map((line) => line.fixedAssetId as string))
+    ];
+
+    // One read for every unit: the view derives Reserved / On Rent from the
+    // live line and In Maintenance from the out-of-service columns.
+    const units = await trx
+      .selectFrom("fleetAssets as fa")
+      .leftJoin("rentalAgreement as live", (join) =>
+        join
+          .onRef("live.id", "=", "fa.rentalAgreementId")
+          .onRef("live.companyId", "=", "fa.companyId")
+      )
+      .select([
+        "fa.id",
+        "fa.fixedAssetId",
+        "fa.itemId",
+        "fa.status",
+        "fa.fleetStatus",
+        "fa.outOfServiceReason",
+        "fa.rentalAgreementId as liveAgreementId",
+        "live.rentalAgreementId as liveAgreementReadableId"
+      ])
+      .where("fa.id", "in", assetIds)
+      .where("fa.companyId", "=", companyId)
+      .execute();
+    const unitById = new Map(units.map((unit) => [unit.id, unit]));
+
+    // Every problem at once, so a planner fixes the agreement in one pass.
+    const problems: string[] = [];
+    const plans: ActivationPlan[] = [];
+    for (const line of lines) {
+      const unit = unitById.get(line.fixedAssetId as string);
+      if (!unit || !unit.itemId) {
+        problems.push("A line names an asset that is not a fleet unit");
+        continue;
+      }
+      const name = unit.fixedAssetId ?? unit.id ?? "A fleet unit";
+      const unavailable = unitAvailabilityError(
+        {
+          fixedAssetId: name,
+          status: unit.status,
+          fleetStatus: unit.fleetStatus,
+          outOfServiceReason: unit.outOfServiceReason,
+          liveAgreementId: unit.liveAgreementId,
+          liveAgreementReadableId: unit.liveAgreementReadableId
+        },
+        agreement.id
+      );
+      if (unavailable) {
+        problems.push(unavailable);
+        continue;
+      }
+      // The unit's own frequency and rate, fixed from here on: a later change
+      // to the rate cards never touches a live line.
+      const rate = Number(line.rate);
+      const rateUnit = line.rateUnit;
+      const unpriced = unpricedUnitError(name, rate);
+      if (unpriced) {
+        problems.push(unpriced);
+        continue;
+      }
+
+      // ASC 842 classification, from the unit's rate and the agreement's
+      // terms. An overridden line keeps the classification the override
+      // stored; its inputs are still recorded.
+      if (
+        line.classificationOverride &&
+        line.lessorClassification === "Financing"
+      ) {
+        problems.push(
+          `${name} is overridden to Financing, which is not supported`
+        );
+        continue;
+      }
+      const terms = leasePaymentTerms({
+        cycle: agreement.billingCycle,
+        rateUnit,
+        rate,
+        discountRate: agreement.discountRate,
+        startDate: agreement.startDate,
+        endDate: agreement.endDate,
+        decimals
+      });
+      const lineTerms = {
+        fairValue: line.fairValue === null ? null : Number(line.fairValue),
+        economicLifeMonths: line.economicLifeMonths,
+        guaranteedResidualValue: Number(line.guaranteedResidualValue),
+        unguaranteedResidualValue: Number(line.unguaranteedResidualValue)
+      };
+      const { classification: computed, record } = classifyRentalLine({
+        terms,
+        timing: agreement.billingTiming,
+        agreement,
+        line: lineTerms,
+        thresholds
+      });
+      const classification = settledClassification(computed, {
+        classificationOverride: line.classificationOverride,
+        lessorClassification:
+          line.lessorClassification === "Financing"
+            ? null
+            : line.lessorClassification
+      });
+      if (classification === "Sale") {
+        const requirement = salesTypeRequirementError({
+          name,
+          cycle: agreement.billingCycle,
+          rateUnit,
+          startDate: agreement.startDate,
+          endDate: agreement.endDate,
+          fairValue: lineTerms.fairValue,
+          today
+        });
+        if (requirement) {
+          problems.push(requirement);
+          continue;
+        }
+      }
+
+      const { create } = generateRentalBillingPeriods({
+        cycle: agreement.billingCycle,
+        timing: agreement.billingTiming,
+        rateUnit,
+        rate,
+        startDate: agreement.startDate,
+        endDate: agreement.endDate,
+        returnedAt: null,
+        // A sales-type line bills its term and nothing past it.
+        through: activationBillingThrough({
+          classification,
+          cycle: agreement.billingCycle,
+          today,
+          endDate: agreement.endDate
+        }),
+        existing: [],
+        decimals
+      });
+      plans.push({
+        lineId: line.id,
+        name,
+        itemId: unit.itemId,
+        fixedAssetId: unit.id as string,
+        trackedEntityId: line.trackedEntityId,
+        deliveredAt: line.deliveredAt,
+        periods: create,
+        classification,
+        classificationInputs: record,
+        terms,
+        closingTarget: leaseClosingTarget({
+          purchaseOption: certainPurchaseOption(agreement),
+          guaranteedResidualValue: lineTerms.guaranteedResidualValue,
+          unguaranteedResidualValue: lineTerms.unguaranteedResidualValue
+        })
+      });
+    }
+    if (problems.length > 0) throw new InvalidInputError(problems.join("; "));
+
+    const now = datetime.timestamp();
+
+    // Sales-type commencement: what each line books, keyed by line.
+    const commenced = await commenceSalesTypeLines(trx, {
+      agreement,
+      companyId,
+      companyGroupId: company.companyGroupId,
+      userId,
+      today,
+      plans: plans.filter((plan) => plan.classification === "Sale")
+    });
+
+    // One update per line: each carries its own classification, and an
+    // agreement holds a handful of units.
+    for (const plan of plans) {
+      const commencement = commenced.get(plan.lineId);
+      await trx
+        .updateTable("rentalAgreementLine")
+        .set({
+          lessorClassification: plan.classification,
+          classificationInputs: toJson(plan.classificationInputs),
+          ...(commencement
+            ? {
+                initialNetInvestment: commencement.netInvestment,
+                sellingProfit: commencement.sellingProfit,
+                commencementJournalId: commencement.journalId
+              }
+            : {}),
+          status: plan.deliveredAt ? "On Rent" : "Pending",
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", plan.lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const periodRows = plans.flatMap((plan) =>
+      plan.periods.map((spec) =>
+        billingPeriodRow(spec, plan.lineId, companyId, userId)
+      )
+    );
+    if (periodRows.length > 0) {
+      await trx.insertInto("rentalBillingPeriod").values(periodRows).execute();
+    }
+
+    await trx
+      .updateTable("rentalAgreement")
+      .set({
+        status: "Active",
+        activatedAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", agreement.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id: agreement.id };
+  });
+}
+
+/**
+ * Commences every sales-type line of an activating agreement (spec §4), in
+ * the caller's transaction: derecognizes the fleet unit (asset Disposed by
+ * Sale with a disposal row; the tracked unit Consumed into the lease), posts
+ * the 'Lease' commencement journal (Provisional before the accounting
+ * cutover, Posted after it), and writes the effective-interest schedule — one
+ * `rentalLeaseScheduleLine` per payment and one Planned `Interest`
+ * recognition row per line that earns interest (Dr net investment / Cr lease
+ * interest income).
+ */
+async function commenceSalesTypeLines(
+  trx: Trx,
+  args: {
+    agreement: AgreementRow;
+    companyId: string;
+    companyGroupId: string | null;
+    userId: string;
+    today: string;
+    plans: ActivationPlan[];
+  }
+): Promise<
+  Map<
+    string,
+    {
+      netInvestment: number;
+      sellingProfit: number;
+      journalId: string | null;
+    }
+  >
+> {
+  const { agreement, companyId, userId, today, plans } = args;
+  const result = new Map<
+    string,
+    {
+      netInvestment: number;
+      sellingProfit: number;
+      journalId: string | null;
+    }
+  >();
+  if (plans.length === 0) return result;
+
+  const assets = await trx
+    .selectFrom("fixedAsset")
+    .select([
+      "id",
+      "fixedAssetId",
+      "fixedAssetClassId",
+      "serialNumber",
+      "trackedEntityId",
+      "status",
+      "acquisitionCost",
+      "accumulatedDepreciation"
+    ])
+    .where(
+      "id",
+      "in",
+      plans.map((plan) => plan.fixedAssetId)
+    )
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .execute();
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const classIds = [...new Set(assets.map((asset) => asset.fixedAssetClassId))];
+  const classes = await trx
+    .selectFrom("fixedAssetClass")
+    .select(["id", "assetAccountId", "accumulatedDepreciationAccountId"])
+    .where("id", "in", classIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const classById = new Map(classes.map((row) => [row.id, row]));
+
+  const accounting = await loadLeaseAccounting(trx, {
+    companyId,
+    companyGroupId: args.companyGroupId,
+    today
+  });
+
+  const scheduleInserts: Array<{
+    rentalAgreementLineId: string;
+    periodDate: string;
+    openingNetInvestment: number;
+    paymentAmount: number;
+    interestAmount: number;
+    principalAmount: number;
+    closingNetInvestment: number;
+    companyId: string;
+    createdBy: string;
+  }> = [];
+  const pendingInterest: Array<{
+    rentalAgreementLineId: string;
+    periodStart: string;
+    periodEnd: string;
+    scheduledDate: string;
+    amount: number;
+  }> = [];
+
+  for (const plan of plans) {
+    const asset = assetById.get(plan.fixedAssetId);
+    if (!asset) throw new NotFoundError("Fixed asset not found");
+    const assetClass = classById.get(asset.fixedAssetClassId);
+    if (!assetClass) throw new NotFoundError("Fixed asset class not found");
+    const { pv } = plan.classificationInputs;
+    const acquisitionCost = Number(asset.acquisitionCost);
+    const accumulatedDepreciation = Number(asset.accumulatedDepreciation);
+
+    let amounts: ReturnType<typeof commencementAmounts>;
+    try {
+      amounts = commencementAmounts({
+        pvPayments: pv.pvPayments,
+        pvResidual: pv.pvResidual,
+        acquisitionCost,
+        accumulatedDepreciation
+      });
+    } catch (err) {
+      throw new InvalidInputError(`${plan.name}: ${(err as Error).message}`);
+    }
+    const serial = asset.serialNumber ?? asset.fixedAssetId;
+    const tags = {
+      customerId: agreement.customerId,
+      itemId: plan.itemId,
+      locationId: agreement.locationId
+    };
+
+    const journalId = await postLeaseJournal(trx, {
+      accounting,
+      companyId,
+      userId,
+      postingDate: today,
+      description: `Lease commencement ${agreement.rentalAgreementId} ${serial}`,
+      lines: buildCommencementLines({
+        pvPayments: pv.pvPayments,
+        pvResidual: pv.pvResidual,
+        acquisitionCost,
+        accumulatedDepreciation,
+        accounts: {
+          netInvestmentInLeasesAccountId:
+            accounting.accounts.netInvestmentInLeasesAccount,
+          costOfGoodsSoldAccountId: accounting.accounts.costOfGoodsSoldAccount,
+          leaseRevenueAccountId: accounting.accounts.leaseRevenueAccount,
+          assetAccountId: assetClass.assetAccountId,
+          accumulatedDepreciationAccountId:
+            assetClass.accumulatedDepreciationAccountId
+        },
+        accountDefaultRoles: accounting.accountDefaultRoles
+      }),
+      rentalAgreementId: agreement.id,
+      rentalAgreementLineId: plan.lineId,
+      tags
+    });
+
+    // The unit leaves the register: sold to the lease at its net investment.
+    // Guarded on the statuses activation accepted, so a concurrent disposal
+    // or return to inventory rolls this back.
+    const disposed = await trx
+      .updateTable("fixedAsset")
+      .set({
+        status: "Disposed",
+        disposalMethod: "Sale",
+        disposalDate: today,
+        saleProceeds: amounts.netInvestment,
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .where("id", "=", asset.id)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...RENTABLE_ASSET_STATUSES])
+      .executeTakeFirst();
+    if (!disposed.numUpdatedRows) {
+      throw new InvalidInputError(
+        `${plan.name} changed status while the agreement was being activated`
+      );
+    }
+    await trx
+      .insertInto("fixedAssetDisposal")
+      .values({
+        fixedAssetId: asset.id,
+        disposalMethod: "Sale",
+        disposalDate: today,
+        saleProceeds: amounts.netInvestment,
+        netBookValueAtDisposal: amounts.carryingAmount,
+        gainLoss: amounts.sellingProfit,
+        journalId,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    // The serial is consumed into the lease: no longer on the asset, and the
+    // agreement and customer on its attributes are how it is found again.
+    const trackedEntityId = plan.trackedEntityId ?? asset.trackedEntityId;
+    if (trackedEntityId) {
+      await trx
+        .updateTable("trackedEntity")
+        .set({
+          status: "Consumed",
+          attributes: sql<Json>`(COALESCE("attributes", '{}'::jsonb) - 'Fixed Asset') || jsonb_build_object('Rental Agreement', ${agreement.id}::text, 'Customer', ${agreement.customerId}::text)`
+        })
+        .where("id", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await insertUnitActivity(trx, {
+        type: "Lease Commencement",
+        direction: "input",
+        sourceDocument: "Rental Agreement",
+        sourceDocumentId: agreement.id,
+        sourceDocumentReadableId: agreement.rentalAgreementId,
+        attributes: {
+          "Rental Agreement": agreement.id,
+          Customer: agreement.customerId
+        },
+        trackedEntityId,
+        companyId,
+        userId
+      });
+    }
+
+    // The effective-interest schedule follows the billing periods: one line
+    // per payment, dated at its billing period's end.
+    const spans = scheduleBillingPeriods(plan.periods, plan.terms.periods);
+    const schedule = buildLessorSchedule({
+      netInvestment: amounts.netInvestment,
+      payment: plan.terms.payment,
+      periods: plan.terms.periods,
+      annualRate: plan.terms.annualRate,
+      timing: agreement.billingTiming,
+      closingTarget: plan.closingTarget,
+      periodDates: spans.map((span) => span.periodEnd)
+    });
+    for (const line of schedule) {
+      scheduleInserts.push({
+        rentalAgreementLineId: plan.lineId,
+        periodDate: line.periodDate,
+        openingNetInvestment: line.openingNetInvestment,
+        paymentAmount: line.paymentAmount,
+        interestAmount: line.interestAmount,
+        principalAmount: line.principalAmount,
+        closingNetInvestment: line.closingNetInvestment,
+        companyId,
+        createdBy: userId
+      });
+    }
+    for (const row of interestRows(schedule, spans)) {
+      pendingInterest.push({
+        rentalAgreementLineId: plan.lineId,
+        periodStart: row.periodStart,
+        periodEnd: row.periodEnd,
+        scheduledDate: row.scheduledDate,
+        amount: row.amount
+      });
+    }
+
+    result.set(plan.lineId, {
+      netInvestment: amounts.netInvestment,
+      sellingProfit: amounts.sellingProfit,
+      journalId
+    });
+  }
+
+  // One insert for every schedule line of the agreement; the Interest rows
+  // find theirs by (line, periodDate), unique per line.
+  const insertedSchedule =
+    scheduleInserts.length === 0
+      ? []
+      : await trx
+          .insertInto("rentalLeaseScheduleLine")
+          .values(scheduleInserts)
+          .returning([
+            "id",
+            "rentalAgreementLineId",
+            sql<string>`"periodDate"::text`.as("periodDate")
+          ])
+          .execute();
+  const scheduleIdByKey = new Map(
+    insertedSchedule.map((row) => [
+      `${row.rentalAgreementLineId}|${row.periodDate}`,
+      row.id
+    ])
+  );
+  if (pendingInterest.length > 0) {
+    // A Planned schedule row is not re-pointed at the cutover, so it names
+    // the real accounts or the activation is refused.
+    const { interestAccounts } = accounting;
+    if (!interestAccounts) {
+      throw new InvalidInputError(LEASE_ACCOUNTS_REQUIRED);
+    }
+    await trx
+      .insertInto("revenueRecognitionSchedule")
+      .values(
+        pendingInterest.map((row) => {
+          const rentalLeaseScheduleLineId = scheduleIdByKey.get(
+            `${row.rentalAgreementLineId}|${row.scheduledDate}`
+          );
+          if (!rentalLeaseScheduleLineId) {
+            throw new Error("Interest row has no lease schedule line");
+          }
+          return {
+            type: "Interest" as const,
+            status: "Planned" as const,
+            rentalAgreementLineId: row.rentalAgreementLineId,
+            rentalLeaseScheduleLineId,
+            periodStart: row.periodStart,
+            periodEnd: row.periodEnd,
+            scheduledDate: row.scheduledDate,
+            amount: row.amount,
+            debitAccountId: interestAccounts.debitAccountId,
+            creditAccountId: interestAccounts.creditAccountId,
+            companyId,
+            createdBy: userId
+          };
+        })
+      )
+      .execute();
+  }
+
+  return result;
+}
+
+async function releaseUnit(
+  { db, companyId, userId }: RentalScope,
+  payload: Extract<RentalAgreementPayload, { type: "release" }>,
+  today: string
+): Promise<{ id: string }> {
+  const future = futureReleaseError(payload.returnedAt, today);
+  if (future) throw new InvalidInputError(future);
+  return db.transaction().execute(async (trx) => {
+    const agreement = await lockAgreement(
+      trx,
+      companyId,
+      payload.rentalAgreementId
+    );
+    if (agreement.status !== "Active") {
+      throw new InvalidInputError(
+        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are released from an Active agreement`
+      );
+    }
+
+    const line = await trx
+      .selectFrom("rentalAgreementLine")
+      .select(["id", "status", "lessorClassification", "fixedAssetId"])
+      .where("id", "=", payload.rentalAgreementLineId)
+      .where("rentalAgreementId", "=", agreement.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line) throw new NotFoundError("Rental agreement line not found");
+
+    const asset = line.fixedAssetId
+      ? await trx
+          .selectFrom("fixedAsset")
+          .select(["fixedAssetId", "name"])
+          .where("id", "=", line.fixedAssetId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+
+    // A unit an open rental document still holds would be Returned while
+    // the document names it (plan decision P2).
+    const openShipment = await trx
+      .selectFrom("shipment as s")
+      .innerJoin("shipmentFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.shipmentId", "=", "s.id")
+          .onRef("l.companyId", "=", "s.companyId")
+      )
+      .select("s.shipmentId")
+      .where("s.companyId", "=", companyId)
+      .where("s.sourceDocument", "=", "Rental Agreement")
+      .where("s.sourceDocumentId", "=", agreement.id)
+      .where("s.status", "in", ["Draft", "Pending"])
+      .where("l.rentalAgreementLineId", "=", line.id)
+      .orderBy("s.createdAt")
+      .executeTakeFirst();
+    const openReceipt = await trx
+      .selectFrom("receipt as r")
+      .innerJoin("receiptFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.receiptId", "=", "r.id")
+          .onRef("l.companyId", "=", "r.companyId")
+      )
+      .select("r.receiptId")
+      .where("r.companyId", "=", companyId)
+      .where("r.sourceDocument", "=", "Rental Agreement")
+      .where("r.sourceDocumentId", "=", agreement.id)
+      .where("r.status", "in", ["Draft", "Pending"])
+      .where("l.rentalAgreementLineId", "=", line.id)
+      .orderBy("r.createdAt")
+      .executeTakeFirst();
+    const openDocument = openShipment
+      ? `shipment ${openShipment.shipmentId}`
+      : openReceipt
+        ? `receipt ${openReceipt.receiptId}`
+        : null;
+
+    const blocker = releaseBlocker({
+      label: unitLabel(asset, line.id),
+      status: line.status,
+      classification: line.lessorClassification,
+      openDocument
+    });
+    if (blocker) throw new InvalidInputError(blocker);
+
+    await returnRentalUnit(trx, {
+      agreement,
+      unit: {
+        rentalAgreementLineId: line.id,
+        returnedAt: payload.returnedAt
+      },
+      companyId,
+      userId,
+      today
+    });
+    return { id: agreement.id };
+  });
+}
+
+// Everything close and cancel decide on, in three reads.
+async function loadSettlementState(
+  trx: Trx,
+  companyId: string,
+  agreementId: string
+) {
+  const lines = await trx
+    .selectFrom("rentalAgreementLine")
+    .select([
+      "id",
+      "status",
+      "lessorClassification",
+      "commencementJournalId",
+      "initialNetInvestment"
+    ])
+    .where("rentalAgreementId", "=", agreementId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .execute();
+  const lineIds = lines.map((line) => line.id);
+  if (lineIds.length === 0) {
+    return {
+      lines,
+      lineIds,
+      pendingPeriods: 0,
+      invoicedPeriods: 0,
+      unbilledCharges: 0,
+      billedCharges: 0
+    };
+  }
+
+  const periods = await trx
+    .selectFrom("rentalBillingPeriod")
+    .select([
+      sql<number>`count(*) FILTER (WHERE status = 'Pending')::int`.as(
+        "pending"
+      ),
+      sql<number>`count(*) FILTER (WHERE status = 'Invoiced')::int`.as(
+        "invoiced"
+      )
+    ])
+    .where("rentalAgreementLineId", "in", lineIds)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const charges = await trx
+    .selectFrom("rentalAgreementCharge")
+    .select([
+      sql<number>`count(*) FILTER (WHERE "salesInvoiceLineId" IS NULL)::int`.as(
+        "unbilled"
+      ),
+      sql<number>`count(*) FILTER (WHERE "salesInvoiceLineId" IS NOT NULL)::int`.as(
+        "billed"
+      )
+    ])
+    .where("rentalAgreementLineId", "in", lineIds)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+
+  return {
+    lines,
+    lineIds,
+    pendingPeriods: Number(periods.pending),
+    invoicedPeriods: Number(periods.invoiced),
+    unbilledCharges: Number(charges.unbilled),
+    billedCharges: Number(charges.billed)
+  };
+}
+
+async function close(
+  { db, companyId, userId }: RentalScope,
+  payload: Extract<RentalAgreementPayload, { type: "close" }>
+): Promise<{ id: string }> {
+  return db.transaction().execute(async (trx) => {
+    const agreement = await lockAgreement(
+      trx,
+      companyId,
+      payload.rentalAgreementId
+    );
+    if (agreement.status !== "Active") {
+      throw new InvalidInputError(
+        `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; only an Active agreement can be closed`
+      );
+    }
+
+    // A rental document still open holds units the close would strand.
+    const openShipment = await trx
+      .selectFrom("shipment as s")
+      .innerJoin("shipmentFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.shipmentId", "=", "s.id")
+          .onRef("l.companyId", "=", "s.companyId")
+      )
+      .select("s.shipmentId")
+      .where("s.companyId", "=", companyId)
+      .where("s.sourceDocument", "=", "Rental Agreement")
+      .where("s.sourceDocumentId", "=", agreement.id)
+      .where("s.status", "in", ["Draft", "Pending"])
+      .orderBy("s.createdAt")
+      .executeTakeFirst();
+    const openReceipt = await trx
+      .selectFrom("receipt as r")
+      .innerJoin("receiptFixedAssetLine as l", (join) =>
+        join
+          .onRef("l.receiptId", "=", "r.id")
+          .onRef("l.companyId", "=", "r.companyId")
+      )
+      .select("r.receiptId")
+      .where("r.companyId", "=", companyId)
+      .where("r.sourceDocument", "=", "Rental Agreement")
+      .where("r.sourceDocumentId", "=", agreement.id)
+      .where("r.status", "in", ["Draft", "Pending"])
+      .orderBy("r.createdAt")
+      .executeTakeFirst();
+    const openDocument = openRentalDocumentBlocker({
+      shipmentId: openShipment?.shipmentId ?? null,
+      receiptId: openReceipt?.receiptId ?? null
+    });
+    if (openDocument) throw new InvalidInputError(openDocument);
+
+    const state = await loadSettlementState(trx, companyId, agreement.id);
+    const blocker = closeBlocker({
+      lineStatuses: state.lines.map((line) => line.status),
+      pendingPeriods: state.pendingPeriods,
+      unbilledCharges: state.unbilledCharges
+    });
+    if (blocker) throw new InvalidInputError(blocker);
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("rentalAgreement")
+      .set({
+        status: "Closed",
+        closedAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", agreement.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id: agreement.id };
+  });
+}
+
+async function cancel(
+  { db, companyId, userId }: RentalScope,
+  payload: Extract<RentalAgreementPayload, { type: "cancel" }>
+): Promise<{ id: string }> {
+  return db.transaction().execute(async (trx) => {
+    const agreement = await lockAgreement(
+      trx,
+      companyId,
+      payload.rentalAgreementId
+    );
+
+    const state = await loadSettlementState(trx, companyId, agreement.id);
+    // An accrual (Task 40) already booked income against a line; dropping its
+    // unbilled periods would strand that contract asset.
+    const recognized =
+      state.lineIds.length === 0
+        ? { count: 0 }
+        : await trx
+            .selectFrom("revenueRecognitionSchedule")
+            .select(sql<number>`count(*)::int`.as("count"))
+            .where("rentalAgreementLineId", "in", state.lineIds)
+            .where("companyId", "=", companyId)
+            .executeTakeFirstOrThrow();
+
+    const blocker = cancelBlocker({
+      status: agreement.status,
+      lineStatuses: state.lines.map((line) => line.status),
+      invoicedPeriods: state.invoicedPeriods,
+      billedCharges: state.billedCharges,
+      recognizedRows: Number(recognized.count),
+      // Booked at activation: the journal and the net investment (the
+      // unit was disposed).
+      commencedSalesTypeLines: state.lines.filter(
+        (line) =>
+          line.lessorClassification === "Sale" &&
+          (line.commencementJournalId !== null ||
+            line.initialNetInvestment !== null)
+      ).length
+    });
+    if (blocker) throw new InvalidInputError(blocker);
+
+    if (state.lineIds.length > 0) {
+      // Nothing is invoiced (the blocker above), so every period left is
+      // Pending and none will ever be billed.
+      await trx
+        .deleteFrom("rentalBillingPeriod")
+        .where("rentalAgreementLineId", "in", state.lineIds)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Pending")
+        .execute();
+
+      // A Pending line holds its unit (the live-line unique index and the
+      // fleetAssets view key on status, not on the agreement's), and the line
+      // status enum has no Cancelled value. The never-delivered lines go, so
+      // their units read Available again; their unbilled charges cascade.
+      // Returned lines stay as the record of what the customer had.
+      await trx
+        .deleteFrom("rentalAgreementLine")
+        .where("rentalAgreementId", "=", agreement.id)
+        .where("companyId", "=", companyId)
+        .where("status", "in", LIVE_LINE_STATUSES)
+        .execute();
+    }
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("rentalAgreement")
+      .set({
+        status: "Cancelled",
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", agreement.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id: agreement.id };
+  });
+}
+
+export const postRentalAgreementInput = payloadValidator;
+
+export type PostRentalAgreementInput = RentalAgreementPayload;
+
+export const postRentalAgreementPermission = {
+  update: "sales"
+} satisfies PermissionRule<z.output<typeof postRentalAgreementInput>>;
+
+/** Activates, releases a unit of, closes or cancels a rental agreement, per
+ *  `type` — each one transaction that locks the agreement row first. */
+export async function postRentalAgreement(
+  ctx: ServiceContext,
+  raw: z.input<typeof postRentalAgreementInput>
+) {
+  const payload = postRentalAgreementInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const scope = { db, companyId, userId };
+  switch (payload.type) {
+    case "activate": {
+      const today = datetime
+        .today(await getCompanyTimeZone(db, companyId))
+        .toString();
+      return activate(scope, payload, today);
+    }
+    case "release": {
+      const today = datetime
+        .today(await getCompanyTimeZone(db, companyId))
+        .toString();
+      return releaseUnit(scope, payload, today);
+    }
+    case "close":
+      return close(scope, payload);
+    case "cancel":
+      return cancel(scope, payload);
+  }
+}
+export type BilledTotals = {
+  /** Σ every schedule row of the line (adjustments and memo credits included). */
+  totals: Map<string, number>;
+  /** The last `periodEnd` of the line's schedule rows. */
+  lastPeriodEnds: Map<string, string>;
+};
+
+/** Plans the invoice schedule live when none is stored (an unedited Draft):
+ *  the contract, its lines and how far to plan (`horizon`). */
+export type LiveSchedule = {
+  contract: ContractRow;
+  lines: ContractLineRow[];
+  through: string;
+};
+
+export type StoredRevenueRow = {
+  id: string;
+  lineId: string;
+  periodStart: string;
+  periodEnd: string;
+  amount: number;
+  status: ContractRevenueStatus;
+};
+
+/**
+ * What the invoice schedule bills each line. Reads the stored schedule rows;
+ * with `live`, a contract that has none (an unedited Draft) is planned the
+ * way the page plans it.
+ */
+export async function billedTotals(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  live?: LiveSchedule
+): Promise<BilledTotals> {
+  const rows = await trx
+    .selectFrom("customerContractInvoiceLine")
+    .select([
+      "customerContractLineId",
+      sql<number>`SUM("amount")`.as("total"),
+      sql<string>`MAX("periodEnd")::text`.as("lastPeriodEnd")
+    ])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", scope.companyId)
+    .groupBy("customerContractLineId")
+    .execute();
+
+  const totals = new Map<string, number>();
+  const lastPeriodEnds = new Map<string, string>();
+  if (rows.length === 0 && live) {
+    const planned = planInvoiceSchedule(
+      toTerms(live.contract),
+      toLineTerms(live.lines),
+      live.through
+    );
+    for (const [lineId, total] of lineTotals(planned))
+      totals.set(lineId, total);
+    for (const row of planned.flatMap((invoice) => invoice.rows)) {
+      const last = lastPeriodEnds.get(row.lineId);
+      if (!last || row.periodEnd > last) {
+        lastPeriodEnds.set(row.lineId, row.periodEnd);
+      }
+    }
+    return { totals, lastPeriodEnds };
+  }
+  for (const row of rows) {
+    totals.set(row.customerContractLineId, round(Number(row.total)));
+    lastPeriodEnds.set(row.customerContractLineId, row.lastPeriodEnd);
+  }
+  return { totals, lastPeriodEnds };
+}
+
+function toPlanLines(lines: ContractLineRow[]): RevenuePlanLine[] {
+  return lines.map((line) => ({
+    id: line.id,
+    revenueType: line.revenueType,
+    revenueMethod: line.revenueMethod,
+    startDate: line.startDate,
+    endDate: line.endDate,
+    goLiveDate: line.goLiveDate,
+    revenueStartDate: line.revenueStartDate,
+    revenueEndDate: line.revenueEndDate
+  }));
+}
+
+/** The revenue plan of `lines` from what the invoice schedule bills them. */
+export async function plannedRevenue(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: ContractRow,
+  lines: ContractLineRow[],
+  live?: Omit<LiveSchedule, "contract" | "lines">
+): Promise<ContractRevenueRow[]> {
+  const billed = await billedTotals(
+    trx,
+    scope,
+    contract.id,
+    live ? { contract, lines, through: live.through } : undefined
+  );
+  return planRevenueSchedule({
+    lines: toPlanLines(lines),
+    totals: billed.totals,
+    fallbackEnds: billed.lastPeriodEnds,
+    recognizeRevenueFrom: contract.recognizeRevenueFrom
+  });
+}
+
+type RevenueValues = {
+  customerContractId: string;
+  customerContractLineId: string;
+  periodStart: string;
+  periodEnd: string;
+  amount: number;
+  status: ContractRevenueStatus;
+  companyId: string;
+  createdBy: string;
+};
+
+function revenueValues(
+  scope: Scope,
+  contractId: string,
+  row: ContractRevenueRow
+): RevenueValues {
+  return {
+    customerContractId: contractId,
+    customerContractLineId: row.lineId,
+    periodStart: row.periodStart,
+    periodEnd: row.periodEnd,
+    amount: round(row.amount),
+    status: row.status,
+    companyId: scope.companyId,
+    createdBy: scope.userId
+  };
+}
+
+async function insertRevenueRows(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  rows: ContractRevenueRow[]
+): Promise<void> {
+  if (rows.length === 0) return;
+  await trx
+    .insertInto("customerContractRevenue")
+    .values(rows.map((row) => revenueValues(scope, contractId, row)))
+    .execute();
+}
+
+/** Persists the live revenue plan. Called on a contract with no stored
+ *  revenue rows — by the first revenue edit, at Confirm, or before an Active
+ *  contract confirmed before Phase B is first reconciled. */
+export async function materializeRevenue(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: ContractRow,
+  lines: ContractLineRow[],
+  live?: Omit<LiveSchedule, "contract" | "lines">
+): Promise<ContractRevenueRow[]> {
+  const rows = await plannedRevenue(trx, scope, contract, lines, live);
+  await insertRevenueRows(trx, scope, contract.id, rows);
+  return rows;
+}
+
+/** The contract's stored revenue rows, in line and month order. */
+export async function loadRevenue(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  lineIds?: string[]
+): Promise<StoredRevenueRow[]> {
+  if (lineIds && lineIds.length === 0) return [];
+  let query = trx
+    .selectFrom("customerContractRevenue")
+    .select([
+      "id",
+      "customerContractLineId",
+      sql<string>`"periodStart"::text`.as("periodStart"),
+      sql<string>`"periodEnd"::text`.as("periodEnd"),
+      "amount",
+      "status"
+    ])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", scope.companyId);
+  if (lineIds) query = query.where("customerContractLineId", "in", lineIds);
+  const rows = await query
+    .orderBy("customerContractLineId")
+    .orderBy("periodStart")
+    .execute();
+  return rows.map((row) => ({
+    id: row.id,
+    lineId: row.customerContractLineId,
+    periodStart: row.periodStart,
+    periodEnd: row.periodEnd,
+    amount: Number(row.amount),
+    status: row.status
+  }));
+}
+
+/** Whether the contract has any stored revenue row. */
+export async function hasStoredRevenue(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string
+): Promise<boolean> {
+  const row = await trx
+    .selectFrom("customerContractRevenue")
+    .select("id")
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", scope.companyId)
+    .limit(1)
+    .executeTakeFirst();
+  return !!row;
+}
+
+/** Materializes the revenue plan when none is stored. Returns true when it
+ *  wrote one. */
+export async function ensureRevenue(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: ContractRow,
+  lines: ContractLineRow[]
+): Promise<boolean> {
+  if (await hasStoredRevenue(trx, scope, contract.id)) return false;
+  await materializeRevenue(trx, scope, contract, lines);
+  return true;
+}
+
+/**
+ * Reconcile, never rewrite (D9), for each line in `lineIds`: kept rows
+ * (Recognized, Recognized Externally, Planned before `from`'s month) stay; the
+ * line's Planned rows from that month on are replaced by the new plan; any
+ * difference to the new plan's total lands on the first month on or after
+ * `from` that is not kept. One delete and one insert for every line.
+ */
+export async function reconcileRevenue(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: ContractRow,
+  lines: ContractLineRow[],
+  lineIds: string[],
+  from: string
+): Promise<void> {
+  const known = new Set(lines.map((line) => line.id));
+  const ids = [...new Set(lineIds)].filter((id) => known.has(id));
+  if (ids.length === 0) return;
+
+  // A Planned month the recognition run has already synthesized (its schedule
+  // rows wait in a Draft run) is in flight: it is kept like a Recognized one,
+  // so the run never loses the month it is about to post.
+  const inFlight = new Set(
+    (
+      await trx
+        .selectFrom("revenueRecognitionSchedule")
+        .select("customerContractRevenueId")
+        .where("companyId", "=", scope.companyId)
+        .where("customerContractLineId", "in", ids)
+        .where("customerContractRevenueId", "is not", null)
+        .execute()
+    ).map((row) => row.customerContractRevenueId!)
+  );
+  const existing = (await loadRevenue(trx, scope, contract.id, ids)).map(
+    (row) =>
+      row.status === "Planned" && inFlight.has(row.id)
+        ? { ...row, status: "Recognized" as const }
+        : row
+  );
+  const planned = await plannedRevenue(trx, scope, contract, lines);
+
+  const replaced: { lineId: string; replaceFrom: string }[] = [];
+  const inserts: ContractRevenueRow[] = [];
+  for (const lineId of ids) {
+    const result = reconcileRevenueSchedule({
+      lineId,
+      existing: existing.filter((row) => row.lineId === lineId),
+      planned,
+      from
+    });
+    replaced.push({ lineId, replaceFrom: result.replaceFrom });
+    inserts.push(...result.rows);
+  }
+
+  const values = replaced.map(
+    (row) => sql`(${row.lineId}::text, ${row.replaceFrom}::date)`
+  );
+  await sql`
+    DELETE FROM "customerContractRevenue" AS r
+    USING (VALUES ${sql.join(values)}) AS v("lineId", "replaceFrom")
+    WHERE r."customerContractLineId" = v."lineId"
+      AND r."periodStart" >= v."replaceFrom"
+      AND r."status" = 'Planned'
+      AND r."companyId" = ${scope.companyId}
+      AND r."customerContractId" = ${contract.id}
+      AND NOT EXISTS (
+        SELECT 1 FROM "revenueRecognitionSchedule" s
+        WHERE s."customerContractRevenueId" = r."id"
+          AND s."companyId" = r."companyId"
+      )
+  `.execute(trx);
+  await insertRevenueRows(trx, scope, contract.id, inserts);
+}
+
+/** The lines whose revenue plan may have changed between two states of a
+ *  contract: a line that is new, whose terms changed, or whose billed total
+ *  or last billed period moved. */
+export function changedRevenueLines(
+  before: { lines: ContractLineRow[]; billed: BilledTotals },
+  after: { lines: ContractLineRow[]; billed: BilledTotals }
+): string[] {
+  const previous = new Map(before.lines.map((line) => [line.id, line]));
+  const changed: string[] = [];
+  for (const line of after.lines) {
+    const old = previous.get(line.id);
+    const termsChanged =
+      !old ||
+      old.startDate !== line.startDate ||
+      old.endDate !== line.endDate ||
+      old.goLiveDate !== line.goLiveDate ||
+      old.revenueStartDate !== line.revenueStartDate ||
+      old.revenueEndDate !== line.revenueEndDate ||
+      old.revenueMethod !== line.revenueMethod;
+    const billedChanged =
+      !equals(
+        before.billed.totals.get(line.id) ?? 0,
+        after.billed.totals.get(line.id) ?? 0
+      ) ||
+      before.billed.lastPeriodEnds.get(line.id) !==
+        after.billed.lastPeriodEnds.get(line.id);
+    if (termsChanged || billedChanged) changed.push(line.id);
+  }
+  return changed;
+}
+
+/**
+ * D8 — the opening position of a migrated contract, written at Confirm: per
+ * line, Σ its `Billed Externally` schedule rows − Σ its `Recognized
+ * Externally` revenue rows, applied to an empty position at the contract's
+ * rate. No journal: the customer's own opening journal carries the balance.
+ */
+export async function writeOpeningEntries(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: ContractRow
+): Promise<void> {
+  const billed = await trx
+    .selectFrom("customerContractInvoiceLine as r")
+    .innerJoin("customerContractInvoice as i", (join) =>
+      join
+        .onRef("i.id", "=", "r.customerContractInvoiceId")
+        .onRef("i.companyId", "=", "r.companyId")
+    )
+    .select([
+      "r.customerContractLineId",
+      sql<number>`SUM(r."amount")`.as("total")
+    ])
+    .where("r.customerContractId", "=", contract.id)
+    .where("r.companyId", "=", scope.companyId)
+    .where("i.status", "=", "Billed Externally")
+    .groupBy("r.customerContractLineId")
+    .execute();
+  const recognized = await trx
+    .selectFrom("customerContractRevenue")
+    .select(["customerContractLineId", sql<number>`SUM("amount")`.as("total")])
+    .where("customerContractId", "=", contract.id)
+    .where("companyId", "=", scope.companyId)
+    .where("status", "=", "Recognized Externally")
+    .groupBy("customerContractLineId")
+    .execute();
+
+  const opening = new Map<string, number>();
+  for (const row of billed) {
+    opening.set(row.customerContractLineId, Number(row.total));
+  }
+  for (const row of recognized) {
+    opening.set(
+      row.customerContractLineId,
+      (opening.get(row.customerContractLineId) ?? 0) - Number(row.total)
+    );
+  }
+
+  const entries = [...opening]
+    .map(([lineId, amount]) => ({ lineId, amount: round(amount) }))
+    .filter(({ amount }) => !equals(amount, 0))
+    .map(({ lineId, amount }) => {
+      const movement = applyContractMovement({
+        position: EMPTY_POSITION,
+        amount,
+        rate: Number(contract.exchangeRate),
+        counterpart: "receivable"
+      });
+      return {
+        customerContractId: contract.id,
+        customerContractLineId: lineId,
+        entryType: "Opening" as const,
+        postingDate: contract.startDate,
+        journalId: null,
+        deferredAmount: movement.deferredAmount,
+        deferredBase: movement.deferredBase,
+        assetAmount: movement.assetAmount,
+        assetBase: movement.assetBase,
+        companyId: scope.companyId,
+        createdBy: scope.userId
+      };
+    });
+  if (entries.length === 0) return;
+  await trx.insertInto("customerContractLedgerEntry").values(entries).execute();
+}
+type scheduleWritesEnums = Database["public"]["Enums"];
+
+export type Scope = { companyId: string; userId: string };
+
+export type ContractRow = Selectable<KyselyDatabase["customerContract"]>;
+
+export type ContractLineRow = Selectable<
+  KyselyDatabase["customerContractLine"]
+>;
+
+export type ContractInvoiceRow = {
+  id: string;
+  invoiceDate: string;
+  status: scheduleWritesEnums["contractInvoiceStatus"];
+  isEdited: boolean;
+  salesInvoiceId: string | null;
+};
+
+export type LoadedContract = {
+  contract: ContractRow;
+  lines: ContractLineRow[];
+  /** Every persisted schedule row (memo-borne ones included), as the planner
+   *  reads it. */
+  existing: ExistingRow[];
+  /** Every planned invoice, including any left without rows. */
+  invoices: ContractInvoiceRow[];
+};
+
+const DATE_TEXT = (column: string) => sql<string>`${sql.ref(column)}::text`;
+
+/** The columns a line copy (or an added line) carries over. */
+export type LineFields = Omit<
+  ContractLineRow,
+  | "id"
+  | "companyId"
+  | "createdAt"
+  | "createdBy"
+  | "updatedAt"
+  | "updatedBy"
+  | "salesOrderLineId"
+>;
+
+/** Insert values for a contract line copied from `line` with `overrides`.
+ *  Every copy sets the same keys, so copies and added lines insert in one
+ *  statement. The sales-order link never moves to a copy (it is unique per
+ *  order line). */
+export function copyLineValues(
+  scope: Scope,
+  line: LineFields,
+  overrides: Partial<LineFields>
+) {
+  const merged = { ...line, ...overrides };
+  return {
+    customerContractId: merged.customerContractId,
+    revenueType: merged.revenueType,
+    itemId: merged.itemId,
+    description: merged.description,
+    quantity: merged.quantity,
+    rate: merged.rate,
+    rateUnit: merged.rateUnit,
+    discountPercent: merged.discountPercent,
+    discountEndsOn: merged.discountEndsOn,
+    taxPercent: merged.taxPercent,
+    startDate: merged.startDate,
+    endDate: merged.endDate,
+    goLiveDate: merged.goLiveDate,
+    revenueMethod: merged.revenueMethod,
+    revenueStartDate: merged.revenueStartDate,
+    revenueEndDate: merged.revenueEndDate,
+    amendmentId: merged.amendmentId,
+    amendsLineId: merged.amendsLineId,
+    salesOrderLineId: null,
+    projectId: merged.projectId,
+    sortOrder: merged.sortOrder,
+    customFields: toJson(merged.customFields) ?? null,
+    companyId: scope.companyId,
+    createdBy: scope.userId
+  };
+}
+
+/** The revenue dates a Recurring line's copy from `newStart` keeps. A go-live
+ *  or revenue start on or before the cutover belongs to the line it was set
+ *  on — inherited, the copy would recognize from that date again, on top of
+ *  the line it replaces. One after the cutover has not happened yet and
+ *  still applies; so does a revenue end on or after it. A One-time copy
+ *  replaces its line whole, so it keeps every date. */
+export function carriedRevenueDates(
+  line: Pick<
+    LineFields,
+    "revenueType" | "goLiveDate" | "revenueStartDate" | "revenueEndDate"
+  >,
+  newStart: string
+): Pick<LineFields, "goLiveDate" | "revenueStartDate" | "revenueEndDate"> {
+  if (line.revenueType !== "Recurring") {
+    return {
+      goLiveDate: line.goLiveDate,
+      revenueStartDate: line.revenueStartDate,
+      revenueEndDate: line.revenueEndDate
+    };
+  }
+  const after = (date: string | null) =>
+    date !== null && date > newStart ? date : null;
+  return {
+    goLiveDate: after(line.goLiveDate),
+    revenueStartDate: after(line.revenueStartDate),
+    revenueEndDate:
+      line.revenueEndDate !== null && line.revenueEndDate >= newStart
+        ? line.revenueEndDate
+        : null
+  };
+}
+
+/** Lines in their display order: sort order, start date, id. */
+async function loadLines(
+  trx: KyselyTx,
+  companyId: string,
+  contractId: string
+): Promise<ContractLineRow[]> {
+  const lines = await trx
+    .selectFrom("customerContractLine")
+    .selectAll()
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", companyId)
+    .orderBy("sortOrder")
+    .orderBy("startDate")
+    .orderBy("id")
+    .execute();
+  return lines.map((line) => ({
+    ...line,
+    quantity: Number(line.quantity),
+    rate: Number(line.rate),
+    discountPercent: Number(line.discountPercent),
+    taxPercent: Number(line.taxPercent)
+  }));
+}
+
+/** The persisted schedule rows and invoices of a contract (no lock: the
+ *  caller already holds the header lock, which serializes every writer). */
+export async function loadSchedule(
+  trx: KyselyTx,
+  companyId: string,
+  contractId: string
+): Promise<{ existing: ExistingRow[]; invoices: ContractInvoiceRow[] }> {
+  const invoices = await trx
+    .selectFrom("customerContractInvoice")
+    .select([
+      "id",
+      DATE_TEXT("invoiceDate").as("invoiceDate"),
+      "status",
+      "isEdited",
+      "salesInvoiceId"
+    ])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", companyId)
+    .orderBy("invoiceDate")
+    .execute();
+
+  const rows = await trx
+    .selectFrom("customerContractInvoiceLine as r")
+    .leftJoin("customerContractInvoice as i", (join) =>
+      join
+        .onRef("i.id", "=", "r.customerContractInvoiceId")
+        .onRef("i.companyId", "=", "r.companyId")
+    )
+    .select([
+      "r.id",
+      "r.customerContractInvoiceId",
+      sql<string | null>`i."invoiceDate"::text`.as("invoiceDate"),
+      "i.status as invoiceStatus",
+      "i.isEdited as invoiceIsEdited",
+      "r.customerContractLineId",
+      sql<string>`r."periodStart"::text`.as("periodStart"),
+      sql<string>`r."periodEnd"::text`.as("periodEnd"),
+      "r.units",
+      "r.unitPrice",
+      "r.amount",
+      "r.isAdjustment",
+      "r.memoId"
+    ])
+    .where("r.customerContractId", "=", contractId)
+    .where("r.companyId", "=", companyId)
+    .orderBy("r.periodStart")
+    .orderBy("r.id")
+    .execute();
+
+  return {
+    invoices: invoices.map((invoice) => ({
+      ...invoice,
+      isEdited: invoice.isEdited ?? false
+    })),
+    existing: rows.map((row) => ({
+      id: row.id,
+      invoiceId: row.customerContractInvoiceId,
+      invoiceDate: row.invoiceDate,
+      invoiceStatus: row.invoiceStatus ?? null,
+      invoiceIsEdited: row.invoiceIsEdited ?? false,
+      lineId: row.customerContractLineId,
+      periodStart: row.periodStart,
+      periodEnd: row.periodEnd,
+      units: Number(row.units),
+      unitPrice: Number(row.unitPrice),
+      amount: Number(row.amount),
+      isAdjustment: row.isAdjustment ?? false,
+      memoId: row.memoId
+    }))
+  };
+}
+
+/** Locks the contract header (`FOR UPDATE`) under `companyId` and loads its
+ *  lines and every schedule row joined to its invoice. The lock serializes
+ *  every action on one contract: a double-clicked Confirm, an amendment racing
+ *  the daily invoicing job. Throws `NotFoundError` when the id is not a
+ *  contract of the company. */
+export async function loadContractForUpdate(
+  trx: KyselyTx,
+  companyId: string,
+  id: string
+): Promise<LoadedContract> {
+  const contract = await trx
+    .selectFrom("customerContract")
+    .selectAll()
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!contract) throw new NotFoundError("Contract not found");
+
+  const lines = await loadLines(trx, companyId, contract.id);
+  const { existing, invoices } = await loadSchedule(
+    trx,
+    companyId,
+    contract.id
+  );
+  return {
+    contract: {
+      ...contract,
+      exchangeRate: Number(contract.exchangeRate),
+      renewalUplift: Number(contract.renewalUplift)
+    },
+    lines,
+    existing,
+    invoices
+  };
+}
+
+/** The contract's billing terms, as the planner reads them. */
+export function toTerms(
+  contract: Pick<
+    ContractRow,
+    | "startDate"
+    | "endDate"
+    | "billingFrequency"
+    | "billingAlignment"
+    | "billingTiming"
+    | "firstInvoiceDate"
+    | "billedThrough"
+  >
+): ContractTerms {
+  return {
+    startDate: contract.startDate,
+    endDate: contract.endDate,
+    billingFrequency: contract.billingFrequency,
+    billingAlignment: contract.billingAlignment,
+    billingTiming: contract.billingTiming,
+    firstInvoiceDate: contract.firstInvoiceDate,
+    billedThrough: contract.billedThrough
+  };
+}
+
+/** The lines, as the planner reads them (input order is kept). */
+export function toLineTerms(
+  lines: Pick<
+    ContractLineRow,
+    | "id"
+    | "revenueType"
+    | "quantity"
+    | "rate"
+    | "rateUnit"
+    | "discountPercent"
+    | "startDate"
+    | "endDate"
+  >[]
+): ContractLineTerms[] {
+  return lines.map((line) => ({
+    id: line.id,
+    revenueType: line.revenueType,
+    quantity: Number(line.quantity),
+    rate: Number(line.rate),
+    rateUnit: line.rateUnit,
+    discountPercent: Number(line.discountPercent),
+    startDate: line.startDate,
+    endDate: line.endDate
+  }));
+}
+
+/** How far a reconciliation plans: the horizon, or further when the persisted
+ *  Recurring periods already reach past it — so a reconciliation never deletes
+ *  rows an earlier horizon roll planned. A One-time row's service window is
+ *  not a planned period (`lastRecurringPeriodEnd`): counting it would plan an
+ *  open-ended contract's months out to the end of that window.
+ *  `planInvoiceSchedule` still clips at the contract's end date. */
+export function reconcileThrough(
+  horizonDate: string,
+  existing: Pick<ExistingRow, "lineId" | "periodEnd" | "isAdjustment">[],
+  lines: Pick<ContractLineRow, "id" | "revenueType">[]
+): string {
+  const planned = lastRecurringPeriodEnd(existing, lines);
+  return planned !== null && planned > horizonDate ? planned : horizonDate;
+}
+
+/** Sets each line's `endDate` in one statement. A `revenueEndDate` past the
+ *  new end is clamped to it — a line recognizes nothing after it ends —
+ *  unless the entry sets `revenueEndDate` itself (a reverted cancellation
+ *  restoring what it clamped). */
+export async function setLineEndDates(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  ends: {
+    id: string;
+    endDate: string | null;
+    revenueEndDate?: string | null;
+  }[]
+): Promise<void> {
+  if (ends.length === 0) return;
+  const values = ends.map(
+    (end) =>
+      sql`(${end.id}::text, ${end.endDate}::date, ${end.revenueEndDate !== undefined}::boolean, ${end.revenueEndDate ?? null}::date)`
+  );
+  await sql`
+    UPDATE "customerContractLine" AS l
+    SET "endDate" = v."endDate",
+        "revenueEndDate" = CASE
+          WHEN v."setsRevenueEnd" THEN v."revenueEndDate"
+          WHEN l."revenueEndDate" > v."endDate" THEN v."endDate"
+          ELSE l."revenueEndDate"
+        END,
+        "updatedBy" = ${scope.userId},
+        "updatedAt" = now()
+    FROM (VALUES ${sql.join(values)}) AS v("id", "endDate", "setsRevenueEnd", "revenueEndDate")
+    WHERE l."id" = v."id"
+      AND l."companyId" = ${scope.companyId}
+      AND l."customerContractId" = ${contractId}
+  `.execute(trx);
+}
+
+/** Turns every "discount ends" date that now falls inside its line into an
+ *  amendment: the line ends that day and a full-price copy starts the next
+ *  (`discountEndSplits`, idempotent). Shared by confirm, amendments and
+ *  renewal, so a discount ends however the line came to be. Reads the lines
+ *  itself (after the caller's own writes); returns the earliest date a copy
+ *  starts — the caller reconciles from there, or from earlier — or null when
+ *  nothing was split. */
+export async function applyDiscountEnds(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: Pick<ContractRow, "id" | "endDate" | "billingFrequency">
+): Promise<string | null> {
+  const lines = await loadLines(trx, scope.companyId, contract.id);
+  const splits = discountEndSplits(lines, contract.endDate);
+  if (splits.length === 0) return null;
+
+  const lineTerms = toLineTerms(lines);
+  const lineById = new Map(lines.map((line) => [line.id, line]));
+  const amendments = await trx
+    .insertInto("customerContractAmendment")
+    .values(
+      splits.map((split) => {
+        const before = recurringValuePerPeriod(
+          lineTerms,
+          contract.billingFrequency,
+          split.resumesOn
+        );
+        const after = recurringValuePerPeriod(
+          [
+            ...lineTerms.filter((l) => l.id !== split.lineId),
+            {
+              ...lineTerms.find((l) => l.id === split.lineId)!,
+              discountPercent: 0,
+              startDate: split.resumesOn
+            }
+          ],
+          contract.billingFrequency,
+          split.resumesOn
+        );
+        return {
+          customerContractId: contract.id,
+          amendmentDate: split.resumesOn,
+          effect: "Change Date" as const,
+          contractType: suggestAmendmentType(before, after),
+          reason: "Discount ends",
+          previousState: null,
+          companyId: scope.companyId,
+          createdBy: scope.userId
+        };
+      })
+    )
+    .returning(["id"])
+    .execute();
+
+  await setLineEndDates(
+    trx,
+    scope,
+    contract.id,
+    splits.map((split) => ({ id: split.lineId, endDate: split.discountEndsOn }))
+  );
+  await trx
+    .insertInto("customerContractLine")
+    .values(
+      splits.map((split, index) =>
+        copyLineValues(scope, lineById.get(split.lineId)!, {
+          ...carriedRevenueDates(lineById.get(split.lineId)!, split.resumesOn),
+          startDate: split.resumesOn,
+          discountPercent: 0,
+          discountEndsOn: null,
+          amendmentId: amendments[index]!.id,
+          amendsLineId: split.lineId
+        })
+      )
+    )
+    .execute();
+
+  return splits
+    .map((split) => split.resumesOn)
+    .reduce((earliest, date) => (date < earliest ? date : earliest));
+}
+
+type RowValues = {
+  customerContractId: string;
+  customerContractInvoiceId: string | null;
+  customerContractLineId: string;
+  periodStart: string;
+  periodEnd: string;
+  units: number;
+  unitPrice: number;
+  amount: number;
+  isAdjustment: boolean;
+  memoId: string | null;
+  companyId: string;
+  createdBy: string;
+};
+
+/** One `customerContractInvoiceLine` insert value. Every row sets the same
+ *  keys, so a multi-row insert never mixes a column's DEFAULT with values. */
+export function scheduleRowValues(
+  scope: Scope,
+  contractId: string,
+  row: Pick<
+    PlannedRow,
+    | "lineId"
+    | "periodStart"
+    | "periodEnd"
+    | "units"
+    | "unitPrice"
+    | "amount"
+    | "isAdjustment"
+  >,
+  parent: { invoiceId: string | null; memoId: string | null }
+): RowValues {
+  return {
+    customerContractId: contractId,
+    customerContractInvoiceId: parent.invoiceId,
+    customerContractLineId: row.lineId,
+    periodStart: row.periodStart,
+    periodEnd: row.periodEnd,
+    units: round(row.units),
+    unitPrice: round(row.unitPrice),
+    amount: round(row.amount),
+    isAdjustment: row.isAdjustment,
+    memoId: parent.memoId,
+    companyId: scope.companyId,
+    createdBy: scope.userId
+  };
+}
+
+export async function insertScheduleRows(
+  trx: KyselyTx,
+  rows: RowValues[]
+): Promise<void> {
+  if (rows.length === 0) return;
+  await trx.insertInto("customerContractInvoiceLine").values(rows).execute();
+}
+
+export const invoiceKey = (invoiceDate: string, status: string) =>
+  `${invoiceDate}|${status}`;
+
+/** Inserts one invoice per `(invoiceDate, status)` and returns their ids by
+ *  that key. The keys must be unique in `wanted`. */
+export async function insertContractInvoices(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  wanted: {
+    invoiceDate: string;
+    status: "Planned" | "Billed Externally";
+    isEdited?: boolean;
+  }[]
+): Promise<Map<string, string>> {
+  const ids = new Map<string, string>();
+  if (wanted.length === 0) return ids;
+  const inserted = await trx
+    .insertInto("customerContractInvoice")
+    .values(
+      wanted.map((invoice) => ({
+        customerContractId: contractId,
+        invoiceDate: invoice.invoiceDate,
+        status: invoice.status,
+        isEdited: invoice.isEdited ?? false,
+        companyId: scope.companyId,
+        createdBy: scope.userId
+      }))
+    )
+    .returning(["id", DATE_TEXT("invoiceDate").as("invoiceDate"), "status"])
+    .execute();
+  for (const invoice of inserted) {
+    ids.set(invoiceKey(invoice.invoiceDate, invoice.status), invoice.id);
+  }
+  return ids;
+}
+
+/** Writes planned invoices and their rows. */
+async function insertPlannedInvoices(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  planned: ContractPlannedInvoice[]
+): Promise<void> {
+  const ids = await insertContractInvoices(trx, scope, contractId, planned);
+  await insertScheduleRows(
+    trx,
+    planned.flatMap((invoice) => {
+      const invoiceId = ids.get(
+        invoiceKey(invoice.invoiceDate, invoice.status)
+      )!;
+      return invoice.rows.map((row) =>
+        scheduleRowValues(scope, contractId, row, { invoiceId, memoId: null })
+      );
+    })
+  );
+}
+
+/** Persists the computed schedule (`planInvoiceSchedule` through `through`):
+ *  one `customerContractInvoice` per planned invoice, carrying its status
+ *  (`Planned` / `Billed Externally`), and its rows. Called on a contract with
+ *  no persisted rows — at Confirm, or by the first schedule edit. */
+export async function materializeSchedule(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: ContractRow,
+  lines: ContractLineRow[],
+  through: string
+): Promise<void> {
+  const planned = planInvoiceSchedule(
+    toTerms(contract),
+    toLineTerms(lines),
+    through
+  );
+  await insertPlannedInvoices(trx, scope, contract.id, planned);
+}
+
+/** Bulk update of re-cut rows: one statement for all of them. */
+async function recutRows(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  recut: ContractScheduleReconciliation["recut"]
+): Promise<void> {
+  if (recut.length === 0) return;
+  const values = recut.map(
+    (row) =>
+      sql`(${row.id}::text, ${row.periodEnd}::date, ${round(row.units)}::numeric, ${round(row.unitPrice)}::numeric, ${round(row.amount)}::numeric)`
+  );
+  await sql`
+    UPDATE "customerContractInvoiceLine" AS r
+    SET "periodEnd" = v."periodEnd",
+        "units" = v."units",
+        "unitPrice" = v."unitPrice",
+        "amount" = v."amount",
+        "updatedBy" = ${scope.userId},
+        "updatedAt" = now()
+    FROM (VALUES ${sql.join(values)}) AS v("id", "periodEnd", "units", "unitPrice", "amount")
+    WHERE r."id" = v."id"
+      AND r."companyId" = ${scope.companyId}
+      AND r."customerContractId" = ${contractId}
+  `.execute(trx);
+}
+
+/** Applies a `reconcileContractSchedule` result, in this order:
+ *
+ *  1. deletes the rows in `deleteRowIds`, then the `Planned` invoices in
+ *     `deleteInvoiceIds` (their rows cascade);
+ *  2. re-cuts the rows in `recut`;
+ *  3. inserts `create` — a group joins a kept invoice with the same date and
+ *     status, else it gets a new invoice;
+ *  4. inserts `adjustments`. With `adjustmentMemoId` they are memo-borne
+ *     (no invoice). Otherwise each attaches to the `Planned` invoice of its
+ *     `invoiceDate` (a created or kept one), inserting one when none exists. */
+export async function applyReconciliation(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  result: ContractScheduleReconciliation,
+  options: { adjustmentMemoId?: string | null } = {}
+): Promise<void> {
+  const { companyId } = scope;
+
+  if (result.deleteRowIds.length > 0) {
+    await trx
+      .deleteFrom("customerContractInvoiceLine")
+      .where("id", "in", result.deleteRowIds)
+      .where("customerContractId", "=", contractId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  if (result.deleteInvoiceIds.length > 0) {
+    await trx
+      .deleteFrom("customerContractInvoice")
+      .where("id", "in", result.deleteInvoiceIds)
+      .where("customerContractId", "=", contractId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Planned")
+      .execute();
+  }
+
+  await recutRows(trx, scope, contractId, result.recut);
+
+  const memoId = options.adjustmentMemoId ?? null;
+  const adjustmentsOnInvoices = memoId ? [] : result.adjustments;
+  const invoiceIds =
+    result.create.length > 0 || adjustmentsOnInvoices.length > 0
+      ? await resolveInvoiceIds(trx, scope, contractId, [
+          ...result.create,
+          ...adjustmentsOnInvoices.map((row) => ({
+            invoiceDate: row.invoiceDate,
+            status: "Planned" as const
+          }))
+        ])
+      : new Map<string, string>();
+
+  const rows: RowValues[] = [];
+  for (const invoice of result.create) {
+    const invoiceId = invoiceIds.get(
+      invoiceKey(invoice.invoiceDate, invoice.status)
+    )!;
+    for (const row of invoice.rows) {
+      rows.push(
+        scheduleRowValues(scope, contractId, row, { invoiceId, memoId: null })
+      );
+    }
+  }
+  for (const row of adjustmentsOnInvoices) {
+    rows.push(
+      scheduleRowValues(scope, contractId, row, {
+        invoiceId: invoiceIds.get(invoiceKey(row.invoiceDate, "Planned"))!,
+        memoId: null
+      })
+    );
+  }
+  if (memoId) {
+    for (const row of result.adjustments) {
+      rows.push(
+        scheduleRowValues(scope, contractId, row, { invoiceId: null, memoId })
+      );
+    }
+  }
+  await insertScheduleRows(trx, rows);
+}
+
+/** The id of the contract's invoice for each wanted `(invoiceDate, status)`:
+ *  an existing `Planned` / `Billed Externally` invoice with that date and
+ *  status, else a new one (one insert for all the missing ones). */
+export async function resolveInvoiceIds(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  wanted: {
+    invoiceDate: string;
+    status: "Planned" | "Billed Externally";
+  }[],
+  options: { isEdited?: boolean } = {}
+): Promise<Map<string, string>> {
+  const existing = await trx
+    .selectFrom("customerContractInvoice")
+    .select(["id", DATE_TEXT("invoiceDate").as("invoiceDate"), "status"])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", scope.companyId)
+    .where("status", "in", ["Planned", "Billed Externally"])
+    .orderBy("id")
+    .execute();
+  const ids = new Map<string, string>();
+  for (const invoice of existing) {
+    const key = invoiceKey(invoice.invoiceDate, invoice.status);
+    if (!ids.has(key)) ids.set(key, invoice.id);
+  }
+
+  const missing = new Map<
+    string,
+    {
+      invoiceDate: string;
+      status: "Planned" | "Billed Externally";
+      isEdited?: boolean;
+    }
+  >();
+  for (const invoice of wanted) {
+    const key = invoiceKey(invoice.invoiceDate, invoice.status);
+    if (!ids.has(key) && !missing.has(key)) {
+      missing.set(key, {
+        invoiceDate: invoice.invoiceDate,
+        status: invoice.status,
+        isEdited: options.isEdited
+      });
+    }
+  }
+  const inserted = await insertContractInvoices(trx, scope, contractId, [
+    ...missing.values()
+  ]);
+  for (const [key, id] of inserted) ids.set(key, id);
+  return ids;
+}
+
+/** Deletes the contract's `Planned` invoices that have no rows left. */
+export async function deleteEmptyPlannedInvoices(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string
+): Promise<void> {
+  await trx
+    .deleteFrom("customerContractInvoice as i")
+    .where("i.customerContractId", "=", contractId)
+    .where("i.companyId", "=", scope.companyId)
+    .where("i.status", "=", "Planned")
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("customerContractInvoiceLine as r")
+            .select("r.id")
+            .whereRef("r.customerContractInvoiceId", "=", "i.id")
+            .whereRef("r.companyId", "=", "i.companyId")
+        )
+      )
+    )
+    .execute();
+}
+
+const STRIPE_CONNECT_INTEGRATION = "stripe-connect";
+
+// ---------------------------------------------------------------------------
+// Input
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+
+const base = {
+  customerContractId: z.string().min(1),
+  /** `YYYY-MM-DD`, today in the company's timezone (computed by the caller). */
+  asOf: isoDate
+};
+
+const contractRateUnits = [
+  "Day",
+  "Week",
+  "Month",
+  "Quarter",
+  "Year"
+] as const satisfies readonly Enums["contractRateUnit"][];
+
+const contractRevenueTypes = [
+  "One-time",
+  "Recurring"
+] as const satisfies readonly Enums["contractRevenueType"][];
+
+const contractRevenueMethods = [
+  "Daily",
+  "Even Period"
+] as const satisfies readonly Enums["contractRevenueMethod"][];
+
+const contractAmendmentEffects = [
+  "Change Date",
+  "Next Period"
+] as const satisfies readonly Enums["contractAmendmentEffect"][];
+
+const customerContractTypes = [
+  "New Sales",
+  "Existing",
+  "Expansion",
+  "Reactivation",
+  "Contraction"
+] as const satisfies readonly Enums["customerContractType"][];
+
+/** One edit to a Draft schedule — the ERP's
+ *  `customerContractScheduleEditValidator` minus `reset`. Refs are a stored
+ *  id or a `planned:` position ref (see `editSchedule`). */
+const scheduleEdit = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("move"),
+    customerContractInvoiceId: z.string().min(1),
+    invoiceDate: isoDate
+  }),
+  z.object({
+    intent: z.literal("split"),
+    customerContractInvoiceLineId: z.string().min(1),
+    installments: z
+      .array(
+        z.object({
+          invoiceDate: isoDate,
+          amount: z.number().positive("Each installment must be more than 0")
+        })
+      )
+      .min(2)
+  }),
+  z.object({
+    intent: z.literal("merge"),
+    sourceInvoiceId: z.string().min(1),
+    targetInvoiceId: z.string().min(1)
+  }),
+  z.object({
+    intent: z.literal("moveLine"),
+    customerContractInvoiceLineId: z.string().min(1),
+    invoiceDate: isoDate
+  }),
+  // The invoice grid (plan D10): one cell is one (invoice, line).
+  z.object({
+    intent: z.literal("setAmount"),
+    customerContractInvoiceId: z.string().min(1),
+    customerContractLineId: z.string().min(1),
+    amount: z.number().min(0)
+  }),
+  z.object({
+    intent: z.literal("addInvoice"),
+    invoiceDate: isoDate,
+    amounts: z
+      .array(
+        z.object({
+          customerContractLineId: z.string().min(1),
+          amount: z.number().min(0)
+        })
+      )
+      .refine((amounts) => amounts.some((a) => a.amount > 0), {
+        message: "Enter an amount for at least one line"
+      })
+  }),
+  z.object({
+    intent: z.literal("delete"),
+    customerContractInvoiceId: z.string().min(1)
+  })
+]);
+
+/** `YYYY-MM-01`: a revenue row is one calendar month. */
+const firstOfMonth = z
+  .string()
+  .regex(
+    /^\d{4}-(0[1-9]|1[0-2])-01$/,
+    "Use the first day of a month (YYYY-MM-01)"
+  );
+
+/** One edit to a Draft revenue plan (plan D11). Rows are keyed by
+ *  (line, month), so no position refs are needed. */
+const revenueEdit = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("setAmount"),
+    customerContractLineId: z.string().min(1),
+    periodStart: firstOfMonth,
+    // A hand edit moves revenue between months; only reconciliation writes a
+    // negative (catch-up) month.
+    amount: z.number().finite().min(0)
+  }),
+  z.object({
+    intent: z.literal("addMonth"),
+    periodStart: firstOfMonth,
+    amounts: z
+      .array(
+        z.object({
+          customerContractLineId: z.string().min(1),
+          amount: z.number().finite().min(0)
+        })
+      )
+      .refine((amounts) => amounts.some((a) => a.amount !== 0), {
+        message: "Enter an amount for at least one line"
+      })
+  }),
+  z.object({ intent: z.literal("deleteMonth"), periodStart: firstOfMonth }),
+  z.object({ intent: z.literal("reset") })
+]);
+
+/** Percentages are percent points (0–100), as the ERP's
+ *  `contractAmendmentChangeValidator` parses them; stored as a fraction by
+ *  `fraction`. */
+const percentPoints = z.number().min(0).max(100);
+
+/** Percent points as the stored fraction, at internal scale — the same
+ *  conversion as the ERP's `percentToFraction`. A bare `/ 100` stores float
+ *  noise (14.3 / 100 = 0.14300000000000002). */
+const fraction = (points: number) => round(points / 100);
+
+const amendmentLine = z
+  .object({
+    revenueType: z.enum(contractRevenueTypes),
+    itemId: z.string().min(1),
+    description: z.string().optional(),
+    quantity: z.number().positive(),
+    rate: z.number().min(0),
+    rateUnit: z.enum(contractRateUnits).optional(),
+    discountPercent: percentPoints,
+    discountEndsOn: isoDate.optional(),
+    taxPercent: percentPoints,
+    startDate: isoDate,
+    endDate: isoDate.optional(),
+    goLiveDate: isoDate.optional(),
+    revenueMethod: z.enum(contractRevenueMethods),
+    revenueStartDate: isoDate.optional(),
+    revenueEndDate: isoDate.optional(),
+    projectId: z.string().optional()
+  })
+  .refine((line) => (line.revenueType === "Recurring") === !!line.rateUnit, {
+    message: "A recurring line needs a rate unit; a one-time line has none",
+    path: ["rateUnit"]
+  });
+
+const amendmentChange = z.discriminatedUnion("op", [
+  z.object({
+    op: z.literal("change"),
+    lineId: z.string().min(1),
+    quantity: z.number().positive().optional(),
+    rate: z.number().min(0).optional(),
+    rateUnit: z.enum(contractRateUnits).optional(),
+    discountPercent: percentPoints.optional(),
+    taxPercent: percentPoints.optional(),
+    description: z.string().optional(),
+    revenueMethod: z.enum(contractRevenueMethods).optional(),
+    projectId: z.string().optional()
+  }),
+  z.object({ op: z.literal("add"), line: amendmentLine }),
+  z.object({ op: z.literal("end"), lineId: z.string().min(1) })
+]);
+
+export const postCustomerContractInput = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("confirm"), ...base }),
+  z.object({ type: z.literal("edit-schedule"), ...base, edit: scheduleEdit }),
+  z.object({ type: z.literal("reset-schedule"), ...base }),
+  z.object({ type: z.literal("edit-revenue"), ...base, edit: revenueEdit }),
+  z.object({
+    type: z.literal("amend"),
+    ...base,
+    amendmentDate: isoDate,
+    effect: z.enum(contractAmendmentEffects),
+    contractType: z.enum(customerContractTypes),
+    reason: z.string().trim().min(1),
+    changes: z.array(amendmentChange).min(1),
+    preview: z.boolean().optional()
+  }),
+  z.object({
+    type: z.literal("cancel"),
+    ...base,
+    endDate: isoDate,
+    reason: z.string().trim().min(1),
+    creditUnusedTime: z.boolean(),
+    preview: z.boolean().optional()
+  }),
+  z.object({ type: z.literal("revert-cancellation"), ...base })
+]);
+
+export type PostCustomerContractInput = z.infer<
+  typeof postCustomerContractInput
+>;
+
+type Payload<T extends PostCustomerContractInput["type"]> = Extract<
+  PostCustomerContractInput,
+  { type: T }
+>;
+
+// ---------------------------------------------------------------------------
+// Helpers
+
+const addDays = (date: string, days: number) =>
+  parseDate(date).add({ days }).toString();
+
+const maxDate = (a: string, b: string) => (a >= b ? a : b);
+
+function refuseUnless(
+  contract: ContractRow,
+  status: Enums["customerContractStatus"],
+  action: string
+) {
+  if (contract.status !== status) {
+    throw new InvalidInputError(
+      `Contract ${contract.customerContractId} is ${contract.status}; only ${
+        status === "Active" ? "an" : "a"
+      } ${status} contract can be ${action}`
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// confirm
+
+async function confirm(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"confirm">
+): Promise<{ customerContractId: string }> {
+  const { companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    // 1. Lock, load, and check the lines.
+    let { contract, lines, existing } = await loadContractForUpdate(
+      trx,
+      companyId,
+      payload.customerContractId
+    );
+    refuseUnless(contract, "Draft", "confirmed");
+    if (lines.length === 0) {
+      throw new InvalidInputError("Add at least one line before confirming");
+    }
+    const items = await trx
+      .selectFrom("item")
+      .select(["id", "type", "readableIdWithRevision"])
+      .where("id", "in", [...new Set(lines.map((line) => line.itemId))])
+      .where("companyId", "=", companyId)
+      .execute();
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const problems: string[] = [];
+    for (const line of lines) {
+      const item = itemById.get(line.itemId);
+      const label = line.description ?? item?.readableIdWithRevision ?? "Line";
+      if (!item) problems.push(`${label}: item not found`);
+      else if (item.type !== "Service") {
+        problems.push(`${label}: only Service items can be on a contract`);
+      }
+      if (line.revenueType === "Recurring" && !line.rateUnit) {
+        problems.push(`${label}: a recurring line needs a rate unit`);
+      }
+    }
+    if (problems.length > 0) throw new InvalidInputError(problems.join("; "));
+
+    const terms = toTerms(contract);
+    const through = horizon(terms, payload.asOf);
+
+    // Billed through must fall on a period end (spec decision 8): a period
+    // is billed elsewhere or here, never half of each. The day before the
+    // start means nothing was billed elsewhere.
+    if (
+      contract.billedThrough !== null &&
+      contract.billedThrough !== addDays(contract.startDate, -1)
+    ) {
+      const periodEnd = periodEndContaining(terms, contract.billedThrough);
+      if (periodEnd !== contract.billedThrough) {
+        throw new InvalidInputError(
+          periodEnd
+            ? `Billed through (${contract.billedThrough}) must fall on the end of a billing period; that period ends on ${periodEnd}`
+            : `Billed through (${contract.billedThrough}) is before the contract starts`
+        );
+      }
+    }
+
+    // 2. Materialize an unedited schedule, or check an edited one still
+    // bills every line's total. An open-ended contract's persisted schedule
+    // was planned to an earlier horizon, so it is compared over the
+    // Recurring periods it covers (a One-time row's service window can run
+    // far past them).
+    const lineLabel = (lineId: string) => {
+      const line = lines.find((l) => l.id === lineId);
+      return (
+        line?.description ??
+        (line ? itemById.get(line.itemId)?.readableIdWithRevision : null) ??
+        lineId
+      );
+    };
+    if (existing.length === 0) {
+      await materializeSchedule(trx, scope, contract, lines, through);
+    } else {
+      const compareThrough = terms.endDate
+        ? through
+        : (lastRecurringPeriodEnd(existing, lines) ?? through);
+      const { ok, residuals } = validateScheduleEdit(
+        lineTotals(
+          planInvoiceSchedule(terms, toLineTerms(lines), compareThrough)
+        ),
+        existing
+      );
+      if (!ok) {
+        const detail = [...residuals]
+          .filter(([, residual]) => !equals(residual, 0))
+          .map(([lineId, residual]) => `${lineLabel(lineId)}: ${residual}`);
+        throw new InvalidInputError(
+          `The edited invoice schedule no longer bills each line's total${
+            detail.length > 0
+              ? ` (${detail.join("; ")} not on any invoice)`
+              : ""
+          }. Fix the edits or reset the schedule.`,
+          { residuals: Object.fromEntries(residuals) }
+        );
+      }
+    }
+
+    // 2b. A revenue plan edited while Draft must still recognize what each
+    // line bills (D11). Checked before the discount ends below re-plan any
+    // line, so an edit is never hidden by a reconciliation.
+    const revenueStored = await hasStoredRevenue(trx, scope, contract.id);
+    if (revenueStored) {
+      await refuseRevenueResiduals(trx, scope, contract.id, lineLabel);
+    }
+    const revenueBefore = revenueStored
+      ? { lines, billed: await billedTotals(trx, scope, contract.id) }
+      : null;
+
+    // 3. Post and Send via Stripe needs the billing customer linked.
+    const settings = await trx
+      .selectFrom("companySettings")
+      .select("invoiceAutomation")
+      .where("id", "=", companyId)
+      .executeTakeFirst();
+    if (!settings) throw new NotFoundError("Company settings not found");
+    const mode = effectiveInvoiceAutomation(
+      contract.invoiceAutomation,
+      settings.invoiceAutomation
+    );
+    if (mode === "Post and Send via Stripe") {
+      const billingCustomerId =
+        contract.invoiceCustomerId ?? contract.customerId;
+      const link = await trx
+        .selectFrom("externalIntegrationMapping")
+        .select("id")
+        .where("entityType", "=", "customer")
+        .where("entityId", "=", billingCustomerId)
+        .where("integration", "=", STRIPE_CONNECT_INTEGRATION)
+        .where("companyId", "=", companyId)
+        .where("externalId", "is not", null)
+        .executeTakeFirst();
+      if (!link) {
+        throw new InvalidInputError(
+          "The billing customer is not linked to a Stripe customer. Link them before confirming a contract that sends its invoices via Stripe."
+        );
+      }
+    }
+
+    // 4. A discount that ends becomes an amendment: the line ends that day
+    // and a full-price copy starts the next. One reconciliation from the
+    // earliest change re-plans Planned invoices from that date on against
+    // every new line at once.
+    const discountFrom = await applyDiscountEnds(trx, scope, contract);
+    if (discountFrom !== null) {
+      const reloaded = await loadContractForUpdate(trx, companyId, contract.id);
+      contract = reloaded.contract;
+      lines = reloaded.lines;
+      existing = reloaded.existing;
+      await applyReconciliation(
+        trx,
+        scope,
+        contract.id,
+        reconcileContractSchedule({
+          terms: toTerms(contract),
+          lines: toLineTerms(lines),
+          existing,
+          from: discountFrom,
+          through: reconcileThrough(through, existing, lines)
+        })
+      );
+    }
+
+    // 4b. The revenue plan: written now when none is stored, else re-planned
+    // for the lines a discount end split (D9). Then checked again — a plan
+    // written from lines whose revenue dates bill nothing cannot conserve.
+    if (!revenueBefore) {
+      await materializeRevenue(trx, scope, contract, lines);
+    } else if (discountFrom !== null) {
+      await reconcileRevenue(
+        trx,
+        scope,
+        contract,
+        lines,
+        changedRevenueLines(revenueBefore, {
+          lines,
+          billed: await billedTotals(trx, scope, contract.id)
+        }),
+        discountFrom
+      );
+    }
+    await refuseRevenueResiduals(trx, scope, contract.id, lineLabel);
+
+    // 4c. A migrated contract's opening position (D8).
+    await writeOpeningEntries(trx, scope, contract);
+
+    // 5. Active.
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("customerContract")
+      .set({
+        status: "Active",
+        confirmedAt: now,
+        confirmedBy: userId,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { customerContractId: contract.id };
+  });
+}
+
+/** Refuses when a line's stored revenue no longer totals what its invoice
+ *  schedule bills — the same shape as the invoice residual refusal, with
+ *  `revenueResiduals` (billed − Σ revenue, per line). */
+async function refuseRevenueResiduals(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  lineLabel: (lineId: string) => string
+): Promise<void> {
+  const billed = await billedTotals(trx, scope, contractId);
+  const rows = await loadRevenue(trx, scope, contractId);
+  const { ok, residuals } = validateRevenueEdit(billed.totals, rows);
+  if (ok) return;
+  const detail = [...residuals].map(
+    ([lineId, residual]) => `${lineLabel(lineId)}: ${residual}`
+  );
+  throw new InvalidInputError(
+    `The revenue plan no longer recognizes each line's billed total (${detail.join(
+      "; "
+    )} not in any month). Fix the edits or reset the revenue plan.`,
+    { revenueResiduals: Object.fromEntries(residuals) }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// edit-schedule / reset-schedule
+
+async function editSchedule(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"edit-schedule">
+): Promise<{ customerContractId: string }> {
+  const { companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const loaded = await loadContractForUpdate(
+      trx,
+      companyId,
+      payload.customerContractId
+    );
+    const { contract } = loaded;
+    refuseUnless(contract, "Draft", "edited");
+
+    // The first edit materializes the computed schedule.
+    let { existing, invoices } = loaded;
+    if (existing.length === 0) {
+      await materializeSchedule(
+        trx,
+        scope,
+        contract,
+        loaded.lines,
+        horizon(toTerms(contract), payload.asOf)
+      );
+      ({ existing, invoices } = await loadSchedule(
+        trx,
+        companyId,
+        contract.id
+      ));
+    }
+
+    // An unedited Draft's schedule is computed live, so the page can only name
+    // its invoices and rows by position: `planned:<invoiceDate>` and
+    // `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]`. Resolve
+    // those against the rows materialized above.
+    const PLANNED_REF = "planned:";
+    const resolveInvoiceId = (ref: string) => {
+      if (!ref.startsWith(PLANNED_REF)) return ref;
+      const invoiceDate = ref.slice(PLANNED_REF.length);
+      return (
+        invoices.find(
+          (i) => i.status === "Planned" && i.invoiceDate === invoiceDate
+        )?.id ?? ref
+      );
+    };
+    const resolveRowId = (ref: string) => {
+      if (!ref.startsWith(PLANNED_REF)) return ref;
+      const [invoiceDate, lineId, periodStart, adjustment] = ref
+        .slice(PLANNED_REF.length)
+        .split(":");
+      const invoiceId = resolveInvoiceId(`${PLANNED_REF}${invoiceDate}`);
+      return (
+        existing.find(
+          (r) =>
+            r.invoiceId === invoiceId &&
+            r.lineId === lineId &&
+            r.periodStart === periodStart &&
+            r.isAdjustment === (adjustment === "adjustment")
+        )?.id ?? ref
+      );
+    };
+
+    const plannedInvoice = (ref: string) => {
+      const id = resolveInvoiceId(ref);
+      const invoice = invoices.find((i) => i.id === id);
+      if (!invoice) throw new NotFoundError("Planned invoice not found");
+      if (invoice.status !== "Planned") {
+        throw new InvalidInputError(
+          `The ${invoice.invoiceDate} invoice is ${invoice.status}; only a Planned invoice can be edited`
+        );
+      }
+      return invoice;
+    };
+    const plannedRow = (ref: string) => {
+      const id = resolveRowId(ref);
+      const row = existing.find((r) => r.id === id);
+      if (!row) throw new NotFoundError("Invoice line not found");
+      if (!row.invoiceId) {
+        throw new InvalidInputError("A credited row cannot be edited");
+      }
+      plannedInvoice(row.invoiceId);
+      return row;
+    };
+    /** The Planned invoice of each date, created (as edited) when missing. */
+    const plannedInvoicesOn = (dates: string[]) =>
+      resolveInvoiceIds(
+        trx,
+        scope,
+        contract.id,
+        dates.map((invoiceDate) => ({
+          invoiceDate,
+          status: "Planned" as const
+        })),
+        { isEdited: true }
+      );
+    const moveRows = async (rowIds: string[], invoiceId: string) => {
+      await trx
+        .updateTable("customerContractInvoiceLine")
+        .set({
+          customerContractInvoiceId: invoiceId,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "in", rowIds)
+        .where("customerContractId", "=", contract.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    };
+
+    const touched = new Set<string>();
+    const lineById = new Map(loaded.lines.map((line) => [line.id, line]));
+    const contractLine = (lineId: string) => {
+      const line = lineById.get(lineId);
+      if (!line) throw new NotFoundError("Contract line not found");
+      return line;
+    };
+    /** The line's row on another invoice nearest to `invoiceDate` (an
+     *  earlier one wins a tie): where a new cell takes its period and price. */
+    const nearestRow = (
+      lineId: string,
+      invoiceId: string,
+      invoiceDate: string
+    ) => {
+      let best: { row: (typeof existing)[number]; distance: number } | null =
+        null;
+      for (const row of existing) {
+        if (
+          row.lineId !== lineId ||
+          row.isAdjustment ||
+          row.invoiceId === invoiceId ||
+          row.invoiceDate === null
+        ) {
+          continue;
+        }
+        const distance = Math.abs(
+          parseDate(row.invoiceDate).compare(parseDate(invoiceDate))
+        );
+        if (
+          !best ||
+          distance < best.distance ||
+          (distance === best.distance &&
+            row.invoiceDate < best.row.invoiceDate!)
+        ) {
+          best = { row, distance };
+        }
+      }
+      return best?.row ?? null;
+    };
+    /** Σ the non-adjustment rows of one cell (invoice × line). */
+    const cellRows = (invoiceId: string, lineId: string) =>
+      existing.filter(
+        (row) =>
+          row.invoiceId === invoiceId &&
+          row.lineId === lineId &&
+          !row.isAdjustment
+      );
+    /**
+     * Each cell becomes ONE non-adjustment row of its amount; 0 removes the
+     * cell's rows (an invoice left empty is deleted below). The row keeps the
+     * cell's period, else takes the line's nearest planned period, else the
+     * invoice date. Units are rescaled like a split: units = source units ×
+     * amount ÷ (quantity × source unit price × (1 − discount)); with no
+     * source to price from it is 1 unit at the amount. One delete and one
+     * insert for every cell.
+     */
+    const setCells = async (
+      cells: {
+        invoiceId: string;
+        invoiceDate: string;
+        lineId: string;
+        amount: number;
+      }[]
+    ) => {
+      const deleteIds: string[] = [];
+      const inserts: ReturnType<typeof scheduleRowValues>[] = [];
+      for (const cell of cells) {
+        const line = contractLine(cell.lineId);
+        const own = cellRows(cell.invoiceId, cell.lineId);
+        deleteIds.push(...own.map((row) => row.id));
+        touched.add(cell.invoiceId);
+        const amount = round(cell.amount);
+        if (equals(amount, 0)) continue;
+
+        const nearest =
+          own.length > 0
+            ? null
+            : nearestRow(cell.lineId, cell.invoiceId, cell.invoiceDate);
+        const source = own.length > 0 ? own : nearest ? [nearest] : [];
+        const periodStart =
+          source.length > 0
+            ? source.map((row) => row.periodStart).sort()[0]!
+            : cell.invoiceDate;
+        const periodEnd =
+          source.length > 0
+            ? source
+                .map((row) => row.periodEnd)
+                .sort()
+                .at(-1)!
+            : cell.invoiceDate;
+        const sourceUnits = source.reduce((sum, row) => sum + row.units, 0);
+        const sourceUnitPrice = source.reduce(
+          (sum, row) => sum + row.unitPrice,
+          0
+        );
+        const fullAmount =
+          Number(line.quantity) *
+          sourceUnitPrice *
+          (1 - Number(line.discountPercent));
+        const priced = source.length > 0 && !equals(fullAmount, 0);
+        inserts.push(
+          scheduleRowValues(
+            scope,
+            contract.id,
+            {
+              lineId: cell.lineId,
+              periodStart,
+              periodEnd,
+              units: priced ? (sourceUnits * amount) / fullAmount : 1,
+              unitPrice: priced ? sourceUnitPrice : amount,
+              amount,
+              isAdjustment: false
+            },
+            { invoiceId: cell.invoiceId, memoId: null }
+          )
+        );
+      }
+      if (deleteIds.length > 0) {
+        await trx
+          .deleteFrom("customerContractInvoiceLine")
+          .where("id", "in", deleteIds)
+          .where("customerContractId", "=", contract.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      await insertScheduleRows(trx, inserts);
+    };
+
+    const { edit } = payload;
+    switch (edit.intent) {
+      case "move": {
+        const invoice = plannedInvoice(edit.customerContractInvoiceId);
+        const other = invoices.find(
+          (i) =>
+            i.id !== invoice.id &&
+            i.status === "Planned" &&
+            i.invoiceDate === edit.invoiceDate
+        );
+        if (other) {
+          // Merge into the Planned invoice already on that date.
+          const rowIds = existing
+            .filter((row) => row.invoiceId === invoice.id)
+            .map((row) => row.id);
+          if (rowIds.length > 0) await moveRows(rowIds, other.id);
+          touched.add(other.id);
+        } else {
+          await trx
+            .updateTable("customerContractInvoice")
+            .set({ invoiceDate: edit.invoiceDate })
+            .where("id", "=", invoice.id)
+            .where("customerContractId", "=", contract.id)
+            .where("companyId", "=", companyId)
+            .execute();
+          touched.add(invoice.id);
+        }
+        break;
+      }
+      case "split": {
+        const row = plannedRow(edit.customerContractInvoiceLineId);
+        const total = round(
+          edit.installments.reduce((sum, i) => sum + i.amount, 0)
+        );
+        if (!equals(total, round(row.amount))) {
+          throw new InvalidInputError(
+            `Installments total ${total}; the line must still total ${round(row.amount)}`
+          );
+        }
+        const ids = await plannedInvoicesOn(
+          edit.installments.map((i) => i.invoiceDate)
+        );
+        await insertScheduleRows(
+          trx,
+          edit.installments.map((installment) => {
+            const units =
+              row.amount === 0
+                ? row.units / edit.installments.length
+                : (row.units * installment.amount) / row.amount;
+            const invoiceId = ids.get(
+              invoiceKey(installment.invoiceDate, "Planned")
+            )!;
+            touched.add(invoiceId);
+            return scheduleRowValues(
+              scope,
+              contract.id,
+              {
+                lineId: row.lineId,
+                periodStart: row.periodStart,
+                periodEnd: row.periodEnd,
+                units,
+                unitPrice: row.unitPrice,
+                amount: installment.amount,
+                isAdjustment: row.isAdjustment
+              },
+              { invoiceId, memoId: null }
+            );
+          })
+        );
+        await trx
+          .deleteFrom("customerContractInvoiceLine")
+          .where("id", "=", row.id)
+          .where("customerContractId", "=", contract.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        touched.add(row.invoiceId!);
+        break;
+      }
+      case "merge": {
+        if (edit.sourceInvoiceId === edit.targetInvoiceId) {
+          throw new InvalidInputError(
+            "Choose a different invoice to merge into"
+          );
+        }
+        const source = plannedInvoice(edit.sourceInvoiceId);
+        const target = plannedInvoice(edit.targetInvoiceId);
+        const rowIds = existing
+          .filter((row) => row.invoiceId === source.id)
+          .map((row) => row.id);
+        if (rowIds.length > 0) await moveRows(rowIds, target.id);
+        touched.add(target.id);
+        break;
+      }
+      case "moveLine": {
+        const row = plannedRow(edit.customerContractInvoiceLineId);
+        const ids = await plannedInvoicesOn([edit.invoiceDate]);
+        const invoiceId = ids.get(invoiceKey(edit.invoiceDate, "Planned"))!;
+        if (invoiceId !== row.invoiceId) await moveRows([row.id], invoiceId);
+        touched.add(invoiceId);
+        touched.add(row.invoiceId!);
+        break;
+      }
+      case "setAmount": {
+        const invoice = plannedInvoice(edit.customerContractInvoiceId);
+        await setCells([
+          {
+            invoiceId: invoice.id,
+            invoiceDate: invoice.invoiceDate,
+            lineId: edit.customerContractLineId,
+            amount: edit.amount
+          }
+        ]);
+        break;
+      }
+      case "addInvoice": {
+        // One amount per line; every line must be on the contract before an
+        // invoice is created for it.
+        const amounts = new Map<string, number>();
+        for (const { customerContractLineId, amount } of edit.amounts) {
+          contractLine(customerContractLineId);
+          amounts.set(
+            customerContractLineId,
+            (amounts.get(customerContractLineId) ?? 0) + amount
+          );
+        }
+        // A Planned invoice already on the date takes the amounts: each adds
+        // to what its cell already bills.
+        const ids = await plannedInvoicesOn([edit.invoiceDate]);
+        const invoiceId = ids.get(invoiceKey(edit.invoiceDate, "Planned"))!;
+        await setCells(
+          [...amounts]
+            .filter(([, amount]) => amount > 0)
+            .map(([lineId, amount]) => ({
+              invoiceId,
+              invoiceDate: edit.invoiceDate,
+              lineId,
+              amount:
+                cellRows(invoiceId, lineId).reduce(
+                  (sum, row) => sum + row.amount,
+                  0
+                ) + amount
+            }))
+        );
+        break;
+      }
+      case "delete": {
+        // The invoice goes with its rows (`deleteEmptyPlannedInvoices`
+        // below); each line it billed shows a residual.
+        const invoice = plannedInvoice(edit.customerContractInvoiceId);
+        await trx
+          .deleteFrom("customerContractInvoiceLine")
+          .where("customerContractInvoiceId", "=", invoice.id)
+          .where("customerContractId", "=", contract.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        break;
+      }
+    }
+
+    if (touched.size > 0) {
+      await trx
+        .updateTable("customerContractInvoice")
+        .set({
+          isEdited: true,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "in", [...touched])
+        .where("customerContractId", "=", contract.id)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Planned")
+        .execute();
+    }
+    await deleteEmptyPlannedInvoices(trx, scope, contract.id);
+
+    return { customerContractId: contract.id };
+  });
+}
+
+async function resetSchedule(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"reset-schedule">
+): Promise<{ customerContractId: string }> {
+  const { companyId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const { contract } = await loadContractForUpdate(
+      trx,
+      companyId,
+      payload.customerContractId
+    );
+    refuseUnless(contract, "Draft", "reset");
+    await trx
+      .deleteFrom("customerContractInvoiceLine")
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    await trx
+      .deleteFrom("customerContractInvoice")
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { customerContractId: contract.id };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// edit-revenue (plan D11)
+
+/** Edits a Draft's revenue plan. Rows are keyed by (line, month). The first
+ *  edit writes the live plan (D1), then applies the edit; `reset` deletes
+ *  every row, so the page plans live again. */
+async function editRevenue(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"edit-revenue">
+): Promise<{ customerContractId: string }> {
+  const { companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const { contract, lines } = await loadContractForUpdate(
+      trx,
+      companyId,
+      payload.customerContractId
+    );
+    refuseUnless(contract, "Draft", "edited");
+    const { edit } = payload;
+
+    const deleteRevenue = () =>
+      trx
+        .deleteFrom("customerContractRevenue")
+        .where("customerContractId", "=", contract.id)
+        .where("companyId", "=", companyId);
+
+    if (edit.intent === "reset") {
+      await deleteRevenue().execute();
+      return { customerContractId: contract.id };
+    }
+
+    const lineIds = new Set(lines.map((line) => line.id));
+    const named =
+      edit.intent === "setAmount"
+        ? [edit.customerContractLineId]
+        : edit.intent === "addMonth"
+          ? edit.amounts.map((a) => a.customerContractLineId)
+          : [];
+    if (named.some((lineId) => !lineIds.has(lineId))) {
+      throw new NotFoundError("Contract line not found");
+    }
+    const { periodStart } = edit;
+    let periodEnd: string;
+    try {
+      periodEnd = monthEnd(periodStart);
+    } catch {
+      throw new InvalidInputError(`${periodStart} is not a date`);
+    }
+    if (monthStart(periodStart) !== periodStart) {
+      throw new InvalidInputError(
+        `${periodStart} is not the first day of a month`
+      );
+    }
+
+    // The first edit writes the live plan.
+    if (!(await hasStoredRevenue(trx, scope, contract.id))) {
+      await materializeRevenue(trx, scope, contract, lines, {
+        through: horizon(toTerms(contract), payload.asOf)
+      });
+    }
+
+    // A month before "Recognize revenue from" was recognized elsewhere.
+    const status: Enums["contractRevenueStatus"] =
+      contract.recognizeRevenueFrom !== null &&
+      periodStart < monthStart(contract.recognizeRevenueFrom)
+        ? "Recognized Externally"
+        : "Planned";
+    const rowValues = (lineId: string, amount: number) => ({
+      customerContractId: contract.id,
+      customerContractLineId: lineId,
+      periodStart,
+      periodEnd,
+      amount: round(amount),
+      status,
+      companyId,
+      createdBy: userId
+    });
+    const conflictKey = [
+      "companyId",
+      "customerContractLineId",
+      "periodStart"
+    ] as const;
+
+    switch (edit.intent) {
+      case "setAmount": {
+        if (equals(round(edit.amount), 0)) {
+          await deleteRevenue()
+            .where("customerContractLineId", "=", edit.customerContractLineId)
+            .where("periodStart", "=", periodStart)
+            .execute();
+          break;
+        }
+        await trx
+          .insertInto("customerContractRevenue")
+          .values(rowValues(edit.customerContractLineId, edit.amount))
+          .onConflict((oc) =>
+            oc.columns([...conflictKey]).doUpdateSet({
+              amount: round(edit.amount),
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+          )
+          .execute();
+        break;
+      }
+      case "addMonth": {
+        // Each amount adds to what the line already recognizes that month.
+        const amounts = new Map<string, number>();
+        for (const { customerContractLineId, amount } of edit.amounts) {
+          amounts.set(
+            customerContractLineId,
+            (amounts.get(customerContractLineId) ?? 0) + amount
+          );
+        }
+        const values = [...amounts]
+          .filter(([, amount]) => !equals(round(amount), 0))
+          .map(([lineId, amount]) => rowValues(lineId, amount));
+        if (values.length === 0) break;
+        await trx
+          .insertInto("customerContractRevenue")
+          .values(values)
+          .onConflict((oc) =>
+            oc.columns([...conflictKey]).doUpdateSet({
+              amount: sql`"customerContractRevenue"."amount" + excluded."amount"`,
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+          )
+          .execute();
+        // A month the amounts brought to 0 has nothing left to recognize.
+        await deleteRevenue()
+          .where("periodStart", "=", periodStart)
+          .where("amount", "=", 0)
+          .execute();
+        break;
+      }
+      case "deleteMonth": {
+        await deleteRevenue().where("periodStart", "=", periodStart).execute();
+        break;
+      }
+    }
+
+    return { customerContractId: contract.id };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// amend (Task 10)
+
+/** Thrown inside a preview's transaction so nothing commits; carries the
+ *  preview out of it. */
+class PreviewRollback<T> extends Error {
+  constructor(readonly result: T) {
+    super("preview rollback");
+  }
+}
+
+/** Runs `body` in one transaction. A preview throws `PreviewRollback`, which
+ *  rolls everything back and is returned here as the result. */
+async function inTransaction<R, P>(
+  db: Db,
+  body: (trx: KyselyTx) => Promise<R>
+): Promise<R | P> {
+  try {
+    return await db.transaction().execute(body);
+  } catch (error) {
+    if (error instanceof PreviewRollback) return error.result as P;
+    throw error;
+  }
+}
+
+type ScheduleRowView = {
+  lineId: string;
+  periodStart: string;
+  periodEnd: string;
+  units: number;
+  unitPrice: number;
+  amount: number;
+  isAdjustment: boolean;
+};
+
+export type ContractAmendmentPreview = {
+  effectiveDate: string;
+  adjustments: ScheduleRowView[];
+  /** The first two Planned invoices on or after the effective date. */
+  nextInvoices: {
+    invoiceDate: string;
+    total: number;
+    rows: ScheduleRowView[];
+  }[];
+  suggestedType: Enums["customerContractType"];
+  /** Edited invoices the amendment deletes and re-plans. */
+  resetsEditedInvoices: number;
+};
+
+const rowView = (row: ScheduleRowView): ScheduleRowView => ({
+  lineId: row.lineId,
+  periodStart: row.periodStart,
+  periodEnd: row.periodEnd,
+  units: row.units,
+  unitPrice: row.unitPrice,
+  amount: row.amount,
+  isAdjustment: row.isAdjustment
+});
+
+/** Effective dates of an amendment for one existing line. A Recurring line
+ *  changes from the effective date (or its own start, when later). A One-time
+ *  line has no time to split: the replacement takes over the whole line, so
+ *  the old one ends the day before it starts and plans nothing. */
+function lineCutover(line: ContractLineRow, effective: string) {
+  if (line.revenueType === "One-time") {
+    return { oldEnd: addDays(line.startDate, -1), newStart: line.startDate };
+  }
+  const newStart = maxDate(effective, line.startDate);
+  return { oldEnd: addDays(newStart, -1), newStart };
+}
+
+async function amend(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"amend">
+): Promise<{ amendmentId: string } | ContractAmendmentPreview> {
+  const { companyId, userId } = scope;
+  return inTransaction<{ amendmentId: string }, ContractAmendmentPreview>(
+    db,
+    async (trx) => {
+      const loaded = await loadContractForUpdate(
+        trx,
+        companyId,
+        payload.customerContractId
+      );
+      const { contract, lines, existing, invoices } = loaded;
+      refuseUnless(contract, "Active", "amended");
+      // A contract confirmed before revenue was stored gets its plan written
+      // from the terms it had, so the reconciliation below keeps its past.
+      await ensureRevenue(trx, scope, contract, lines);
+      const billedBefore = await billedTotals(trx, scope, contract.id);
+
+      const terms = toTerms(contract);
+      const through = reconcileThrough(
+        horizon(terms, payload.asOf),
+        existing,
+        lines
+      );
+      const effective = amendmentEffectiveDate(
+        terms,
+        payload.effect,
+        payload.amendmentDate,
+        through
+      );
+
+      const lineById = new Map(lines.map((line) => [line.id, line]));
+      const invoicedLineIds = new Set(
+        existing
+          .filter(
+            (row) => row.invoiceStatus === "Invoiced" && !row.isAdjustment
+          )
+          .map((row) => row.lineId)
+      );
+      const label = (line: ContractLineRow) =>
+        line.description ?? `Line ${line.id}`;
+      const touchedLines = new Set<string>();
+      const openLine = (lineId: string) => {
+        const line = lineById.get(lineId);
+        if (!line) throw new NotFoundError("Contract line not found");
+        if (touchedLines.has(lineId)) {
+          throw new InvalidInputError(`${label(line)} is changed twice`);
+        }
+        touchedLines.add(lineId);
+        if (line.endDate !== null && line.endDate < effective) {
+          throw new InvalidInputError(
+            `${label(line)} already ended on ${line.endDate}`
+          );
+        }
+        if (line.revenueType === "One-time" && invoicedLineIds.has(line.id)) {
+          throw new InvalidInputError(
+            `${label(line)} is a one-time line that has been invoiced; it cannot be changed`
+          );
+        }
+        return line;
+      };
+
+      // Added lines must be Service items of this company.
+      const added = payload.changes.flatMap((change) =>
+        change.op === "add" ? [change.line] : []
+      );
+      if (added.length > 0) {
+        const items = await trx
+          .selectFrom("item")
+          .select(["id", "type"])
+          .where("id", "in", [...new Set(added.map((line) => line.itemId))])
+          .where("companyId", "=", companyId)
+          .execute();
+        const typeById = new Map(items.map((item) => [item.id, item.type]));
+        for (const line of added) {
+          const type = typeById.get(line.itemId);
+          if (!type) throw new NotFoundError("Item not found");
+          if (type !== "Service") {
+            throw new InvalidInputError(
+              "Only Service items can be on a contract"
+            );
+          }
+        }
+      }
+
+      // The next line set: end dates to write and lines to insert.
+      const ends: { id: string; endDate: string }[] = [];
+      const inserts: { fields: LineFields; overrides: Partial<LineFields> }[] =
+        [];
+      for (const change of payload.changes) {
+        if (change.op === "change") {
+          const line = openLine(change.lineId);
+          if (
+            line.revenueType === "One-time" &&
+            change.rateUnit !== undefined
+          ) {
+            throw new InvalidInputError(
+              `${label(line)} is a one-time line; it has no rate unit`
+            );
+          }
+          const { oldEnd, newStart } = lineCutover(line, effective);
+          ends.push({ id: line.id, endDate: oldEnd });
+          inserts.push({
+            fields: line,
+            overrides: {
+              ...(change.quantity !== undefined && {
+                quantity: change.quantity
+              }),
+              ...(change.rate !== undefined && { rate: change.rate }),
+              ...(change.rateUnit !== undefined && {
+                rateUnit: change.rateUnit
+              }),
+              ...(change.discountPercent !== undefined && {
+                discountPercent: fraction(change.discountPercent)
+              }),
+              ...(change.taxPercent !== undefined && {
+                taxPercent: fraction(change.taxPercent)
+              }),
+              ...(change.description !== undefined && {
+                description: change.description || null
+              }),
+              ...(change.revenueMethod !== undefined && {
+                revenueMethod: change.revenueMethod
+              }),
+              ...(change.projectId !== undefined && {
+                projectId: change.projectId || null
+              }),
+              ...carriedRevenueDates(line, newStart),
+              startDate: newStart,
+              discountEndsOn:
+                line.discountEndsOn !== null && line.discountEndsOn >= newStart
+                  ? line.discountEndsOn
+                  : null,
+              amendsLineId: line.id
+            }
+          });
+        } else if (change.op === "end") {
+          const line = openLine(change.lineId);
+          ends.push({
+            id: line.id,
+            endDate: lineCutover(line, effective).oldEnd
+          });
+        } else {
+          const line = change.line;
+          const startDate = maxDate(line.startDate, effective);
+          const name = line.description || "The added line";
+          if (line.endDate !== undefined && line.endDate < startDate) {
+            throw new InvalidInputError(
+              `${name} ends on ${line.endDate}, before it starts on ${startDate}`
+            );
+          }
+          if (
+            line.discountEndsOn !== undefined &&
+            line.discountEndsOn < startDate
+          ) {
+            throw new InvalidInputError(
+              `${name}'s discount ends on ${line.discountEndsOn}, before the line starts on ${startDate}`
+            );
+          }
+          inserts.push({
+            fields: {
+              customerContractId: contract.id,
+              revenueType: line.revenueType,
+              itemId: line.itemId,
+              description: line.description || null,
+              quantity: line.quantity,
+              rate: line.rate,
+              rateUnit: line.rateUnit ?? null,
+              discountPercent: fraction(line.discountPercent),
+              discountEndsOn: line.discountEndsOn ?? null,
+              taxPercent: fraction(line.taxPercent),
+              startDate,
+              endDate: line.endDate ?? null,
+              goLiveDate: line.goLiveDate ?? null,
+              revenueMethod: line.revenueMethod,
+              revenueStartDate: line.revenueStartDate ?? null,
+              revenueEndDate: line.revenueEndDate ?? null,
+              amendmentId: null,
+              amendsLineId: null,
+              projectId: line.projectId || null,
+              sortOrder: null,
+              customFields: null
+            },
+            overrides: {}
+          });
+        }
+      }
+
+      // Suggested type, from the recurring value per period before and after.
+      const endById = new Map(ends.map((end) => [end.id, end.endDate]));
+      const before = recurringValuePerPeriod(
+        toLineTerms(lines),
+        contract.billingFrequency,
+        effective
+      );
+      const after = recurringValuePerPeriod(
+        [
+          ...toLineTerms(
+            lines.map((line) => ({
+              ...line,
+              endDate: endById.get(line.id) ?? line.endDate
+            }))
+          ),
+          ...toLineTerms(
+            inserts.map(({ fields, overrides }, index) => ({
+              ...fields,
+              ...overrides,
+              id: `new-${index}`
+            }))
+          )
+        ],
+        contract.billingFrequency,
+        effective
+      );
+      const suggestedType = suggestAmendmentType(before, after);
+
+      // Write: the amendment, the end dates, the new lines.
+      const amendment = await trx
+        .insertInto("customerContractAmendment")
+        .values({
+          customerContractId: contract.id,
+          amendmentDate: effective,
+          effect: payload.effect,
+          contractType: payload.contractType,
+          reason: payload.reason,
+          previousState: null,
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+      await setLineEndDates(trx, scope, contract.id, ends);
+      if (inserts.length > 0) {
+        await trx
+          .insertInto("customerContractLine")
+          .values(
+            inserts.map(({ fields, overrides }) =>
+              copyLineValues(scope, fields, {
+                ...overrides,
+                amendmentId: amendment.id
+              })
+            )
+          )
+          .execute();
+      }
+
+      // A discount on a new line that ends inside it is split off now, as at
+      // confirm — nothing else would ever end it. Each split starts after
+      // the effective date, so the one reconciliation below covers it.
+      await applyDiscountEnds(trx, scope, contract);
+
+      // Reconcile the schedule from the effective date.
+      const next = await loadContractForUpdate(trx, companyId, contract.id);
+      const result = reconcileContractSchedule({
+        terms: toTerms(next.contract),
+        lines: toLineTerms(next.lines),
+        existing: next.existing,
+        from: effective,
+        through
+      });
+      const editedIds = new Set(
+        invoices.filter((invoice) => invoice.isEdited).map((i) => i.id)
+      );
+      const resetsEditedInvoices = result.deleteInvoiceIds.filter((id) =>
+        editedIds.has(id)
+      ).length;
+      await applyReconciliation(trx, scope, contract.id, result);
+
+      // Reconcile the revenue of every line the amendment changed (D9).
+      await reconcileRevenue(
+        trx,
+        scope,
+        next.contract,
+        next.lines,
+        changedRevenueLines(
+          { lines, billed: billedBefore },
+          {
+            lines: next.lines,
+            billed: await billedTotals(trx, scope, contract.id)
+          }
+        ),
+        effective
+      );
+
+      if (payload.preview) {
+        const after = await loadSchedule(trx, companyId, contract.id);
+        const nextInvoices = after.invoices
+          .filter(
+            (invoice) =>
+              invoice.status === "Planned" && invoice.invoiceDate >= effective
+          )
+          .slice(0, 2)
+          .map((invoice) => {
+            const rows = after.existing
+              .filter((row) => row.invoiceId === invoice.id)
+              .map(rowView);
+            return {
+              invoiceDate: invoice.invoiceDate,
+              total: round(rows.reduce((sum, row) => sum + row.amount, 0)),
+              rows
+            };
+          });
+        throw new PreviewRollback<ContractAmendmentPreview>({
+          effectiveDate: effective,
+          adjustments: result.adjustments.map(rowView),
+          nextInvoices,
+          suggestedType,
+          resetsEditedInvoices
+        });
+      }
+
+      return { amendmentId: amendment.id };
+    }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// cancel / revert-cancellation (Task 11)
+
+/** What a cancellation changed, stored on its amendment so it can be
+ *  reverted (plan decision 11). */
+const previousStateSchema = z.object({
+  contractEndDate: z.string().nullable(),
+  renewal: z.enum(["Renew", "End"]),
+  lineEndDates: z.record(z.string(), z.string().nullable()),
+  /** The revenue end of every line whose revenue end the new end clamped
+   *  (`setLineEndDates`). Absent on cancellations recorded before it. */
+  lineRevenueEndDates: z.record(z.string(), z.string()).optional()
+});
+
+type PreviousState = z.infer<typeof previousStateSchema>;
+
+const CANCELLATION_REASON_PREFIX = "Cancellation";
+
+export type ContractCancellationPreview = {
+  /** The unused billed time a credit memo would credit (positive). */
+  credit: number;
+  creditAvailable: boolean;
+  /** Planned invoices the cancellation deletes. */
+  removedInvoices: number;
+};
+
+export type ContractCancellationResult = {
+  customerContractId: string;
+  /** The Draft credit memo, when unused time was credited. */
+  memoId: string | null;
+  memoReadableId: string | null;
+};
+
+async function cancelContractWrites(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"cancel">
+): Promise<ContractCancellationResult | ContractCancellationPreview> {
+  const { companyId, userId } = scope;
+  const { endDate } = payload;
+
+  return inTransaction<ContractCancellationResult, ContractCancellationPreview>(
+    db,
+    async (trx) => {
+      // 1. Lock, load, refuse.
+      const { contract, lines, existing } = await loadContractForUpdate(
+        trx,
+        companyId,
+        payload.customerContractId
+      );
+      refuseUnless(contract, "Active", "cancelled");
+      if (contract.endDate !== null && endDate >= contract.endDate) {
+        throw new InvalidInputError(
+          `The contract already ends on ${contract.endDate}; choose an earlier end date`
+        );
+      }
+      if (endDate < addDays(contract.startDate, -1)) {
+        throw new InvalidInputError(
+          `The end date can be at most one day before the contract starts (${contract.startDate})`
+        );
+      }
+      if (endDate < contract.startDate) {
+        const invoiced = existing
+          .filter((row) => row.invoiceStatus === "Invoiced")
+          .map((row) => row.periodStart)
+          .sort();
+        if (invoiced.length > 0) {
+          throw new InvalidInputError(
+            `Invoices exist — cancel on or after ${invoiced[0]}`
+          );
+        }
+      }
+
+      // A contract confirmed before revenue was stored gets its plan first.
+      await ensureRevenue(trx, scope, contract, lines);
+      const billedBefore = await billedTotals(trx, scope, contract.id);
+
+      // 2. End every line that runs past the new end, remembering its end.
+      const previousState: PreviousState = {
+        contractEndDate: contract.endDate,
+        renewal: contract.renewal,
+        lineEndDates: {},
+        lineRevenueEndDates: {}
+      };
+      const ends: { id: string; endDate: string }[] = [];
+      for (const line of lines) {
+        if (line.endDate !== null && line.endDate <= endDate) continue;
+        const lineEnd = maxDate(endDate, addDays(line.startDate, -1));
+        previousState.lineEndDates[line.id] = line.endDate;
+        if (line.revenueEndDate !== null && line.revenueEndDate > lineEnd) {
+          previousState.lineRevenueEndDates![line.id] = line.revenueEndDate;
+        }
+        ends.push({ id: line.id, endDate: lineEnd });
+      }
+      await setLineEndDates(trx, scope, contract.id, ends);
+
+      // 3. The contract ends (and is Ended at once when cancelled to nothing).
+      const now = datetime.timestamp();
+      const endsNow = endDate < contract.startDate;
+      await trx
+        .updateTable("customerContract")
+        .set({
+          endDate,
+          renewal: "End",
+          cancelledAt: now,
+          cancellationReason: payload.reason,
+          ...(endsNow && { status: "Ended" as const, endedAt: now }),
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", contract.id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      // 4. The amendment that records it.
+      await trx
+        .insertInto("customerContractAmendment")
+        .values({
+          customerContractId: contract.id,
+          amendmentDate: addDays(endDate, 1),
+          effect: "Change Date",
+          contractType: "Contraction",
+          reason: `${CANCELLATION_REASON_PREFIX}: ${payload.reason}`,
+          previousState: toJson(previousState),
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+
+      // 5. Reconcile from the day after the new end.
+      const next = await loadContractForUpdate(trx, companyId, contract.id);
+      const result = reconcileContractSchedule({
+        terms: toTerms(next.contract),
+        lines: toLineTerms(next.lines),
+        existing: next.existing,
+        from: addDays(endDate, 1),
+        through: reconcileThrough(
+          horizon(toTerms(next.contract), payload.asOf),
+          next.existing,
+          next.lines
+        )
+      });
+      const credit = round(
+        -result.adjustments.reduce((sum, row) => sum + row.amount, 0)
+      );
+      const creditAvailable = result.adjustments.length > 0;
+
+      if (payload.preview) {
+        throw new PreviewRollback<ContractCancellationPreview>({
+          credit,
+          creditAvailable,
+          removedInvoices: result.deleteInvoiceIds.length
+        });
+      }
+
+      // 6. The credit memo, or no credit at all.
+      let memoId: string | null = null;
+      let memoReadableId: string | null = null;
+      let adjustments = result.adjustments;
+      if (payload.creditUnusedTime && creditAvailable) {
+        const currency = await trx
+          .selectFrom("currency")
+          .innerJoin(
+            "company",
+            "company.companyGroupId",
+            "currency.companyGroupId"
+          )
+          .select("currency.decimalPlaces")
+          .where("company.id", "=", companyId)
+          .where("currency.code", "=", contract.currencyCode)
+          .executeTakeFirst();
+        if (!currency) {
+          throw new InvalidInputError(
+            `Currency ${contract.currencyCode} is not set up for this company`
+          );
+        }
+        // A memo total is a settlement value (currency decimals). Its rows
+        // are apportioned to the same decimals so they sum to it exactly —
+        // posting the memo refuses rows that credit more than its amount.
+        const amount = round(credit, currency.decimalPlaces);
+        const apportioned = distributeRoundingResidual(
+          adjustments.map((row) => row.amount),
+          -amount,
+          currency.decimalPlaces
+        );
+        adjustments = adjustments.map((row, index) => ({
+          ...row,
+          amount: apportioned[index]!
+        }));
+        // Allocated in this transaction, so a rollback leaves no gap.
+        memoReadableId = await getNextSequence(trx, "creditMemo", companyId);
+        const memo = await trx
+          .insertInto("memo")
+          .values({
+            memoId: memoReadableId,
+            direction: "Credit",
+            status: "Draft",
+            customerId: contract.invoiceCustomerId ?? contract.customerId,
+            memoDate: payload.asOf,
+            currencyCode: contract.currencyCode,
+            exchangeRate: contract.exchangeRate,
+            amount,
+            reference: contract.customerContractId,
+            customerContractId: contract.id,
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+        memoId = memo.id;
+      }
+      await applyReconciliation(
+        trx,
+        scope,
+        contract.id,
+        { ...result, adjustments: memoId ? adjustments : [] },
+        { adjustmentMemoId: memoId }
+      );
+
+      // 7. Reconcile revenue from the new end (D9): months after it are
+      // removed, the month it falls in is re-cut, and a month already
+      // recognized past it is caught up in the next Planned month (D7).
+      await reconcileRevenue(
+        trx,
+        scope,
+        next.contract,
+        next.lines,
+        changedRevenueLines(
+          { lines, billed: billedBefore },
+          {
+            lines: next.lines,
+            billed: await billedTotals(trx, scope, contract.id)
+          }
+        ),
+        endDate
+      );
+
+      return {
+        customerContractId: contract.id,
+        memoId,
+        memoReadableId
+      };
+    }
+  );
+}
+
+async function revertCancellation(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"revert-cancellation">
+): Promise<{ customerContractId: string }> {
+  const { companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const { contract, lines, existing } = await loadContractForUpdate(
+      trx,
+      companyId,
+      payload.customerContractId
+    );
+    if (!contract.cancelledAt) {
+      throw new InvalidInputError(
+        `Contract ${contract.customerContractId} is not cancelled`
+      );
+    }
+    refuseUnless(contract, "Active", "reverted");
+    const cancelledEndDate = contract.endDate;
+    if (cancelledEndDate === null || payload.asOf > cancelledEndDate) {
+      throw new InvalidInputError(
+        "The cancellation has taken effect; it can no longer be reverted"
+      );
+    }
+
+    const memoIds = [
+      ...new Set(
+        existing
+          .map((row) => row.memoId)
+          .filter((memoId): memoId is string => memoId !== null)
+      )
+    ];
+    if (memoIds.length > 0) {
+      const memos = await trx
+        .selectFrom("memo")
+        .select(["id", "status"])
+        .where("id", "in", memoIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (memos.some((memo) => memo.status !== "Draft")) {
+        throw new InvalidInputError("The credit memo has been posted");
+      }
+    }
+
+    // The cancellation is the amendment that recorded what it changed —
+    // only a cancellation writes `previousState` (a reason is free text).
+    const amendment = await trx
+      .selectFrom("customerContractAmendment")
+      .select(["id", "previousState"])
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .where("previousState", "is not", null)
+      .orderBy("createdAt", "desc")
+      .orderBy("id", "desc")
+      .executeTakeFirst();
+    const parsed = previousStateSchema.safeParse(amendment?.previousState);
+    if (!amendment || !parsed.success) {
+      throw new InvalidInputError(
+        "The cancellation has no record of what it changed; it cannot be reverted"
+      );
+    }
+    const previous = parsed.data;
+
+    // Restoring the recorded end dates is only right while nothing has
+    // changed the lines since. An amendment after the cancellation ended a
+    // line and started its replacement inside the cancelled term: restoring
+    // the old line's end would bill both. Ordered by `createdAt` (when the
+    // action ran), not `amendmentDate`: a later amendment is effective on or
+    // before the cancelled end, so it always dates EARLIER than the
+    // cancellation (end + 1) and an effective-date order would miss it.
+    // Compared in SQL: a JS `Date` would cut the timestamp to milliseconds.
+    const newer = await trx
+      .selectFrom("customerContractAmendment")
+      .select("id")
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .where("id", "!=", amendment.id)
+      .where("createdAt", ">", (eb) =>
+        eb
+          .selectFrom("customerContractAmendment as cancellation")
+          .select("cancellation.createdAt")
+          .where("cancellation.id", "=", amendment.id)
+          .where("cancellation.companyId", "=", companyId)
+      )
+      .executeTakeFirst();
+    if (newer) {
+      throw new InvalidInputError(
+        "The contract was amended after it was cancelled; the cancellation can no longer be reverted"
+      );
+    }
+    const lineIds = new Set(lines.map((line) => line.id));
+    if (Object.keys(previous.lineEndDates).some((id) => !lineIds.has(id))) {
+      throw new InvalidInputError(
+        "A line the cancellation ended no longer exists; the cancellation can no longer be reverted"
+      );
+    }
+
+    // A contract confirmed before revenue was stored gets its plan first.
+    await ensureRevenue(trx, scope, contract, lines);
+    const billedBefore = await billedTotals(trx, scope, contract.id);
+
+    // 1. Restore the line end dates (and the revenue ends they clamped),
+    // the contract's end and renewal.
+    const revenueEnds = previous.lineRevenueEndDates ?? {};
+    await setLineEndDates(
+      trx,
+      scope,
+      contract.id,
+      Object.entries(previous.lineEndDates).map(([id, endDate]) => ({
+        id,
+        endDate,
+        ...(revenueEnds[id] !== undefined && {
+          revenueEndDate: revenueEnds[id]
+        })
+      }))
+    );
+    // 2. Clear the cancellation.
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("customerContract")
+      .set({
+        endDate: previous.contractEndDate,
+        renewal: previous.renewal,
+        cancelledAt: null,
+        cancellationReason: null,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    // 3. The memo-borne rows and the Draft memo, then the amendment.
+    if (memoIds.length > 0) {
+      await trx
+        .deleteFrom("customerContractInvoiceLine")
+        .where("memoId", "in", memoIds)
+        .where("customerContractId", "=", contract.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .deleteFrom("memo")
+        .where("id", "in", memoIds)
+        .where("status", "=", "Draft")
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await trx
+      .deleteFrom("customerContractAmendment")
+      .where("id", "=", amendment.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    // 4. Re-plan from the day after the cancelled end.
+    const next = await loadContractForUpdate(trx, companyId, contract.id);
+    await applyReconciliation(
+      trx,
+      scope,
+      contract.id,
+      reconcileContractSchedule({
+        terms: toTerms(next.contract),
+        lines: toLineTerms(next.lines),
+        existing: next.existing,
+        from: addDays(cancelledEndDate, 1),
+        through: reconcileThrough(
+          horizon(toTerms(next.contract), payload.asOf),
+          next.existing,
+          next.lines
+        )
+      })
+    );
+
+    // 5. Re-plan revenue from the cancelled end date (D9).
+    await reconcileRevenue(
+      trx,
+      scope,
+      next.contract,
+      next.lines,
+      changedRevenueLines(
+        { lines, billed: billedBefore },
+        {
+          lines: next.lines,
+          billed: await billedTotals(trx, scope, contract.id)
+        }
+      ),
+      cancelledEndDate
+    );
+
+    return { customerContractId: contract.id };
+  });
+}
+
+// ---------------------------------------------------------------------------
+
+export const postCustomerContractPermission = {
+  update: "sales"
+} satisfies PermissionRule<z.output<typeof postCustomerContractInput>>;
+
+/** Confirms, edits the schedule of, amends, cancels or reverts the
+ *  cancellation of a customer contract, per `type`. */
+export async function postCustomerContract(
+  ctx: ServiceContext,
+  raw: z.input<typeof postCustomerContractInput>
+) {
+  const payload = postCustomerContractInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const scope = { companyId, userId };
+  switch (payload.type) {
+    case "confirm":
+      return confirm(db, scope, payload);
+    case "edit-schedule":
+      return editSchedule(db, scope, payload);
+    case "reset-schedule":
+      return resetSchedule(db, scope, payload);
+    case "edit-revenue":
+      return editRevenue(db, scope, payload);
+    case "amend":
+      return amend(db, scope, payload);
+    case "cancel":
+      return cancelContractWrites(db, scope, payload);
+    case "revert-cancellation":
+      return revertCancellation(db, scope, payload);
+  }
+}
+
+export type ContractInvoiceGenerationArgs = {
+  companyId: string;
+  /** `YYYY-MM-DD` in the company's timezone: Planned invoices dated on or
+   *  before it are drafted. */
+  asOf: string;
+  /** Draft one contract only (the contract page's action). */
+  customerContractId?: string;
+  userId: string;
+};
+
+/** One invoice the generator drafted, and what automation may do with it. */
+export type DraftedContractInvoice = {
+  invoiceId: string;
+  customerContractId: string;
+  /** The contract's effective invoice automation. */
+  mode: InvoiceAutomation;
+  /** Set when a person must review the draft before it is posted. */
+  holdReason: string | null;
+};
+
+export type ContractInvoiceGenerationFailure = {
+  customerContractId: string;
+  error: string;
+};
+
+export type ContractInvoiceGenerationResult = {
+  invoices: DraftedContractInvoice[];
+  /** `invoices.map(i => i.invoiceId)`. */
+  invoiceIds: string[];
+  /** Contracts whose transaction rolled back; their invoices stay Planned. */
+  failures: ContractInvoiceGenerationFailure[];
+};
+
+/** Shown on a drafted line: "Nov 1, 2026". */
+const DESCRIPTION_DATE: Intl.DateTimeFormatOptions = { dateStyle: "medium" };
+
+const DESCRIPTION_LOCALE = "en-US";
+
+/**
+ * Drafts the sales invoices of every Active contract with something to do: a
+ * Planned invoice dated on or before `asOf`, a renewal that is due, an end
+ * date that has passed, or an open-ended schedule to roll forward. Each
+ * contract is its own transaction, so one contract's failure never rolls back
+ * another's invoice. A drafted planned invoice is stamped `Invoiced` with its
+ * sales invoice, and each of its rows with the line that bills it, which is
+ * what makes a second call for the same day a no-op.
+ */
+async function createContractInvoicesForDueInvoices(
+  db: Kysely<KyselyDatabase>,
+  args: ContractInvoiceGenerationArgs
+): Promise<ContractInvoiceGenerationResult> {
+  const { companyId, asOf, customerContractId } = args;
+
+  // One read for every contract with anything to do; the per-contract
+  // transaction below re-reads its own rows under the header lock.
+  let dueQuery = db
+    .selectFrom("customerContract as c")
+    .select("c.id")
+    .where("c.companyId", "=", companyId)
+    .where("c.status", "=", "Active")
+    .where((eb) =>
+      eb.or([
+        eb.exists(
+          eb
+            .selectFrom("customerContractInvoice as i")
+            .select("i.id")
+            .whereRef("i.customerContractId", "=", "c.id")
+            .whereRef("i.companyId", "=", "c.companyId")
+            .where("i.status", "=", "Planned")
+            .where("i.invoiceDate", "<=", asOf)
+        ),
+        eb.and([eb("c.renewal", "=", "Renew"), eb("c.endDate", "<=", asOf)]),
+        eb("c.endDate", "<", asOf),
+        // An open-ended schedule may need its next period planned.
+        eb("c.endDate", "is", null)
+      ])
+    )
+    .orderBy("c.customerContractId");
+  if (customerContractId) {
+    dueQuery = dueQuery.where("c.id", "=", customerContractId);
+  }
+  const contracts = await dueQuery.execute();
+
+  // One contract's failure never stops the others: what earlier contracts
+  // committed is returned (so automation still runs over it) next to the
+  // failures, rather than lost behind a throw.
+  const invoices: DraftedContractInvoice[] = [];
+  const failures: ContractInvoiceGenerationFailure[] = [];
+  for (const contract of contracts) {
+    try {
+      const drafted = await db
+        .transaction()
+        .execute((trx) => processContract(trx, args, contract.id));
+      invoices.push(...drafted);
+    } catch (error) {
+      failures.push({
+        customerContractId: contract.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  return { invoices, invoiceIds: invoices.map((i) => i.invoiceId), failures };
+}
+
+async function processContract(
+  trx: KyselyTx,
+  args: ContractInvoiceGenerationArgs,
+  contractId: string
+): Promise<DraftedContractInvoice[]> {
+  const { companyId, userId, asOf } = args;
+  const scope: Scope = { companyId, userId };
+
+  // 1. Lock and load.
+  let loaded = await loadContractForUpdate(trx, companyId, contractId);
+  if (loaded.contract.status !== "Active") return [];
+
+  // 2. Renew, as many terms as the contract is behind.
+  loaded = await renewDueTerms(trx, scope, asOf, loaded);
+
+  // 3. Roll an open-ended schedule forward to the horizon.
+  if (loaded.contract.endDate === null) {
+    loaded = await rollHorizon(trx, scope, asOf, loaded);
+  }
+
+  // 4. Draft every Planned invoice that is due.
+  await deleteEmptyPlannedInvoices(trx, scope, contractId);
+  const drafted = await draftDueInvoices(trx, scope, asOf, loaded);
+
+  // 5. End a contract whose end date has passed and that has nothing left to
+  // invoice.
+  const { contract } = loaded;
+  if (contract.endDate !== null && contract.endDate < asOf) {
+    const planned = await trx
+      .selectFrom("customerContractInvoice")
+      .select("id")
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Planned")
+      .executeTakeFirst();
+    if (!planned) {
+      const now = datetime.timestamp();
+      await trx
+        .updateTable("customerContract")
+        .set({
+          status: "Ended",
+          endedAt: now,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", contract.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+  }
+
+  return drafted;
+}
+
+/**
+ * Renews the contract while `renewal = 'Renew'` and its term has run out:
+ * one amendment per term (effective the day after the old end), the contract
+ * end moved by `termMonths`, and the schedule reconciled from the new term's
+ * first day. A Recurring line that runs to the old end (a null end, or an end
+ * equal to it) carries into the new term — as a copy at the uplifted rate when
+ * `renewalUplift > 0`; a null-ended line otherwise just follows the contract.
+ * A discount that ended in the old term is dropped from a copy; one that ends
+ * inside the new term is split off (`applyDiscountEnds`), whether the line was
+ * copied or followed the contract.
+ */
+async function renewDueTerms(
+  trx: KyselyTx,
+  scope: Scope,
+  asOf: string,
+  initial: LoadedContract
+): Promise<LoadedContract> {
+  const { companyId, userId } = scope;
+  let loaded = initial;
+  for (;;) {
+    const { contract, lines } = loaded;
+    if (
+      contract.renewal !== "Renew" ||
+      !contract.termMonths ||
+      contract.endDate === null ||
+      contract.endDate > asOf
+    ) {
+      return loaded;
+    }
+    const oldEnd = contract.endDate;
+    const newStart = addDays(oldEnd, 1);
+    // A contract confirmed before revenue was stored gets its plan written
+    // from the term it had, so the reconciliation below keeps its past.
+    await ensureRevenue(trx, scope, contract, lines);
+    const billedBefore = await billedTotals(trx, scope, contract.id);
+    const newEnd = renewedEndDate(oldEnd, contract.termMonths);
+    const uplift = Number(contract.renewalUplift);
+
+    const amendment = await trx
+      .insertInto("customerContractAmendment")
+      .values({
+        customerContractId: contract.id,
+        amendmentDate: newStart,
+        effect: "Next Period",
+        contractType: "Existing",
+        reason: "Renewal",
+        previousState: null,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const renewing = lines.filter(
+      (line) =>
+        line.revenueType === "Recurring" &&
+        line.startDate <= oldEnd &&
+        (line.endDate === null || line.endDate === oldEnd)
+    );
+    // With an uplift every renewing line is ended and copied at the new rate.
+    // Without one a null-ended line follows the contract as it is; a line
+    // ended on the old contract end is copied at its rate, or it would drop
+    // out of the renewed term.
+    const copied =
+      uplift > 0
+        ? renewing
+        : renewing.filter((line) => line.endDate === oldEnd);
+    if (copied.length > 0) {
+      const toEnd = copied.filter((line) => line.endDate === null);
+      if (toEnd.length > 0) {
+        await trx
+          .updateTable("customerContractLine")
+          .set({ endDate: oldEnd, updatedBy: userId, updatedAt: sql`now()` })
+          .where(
+            "id",
+            "in",
+            toEnd.map((line) => line.id)
+          )
+          .where("customerContractId", "=", contract.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      await trx
+        .insertInto("customerContractLine")
+        .values(
+          copied.map((line) => {
+            // A discount that ended in the old term does not come back: the
+            // copy is full price, not a discount that now never ends.
+            const discountEnded =
+              line.discountEndsOn !== null && line.discountEndsOn < newStart;
+            return copyLineValues(scope, line, {
+              rate: round(line.rate * (1 + uplift)),
+              startDate: newStart,
+              endDate: null,
+              discountPercent: discountEnded ? 0 : line.discountPercent,
+              discountEndsOn: discountEnded ? null : line.discountEndsOn,
+              // The old term's go-live and revenue dates do not carry over.
+              goLiveDate: null,
+              revenueStartDate: null,
+              revenueEndDate: null,
+              amendmentId: amendment.id,
+              amendsLineId: line.id
+            });
+          })
+        )
+        .execute();
+    }
+
+    await trx
+      .updateTable("customerContract")
+      .set({ endDate: newEnd, updatedBy: userId, updatedAt: sql`now()` })
+      .where("id", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    // Every split starts after `newStart`, so the reconciliation below
+    // covers it.
+    await applyDiscountEnds(trx, scope, { ...contract, endDate: newEnd });
+
+    const next = await loadContractForUpdate(trx, companyId, contract.id);
+    const terms = toTerms(next.contract);
+    await applyReconciliation(
+      trx,
+      scope,
+      contract.id,
+      reconcileContractSchedule({
+        terms,
+        lines: toLineTerms(next.lines),
+        existing: next.existing,
+        from: newStart,
+        through: reconcileThrough(
+          horizon(terms, asOf),
+          next.existing,
+          next.lines
+        )
+      })
+    );
+    // Revenue follows the renewed term from its first day (D9).
+    await reconcileRevenue(
+      trx,
+      scope,
+      next.contract,
+      next.lines,
+      changedRevenueLines(
+        { lines, billed: billedBefore },
+        {
+          lines: next.lines,
+          billed: await billedTotals(trx, scope, contract.id)
+        }
+      ),
+      newStart
+    );
+    loaded = await loadContractForUpdate(trx, companyId, contract.id);
+  }
+}
+
+/**
+ * Plans an open-ended contract's periods up to `horizon(terms, asOf)`, from
+ * the day after the last persisted Recurring period (`lastRecurringPeriodEnd`
+ * — a One-time row's service window can run far past it). Creates only: rows
+ * already planned (and the invoices they sit on) are never touched, and no
+ * row is created for a key that already has one.
+ */
+async function rollHorizon(
+  trx: KyselyTx,
+  scope: Scope,
+  asOf: string,
+  loaded: LoadedContract
+): Promise<LoadedContract> {
+  const { contract, lines, existing } = loaded;
+  const terms = toTerms(contract);
+  const through = horizon(terms, asOf);
+  const lastEnd = lastRecurringPeriodEnd(existing, lines);
+  const from = lastEnd === null ? contract.startDate : addDays(lastEnd, 1);
+  if (from > through) return loaded;
+
+  const result = reconcileContractSchedule({
+    terms,
+    lines: toLineTerms(lines),
+    existing,
+    from,
+    through
+  });
+  // Only the periods past the persisted schedule: reconciling from `from`
+  // would otherwise replace a Planned invoice dated on or after it (an
+  // Arrears invoice for the last planned period, a One-time row invoiced
+  // later), re-creating its rows.
+  const persisted = new Set(
+    existing
+      .filter((row) => !row.isAdjustment)
+      .map((row) => `${row.lineId}|${row.periodStart}`)
+  );
+  const create = result.create
+    .map((invoice) => ({
+      ...invoice,
+      rows: invoice.rows.filter(
+        (row) =>
+          row.periodStart >= from &&
+          !persisted.has(`${row.lineId}|${row.periodStart}`)
+      )
+    }))
+    .filter((invoice) => invoice.rows.length > 0);
+  if (create.length === 0) return loaded;
+
+  await ensureRevenue(trx, scope, contract, lines);
+  const billedBefore = await billedTotals(trx, scope, contract.id);
+  await applyReconciliation(trx, scope, contract.id, {
+    deleteInvoiceIds: [],
+    deleteRowIds: [],
+    recut: [],
+    create,
+    adjustments: []
+  });
+  // The appended periods extend each open-ended line's revenue: re-plan it
+  // from the first appended period (D9).
+  const firstAppended = create
+    .flatMap((invoice) => invoice.rows.map((row) => row.periodStart))
+    .reduce((earliest, date) => (date < earliest ? date : earliest));
+  await reconcileRevenue(
+    trx,
+    scope,
+    contract,
+    lines,
+    changedRevenueLines(
+      { lines, billed: billedBefore },
+      { lines, billed: await billedTotals(trx, scope, contract.id) }
+    ),
+    firstAppended
+  );
+  return loadContractForUpdate(trx, scope.companyId, contract.id);
+}
+
+type DueRow = {
+  id: string;
+  customerContractInvoiceId: string;
+  invoiceDate: string;
+  customerContractLineId: string;
+  periodStart: string;
+  periodEnd: string;
+  unitPrice: number;
+  amount: number;
+  isAdjustment: boolean;
+  voidedSalesInvoiceId: string | null;
+};
+
+/** Drafts one sales invoice per Planned invoice dated on or before `asOf`. */
+async function draftDueInvoices(
+  trx: KyselyTx,
+  scope: Scope,
+  asOf: string,
+  loaded: LoadedContract
+): Promise<DraftedContractInvoice[]> {
+  const { companyId } = scope;
+  const { contract, lines } = loaded;
+
+  const rows: DueRow[] = (
+    await trx
+      .selectFrom("customerContractInvoiceLine as r")
+      .innerJoin("customerContractInvoice as i", (join) =>
+        join
+          .onRef("i.id", "=", "r.customerContractInvoiceId")
+          .onRef("i.companyId", "=", "r.companyId")
+      )
+      .select([
+        "r.id",
+        "r.customerContractInvoiceId",
+        sql<string>`i."invoiceDate"::text`.as("invoiceDate"),
+        "r.customerContractLineId",
+        sql<string>`r."periodStart"::text`.as("periodStart"),
+        sql<string>`r."periodEnd"::text`.as("periodEnd"),
+        "r.unitPrice",
+        "r.amount",
+        "r.isAdjustment",
+        "r.voidedSalesInvoiceId"
+      ])
+      .where("i.customerContractId", "=", contract.id)
+      .where("i.companyId", "=", companyId)
+      .where("i.status", "=", "Planned")
+      .where("i.invoiceDate", "<=", asOf)
+      .orderBy("i.invoiceDate")
+      .orderBy("i.id")
+      .orderBy("r.periodStart")
+      .orderBy("r.id")
+      .execute()
+  ).map((row) => ({
+    ...row,
+    customerContractInvoiceId: row.customerContractInvoiceId!,
+    unitPrice: Number(row.unitPrice),
+    amount: Number(row.amount),
+    isAdjustment: row.isAdjustment ?? false
+  }));
+  if (rows.length === 0) return [];
+
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select("invoiceAutomation")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const mode = effectiveInvoiceAutomation(
+    contract.invoiceAutomation,
+    settings.invoiceAutomation
+  );
+
+  const itemIds = [...new Set(lines.map((line) => line.itemId))];
+  const items =
+    itemIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("item")
+          .select(["id", "name", "unitOfMeasureCode", "defaultMethodType"])
+          .where("id", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .execute();
+  const itemById = new Map(items.map((item) => [item.id, item]));
+
+  // The readable ids of the voided invoices these rows were billed on, so a
+  // re-bill's hold names them. One read; a deleted invoice keeps its raw id.
+  const voidedIds = [
+    ...new Set(
+      rows
+        .map((row) => row.voidedSalesInvoiceId)
+        .filter((voidedId): voidedId is string => !!voidedId)
+    )
+  ];
+  const voidedReadableIds = new Map<string, string>();
+  if (voidedIds.length > 0) {
+    const voided = await trx
+      .selectFrom("salesInvoice")
+      .select(["id", "invoiceId"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", voidedIds)
+      .execute();
+    for (const invoice of voided) {
+      voidedReadableIds.set(invoice.id, invoice.invoiceId);
+    }
+  }
+
+  const locationId = await contractLocationId(trx, companyId, contract);
+
+  // Rows grouped by planned invoice, in invoice-date order; each invoice's
+  // rows follow the contract's line order.
+  const lineOrder = new Map(lines.map((line, index) => [line.id, index]));
+  const byInvoice = new Map<string, DueRow[]>();
+  for (const row of rows) {
+    const group = byInvoice.get(row.customerContractInvoiceId);
+    if (group) group.push(row);
+    else byInvoice.set(row.customerContractInvoiceId, [row]);
+  }
+
+  const lineById = new Map(lines.map((line) => [line.id, line]));
+  const drafted: DraftedContractInvoice[] = [];
+  for (const [plannedInvoiceId, group] of byInvoice) {
+    group.sort(
+      (a, b) =>
+        (lineOrder.get(a.customerContractLineId) ?? 0) -
+          (lineOrder.get(b.customerContractLineId) ?? 0) ||
+        a.periodStart.localeCompare(b.periodStart) ||
+        Number(a.isAdjustment) - Number(b.isAdjustment)
+    );
+    const holdReason = contractInvoiceHold(
+      mode,
+      group.map((row) => ({
+        amount: row.amount,
+        isAdjustment: row.isAdjustment,
+        voidedInvoiceReadableId: row.voidedSalesInvoiceId
+          ? (voidedReadableIds.get(row.voidedSalesInvoiceId) ??
+            row.voidedSalesInvoiceId)
+          : null
+      }))
+    );
+    const invoiceId = await insertContractInvoice(trx, scope, {
+      asOf,
+      contract,
+      locationId,
+      plannedInvoiceId,
+      holdReason,
+      lines: group.map((row) => {
+        const line = lineById.get(row.customerContractLineId);
+        if (!line) {
+          throw new Error(
+            `Schedule row ${row.id} names a line that is not on the contract`
+          );
+        }
+        return invoiceLineValues(row, line, itemById.get(line.itemId), {
+          contract,
+          locationId
+        });
+      })
+    });
+    drafted.push({
+      invoiceId,
+      customerContractId: contract.id,
+      mode,
+      holdReason
+    });
+  }
+  return drafted;
+}
+
+/** Where a contract's invoices are drafted: its sales order's shipping
+ *  location when it came from one, else the company's first location. A
+ *  contract has no location of its own. */
+async function contractLocationId(
+  trx: KyselyTx,
+  companyId: string,
+  contract: ContractRow
+): Promise<string> {
+  if (contract.salesOrderId) {
+    const shipment = await trx
+      .selectFrom("salesOrderShipment")
+      .select("locationId")
+      .where("id", "=", contract.salesOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (shipment?.locationId) return shipment.locationId;
+  }
+  const location = await trx
+    .selectFrom("location")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .executeTakeFirst();
+  if (!location) {
+    throw new Error("The company has no location to draft the invoice at");
+  }
+  return location.id;
+}
+
+type InvoiceLineValues = {
+  itemId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number;
+  taxPercent: number;
+  serviceStartDate: string | null;
+  serviceEndDate: string | null;
+  customerContractId: string;
+  customerContractLineId: string;
+  customerContractInvoiceLineId: string;
+  projectId: string | null;
+  methodType: Enums["methodType"];
+  unitOfMeasureCode: string;
+};
+
+/** One schedule row as a Service sales-invoice line (plan decision 10). */
+function invoiceLineValues(
+  row: DueRow,
+  line: ContractLineRow,
+  item:
+    | {
+        name: string;
+        unitOfMeasureCode: string | null;
+        defaultMethodType: Enums["methodType"] | null;
+      }
+    | undefined,
+  context: { contract: ContractRow; locationId: string }
+): InvoiceLineValues {
+  const quantity = Number(line.quantity);
+  const discountPercent = Number(line.discountPercent);
+  const pricing = invoiceLinePricing(row, { quantity, discountPercent });
+
+  const period = `${formatDate(row.periodStart, DESCRIPTION_DATE, DESCRIPTION_LOCALE)}–${formatDate(
+    row.periodEnd,
+    DESCRIPTION_DATE,
+    DESCRIPTION_LOCALE
+  )}`;
+  const fellBack = pricing.discountPercent === 0 && discountPercent > 0;
+  const description = [
+    line.description ?? item?.name ?? "",
+    period,
+    ...(fellBack
+      ? [`${formatPercent(discountPercent, DESCRIPTION_LOCALE)} off`]
+      : [])
+  ].join(" · ");
+
+  let serviceStartDate: string | null = row.periodStart;
+  let serviceEndDate: string | null = row.periodEnd;
+  if (line.revenueType === "One-time") {
+    const revenue = lineRevenueDates(line);
+    serviceStartDate = revenue.end === null ? null : revenue.start;
+    serviceEndDate = revenue.end;
+  }
+
+  return {
+    itemId: line.itemId,
+    description,
+    quantity: pricing.quantity,
+    // The schedule prices in the contract's currency; `salesInvoiceLine.
+    // unitPrice` is base currency (`convertedUnitPrice` = unitPrice ×
+    // exchangeRate is what the customer sees), as on every sales document.
+    unitPrice: toBaseAmount(
+      pricing.unitPrice,
+      Number(context.contract.exchangeRate)
+    ),
+    discountPercent: pricing.discountPercent,
+    taxPercent: Number(line.taxPercent),
+    serviceStartDate,
+    serviceEndDate,
+    customerContractId: context.contract.id,
+    customerContractLineId: line.id,
+    customerContractInvoiceLineId: row.id,
+    projectId: line.projectId ?? context.contract.projectId,
+    // As the invoice line form fills it from the item (and `convert` copies
+    // it from the order line the form filled the same way).
+    methodType: item?.defaultMethodType ?? "Pull from Inventory",
+    unitOfMeasureCode: item?.unitOfMeasureCode ?? "EA"
+  };
+}
+
+/**
+ * Inserts one Draft contract invoice (opportunity, header, shipment, lines),
+ * stamps the planned invoice `Invoiced` with it and each row with the line
+ * that bills it. Returns the invoice id.
+ */
+async function insertContractInvoice(
+  trx: KyselyTx,
+  scope: Scope,
+  args: {
+    asOf: string;
+    contract: ContractRow;
+    locationId: string;
+    plannedInvoiceId: string;
+    holdReason: string | null;
+    lines: InvoiceLineValues[];
+  }
+): Promise<string> {
+  const { companyId, userId } = scope;
+  const { asOf, contract, locationId, lines } = args;
+
+  // Net merchandise per line, as the schedule priced it; tax on the net.
+  const nets = lines.map((line) =>
+    round(line.quantity * line.unitPrice * (1 - line.discountPercent))
+  );
+  const subtotal = round(nets.reduce((sum, net) => sum + net, 0));
+  const totalTax = round(
+    lines.reduce((sum, line, index) => sum + nets[index]! * line.taxPercent, 0)
+  );
+
+  const readableInvoiceId = await getNextSequence(
+    trx,
+    "salesInvoice",
+    companyId
+  );
+  // Every sales invoice has an opportunity, as insertSalesInvoice makes one:
+  // its documents live under the opportunity's storage folder, and the
+  // invoice page reads it.
+  const opportunity = await trx
+    .insertInto("opportunity")
+    .values({ companyId, customerId: contract.customerId })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+  const invoice = await trx
+    .insertInto("salesInvoice")
+    .values({
+      invoiceId: readableInvoiceId,
+      status: "Draft",
+      customerId: contract.customerId,
+      invoiceCustomerId: contract.invoiceCustomerId ?? contract.customerId,
+      invoiceCustomerContactId: contract.invoiceCustomerContactId,
+      invoiceCustomerLocationId: contract.invoiceCustomerLocationId,
+      locationId,
+      paymentTermId: contract.paymentTermId,
+      currencyCode: contract.currencyCode,
+      exchangeRate: contract.exchangeRate,
+      customerReference: contract.customerReference,
+      customerContractId: contract.id,
+      dateIssued: asOf,
+      subtotal,
+      totalDiscount: 0,
+      totalTax,
+      totalAmount: round(subtotal + totalTax),
+      opportunityId: opportunity.id,
+      automationHoldReason: args.holdReason,
+      companyId,
+      createdBy: userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  await trx
+    .insertInto("salesInvoiceShipment")
+    .values({
+      id: invoice.id,
+      locationId,
+      // The contract's customer ship-to; sales rules evaluate the invoice's
+      // lines against it.
+      customerLocationId: contract.shipToCustomerLocationId,
+      shippingCost: 0,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+
+  await trx
+    .insertInto("salesInvoiceLine")
+    .values(
+      lines.map((line, index) => ({
+        invoiceId: invoice.id,
+        invoiceLineType: "Service" as const,
+        ...line,
+        exchangeRate: contract.exchangeRate,
+        locationId,
+        sortOrder: index + 1,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  // Stamp what was drafted with the invoice (and line) that bills it.
+  await trx
+    .updateTable("customerContractInvoice")
+    .set({
+      status: "Invoiced",
+      salesInvoiceId: invoice.id,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", args.plannedInvoiceId)
+    .where("customerContractId", "=", contract.id)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  await trx
+    .updateTable("customerContractInvoiceLine as r")
+    .from("salesInvoiceLine as sil")
+    .set({
+      salesInvoiceLineId: sql`sil.id`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .whereRef("sil.customerContractInvoiceLineId", "=", "r.id")
+    .whereRef("sil.companyId", "=", "r.companyId")
+    .where("sil.invoiceId", "=", invoice.id)
+    .where("r.companyId", "=", companyId)
+    .execute();
+
+  return invoice.id;
+}
+
+export const createContractInvoicesInput = z.object({
+  /** `YYYY-MM-DD` in the company's timezone. */
+  asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Draft one contract only. */
+  customerContractId: z.string().optional()
+});
+
+export const createContractInvoicesPermission = {
+  update: "sales",
+  create: "invoicing"
+} satisfies PermissionRule<z.output<typeof createContractInvoicesInput>>;
+
+/** Drafts the contract invoices due on or before `asOf` (see
+ *  `createContractInvoicesForDueInvoices`). A contract that fails is reported
+ *  in `failures`, never thrown, so the others still draft. */
+export async function createContractInvoices(
+  ctx: ServiceContext,
+  raw: z.input<typeof createContractInvoicesInput>
+) {
+  const { asOf, customerContractId } = createContractInvoicesInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  return createContractInvoicesForDueInvoices(db, {
+    companyId,
+    userId,
+    asOf,
+    customerContractId
   });
 }

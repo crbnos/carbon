@@ -15,7 +15,7 @@ import {
   stampCutover,
   stockPart,
   unwrap
-} from "@carbon/server-functions/always-post-test-fixture";
+} from "./fixtures/always-post";
 import issue from "@carbon/server-functions/issue";
 import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
 import { expect } from "vitest";

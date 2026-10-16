@@ -8,10 +8,10 @@ paths:
   - "packages/database/supabase/migrations/*fleet-bridge*"
   - "packages/database/supabase/migrations/*asset-transfer*"
   - "packages/database/supabase/migrations/*job-to-asset*"
-  - "packages/server-functions/src/post-asset-transfer/**"
+  - "apps/erp/app/modules/accounting/accounting.service.ts"
   - "packages/server-functions/src/lib/asset-transfer.ts"
-  - "packages/server-functions/src/post-rental-agreement/**"
-  - "packages/server-functions/src/post-lease/**"
+  - "apps/erp/app/modules/sales/sales.service.ts"
+  - "apps/erp/app/modules/purchasing/purchasing.service.ts"
   - "packages/database/supabase/migrations/*rental-agreements*"
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
@@ -313,7 +313,7 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    cost — or, for a unit carried at zero, at the cost the user enters; see
    **post-asset-transfer** below.
 5. Exercise a lessee lease's purchase option for one leased asset:
-   `post-lease` `purchase` (`packages/server-functions/src/post-lease/lifecycle.ts`;
+   `post-lease` `purchase` (`apps/erp/app/modules/purchasing/purchasing.service.ts`;
    lease page → the asset in the explorer → its page → **Exercise Purchase Option**,
    `x+/lease+/$id.$lineId.purchase.tsx`, `update: purchasing`). Refused for a
    Short-Term asset (and an open-ended lease, whose assets all are), an

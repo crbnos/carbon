@@ -1796,6 +1796,15 @@ export async function invokePosting<I, R>(
   );
 }
 
+/** {@link invokePosting}, throwing its refusal, as `invokeOrThrow` did. */
+export async function invokePostingOrThrow<I, R>(
+  ...args: Parameters<typeof invokePosting<I, R>>
+): Promise<R> {
+  const result = await invokePosting(...args);
+  if (result.error) throw result.error;
+  return result.data;
+}
+
 function postingContext(handles: PostingHandles): ServiceContext {
   return createServiceContext({
     actor: { type: "system", onBehalfOf: handles.userId },

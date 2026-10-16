@@ -3,77 +3,113 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The postings `@carbon/jobs` and `@carbon/ee` call, which cannot import the
-// ERP (`@carbon/api/postings.server`). Registered by `carbon.server.ts`.
+// ERP (`@carbon/api/postings.server`). Registered by `carbon.server.ts`. A
+// posting with a client checks the caller behind it against the posting's
+// permission first, as `serverFns.as` did; without one it runs as the system.
 
-import type {
-  PostingContract,
-  PostingHandles,
-  PostingName,
-  Postings
-} from "@carbon/api/postings.server";
-import { type ServerFnName, serverFns } from "@carbon/server-functions";
-import {
-  replenishKanban,
-  replenishKanbanPermission
-} from "./inventory/inventory.service";
-import {
-  updatePurchasedPrices,
-  updatePurchasedPricesPermission
-} from "./purchasing/purchasing.service";
-import {
-  createRentalInvoices,
-  createRentalInvoicesPermission
-} from "./sales/sales.service";
+import type { Postings } from "@carbon/api/postings.server";
+import * as accounting from "./accounting/accounting.service";
+import * as inventory from "./inventory/inventory.service";
+import * as invoicing from "./invoicing/invoicing.service";
+import * as purchasing from "./purchasing/purchasing.service";
+import * as sales from "./sales/sales.service";
 import { invokePosting } from "./shared/shared.service";
 
-/** A posting still in `@carbon/server-functions`, called as its callers did:
- *  as the caller behind `client`, else as the system. */
-function fromPackage<K extends PostingName & ServerFnName>(
-  name: K
-): Postings[K] {
-  return ((handles: PostingHandles, input: PostingContract[K]["input"]) => {
-    const { client, ...fields } = handles;
-    const invoker = client
-      ? serverFns.as({ ...fields, client })
-      : serverFns.system(fields);
-    return invoker.invoke(name, input as never);
-  }) as Postings[K];
-}
-
 export const postings: Postings = {
-  "post-sales-invoice": fromPackage("post-sales-invoice"),
-  "post-purchase-invoice": fromPackage("post-purchase-invoice"),
-  "post-receipt": fromPackage("post-receipt"),
-  "post-shipment": fromPackage("post-shipment"),
-  "post-payment": fromPackage("post-payment"),
-  "post-charge": fromPackage("post-charge"),
+  "post-sales-invoice": (handles, input) =>
+    invokePosting(
+      handles,
+      "post-sales-invoice",
+      input,
+      invoicing.postSalesInvoice,
+      {
+        as: invoicing.postSalesInvoicePermission
+      }
+    ),
+  "post-purchase-invoice": (handles, input) =>
+    invokePosting(
+      handles,
+      "post-purchase-invoice",
+      input,
+      invoicing.postPurchaseInvoice,
+      {
+        as: invoicing.postPurchaseInvoicePermission
+      }
+    ),
+  "post-receipt": (handles, input) =>
+    invokePosting(handles, "post-receipt", input, inventory.postReceipt, {
+      as: inventory.postReceiptPermission
+    }),
+  "post-shipment": (handles, input) =>
+    invokePosting(handles, "post-shipment", input, inventory.postShipment, {
+      as: inventory.postShipmentPermission
+    }),
+  "post-payment": (handles, input) =>
+    invokePosting(handles, "post-payment", input, invoicing.postPayment, {
+      as: invoicing.postPaymentPermission
+    }),
+  "post-charge": (handles, input) =>
+    invokePosting(handles, "post-charge", input, accounting.postCharge, {
+      as: accounting.postChargePermission
+    }),
   "update-purchased-prices": (handles, input) =>
     invokePosting(
       handles,
       "update-purchased-prices",
       input,
-      updatePurchasedPrices,
+      purchasing.updatePurchasedPrices,
       {
-        as: updatePurchasedPricesPermission
+        as: purchasing.updatePurchasedPricesPermission
       }
     ),
   "kanban-replenish": (handles, input) =>
-    invokePosting(handles, "kanban-replenish", input, replenishKanban, {
-      as: replenishKanbanPermission
-    }),
+    invokePosting(
+      handles,
+      "kanban-replenish",
+      input,
+      inventory.replenishKanban,
+      {
+        as: inventory.replenishKanbanPermission
+      }
+    ),
   "create-rental-invoices": (handles, input) =>
     invokePosting(
       handles,
       "create-rental-invoices",
       input,
-      createRentalInvoices,
+      sales.createRentalInvoices,
       {
-        as: createRentalInvoicesPermission
+        as: sales.createRentalInvoicesPermission
       }
     ),
-  "create-contract-invoices": fromPackage("create-contract-invoices"),
-  "create-lease-invoices": fromPackage("create-lease-invoices"),
-  "propose-revenue-recognition-run": fromPackage(
-    "propose-revenue-recognition-run"
-  )
+  "create-contract-invoices": (handles, input) =>
+    invokePosting(
+      handles,
+      "create-contract-invoices",
+      input,
+      sales.createContractInvoices,
+      {
+        as: sales.createContractInvoicesPermission
+      }
+    ),
+  "create-lease-invoices": (handles, input) =>
+    invokePosting(
+      handles,
+      "create-lease-invoices",
+      input,
+      purchasing.createLeaseInvoices,
+      {
+        as: purchasing.createLeaseInvoicesPermission
+      }
+    ),
+  "propose-revenue-recognition-run": (handles, input) =>
+    invokePosting(
+      handles,
+      "propose-revenue-recognition-run",
+      input,
+      accounting.proposeRevenueRecognitionRun,
+      {
+        as: accounting.proposeRevenueRecognitionRunPermission
+      }
+    )
 };

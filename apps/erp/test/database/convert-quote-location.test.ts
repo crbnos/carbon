@@ -13,7 +13,7 @@ import {
   seed,
   USER,
   unwrap
-} from "@carbon/server-functions/always-post-test-fixture";
+} from "./fixtures/always-post";
 import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
 import {
   convertDocument,

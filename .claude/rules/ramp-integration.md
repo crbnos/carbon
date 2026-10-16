@@ -3,7 +3,7 @@ paths:
   - packages/ee/src/ramp/**
   - packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts
   - packages/jobs/src/inngest/functions/integrations/ramp-sweep.ts
-  - packages/server-functions/src/post-charge/**
+  - apps/erp/app/modules/accounting/accounting.service.ts
   - apps/erp/app/modules/invoicing/ui/Charge/**
   - apps/erp/app/routes/x+/invoicing+/charges*.tsx
   - apps/erp/app/routes/api+/integrations.ramp.oauth.ts
@@ -943,7 +943,7 @@ rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider
 
 ## post-charge server function
 
-`packages/server-functions/src/post-charge/` (`defineServerFn`,
+`apps/erp/app/modules/accounting/accounting.service.ts` (`defineServerFn`,
 `permissions: { update: "invoicing" }`). Input `{ type: "post" | "void", chargeId }`;
 the context carries `companyId` / `userId`. `postChargeTransaction` opens one Kysely transaction and performs
 the tenant-scoped header `FOR UPDATE` as its first read; every settings, company, line,

@@ -22,16 +22,14 @@ describe("serverFns", () => {
   it("returns the function's own refusal as { data, error }", async () => {
     const result = await serverFns
       .system(fields)
-      .invoke("post-receipt", { receiptId: 1 } as never);
+      .invoke("issue", { type: 1 } as never);
     expect(result.data).toBeNull();
     expect(result.error?.status).toBe(400);
   });
 
   it("invokeOrThrow throws that error", async () => {
     await expect(
-      serverFns
-        .system(fields)
-        .invokeOrThrow("post-receipt", { receiptId: 1 } as never)
+      serverFns.system(fields).invokeOrThrow("issue", { type: 1 } as never)
     ).rejects.toMatchObject({ status: 400 });
   });
 });

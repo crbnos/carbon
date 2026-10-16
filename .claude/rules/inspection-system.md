@@ -10,7 +10,7 @@ paths:
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
-  - "packages/server-functions/src/post-receipt/index.ts"
+  - "apps/erp/app/modules/inventory/inventory.service.ts"
 ---
 
 # Inspection System
@@ -178,7 +178,7 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
 
 ## Receipt → inspection flow (`post-receipt/index.ts`, server function)
 
-`packages/server-functions/src/post-receipt/index.ts`:
+`apps/erp/app/modules/inventory/inventory.service.ts`:
 1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,
    Receipt-usage `itemInspectionDocumentAssignment` rows (`assignmentByItemId`), and the
    assigned documents' `inspectionFeature` rows + default sampling columns.

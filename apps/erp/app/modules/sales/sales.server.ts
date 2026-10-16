@@ -22,11 +22,6 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
-import type {
-  ContractAmendmentPreview,
-  ContractCancellationPreview,
-  ContractCancellationResult
-} from "@carbon/server-functions/post-customer-contract";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
@@ -70,6 +65,7 @@ import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
+import { invokePosting } from "../shared/shared.service";
 import {
   contractAmendmentChangeValidator,
   customerContractAmendmentValidator,
@@ -97,7 +93,13 @@ import {
   selectedLinesValidator
 } from "./sales.models";
 import { renderQuotePdf, renderSalesReturnOrderPdf } from "./sales.pdf";
-import type { DraftedRentalInvoice, QuoteLinePriceRow } from "./sales.service";
+import type {
+  ContractAmendmentPreview,
+  ContractCancellationPreview,
+  ContractCancellationResult,
+  DraftedRentalInvoice,
+  QuoteLinePriceRow
+} from "./sales.service";
 import * as service from "./sales.service";
 import * as utils from "./sales.utils";
 import { reconcileQuantityBreaks } from "./sales.utils";
@@ -4397,10 +4399,15 @@ export const activateRentalAgreement = defineServiceFn({
       return ctx.error("rule", "Add a unit before activating");
     }
 
-    const result = await service.postRentalAgreement(ctx, {
-      type: "activate",
-      rentalAgreementId: id
-    });
+    const result = await invokePosting(
+      ctx,
+      "post-rental-agreement",
+      {
+        type: "activate",
+        rentalAgreementId: id
+      },
+      service.postRentalAgreement
+    );
     if (result.error) {
       return ctx.error(
         "rule",
@@ -4432,10 +4439,15 @@ export const setRentalAgreementStatus = defineServiceFn({
     const agreement = await service.ownRentalAgreement(ctx, id);
     if (agreement instanceof Error) return agreement;
 
-    const result = await service.postRentalAgreement(ctx, {
-      type: intent,
-      rentalAgreementId: id
-    });
+    const result = await invokePosting(
+      ctx,
+      "post-rental-agreement",
+      {
+        type: intent,
+        rentalAgreementId: id
+      },
+      service.postRentalAgreement
+    );
     if (result.error) {
       return ctx.error(
         "rule",
@@ -4471,10 +4483,15 @@ export const releaseRentalUnit = defineServiceFn({
   permission: { update: "sales" },
 
   async run(ctx, input) {
-    const result = await service.postRentalAgreement(ctx, {
-      type: "release",
-      ...input
-    });
+    const result = await invokePosting(
+      ctx,
+      "post-rental-agreement",
+      {
+        type: "release",
+        ...input
+      },
+      service.postRentalAgreement
+    );
     if (result.error) {
       return ctx.error(
         "rule",

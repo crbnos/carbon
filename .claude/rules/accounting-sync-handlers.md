@@ -225,7 +225,7 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
 - `core/payment-syncer.ts` — `PaymentSyncerBase` (pull, plus the Phase G push below). Providers implement
   `mapToNormalized(remote, entityId)` + `fetchRemote`. The base overrides
   `pullFromAccounting`/`pullBatchFromAccounting`: Draft write in the base tx, then
-  **after commit** calls the `post-payment` server function (`{type:'post'|'void'}`), which builds the GL journal,
+  **after commit** calls `postPayment` (`invoicing.service.ts`, ported from the `post-payment` server function) (`{type:'post'|'void'}`), which builds the GL journal,
   sets `payment.journalId`, and derives document status. **Pulled payments DO post
   to Carbon's GL** — no double-count because `documents`-mode `Payment` journals are
   DOC_BACKED-excluded from outbound push (the payment journal never re-posts to the

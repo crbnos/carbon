@@ -453,10 +453,15 @@ export const postReceipt = defineServiceFn({
 
     let failure: CarbonError | null = null;
     try {
-      const posted = await service.system(ctx).invoke("post-receipt", {
-        receiptId,
-        postingDate
-      });
+      const posted = await invokePosting(
+        ctx,
+        "post-receipt",
+        {
+          receiptId,
+          postingDate
+        },
+        service.postReceipt
+      );
       if (posted.error) {
         await backToDraft();
         return service.serverFnFailure(
@@ -563,10 +568,15 @@ export const voidReceipt = defineServiceFn({
       );
     }
 
-    const voided = await service.system(ctx).invoke("post-receipt", {
-      type: "void",
-      receiptId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-receipt",
+      {
+        type: "void",
+        receiptId
+      },
+      service.postReceipt
+    );
     if (voided.error) {
       return service.serverFnFailure(
         ctx,
@@ -1562,11 +1572,16 @@ export const postShipment = defineServiceFn({
     let splitEntityIds: string[] = [];
     try {
       await service.savePackingSlip(ctx, { shipmentId, locale });
-      const posted = await service.system(ctx).invoke("post-shipment", {
-        type: "post",
-        shipmentId,
-        postingDate
-      });
+      const posted = await invokePosting(
+        ctx,
+        "post-shipment",
+        {
+          type: "post",
+          shipmentId,
+          postingDate
+        },
+        service.postShipment
+      );
       if (posted.error) {
         await backToDraft();
         return service.serverFnFailure(
@@ -1653,10 +1668,15 @@ export const voidShipment = defineServiceFn({
       return ctx.error("rule", "Can only void posted shipments");
     }
 
-    const voided = await service.system(ctx).invoke("post-shipment", {
-      type: "void",
-      shipmentId
-    });
+    const voided = await invokePosting(
+      ctx,
+      "post-shipment",
+      {
+        type: "void",
+        shipmentId
+      },
+      service.postShipment
+    );
     if (voided.error) {
       return service.serverFnFailure(
         ctx,

@@ -9,7 +9,7 @@ paths:
 # CSV Import System
 
 Bulk-import ERP entities from a user-uploaded CSV. Two-stage UI wizard (upload → map),
-a thin route action, and the `import-csv` server function that does the actual inserts/updates inside
+a thin route action, and `importCsvTable` (`shared.service.ts`, ported from the `import-csv` server function) that does the actual inserts/updates inside
 a transaction. Imports are idempotent via the `externalIntegrationMapping` table.
 
 ## Flow
@@ -275,7 +275,7 @@ importCsvTable, { as: importCsvTablePermission })`.
 
 ## The import (`importCsvTable`, `shared.service.ts`)
 
-Ported from the `import-csv` server function. Its input is `importCsvInput` (table enum,
+Ported from `importCsvTable` (`shared.service.ts`, ported from the `import-csv` server function). Its input is `importCsvInput` (table enum,
 `filePath`, `columnMappings`, optional `enumMappings`).
 
 - `importCsv` checks the caller against `importCsvTablePermission`, `{ by: "table", rules }`: `update` on

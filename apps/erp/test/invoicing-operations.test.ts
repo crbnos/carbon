@@ -37,7 +37,10 @@ vi.mock("../app/modules/shared/shared.service", async (actual) => ({
   ...(await actual<object>()),
   // The records the tests name are the company's.
   refuseUnlessOwned: vi.fn(async () => null),
-  sendSalesOrderEmail: vi.fn()
+  sendSalesOrderEmail: vi.fn(),
+  // The ported server functions run through invokePosting.
+  invokePosting: (_from: unknown, name: string, input: unknown) =>
+    invoke(name, input)
 }));
 vi.mock("@carbon/lib/party-contact.server", () => ({
   checkPartyContactRequirement: vi.fn(async () => null)

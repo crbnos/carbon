@@ -50,7 +50,7 @@ Key service functions (verified):
   Pinned by `lib/cost-layer-order.test.ts` and the database test
   `lib/calculate-cogs.test.ts`.
   **Serial unit cost and Recost.** `previewSerialUnitCosts` (`inventory.service.ts`,
-  ported from the `preview-serial-unit-costs` server function; `{ itemId,
+  ported from `previewSerialUnitCosts` (`inventory.service.ts`, ported from the `preview-serial-unit-costs` server function); `{ itemId,
   locationId? }`, `view: accounting`) values every on-hand serial of an item
   with the pure `serialUnitCost` (`@carbon/server-functions/lib/serial-unit-cost`): calculateCOGS's
   arithmetic for a quantity of one (own layer, then unstamped, with price
@@ -95,7 +95,7 @@ Key service functions (verified):
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from `postStockMovementCorrection` (`inventory.service.ts`, ported from the `correct-stock-movement` server function)): fixes any
+- `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from `postStockMovementCorrection` (`inventory.service.ts`, ported from `postStockMovementCorrection` (`inventory.service.ts`, ported from the `correct-stock-movement` server function))): fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
   `postingDate` and posting its journal: after the accounting cutover into the period containing

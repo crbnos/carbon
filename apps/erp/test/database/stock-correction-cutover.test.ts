@@ -11,7 +11,7 @@ import {
   moveBeforeCutover,
   receiveFiveParts,
   USER
-} from "@carbon/server-functions/activate-accounting/activation-test-fixture";
+} from "./fixtures/activation";
 import { STOCK_CORRECTION_BEFORE_CUTOVER_ERROR } from "@carbon/server-functions/lib/cutover-void";
 import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
 import { sql } from "kysely";

@@ -857,9 +857,12 @@ export const recalculateRevenueRecognitionRun = defineServiceFn({
       .eq("companyId", ctx.company.id)
       .maybeSingle();
 
-    const result = await service
-      .asCaller(ctx)
-      .invoke("recalculate-revenue-recognition-run", { runId });
+    const result = await invokePosting(
+      ctx,
+      "recalculate-revenue-recognition-run",
+      { runId },
+      service.recalculateRevenueRecognitionRun
+    );
     if (result.error) {
       return service.fromServerFn(
         ctx,
@@ -1972,9 +1975,12 @@ export const enableAccountingCutover = defineServiceFn({
   input: z.object({ cutoverDate: z.string(), confirmation: z.string() }),
   permission: { update: "accounting" },
   async run(ctx, input) {
-    const result = await service
-      .asCaller(ctx)
-      .invoke("activate-accounting", input);
+    const result = await invokePosting(
+      ctx,
+      "activate-accounting",
+      input,
+      service.activateAccounting
+    );
     if (result.error) {
       return service.fromServerFn(
         ctx,
