@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { maintenanceDispatchEventValidator } from "~/modules/resources";
+import { maintenanceDispatchEventValidator } from "~/modules/resources/resources.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(maintenanceDispatchEventValidator).request(

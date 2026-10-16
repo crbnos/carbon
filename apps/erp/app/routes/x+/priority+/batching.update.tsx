@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { createJobOperationBatchValidator } from "~/modules/production";
+import { createJobOperationBatchValidator } from "~/modules/production/production.models";
 
 // The Release dialog's per-supplier PO choice ("new" or a Draft PO id), posted
 // as JSON. Absent when nothing needed choosing.

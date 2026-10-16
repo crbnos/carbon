@@ -32,7 +32,7 @@ import { usePermissions } from "~/hooks";
 import {
   shippingCarrierType,
   shippingMethodValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type ShippingMethodFormProps = {

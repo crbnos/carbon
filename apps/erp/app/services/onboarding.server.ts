@@ -17,16 +17,19 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
-import { insertEmployeeJob } from "~/modules/people";
-import { getLocationsList, upsertLocation } from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
-  type companyValidator,
+  getLocationsList,
+  upsertLocation
+} from "~/modules/resources/resources.service";
+import type { companyValidator } from "~/modules/settings/settings.models";
+import {
   getCompanies,
   insertCompany,
   seedCompany,
+  unpackBackupArchive,
   updateCompany
-} from "~/modules/settings";
-import { unpackBackupArchive } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;

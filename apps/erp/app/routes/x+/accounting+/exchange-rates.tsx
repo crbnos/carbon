@@ -10,7 +10,10 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCurrencies, getExchangeRates } from "~/modules/accounting";
+import {
+  getCurrencies,
+  getExchangeRates
+} from "~/modules/accounting/accounting.service";
 import { ExchangeRatesTable } from "~/modules/accounting/ui/ExchangeRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

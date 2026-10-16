@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { purchaseReturnOrderLineValidator } from "~/modules/purchasing";
+import { purchaseReturnOrderLineValidator } from "~/modules/purchasing/purchasing.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -15,12 +15,13 @@ import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
-import {
-  getAvailableTrackedEntities,
-  stockTransferLineScanValidator
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
+import { stockTransferLineScanValidator } from "~/modules/inventory/inventory.models";
+import { getAvailableTrackedEntities } from "~/modules/inventory/inventory.service";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 /**

@@ -47,9 +47,10 @@ import {
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
-import { getDefaultAccounts } from "~/modules/accounting";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import { getCompanySettings, settingsToggle } from "~/modules/settings";
+import { settingsToggle } from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

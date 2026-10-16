@@ -8,8 +8,10 @@ import { Modal, ModalContent, toast } from "@carbon/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { z } from "zod";
-
-import { type fieldMappings, importSchemas } from "~/modules/shared";
+import {
+  type fieldMappings,
+  importSchemas
+} from "~/modules/shared/imports.models";
 import type { action } from "~/routes/x+/shared+/import.$tableId";
 import { path } from "~/utils/path";
 import { AnimatedSizeContainer } from "../AnimatedSizeContainer";

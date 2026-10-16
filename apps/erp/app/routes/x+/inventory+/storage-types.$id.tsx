@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { storageTypeValidator } from "~/modules/inventory/inventory.models";
 import {
   getStorageType,
-  storageTypeValidator,
   upsertStorageType
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

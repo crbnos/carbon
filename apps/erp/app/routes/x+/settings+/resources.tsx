@@ -29,11 +29,13 @@ import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
-  getCompany,
-  getCompanySettings,
   maintenanceDispatchNotificationValidator,
   suggestionNotificationValidator
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

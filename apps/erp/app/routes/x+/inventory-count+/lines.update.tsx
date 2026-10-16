@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  inventoryCountLineValidator,
-  updateInventoryCountLine
-} from "~/modules/inventory";
+import { inventoryCountLineValidator } from "~/modules/inventory/inventory.models";
+import { updateInventoryCountLine } from "~/modules/inventory/inventory.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 // Inline count entry persists one line at a time via a fetcher. The Draft-only

@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
-import type { QuantityEffect } from "../shared";
+import type { QuantityEffect } from "../shared/types";
 import type {
   getCustomer,
   getCustomerBankAccounts,
@@ -19,7 +19,6 @@ import type {
   getPricingRule,
   getPricingRules,
   getQuoteLinePrices,
-  getQuoteLines,
   getQuoteMakeMethod,
   getQuoteMaterials,
   getQuoteMethodTrees,
@@ -37,6 +36,7 @@ import type {
   priceSourceTypes
 } from "./sales.service";
 import type {
+  getQuoteLines,
   pricingRuleConfigurationPriceValidator,
   QuoteLinePriceSource
 } from "./sales.utils";

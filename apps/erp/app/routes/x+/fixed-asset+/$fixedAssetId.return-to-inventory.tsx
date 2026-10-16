@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { fixedAssetReturnToInventoryValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetReturnToInventoryValidator,
   getFixedAsset,
   invokeAssetTransfer
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { FixedAssetReturnToInventoryForm } from "~/modules/accounting/ui/FixedAssets";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";

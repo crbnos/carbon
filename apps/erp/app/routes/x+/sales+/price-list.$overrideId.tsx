@@ -12,11 +12,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getCustomerItemPriceOverrideById,
   priceOverrideBreaksValidator,
-  priceOverrideValidator,
+  priceOverrideValidator
+} from "~/modules/sales/sales.models";
+import {
+  getCustomerItemPriceOverrideById,
   upsertCustomerItemPriceOverride
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";

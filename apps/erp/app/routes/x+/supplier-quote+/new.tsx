@@ -11,10 +11,8 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import {
-  insertSupplierQuote,
-  supplierQuoteValidator
-} from "~/modules/purchasing";
+import { supplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
+import { insertSupplierQuote } from "~/modules/purchasing/purchasing.service";
 import { SupplierQuoteForm } from "~/modules/purchasing/ui/SupplierQuote";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";

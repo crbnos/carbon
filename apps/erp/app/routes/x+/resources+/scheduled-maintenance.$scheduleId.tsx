@@ -11,10 +11,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getMaintenanceSchedule,
-  maintenanceScheduleValidator
-} from "~/modules/resources";
+import { maintenanceScheduleValidator } from "~/modules/resources/resources.models";
+import { getMaintenanceSchedule } from "~/modules/resources/resources.service";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
 import { path } from "~/utils/path";
 

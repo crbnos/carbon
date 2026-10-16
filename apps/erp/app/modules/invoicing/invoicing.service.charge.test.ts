@@ -14,7 +14,7 @@ vi.mock("@carbon/content/glossary", () => ({
   termSlug: (value: string) => value,
   glossaryEntries: () => []
 }));
-vi.mock("~/modules/purchasing", () => ({}));
+
 vi.mock("../people/people.service", () => ({}));
 vi.mock("../sales/sales.service", () => ({}));
 vi.mock("../accounting/accounting.service", () => ({}));

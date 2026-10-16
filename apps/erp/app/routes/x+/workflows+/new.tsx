@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { workflowValidator } from "~/modules/workflows";
+import { workflowValidator } from "~/modules/workflows/workflows.models";
 
 // The New Workflow modal opens the builder on success.
 export async function action(args: ActionFunctionArgs) {

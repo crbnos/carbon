@@ -5,10 +5,8 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  CreateSupplierModal,
-  createSupplierAccountValidator
-} from "~/modules/users";
+import { CreateSupplierModal } from "~/modules/users/ui";
+import { createSupplierAccountValidator } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 

@@ -123,8 +123,6 @@ import { upsertLocation } from "~/modules/resources/resources.service";
 import {
   getQuote,
   getQuoteCustomerDetails,
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrder,
@@ -132,6 +130,10 @@ import {
   getSalesOrderLines,
   getSalesTerms
 } from "~/modules/sales/sales.service";
+import {
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines
+} from "~/modules/sales/sales.utils";
 import type { Integration } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { getPermissionCacheKey } from "~/modules/users/users.service";

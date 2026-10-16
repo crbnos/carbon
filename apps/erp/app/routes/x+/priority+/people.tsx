@@ -23,8 +23,9 @@ import {
   getEmployeeDepartments,
   getEmployeeShifts,
   getShiftsWithTimes
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import {
+  buildPeopleCapacityBuckets,
   getActiveEmployeeAbilities,
   getLocationEmployees,
   getPeopleAbsences,
@@ -32,13 +33,10 @@ import {
   getPeopleAssignments,
   getPeopleAssignmentsRange,
   getPeopleCapacityOperations,
+  getWorkCenterCalendarHoursByDay,
   getWorkCenterRequiredAbilities,
   getWorkCenterReservationsRange,
   getWorkCenterShifts
-} from "~/modules/production";
-import {
-  buildPeopleCapacityBuckets,
-  getWorkCenterCalendarHoursByDay
 } from "~/modules/production/production.service";
 import { OvertimeDialog } from "~/modules/production/ui/Schedule/People/OvertimeDialog";
 import { PeopleBoard } from "~/modules/production/ui/Schedule/People/PeopleBoard";
@@ -48,7 +46,7 @@ import { PeopleMatrix } from "~/modules/production/ui/Schedule/People/PeopleMatr
 import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleWeekBoard";
 import { assignmentMatchesShift } from "~/modules/production/ui/Schedule/People/peopleShared";
 import { TimeOffDialog } from "~/modules/production/ui/Schedule/People/TimeOffDialog";
-import { getWorkCentersByLocation } from "~/modules/resources";
+import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
 import {
   getLocationTimeZone,
   resolveLocationId

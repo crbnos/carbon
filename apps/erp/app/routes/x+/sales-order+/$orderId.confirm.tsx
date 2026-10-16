@@ -6,7 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { salesConfirmValidator } from "~/modules/sales";
+import { salesConfirmValidator } from "~/modules/sales/sales.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(salesConfirmValidator).request(args, {

@@ -8,10 +8,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getJobOperations,
-  productionQuantityValidator
-} from "~/modules/production";
+import { productionQuantityValidator } from "~/modules/production/production.models";
+import { getJobOperations } from "~/modules/production/production.service";
 import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
 

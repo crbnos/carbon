@@ -15,15 +15,17 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { DeferredFiles, Documents } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { IssueAssociationNode } from "~/modules/quality";
+import {
+  isIssueLocked,
+  issueValidator
+} from "~/modules/quality/quality.models";
 import {
   getIssue,
   getIssueActionTasks,
   getIssueReviewers,
-  isIssueLocked,
-  issueValidator,
   updateIssue
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
+import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   ActionTasksList,
   AssociatedItemsList,

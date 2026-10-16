@@ -20,16 +20,17 @@ vi.mock("@carbon/logger", () => ({
 }));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn(), batchTrigger: vi.fn() }));
 vi.mock("@carbon/lib/telemetry", () => ({ trackWorkEvent: vi.fn() }));
+vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@carbon/server-functions", () => ({
   serverFns: { system: () => ({ invoke }) }
 }));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
-vi.mock("../app/modules/production/production.service", () => ({
+vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(async () => ({ data: {}, error: null })),
-  updateJobStatus: vi.fn(async () => ({ error: null, updated: true })),
   upsertProductionQuantity: vi.fn(async () => ({
     data: { id: "pq1" },
     error: null
@@ -38,7 +39,6 @@ vi.mock("../app/modules/production/production.service", () => ({
 
 import {
   returnPickedRemaindersForJob,
-  updateJobStatus,
   upsertProductionQuantity
 } from "../app/modules/production/production.service";
 import {
@@ -51,15 +51,35 @@ import {
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
-/** The user client: the job as read, and the completion RPC's answer. */
+/** Every status the job was moved to, with the statuses the move allowed. */
+let statusWrites: { status: unknown; fromStatuses?: unknown }[] = [];
+
+/** The user client: the job as read, its status writes, and the completion RPC's answer. */
 function callerWith(
   job: Record<string, unknown> | null,
   rpc: { error: { message: string } | null } = { error: null }
 ) {
-  const chain: Record<string, unknown> = {};
-  for (const method of ["select", "eq"]) chain[method] = () => chain;
-  chain.maybeSingle = async () => ({ data: job, error: null });
-  return { from: () => chain, rpc: async () => ({ data: null, ...rpc }) };
+  const read: Record<string, unknown> = {};
+  for (const method of ["select", "eq"]) read[method] = () => read;
+  read.maybeSingle = async () => ({ data: job, error: null });
+  const update = (row: { status?: unknown }) => {
+    const write = {
+      eq: () => write,
+      in: (_column: string, fromStatuses: unknown) => {
+        statusWrites.push({ status: row.status, fromStatuses });
+        return { select: async () => ({ data: [{ id: "j1" }], error: null }) };
+      },
+      then: (resolve: (value: unknown) => void) => {
+        statusWrites.push({ status: row.status });
+        resolve({ error: null });
+      }
+    };
+    return write;
+  };
+  return {
+    from: () => ({ ...read, update }),
+    rpc: async () => ({ data: null, ...rpc })
+  };
 }
 
 const contextWith = (caller: unknown) =>
@@ -78,16 +98,11 @@ const contextWith = (caller: unknown) =>
     kv: () => ({}) as never
   });
 
-const flips = () =>
-  vi
-    .mocked(updateJobStatus)
-    .mock.calls.map(([, { status, fromStatuses }]) => ({
-      status,
-      fromStatuses
-    }));
+const flips = () => statusWrites;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  statusWrites = [];
   invoke.mockResolvedValue({ data: {}, error: null });
 });
 
@@ -107,7 +122,7 @@ describe("pauseJob", () => {
       jobId: "j1"
     });
     expect(result.error?.category).toBe("rule");
-    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(flips()).toEqual([]);
   });
 
   it("refuses a job of another company as not found", async () => {
@@ -152,7 +167,7 @@ describe("resumeJob", () => {
       { jobId: "j1" }
     );
     expect(result.error?.message).toBe("Manufacturing is blocked");
-    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(flips()).toEqual([]);
   });
 
   it("refuses a Make to Asset job whose item cannot complete to the asset class", async () => {
@@ -161,7 +176,7 @@ describe("resumeJob", () => {
       { jobId: "j1" }
     );
     expect(result.error?.category).toBe("rule");
-    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(flips()).toEqual([]);
   });
 
   it("refuses a job that is not Paused", async () => {

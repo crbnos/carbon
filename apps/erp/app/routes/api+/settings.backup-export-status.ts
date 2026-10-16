@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanyExportRun } from "~/modules/settings";
+import { getCompanyExportRun } from "~/modules/settings/backups.service";
 import { canManageBackups } from "~/modules/settings/settings.service";
 
 // Polled by the export progress modal (and the in-progress list row) for live

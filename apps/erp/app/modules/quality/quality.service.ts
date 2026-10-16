@@ -44,7 +44,7 @@ import { systemContext } from "~/modules/service-context.server";
 import { getCachedCompanyIntegrations } from "~/modules/settings/settings.service";
 import { getExternalLink } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
-import type { inspectionStatus } from "../shared";
+import type { inspectionStatus } from "../shared/shared.models";
 import type {
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,

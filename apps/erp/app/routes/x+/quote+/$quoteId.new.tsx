@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { quoteLineValidator } from "~/modules/sales";
+import { quoteLineValidator } from "~/modules/sales/sales.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

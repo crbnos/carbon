@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { chatRequest } from "~/modules/agent";
+import { chatRequest } from "~/modules/agent/agent.models";
 import { startAgentTurn } from "~/modules/agent/agent.server";
 import { streamChat } from "~/modules/agent/agent.service";
 import { serviceContext } from "~/modules/service-context.server";

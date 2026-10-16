@@ -152,13 +152,9 @@ import {
   OperationRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
 import type {
-  OperationParameter,
-  OperationStep,
-  OperationStepSlide,
-  OperationTool,
   SlideAnnotation,
   SlideSize
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -166,7 +162,13 @@ import {
   operationToolValidator,
   operationTypes,
   procedureStepType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationStepSlide,
+  OperationTool
+} from "~/modules/shared/types";
 import type { action as syncAssemblyAction } from "~/routes/x+/assembly+/$id.sync-bop";
 import type { action as updateOperationAction } from "~/routes/x+/job+/methods+/$jobId.operation.$id";
 import type { action as createOperationAction } from "~/routes/x+/job+/methods+/$jobId.operation.new";
@@ -184,7 +186,7 @@ import {
   procedureSyncValidator,
   syncAssemblyToBopValidator
 } from "../../production.models";
-import { getProductionEventsPage } from "../../production.service";
+import { getProductionEventsPage } from "../../production.utils";
 import type { Job, JobOperation } from "../../types";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { OperationDueDatePicker } from "./OperationDueDatePicker";

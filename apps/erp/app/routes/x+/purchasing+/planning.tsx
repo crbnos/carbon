@@ -17,12 +17,12 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getPlanningActions,
   PLANNING_DRAWER_PARAM,
   resolvePlanningActionScope
-} from "~/modules/production";
-import type { PurchasingPlanningItem } from "~/modules/purchasing";
-import { getPurchasingPlanning } from "~/modules/purchasing";
+} from "~/modules/production/production.models";
+import { getPlanningActions } from "~/modules/production/production.service";
+import { getPurchasingPlanning } from "~/modules/purchasing/purchasing.service";
+import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
 import {
   getLocationTimeZone,

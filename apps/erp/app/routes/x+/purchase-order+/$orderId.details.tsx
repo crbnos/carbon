@@ -14,19 +14,21 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import {
+  isPurchaseOrderLocked,
+  purchaseOrderValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getPurchaseOrder,
+  getPurchaseOrderPayment,
+  updatePurchaseOrder
+} from "~/modules/purchasing/purchasing.service";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
   PurchaseOrderLine,
   SupplierInteraction
-} from "~/modules/purchasing";
-import {
-  getPurchaseOrder,
-  getPurchaseOrderPayment,
-  isPurchaseOrderLocked,
-  purchaseOrderValidator,
-  updatePurchaseOrder
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/types";
 import {
   PurchaseOrderDeliveryForm,
   PurchaseOrderPaymentForm,

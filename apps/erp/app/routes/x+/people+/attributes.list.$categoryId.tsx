@@ -13,7 +13,7 @@ import { useUrlParams } from "~/hooks";
 import {
   getAttributeCategory,
   updateAttributeSortOrder
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 

@@ -30,10 +30,8 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
-import {
-  getItemReplenishment,
-  getSupplierPartPricing
-} from "~/modules/items/items.service";
+import { getItemReplenishment } from "~/modules/items/items.service";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   getActiveJobOperationByJobId,
   insertJob,
@@ -53,9 +51,9 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
-  refuseUnlessOwned,
-  resolveSupplierPrice
+  refuseUnlessOwned
 } from "~/modules/shared/shared.service";
+import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import {
   finishPickingList,
   inventoryAdjustmentTypes,
@@ -80,7 +78,6 @@ import {
   deleteStorageUnitCascade,
   deleteWarehouseTransferLine,
   generateInventoryCountLines,
-  getDefaultStorageUnitForJob,
   getInventoryCount,
   getKanban,
   getPickingList,
@@ -114,6 +111,7 @@ import {
   warehouseTransferLineOf,
   withoutReceiptTracking
 } from "./inventory.service";
+import { getDefaultStorageUnitForJob } from "./inventory.utils";
 
 const logger = getLogger("erp", "inventory");
 

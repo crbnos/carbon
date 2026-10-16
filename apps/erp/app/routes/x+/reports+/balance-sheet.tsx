@@ -17,15 +17,13 @@ import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  financialReportParamsValidator,
-  getCompaniesInGroup,
-  getFinancialStatementPeriodSeries,
-  getFiscalYearSettings
-} from "~/modules/accounting";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
   applyCtaToReportPeriodSeriesForReport,
-  getConsolidatedPeriodSeriesForReport
+  getCompaniesInGroup,
+  getConsolidatedPeriodSeriesForReport,
+  getFinancialStatementPeriodSeries,
+  getFiscalYearSettings
 } from "~/modules/accounting/accounting.service";
 import {
   exportPeriodReport,
@@ -33,7 +31,7 @@ import {
   MultiPeriodStatementTree,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
+import { months } from "~/modules/shared/shared.models";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
-import type { getMaterialSubstancesList } from "~/modules/items";
+import type { getMaterialSubstancesList } from "~/modules/items/items.service";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

@@ -13,7 +13,7 @@ import { useLoaderData } from "react-router";
 import {
   getAttributeCategories,
   getAttributeDataTypes
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { AttributeCategoriesTable } from "~/modules/people/ui/Attributes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

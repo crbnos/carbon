@@ -10,11 +10,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { CustomerRentalRateForm } from "~/modules/items/ui/Item";
+import { customerItemRentalRateValidator } from "~/modules/sales/sales.models";
 import {
-  customerItemRentalRateValidator,
   getCustomerItemRentalRate,
   upsertCustomerItemRentalRate
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

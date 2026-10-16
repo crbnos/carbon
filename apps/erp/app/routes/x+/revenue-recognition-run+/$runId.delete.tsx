@@ -12,7 +12,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getRevenueRecognitionRun } from "~/modules/accounting";
+import { getRevenueRecognitionRun } from "~/modules/accounting/accounting.service";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { path } from "~/utils/path";
 

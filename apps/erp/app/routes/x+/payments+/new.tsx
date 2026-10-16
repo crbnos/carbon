@@ -19,18 +19,16 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { getDefaultAccounts } from "~/modules/accounting";
-import {
-  getPaymentCurrencyConfiguration,
-  PaymentForm,
-  paymentValidator
-} from "~/modules/invoicing";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
+import { paymentValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getDepositDocuments,
+  getPaymentCurrencyConfiguration,
   getSeedableOpenInvoices,
   getSeededDiscounts
 } from "~/modules/invoicing/invoicing.service";
-import { getCompany } from "~/modules/settings";
+import { PaymentForm } from "~/modules/invoicing/ui";
+import { getCompany } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

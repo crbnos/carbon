@@ -11,11 +11,9 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useSearchParams } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  StorageUnitForm,
-  storageUnitValidator,
-  upsertStorageUnit
-} from "~/modules/inventory";
+import { storageUnitValidator } from "~/modules/inventory/inventory.models";
+import { upsertStorageUnit } from "~/modules/inventory/inventory.service";
+import { StorageUnitForm } from "~/modules/inventory/ui";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

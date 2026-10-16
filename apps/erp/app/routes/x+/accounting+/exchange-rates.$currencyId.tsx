@@ -11,11 +11,13 @@ import { useLoaderData } from "react-router";
 import { z } from "zod";
 import {
   currencyFormValidator,
-  exchangeRateOverrideValidator,
+  exchangeRateOverrideValidator
+} from "~/modules/accounting/accounting.models";
+import {
   getCurrency,
   getExchangeRateHistory,
   getExchangeRates
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

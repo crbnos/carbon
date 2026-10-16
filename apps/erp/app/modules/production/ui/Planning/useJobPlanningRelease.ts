@@ -6,7 +6,7 @@ import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import type { PlanningAction } from "~/modules/production";
+import type { PlanningAction } from "~/modules/production/types";
 import type { action as releaseAction } from "~/routes/x+/job+/release";
 import { path } from "~/utils/path";
 

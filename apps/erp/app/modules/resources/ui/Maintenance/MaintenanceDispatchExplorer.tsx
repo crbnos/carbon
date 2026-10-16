@@ -53,7 +53,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import type { action as editEventAction } from "~/routes/x+/maintenance+/$dispatchId.event.$eventId";
 import type { action as newEventAction } from "~/routes/x+/maintenance+/$dispatchId.event.new";
 import { useItems } from "~/stores/items";

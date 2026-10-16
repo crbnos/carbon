@@ -22,7 +22,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { z } from "zod";
 import { useRealtime } from "~/hooks";
-import { PrintJobsTable } from "~/modules/settings";
+import { PrintJobsTable } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

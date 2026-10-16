@@ -34,22 +34,22 @@ import { useLoaderData, useParams } from "react-router";
 import z from "zod";
 import { zfd } from "zod-form-data";
 import { actionTaskStatusActions } from "~/components/ActionTasks/ActionTaskCard";
-import { getSupplier } from "~/modules/purchasing";
-import type { IssueActionTask } from "~/modules/quality";
-import {
-  getIssueActionTasks,
-  getIssueFromExternalLink,
-  nonConformanceTaskStatus
-} from "~/modules/quality";
+import { getSupplier } from "~/modules/purchasing/purchasing.service";
+import { nonConformanceTaskStatus } from "~/modules/quality/quality.models";
 import {
   setScarTaskStatus,
   updateScarTaskNotes
 } from "~/modules/quality/quality.server";
-import { scarLinkContext } from "~/modules/quality/quality.service";
+import {
+  getIssueActionTasks,
+  getIssueFromExternalLink,
+  scarLinkContext
+} from "~/modules/quality/quality.service";
+import type { IssueActionTask } from "~/modules/quality/types";
 import { TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { getCompany } from "~/modules/settings";
-import { getExternalLink } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service";
+import { getExternalLink } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { ErrorMessage } from "./quote.$id";
 

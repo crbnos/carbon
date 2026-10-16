@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteLeaseLine } from "~/modules/purchasing";
+import { deleteLeaseLine } from "~/modules/purchasing/purchasing.service";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "lease-line-delete");

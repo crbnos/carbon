@@ -17,7 +17,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { revokeInviteValidator } from "~/modules/users";
+import { revokeInviteValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type RevokeInviteModalProps = {

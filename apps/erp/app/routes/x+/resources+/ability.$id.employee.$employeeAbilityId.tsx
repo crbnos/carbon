@@ -12,12 +12,10 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Ability } from "~/modules/resources";
-import {
-  EmployeeAbilityForm,
-  employeeAbilityCellValidator,
-  getEmployeeAbility
-} from "~/modules/resources";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
+import { getEmployeeAbility } from "~/modules/resources/resources.service";
+import type { Ability } from "~/modules/resources/types";
+import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

@@ -8,11 +8,12 @@ import { getLogger } from "@carbon/logger";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
+import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory/inventory.service";
 import {
+  getCompany,
   getCompanyLogoForLabel,
   getCompanySettings,
+  getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 

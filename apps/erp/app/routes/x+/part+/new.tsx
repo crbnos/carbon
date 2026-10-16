@@ -8,7 +8,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { partValidator } from "~/modules/items";
+import { partValidator } from "~/modules/items/items.models";
 import { PartForm } from "~/modules/items/ui/Parts";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

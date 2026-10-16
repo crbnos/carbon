@@ -48,7 +48,7 @@ import {
 } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import { getItemStorageUnitQuantities } from "../items/items.service";
+import { getItemStorageUnitQuantities } from "../items/items.utils";
 import type {
   batchPropertyOrderValidator,
   batchPropertyValidator,
@@ -827,18 +827,6 @@ export async function getReceiptRelatedItems(
   };
 }
 
-export async function getReceiptTracking(
-  client: SupabaseClient<Database>,
-  receiptId: string,
-  companyId: string
-) {
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("attributes ->> Receipt", receiptId)
-    .eq("companyId", companyId);
-}
-
 export async function getReceiptLineTracking(
   client: SupabaseClient<Database>,
   receiptLineId: string,
@@ -1438,18 +1426,6 @@ export async function getShipmentRelatedItems(
   return {
     invoices: invoices.data ?? []
   };
-}
-
-export async function getShipmentTracking(
-  client: SupabaseClient<Database>,
-  shipmentId: string,
-  companyId: string
-) {
-  return client
-    .from("trackedEntity")
-    .select("*")
-    .eq("attributes ->> Shipment", shipmentId)
-    .eq("companyId", companyId);
 }
 
 export async function getRentalShipmentLines(
@@ -2814,44 +2790,6 @@ export async function upsertWarehouseTransferLine(
       .select()
       .single();
   }
-}
-
-export async function getDefaultStorageUnitForJob(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  locationId: string,
-  companyId: string
-): Promise<string | null> {
-  const pickMethod = await client
-    .from("pickMethod")
-    .select("defaultStorageUnitId")
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (pickMethod.data?.defaultStorageUnitId) {
-    return pickMethod.data.defaultStorageUnitId;
-  }
-
-  const itemStorageUnitQuantities = await getItemStorageUnitQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
-
-  if (itemStorageUnitQuantities.data?.length) {
-    // Find the storage unit with the highest quantity
-    const storageUnitWithHighestQuantity =
-      itemStorageUnitQuantities.data.reduce((max, current) => {
-        return (current.quantity ?? 0) > (max.quantity ?? 0) ? current : max;
-      });
-
-    return storageUnitWithHighestQuantity.storageUnitId;
-  }
-
-  return null;
 }
 
 // ----------------------------------------------------------------------------

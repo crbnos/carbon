@@ -10,16 +10,18 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import {
+  isWarehouseTransferLocked,
+  warehouseTransferValidator
+} from "~/modules/inventory/inventory.models";
+import {
+  getWarehouseTransfer,
+  updateWarehouseTransfer
+} from "~/modules/inventory/inventory.service";
 import type {
   WarehouseTransfer,
   WarehouseTransferLine
-} from "~/modules/inventory";
-import {
-  getWarehouseTransfer,
-  isWarehouseTransferLocked,
-  updateWarehouseTransfer,
-  warehouseTransferValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import {
   WarehouseTransferForm,
   WarehouseTransferLines

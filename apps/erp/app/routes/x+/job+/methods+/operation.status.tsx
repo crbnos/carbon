@@ -6,7 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { jobOperationStatus } from "~/modules/production";
+import { jobOperationStatus } from "~/modules/production/production.models";
 
 const statusForm = z.object({
   id: z.string().min(1),

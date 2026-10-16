@@ -8,10 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  trackedEntityExpiryValidator,
-  updateTrackedEntityExpiry
-} from "~/modules/inventory";
+import { trackedEntityExpiryValidator } from "~/modules/inventory/inventory.models";
+import { updateTrackedEntityExpiry } from "~/modules/inventory/inventory.service";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

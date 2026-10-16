@@ -6,7 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { maintenanceDispatchStatus } from "~/modules/resources";
+import { maintenanceDispatchStatus } from "~/modules/resources/resources.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(

@@ -11,7 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCompletionJobs } from "~/modules/production";
+import { getCompletionJobs } from "~/modules/production/production.service";
 import type { OutboundRow } from "~/modules/production/ui/Schedule/OutboundTable";
 import {
   isOutboundHorizon,

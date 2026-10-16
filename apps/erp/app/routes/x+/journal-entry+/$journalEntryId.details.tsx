@@ -9,8 +9,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { z } from "zod";
 import { useRouteData } from "~/hooks";
-import type { JournalEntry } from "~/modules/accounting";
-import { journalEntryValidator } from "~/modules/accounting";
+import { journalEntryValidator } from "~/modules/accounting/accounting.models";
+import type { JournalEntry } from "~/modules/accounting/types";
 import { JournalEntryForm } from "~/modules/accounting/ui/JournalEntries";
 import type {
   DimensionWithValues,

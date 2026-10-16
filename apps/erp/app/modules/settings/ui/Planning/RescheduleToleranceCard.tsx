@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Number, Submit } from "~/components/Form";
-import { rescheduleToleranceValidator } from "~/modules/settings";
+import { rescheduleToleranceValidator } from "~/modules/settings/settings.models";
 
 // One settings card = one saved concern (archetype F): the reschedule
 // tolerance MRP applies before it raises an Expedite / Defer suggestion.

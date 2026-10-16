@@ -20,7 +20,7 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator
-} from "~/modules/production";
+} from "~/modules/production/production.models";
 
 const id = z.string().min(1);
 

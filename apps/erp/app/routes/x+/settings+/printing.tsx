@@ -18,8 +18,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
-import { getLocationsList, getWorkCentersList } from "~/modules/resources";
-import { getCompanySettings, printerRouteValidator } from "~/modules/settings";
+import {
+  getLocationsList,
+  getWorkCentersList
+} from "~/modules/resources/resources.service";
+import { printerRouteValidator } from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";

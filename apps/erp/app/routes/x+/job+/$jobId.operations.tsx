@@ -10,7 +10,10 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
-import { getJob, getJobOperations } from "~/modules/production";
+import {
+  getJob,
+  getJobOperations
+} from "~/modules/production/production.service";
 import { JobOperationsTable } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

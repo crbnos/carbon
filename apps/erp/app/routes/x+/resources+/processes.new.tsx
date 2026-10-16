@@ -8,9 +8,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import {
   batchRuleInitialValues,
-  ProcessForm,
   processValidator
-} from "~/modules/resources";
+} from "~/modules/resources/resources.models";
+import { ProcessForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

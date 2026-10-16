@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import type { deadlineTypes } from "~/modules/production";
+import type { deadlineTypes } from "~/modules/production/production.models";
 
 // The jobs table's bulk actions and the job properties panel: one field of
 // one or more jobs per post.

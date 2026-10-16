@@ -34,11 +34,11 @@ import { z } from "zod";
 import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
-  getCompanySettings,
   jobCompletedValidator,
   settingsToggle
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
 import type { updateProductionSettings } from "~/modules/settings/settings.server";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

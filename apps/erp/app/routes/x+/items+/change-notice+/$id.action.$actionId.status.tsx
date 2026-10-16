@@ -8,13 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  changeNoticeActionStatusValidator,
-  updateChangeNoticeActionStatus
-} from "~/modules/items";
+import { changeNoticeActionStatusValidator } from "~/modules/items/items.models";
 import {
   requireChangeNoticeChildRoute,
-  requireEditableChangeNoticeRoute
+  requireEditableChangeNoticeRoute,
+  updateChangeNoticeActionStatus
 } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {

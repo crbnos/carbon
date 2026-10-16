@@ -11,10 +11,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  fixedAssetDisposalValidator,
-  getFixedAsset
-} from "~/modules/accounting";
+import { fixedAssetDisposalValidator } from "~/modules/accounting/accounting.models";
+import { getFixedAsset } from "~/modules/accounting/accounting.service";
 import { FixedAssetDisposalForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 

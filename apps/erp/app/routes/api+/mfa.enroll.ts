@@ -8,7 +8,7 @@ import { enrollTotpFactor, getTotpFactors } from "@carbon/auth/mfa.server";
 import { requireAuthSession } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getCompany } from "~/modules/settings";
+import { getCompany } from "~/modules/settings/settings.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

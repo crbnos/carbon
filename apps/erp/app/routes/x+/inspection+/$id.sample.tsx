@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
-import { inspectionSampleValidator } from "~/modules/quality";
+import { inspectionSampleValidator } from "~/modules/quality/quality.models";
 import { upsertInspectionSample } from "~/modules/quality/quality.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {

@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { getJobMethodValidator } from "~/modules/production";
+import { getJobMethodValidator } from "~/modules/production/production.models";
 import { path, requestReferrer } from "~/utils/path";
 
 // Get Method: onto the job from an item, quote line or job, or onto a made

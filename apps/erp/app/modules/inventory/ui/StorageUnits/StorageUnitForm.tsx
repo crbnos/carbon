@@ -33,7 +33,7 @@ import {
   WorkCenter
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { storageUnitValidator } from "~/modules/inventory";
+import { storageUnitValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 import { StorageUnitParentSelect } from "./StorageUnitParentSelect";
 

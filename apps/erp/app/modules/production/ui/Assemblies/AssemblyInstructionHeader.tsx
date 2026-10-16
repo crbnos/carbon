@@ -25,7 +25,7 @@ import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import type { action as reconvertAction } from "~/routes/x+/assembly+/$id.model.invalidate";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

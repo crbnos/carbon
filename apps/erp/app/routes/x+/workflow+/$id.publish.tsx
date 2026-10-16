@@ -9,7 +9,7 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { workflowPublishValidator } from "~/modules/workflows";
+import { workflowPublishValidator } from "~/modules/workflows/workflows.models";
 import { publishWorkflowVersion } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 

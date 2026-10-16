@@ -4,7 +4,7 @@
 
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { isAccountSettingsTab } from "~/modules/account";
+import { isAccountSettingsTab } from "~/modules/account/account.models";
 import { path } from "~/utils/path";
 
 // Account settings is a modal now. The old pages stay as links into it —

@@ -28,7 +28,7 @@ import { LuEllipsisVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, New } from "~/components";
 import { usePermissions } from "~/hooks";
-import type { getCustomerItemRentalRates } from "~/modules/sales";
+import type { getCustomerItemRentalRates } from "~/modules/sales/sales.service";
 import RentalMoney from "~/modules/sales/ui/Rentals/RentalMoney";
 import { path } from "~/utils/path";
 

@@ -21,7 +21,7 @@ import {
   getIntegration,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.service";
-import { oAuthCallbackSchema } from "~/modules/shared";
+import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 export const config = {

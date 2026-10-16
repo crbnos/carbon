@@ -51,7 +51,7 @@ import type {
   IssueActionTask,
   IssueItem,
   IssueReviewer
-} from "~/modules/quality";
+} from "~/modules/quality/types";
 import type { action as dueDateRouteAction } from "~/routes/x+/issue+/action.$id.due-date";
 import type { action as taskStatusAction } from "~/routes/x+/issue+/task.$id.status";
 import type { action as supplierRouteAction } from "~/routes/x+/issue+/task.supplier";

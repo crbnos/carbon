@@ -53,7 +53,10 @@ import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
+import {
+  ssoConnectionValidator,
+  ssoDomainValidator
+} from "~/modules/settings/settings.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

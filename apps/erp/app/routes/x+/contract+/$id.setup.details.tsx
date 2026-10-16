@@ -8,7 +8,7 @@ import { redirect, round, tiptapToText } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { customerContractValidator } from "~/modules/sales";
+import { customerContractValidator } from "~/modules/sales/sales.models";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractDetailsForm,

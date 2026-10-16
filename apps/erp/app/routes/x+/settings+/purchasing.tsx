@@ -47,13 +47,15 @@ import {
   accountsPayableBillingAddressValidator,
   billingAddressFields,
   defaultSupplierCcValidator,
-  getAccountsPayableBillingAddress,
-  getCompanySettings,
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   settingsToggle,
   supplierQuoteNotificationValidator
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
+import {
+  getAccountsPayableBillingAddress,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

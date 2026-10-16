@@ -6,7 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { leaseClassificationValidator } from "~/modules/purchasing";
+import { leaseClassificationValidator } from "~/modules/purchasing/purchasing.models";
 import { path, requestReferrer } from "~/utils/path";
 
 // Override one leased asset's classification, or `intent=remove` to clear

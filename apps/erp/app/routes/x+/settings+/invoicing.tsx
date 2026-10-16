@@ -47,13 +47,15 @@ import {
   accountsReceivableEmailValidator,
   billingAddressFields,
   defaultCustomerCcValidator,
-  getAccountsReceivableBillingAddress,
-  getCompanySettings,
   invoiceAutomations,
   invoiceAutomationValidator,
   invoiceNotificationValidator,
   settingsToggle
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
+import {
+  getAccountsReceivableBillingAddress,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

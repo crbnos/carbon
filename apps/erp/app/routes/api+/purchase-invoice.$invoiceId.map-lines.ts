@@ -9,7 +9,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { mapPurchaseInvoiceLines } from "~/modules/invoicing/invoicing.server";
-import { resolveItemIdFromExtractedText } from "~/modules/items";
+import { resolveItemIdFromExtractedText } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

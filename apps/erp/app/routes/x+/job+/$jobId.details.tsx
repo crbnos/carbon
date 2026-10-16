@@ -33,7 +33,7 @@ import {
 } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Job, JobPurchaseOrderLine } from "~/modules/production";
+import { jobValidator } from "~/modules/production/production.models";
 import {
   getJob,
   getJobDocumentsWithItemId,
@@ -42,9 +42,9 @@ import {
   getJobOperationsByMethodId,
   getJobPurchaseOrderLines,
   getProductionDataByOperations,
-  getRootMakeMethod,
-  jobValidator
-} from "~/modules/production";
+  getRootMakeMethod
+} from "~/modules/production/production.service";
+import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -55,8 +55,10 @@ import {
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
-import { getTagsList } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import {
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";

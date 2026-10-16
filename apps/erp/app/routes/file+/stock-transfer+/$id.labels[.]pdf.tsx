@@ -7,10 +7,11 @@ import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
 import {
+  getCompany,
   getCompanyLogoForLabel,
   getCompanySettings,
+  getDocumentTemplateConfig,
   resolveLabelLogo
 } from "~/modules/settings/settings.service";
 import { getStockTransferLabelItems } from "./labels.server";

@@ -18,13 +18,15 @@ import { z } from "zod";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   forecastConsumptionValidator,
-  getCompanySettings,
-  getItemPostingGroupResponsibilities,
   mrpScheduleValidator,
   planningHorizonValidator,
   rescheduleToleranceValidator,
   settingsToggle
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
+import {
+  getCompanySettings,
+  getItemPostingGroupResponsibilities
+} from "~/modules/settings/settings.service";
 import {
   ForecastConsumptionCard,
   MrpScheduleCard,

@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deactivateUsersValidator } from "~/modules/users";
+import { deactivateUsersValidator } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
 
 export async function action(args: ActionFunctionArgs) {

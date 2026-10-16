@@ -16,20 +16,20 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
-  getItemManufacturing,
-  getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId,
   itemManufacturingValidator,
   toolValidator
-} from "~/modules/items";
+} from "~/modules/items/items.models";
 import {
   getItemChangeNoticeDataOnce,
+  getItemManufacturing,
   getMakeMethodByIdOnce,
   getMakeMethodsOnce,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
   getRevisionLock
 } from "~/modules/items/items.service";
+import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items/types";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -46,8 +46,8 @@ import {
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

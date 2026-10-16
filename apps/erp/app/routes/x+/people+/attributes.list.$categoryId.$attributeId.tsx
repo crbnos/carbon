@@ -10,8 +10,8 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { getAttribute } from "~/modules/people";
+import { getAttribute } from "~/modules/people/people.service";
+import type { AttributeDataType } from "~/modules/people/types";
 import { AttributeForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 

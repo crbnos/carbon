@@ -11,13 +11,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
-import {
-  CONSTRUCTION_IN_PROGRESS_ENABLED,
-  getFixedAssets
-} from "~/modules/accounting";
-import { jobValidator } from "~/modules/production";
+import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
+import { getFixedAssets } from "~/modules/accounting/accounting.service";
+import { jobValidator } from "~/modules/production/production.models";
 import { JobForm } from "~/modules/production/ui/Jobs";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

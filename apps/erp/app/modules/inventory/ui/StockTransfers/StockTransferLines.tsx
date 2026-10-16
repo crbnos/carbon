@@ -43,11 +43,11 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import {
-  isStockTransferLocked,
-  type StockTransfer,
-  type StockTransferLine
-} from "~/modules/inventory";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
 import type { action as quantityAction } from "~/routes/x+/stock-transfer+/$id.line.quantity";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

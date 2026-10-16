@@ -95,12 +95,6 @@ import {
 } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
-  getIntegration,
-  IntegrationForm,
-  SyncActivity,
-  syncOperationTransitionValidator
-} from "~/modules/settings";
-import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
   dimensionSlotsUpdateValidator,
@@ -108,15 +102,18 @@ import {
   dimensionValueMappingUpsertValidator,
   postingSyncSettingsValidator,
   syncEnabledValidator,
+  syncOperationTransitionValidator,
   workCenterDeviceUpsertValidator
 } from "~/modules/settings/settings.models";
 import {
+  getIntegration,
   getOeeDevicesTabData,
   getProviderDimensionTargets,
   getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.service";
+import { IntegrationForm, SyncActivity } from "~/modules/settings/ui";
 import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/AccountingSyncControl";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";

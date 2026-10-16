@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Status } from "@carbon/react";
-import type { trainingStatus } from "~/modules/resources";
+import type { trainingStatus } from "~/modules/resources/resources.models";
 
 type TrainingStatusProps = {
   status: (typeof trainingStatus)[number] | null;

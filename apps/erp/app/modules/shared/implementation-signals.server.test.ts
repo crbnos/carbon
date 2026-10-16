@@ -28,11 +28,10 @@ vi.mock("@carbon/documents/email", () => ({}));
 vi.mock("@carbon/jobs", () => ({}));
 vi.mock("~/modules/accounting/accounting.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({}));
-vi.mock("~/modules/users/users.server", () => ({}));
+
 vi.mock("~/routes/file+/purchase-return-order+/$id[.]pdf", () => ({}));
 vi.mock("~/routes/file+/sales-return-order+/$id[.]pdf", () => ({}));
 vi.mock("../documents/documents.service", () => ({}));
-vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 
 const { getImplementationSignals } = await import("./shared.service");

@@ -16,15 +16,15 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
+import { documentTemplateValidator } from "~/modules/settings/settings.models";
 import {
-  documentTemplateValidator,
   getCompany,
   getCompanySettings,
   getDocumentSections,
   getDocumentTemplate,
-  getTerms
-} from "~/modules/settings";
-import { listPreviewEntities } from "~/modules/settings/settings.service";
+  getTerms,
+  listPreviewEntities
+} from "~/modules/settings/settings.service";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

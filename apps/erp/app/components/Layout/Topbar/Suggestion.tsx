@@ -35,7 +35,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { LuImage, LuMegaphone } from "react-icons/lu";
 import { useLocation } from "react-router";
 import { useUser } from "~/hooks";
-import { suggestionValidator } from "~/modules/shared";
+import { suggestionValidator } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/resources+/suggestions.new";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";

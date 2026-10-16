@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { jobOperationValidator } from "~/modules/production";
+import { jobOperationValidator } from "~/modules/production/production.models";
 import { setCustomFields } from "~/utils/form";
 
 export async function action(args: ActionFunctionArgs) {

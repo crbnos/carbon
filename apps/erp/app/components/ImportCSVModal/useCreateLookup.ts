@@ -5,7 +5,7 @@
 import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useRef } from "react";
-import type { CreatableLookup } from "~/modules/shared";
+import type { CreatableLookup } from "~/modules/shared/imports.models";
 import type { action } from "~/routes/api+/csv+/create-lookup";
 import { path } from "~/utils/path";
 

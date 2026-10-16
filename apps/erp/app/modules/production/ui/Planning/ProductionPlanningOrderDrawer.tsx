@@ -24,11 +24,12 @@ import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import type { PlanningAction, ProductionOrder } from "~/modules/production";
+import type { ProductionOrder } from "~/modules/production/production.models";
 import {
   isJobEditableFromPlanning,
   type jobStatus
 } from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,

@@ -8,11 +8,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { warehouseTransferLineValidator } from "~/modules/inventory/inventory.models";
 import type {
   WarehouseTransfer,
   WarehouseTransferLine
-} from "~/modules/inventory";
-import { warehouseTransferLineValidator } from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { WarehouseTransferLineForm } from "~/modules/inventory/ui/WarehouseTransfers";
 import { path } from "~/utils/path";
 

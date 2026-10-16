@@ -11,11 +11,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { salesReturnOrderLineValidator } from "~/modules/sales/sales.models";
 import {
   getReturnReasonsList,
-  getSalesReturnOrderLine,
-  salesReturnOrderLineValidator
-} from "~/modules/sales";
+  getSalesReturnOrderLine
+} from "~/modules/sales/sales.service";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
 import type { SalesReturnOrderLine } from "~/modules/sales/ui/SalesReturnOrders/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";

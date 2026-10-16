@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  generatePickingList,
-  generatePickingListValidator
-} from "~/modules/inventory";
+import { generatePickingListValidator } from "~/modules/inventory/inventory.models";
+import { generatePickingList } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

@@ -7,7 +7,8 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { WorkCenterForm, workCenterValidator } from "~/modules/resources";
+import { workCenterValidator } from "~/modules/resources/resources.models";
+import { WorkCenterForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

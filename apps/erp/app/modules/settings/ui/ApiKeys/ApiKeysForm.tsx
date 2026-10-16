@@ -44,7 +44,7 @@ import {
   apiKeyOptInPermissionKeys,
   apiKeyPermissionModules,
   apiKeyValidator
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 

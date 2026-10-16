@@ -40,8 +40,6 @@ import {
   getCustomerLocations,
   getQuote,
   getQuoteCustomerDetails,
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrder,
@@ -51,6 +49,7 @@ import {
   getSalesReturnOrderLines,
   getSalesTerms
 } from "./sales.service";
+import { getQuoteLinePricesByQuoteId, getQuoteLines } from "./sales.utils";
 
 // The sales documents as PDFs, read with the caller's client. The file
 // routes serve them; the operations that issue a document (quote finalize,

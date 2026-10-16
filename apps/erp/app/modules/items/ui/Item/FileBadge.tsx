@@ -7,7 +7,7 @@ import { Badge, cn, HStack } from "@carbon/react";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import type { ItemFile } from "../../types";
 import { useItemDocuments } from "./ItemDocuments";
 

@@ -9,13 +9,15 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  getDefaultRentalRates,
+  rentalAgreementLineValidator,
+  rentalRateUnits
+} from "~/modules/sales/sales.models";
+import {
   getRentalAgreement,
   getRentalAgreementLine,
-  rentalAgreementLineValidator,
-  rentalRateUnits,
   upsertRentalAgreementLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import { getDefaultRentalRates } from "~/modules/sales/sales.utils";
 
 const logger = getLogger("erp", "rental-agreement-line-update");
 

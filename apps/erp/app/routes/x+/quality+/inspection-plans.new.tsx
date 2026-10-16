@@ -9,8 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { upsertInspectionDocument } from "~/modules/quality";
 import { inspectionDocumentValidator } from "~/modules/quality/quality.models";
+import { upsertInspectionDocument } from "~/modules/quality/quality.service";
 import { InspectionDocumentForm } from "~/modules/quality/ui/InspectionDocument";
 import { path } from "~/utils/path";
 

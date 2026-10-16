@@ -8,7 +8,7 @@ import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { maintenanceScheduleValidator } from "~/modules/resources";
+import { maintenanceScheduleValidator } from "~/modules/resources/resources.models";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { getParams, path, requestReferrer } from "~/utils/path";

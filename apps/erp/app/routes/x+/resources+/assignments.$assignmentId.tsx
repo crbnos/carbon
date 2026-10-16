@@ -48,11 +48,11 @@ import { useLoaderData, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Empty, FileDropzone } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { trainingCertificateAccept } from "~/modules/resources/resources.models";
 import {
   getTrainingAssignment,
-  getTrainingAssignmentStatus,
-  trainingCertificateAccept
-} from "~/modules/resources";
+  getTrainingAssignmentStatus
+} from "~/modules/resources/resources.service";
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
 import type { action as completeAction } from "~/routes/x+/resources+/assignments.complete";
 import type { Handle } from "~/utils/handle";

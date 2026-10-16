@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { receiptFixedAssetLineUpdateValidator } from "~/modules/inventory";
+import { receiptFixedAssetLineUpdateValidator } from "~/modules/inventory/inventory.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(receiptFixedAssetLineUpdateValidator).request(

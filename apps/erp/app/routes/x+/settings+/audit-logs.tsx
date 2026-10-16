@@ -23,7 +23,10 @@ import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
+import {
+  AuditLogSettings,
+  AuditLogUpgradeOverlay
+} from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

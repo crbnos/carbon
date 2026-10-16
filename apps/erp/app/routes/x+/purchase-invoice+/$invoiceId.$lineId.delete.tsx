@@ -12,11 +12,11 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { isPurchaseInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
-  getPurchaseInvoiceLine,
-  isPurchaseInvoiceLocked
-} from "~/modules/invoicing";
+  getPurchaseInvoiceLine
+} from "~/modules/invoicing/invoicing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

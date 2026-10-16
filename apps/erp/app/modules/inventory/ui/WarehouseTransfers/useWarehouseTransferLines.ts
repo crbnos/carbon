@@ -5,7 +5,7 @@
 import { useAction } from "@carbon/query";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
-import type { WarehouseTransfer } from "~/modules/inventory";
+import type { WarehouseTransfer } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 export default function useWarehouseTransferLines(

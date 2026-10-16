@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { salesRuleAcknowledgementValidator } from "~/modules/sales";
+import { salesRuleAcknowledgementValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

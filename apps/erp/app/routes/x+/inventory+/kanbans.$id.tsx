@@ -10,12 +10,9 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import {
-  getKanban,
-  KanbanForm,
-  kanbanValidator,
-  upsertKanban
-} from "~/modules/inventory";
+import { kanbanValidator } from "~/modules/inventory/inventory.models";
+import { getKanban, upsertKanban } from "~/modules/inventory/inventory.service";
+import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

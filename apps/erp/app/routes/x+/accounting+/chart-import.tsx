@@ -45,7 +45,7 @@ import {
   AccountImportCsvErrors,
   AccountImportReview
 } from "~/modules/accounting/ui/ChartOfAccounts";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

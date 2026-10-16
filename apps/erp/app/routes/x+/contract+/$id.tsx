@@ -34,7 +34,7 @@ import {
   getContractAmendments,
   getContractInvoiceSchedule,
   getContractLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import type {
   Contract,
   ContractCreditMemoLinks,

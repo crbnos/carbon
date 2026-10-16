@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  InventoryCountForm,
-  inventoryCountValidator
-} from "~/modules/inventory";
+import { inventoryCountValidator } from "~/modules/inventory/inventory.models";
+import { InventoryCountForm } from "~/modules/inventory/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

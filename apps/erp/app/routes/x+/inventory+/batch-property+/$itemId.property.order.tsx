@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  batchPropertyOrderValidator,
-  updateBatchPropertyOrder
-} from "~/modules/inventory";
+import { batchPropertyOrderValidator } from "~/modules/inventory/inventory.models";
+import { updateBatchPropertyOrder } from "~/modules/inventory/inventory.service";
 
 const logger = getLogger("erp", "itemid-property-order");
 

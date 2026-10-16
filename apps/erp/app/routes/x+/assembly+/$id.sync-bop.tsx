@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { syncAssemblyToBopValidator } from "~/modules/production";
+import { syncAssemblyToBopValidator } from "~/modules/production/production.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(syncAssemblyToBopValidator).request(args, {

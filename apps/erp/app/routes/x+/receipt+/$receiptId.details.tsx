@@ -8,14 +8,11 @@ import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Receipt, ReceiptLine } from "~/modules/inventory";
-import {
-  ReceiptForm,
-  ReceiptLines,
-  receiptValidator
-} from "~/modules/inventory";
+import { receiptValidator } from "~/modules/inventory/inventory.models";
+import type { Receipt, ReceiptLine } from "~/modules/inventory/types";
+import { ReceiptForm, ReceiptLines } from "~/modules/inventory/ui";
 import { SupplierInteractionNotes } from "~/modules/purchasing/ui/SupplierInteraction";
-import type { Note } from "~/modules/shared";
+import type { Note } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

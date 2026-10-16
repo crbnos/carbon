@@ -11,10 +11,12 @@ import { loader } from "./traceability.expand";
 vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: vi.fn()
 }));
-vi.mock("~/modules/inventory/lineage.server", () => ({
+vi.mock("~/modules/inventory/inventory.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   fetchLineageSubgraph: vi.fn(async () => ({ entities: [], activities: [] }))
 }));
-vi.mock("~/modules/shared/shared.server", () => ({
+vi.mock("~/modules/shared/shared.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   requireCompanyRecord: vi.fn(async () => undefined)
 }));
 

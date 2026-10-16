@@ -9,8 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { updateWarehouseTransferStatus } from "~/modules/inventory";
 import { warehouseTransferStatusType } from "~/modules/inventory/inventory.models";
+import { updateWarehouseTransferStatus } from "~/modules/inventory/inventory.service";
 
 const updateStatusValidator = z.object({
   status: z.enum(warehouseTransferStatusType)

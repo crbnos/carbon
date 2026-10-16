@@ -83,10 +83,10 @@ import {
 } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type {
-  ItemStorageUnitQuantities,
   itemTrackingTypes,
   pickMethodValidator
-} from "~/modules/items";
+} from "~/modules/items/items.models";
+import type { ItemStorageUnitQuantities } from "~/modules/items/types";
 import { path } from "~/utils/path";
 import {
   inventoryAdjustmentValidator,

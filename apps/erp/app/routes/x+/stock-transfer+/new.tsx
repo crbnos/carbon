@@ -8,7 +8,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { zfd } from "zod-form-data";
-import { stockTransferValidator } from "~/modules/inventory";
+import { stockTransferValidator } from "~/modules/inventory/inventory.models";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -10,12 +10,10 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import type { ShippingCarrier } from "~/modules/inventory";
-import {
-  ShippingMethodForm,
-  shippingMethodValidator,
-  upsertShippingMethod
-} from "~/modules/inventory";
+import { shippingMethodValidator } from "~/modules/inventory/inventory.models";
+import { upsertShippingMethod } from "~/modules/inventory/inventory.service";
+import type { ShippingCarrier } from "~/modules/inventory/types";
+import { ShippingMethodForm } from "~/modules/inventory/ui";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

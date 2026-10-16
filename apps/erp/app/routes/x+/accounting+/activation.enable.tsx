@@ -31,7 +31,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { activateAccountingValidator } from "~/modules/accounting";
+import { activateAccountingValidator } from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,

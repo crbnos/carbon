@@ -8,13 +8,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { productionEventValidator } from "~/modules/production/production.models";
 import {
   getJobOperations,
-  getProductionEvent,
-  productionEventValidator
-} from "~/modules/production";
+  getProductionEvent
+} from "~/modules/production/production.service";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
-import { getWorkCentersList } from "~/modules/resources";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

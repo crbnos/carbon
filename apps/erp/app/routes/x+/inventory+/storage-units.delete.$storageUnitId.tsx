@@ -27,7 +27,7 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
-import { getStorageUnit } from "~/modules/inventory";
+import { getStorageUnit } from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
 
 // The cascade modal sends `cascade=true` to delete the nested units too.

@@ -8,8 +8,12 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
-import type { Customer, SalesOrder, SalesOrderLineType } from "~/modules/sales";
-import { salesOrderLineValidator } from "~/modules/sales";
+import { salesOrderLineValidator } from "~/modules/sales/sales.models";
+import type {
+  Customer,
+  SalesOrder,
+  SalesOrderLineType
+} from "~/modules/sales/types";
 import { SalesOrderLineForm } from "~/modules/sales/ui/SalesOrder";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

@@ -69,7 +69,6 @@ vi.mock("~/hooks", () => ({
   usePermissions: () => ({ can: () => true }),
   useRouteData: () => undefined
 }));
-vi.mock("~/modules/invoicing", () => import("../../invoicing.models"));
 
 import SalesInvoiceForm from "./SalesInvoiceForm";
 

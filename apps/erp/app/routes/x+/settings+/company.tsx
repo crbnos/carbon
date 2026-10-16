@@ -25,8 +25,9 @@ import { AppBarActions } from "~/components/Layout/Mobile";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import type { Company as CompanyType } from "~/modules/settings";
-import { CompanyForm, companyValidator } from "~/modules/settings";
+import { companyValidator } from "~/modules/settings/settings.models";
+import type { Company as CompanyType } from "~/modules/settings/types";
+import { CompanyForm } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

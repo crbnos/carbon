@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { quoteFinalizeValidator } from "~/modules/sales";
+import { quoteFinalizeValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

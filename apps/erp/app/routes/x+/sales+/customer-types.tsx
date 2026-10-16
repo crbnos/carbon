@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerTypes } from "~/modules/sales";
+import { getCustomerTypes } from "~/modules/sales/sales.service";
 import { CustomerTypesTable } from "~/modules/sales/ui/CustomerTypes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

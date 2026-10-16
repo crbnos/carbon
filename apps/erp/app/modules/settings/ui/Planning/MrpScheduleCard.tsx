@@ -20,7 +20,10 @@ import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { useCompanyTimeZone } from "~/hooks";
-import { mrpScheduleTypes, mrpScheduleValidator } from "~/modules/settings";
+import {
+  mrpScheduleTypes,
+  mrpScheduleValidator
+} from "~/modules/settings/settings.models";
 
 type MrpScheduleType = (typeof mrpScheduleTypes)[number];
 

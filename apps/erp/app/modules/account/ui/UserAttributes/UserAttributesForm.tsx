@@ -38,7 +38,7 @@ import {
 import { UserSelect } from "~/components/Selectors";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import { usePermissions, useUser } from "~/hooks";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   attributeBooleanValidator,

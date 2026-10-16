@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales";
+import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.service";
 
 // Candidate serials/batches for a sales-return receipt line — the picker
 // source for return-receipt tracking (ReturnEntityForm). "Which serial is it"

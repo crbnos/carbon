@@ -9,9 +9,10 @@ import { batchTrigger } from "@carbon/jobs";
 import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-
-import { getContract } from "~/modules/sales";
-import { generateContractInvoicesNow } from "~/modules/sales/sales.service";
+import {
+  generateContractInvoicesNow,
+  getContract
+} from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";

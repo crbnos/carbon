@@ -8,7 +8,8 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { LocationForm, locationValidator } from "~/modules/resources";
+import { locationValidator } from "~/modules/resources/resources.models";
+import { LocationForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

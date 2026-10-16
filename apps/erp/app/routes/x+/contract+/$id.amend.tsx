@@ -7,7 +7,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { customerContractAmendmentValidator } from "~/modules/sales";
+import { customerContractAmendmentValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 const intentForm = z.object({ intent: zfd.text(z.string().optional()) });

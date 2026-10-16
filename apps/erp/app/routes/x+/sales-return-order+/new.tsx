@@ -11,10 +11,8 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import {
-  insertSalesReturnOrder,
-  salesReturnOrderValidator
-} from "~/modules/sales";
+import { salesReturnOrderValidator } from "~/modules/sales/sales.models";
+import { insertSalesReturnOrder } from "~/modules/sales/sales.service";
 import { SalesReturnOrderForm } from "~/modules/sales/ui/SalesReturnOrders";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";

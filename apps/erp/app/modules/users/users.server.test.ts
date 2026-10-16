@@ -21,7 +21,6 @@ const mocks = vi.hoisted(() => ({
   setEmployeePin: vi.fn(),
   deleteAuthAccount: vi.fn(),
   getDatabaseClient: vi.fn(),
-  getPermissionsByEmployeeType: vi.fn(),
   getUserClaims: vi.fn(),
   insertEmployeeJob: vi.fn(),
   mergeInvitePermissions: vi.fn(() => ({})),
@@ -32,6 +31,7 @@ const mocks = vi.hoisted(() => ({
 // It is read from its source file because the package root pulls in Lingui
 // macros that only run inside the app build.
 vi.mock("@carbon/auth", async () => ({
+  ...(await vi.importActual<object>("@carbon/auth")),
   CarbonEdition: "test",
   CONTROLLED_ENVIRONMENT: false,
   error: vi.fn(),
@@ -125,20 +125,20 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
-vi.mock("~/modules/purchasing/purchasing.service", () => ({
+vi.mock("~/modules/purchasing/purchasing.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getSupplierContact: vi.fn()
 }));
-vi.mock("~/modules/sales/sales.service", () => ({
+vi.mock("~/modules/sales/sales.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getCustomerContact: vi.fn()
-}));
-vi.mock("~/modules/users/users.service", () => ({
-  getPermissionsByEmployeeType: mocks.getPermissionsByEmployeeType
 }));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: mocks.getDatabaseClient
 }));
 vi.mock("~/utils/path", () => ({ path: { to: {} } }));
-vi.mock("../people/people.service", () => ({
+vi.mock("../people/people.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   insertEmployeeJob: mocks.insertEmployeeJob
 }));
 
@@ -216,11 +216,20 @@ function makeClient(
   readError: { message: string } | null = null
 ) {
   const writes: { table: string; op: string; payload: unknown }[] = [];
+  const permissionReads: string[] = [];
   const client = {
     from: (table: string) => {
       const chain: Record<string, unknown> = {
         select: () => chain,
-        eq: () => chain,
+        // An employee type's permissions: the one read that ends at `.eq`.
+        eq: (_column: string, value: string) => {
+          if (table !== "employeeTypePermission") return chain;
+          permissionReads.push(value);
+          return Promise.resolve({
+            data: EMPLOYEE_TYPE_PERMISSIONS,
+            error: null
+          });
+        },
         maybeSingle: () =>
           Promise.resolve(
             readError
@@ -236,7 +245,7 @@ function makeClient(
       return chain;
     }
   };
-  return { client: client as never, writes };
+  return { client: client as never, writes, permissionReads };
 }
 
 const deactivated = { id: USER, active: false };
@@ -248,21 +257,19 @@ function answer(lockedRow: { active: boolean } | null) {
       : [];
 }
 
+const EMPLOYEE_TYPE_PERMISSIONS = [
+  {
+    module: "Sales",
+    view: [COMPANY],
+    create: [COMPANY],
+    update: [],
+    delete: []
+  }
+];
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.serviceRoleWrites.length = 0;
-  mocks.getPermissionsByEmployeeType.mockResolvedValue({
-    data: [
-      {
-        module: "Sales",
-        view: [COMPANY],
-        create: [COMPANY],
-        update: [],
-        delete: []
-      }
-    ],
-    error: null
-  });
   mocks.insertEmployeeJob.mockResolvedValue({ data: {}, error: null });
   // The inviter may do everything a first-time add needs.
   mocks.getUserClaims.mockResolvedValue({
@@ -278,7 +285,7 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
   it("writes the employee type, placement and invite in one committed transaction", async () => {
     const { db, statements, transactions } = makeDb(answer(deactivated));
     mocks.getDatabaseClient.mockReturnValue(db);
-    const { client, writes } = makeClient(deactivated);
+    const { client, writes, permissionReads } = makeClient(deactivated);
 
     const result = await createEmployeeAccount(client, ACCOUNT);
 
@@ -310,10 +317,7 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
       sales_delete: []
     });
     expect(invite.parameters).toContain(result.code);
-    expect(mocks.getPermissionsByEmployeeType).toHaveBeenCalledWith(
-      client,
-      NEW_TYPE
-    );
+    expect(permissionReads).toEqual([NEW_TYPE]);
 
     // Nothing went through the non-transactional clients.
     expect(writes).toEqual([]);

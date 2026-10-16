@@ -62,16 +62,18 @@ import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   getBatchNumbersForItem,
-  getSerialNumbersForItem,
+  getSerialNumbersForItem
+} from "~/modules/inventory/inventory.service";
+import type {
   ItemTracking,
   RentalShipmentLine,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import type { action as shipmentLinesSplitAction } from "~/routes/x+/shipment+/lines.split";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";

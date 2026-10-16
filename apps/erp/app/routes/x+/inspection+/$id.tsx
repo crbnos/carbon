@@ -19,9 +19,7 @@ import {
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
-  getIssueTypesList
-} from "~/modules/quality";
-import {
+  getIssueTypesList,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "~/modules/quality/quality.service";
@@ -35,7 +33,7 @@ import type {
   IssueTypeListItem
 } from "~/modules/quality/types";
 import InspectionView from "~/modules/quality/ui/Inspections/InspectionView";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

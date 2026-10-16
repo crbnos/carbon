@@ -8,8 +8,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getAvailableTrackedEntities, getPickOrder } from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
+import {
+  getAvailableTrackedEntities,
+  getPickOrder
+} from "~/modules/inventory/inventory.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),

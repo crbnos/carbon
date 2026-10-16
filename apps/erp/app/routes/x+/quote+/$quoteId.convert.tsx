@@ -8,7 +8,10 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { salesConfirmValidator, selectedLinesValidator } from "~/modules/sales";
+import {
+  salesConfirmValidator,
+  selectedLinesValidator
+} from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 // The drawer posts the chosen lines as JSON beside the email choices.

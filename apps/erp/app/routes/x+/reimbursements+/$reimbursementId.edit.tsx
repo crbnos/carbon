@@ -15,10 +15,10 @@ import { useRouteData } from "~/hooks";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
 import {
   isReimbursementLocked,
-  ReimbursementEditForm,
   reimbursementLinesValidator,
   reimbursementUpdateValidator
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.models";
+import { ReimbursementEditForm } from "~/modules/invoicing/ui";
 import type { loader as reimbursementLoader } from "~/routes/x+/reimbursements+/$reimbursementId";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";

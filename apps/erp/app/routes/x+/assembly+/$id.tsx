@@ -40,6 +40,9 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { usePermissions } from "~/hooks";
 import {
   assemblyInstructionValidator,
+  isAssemblyPlanRunning
+} from "~/modules/production/production.models";
+import {
   getAssemblyComponentMappings,
   getAssemblyInstruction,
   getAssemblyInstructionStepMaterials,
@@ -51,11 +54,10 @@ import {
   getAssemblyUnits,
   getFlattenedBomMaterials,
   getLatestAssemblyPlanJob,
-  isAssemblyPlanRunning,
-  toViewerStep,
+  isAssemblerServiceHealthy,
   upsertAssemblyInstruction
-} from "~/modules/production";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.service";
+} from "~/modules/production/production.service";
+import { toViewerStep } from "~/modules/production/production.utils";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader, {
   AssemblyInstructionOverviewHero

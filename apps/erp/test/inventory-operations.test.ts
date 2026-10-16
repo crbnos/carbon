@@ -33,10 +33,12 @@ vi.mock("@carbon/ee/rules.server", async () => ({
 vi.mock("../app/modules/inventory/packing-slip.pdf", () => ({
   renderPackingSlip: vi.fn()
 }));
-vi.mock("../app/modules/sales/sales.server", () => ({
+vi.mock("../app/modules/sales/sales.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   recordSalesRuleOutcome: vi.fn()
 }));
-vi.mock("../app/modules/inventory/inventory.service", () => ({
+vi.mock("../app/modules/inventory/inventory.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getInventoryCount: vi.fn(),
   insertManualInventoryAdjustment: vi.fn()
 }));

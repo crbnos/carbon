@@ -12,7 +12,7 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getProductionProjections } from "~/modules/production";
+import { getProductionProjections } from "~/modules/production/production.service";
 import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import {

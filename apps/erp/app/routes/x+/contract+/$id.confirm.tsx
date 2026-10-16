@@ -9,8 +9,8 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { stripeCustomerChoiceValidator } from "~/modules/invoicing";
-import { getContract } from "~/modules/sales";
+import { stripeCustomerChoiceValidator } from "~/modules/invoicing/invoicing.models";
+import { getContract } from "~/modules/sales/sales.service";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-confirm");

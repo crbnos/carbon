@@ -80,7 +80,6 @@ import {
   getCustomerType,
   getCustomerTypes,
   getCustomerTypesList,
-  getDefaultRentalRates,
   getExternalSalesOrderLines,
   getItemRentalRate,
   getModelByQuoteLineId,
@@ -97,9 +96,7 @@ import {
   getQuoteCustomerDetails,
   getQuoteLine,
   getQuoteLinePrices,
-  getQuoteLinePricesByQuoteId,
   getQuoteLinePriceTraces,
-  getQuoteLines,
   getQuoteLinesList,
   getQuoteMakeMethod,
   getQuoteMaterialsByMethodId,
@@ -202,6 +199,11 @@ import {
   upsertSalesRFQ,
   upsertSalesRFQLine
 } from "./sales.service";
+import {
+  getDefaultRentalRates,
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines
+} from "./sales.utils";
 
 /**
  * Copy quote

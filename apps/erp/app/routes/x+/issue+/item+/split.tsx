@@ -8,7 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { isIssueLocked, splitIssueItemValidator } from "~/modules/quality";
+import {
+  isIssueLocked,
+  splitIssueItemValidator
+} from "~/modules/quality/quality.models";
 import { splitIssueItem } from "~/modules/quality/quality.service";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 

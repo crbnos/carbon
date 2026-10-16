@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Number, Submit } from "~/components/Form";
-import { forecastConsumptionValidator } from "~/modules/settings";
+import { forecastConsumptionValidator } from "~/modules/settings/settings.models";
 
 // The forecast consumption window (weekly buckets). Actual demand that lands
 // in a week whose forecast is used up consumes forecast from up to

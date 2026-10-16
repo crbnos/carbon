@@ -11,17 +11,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { purchaseReturnOrderLineValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLine,
   getPurchaseReturnOrderLineTrackedEntities,
-  getReturnableEntitiesForSupplier,
-  purchaseReturnOrderLineValidator
-} from "~/modules/purchasing";
+  getReturnableEntitiesForSupplier
+} from "~/modules/purchasing/purchasing.service";
 import { PurchaseReturnOrderLineForm } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { PurchaseReturnOrderLine } from "~/modules/purchasing/ui/PurchaseReturnOrders/types";
+import { getReturnReasonsList } from "~/modules/sales/sales.service";
 // returnReason is shared reference data; its list read lives in the sales module
-import { getReturnReasonsList } from "~/modules/sales";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

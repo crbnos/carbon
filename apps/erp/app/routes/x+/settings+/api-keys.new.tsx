@@ -8,7 +8,11 @@ import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useRouteData } from "~/hooks";
-import { ApiKeyForm, apiKeyFields, apiKeyValidator } from "~/modules/settings";
+import {
+  apiKeyFields,
+  apiKeyValidator
+} from "~/modules/settings/settings.models";
+import { ApiKeyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

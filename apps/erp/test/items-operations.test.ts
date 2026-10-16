@@ -18,7 +18,8 @@ vi.mock("@carbon/ee/approvals/document.server", () => ({
   cancelPendingApprovals: vi.fn(),
   decideApprovalRequest: vi.fn()
 }));
-vi.mock("../app/modules/items/items.service", () => ({
+vi.mock("../app/modules/items/items.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   addChangeNoticeAffectedItem: vi.fn(),
   getItemSupersession: vi.fn(),
   insertChangeNotice: vi.fn(),

@@ -11,12 +11,10 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import {
-  getTrainingsList,
-  TrainingAssignmentForm,
-  trainingAssignmentValidator
-} from "~/modules/resources";
+import { trainingAssignmentValidator } from "~/modules/resources/resources.models";
+import { getTrainingsList } from "~/modules/resources/resources.service";
 import type { TrainingListItem } from "~/modules/resources/types";
+import { TrainingAssignmentForm } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

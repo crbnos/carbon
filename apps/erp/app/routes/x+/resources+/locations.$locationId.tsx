@@ -12,11 +12,9 @@ import { redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getLocation,
-  LocationForm,
-  locationValidator
-} from "~/modules/resources";
+import { locationValidator } from "~/modules/resources/resources.models";
+import { getLocation } from "~/modules/resources/resources.service";
+import { LocationForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

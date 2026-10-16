@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Number, Submit } from "~/components/Form";
-import { planningHorizonValidator } from "~/modules/settings";
+import { planningHorizonValidator } from "~/modules/settings/settings.models";
 
 // One settings card = one saved concern (archetype F): the company-wide
 // planning horizon (time fence). An item's own horizon on its Planning tab

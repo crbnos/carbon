@@ -11,14 +11,14 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { accountProfileValidator } from "~/modules/account/account.models";
 import {
-  accountProfileValidator,
   getAllAttributeCategories,
   updatePublicAccount
-} from "~/modules/account";
-import { getEmployeeSummary } from "~/modules/people";
+} from "~/modules/account/account.service";
+import { getEmployeeSummary } from "~/modules/people/people.service";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

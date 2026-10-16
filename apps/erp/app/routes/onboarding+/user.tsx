@@ -29,10 +29,8 @@ import {
 } from "~/components";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import {
-  onboardingUserValidator,
-  updatePublicAccount
-} from "~/modules/account";
+import { onboardingUserValidator } from "~/modules/account/account.models";
+import { updatePublicAccount } from "~/modules/account/account.service";
 import { getUser } from "~/modules/users/users.service";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";

@@ -42,8 +42,8 @@ import { useFetchers, useSubmit } from "react-router";
 import { DateTime, DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { ItemFile } from "~/modules/items";
-import type { OptimisticFileObject } from "~/modules/shared";
+import type { ItemFile } from "~/modules/items/types";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 

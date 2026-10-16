@@ -12,11 +12,9 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  EmployeeTypeForm,
-  employeeTypeValidator,
-  getModules
-} from "~/modules/users";
+import { EmployeeTypeForm } from "~/modules/users/ui";
+import { employeeTypeValidator } from "~/modules/users/users.models";
+import { getModules } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

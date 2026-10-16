@@ -63,7 +63,7 @@ import { createPortalSlot } from "~/components/Layout/Mobile/slots";
 import { RecordAction } from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
   getMethodValidator,

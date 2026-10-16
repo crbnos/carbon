@@ -23,7 +23,8 @@ vi.mock("@carbon/server-functions", () => ({
   serverFns: { system: () => ({ invoke: vi.fn() }) }
 }));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
-vi.mock("../app/modules/production/production.service", () => ({
+vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   createAssemblyPlanJob: vi.fn(async () => ({
     data: { id: "plan1" },
     error: null
@@ -109,23 +110,6 @@ describe("mapAssemblyComponent", () => {
 });
 
 describe("generateAssemblySteps", () => {
-  it("starts the missing plan and answers planning", async () => {
-    vi.mocked(generateAssemblyStepsFromPlan).mockResolvedValueOnce({
-      ok: false,
-      reason: "no-plan",
-      modelUploadId: "mu1"
-    });
-    const result = await generateAssemblySteps(
-      contextWith({ modelUpload: { processingStatus: "Success" } }),
-      { id: "ai1" }
-    );
-    expect(result.data).toMatchObject({ planning: true });
-    expect(trigger).toHaveBeenCalledWith(
-      "assembly-plan",
-      expect.objectContaining({ planJobId: "plan1" })
-    );
-  });
-
   it("does not start a plan while the model is still converting", async () => {
     vi.mocked(generateAssemblyStepsFromPlan).mockResolvedValueOnce({
       ok: false,

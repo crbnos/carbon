@@ -24,7 +24,7 @@ import { Hyperlink, Table } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUser } from "~/hooks";
-import { operationTypes } from "~/modules/shared";
+import { operationTypes } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import type { JobOperation } from "../../types";
 import { JobOperationStatus } from "./JobOperationStatus";

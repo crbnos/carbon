@@ -19,8 +19,13 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
-import { getCompany, getNextSequence } from "~/modules/settings";
+import { memoValidator } from "~/modules/invoicing/invoicing.models";
+import { upsertMemo } from "~/modules/invoicing/invoicing.service";
+import { MemoForm } from "~/modules/invoicing/ui";
+import {
+  getCompany,
+  getNextSequence
+} from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

@@ -9,7 +9,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getMethodValidator } from "~/modules/sales";
+import { getMethodValidator } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
 // Get Method: the source and target, the parts to copy, and for a

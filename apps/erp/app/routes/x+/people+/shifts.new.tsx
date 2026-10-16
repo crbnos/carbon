@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { shiftValidator } from "~/modules/people";
+import { shiftValidator } from "~/modules/people/people.models";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

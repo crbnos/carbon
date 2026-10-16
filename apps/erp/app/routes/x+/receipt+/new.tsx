@@ -9,7 +9,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { receiptSourceDocumentType } from "~/modules/inventory";
+import { receiptSourceDocumentType } from "~/modules/inventory/inventory.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

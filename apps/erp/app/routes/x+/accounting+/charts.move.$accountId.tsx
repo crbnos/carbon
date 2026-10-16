@@ -10,11 +10,11 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { moveAccountValidator } from "~/modules/accounting/accounting.models";
 import {
   getAccount,
-  getGroupAccounts,
-  moveAccountValidator
-} from "~/modules/accounting";
+  getGroupAccounts
+} from "~/modules/accounting/accounting.service";
 import { MoveAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 

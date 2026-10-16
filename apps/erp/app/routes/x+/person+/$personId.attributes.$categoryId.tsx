@@ -17,7 +17,7 @@ import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAttributeCategoryWithValues } from "~/modules/account";
+import { getAttributeCategoryWithValues } from "~/modules/account/account.service";
 import { UserAttributesForm } from "~/modules/account/ui/UserAttributes";
 import { path } from "~/utils/path";
 

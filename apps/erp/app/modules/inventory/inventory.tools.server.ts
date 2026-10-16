@@ -64,7 +64,6 @@ import {
   getReceiptLines,
   getReceiptRelatedItems,
   getReceipts,
-  getReceiptTracking,
   getRentalReceiptLines,
   getRentalShipmentLines,
   getSerialNumbersForItem,
@@ -73,7 +72,6 @@ import {
   getShipmentLines,
   getShipmentRelatedItems,
   getShipments,
-  getShipmentTracking,
   getShippingMethod,
   getShippingMethods,
   getShippingMethodsList,
@@ -119,6 +117,7 @@ import {
   upsertStorageType,
   upsertStorageUnit
 } from "./inventory.service";
+import { getReceiptTracking, getShipmentTracking } from "./inventory.utils";
 
 /**
  * Delete batch property

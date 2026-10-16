@@ -34,12 +34,12 @@ import type {
   InventoryCountLine,
   InventoryCount as InventoryCountType,
   StockMovement
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import {
   InventoryCountConfirmModal,
   InventoryCountLines,
   InventoryCountStatus
-} from "~/modules/inventory";
+} from "~/modules/inventory/ui";
 import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

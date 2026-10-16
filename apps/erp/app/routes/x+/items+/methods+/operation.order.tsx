@@ -7,8 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateOperationOrder } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.service";
+import {
+  checkRevisionLock,
+  updateOperationOrder
+} from "~/modules/items/items.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -69,7 +69,7 @@ import type { action as mapComponentAction } from "~/routes/x+/assembly+/$id.com
 import type { action as reassignAction } from "~/routes/x+/assembly+/$id.steps.components.reassign";
 import { path } from "~/utils/path";
 import type { FlattenedBomMaterial } from "../../production.service";
-import { toViewerStep } from "../../production.service";
+import { toViewerStep } from "../../production.utils";
 import type {
   AssemblyComponentMapping,
   AssemblyInstructionStepRow,

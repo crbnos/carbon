@@ -115,11 +115,6 @@ import {
   OperationRowDetails,
   OperationRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type {
-  OperationParameter,
-  OperationStep,
-  OperationTool
-} from "~/modules/shared";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -127,7 +122,12 @@ import {
   operationToolValidator,
   operationTypes,
   procedureStepType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationTool
+} from "~/modules/shared/types";
 import type { action as editQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.$id";
 import type { action as newQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.new";
 import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";

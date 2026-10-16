@@ -6,11 +6,11 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { stockMovementCorrectionValidator } from "~/modules/inventory/inventory.models";
 import {
   correctStockMovement,
-  getStockMovementEffectiveQuantity,
-  stockMovementCorrectionValidator
-} from "~/modules/inventory";
+  getStockMovementEffectiveQuantity
+} from "~/modules/inventory/inventory.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 // The modal pre-fills its corrected-quantity field from this — the page's

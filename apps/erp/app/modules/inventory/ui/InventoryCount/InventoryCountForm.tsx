@@ -31,7 +31,7 @@ import { usePermissions } from "~/hooks";
 import {
   inventoryCountValidator,
   inventoryItemTypes
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type InventoryCountFormProps = {

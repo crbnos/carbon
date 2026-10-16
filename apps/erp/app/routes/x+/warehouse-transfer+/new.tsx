@@ -13,10 +13,8 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUser } from "~/hooks";
-import {
-  insertWarehouseTransfer,
-  warehouseTransferValidator
-} from "~/modules/inventory";
+import { warehouseTransferValidator } from "~/modules/inventory/inventory.models";
+import { insertWarehouseTransfer } from "~/modules/inventory/inventory.service";
 import { WarehouseTransferForm } from "~/modules/inventory/ui/WarehouseTransfers";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

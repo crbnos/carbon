@@ -23,13 +23,15 @@ import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  workflowTestRunInputSchema,
+  workflowTestRunValidator
+} from "~/modules/workflows/workflows.models";
+import {
   getWorkflow,
   getWorkflowRunSteps,
-  getWorkflowVersionOwnership,
-  MAX_RUN_STEPS,
-  workflowTestRunValidator
-} from "~/modules/workflows";
-import { workflowTestRunInputSchema } from "~/modules/workflows/workflows.models";
+  getWorkflowVersionOwnership
+} from "~/modules/workflows/workflows.service";
+import { MAX_RUN_STEPS } from "~/modules/workflows/workflows.utils";
 import { path } from "~/utils/path";
 
 // The picker filters this page locally, so it has to be big enough to be useful.

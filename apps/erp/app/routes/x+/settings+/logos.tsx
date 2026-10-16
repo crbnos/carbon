@@ -19,15 +19,15 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
-import type { Company } from "~/modules/settings";
 import {
-  CompanyLogoForm,
   updateLogoDark,
   updateLogoDarkIcon,
   updateLogoLight,
   updateLogoLightIcon,
   updateLogoWatermark
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { CompanyLogoForm } from "~/modules/settings/ui";
 import { maxSizeMB } from "~/modules/settings/ui/Company/CompanyLogoForm";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

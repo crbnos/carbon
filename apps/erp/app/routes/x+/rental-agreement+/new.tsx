@@ -14,12 +14,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import { rentalAgreementValidator } from "~/modules/sales";
+import { rentalAgreementValidator } from "~/modules/sales/sales.models";
 import {
   RentalAgreementDetailsForm,
   RentalSetupSteps
 } from "~/modules/sales/ui/Rentals";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -8,11 +8,9 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Ability } from "~/modules/resources";
-import {
-  EmployeeAbilityForm,
-  employeeAbilityCellValidator
-} from "~/modules/resources";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
+import type { Ability } from "~/modules/resources/types";
+import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

@@ -10,12 +10,10 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { getWorkCenterCapitalCost } from "~/modules/accounting";
-import {
-  getWorkCenter,
-  WorkCenterForm,
-  workCenterValidator
-} from "~/modules/resources";
+import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
+import { workCenterValidator } from "~/modules/resources/resources.models";
+import { getWorkCenter } from "~/modules/resources/resources.service";
+import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

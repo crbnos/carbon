@@ -11,7 +11,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
-import { getJournalEntries } from "~/modules/accounting";
+import { getJournalEntries } from "~/modules/accounting/accounting.service";
 import { JournalEntriesTable } from "~/modules/accounting/ui/JournalEntries";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

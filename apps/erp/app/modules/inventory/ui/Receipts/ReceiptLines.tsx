@@ -77,14 +77,14 @@ import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData, useUser } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   BatchProperty,
   ItemTracking,
   Receipt,
   ReceiptLine,
   RentalReceiptLine
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";

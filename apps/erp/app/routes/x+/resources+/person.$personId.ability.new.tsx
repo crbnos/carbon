@@ -8,10 +8,8 @@ import { validator } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
-import {
-  EmployeeAbilityForm,
-  employeeAbilityCellValidator
-} from "~/modules/resources";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
+import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

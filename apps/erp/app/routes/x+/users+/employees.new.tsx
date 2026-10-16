@@ -10,12 +10,9 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  CreateEmployeeModal,
-  createEmployeeValidator,
-  getInvitable
-} from "~/modules/users";
-import { originOf } from "~/modules/users/users.service";
+import { CreateEmployeeModal } from "~/modules/users/ui";
+import { createEmployeeValidator } from "~/modules/users/users.models";
+import { getInvitable, originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

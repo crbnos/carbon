@@ -55,10 +55,8 @@ vi.mock("~/hooks", () => ({
 vi.mock("~/modules/accounting/ui/JournalEntries", () => ({
   JournalEntryStatus: EmptyComponent
 }));
-vi.mock("~/modules/invoicing", () => ({
-  ChargeStatus: EmptyComponent,
-  getCharge
-}));
+vi.mock("~/modules/invoicing/ui", () => ({ ChargeStatus: EmptyComponent }));
+vi.mock("~/modules/invoicing/invoicing.service", () => ({ getCharge }));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {

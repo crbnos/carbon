@@ -8,8 +8,12 @@ import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
-import { ApiKeyForm, apiKeyFields, apiKeyValidator } from "~/modules/settings";
+import {
+  apiKeyFields,
+  apiKeyValidator
+} from "~/modules/settings/settings.models";
+import type { ApiKey } from "~/modules/settings/types";
+import { ApiKeyForm } from "~/modules/settings/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

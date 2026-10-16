@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { reimbursementPaymentValidator } from "~/modules/invoicing";
+import { reimbursementPaymentValidator } from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
 
 /**

@@ -8,14 +8,14 @@ import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Shipment, ShipmentLine } from "~/modules/inventory";
-import { shipmentValidator } from "~/modules/inventory";
+import { shipmentValidator } from "~/modules/inventory/inventory.models";
+import type { Shipment, ShipmentLine } from "~/modules/inventory/types";
 import {
   ShipmentForm,
   ShipmentLines,
   ShipmentNotes
 } from "~/modules/inventory/ui/Shipments";
-import type { Note } from "~/modules/shared";
+import type { Note } from "~/modules/shared/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

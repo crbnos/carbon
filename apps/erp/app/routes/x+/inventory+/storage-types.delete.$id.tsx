@@ -27,7 +27,7 @@ import {
   deleteStorageTypeWithCascade,
   getStorageType,
   getStorageTypeUsage
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

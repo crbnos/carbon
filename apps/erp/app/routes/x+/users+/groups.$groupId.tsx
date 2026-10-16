@@ -10,7 +10,9 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { GroupForm, getGroupMembers, groupValidator } from "~/modules/users";
+import { GroupForm } from "~/modules/users/ui";
+import { groupValidator } from "~/modules/users/users.models";
+import { getGroupMembers } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

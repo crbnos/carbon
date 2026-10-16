@@ -53,7 +53,7 @@ import type { action as generateAction } from "~/routes/x+/assembly+/$id.steps.g
 import { path } from "~/utils/path";
 import { isAssemblyPlanRunning } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
-import { toViewerStep } from "../../production.service";
+import { toViewerStep } from "../../production.utils";
 import type {
   AssemblyComponentMapping,
   AssemblyInstructionStepRow,

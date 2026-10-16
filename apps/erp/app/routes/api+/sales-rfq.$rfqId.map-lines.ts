@@ -8,7 +8,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { resolveItemIdFromExtractedText } from "~/modules/items";
+import { resolveItemIdFromExtractedText } from "~/modules/items/items.service";
 import { mapSalesRfqLines } from "~/modules/sales/sales.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

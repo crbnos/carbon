@@ -82,7 +82,7 @@ vi.mock("~/modules/items/items.service", () => ({
   upsertMethodMaterial: spies.upsertMethodMaterial
 }));
 vi.mock("~/modules/people/people.service", () => ({}));
-vi.mock("~/modules/production/production.mcp.server", () => ({}));
+
 vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
   getActiveJobOperationsByLocation: spies.getActiveJobOperationsByLocation

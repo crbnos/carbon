@@ -10,10 +10,8 @@ import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  fixedAssetRegisterValidator,
-  getFixedAsset
-} from "~/modules/accounting";
+import { fixedAssetRegisterValidator } from "~/modules/accounting/accounting.models";
+import { getFixedAsset } from "~/modules/accounting/accounting.service";
 import { FixedAssetRegisterForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
 

@@ -19,7 +19,6 @@ import type {
   getJob,
   getJobMakeMethodById,
   getJobMaterialsWithQuantityOnHand,
-  getJobMethodTree,
   getJobOperationBatchEvents,
   getJobOperationBatches,
   getJobOperationBatchWithMembers,
@@ -46,6 +45,7 @@ import type {
   getScrapReasons,
   JobOperationBatchListMember
 } from "./production.service";
+import type { getJobMethodTree } from "./production.utils";
 
 export type ActiveProductionEvent = NonNullable<
   Awaited<ReturnType<typeof getActiveProductionEvents>>["data"]

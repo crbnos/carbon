@@ -14,7 +14,7 @@ import {
   attributeSupplierValidator,
   attributeTextValidator,
   attributeUserValidator
-} from "~/modules/account";
+} from "~/modules/account/account.models";
 
 /** The value's form, by the attribute's data type. */
 const attributeValueForm = z.discriminatedUnion("type", [

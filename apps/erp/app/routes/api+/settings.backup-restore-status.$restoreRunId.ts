@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanyRestoreRuns } from "~/modules/settings";
+import { getCompanyRestoreRuns } from "~/modules/settings/backups.service";
 import { canManageBackups } from "~/modules/settings/settings.service";
 
 // Polled by the restore progress modal. A restore run is "running" until its

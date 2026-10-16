@@ -10,14 +10,14 @@ import { RecordOutlet, useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { storageUnitValidator } from "~/modules/inventory/inventory.models";
 import {
   getEffectiveWorkCenterId,
   getStorageUnit,
-  StorageUnitForm,
-  storageUnitValidator,
   upsertStorageUnit
-} from "~/modules/inventory";
-import { getWorkCentersList } from "~/modules/resources";
+} from "~/modules/inventory/inventory.service";
+import { StorageUnitForm } from "~/modules/inventory/ui";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

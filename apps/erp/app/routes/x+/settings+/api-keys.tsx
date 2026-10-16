@@ -11,11 +11,8 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import {
-  ApiKeysTable,
-  ApiKeysUpgradeOverlay,
-  getApiKeys
-} from "~/modules/settings";
+import { getApiKeys } from "~/modules/settings/settings.service";
+import { ApiKeysTable, ApiKeysUpgradeOverlay } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

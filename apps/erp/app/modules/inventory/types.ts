@@ -14,10 +14,8 @@ import type {
   getKanbans,
   getReceiptLines,
   getReceipts,
-  getReceiptTracking,
   getShipmentLines,
   getShipments,
-  getShipmentTracking,
   getShippingMethods,
   getStockMovements,
   getStockTransferLines,
@@ -26,6 +24,10 @@ import type {
   getWarehouseTransferLines,
   getWarehouseTransfers
 } from "./inventory.service";
+import type {
+  getReceiptTracking,
+  getShipmentTracking
+} from "./inventory.utils";
 
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]

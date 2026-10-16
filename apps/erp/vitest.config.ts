@@ -2,9 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { linguiWithoutIdQuery } from "@carbon/dev/vite";
+import { lingui } from "@lingui/vite-plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Compile Lingui macros as the app does, so a module that defines its
+  // messages with `msg` can be imported by a test without stubbing the macro.
+  plugins: [linguiWithoutIdQuery(lingui({ macroTransform: true }))],
   resolve: {
     tsconfigPaths: true,
   },

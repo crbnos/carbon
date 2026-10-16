@@ -79,12 +79,12 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
-import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items/items.utils";
 import {
   MaterialRowDetails,
   MaterialRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import type { action as editQuoteMaterialAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.material.$id";
 import type { action as newQuoteMaterialAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.material.new";
 import type { Item as ItemType } from "~/stores";

@@ -46,8 +46,7 @@ import {
 import type {
   AssemblyGraph,
   AssemblyGraphIndex,
-  AssemblyPlan,
-  AssemblyStep
+  AssemblyPlan
 } from "@carbon/viewer";
 import {
   buildAssemblyStepGroups,
@@ -57,7 +56,6 @@ import {
   indexAssemblyGraph,
   validateSubAssemblies
 } from "@carbon/viewer";
-import { isPlanFlagged } from "@carbon/viewer/steps";
 import {
   getDayOfWeek,
   parseDate,
@@ -80,18 +78,18 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getDefaultStorageUnitForJob } from "../inventory/inventory.service";
+import { getDefaultStorageUnitForJob } from "../inventory/inventory.utils";
 import { getEmployeeJob } from "../people/people.service";
 import { resolveJobConfiguration } from "../sales/sales.utils";
 import type {
-  MethodType,
   operationParameterValidator,
   operationStepSlideValidator,
   operationStepValidator,
   operationToolValidator
-} from "../shared";
+} from "../shared/shared.models";
 import { normalizeOperationSourceIds } from "../shared/shared.models";
 import { updateSortOrder } from "../shared/sort-order";
+import type { MethodType } from "../shared/types";
 import {
   claimPlanningActions,
   releasePlanningActionClaims
@@ -121,8 +119,8 @@ import type {
 } from "./production.models";
 import {
   ACTIVE_JOB_STATUSES,
-  cameraSchema,
-  fastenerSchema,
+  type cameraSchema,
+  type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
   isJobOrderStatusHidden,
@@ -130,13 +128,12 @@ import {
   JOB_SUPPLY_STATUS_PRIORITY,
   makeToAssetReleaseError,
   motionSchema,
-  orientationSchema,
+  type orientationSchema,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {
-  AssemblyInstructionStepRow,
   ItemOrderStatus,
   ItemShortfall,
   Job,
@@ -1783,80 +1780,6 @@ export async function getJobOrderStatusMap(
   );
 }
 
-export async function getJobMethodTree(
-  client: SupabaseClient<Database>,
-  jobId: string
-) {
-  const items = await getJobMethodTreeArray(client, jobId);
-  if (items.error) return items;
-
-  const tree = getJobMethodTreeArrayToTree(items.data);
-
-  return {
-    data: tree,
-    error: null
-  };
-}
-
-export async function getJobMethodTreeArray(
-  client: SupabaseClient<Database>,
-  jobId: string
-) {
-  return client.rpc("get_job_method", {
-    jid: jobId
-  });
-}
-
-function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
-  // function traverseAndRenameIds(node: JobMethodTreeItem) {
-  //   const clone = structuredClone(node);
-  //   clone.id = `node-${Math.random().toString(16).slice(2)}`;
-  //   clone.children = clone.children.map((n) => traverseAndRenameIds(n));
-  //   return clone;
-  // }
-
-  const rootItems: JobMethodTreeItem[] = [];
-  const lookup: { [id: string]: JobMethodTreeItem } = {};
-
-  for (const item of items) {
-    const itemId = item.methodMaterialId;
-    const parentId = item.parentMaterialId;
-
-    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
-      // @ts-expect-error
-      lookup[itemId] = { id: itemId, children: [] };
-    }
-
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    lookup[itemId]["data"] = item;
-
-    const treeItem = lookup[itemId];
-
-    if (parentId === null || parentId === undefined) {
-      rootItems.push(treeItem);
-    } else {
-      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
-        // @ts-expect-error
-        lookup[parentId] = { id: parentId, children: [] };
-      }
-
-      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-      lookup[parentId]["children"].push(treeItem);
-    }
-  }
-  return rootItems;
-  // return rootItems.map((item) => traverseAndRenameIds(item));
-}
-
-export type JobMethod = NonNullable<
-  Awaited<ReturnType<typeof getJobMethodTreeArray>>["data"]
->[number];
-export type JobMethodTreeItem = {
-  id: string;
-  data: JobMethod;
-  children: JobMethodTreeItem[];
-};
-
 export async function getJobMaterial(
   client: SupabaseClient<Database>,
   materialId: string
@@ -2190,39 +2113,6 @@ export async function getProductionEvents(
   }
 
   return query;
-}
-
-export async function getProductionEventsPage(
-  client: SupabaseClient<Database>,
-  jobOperationId: string,
-  companyId: string,
-  sortDescending: boolean = false,
-  page: number = 1
-) {
-  const pageSize = 20;
-  const offset = (page - 1) * pageSize;
-
-  let query = client
-    .from("productionEvent")
-    .select("*", { count: "exact" })
-    .eq("jobOperationId", jobOperationId)
-    .eq("companyId", companyId)
-    .order("startTime", { ascending: !sortDescending })
-    .range(offset, offset + pageSize - 1);
-
-  const { data, error, count } = await query;
-
-  if (error) {
-    return { error };
-  }
-
-  return {
-    data,
-    count,
-    page,
-    pageSize,
-    hasMore: count !== null && offset + pageSize < count
-  };
 }
 
 export async function getProductionEventsByOperations(
@@ -10510,35 +10400,6 @@ export async function generateAssemblyStepsFromPlan(
   }
 
   return { ok: true, created: rows.length, unmappedComponentCount };
-}
-
-/**
- * Maps a DB step row to the viewer's step shape. JSONB columns are validated
- * defensively — `path` motions with invalid keyframes throw inside the viewer,
- * so anything that fails the schema falls back to a safe default.
- */
-export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
-  const motion = motionSchema.safeParse(step.motion);
-  const camera = cameraSchema.safeParse(step.camera);
-  const orientation = orientationSchema.safeParse(step.orientation);
-  const fastener = fastenerSchema.safeParse(step.fastener);
-
-  return {
-    id: step.id,
-    title: step.title,
-    instructionText: step.instructionText,
-    componentNodeIds: step.componentNodeIds ?? [],
-    hiddenComponentNodeIds: step.hiddenComponentNodeIds ?? [],
-    isSubAssembly: step.isSubAssembly,
-    parentStepId: step.parentStepId ?? null,
-    usedInStepId: step.usedInStepId ?? null,
-    motion: motion.success ? motion.data : { type: "none" },
-    camera: camera.success ? camera.data : null,
-    orientation: orientation.success ? orientation.data : null,
-    fastener: fastener.success ? fastener.data : null,
-    durationSeconds: step.durationSeconds,
-    flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
-  };
 }
 
 // Purchase order lines for a job's materials, scoped by item + location (not

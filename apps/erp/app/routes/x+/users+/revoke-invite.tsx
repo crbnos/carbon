@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { revokeInviteValidator } from "~/modules/users";
+import { revokeInviteValidator } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
 
 export async function action(args: ActionFunctionArgs) {

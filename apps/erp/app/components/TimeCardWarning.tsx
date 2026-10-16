@@ -33,7 +33,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
-import { setClockOutValidator } from "~/modules/people";
+import { setClockOutValidator } from "~/modules/people/people.models";
 import { path } from "~/utils/path";
 import { DateTimePicker, Hidden, Submit } from "./Form";
 

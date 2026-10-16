@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { salesRfqDragValidator } from "~/modules/sales";
+import { salesRfqDragValidator } from "~/modules/sales/sales.models";
 import { path } from "~/utils/path";
 
 // The drop posts the dragged file as JSON in one field.

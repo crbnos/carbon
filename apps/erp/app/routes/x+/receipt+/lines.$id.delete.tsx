@@ -5,7 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteReceiptLine } from "~/modules/inventory";
+import { deleteReceiptLine } from "~/modules/inventory/inventory.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -12,13 +12,15 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import {
-  getPurchaseOrder,
   isPurchaseOrderLocked,
-  purchaseOrderLineValidator,
+  purchaseOrderLineValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getPurchaseOrder,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

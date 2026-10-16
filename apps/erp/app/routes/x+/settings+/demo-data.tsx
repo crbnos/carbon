@@ -15,8 +15,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import type { CompanyTemplateRun } from "~/modules/settings";
-import { getCompanyTemplateRun } from "~/modules/settings";
+import type { CompanyTemplateRun } from "~/modules/settings/backups.service";
+import { getCompanyTemplateRun } from "~/modules/settings/backups.service";
 import {
   finalizeCompanyTemplate,
   purgeCorruptedRows,

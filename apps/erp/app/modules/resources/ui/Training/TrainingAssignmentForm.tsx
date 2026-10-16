@@ -25,7 +25,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import { Input as FormInput, Hidden, Submit, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { trainingAssignmentValidator } from "~/modules/resources";
+import { trainingAssignmentValidator } from "~/modules/resources/resources.models";
 import type { TrainingListItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 

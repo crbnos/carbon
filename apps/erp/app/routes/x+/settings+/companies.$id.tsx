@@ -10,11 +10,9 @@ import { validator } from "@carbon/form";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  CompanyForm,
-  getSubsidiary,
-  subsidiaryValidator
-} from "~/modules/settings";
+import { subsidiaryValidator } from "~/modules/settings/settings.models";
+import { getSubsidiary } from "~/modules/settings/settings.service";
+import { CompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

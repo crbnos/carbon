@@ -11,12 +11,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
+import { issueValidator } from "~/modules/quality/quality.models";
 import {
   getIssueTypesList,
   getIssueWorkflowsList,
-  getRequiredActionsList,
-  issueValidator
-} from "~/modules/quality";
+  getRequiredActionsList
+} from "~/modules/quality/quality.service";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

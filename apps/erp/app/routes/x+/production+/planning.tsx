@@ -16,13 +16,15 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { ProductionPlanningItem } from "~/modules/production";
 import {
-  getPlanningActions,
-  getProductionPlanning,
   PLANNING_DRAWER_PARAM,
   resolvePlanningActionScope
-} from "~/modules/production";
+} from "~/modules/production/production.models";
+import {
+  getPlanningActions,
+  getProductionPlanning
+} from "~/modules/production/production.service";
+import type { ProductionPlanningItem } from "~/modules/production/types";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
 import {
   getLocationTimeZone,

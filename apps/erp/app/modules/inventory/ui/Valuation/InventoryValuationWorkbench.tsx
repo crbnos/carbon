@@ -42,7 +42,7 @@ import {
 import type {
   InventoryTieOutRow,
   InventoryValuationRow
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 type InventoryValuationWorkbenchProps = {

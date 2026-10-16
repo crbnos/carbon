@@ -17,7 +17,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { UserSelect } from "~/components/Selectors";
-import { resendInviteValidator } from "~/modules/users";
+import { resendInviteValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type ResendInviteModalProps = {

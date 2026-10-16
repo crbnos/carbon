@@ -10,10 +10,8 @@ import { getLogger } from "@carbon/logger";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  recostSerialUnit,
-  serialUnitRecostValidator
-} from "~/modules/inventory";
+import { serialUnitRecostValidator } from "~/modules/inventory/inventory.models";
+import { recostSerialUnit } from "~/modules/inventory/inventory.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "inventory-recost");

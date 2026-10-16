@@ -26,6 +26,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
+import { MAX_RUN_STEPS } from "./workflows.utils";
 
 export async function getWorkflows(
   client: SupabaseClient<Database>,
@@ -341,13 +342,6 @@ export async function getWorkflowRun(
     .eq("companyId", companyId)
     .maybeSingle();
 }
-
-/**
- * A batched node writes one row per item, so a 100-item batch alone is 100+ rows
- * each carrying input, output and detail JSONB. Cap what reaches the browser; the
- * caller reads one row past the cap to know it truncated.
- */
-export const MAX_RUN_STEPS = 200;
 
 export async function getWorkflowRunSteps(
   client: SupabaseClient<Database>,

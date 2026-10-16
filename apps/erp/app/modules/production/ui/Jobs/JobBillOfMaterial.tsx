@@ -78,12 +78,12 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
-import { ItemTrackingType } from "~/modules/items";
+import { ItemTrackingType } from "~/modules/items/items.models";
 import {
   MaterialRowDetails,
   MaterialRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import type { action as updateMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.$id";
 import type { action as createMaterialAction } from "~/routes/x+/job+/methods+/$jobId.material.new";
 import type { Item as ItemType } from "~/stores";

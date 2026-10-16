@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { rentalAgreementLineClassificationValidator } from "~/modules/sales";
+import { rentalAgreementLineClassificationValidator } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

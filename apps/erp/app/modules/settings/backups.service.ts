@@ -9,6 +9,7 @@ import type {
   Manifest
 } from "@carbon/jobs/backups";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { RowsByTable } from "./settings.utils";
 
 // Company backup data access. Export is enqueued server-side
 // (exportCompanyBackup in backups.server.ts) and runs in the
@@ -34,19 +35,6 @@ export type ScopeViolationSummary = {
   refTable: string;
   rows: number;
 };
-
-/** DISTINCT rows per table. The ONLY shape a user-facing total may be summed from. */
-export type RowsByTable = { table: string; rows: number };
-
-/**
- * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
- * EDGE — a row escaping scope through three of its foreign keys appears three
- * times there — so totals must come from the per-table distinct counts.
- */
-export function totalScopeRows(rowsByTable: RowsByTable[]): number {
-  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
-}
-
 /** Supabase storage caps a `list` call; page until a short page comes back. */
 const BACKUP_LIST_PAGE_SIZE = 100;
 const BACKUP_LIST_MAX_PAGES = 50;

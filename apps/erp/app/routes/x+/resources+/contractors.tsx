@@ -11,10 +11,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  ContractorsTable,
   getAbilitiesList,
   getContractors
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
+import { ContractorsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

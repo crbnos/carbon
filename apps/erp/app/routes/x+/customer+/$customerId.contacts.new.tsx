@@ -10,10 +10,8 @@ import { validationError, validator } from "@carbon/form";
 import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
-import {
-  customerContactValidator,
-  insertCustomerContact
-} from "~/modules/sales";
+import { customerContactValidator } from "~/modules/sales/sales.models";
+import { insertCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";

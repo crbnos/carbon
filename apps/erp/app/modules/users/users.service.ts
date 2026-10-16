@@ -47,7 +47,7 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { getCustomerContact } from "~/modules/sales/sales.service";
-import type { EmployeeInsert, InviteInsert, User } from "~/modules/users";
+import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";

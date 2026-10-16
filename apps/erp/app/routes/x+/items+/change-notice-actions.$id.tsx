@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { changeNoticeRequiredActionValidator } from "~/modules/items/items.models";
 import {
-  changeNoticeRequiredActionValidator,
   getChangeNoticeRequiredAction,
   upsertChangeNoticeRequiredAction
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { path } from "~/utils/path";
 

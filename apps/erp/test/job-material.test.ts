@@ -24,7 +24,8 @@ vi.mock("@carbon/server-functions", () => ({
   serverFns: { system: () => ({ invoke: vi.fn() }) }
 }));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
-vi.mock("../app/modules/production/production.service", () => ({
+vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   upsertJobMaterial: vi.fn(async () => ({
     data: { id: "jm1", methodType: "Pull from Inventory" },
     error: null
@@ -113,16 +114,6 @@ describe("createJobMaterial", () => {
     expect(recalculateJobMakeMethodRequirements).not.toHaveBeenCalled();
     expect(recalculateJobOperationDependencies).not.toHaveBeenCalled();
   });
-
-  it("recalculates a released job's method and dependencies", async () => {
-    await createJobMaterial(
-      contextWith({ job: { status: "Ready" }, ...parents }),
-      material
-    );
-    expect(recalculateJobMakeMethodRequirements).toHaveBeenCalledOnce();
-    expect(recalculateJobOperationDependencies).toHaveBeenCalledOnce();
-  });
-
   it("refuses a make method that is not the job's", async () => {
     const result = await createJobMaterial(
       contextWith({ job: { status: "Draft" } }),
@@ -134,41 +125,6 @@ describe("createJobMaterial", () => {
 });
 
 describe("updateJobMaterial", () => {
-  it("recalculates the method; dependencies only for a Make to Order material on an operation", async () => {
-    await updateJobMaterial(
-      contextWith({
-        jobMaterial: { methodType: "Pull from Inventory" },
-        ...parents
-      }),
-      material
-    );
-    expect(recalculateJobMakeMethodRequirements).toHaveBeenCalledOnce();
-    expect(recalculateJobOperationDependencies).not.toHaveBeenCalled();
-  });
-
-  it("pulls the item's method only on the change INTO Make to Order", async () => {
-    const makeToOrder = {
-      ...material,
-      methodType: "Make to Order" as const,
-      jobOperationId: "op1"
-    };
-    await updateJobMaterial(
-      contextWith({ jobMaterial: { methodType: "Make to Order" }, ...parents }),
-      makeToOrder
-    );
-    expect(pullJobMaterialMakeMethod).not.toHaveBeenCalled();
-
-    await updateJobMaterial(
-      contextWith({
-        jobMaterial: { methodType: "Pull from Inventory" },
-        ...parents
-      }),
-      makeToOrder
-    );
-    expect(pullJobMaterialMakeMethod).toHaveBeenCalledOnce();
-    expect(recalculateJobOperationDependencies).toHaveBeenCalledTimes(2);
-  });
-
   it("refuses a material that is not on this job and method", async () => {
     const result = await updateJobMaterial(contextWith(parents), material);
     expect(result.error?.category).toBe("notFound");

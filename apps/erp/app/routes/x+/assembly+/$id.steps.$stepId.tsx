@@ -8,13 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyInstructionStepValidator,
-  upsertAssemblyInstructionStep
-} from "~/modules/production";
+import { assemblyInstructionStepValidator } from "~/modules/production/production.models";
 import {
   logAssemblyStep,
-  readAndLogFormData
+  readAndLogFormData,
+  upsertAssemblyInstructionStep
 } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {

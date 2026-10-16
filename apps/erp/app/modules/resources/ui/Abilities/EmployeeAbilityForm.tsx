@@ -27,7 +27,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { employeeAbilityCellValidator } from "~/modules/resources";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
 
 type EmployeeAbilityFormProps = {
   action: string;

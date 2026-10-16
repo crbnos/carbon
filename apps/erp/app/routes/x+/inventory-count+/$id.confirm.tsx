@@ -10,7 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 import {
   getInventoryCount,
   updateInventoryCountStatus
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 // Confirm (Draft -> Pending): moves the count out of entry into review. The

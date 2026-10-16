@@ -17,7 +17,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Submit, TextArea } from "~/components/Form";
-import { inventoryAdjustmentValidator } from "~/modules/inventory";
+import { inventoryAdjustmentValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 type UnscrapModalProps = {

@@ -11,7 +11,9 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useSearchParams } from "react-router";
 import { useUser } from "~/hooks";
-import { KanbanForm, kanbanValidator, upsertKanban } from "~/modules/inventory";
+import { kanbanValidator } from "~/modules/inventory/inventory.models";
+import { upsertKanban } from "~/modules/inventory/inventory.service";
+import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

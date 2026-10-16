@@ -21,7 +21,8 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
@@ -29,15 +30,14 @@ import {
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
-  getSupplierInteractionDocuments,
-  purchaseOrderApprovalValidator
-} from "~/modules/purchasing";
+  getSupplierInteractionDocuments
+} from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
   PurchaseOrderHeader,
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

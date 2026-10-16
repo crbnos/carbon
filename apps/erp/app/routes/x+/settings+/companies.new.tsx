@@ -15,7 +15,8 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { SubsidiaryCompanyForm, subsidiaryValidator } from "~/modules/settings";
+import { subsidiaryValidator } from "~/modules/settings/settings.models";
+import { SubsidiaryCompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

@@ -12,8 +12,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import type { SupplierBankAccount } from "~/modules/purchasing";
-import { deleteSupplierBankAccount } from "~/modules/purchasing";
+import { deleteSupplierBankAccount } from "~/modules/purchasing/purchasing.service";
+import type { SupplierBankAccount } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

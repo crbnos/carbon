@@ -7,10 +7,12 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() })
 }));
-vi.mock("../app/modules/production/production.service", () => ({
+vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   notifyScheduleInputsChanged: vi.fn()
 }));
-vi.mock("../app/modules/people/people.service", () => ({
+vi.mock("../app/modules/people/people.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   clockIn: vi.fn(),
   clockOut: vi.fn(),
   createTimeCardEntry: vi.fn(),

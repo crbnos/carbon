@@ -5,7 +5,7 @@
 import { assertIsPost, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteBatchProperty } from "~/modules/inventory";
+import { deleteBatchProperty } from "~/modules/inventory/inventory.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -10,10 +10,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
-import {
-  changeNoticeValidator,
-  getChangeNoticeTypesList
-} from "~/modules/items";
+import { changeNoticeValidator } from "~/modules/items/items.models";
+import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

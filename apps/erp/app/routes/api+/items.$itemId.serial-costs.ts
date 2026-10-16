@@ -6,8 +6,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
-import { getDefaultAccounts } from "~/modules/accounting";
-import { getSerialUnitCosts } from "~/modules/inventory";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
+import { getSerialUnitCosts } from "~/modules/inventory/inventory.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "item-serial-costs");

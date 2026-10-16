@@ -6,7 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { salesInvoicePostValidator } from "~/modules/invoicing";
+import { salesInvoicePostValidator } from "~/modules/invoicing/invoicing.models";
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(salesInvoicePostValidator).request(args, {

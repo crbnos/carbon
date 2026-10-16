@@ -10,12 +10,12 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { EmployeeTypeForm } from "~/modules/users/ui";
+import { employeeTypeValidator } from "~/modules/users/users.models";
 import {
-  EmployeeTypeForm,
-  employeeTypeValidator,
   getEmployeeType,
   getPermissionsByEmployeeType
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

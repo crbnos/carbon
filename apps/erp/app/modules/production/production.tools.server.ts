@@ -77,7 +77,6 @@ import {
   getJobMaterialItemIds,
   getJobMaterialsByMethodId,
   getJobMaterialsWithQuantityOnHand,
-  getJobMethodTree,
   getJobOperationAttachments,
   getJobOperationBatchEvents,
   getJobOperationBatches,
@@ -141,7 +140,6 @@ import {
   runMRP,
   setJobMaterialStepLink,
   setJobOperationToolStepLink,
-  toViewerStep,
   ungroupAssemblySubAssembly,
   updateAssemblyInstructionStatus,
   updateAssemblyInstructionStepMaterialOrder,
@@ -179,6 +177,7 @@ import {
   upsertProcedureStep,
   upsertScrapReason
 } from "./production.service";
+import { getJobMethodTree, toViewerStep } from "./production.utils";
 
 /**
  * Convert sales order lines to jobs

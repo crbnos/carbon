@@ -11,7 +11,7 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteChangeNotice } from "~/modules/items";
+import { deleteChangeNotice } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

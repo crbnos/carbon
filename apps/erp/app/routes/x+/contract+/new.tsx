@@ -12,10 +12,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUser } from "~/hooks";
-import {
-  customerContractValidator,
-  getCustomerContractStatuses
-} from "~/modules/sales";
+import { customerContractValidator } from "~/modules/sales/sales.models";
+import { getCustomerContractStatuses } from "~/modules/sales/sales.service";
 import {
   ContractDetailsForm,
   ContractSetupSteps

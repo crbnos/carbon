@@ -5,7 +5,8 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { GroupForm, groupValidator } from "~/modules/users";
+import { GroupForm } from "~/modules/users/ui";
+import { groupValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

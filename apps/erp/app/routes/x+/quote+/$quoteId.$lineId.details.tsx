@@ -18,12 +18,7 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
-import type {
-  Quotation,
-  QuotationOperation,
-  QuotationPrice,
-  QuoteMethod
-} from "~/modules/sales";
+import { quoteLineValidator } from "~/modules/sales/sales.models";
 import {
   getConfigurationParametersByQuoteLineId,
   getModelByQuoteLineId,
@@ -34,9 +29,14 @@ import {
   getQuoteOperationsByLine,
   getQuoteOperationsByMethodId,
   getRelatedPricesForQuoteLine,
-  getRootQuoteMakeMethod,
-  quoteLineValidator
-} from "~/modules/sales";
+  getRootQuoteMakeMethod
+} from "~/modules/sales/sales.service";
+import type {
+  Quotation,
+  QuotationOperation,
+  QuotationPrice,
+  QuoteMethod
+} from "~/modules/sales/types";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -52,8 +52,11 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
-import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import type { SupplierPriceMap } from "~/modules/shared/shared.models";
+import {
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

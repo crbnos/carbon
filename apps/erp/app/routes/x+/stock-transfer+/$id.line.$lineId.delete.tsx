@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
 import {
   deleteStockTransferLine,
-  getStockTransfer,
-  isStockTransferLocked
-} from "~/modules/inventory";
+  getStockTransfer
+} from "~/modules/inventory/inventory.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

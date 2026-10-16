@@ -30,12 +30,12 @@ import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
-import { plmReleaseControl } from "~/modules/items";
+import { plmReleaseControl } from "~/modules/items/items.models";
 import {
-  getCompanySettings,
   plmReleaseControlValidator,
   settingsToggle
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

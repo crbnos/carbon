@@ -22,7 +22,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import { getCostCentersTree } from "~/modules/accounting";
+import { getCostCentersTree } from "~/modules/accounting/accounting.service";
 import {
   CostCentersListView,
   CostCentersTreeView

@@ -16,7 +16,6 @@ import { useCallback, useMemo, useState } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {
   enrichActivityBinNames,
   fetchContainmentsForEntities,
@@ -24,6 +23,7 @@ import {
   fetchLineageSubgraph,
   type LineagePayload
 } from "~/modules/inventory/inventory.service";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { isClusterId } from "~/modules/inventory/ui/Traceability/cluster";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import {

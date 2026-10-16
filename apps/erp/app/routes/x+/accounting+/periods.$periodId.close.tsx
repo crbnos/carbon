@@ -53,15 +53,13 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { EmployeeAvatar } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
-import type {
-  PeriodCloseStatus,
-  PeriodCloseTaskView
-} from "~/modules/accounting";
+import type { PeriodCloseTaskView } from "~/modules/accounting/accounting.service";
 import {
   getAccountingPeriods,
   getPeriodCloseChecklist,
   LOCK_PERIOD_TASK_NAME
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type { PeriodCloseStatus } from "~/modules/accounting/types";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";

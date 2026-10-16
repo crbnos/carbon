@@ -14,10 +14,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   batchRuleInitialValues,
-  getProcess,
-  ProcessForm,
   processValidator
-} from "~/modules/resources";
+} from "~/modules/resources/resources.models";
+import { getProcess } from "~/modules/resources/resources.service";
+import { ProcessForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

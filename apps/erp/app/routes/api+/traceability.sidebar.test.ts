@@ -10,7 +10,8 @@ import { loader } from "./traceability.sidebar";
 vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: vi.fn()
 }));
-vi.mock("~/modules/inventory/lineage.server", () => ({
+vi.mock("~/modules/inventory/inventory.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   fetchJobStepRecords: vi.fn(async () => [{ id: "step-record-1" }])
 }));
 

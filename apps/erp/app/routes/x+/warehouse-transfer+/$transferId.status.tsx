@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { warehouseTransferStatusType } from "~/modules/inventory";
+import { warehouseTransferStatusType } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
 const statusForm = z.object({

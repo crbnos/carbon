@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { carbon, respond } from "@carbon/api/carbon.server";
 import type {
   CarbonError,
   ErrorCategory,
@@ -41,7 +40,6 @@ import {
   runTypeOfScheduleRow
 } from "@carbon/database/run-type";
 import { getNextSequence as getNextSequenceInTransaction } from "@carbon/database/sequence";
-import { validator } from "@carbon/form";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import { isDataLayerError } from "@carbon/server-functions/errors";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
@@ -67,19 +65,12 @@ import {
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
-import type { ActionFunctionArgs } from "react-router";
-import { z } from "zod";
+import type { z } from "zod";
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
-import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
-import {
-  getGenericQueryFilters,
-  LIST_COUNT,
-  setGenericQueryFilters
-} from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCompanyTimeZone as getCachedCompanyTimeZone } from "../shared/shared.service";
 import type {
   AnalyticsAccountScope,
   AnalyticsReportDefinition,
@@ -120,7 +111,6 @@ import {
   depreciationFloor,
   depreciationRunLinesMatch,
   diffJournalLines,
-  getNextRevenueRecognitionPeriodEnd,
   hasAccountingCutover,
   isFutureRunPeriod,
   monthEndOf,
@@ -142,7 +132,6 @@ import type {
   TranslatedBalance
 } from "./types";
 import { NET_INCOME_ACCOUNT_ID } from "./types";
-import { RUN_PAGES } from "./ui/RevenueRecognition/runPages";
 
 /**
  * Sign multiplier for root account aggregation.
@@ -7390,30 +7379,6 @@ export async function getDepreciationRunLines(
 
 // -- Revenue Recognition --
 
-export async function getRevenueRecognitionRuns(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  type: Database["public"]["Enums"]["runType"],
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("revenueRecognitionRun")
-    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
-      count: "exact"
-    })
-    .eq("companyId", companyId)
-    .eq("type", type);
-
-  if (args.search) {
-    query = query.ilike("runId", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
-  return query;
-}
-
 export async function getRevenueRecognitionRun(
   client: SupabaseClient<Database>,
   id: string,
@@ -11651,69 +11616,31 @@ export async function outOfServiceRefusal(
   }
   return null;
 }
-const newRunForm = z.object({ periodEnd: z.string().optional() });
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+// -- Revenue Recognition --
 
-export async function loadPeriodRuns(request: Request, type: RunType) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
-  });
+export async function getRevenueRecognitionRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  type: Database["public"]["Enums"]["runType"],
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("revenueRecognitionRun")
+    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
+      count: "exact"
+    })
+    .eq("companyId", companyId)
+    .eq("type", type);
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  if (args.search) {
+    query = query.ilike("runId", `%${args.search}%`);
+  }
 
-  const [runs, lastRun] = await Promise.all([
-    getRevenueRecognitionRuns(client, companyId, type, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    client
-      .from("revenueRecognitionRun")
-      .select("periodEnd, status")
-      .eq("companyId", companyId)
-      .eq("type", type)
-      .order("periodEnd", { ascending: false })
-      .limit(1)
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
   ]);
-
-  const lastRunData =
-    lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
-  // The proposed period: the month after the last run, or the month just
-  // closed in the company's calendar when there is no run yet.
-  const nextPeriodEnd = getNextRevenueRecognitionPeriodEnd(
-    lastRunData?.periodEnd ?? null,
-    datetime.today(await getCachedCompanyTimeZone(client, companyId)).toString()
-  );
-  const hasDraftBlocking = lastRunData?.status === "Draft";
-
-  return {
-    data: runs.data ?? [],
-    count: runs.count ?? 0,
-    nextPeriodEnd,
-    hasDraftBlocking
-  };
-}
-
-/** The list pages' New Run: the period the page showed, or with a bare POST
- *  the month after the last run of the type. */
-export async function createPeriodRun(args: ActionFunctionArgs, type: RunType) {
-  const input = await validator(newRunForm).request(args);
-  if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
-  const result = await api.accounting.revenueRecognitionRun.create({
-    type,
-    periodEnd: input.data.periodEnd || undefined
-  });
-  return respond(args.request, result).redirect(
-    result.data
-      ? path.to.revenueRecognitionRun(result.data.id)
-      : RUN_PAGES[type].listPath,
-    { message: `${runLabelSentence(type)} created` }
-  );
+  return query;
 }

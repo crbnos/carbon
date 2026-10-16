@@ -18,21 +18,23 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getItemReplenishment } from "~/modules/items";
-import { getJobsBySalesOrderLine } from "~/modules/production";
+import { getItemReplenishment } from "~/modules/items/items.service";
+import { getJobsBySalesOrderLine } from "~/modules/production/production.service";
+import {
+  isSalesOrderLocked,
+  salesOrderLineValidator
+} from "~/modules/sales/sales.models";
+import {
+  getOpportunityLineDocuments,
+  getSalesOrderLine,
+  getSalesOrderLineShipments
+} from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   PriceTraceStep,
   SalesOrder,
   SalesOrderLineType
-} from "~/modules/sales";
-import {
-  getOpportunityLineDocuments,
-  getSalesOrderLine,
-  getSalesOrderLineShipments,
-  isSalesOrderLocked,
-  salesOrderLineValidator
-} from "~/modules/sales";
+} from "~/modules/sales/types";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes

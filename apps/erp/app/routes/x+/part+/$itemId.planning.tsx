@@ -15,20 +15,22 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { useRouteData } from "~/hooks";
 import {
-  getItemPlanning,
-  getItemQuantities,
-  getItemSupersession,
-  getSupersessionChain,
   itemPlanningValidator,
   itemSupersessionValidator,
   predecessorSupersessionValidator
-} from "~/modules/items";
+} from "~/modules/items/items.models";
+import {
+  getItemPlanning,
+  getItemQuantities,
+  getItemSupersession,
+  getSupersessionChain
+} from "~/modules/items/items.service";
 import {
   ItemPlanningForm,
   ItemSupersessionForm
 } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";

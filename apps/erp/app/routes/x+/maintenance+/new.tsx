@@ -9,10 +9,8 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import {
-  getFailureModesList,
-  maintenanceDispatchValidator
-} from "~/modules/resources";
+import { maintenanceDispatchValidator } from "~/modules/resources/resources.models";
+import { getFailureModesList } from "~/modules/resources/resources.service";
 import MaintenanceDispatchForm from "~/modules/resources/ui/Maintenance/MaintenanceDispatchForm";
 import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";

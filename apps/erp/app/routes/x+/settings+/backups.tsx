@@ -45,13 +45,12 @@ import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import type { CompanyBackupSummary } from "~/modules/settings";
+import type { CompanyBackupSummary } from "~/modules/settings/backups.service";
 import {
   deleteCompanyBackup,
   getCompanyExportRun,
-  getCompanyRestoreRuns,
-  totalScopeRows
-} from "~/modules/settings";
+  getCompanyRestoreRuns
+} from "~/modules/settings/backups.service";
 import {
   canManageBackups,
   dismissCompanyExportFailure,
@@ -62,6 +61,7 @@ import {
   revertCompanyRestore,
   startCompanyRestore
 } from "~/modules/settings/settings.service";
+import { totalScopeRows } from "~/modules/settings/settings.utils";
 import type { BackupStatus } from "~/modules/settings/ui/Backups";
 import {
   BackupContentsInfo,

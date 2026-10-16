@@ -25,8 +25,8 @@ import {
   RelatedDocumentSkeleton
 } from "~/components/DocumentPage";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { Receipt, ReceiptLine } from "~/modules/inventory";
-import type { purchaseInvoiceStatusType } from "~/modules/invoicing";
+import type { Receipt, ReceiptLine } from "~/modules/inventory/types";
+import type { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import { InspectionStatus } from "~/modules/quality/ui/Inspections/InspectionStatus";
 import { useCustomers, useSuppliers } from "~/stores";

@@ -38,11 +38,11 @@ import { upsertDocument } from "~/modules/documents/documents.service";
 import { stripeCustomerActions } from "~/modules/invoicing/invoicing.models";
 import { linkStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
 import {
-  getSupplierPriceBreaksForItems,
   getUnreleasedChangeOrderIssue,
   resolveItemIdFromExtractedText,
   upsertPart
 } from "~/modules/items/items.service";
+import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { runMRP } from "~/modules/production/production.service";
 import {
   deleteIssue,
@@ -57,10 +57,10 @@ import {
   getCompanyTimeZone,
   getLocationTimeZone,
   refuseUnlessOwned,
-  resolveBuyUnitCost,
   sendSalesOrderEmail,
   upsertExternalLink
 } from "~/modules/shared/shared.service";
+import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";

@@ -23,7 +23,8 @@ vi.mock("@carbon/server-functions", () => ({
   serverFns: { system: () => ({ invoke: vi.fn() }) }
 }));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
-vi.mock("../app/modules/production/production.service", () => ({
+vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   dismissPlanningActions: vi.fn(),
   getPlanningActionsByIds: vi.fn(),
   markPlanningActionsActioned: vi.fn(),

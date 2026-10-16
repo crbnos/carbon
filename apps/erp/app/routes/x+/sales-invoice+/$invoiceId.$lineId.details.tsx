@@ -14,12 +14,10 @@ import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
-import {
-  getSalesInvoiceLine,
-  salesInvoiceLineValidator
-} from "~/modules/invoicing";
+import { salesInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import { getSalesInvoiceLine } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import { getOpportunityLineDocuments } from "~/modules/sales";
+import { getOpportunityLineDocuments } from "~/modules/sales/sales.service";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes

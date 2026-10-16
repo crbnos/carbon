@@ -13,7 +13,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { ApprovalRules, ApprovalRulesUpgradeOverlay } from "~/modules/settings";
+import {
+  ApprovalRules,
+  ApprovalRulesUpgradeOverlay
+} from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

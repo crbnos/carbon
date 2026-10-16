@@ -14,11 +14,9 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import {
-  createPurchaseInvoiceFromPurchaseOrder,
-  PurchaseInvoiceForm,
-  purchaseInvoiceValidator
-} from "~/modules/invoicing";
+import { purchaseInvoiceValidator } from "~/modules/invoicing/invoicing.models";
+import { createPurchaseInvoiceFromPurchaseOrder } from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceForm } from "~/modules/invoicing/ui";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

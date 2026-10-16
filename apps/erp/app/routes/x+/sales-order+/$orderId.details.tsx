@@ -16,13 +16,17 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
+import { salesOrderValidator } from "~/modules/sales/sales.models";
 import {
   getSalesOrder,
   getSalesOrderPayment,
-  getSalesOrderShipment,
-  salesOrderValidator
-} from "~/modules/sales";
+  getSalesOrderShipment
+} from "~/modules/sales/sales.service";
+import type {
+  Opportunity,
+  SalesOrder,
+  SalesOrderLine
+} from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes,

@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher, useLoaderData } from "react-router";
-import { getKanban } from "~/modules/inventory";
+import { getKanban } from "~/modules/inventory/inventory.service";
 import {
   getJob,
   updateKanbanJob

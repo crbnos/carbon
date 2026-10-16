@@ -16,7 +16,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { Hidden, Number, Submit } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
-import { itemRentalRateValidator } from "~/modules/sales";
+import { itemRentalRateValidator } from "~/modules/sales/sales.models";
 
 type ItemRentalRateFormProps = {
   initialValues: z.infer<typeof itemRentalRateValidator>;

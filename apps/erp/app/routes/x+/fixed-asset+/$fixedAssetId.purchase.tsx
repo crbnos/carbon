@@ -24,7 +24,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { Submit, Supplier } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { getFixedAsset } from "~/modules/accounting";
+import { getFixedAsset } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 const purchaseAssetValidator = z.object({

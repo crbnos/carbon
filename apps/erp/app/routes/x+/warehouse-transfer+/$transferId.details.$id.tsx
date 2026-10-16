@@ -13,10 +13,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import {
-  getWarehouseTransferLine,
-  WarehouseTransferLineForm
-} from "~/modules/inventory";
+import { getWarehouseTransferLine } from "~/modules/inventory/inventory.service";
+import { WarehouseTransferLineForm } from "~/modules/inventory/ui";
 import { path } from "~/utils/path";
 
 const warehouseTransferLineActionValidator = z.discriminatedUnion("type", [

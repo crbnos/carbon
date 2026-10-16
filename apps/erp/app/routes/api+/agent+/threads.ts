@@ -7,8 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { getThreads } from "~/modules/agent";
 import { deleteAgentThread } from "~/modules/agent/agent.server";
+import { getThreads } from "~/modules/agent/agent.service";
 
 const logger = getLogger("erp", "agent-threads");
 

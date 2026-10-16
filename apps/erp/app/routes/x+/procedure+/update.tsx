@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import type { procedureStatus } from "~/modules/production";
+import type { procedureStatus } from "~/modules/production/production.models";
 
 // The procedure properties panel: one field of one or more procedures.
 const updateForm = z.object({

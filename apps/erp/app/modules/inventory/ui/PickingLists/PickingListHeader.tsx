@@ -34,12 +34,12 @@ import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
+import { isPickingListLocked } from "~/modules/inventory/inventory.models";
 import type {
   getPickingList,
   getPickingListLines,
   UnresolvedPickingListLine
-} from "~/modules/inventory";
-import { isPickingListLocked } from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import type { action as statusAction } from "~/routes/x+/picking-list+/$pickingListId.status";
 import { path } from "~/utils/path";
 import PickingListStatus from "./PickingListStatus";

@@ -30,10 +30,8 @@ import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SectionFormModal } from "~/components/DocumentTemplateEditor/SectionFormModal";
 import { usePermissions } from "~/hooks";
-import {
-  documentSectionValidator,
-  getDocumentSections
-} from "~/modules/settings";
+import { documentSectionValidator } from "~/modules/settings/settings.models";
+import { getDocumentSections } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const PLACEMENT_LABELS: Record<DocumentSectionPlacement, string> = {

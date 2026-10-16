@@ -12,11 +12,11 @@ import { getVapidDetails } from "@carbon/env/push.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { notificationPreferenceValidator } from "~/modules/account/account.models";
 import {
   getNotificationPreferences,
-  notificationPreferenceValidator,
   upsertNotificationPreference
-} from "~/modules/account";
+} from "~/modules/account/account.service";
 
 // Data and writes for the Notifications pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {

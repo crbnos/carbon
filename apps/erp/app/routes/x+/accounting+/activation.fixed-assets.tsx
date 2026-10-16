@@ -17,7 +17,7 @@ import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import { cutoverAccumulatedDepreciationValidator } from "~/modules/accounting";
+import { cutoverAccumulatedDepreciationValidator } from "~/modules/accounting/accounting.models";
 import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,

@@ -7,11 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import {
-  AbilityForm,
-  abilityValidator,
-  getProcessesWithoutAbility
-} from "~/modules/resources";
+import { abilityValidator } from "~/modules/resources/resources.models";
+import { getProcessesWithoutAbility } from "~/modules/resources/resources.service";
+import { AbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

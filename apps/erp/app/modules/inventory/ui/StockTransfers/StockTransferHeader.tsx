@@ -27,11 +27,11 @@ import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import {
-  isStockTransferLocked,
-  type StockTransfer,
-  type StockTransferLine
-} from "~/modules/inventory";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import StockTransferStatus from "./StockTransferStatus";
 

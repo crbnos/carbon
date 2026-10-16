@@ -30,15 +30,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { CompanyPermission } from "~/modules/users";
+import type { CompanyPermission } from "~/modules/users/types";
+import { EmployeePermissionsForm } from "~/modules/users/ui";
+import { employeeValidator } from "~/modules/users/users.models";
 import {
-  EmployeePermissionsForm,
-  employeeValidator,
+  getClaims,
   getEmployee,
   getEmployeeTypes,
-  getPermissionsByEmployeeType
-} from "~/modules/users";
-import { getClaims, originOf } from "~/modules/users/users.service";
+  getPermissionsByEmployeeType,
+  originOf
+} from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 // The per-user permissions editor is a modal over the accounts list; when the

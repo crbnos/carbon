@@ -29,7 +29,8 @@ vi.mock("@carbon/planning", () => ({
     events.push("schedule");
   })
 }));
-vi.mock("../app/modules/production/production.service", () => ({
+vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   runMRP: vi.fn(async () => ({ data: null, error: null })),

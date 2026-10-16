@@ -31,7 +31,8 @@ import {
   Timezone
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import { addressValidator, getCompany } from "~/modules/settings";
+import { addressValidator } from "~/modules/settings/settings.models";
+import { getCompany } from "~/modules/settings/settings.service";
 import {
   getOnboardingDraft,
   setOnboardingDraft

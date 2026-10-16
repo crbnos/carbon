@@ -33,8 +33,8 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items/items.utils";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import type { action as editQuoteMaterialAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.material.$id";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

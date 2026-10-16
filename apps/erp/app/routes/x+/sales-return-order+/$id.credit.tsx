@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { salesReturnOrderCreditValidator } from "~/modules/sales/sales.models";
 import {
   createSalesReturnOrderCredit,
-  getCreditableQuantities,
-  salesReturnOrderCreditValidator
-} from "~/modules/sales";
+  getCreditableQuantities
+} from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

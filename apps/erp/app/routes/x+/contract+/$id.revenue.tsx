@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { customerContractRevenueEditValidator } from "~/modules/sales";
+import { customerContractRevenueEditValidator } from "~/modules/sales/sales.models";
 import { runContractAction } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";

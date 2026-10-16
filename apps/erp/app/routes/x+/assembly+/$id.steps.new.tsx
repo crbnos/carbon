@@ -9,11 +9,9 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { assemblyInstructionStepNewValidator } from "~/modules/production/production.models";
 import {
-  assemblyInstructionStepNewValidator,
-  insertAssemblyInstructionStep
-} from "~/modules/production";
-import {
+  insertAssemblyInstructionStep,
   logAssemblyStep,
   readAndLogFormData
 } from "~/modules/production/production.service";

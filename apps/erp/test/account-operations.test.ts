@@ -8,7 +8,8 @@ vi.mock("@lingui/core/macro", () => ({ msg: (value: unknown) => value }));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() })
 }));
-vi.mock("../app/modules/account/account.service", () => ({
+vi.mock("../app/modules/account/account.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   deleteUserAttributeValue: vi.fn(),
   getChangelogPanelEntry: vi.fn(),
   getCurrentUser: vi.fn(),
@@ -16,7 +17,8 @@ vi.mock("../app/modules/account/account.service", () => ({
   upsertUserAttributeValue: vi.fn()
 }));
 
-vi.mock("../app/modules/people/people.service", () => ({
+vi.mock("../app/modules/people/people.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getAttribute: vi.fn()
 }));
 

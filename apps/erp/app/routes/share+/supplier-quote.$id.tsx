@@ -68,9 +68,9 @@ import type {
   SupplierQuoteLinePrice
 } from "~/modules/purchasing/types";
 import { shareLinkContext } from "~/modules/service-context.server";
-import type { Company } from "~/modules/settings";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
 

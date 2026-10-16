@@ -12,11 +12,11 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { accountProfileValidator } from "~/modules/account/account.models";
 import {
-  accountProfileValidator,
   getAccount,
   updatePublicAccount
-} from "~/modules/account";
+} from "~/modules/account/account.service";
 
 const logger = getLogger("erp", "account-profile");
 

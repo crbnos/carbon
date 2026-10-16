@@ -25,9 +25,9 @@ import { usePermissions, useRouteData } from "~/hooks";
 import {
   inventoryItemTypes,
   isStockTransferLocked,
-  type StockTransfer,
   stockTransferLineValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
+import type { StockTransfer } from "~/modules/inventory/types";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";

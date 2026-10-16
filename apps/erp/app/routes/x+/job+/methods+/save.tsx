@@ -8,11 +8,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getJobMethodValidator } from "~/modules/production/production.models";
 import {
-  getJobMethodValidator,
   upsertMakeMethodFromJob,
   upsertMakeMethodFromJobMethod
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

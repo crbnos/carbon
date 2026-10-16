@@ -45,13 +45,13 @@ import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
-  getCompanySettings,
   incompletePickingListPolicyValidator,
   kanbanOutputTypes,
   kanbanOutputValidator,
   returnPickedMaterialTimingValidator,
   shelfLifeSettingsValidator
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

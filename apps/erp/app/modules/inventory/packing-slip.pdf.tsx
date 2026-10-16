@@ -37,10 +37,10 @@ import {
   getRentalShipmentLines,
   getShipment,
   getShipmentLinesWithDetails,
-  getShipmentTracking,
   getShippingMethod,
   getWarehouseTransfer
 } from "./inventory.service";
+import { getShipmentTracking } from "./inventory.utils";
 
 const logger = getLogger("erp", "shipment", "pdf");
 

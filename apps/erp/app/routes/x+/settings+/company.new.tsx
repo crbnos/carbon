@@ -8,7 +8,7 @@ import { updateCompanySession } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { companyValidator } from "~/modules/settings";
+import { companyValidator } from "~/modules/settings/settings.models";
 import { path, requestReferrer } from "~/utils/path";
 
 // The form lives in the topbar and only posts here. A tab left open across a

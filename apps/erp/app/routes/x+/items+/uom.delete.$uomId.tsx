@@ -14,7 +14,7 @@ import {
   deleteUnitOfMeasure,
   getUnitOfMeasure,
   getUnitOfMeasureUsage
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 import { camelCaseToWords } from "~/utils/string";
 

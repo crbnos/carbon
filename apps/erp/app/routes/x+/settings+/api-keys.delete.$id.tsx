@@ -10,7 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
+import type { ApiKey } from "~/modules/settings/types";
 import { getParams, path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

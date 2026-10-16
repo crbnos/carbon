@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
-import { inspectionGaugeValidator } from "~/modules/quality";
+import { inspectionGaugeValidator } from "~/modules/quality/quality.models";
 import { recordInspectionGauge } from "~/modules/quality/quality.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {

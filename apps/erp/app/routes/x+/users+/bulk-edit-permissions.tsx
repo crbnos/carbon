@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { bulkPermissionsValidator } from "~/modules/users";
+import { bulkPermissionsValidator } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
 import { getParams, path } from "~/utils/path";
 

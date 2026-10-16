@@ -16,13 +16,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
+import { quoteValidator } from "~/modules/sales/sales.models";
+import { getQuote } from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   Quotation,
   QuotationPayment,
   QuotationShipment
-} from "~/modules/sales";
-import { getQuote, quoteValidator } from "~/modules/sales";
+} from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes,

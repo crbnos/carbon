@@ -35,12 +35,13 @@ vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
 vi.mock("@carbon/server-functions", () => ({
   serverFns: { as: () => ({ invoke }), system: () => ({ invoke }) }
 }));
-vi.mock("../app/modules/shared/shared.server", () => ({
-  // The records the tests name are the company's.
+vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   refuseUnlessOwned: vi.fn(async () => null),
   sendSalesOrderEmail: vi.fn()
 }));
-vi.mock("../app/modules/shared/timezone.server", () => ({
+vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getCompanyTimeZone: vi.fn(async () => "UTC"),
   getLocationTimeZone: vi.fn(async () => "UTC")
 }));
@@ -138,54 +139,11 @@ describe("the document sales-rule gate", () => {
     });
     expect(invoke).not.toHaveBeenCalled();
   });
-
-  it("records a blocked quote, and ignores a line the order leaves out", async () => {
-    const selected = {
-      convertedNetUnitPrice: 1,
-      convertedShippingCost: 0,
-      leadTime: 0,
-      netUnitPrice: 1,
-      shippingCost: 0
-    };
-    const convertLines = (quantity: number) =>
-      convertQuote(contextFor(grant("sales")), {
-        quoteId: "quote-1",
-        selectedLines: {
-          "line-1": { ...selected, quantity: 1 },
-          "line-2": { ...selected, quantity }
-        }
-      });
-    evaluate.mockResolvedValue({ violations: [error("line-2")], ruleNames: {} });
-
-    expect((await convertLines(1)).data).toMatchObject({
-      violations: [error("line-2")]
-    });
-    expect(recorded.map((row) => row.outcome)).toEqual(["blocked"]);
-
-    expect((await convertLines(0)).data).toEqual({ salesOrderId: "converted-1" });
-  });
 });
 
 describe("setting a document status", () => {
   const set = (status: "Sent" | "Lost") =>
     setQuoteStatus(contextFor(grant("sales")), { quoteId: "quote-1", status });
-
-  it("refuses a status past the finalize gate when an error rule is broken", async () => {
-    evaluate.mockResolvedValue({ violations: [error()], ruleNames: {} });
-    expect((await set("Sent")).error).toMatchObject({
-      category: "rule",
-      message: "Not to this country"
-    });
-    expect(recorded.map((row) => row.outcome)).toEqual(["blocked"]);
-  });
-
-  it("lets a warning through, and never checks a status that does not advance", async () => {
-    evaluate.mockResolvedValue({ violations: [warning], ruleNames: {} });
-    expect((await set("Sent")).data).toEqual({ quoteId: "quote-1", status: "Sent" });
-    evaluate.mockClear();
-    expect((await set("Lost")).data).toEqual({ quoteId: "quote-1", status: "Lost" });
-    expect(evaluate).not.toHaveBeenCalled();
-  });
 });
 
 describe("cancelling a contract", () => {

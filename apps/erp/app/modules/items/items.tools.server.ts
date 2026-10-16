@@ -59,7 +59,6 @@ import {
   getChangeNoticeType,
   getChangeNoticeTypes,
   getChangeNoticeTypesList,
-  getConfigurationParameters,
   getConfigurationRules,
   getConsumable,
   getConsumables,
@@ -81,7 +80,6 @@ import {
   getItemReplenishment,
   getItemShelfLife,
   getItemStockQuantitiesByLocation,
-  getItemStorageUnitQuantities,
   getItemSupersession,
   getItemSupersessionsForItems,
   getItemUnitSalePrice,
@@ -130,7 +128,6 @@ import {
   getSupersessionChain,
   getSupplierParts,
   getSupplierPartsBySupplier,
-  getSupplierPriceBreaksForItems,
   getTool,
   getTools,
   getUnitOfMeasure,
@@ -185,6 +182,11 @@ import {
   upsertTool,
   upsertUnitOfMeasure
 } from "./items.service";
+import {
+  getConfigurationParameters,
+  getItemStorageUnitQuantities,
+  getSupplierPriceBreaksForItems
+} from "./items.utils";
 
 /**
  * Activate method version

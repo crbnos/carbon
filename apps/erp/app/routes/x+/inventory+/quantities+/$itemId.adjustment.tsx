@@ -8,7 +8,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { inventoryAdjustmentValidator } from "~/modules/inventory";
+import { inventoryAdjustmentValidator } from "~/modules/inventory/inventory.models";
 import { path, requestReferrer } from "~/utils/path";
 
 // The adjustment form, and `acknowledged` once the user accepts the rule

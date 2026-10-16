@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ActionFunctionArgs } from "react-router";
-import { createPeriodRun } from "~/modules/accounting/accounting.service";
+import { createPeriodRun } from "~/routes/x+/accounting+/period-runs.server";
 
 export async function action(args: ActionFunctionArgs) {
   return createPeriodRun(args, "Revenue Recognition");

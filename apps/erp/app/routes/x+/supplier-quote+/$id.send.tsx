@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { supplierQuoteFinalizeValidator } from "~/modules/purchasing";
+import { supplierQuoteFinalizeValidator } from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {

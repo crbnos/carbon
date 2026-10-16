@@ -37,15 +37,9 @@ import type {
   DraftedRentalCreditMemo,
   DraftedRentalInvoice
 } from "@carbon/server-functions/create-rental-invoices";
-import type {
-  DefaultRentalRates,
-  PickPartial,
-  ScopedRentalRate,
-  Violation
-} from "@carbon/utils";
+import type { PickPartial, Violation } from "@carbon/utils";
 import {
   datetime,
-  defaultRentalRates,
   EPSILON,
   getSalesReturnOrderStatus,
   round,
@@ -67,10 +61,8 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
-import {
-  getSupplierPriceBreaksForItems,
-  upsertPart
-} from "~/modules/items/items.service";
+import { upsertPart } from "~/modules/items/items.service";
+import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import {
   getCompany,
@@ -96,14 +88,13 @@ import type {
   operationParameterValidator,
   operationStepValidator,
   operationToolValidator
-} from "../shared";
+} from "../shared/shared.models";
 import { normalizeOperationSourceIds } from "../shared/shared.models";
+import { getModelByItemId, upsertExternalLink } from "../shared/shared.service";
 import {
-  getModelByItemId,
   lookupBuyPriceFromMap,
-  resolveBuyUnitCost,
-  upsertExternalLink
-} from "../shared/shared.service";
+  resolveBuyUnitCost
+} from "../shared/shared.utils";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
   customerAccountingValidator,
@@ -164,6 +155,7 @@ import {
   asConfiguration,
   configuredQuoteBasePrice,
   decideRecalcPricing,
+  getDefaultRentalRates,
   getEffectiveDefaultMarkups,
   QUOTE_BASE_PRICE_SOURCES,
   resolvePreservedQuoteLinePriceFields,
@@ -1496,18 +1488,6 @@ function getQuoteMethodTreeArrayToTree(
   // return rootItems.map((item) => traverseAndRenameIds(item));
 }
 
-export async function getQuoteLines(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteLines")
-    .select("*")
-    .eq("quoteId", quoteId)
-    .order("sortOrder", { ascending: true })
-    .order("itemReadableId", { ascending: true });
-}
-
 export async function getQuoteByExternalId(
   client: SupabaseClient<Database>,
   externalId: string
@@ -1527,17 +1507,6 @@ export async function getQuoteLinePrices(
     .from("quoteLinePrice")
     .select("*")
     .eq("quoteLineId", quoteLineId);
-}
-
-export async function getQuoteLinePricesByQuoteId(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteId", quoteId)
-    .order("quoteLineId", { ascending: true });
 }
 
 export async function getQuoteLinePricesByItemId(
@@ -9229,96 +9198,6 @@ export async function deleteItemRentalRate(
     .delete()
     .eq("id", itemRentalRateId)
     .eq("companyId", companyId);
-}
-
-/** Per item: the rate a rental unit starts at for each frequency. */
-export type DefaultRentalRatesByItem = Record<string, DefaultRentalRates>;
-
-/** The rate each item starts at on a rental line for this customer, per
- *  frequency — the customer's own rate, else its customer type's, else the
- *  item's (`defaultRentalRates`) — in effect on `asOf`, the agreement's start
- *  date. Keyed by item id. One query per table over every item.
- */
-export async function getDefaultRentalRates(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    customerId: string;
-    currencyCode: string;
-    asOf: string;
-    itemIds: string[];
-  }
-): Promise<
-  | { data: DefaultRentalRatesByItem; error: null }
-  | { data: null; error: PostgrestError }
-> {
-  const { companyId, customerId, currencyCode, asOf } = args;
-  const itemIds = [...new Set(args.itemIds)];
-  if (itemIds.length === 0) return { data: {}, error: null };
-
-  const customer = await client
-    .from("customer")
-    .select("customerTypeId")
-    .eq("id", customerId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (customer.error) return { data: null, error: customer.error };
-  const customerTypeId = customer.data?.customerTypeId ?? null;
-
-  // Two plain `.eq` reads rather than one `.or()` string: `customerId` is a
-  // caller's value (this is an MCP tool) and never belongs in a filter string.
-  const scopedSelect =
-    "itemId, customerId, customerTypeId, dayRate, weekRate, monthRate, validFrom, validTo";
-  const [itemRates, customerRates, typeRates] = await Promise.all([
-    client
-      .from("itemRentalRate")
-      .select("itemId, dayRate, weekRate, monthRate")
-      .eq("companyId", companyId)
-      .eq("currencyCode", currencyCode)
-      .in("itemId", itemIds),
-    client
-      .from("customerItemRentalRate")
-      .select(scopedSelect)
-      .eq("companyId", companyId)
-      .eq("currencyCode", currencyCode)
-      .eq("customerId", customerId)
-      .in("itemId", itemIds),
-    customerTypeId
-      ? client
-          .from("customerItemRentalRate")
-          .select(scopedSelect)
-          .eq("companyId", companyId)
-          .eq("currencyCode", currencyCode)
-          .eq("customerTypeId", customerTypeId)
-          .in("itemId", itemIds)
-      : null
-  ]);
-  if (itemRates.error) return { data: null, error: itemRates.error };
-  if (customerRates.error) return { data: null, error: customerRates.error };
-  if (typeRates?.error) return { data: null, error: typeRates.error };
-  const scopedRates = [...customerRates.data, ...(typeRates?.data ?? [])];
-
-  const itemRateById = new Map(itemRates.data.map((row) => [row.itemId, row]));
-  const result: DefaultRentalRatesByItem = {};
-  for (const itemId of itemIds) {
-    const item = itemRateById.get(itemId);
-    result[itemId] = defaultRentalRates({
-      customerId,
-      customerTypeId,
-      asOf,
-      scoped: scopedRates.filter(
-        (row): boolean => row.itemId === itemId
-      ) satisfies ScopedRentalRate[],
-      item: item
-        ? {
-            dayRate: item.dayRate,
-            weekRate: item.weekRate,
-            monthRate: item.monthRate
-          }
-        : null
-    });
-  }
-  return { data: result, error: null };
 }
 
 export async function getCustomerItemRentalRates(

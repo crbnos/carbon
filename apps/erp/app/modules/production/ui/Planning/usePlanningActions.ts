@@ -6,8 +6,8 @@ import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useRef } from "react";
-import type { PlanningAction } from "~/modules/production";
-import { actionsOfTypes } from "~/modules/production";
+import { actionsOfTypes } from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import {
   type FenceRow,
   useTimeFenceOverrides

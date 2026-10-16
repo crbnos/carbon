@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { quoteMaterialValidator } from "~/modules/sales";
+import { quoteMaterialValidator } from "~/modules/sales/sales.models";
 import { setCustomFields } from "~/utils/form";
 
 export async function action(args: ActionFunctionArgs) {

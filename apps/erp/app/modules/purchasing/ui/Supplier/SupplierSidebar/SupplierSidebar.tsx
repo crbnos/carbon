@@ -9,7 +9,7 @@ import type {
   SupplierContact,
   SupplierDetail,
   SupplierLocation
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 import { useSupplierSidebar } from "./useSupplierSidebar";
 

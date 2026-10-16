@@ -11,7 +11,7 @@ import { data } from "react-router";
 import {
   assignIssueItemEntitiesValidator,
   isIssueLocked
-} from "~/modules/quality";
+} from "~/modules/quality/quality.models";
 import { assignEntitiesToIssueItem } from "~/modules/quality/quality.service";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 

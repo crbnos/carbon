@@ -18,13 +18,13 @@ import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import type { SalesRFQLine } from "~/modules/sales";
 import {
   getOpportunity,
   getOpportunityDocuments,
   getSalesRFQ,
   getSalesRFQLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import type { SalesRFQLine } from "~/modules/sales/types";
 import {
   SalesRFQExplorer,
   SalesRFQHeader,

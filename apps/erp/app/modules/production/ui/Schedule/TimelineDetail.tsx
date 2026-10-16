@@ -23,7 +23,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, ItemThumbnail } from "~/components";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { TimelineNodeDetail } from "./timeline";
 

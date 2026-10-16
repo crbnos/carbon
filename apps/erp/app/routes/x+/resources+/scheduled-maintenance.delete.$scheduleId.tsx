@@ -13,7 +13,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteMaintenanceSchedule,
   getMaintenanceSchedule
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

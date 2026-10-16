@@ -55,7 +55,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { getSupplierPartPricing } from "~/modules/items";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import { path } from "~/utils/path";
 import {
   isPurchaseReturnOrderLocked,

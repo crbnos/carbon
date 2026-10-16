@@ -11,11 +11,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import {
-  getStockTransfer,
   isStockTransferLocked,
-  stockTransferLineValidator,
+  stockTransferLineValidator
+} from "~/modules/inventory/inventory.models";
+import {
+  getStockTransfer,
   upsertStockTransferLine
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import type {
   StockTransfer,
   StockTransferLine

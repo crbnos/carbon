@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deletePayment } from "~/modules/invoicing";
+import { deletePayment } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 // Action-only route — the delete confirmation modal (ConfirmDelete) posts here.

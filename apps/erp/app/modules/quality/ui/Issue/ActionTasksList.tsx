@@ -9,7 +9,7 @@ import { useCallback } from "react";
 import { useParams } from "react-router";
 import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
 import { useRouteData } from "~/hooks";
-import type { IssueActionTask } from "~/modules/quality";
+import type { IssueActionTask } from "~/modules/quality/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { TaskItem } from "./IssueTask";

@@ -13,20 +13,22 @@ import { LuChevronUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
+import {
+  getItemLedgerActivity,
+  getItemLedgerBalance
+} from "~/modules/inventory/inventory.service";
+import type { ItemLedger } from "~/modules/inventory/types";
 import type {
   BalanceAnchor,
-  CollapsedItemLedger,
-  ItemLedger
-} from "~/modules/inventory";
+  CollapsedItemLedger
+} from "~/modules/inventory/ui";
 import {
   collapseTransferPairs,
-  getItemLedgerActivity,
-  getItemLedgerBalance,
   InventoryActivity,
   withRunningBalance
-} from "~/modules/inventory";
-import { getItem } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+} from "~/modules/inventory/ui";
+import { getItem } from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 

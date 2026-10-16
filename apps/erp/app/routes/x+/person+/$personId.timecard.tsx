@@ -71,11 +71,13 @@ import {
   clockInValidator,
   clockOutValidator,
   deleteTimeCardEntryValidator,
-  getOpenClockEntry,
-  getTimeCardEntries,
   updateTimeCardEntryValidator
-} from "~/modules/people";
-import { getCompanySettings } from "~/modules/settings";
+} from "~/modules/people/people.models";
+import {
+  getOpenClockEntry,
+  getTimeCardEntries
+} from "~/modules/people/people.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 

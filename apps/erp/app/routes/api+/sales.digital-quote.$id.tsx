@@ -9,11 +9,12 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { getQuoteByExternalId, selectedLinesValidator } from "~/modules/sales";
+import { selectedLinesValidator } from "~/modules/sales/sales.models";
 import {
   acceptDigitalQuote,
   rejectDigitalQuote
 } from "~/modules/sales/sales.server";
+import { getQuoteByExternalId } from "~/modules/sales/sales.service";
 import { shareLinkContext } from "~/modules/service-context.server";
 
 const logger = getLogger("erp", "sales", "digital-quote");

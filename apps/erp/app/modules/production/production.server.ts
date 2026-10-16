@@ -23,9 +23,9 @@ import { sql } from "kysely";
 import { z } from "zod";
 import {
   cancelOpenPickingListsForJob,
-  getDefaultStorageUnitForJob,
   mergeTrackedEntities
 } from "~/modules/inventory/inventory.service";
+import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";

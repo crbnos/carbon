@@ -9,7 +9,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import type { Ability } from "~/modules/resources";
+import type { Ability } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
