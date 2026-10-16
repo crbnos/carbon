@@ -91,9 +91,21 @@ rentals persist `rentalBillingPeriod` rows per unit.
   term, and the Rentals section of `apps/erp/app/modules/sales/AGENTS.md`. Then
   regenerate swagger (`packages/database/src/swagger-docs-schema.ts`, via
   generate:types).
-- [ ] **7. Verify.** Run `pnpm --filter @carbon/utils test`,
+- [x] **7. Verify.** Run `pnpm --filter @carbon/utils test`,
   `pnpm --filter @carbon/server-functions test` (rental files), the scoped typecheck
   for `@carbon/utils`, `@carbon/server-functions` and `erp`, Biome,
   `pnpm db:check:datasets` and `pnpm db:check:backups`. Then browser-test with /test:
   create an agreement starting on the 7th, untick the box, activate, generate
   invoices, and check that the periods run 7th–6th at the full month rate.
+
+## Deviations from the plan
+
+- The helper is named `monthlyPeriodEnd`, not `anniversaryPeriodEnd`. It reuses
+  `leaseMonthsAt` / `leaseMonthEnd` from `@carbon/database/lease-months`, which
+  already clamp from the start date.
+- A Monthly term counts its months with `leaseMonthsThrough`, not
+  `wholeMonthsInTerm`. `wholeMonthsInTerm` counts 31 Jan → 27 Feb as 0 months,
+  but billing cuts it as one whole period.
+- The two sales-type troubleshooting headings in the rental agreements page are
+  shorter. The longer headings pushed the page past the agent's read budget
+  (`agent.kb.test.ts`).
