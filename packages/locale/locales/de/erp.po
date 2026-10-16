@@ -4061,8 +4061,8 @@ msgstr "Abgerechnet:"
 msgid "Billing"
 msgstr "Abrechnung"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Abrechnung einer Miete in festen Perioden, entweder Kalendermonate oder aufeinanderfolgende 28-Tage-Perioden, jede am ersten Tag (Im Voraus) oder am letzten Tag (Im Nachhinein) fakturiert."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Abrechnung einer Miete in festen Perioden, entweder in Monaten vom Startdatum an, Kalendermonaten oder aufeinanderfolgenden 28-Tage-Perioden, wobei jede Periode am ersten Tag (Vorauszahlung) oder am letzten Tag (Nachzahlung) fakturiert wird."
 
 msgid "Billing Address"
 msgstr "Rechnungsadresse"
@@ -10876,8 +10876,8 @@ msgstr "Wie eine Vertragsposition ihre Umsatzerlöse über ihre Umsatzdaten verd
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Wie ein Vertrag oder eine Änderung für Berichte über wiederkehrende Umsatzerlöse klassifiziert wird: Neuer Verkauf, Bestehend, Erweiterung, Reaktivierung oder Kontraktion. Carbon schlägt das vor und Sie können es ändern."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Wie eine Mietvereinbarung Abrechnungsperioden ab ihrem Startdatum abschneidet: Kalendermonat schneidet Kalendermonate ab, und 28 Tage schneidet aufeinanderfolgende 28-Tage-Perioden ab. Jede Einheit berechnet einen Tarif gemäß ihrer eigenen Häufigkeit für alle ganzen Tage, Wochen oder Monate, die eine Periode abdeckt; ein monatlicher Tarif in einem Kalendermonat wird tageweise anteilig berechnet."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Wie eine Mietvereinbarung Abrechnungsperioden ab dem Startdatum schneidet: Monatlich schneidet ab dem Tag des Startdatums jeweils einen Monat ab (z. B. bei Beginn am 7.: Abrechnung vom 7. bis 6.), Kalendermonat (Monatlich, an Kalenderperioden ausgerichtet) schneidet Kalendermonate ab, und 28 Tage schneidet jeweils 28-Tage-Perioden ab. Jeder Abrechnungszeitraum rechnet einen Satz ab, in seiner eigenen Häufigkeit, für alle Tage, Wochen oder Monate, die er umfasst; ein monatlicher Satz in einer Teilperiode wird tageweise anteilig berechnet."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Wie ein Artikel insgesamt aufgefüllt wird (Fremdbeschaffung, Eigenfertigung oder Fremdbeschaffung und Eigenfertigung), pro Artikel festgelegt, anders als die Bereitstellungsart pro Position."

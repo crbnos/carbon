@@ -4061,8 +4061,8 @@ msgstr "Rozliczono:"
 msgid "Billing"
 msgstr "Rozliczenia"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Rozliczanie wynajmu w ustalonych okresach, albo w miesiącach kalendarzowych, albo w kolejnych okresach 28-dniowych, każdy Zafakturowany w jego pierwszym dniu (Advance) lub ostatnim dniu (Arrears)."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Naliczanie wynajmu w stałych okresach — miesiące od daty rozpoczęcia, miesiące kalendarzowe lub kolejne okresy 28-dniowe — każdy z nich zafakturowany w jego pierwszym dniu (Z góry) lub ostatnim dniu (Z dołu)."
 
 msgid "Billing Address"
 msgstr "Adres rozliczeniowy"
@@ -10876,8 +10876,8 @@ msgstr "Jak pozycja umowy zarabia swoje przychody ze sprzedaży w okresach przyc
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Jak umowa lub zmiana są klasyfikowane do raportowania przychodu cyklicznego: Nowa Sprzedaż, Istniejące, Ekspansja, Reaktywacja lub Kontrakcja. Carbon sugeruje to, a ty możesz to zmienić."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Jak umowa wynajmu wyznacza okresy rozliczeniowe od jej daty rozpoczęcia: Miesiąc kalendarny wyznacza miesiące kalendarowe, a 28 Dni wyznacza kolejne 28-dniowe okresy. Każda jednostka rozlicza się jedną stawką przy własnej częstotliwości przez całe dni, tygodnie lub miesiące, które okres obejmuje; miesięczna stawka w miesiącu kalendarnym jest przeliczana proporcjonalnie do dni."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Jak umowa wynajmu dzieli okresy rozliczeniowe od jej daty rozpoczęcia: Co miesiąc dzieli jeden miesiąc od dnia daty rozpoczęcia (start w dniu 7. obejmuje okres od 7. do 6.), Miesiąc kalendarzowy (wyrównany do okresów kalendarzowych) dzieli miesiące kalendarzowe, a 28 dni dzieli kolejne okresy 28-dniowe. Każdy okres nalicza jedną stawkę z właściwą częstotliwością dla całych dni, tygodni lub miesięcy, które okres obejmuje; stawka miesięczna w okresie częściowym jest rozliczana proporcjonalnie do liczby dni."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Jak artykuł jest uzupełniany ogółem (Zakup, Produkcja lub Zakup i produkcja), ustawione na artykuł, w odróżnieniu od typu zasilania dla każdej pozycji."

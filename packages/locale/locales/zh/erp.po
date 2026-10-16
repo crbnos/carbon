@@ -4061,8 +4061,8 @@ msgstr "已计费:"
 msgid "Billing"
 msgstr "账单"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "按固定周期对租赁进行计费，可以是日历月或连续28天周期，每个周期在其第一天（提前）或最后一天（滞后）开具发票。"
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "租赁按固定期间计费，可以是从开始日期开始的月份、日历月份或连续的28天期间，每个期间在其第一天（提前）或最后一天（后付）已开票。"
 
 msgid "Billing Address"
 msgstr "账单地址"
@@ -10876,8 +10876,8 @@ msgstr "合同行如何在其收入日期内获得收入：每日，每天金额
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "合同或修订如何为经常性收入报告分类：新销售、现有、扩展、重新激活或缩减。Carbon 会建议分类，您可以更改。"
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "租赁协议如何从其开始日期生成计费周期：日历月生成日历月，28 天生成连续的 28 天周期。每个单元按其自身的频率计费一个费率，用于一个周期涵盖的整个天数、周数或月数；日历月中的月费率按天数按比例分配。"
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "租赁协议如何从开始日期开始划分计费期间：每月从开始日期的那一天划分一个月（例如，从7日开始计费到6日），日历月（每月，与日历期间对齐）划分日历月，28天则划分连续的28天期间。每件按其自身频率对周期所涵盖的整个天数、周或月计费一个费率；在部分期间内的月费率按天分摊。"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "物料整体的补货方式（采购、自制或采购与自制），按物料设定，与按行的供料方式不同"

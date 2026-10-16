@@ -86,7 +86,7 @@ rentals persist `rentalBillingPeriod` rows per unit.
   `RentalAgreementBilling.tsx` (cards + checkbox, copied from `ContractBillTo.tsx`)
   and the `RentalAgreementProperties.tsx` select labels. Then run `lingui:extract`
   and `/translate`.
-- [ ] **6. Docs.** Update `docs/content/docs/reference/rental-agreements.mdx` (cycles,
+- [x] **6. Docs.** Update `docs/content/docs/reference/rental-agreements.mdx` (cycles,
   example, sales-type requirements, the error text), the glossary `billing-cycle`
   term, and the Rentals section of `apps/erp/app/modules/sales/AGENTS.md`. Then
   regenerate swagger (`packages/database/src/swagger-docs-schema.ts`, via

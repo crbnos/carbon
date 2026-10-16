@@ -4061,8 +4061,8 @@ msgstr "Facturé :"
 msgid "Billing"
 msgstr "Facturation"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Facturation d'une location en périodes fixes, soit des mois civils, soit des périodes consécutives de 28 jours, chacune facturée le premier jour (Anticipé) ou le dernier jour (Arriéré)."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Facturation d'une location en périodes fixes, soit des mois à partir de la date de début, des mois calendaires, ou des périodes consécutives de 28 jours, chacune facturée à son premier jour (Anticipée) ou à son dernier jour (Différée)."
 
 msgid "Billing Address"
 msgstr "Adresse de facturation"
@@ -10876,8 +10876,8 @@ msgstr "Comment une ligne de contrat génère ses revenus sur ses dates de reven
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Comment un contrat ou un amendement est classé pour la déclaration des revenus récurrents : Nouvelles Ventes, Existant, Expansion, Réactivation ou Contraction. Carbon le suggère et vous pouvez le modifier."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Comment un accord de location découpe les périodes de facturation à partir de sa Date de début : Mois calendaire découpe les mois calendaires, et 28 jours découpe les périodes consécutives de 28 jours. Chaque Unité facture un taux à sa propre fréquence pour les jours, semaines ou mois entiers qu'une période couvre ; un taux Mensuel dans un mois calendaire est réparti au prorata des jours."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Comment un accord de location coupe les périodes de facturation à partir de sa date de début : Mensuel coupe un mois à partir du jour de la date de début (un démarrage le 7 facture du 7 au 6), Mois calendaire (Mensuel, aligné sur les périodes calendaires) coupe les mois calendaires, et 28 Jours coupe les périodes consécutives de 28 jours. Chaque unité facture un taux à sa propre fréquence pour la durée complète (jours, semaines ou mois) qu'une période couvre; un taux mensuel dans une période partielle est au prorata par jour."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Comment un article est approvisionné globalement (Achat, Fabrication ou Achat et fabrication), défini par article, contrairement au type d'approvisionnement par ligne."
