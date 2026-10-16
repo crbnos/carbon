@@ -1009,8 +1009,8 @@ account is **always booked as a LIABILITY** (a credit card is money owed). The f
 - Routes: `charges.tsx` (list, loader `getCharges`, filters
   search/type/status), `charges.$id.tsx` (read-only Drawer detail with lines +
   receipts + a **Void** action for Posted rows, `update: "invoicing"`),
-  `charges.$id.void.tsx` (action → `postCharge(ServerFnContext.system(...),
-  { type: "void", chargeId })`).
+  `charges.$id.void.tsx` (action → `invoicing.charge.void`, which runs the
+  `post-charge` server function with `{ type: "void", chargeId }`).
 - Components: `apps/erp/app/modules/invoicing/ui/Charge/` —
   `ChargesTable.tsx`, `ChargeStatus.tsx`, `index.ts`. Service:
   `getCharge(client, companyId, id)` / `getCharges` in

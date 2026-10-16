@@ -96,7 +96,11 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_rentalAgreement_unit_classify: {
     module: "accounting",
     actions: ["update"]
-  }
+  },
+  // A tie-out adjustment drafts a GL journal: its route requires
+  // accounting_create.
+  invoicing_receivables_adjust: { module: "accounting", actions: ["create"] },
+  invoicing_payables_adjust: { module: "accounting", actions: ["create"] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

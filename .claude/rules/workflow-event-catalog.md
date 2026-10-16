@@ -170,8 +170,8 @@ The nine v1 moments and their sites:
 | `sales.quoteAccepted` | `convertQuoteToOrder`, same file |
 | `inventory.receiptPosted` | `x+/receipt+/$receiptId.post.tsx`, below the rollback catch |
 | `inventory.shipmentPosted` | `x+/shipment+/$shipmentId.post.tsx`, below the rollback catch |
-| `invoicing.salesInvoicePosted` | `x+/sales-invoice+/$invoiceId.post.tsx`, below the tenant guard |
-| `invoicing.purchaseInvoicePosted` | `x+/purchase-invoice+/$invoiceId.post.tsx`, below the rollback catch |
+| `invoicing.salesInvoicePosted` | `postSalesInvoice`, `modules/invoicing/invoicing.server.ts`, below the rollback to Draft |
+| `invoicing.purchaseInvoicePosted` | `postPurchaseInvoice`, same file, below the rollback to Draft |
 
 `packages/jobs/.../tasks/post-transaction.ts` posts the same three documents and looks like a
 second caller, but **nothing sends `carbon/post-transaction`** — it is dead code. Don't add a

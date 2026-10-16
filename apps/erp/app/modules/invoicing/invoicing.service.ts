@@ -557,7 +557,7 @@ export async function updateSalesInvoiceExchangeRate(
   return client.from("salesInvoice").update(update).eq("id", update.id);
 }
 
-/** @mcp create destructive */
+/** Not published: `invoicing.purchaseInvoice.create` creates the invoice and its extracted lines. */
 export async function insertPurchaseInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1262,7 +1262,7 @@ export async function upsertSalesInvoiceShipment(
     .single();
 }
 
-/** @mcp upsert */
+/** Not published: `invoicing.salesInvoice.line.create` / `update` also refuse a posted invoice and run the sales rules. */
 export async function upsertSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLine:
@@ -3976,7 +3976,7 @@ export async function upsertMemo(
 }
 
 // RLS DELETE policy on memo restricts to status='Draft'.
-/** @mcp delete */
+/** Not published: `invoicing.memo.delete` also refuses a posted memo and releases a rental credit's periods. */
 export async function deleteMemo(
   client: SupabaseClient<Database>,
   id: string,

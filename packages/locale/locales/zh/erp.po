@@ -11750,6 +11750,9 @@ msgstr "立即开票"
 msgid "Invoice Number"
 msgstr "发票号码"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
+
 msgid "Invoice Rate"
 msgstr "发票汇率"
 
@@ -17377,6 +17380,9 @@ msgstr "采购发票金额"
 msgid "Purchase Invoice Line"
 msgstr "采购发票行"
 
+msgid "Purchase invoice voided"
+msgstr ""
+
 msgid "Purchase invoices"
 msgstr "采购发票"
 
@@ -19501,11 +19507,17 @@ msgstr "销售发票"
 msgid "Sales Invoice"
 msgstr "销售发票"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "销售发票行"
 
 msgid "Sales Invoice Line"
 msgstr "销售发票行"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "销售发票"
@@ -20256,6 +20268,9 @@ msgstr "通过以下方式发送"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废。"
+
+msgid "Sending invoice"
+msgstr ""
 
 msgid "Sends this document for approval before it can go active."
 msgstr "在文件启用前发送进行审批。"

@@ -11750,6 +11750,9 @@ msgstr "Wystawiaj faktury teraz"
 msgid "Invoice Number"
 msgstr "Numer faktury"
 
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
+
 msgid "Invoice Rate"
 msgstr "Kurs wymiany faktury"
 
@@ -17377,6 +17380,9 @@ msgstr "Kwota faktury zakupu"
 msgid "Purchase Invoice Line"
 msgstr "Linia faktury zakupu"
 
+msgid "Purchase invoice voided"
+msgstr ""
+
 msgid "Purchase invoices"
 msgstr "Faktury Zakupu"
 
@@ -19501,11 +19507,17 @@ msgstr "Faktura sprzedaży"
 msgid "Sales Invoice"
 msgstr "Faktura sprzedaży"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "Pozycja faktury sprzedaży"
 
 msgid "Sales Invoice Line"
 msgstr "Linia faktury sprzedaży"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "Faktury sprzedaży"
@@ -20256,6 +20268,9 @@ msgstr "Wyślij przez"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Odesłanie uszkodzonych jednostek do wcześniejszej operacji do poprawy zamiast ich złomowania."
+
+msgid "Sending invoice"
+msgstr ""
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Wysyła ten dokument do zatwierdzenia, zanim będzie mógł zostać aktywny."
