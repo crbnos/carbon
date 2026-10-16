@@ -52,6 +52,7 @@ export function ReturnEntityForm({
   const candidatesFetcher = useFetcher<{
     candidates: CandidateEntity[];
     assigned: AssignedRow[];
+    error: string | null;
   }>();
   const assignFetcher = useAction<{ error?: string }>({
     onSettled: (data) => {
@@ -88,7 +89,18 @@ export function ReturnEntityForm({
     return map;
   }, [candidatesFetcher.data?.assigned]);
 
-  if (!line.lineId || (candidates && candidates.length === 0)) {
+  if (candidatesFetcher.data?.error) {
+    return (
+      <span className="text-xs text-destructive">
+        {candidatesFetcher.data.error}
+      </span>
+    );
+  }
+
+  if (
+    !line.lineId ||
+    (candidates && candidates.length === 0 && assignedByEntityId.size === 0)
+  ) {
     // Blind return: nothing shipped on record — standard serial/batch entry
     return <>{children}</>;
   }

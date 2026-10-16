@@ -14,9 +14,9 @@ import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick"
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import type { TrackedEntityAttributes } from "@carbon/utils";
 import { async, datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings/settings.service";
@@ -50,8 +50,7 @@ import type {
 import {
   isPickingListLocked,
   planReceiptSerialRelease,
-  reconcileReceiptLineSerials,
-  withoutReceiptLink
+  reconcileReceiptLineSerials
 } from "./inventory.models";
 import {
   effectiveSuccessorId,
@@ -852,134 +851,115 @@ export async function getReceiptLineTracking(
 }
 
 /**
- * Removes stale serial tracked entities from a receipt's serial-tracked lines
- * (through `releaseReceiptSerialEntities`), before posting and when the
- * received quantity changes. Post-receipt flips one serial per index in
- * [0, receivedQuantity) to Available; orphaned (reduced quantity) or duplicate
- * (edited serial) entities would otherwise become phantom Available serials.
- * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
- * stays in lockstep with the post-time validation in ReceiptPostModal.
- * Returns the ids of the lines that still miss a serial, so the post can be
- * refused on the server and not only in the modal. A sales-return receipt
- * picks existing units, so an assigned unit counts without a serial number.
+ * Drops serials beyond the received quantity or duplicated in a box, and
+ * returns the lines still missing a serial.
  * @mcp action destructive
  */
 export async function reconcileReceiptSerialEntities(
-  client: SupabaseClient<Database>,
-  args: {
-    receiptId: string;
-    companyId: string;
-    isSalesReturn: boolean;
-    lines: {
-      id: string;
-      receivedQuantity: number | null;
-      requiresSerialTracking?: boolean | null;
-    }[];
-  }
-): Promise<{ linesMissingSerials: string[]; error: unknown }> {
-  const serialLines = args.lines.filter((line) => line.requiresSerialTracking);
-  if (serialLines.length === 0) return { linesMissingSerials: [], error: null };
+  db: Kysely<KyselyDatabase>,
+  args: ReconcileReceiptSerialsArgs
+): Promise<{ linesMissingSerials: string[] }> {
+  return db
+    .transaction()
+    .execute((trx) => reconcileReceiptSerialsInTransaction(trx, args));
+}
 
-  const { data: serialEntities, error } = await client
-    .from("trackedEntity")
-    .select("id, attributes, createdAt, readableId")
-    .eq("attributes ->> Receipt", args.receiptId)
-    .eq("companyId", args.companyId);
-  if (error) return { linesMissingSerials: [], error };
+type ReconcileReceiptSerialsArgs = {
+  receiptId: string;
+  companyId: string;
+  isSalesReturn: boolean;
+  lines: {
+    id: string;
+    receivedQuantity: number | null;
+    requiresSerialTracking?: boolean | null;
+  }[];
+};
+
+/** `reconcileReceiptSerialEntities` inside the caller's transaction. */
+export async function reconcileReceiptSerialsInTransaction(
+  trx: Kysely<KyselyDatabase>,
+  args: ReconcileReceiptSerialsArgs
+): Promise<{ linesMissingSerials: string[] }> {
+  const serialLines = args.lines.filter((line) => line.requiresSerialTracking);
+  if (serialLines.length === 0) return { linesMissingSerials: [] };
+
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select([
+      "id",
+      "readableId",
+      sql<string | null>`attributes->>'Receipt Line'`.as("receiptLineId"),
+      sql<number | null>`(attributes->>'Receipt Line Index')::int`.as("index"),
+      sql<string>`"createdAt"::text`.as("createdAt")
+    ])
+    .where("companyId", "=", args.companyId)
+    .where(sql<string>`attributes->>'Receipt'`, "=", args.receiptId)
+    .execute();
 
   const linesMissingSerials: string[] = [];
-  const idsToDelete = serialLines.flatMap((line) => {
-    const entities = (serialEntities ?? [])
-      .filter(
-        (e) =>
-          (e.attributes as TrackedEntityAttributes)?.["Receipt Line"] ===
-          line.id
-      )
-      .map((e) => ({
-        id: e.id,
-        index: (e.attributes as TrackedEntityAttributes)?.[
-          "Receipt Line Index"
-        ],
-        hasSerial: args.isSalesReturn || !!e.readableId,
-        createdAt: e.createdAt
-      }));
+  const surplusIds = serialLines.flatMap((line) => {
     const { missingIndexes, surplusEntityIds } = reconcileReceiptLineSerials(
-      entities,
+      entities
+        .filter((e) => e.receiptLineId === line.id)
+        .map((e) => ({
+          id: e.id,
+          index: e.index ?? undefined,
+          hasSerial: args.isSalesReturn || !!e.readableId,
+          createdAt: e.createdAt
+        })),
       Number(line.receivedQuantity ?? 0)
     );
     if (missingIndexes.length > 0) linesMissingSerials.push(line.id);
     return surplusEntityIds;
   });
 
-  const released = await releaseReceiptSerialEntities(
-    client,
-    args.companyId,
-    idsToDelete
-  );
-  if (released.error) return { linesMissingSerials, error: released.error };
-
-  return { linesMissingSerials, error: null };
+  await releaseReceiptSerialEntities(trx, args.companyId, surplusIds);
+  return { linesMissingSerials };
 }
 
-/**
- * Takes serial tracked entities off a receipt, by `planReceiptSerialRelease`:
- * an entity with no stock history is deleted, one with history only loses its
- * receipt link.
- */
+/** Removes serials from a receipt (`planReceiptSerialRelease`). Run inside a transaction. */
 export async function releaseReceiptSerialEntities(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   entityIds: string[]
-): Promise<{ error: unknown }> {
-  if (entityIds.length === 0) return { error: null };
+): Promise<void> {
+  if (entityIds.length === 0) return;
 
-  const [entities, history] = await Promise.all([
-    client
-      .from("trackedEntity")
-      .select("id, attributes")
-      .in("id", entityIds)
-      .eq("companyId", companyId),
-    client
-      .from("itemLedger")
-      .select("trackedEntityId")
-      .in("trackedEntityId", entityIds)
-      .eq("companyId", companyId)
-  ]);
-  if (entities.error) return { error: entities.error };
-  if (history.error) return { error: history.error };
+  const history = await db
+    .selectFrom("itemLedger")
+    .select("trackedEntityId")
+    .distinct()
+    .where("trackedEntityId", "in", entityIds)
+    .where("companyId", "=", companyId)
+    .execute();
 
   const { deleteIds, unlink } = planReceiptSerialRelease(
-    entities.data,
-    new Set(
-      history.data.flatMap((row) =>
-        row.trackedEntityId ? [row.trackedEntityId] : []
-      )
-    )
+    entityIds.map((id) => ({ id })),
+    new Set(history.flatMap((row) => row.trackedEntityId ?? []))
   );
 
   if (deleteIds.length > 0) {
-    const { error } = await client
-      .from("trackedEntity")
-      .delete()
-      .in("id", deleteIds)
-      .eq("companyId", companyId);
-    if (error) return { error };
+    await db
+      .deleteFrom("trackedEntity")
+      .where("id", "in", deleteIds)
+      .where("companyId", "=", companyId)
+      .execute();
   }
 
-  for (const entity of unlink) {
-    const { error } = await client
-      .from("trackedEntity")
-      .update({
-        attributes: withoutReceiptLink(
-          entity.attributes as Record<string, unknown>
-        ) as Json
+  if (unlink.length > 0) {
+    await db
+      .updateTable("trackedEntity")
+      .set({
+        attributes: sql`attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'`
       })
-      .eq("id", entity.id)
-      .eq("companyId", companyId);
-    if (error) return { error };
+      .where(
+        "id",
+        "in",
+        unlink.map((entity) => entity.id)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
   }
-
-  return { error: null };
 }
 
 /** @mcp read */

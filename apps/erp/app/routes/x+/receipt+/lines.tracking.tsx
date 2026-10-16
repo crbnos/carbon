@@ -15,14 +15,11 @@ import {
   releaseReceiptSerialEntities
 } from "~/modules/inventory";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "receipt", "tracking");
 
-/**
- * Which of these tracked entities have stock history. Read with the service
- * role, like the writes: a history check hidden by RLS would read as "no
- * history" and let a real unit be renamed, taken over or deleted.
- */
+/** Which of these tracked entities have stock history (read past RLS). */
 async function getIdsWithHistory(
   serviceRole: SupabaseClient<Database>,
   companyId: string,
@@ -165,7 +162,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
     }
 
-    // The entities filling this serial box (line + index).
     const { data: boxEntities, error: boxError } = await serviceRole
       .from("trackedEntity")
       .select("id")
@@ -182,8 +178,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return data({ error: "Failed to update tracking" }, { status: 500 });
     }
 
-    // Every entity of this item already carrying the serial. Usually none or
-    // one; two saves of the same box racing each other can leave two.
     let withSerial: { id: string; attributes: Json }[] = [];
     if (serialNumber) {
       const { data: entities, error: serialQueryError } = await serviceRole
@@ -237,20 +231,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
     });
 
     const releaseBox = async (ids = plan.releaseIds) => {
-      const released = await releaseReceiptSerialEntities(
-        serviceRole,
-        companyId,
-        ids
-      );
-      if (released.error) {
+      try {
+        await getDatabaseClient()
+          .transaction()
+          .execute((trx) => releaseReceiptSerialEntities(trx, companyId, ids));
+        return { error: null };
+      } catch (error) {
         logger.error("Failed to clear the serial box", {
           companyId,
           receiptLineId,
           index,
-          error: released.error
+          error
         });
+        return { error };
       }
-      return released;
     };
 
     if (plan.kind === "clear") {
@@ -262,8 +256,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     if (plan.kind === "taken") {
-      // The box shows the refused serial; whatever it held before must not
-      // post in its place.
+      // Empty the box so its previous serial cannot post in its place.
       await releaseBox();
       return data(
         {
@@ -291,8 +284,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (error) {
       logger.error("Failed to update serial tracking", { error });
-      // The box shows the value that failed; empty it so its previous
-      // serial does not post in its place.
       await releaseBox(boxEntities.map((entity) => entity.id));
       // Check if error is due to unique constraint violation
       if (isUniqueViolation(error)) {
@@ -304,7 +295,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return data({ error: "Failed to update tracking" }, { status: 500 });
     }
 
-    // Anything else still in the box held its previous serial.
     const released = await releaseBox();
     if (released.error) {
       return data({ error: "Failed to update tracking" }, { status: 500 });

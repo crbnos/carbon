@@ -17,6 +17,7 @@ import {
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime, round, settleQuantity } from "@carbon/utils";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -1727,10 +1728,7 @@ const create = defineServerFn({
             trackedEntities.data?.length
           ) {
             // TODO: update the Receipt Line and Index attributes to point to the new line
-            // A serial with stock history is a real unit (a sales return
-            // re-tags a shipped one): it only loses its receipt link, as in
-            // the ERP's `planReceiptSerialRelease`. Deleting it would null
-            // `itemLedger.trackedEntityId` on its past movements.
+            // A unit with stock history is only unlinked, never deleted.
             const entityIds = trackedEntities.data.map((d) => d.id);
             const withHistory = new Set(
               (
@@ -1740,7 +1738,7 @@ const create = defineServerFn({
                   .where("trackedEntityId", "in", entityIds)
                   .where("companyId", "=", companyId)
                   .execute()
-              ).map((row) => row.trackedEntityId)
+              ).flatMap((row) => row.trackedEntityId ?? [])
             );
 
             const unposted = entityIds.filter((id) => !withHistory.has(id));
@@ -1752,18 +1750,13 @@ const create = defineServerFn({
                 .execute();
             }
 
-            for (const entity of trackedEntities.data) {
-              if (!withHistory.has(entity.id)) continue;
-              const {
-                Receipt: _receipt,
-                "Receipt Line": _line,
-                "Receipt Line Index": _index,
-                ...attributes
-              } = (entity.attributes ?? {}) as Record<string, unknown>;
+            if (withHistory.size > 0) {
               await trx
                 .updateTable("trackedEntity")
-                .set({ attributes: attributes as Json })
-                .where("id", "=", entity.id)
+                .set({
+                  attributes: sql`attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'`
+                })
+                .where("id", "in", [...withHistory])
                 .where("companyId", "=", companyId)
                 .execute();
             }

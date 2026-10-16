@@ -1300,9 +1300,7 @@ function SerialForm({
     [line.id, line.itemId, receipt?.id, expiryDate]
   );
 
-  // Every save is sent, an empty one included: it clears the serial saved for
-  // the box. A value refused here empties the box on the server too, so what
-  // posts is never a serial the box no longer shows.
+  // An empty or refused value clears the serial saved for the box.
   const updateSerialNumber = useCallback(
     async (serialNumber: { index: number; number: string }) => {
       const { index } = serialNumber;
@@ -1406,9 +1404,7 @@ function SerialForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  // Leaving the box saves it (onBlur). Saving here as well
-                  // sent two saves of one box at once, which can store the
-                  // serial twice.
+                  // onBlur saves; saving here too would race it.
                   const nextInput = e.currentTarget
                     .closest("[data-serial-boxes]")
                     ?.querySelector<HTMLInputElement>(

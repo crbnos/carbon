@@ -65,10 +65,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .single();
 
   // A voided receipt has already been reversed — re-posting would duplicate
-  // ledger entries, cost layers and journal lines. Block it, and a posted one,
-  // before mutating any state (the serial cleanup and the "Pending" flip
-  // below both write, which is why this guard lives here and not in the
-  // server function).
+  // ledger entries, cost layers and journal lines. Block it before mutating
+  // any state (the route flips status to "Pending" below, which is why this
+  // guard lives here and not in the server function).
   if (
     receiptForSurface?.status === "Voided" ||
     receiptForSurface?.status === "Posted"
@@ -177,18 +176,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // quantity leaves orphans, edited serials leave duplicates) that would
   // otherwise be flipped to Available as phantom serials. Clear them before
   // posting.
-  const serials = await reconcileReceiptSerialEntities(serviceRole, {
-    receiptId,
-    companyId,
-    isSalesReturn: receiptForSurface?.sourceDocument === "Sales Return Order",
-    lines: lines ?? []
-  });
-
-  if (serials.error) {
+  let linesMissingSerials: string[];
+  try {
+    ({ linesMissingSerials } = await reconcileReceiptSerialEntities(
+      getDatabaseClient(),
+      {
+        receiptId,
+        companyId,
+        isSalesReturn:
+          receiptForSurface?.sourceDocument === "Sales Return Order",
+        lines: lines ?? []
+      }
+    ));
+  } catch (error) {
     logger.error("Failed to check the receipt's serial numbers", {
       companyId,
       receiptId,
-      error: serials.error
+      error
     });
     return {
       error: { message: "Failed to post receipt" },
@@ -198,11 +202,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  // The post modal checks this too, but only the server sees what is saved
-  // at the moment of posting. Returned rather than flashed on a redirect:
-  // the modal submits through a fetcher, and a redirect back to this page
-  // does not reload the root, so a flashed message is never shown.
-  if (serials.linesMissingSerials.length > 0) {
+  // Returned, not flashed: a fetcher redirect to this page never shows a flash.
+  if (linesMissingSerials.length > 0) {
     return {
       error: { message: "Serial numbers are missing" },
       data: null,

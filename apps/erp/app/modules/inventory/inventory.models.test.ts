@@ -12,8 +12,7 @@ import {
   resolveStockTransferPickForward,
   shipmentFixedAssetLineUpdateValidator,
   storageTypeValidator,
-  storageUnitValidator,
-  withoutReceiptLink
+  storageUnitValidator
 } from "./inventory.models";
 
 describe("storageTypeValidator", () => {
@@ -384,20 +383,6 @@ describe("planReceiptSerialRelease", () => {
     expect(
       planReceiptSerialRelease([placeholder, shipped], new Set(["unit"]))
     ).toEqual({ deleteIds: ["new"], unlink: [shipped] });
-  });
-});
-
-describe("withoutReceiptLink", () => {
-  it("drops only the receipt attributes", () => {
-    expect(
-      withoutReceiptLink({
-        Receipt: "rec1",
-        "Receipt Line": "line1",
-        "Receipt Line Index": 0,
-        Shipment: "sh1",
-        Supplier: "sup1"
-      })
-    ).toEqual({ Shipment: "sh1", Supplier: "sup1" });
   });
 });
 

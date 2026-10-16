@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { unchecked } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { reconcileReceiptSerialEntities } from "~/modules/inventory";
+import { reconcileReceiptSerialsInTransaction } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "receipt", "lines-update");
 
@@ -34,7 +34,68 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Storage Rule evaluation runs at post time only (`$receiptId.post.tsx`).
   // Per-line saves go straight through.
-  const update = await client
+  if (field === "receivedQuantity") {
+    if (ids.length === 0) return { error: null, data: null };
+    if (!value) {
+      return {
+        error: { message: "Received quantity is required" },
+        data: null
+      };
+    }
+    // Drop serials beyond the new quantity in the same transaction.
+    try {
+      await getDatabaseClient()
+        .transaction()
+        .execute(async (trx) => {
+          const lines = await trx
+            .updateTable("receiptLine")
+            .set({
+              receivedQuantity: Number(value),
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .returning([
+              "id",
+              "receiptId",
+              "receivedQuantity",
+              "requiresSerialTracking"
+            ])
+            .execute();
+
+          const receipts = await trx
+            .selectFrom("receipt")
+            .select(["id", "sourceDocument"])
+            .where("id", "in", [...new Set(lines.map((l) => l.receiptId))])
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Draft")
+            .execute();
+
+          for (const receipt of receipts) {
+            await reconcileReceiptSerialsInTransaction(trx, {
+              receiptId: receipt.id,
+              companyId,
+              isSalesReturn: receipt.sourceDocument === "Sales Return Order",
+              lines: lines.filter((l) => l.receiptId === receipt.id)
+            });
+          }
+        });
+    } catch (error) {
+      logger.error("Failed to update the received quantity", {
+        companyId,
+        ids,
+        error
+      });
+      return {
+        error: { message: "Failed to update the received quantity" },
+        data: null
+      };
+    }
+    return { error: null, data: null };
+  }
+
+  return client
     .from("receiptLine")
     .update(
       unchecked({
@@ -45,51 +106,4 @@ export async function action({ request }: ActionFunctionArgs) {
     )
     .in("id", ids)
     .eq("companyId", companyId);
-
-  // A lower received quantity drops serial boxes from the page; drop the
-  // serials saved for them too. Left in place, raising the quantity again
-  // showed an empty box while the old serial was still saved and posted.
-  if (field === "receivedQuantity" && !update.error) {
-    const { data: lines, error: linesError } = await client
-      .from("receiptLine")
-      .select(
-        "id, receiptId, receivedQuantity, requiresSerialTracking, receipt(status, sourceDocument)"
-      )
-      .in("id", ids)
-      .eq("companyId", companyId);
-    if (linesError) {
-      logger.error("Failed to load receipt lines for serial cleanup", {
-        companyId,
-        ids,
-        error: linesError
-      });
-    }
-
-    // Only a Draft receipt: a posted one's serials are its record.
-    const serialLines = (lines ?? []).filter(
-      (l) => l.requiresSerialTracking && l.receipt?.status === "Draft"
-    );
-    for (const receiptId of new Set(serialLines.map((l) => l.receiptId))) {
-      const receiptLines = serialLines.filter((l) => l.receiptId === receiptId);
-      const reconciled = await reconcileReceiptSerialEntities(
-        getCarbonServiceRole(),
-        {
-          receiptId,
-          companyId,
-          isSalesReturn:
-            receiptLines[0]?.receipt?.sourceDocument === "Sales Return Order",
-          lines: receiptLines
-        }
-      );
-      if (reconciled.error) {
-        logger.error("Failed to remove serials beyond the received quantity", {
-          companyId,
-          receiptId,
-          error: reconciled.error
-        });
-      }
-    }
-  }
-
-  return update;
 }

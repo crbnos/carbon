@@ -56,10 +56,13 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   `reconcileReceiptSerialEntities` reports a line still
   missing serials, returned to the modal as `{ error: { message } }` rather than flashed: a
   fetcher redirect back to the same page does not reload the root, so a flash is never shown.
-  Lowering `receivedQuantity` (`lines.update`) runs the same cleanup on a Draft receipt. Every
-  removal goes through `releaseReceiptSerialEntities`: an entity with no `itemLedger` history is
-  deleted, one with history only loses its receipt attributes — a sales return re-tags real
-  shipped units.
+  Lowering `receivedQuantity` (`lines.update`) runs the same cleanup on a Draft receipt, in one
+  Kysely transaction with the quantity update, and returns the failure if either fails. Every
+  removal goes through `releaseReceiptSerialEntities` (Kysely, set-based): an entity with no
+  `itemLedger` history is deleted, one with history only loses its receipt attributes — a sales
+  return re-tags real shipped units. `lines.return-entities` reports a failed read as an error,
+  and `ReturnEntityForm` shows it instead of falling back to typed serials (whose empty save
+  would unlink an assigned unit).
 - `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
   A serial `receiptLineSplit` drops the line's serials, deleting only entities with no
   `itemLedger` history; a unit with history (a sales return) only loses its receipt link.
