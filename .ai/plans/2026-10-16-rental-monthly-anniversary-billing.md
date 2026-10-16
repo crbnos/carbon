@@ -76,7 +76,7 @@ rentals persist `rentalBillingPeriod` rows per unit.
   `salesTypeRequirementError` gets the Monthly whole-months rule. Add tests in the
   lessor-lease tests and `post-rental-agreement/lessor.test.ts`: a mid-month 12-month
   term schedules 12 periods.
-- [ ] **4. Server functions.** `create-rental-invoices/index.ts` `rentLineDescription`:
+- [x] **4. Server functions.** `create-rental-invoices/index.ts` `rentLineDescription`:
   Monthly + Month gives " · Month rate". Add a test to
   `rent-line-description.test.ts`. `post-rental-agreement` and `return-unit` already
   pass `cycle` through; only their types need checking.
