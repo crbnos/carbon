@@ -9845,10 +9845,6 @@ msgstr "Falha ao carregar as taxas de aluguel"
 msgid "Failed to load tracked entities"
 msgstr "Falha ao carregar entidades rastreadas"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Falha ao mover conta: {0}"
-
 msgid "Failed to plan job"
 msgstr "Falha ao planejar ordem de produção"
 
@@ -16466,8 +16462,14 @@ msgstr "Fim do Período"
 msgid "Period lock policy"
 msgstr "Política de bloqueio de período"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Início do período"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Despesa de depreciação periódica para ativos fixos"
@@ -22004,6 +22006,12 @@ msgstr "Versão de Destino"
 
 msgid "Task"
 msgstr "Tarefa"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "tarefas"

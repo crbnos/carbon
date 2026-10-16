@@ -9845,10 +9845,6 @@ msgstr "Fehler beim Laden der Miettarife"
 msgid "Failed to load tracked entities"
 msgstr "Fehler beim Laden von verfolgten Entitäten"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Konto konnte nicht verschoben werden: {0}"
-
 msgid "Failed to plan job"
 msgstr "Fertigungsauftrag konnte nicht geplant werden"
 
@@ -16466,8 +16462,14 @@ msgstr "Periodenende"
 msgid "Period lock policy"
 msgstr "Zeitraumsperrrichtlinie"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Periodenbeginn"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Periodischer Abschreibungsaufwand für Anlagegüter"
@@ -22004,6 +22006,12 @@ msgstr "Zielversion"
 
 msgid "Task"
 msgstr "Aufgabe"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "Aufgaben"

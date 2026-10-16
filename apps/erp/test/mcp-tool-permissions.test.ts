@@ -90,7 +90,11 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_rentalAgreement_unit_classify: {
     module: "accounting",
     actions: ["update"]
-  }
+  },
+  // Buying or selling a fixed asset creates a purchase or sales order: its
+  // route requires purchasing_create or sales_create.
+  accounting_fixedAsset_purchase: { module: "purchasing", actions: ["create"] },
+  accounting_fixedAsset_sell: { module: "sales", actions: ["create"] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

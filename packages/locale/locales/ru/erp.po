@@ -9845,10 +9845,6 @@ msgstr "Не удалось загрузить ставки аренды"
 msgid "Failed to load tracked entities"
 msgstr "Не удалось загрузить отслеживаемые сущности"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Не удалось переместить счет: {0}"
-
 msgid "Failed to plan job"
 msgstr "Ошибка при планировании производственного заказа"
 
@@ -16466,8 +16462,14 @@ msgstr "Конец периода"
 msgid "Period lock policy"
 msgstr "Политика блокировки периода"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Начало периода"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Периодический расход амортизации основных средств"
@@ -22004,6 +22006,12 @@ msgstr "Целевая версия"
 
 msgid "Task"
 msgstr "Задача"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "задачи"

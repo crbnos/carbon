@@ -9845,10 +9845,6 @@ msgstr "렌탈 요금을 로드하지 못했습니다."
 msgid "Failed to load tracked entities"
 msgstr "추적 개체를 불러오지 못했습니다"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "계정 이동 실패: {0}"
-
 msgid "Failed to plan job"
 msgstr "작업 지시 계획 실패"
 
@@ -16466,8 +16462,14 @@ msgstr "기간 종료"
 msgid "Period lock policy"
 msgstr "기간 잠금 정책"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "기간 시작"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "고정자산에 대한 정기적인 감가상각 비용"
@@ -22004,6 +22006,12 @@ msgstr "대상 버전"
 
 msgid "Task"
 msgstr "작업"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "작업"

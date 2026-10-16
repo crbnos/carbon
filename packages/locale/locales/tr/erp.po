@@ -9845,10 +9845,6 @@ msgstr "Kiralama oranları yüklenemedi"
 msgid "Failed to load tracked entities"
 msgstr "Takip edilen varlıklar yüklenemedi"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Hesap taşınamadı: {0}"
-
 msgid "Failed to plan job"
 msgstr "İş emrini planlama başarısız"
 
@@ -16466,8 +16462,14 @@ msgstr "Dönem Sonu"
 msgid "Period lock policy"
 msgstr "Dönem kilit politikası"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Dönem Başlangıcı"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Sabit kıymetler için dönemsel amortisman gideri"
@@ -22004,6 +22006,12 @@ msgstr "Hedef Sürüm"
 
 msgid "Task"
 msgstr "Görev"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "görevler"

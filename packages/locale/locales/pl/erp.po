@@ -9845,10 +9845,6 @@ msgstr "Nie udało się załadować stawek wynajmu"
 msgid "Failed to load tracked entities"
 msgstr "Nie udało się załadować śledzonych jednostek"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Nie udało się przenieść konta: {0}"
-
 msgid "Failed to plan job"
 msgstr "Nie udało się zaplanować zlecenia produkcyjnego"
 
@@ -16466,8 +16462,14 @@ msgstr "Koniec okresu"
 msgid "Period lock policy"
 msgstr "Polityka blokady okresu"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Początek okresu"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Okresowy wydatek amortyzacyjny dla środków trwałych"
@@ -22004,6 +22006,12 @@ msgstr "Wersja docelowa"
 
 msgid "Task"
 msgstr "Zadanie"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "zadania"

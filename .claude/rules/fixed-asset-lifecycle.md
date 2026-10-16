@@ -274,8 +274,9 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 `acquisitionCost`, `depreciationStartDate` (if unset), and flip `status`; a
 fifth (5, a lessee lease's purchase option) inserts the asset already Active:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`. For every company the
-   route posts an acquisition journal via `postAssetRegistration()` inside one
+   `fixedAssetRegisterValidator`, which calls `fixedAsset.register`
+   (`accounting.server.ts`). For every company it
+   posts an acquisition journal via `postAssetRegistration()` inside one
    Kysely transaction (Provisional before the accounting cutover, with no period
    and no dimension check; Posted after it) (`sourceType` `'Manual'`, description
    `Asset Registration: <readableId>`) and only then flips the asset (journal
@@ -607,12 +608,13 @@ created — the unit is the customer's.
 **Out of service.** `outOfServiceSince` / `outOfServiceReason` are set together
 by `setFixedAssetOutOfService` (date = company today) and cleared together by
 `returnFixedAssetToService`; both through `$fixedAssetId.out-of-service.tsx`
-(`update: accounting`; a plain POST takes the asset out with the form's reason,
-POST `?intent=return` returns it). The loader refuses an asset already out of
-service or Disposed. Accounting is untouched: the asset stays `Active` and
+(`update: accounting`; a plain POST takes the asset out with the form's reason
+through `fixedAsset.takeOutOfService`, POST `?intent=return` returns it through
+`fixedAsset.returnToService`). The loader and the operation refuse an asset
+already out of service or Disposed (`outOfServiceRefusal`). Accounting is untouched: the asset stays `Active` and
 keeps depreciating; only the fleet status reads `In Maintenance`, and Return to
 Inventory is blocked until the asset is back in service. A unit On Rent
-cannot be taken out of service: the loader and the action both refuse it
+cannot be taken out of service: the loader and the operation both refuse it
 (`getOnRentLineForAsset`, `sales.service.ts`, read with the service role
 scoped to company + asset — an accountant may lack `sales_view`, and under RLS
 that read as "not on rent"; a failed read refuses) with "The asset is on rent on
@@ -638,14 +640,15 @@ themselves (remaining value over remaining life / cumulative minus taken);
 Units of Production does not catch up. Gated on the adjustment so a mid-life
 registration with an opening accumulated balance is never re-derived.
 
-1. `depreciation-runs.new` action calls `createDepreciationRun()`, which
+1. `depreciation-runs.new` calls `depreciationRun.create`, which calls
+   `createDepreciationRun()`, which
    builds the lines with `buildDepreciationRunLines()` and inserts a
    `depreciationRun` (Draft) + one `depreciationRunLine` per asset per month.
    With no lines it creates nothing.
-2. `$depreciationRunId.post` → `postDepreciationRun()`: locks the run
+2. `$depreciationRunId.post` → `depreciationRun.post` → `postDepreciationRun()`: locks the run
    `FOR UPDATE` and refuses anything but a Draft, re-reads the lines and locks
    the assets inside the transaction (`RunOutOfDateError` when they no longer
-   match what the route checked), then per asset per month posts Debit
+   match what the operation checked), then per asset per month posts Debit
    `depreciationExpenseAccountId` / Credit `accumulatedDepreciationAccountId`
    (`sourceType: 'Asset Depreciation'`; a month with a zero book amount posts
    no journal), adds to `accumulatedDepreciation` in SQL (+ tax / deferred-tax
@@ -658,7 +661,8 @@ NBV** to a distinct non-operating line — never comingled with revenue. Carbon
 uses `gainOnDisposalAccountId` / `lossOnDisposalAccountId` for that gain/loss
 and `writeOffAccountId` as a **disposal clearing / holding account** in the
 two-step (ship → invoice) flow.
-1. Manual scrap: `$fixedAssetId.dispose` → `postDisposal()` (hardcodes
+1. Manual scrap: `$fixedAssetId.dispose` → `fixedAsset.dispose` (Active or
+   Fully Depreciated only) → `postDisposal()` (hardcodes
    `Scrapping`). NBV = `acquisitionCost − accumulatedDepreciation`; proceeds = 0,
    so the entire NBV is a loss. Posts Debit accumulated depreciation, **Debit
    `lossOnDisposalAccountId` for the full NBV loss**, Credit asset at cost
