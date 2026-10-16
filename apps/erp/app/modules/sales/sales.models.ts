@@ -17,7 +17,7 @@ import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { currencyCodes } from "../accounting";
+import { currencyCodes } from "../accounting/types";
 import {
   incoterms,
   itemType,
@@ -28,7 +28,7 @@ import {
   optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
-} from "../shared";
+} from "../shared/shared.models";
 import { pricingRuleConfigurationPriceValidator } from "./sales.utils";
 
 export const KPIs = [

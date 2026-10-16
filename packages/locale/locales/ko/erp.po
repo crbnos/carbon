@@ -5558,6 +5558,9 @@ msgstr "소모품 세부정보"
 msgid "Consumable ID"
 msgstr "소모품 ID"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "소모품"
 
@@ -13313,6 +13316,9 @@ msgstr "자재 재질"
 msgid "Material Substances"
 msgstr "자재 재질"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "자재 유형"
 
@@ -16217,6 +16223,9 @@ msgstr "부품 번호"
 
 msgid "Part Supersession"
 msgstr "부품 대체"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "부분"
@@ -20362,6 +20371,9 @@ msgstr "서비스 공급자 세부 정보"
 msgid "Service start"
 msgstr "서비스 시작일"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "서비스"
 
@@ -21714,6 +21726,9 @@ msgstr "공급업체 부품 번호"
 
 msgid "Supplier Part Numbers"
 msgstr "공급업체 부품 번호"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "공급업체 부품"
@@ -24001,6 +24016,9 @@ msgstr "공구 세부정보"
 
 msgid "Tool ID"
 msgstr "공구 ID"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "공구 원가"

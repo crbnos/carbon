@@ -1303,8 +1303,8 @@ describe("upserts decided by whether the record exists", () => {
     ).toBe("update");
   });
 
-  it("r. a part is found by its item id OR its part number", async () => {
-    const upsert = rule("items_upsertPart");
+  it("r. a tool is found by its item id OR its tool number", async () => {
+    const upsert = rule("items_upsertTool");
     const items = { item: [{ id: "item_1", readableId: "PN-100" }] };
 
     for (const id of ["item_1", "PN-100"]) {

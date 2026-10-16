@@ -6,7 +6,7 @@ import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
 
 const logger = getLogger("erp", "documents-models");
 

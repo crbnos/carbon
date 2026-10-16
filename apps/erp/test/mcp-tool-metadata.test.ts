@@ -72,7 +72,6 @@ describe("mcp tool-metadata generator", () => {
     for (const name of [
       "items_upsertService",
       "items_upsertConsumable",
-      "items_upsertPart",
       "items_upsertMaterial",
       "items_upsertTool"
     ]) {

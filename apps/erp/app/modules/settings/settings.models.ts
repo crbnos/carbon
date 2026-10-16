@@ -14,7 +14,7 @@ import { isValidTimeZone, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
   "Accounting",

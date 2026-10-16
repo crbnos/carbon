@@ -82,7 +82,7 @@ de-dupes to the latest item per `(readableId, companyId)` and aggregates the rev
 ## Editing properties
 
 `updateMaterialProperties(client, db, material)` is the one path for substance, form, type,
-finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`),
+finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`, through `items.material.setProperties`),
 `upsertMaterial`'s update branch and MCP all go through it. The rules are pure functions in
 `apps/erp/app/modules/items/material-properties.ts` (pinned by `apps/erp/test/material-properties.test.ts`);
 the service loads the rows they read and writes what they decide.

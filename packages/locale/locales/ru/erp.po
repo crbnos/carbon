@@ -5558,6 +5558,9 @@ msgstr "Детали расходного материала"
 msgid "Consumable ID"
 msgstr "ID расходного материала"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "расходные материалы"
 
@@ -13313,6 +13316,9 @@ msgstr "Основной материал"
 msgid "Material Substances"
 msgstr "Основные материалы"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "Тип материала"
 
@@ -16217,6 +16223,9 @@ msgstr "Номер детали"
 
 msgid "Part Supersession"
 msgstr "Замещение деталей"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "Частично"
@@ -20362,6 +20371,9 @@ msgstr "Детали поставщика услуг"
 msgid "Service start"
 msgstr "Начало обслуживания"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "услуги"
 
@@ -21714,6 +21726,9 @@ msgstr "Номер детали поставщика"
 
 msgid "Supplier Part Numbers"
 msgstr "Номера деталей поставщика"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "Детали поставщика"
@@ -24001,6 +24016,9 @@ msgstr "Детали инструмента"
 
 msgid "Tool ID"
 msgstr "ID инструмента"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "Себестоимость оснастки"

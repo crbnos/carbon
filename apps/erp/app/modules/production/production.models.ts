@@ -15,7 +15,7 @@ import {
   procedureStepType,
   standardFactorType,
   toTiptapDoc
-} from "../shared";
+} from "../shared/shared.models";
 import type {
   ItemOrderStatus,
   JobOrderStatusCategory,

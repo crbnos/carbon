@@ -4,20 +4,16 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-// items.server's only runtime dependency; stubbed so the pure verdict logic
-// can be tested without dragging in the app's full module graph.
-vi.mock("~/modules/settings", () => ({ getCompanySettings: vi.fn() }));
+// The release-control read; stubbed so the verdict logic can be tested
+// without the settings module.
+vi.mock("~/modules/settings/settings.service", () => ({
+  getCompanySettings: vi.fn()
+}));
 
-// items.server pulls the items module graph (via ~/modules/items), which
-// transitively loads @carbon/content/glossary — whose module-load-time Lingui `msg`
-// macro isn't transformed under plain vitest and throws. Stub it; the verdict
-// logic under test needs none of it.
-vi.mock("@carbon/content/glossary", () => ({
-  terms: {},
-  getEntry: vi.fn(),
-  lookupEntry: vi.fn(),
-  hasEntry: vi.fn(),
-  termSlug: vi.fn()
+// The module graph reaches Lingui `msg` macros at load time (the glossary, the
+// onboarding content), which only run compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 
 const {

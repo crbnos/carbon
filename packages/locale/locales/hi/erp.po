@@ -5558,6 +5558,9 @@ msgstr "उपभोग्य सामग्री विवरण"
 msgid "Consumable ID"
 msgstr "उपभोग्य सामग्री ID"
 
+msgid "Consumable supplier created"
+msgstr ""
+
 msgid "consumables"
 msgstr "उपभोग्य सामग्री"
 
@@ -13313,6 +13316,9 @@ msgstr "सामग्री पदार्थ"
 msgid "Material Substances"
 msgstr "सामग्री पदार्थ"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "सामग्री प्रकार"
 
@@ -16217,6 +16223,9 @@ msgstr "भाग संख्या"
 
 msgid "Part Supersession"
 msgstr "भाग प्रतिस्थापन"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "आंशिक"
@@ -20362,6 +20371,9 @@ msgstr "सेवा प्रदाता विवरण"
 msgid "Service start"
 msgstr "सेवा की शुरुआत"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "सेवाएं"
 
@@ -21714,6 +21726,9 @@ msgstr "आपूर्तिकर्ता भाग संख्या"
 
 msgid "Supplier Part Numbers"
 msgstr "आपूर्तिकर्ता भाग संख्या"
+
+msgid "Supplier part updated"
+msgstr ""
 
 msgid "Supplier Parts"
 msgstr "आपूर्तिकर्ता पार्ट्स"
@@ -24001,6 +24016,9 @@ msgstr "उपकरण विवरण"
 
 msgid "Tool ID"
 msgstr "टूल आईडी"
+
+msgid "Tool supplier created"
+msgstr ""
 
 msgid "Tooling Cost"
 msgstr "उपकरण लागत"

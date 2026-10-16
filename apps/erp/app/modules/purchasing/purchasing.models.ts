@@ -24,7 +24,11 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { incoterms, itemType, taxExemptionReasons } from "../shared";
+import {
+  incoterms,
+  itemType,
+  taxExemptionReasons
+} from "../shared/shared.models";
 
 export const KPIs = [
   {

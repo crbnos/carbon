@@ -278,7 +278,7 @@ const BillOfProcess = ({
 
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  const deleteOperationFetcher = useAction();
   const { id: userId } = useUser();
 
   const [allItems] = useItems();
