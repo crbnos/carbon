@@ -4,6 +4,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// The operations in settings.server.ts reach the glossary, whose `msg` macro
+// only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
+
 const getCarbonServiceRole = vi.hoisted(() => vi.fn());
 const patchRampSettings = vi.hoisted(() => vi.fn());
 

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
+import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -18,6 +18,7 @@ import {
   themeSchema
 } from "@carbon/documents/template";
 import {
+  integrations as availableIntegrations,
   getIntegrationConfigById,
   getIntegrationIdsByRole,
   type IntegrationHealthcheckResult,
@@ -26,10 +27,17 @@ import {
   splitSecrets
 } from "@carbon/ee";
 import { isAccountingSyncEnabled } from "@carbon/ee/accounting";
-import { enableAuditLog } from "@carbon/ee/audit.server";
+import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
+import {
+  disableAuditLog,
+  enableAuditLog,
+  getArchiveDownloadUrl
+} from "@carbon/ee/audit.server";
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import { isIntegrationWhitelisted } from "@carbon/ee/plan";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
@@ -53,9 +61,16 @@ import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import type { JSONContent } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
-import { isInternalEmail, labelSizes } from "@carbon/utils";
+import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
+import {
+  datetime,
+  isInternalEmail,
+  labelSizes,
+  unchecked
+} from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { insertEmployeeJob } from "~/modules/people/people.service";
@@ -74,6 +89,7 @@ import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import { sanitize } from "~/utils/supabase";
 import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import {
+  apiKeyValidator,
   calculatedShelfLifeInputScopes,
   companyValidator,
   type customFieldValidator,
@@ -2524,5 +2540,341 @@ export const removeDocumentSection = defineServiceFn({
       return ctx.error("internal", "Failed to delete section", result.error);
     }
     return { id };
+  }
+});
+
+const apiKeyFields = {
+  name: apiKeyValidator.shape.name,
+  expiresAt: apiKeyValidator.shape.expiresAt,
+  /** Per module, the actions the key may run: `{ "sales": ["view"] }`. */
+  scopes: z.record(z.string(), z.array(z.string()))
+};
+
+/** An API key action on a company without the plan. */
+function apiKeysEntitlement(ctx: ServiceContext, err: unknown) {
+  if (!(err instanceof EntitlementError)) throw err;
+  return ctx.error("entitlement", "API keys require the Business plan");
+}
+
+/**
+ * Create an API key.
+ *
+ * @remarks
+ * Generates the key, stores only its hash and last five characters, and
+ * returns the raw key once: it can never be read back. API keys are a
+ * Business plan feature.
+ */
+export const createApiKey = defineServiceFn({
+  input: z.object(apiKeyFields),
+  permission: { update: "users" },
+  async run(ctx, { name, scopes, expiresAt }) {
+    const rawKey = `crbn_${nanoid()}`;
+    let created: Awaited<ReturnType<typeof upsertApiKey>>;
+    try {
+      created = await upsertApiKey(ctx.asCaller.supabase, {
+        name,
+        scopes,
+        expiresAt: expiresAt || undefined,
+        rawKey,
+        keyHash: hashApiKey(rawKey),
+        keyPreview: rawKey.slice(-5),
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      });
+    } catch (err) {
+      return apiKeysEntitlement(ctx, err);
+    }
+    const key = created.data && "key" in created.data ? created.data.key : null;
+    if (created.error || !key) {
+      return ctx.error("internal", "Failed to create API key", created.error);
+    }
+    return { key };
+  }
+});
+
+/**
+ * Update an API key's name, scopes and expiry.
+ *
+ * @remarks
+ * The key itself never changes. Its cached authentication is dropped, so a
+ * narrower scope or an earlier expiry applies at once.
+ */
+export const updateApiKey = defineServiceFn({
+  input: z.object({ id: z.string().min(1), ...apiKeyFields }),
+  permission: { update: "users" },
+  async run(ctx, { id, name, scopes, expiresAt }) {
+    let updated: Awaited<ReturnType<typeof upsertApiKey>>;
+    try {
+      updated = await upsertApiKey(ctx.asCaller.supabase, {
+        id,
+        name,
+        scopes,
+        expiresAt: expiresAt || undefined
+      });
+    } catch (err) {
+      return apiKeysEntitlement(ctx, err);
+    }
+    if (updated.error) {
+      return ctx.error("internal", "Failed to update API key", updated.error);
+    }
+    // A scope or expiry edit must not keep authenticating from the 30s cache.
+    await invalidateApiKeyCache(id, ctx.company.id);
+    return { id };
+  }
+});
+
+/**
+ * Delete an API key.
+ *
+ * @remarks
+ * The key stops authenticating: its cached authentication is dropped before
+ * the delete (the key's hash cannot be read once the row is gone) and again
+ * after it, in case a request re-cached the live row in between.
+ */
+export const revokeApiKey = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "users" },
+  async run(ctx, { id }) {
+    const keyHash = await invalidateApiKeyCache(id, ctx.company.id);
+    let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
+    try {
+      deleted = await deleteApiKey(ctx.asCaller.supabase, id);
+    } catch (err) {
+      return apiKeysEntitlement(ctx, err);
+    }
+    if (deleted.error) {
+      return ctx.error("internal", "Failed to delete API key", deleted.error);
+    }
+    if (keyHash) await bustApiKeyCache(keyHash);
+    return { id };
+  }
+});
+
+/**
+ * Disconnect an integration.
+ *
+ * @remarks
+ * Marks the company's integration inactive, runs the integration's own
+ * uninstall step (removing its webhooks, for example) and drops its cached
+ * health. Integrations outside the always-available set need the plan's
+ * integrations feature.
+ *
+ * @mcp
+ */
+export const deactivateCompanyIntegration = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    if (
+      !isIntegrationWhitelisted(id) &&
+      !(await companyHasFeature(ctx.asCaller.supabase, ctx.company.id, {
+        feature: "INTEGRATIONS"
+      }))
+    ) {
+      return ctx.error("entitlement", "Integrations require an upgraded plan");
+    }
+
+    const integration = availableIntegrations.find((i) => i.id === id);
+    if (!integration) return ctx.error("notFound", "Integration not found");
+
+    const update = await deactivateIntegration(ctx.asCaller.supabase, {
+      id,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to disconnect integration",
+        update.error
+      );
+    }
+
+    const hooks = getIntegrationServerHooks(id);
+    if (hooks?.onUninstall) await hooks.onUninstall(ctx.company.id);
+
+    await invalidateIntegrationHealthCache(id, ctx.company.id);
+    return { id, name: integration.name };
+  }
+});
+
+/**
+ * Turn audit logging on.
+ *
+ * @remarks
+ * Records every change to the company's audited tables from now on. Audit
+ * logging is a Business plan feature.
+ *
+ * @mcp
+ */
+export const enableCompanyAuditLog = defineServiceFn({
+  input: z.object({}),
+  permission: { update: "settings" },
+  async run(ctx) {
+    try {
+      await enableAuditLog(ctx.asCaller.supabase, ctx.company.id);
+    } catch (err) {
+      if (err instanceof EntitlementError) {
+        return ctx.error(
+          "entitlement",
+          "Upgrade to Business to enable audit logging"
+        );
+      }
+      return ctx.error("internal", "Failed to enable audit logging", err);
+    }
+    return { auditLogEnabled: true };
+  }
+});
+
+/**
+ * Turn audit logging off.
+ *
+ * @remarks
+ * Stops recording changes; the log written so far is kept. A controlled
+ * environment cannot turn audit logging off.
+ *
+ * @mcp
+ */
+export const disableCompanyAuditLog = defineServiceFn({
+  input: z.object({}),
+  permission: { update: "settings" },
+  async run(ctx) {
+    if (CONTROLLED_ENVIRONMENT) {
+      return ctx.error(
+        "rule",
+        "Audit logging cannot be disabled in a controlled environment"
+      );
+    }
+    try {
+      await disableAuditLog(ctx.asCaller.supabase, ctx.company.id);
+    } catch (err) {
+      return ctx.error("internal", "Failed to disable audit logging", err);
+    }
+    return { auditLogEnabled: false };
+  }
+});
+
+/** A signed URL that downloads one of the company's audit log archives. */
+export const auditArchiveDownloadUrl = defineServiceFn({
+  input: z.object({ archiveId: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { archiveId }) {
+    try {
+      const url = await getArchiveDownloadUrl(
+        ctx.asSystem.supabase,
+        archiveId,
+        ctx.company.id
+      );
+      return { url };
+    } catch (err) {
+      return ctx.error("internal", "Failed to generate download URL", err);
+    }
+  }
+});
+
+/** A Stripe billing portal session for the company, for its subscription. */
+export const billingPortalUrl = defineServiceFn({
+  input: z.object({}),
+  permission: { update: "settings" },
+  async run(ctx) {
+    try {
+      const plans = await ctx.asCaller.supabase
+        .from("plan")
+        .select("stripePriceId")
+        .eq("userBasedPricing", true);
+      const priceIds = plans.data?.map((plan) => plan.stripePriceId);
+      const url = await getBillingPortalRedirectUrl({
+        companyId: ctx.company.id,
+        priceIds
+      });
+      return { url };
+    } catch (err) {
+      return ctx.error("internal", "Failed to access billing portal", err);
+    }
+  }
+});
+
+/**
+ * Transfer ownership of the company group to another user.
+ *
+ * @remarks
+ * The owner holds billing and the group's administrative settings.
+ */
+export const transferCompanyOwnership = defineServiceFn({
+  input: z.object({ newOwnerId: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { newOwnerId }) {
+    const { error } = await ctx.asCaller.supabase
+      .from("companyGroup")
+      .update({ ownerId: newOwnerId })
+      .eq("id", ctx.company.groupId);
+    if (error) {
+      return ctx.error("internal", "Failed to transfer ownership", error);
+    }
+    return { ownerId: newOwnerId };
+  }
+});
+
+/**
+ * Set the tags of some records of one table.
+ *
+ * @remarks
+ * Replaces the `tags` of each record. Row-level security decides which
+ * records the caller may change.
+ */
+export const setRecordTags = defineServiceFn({
+  input: z.object({
+    table: z.string().min(1),
+    ids: z.array(z.string()),
+    tags: z.array(z.string())
+  }),
+  permission: {},
+  async run(ctx, { table, ids, tags }) {
+    const { error } = await ctx.asCaller.supabase
+      // @ts-expect-error: the table is the caller's, for any taggable record
+      .from(table)
+      .update(
+        unchecked({
+          tags,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .in(unchecked("id"), ids);
+    if (error) return ctx.error("internal", "Failed to update tags", error);
+    return { ids };
+  }
+});
+
+/**
+ * Set the custom field values of some records of one table.
+ *
+ * @remarks
+ * Replaces the `customFields` of each record. Row-level security decides
+ * which records the caller may change.
+ */
+export const setRecordCustomFields = defineServiceFn({
+  input: z.object({
+    table: z.string().min(1),
+    ids: z.array(z.string()),
+    customFields: z.record(z.string(), z.unknown())
+  }),
+  permission: {},
+  async run(ctx, { table, ids, customFields }) {
+    const { error } = await ctx.asCaller.supabase
+      // @ts-expect-error: the table is the caller's, for any record with custom fields
+      .from(table)
+      .update(
+        unchecked({
+          customFields,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+      )
+      .in(unchecked("id"), ids);
+    if (error) {
+      return ctx.error("internal", "Failed to update custom fields", error);
+    }
+    return { ids };
   }
 });

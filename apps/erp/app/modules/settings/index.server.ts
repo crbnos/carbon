@@ -4,17 +4,28 @@
 
 import {
   assignPrinter,
+  auditArchiveDownloadUrl,
+  billingPortalUrl,
+  createApiKey,
   createCompany,
   createSubsidiary,
+  deactivateCompanyIntegration,
   deletePrintJob,
+  disableCompanyAuditLog,
+  enableCompanyAuditLog,
   removeDocumentSection,
   removePrinterRoute,
   reprintPrintJob,
+  revokeApiKey,
   saveDocumentSection,
   saveDocumentTemplate,
   savePrinterRoute,
+  setRecordCustomFields,
+  setRecordTags,
   testPrinterRoute,
+  transferCompanyOwnership,
   updateAccountingSettings,
+  updateApiKey,
   updateCompanyDetails,
   updateInventorySettings,
   updateInvoicingSettings,
@@ -47,6 +58,19 @@ export const settings = {
     save: saveDocumentSection,
     delete: removeDocumentSection
   },
+  apiKey: { create: createApiKey, update: updateApiKey, delete: revokeApiKey },
+  integration: { deactivate: deactivateCompanyIntegration },
+  auditLog: {
+    enable: enableCompanyAuditLog,
+    disable: disableCompanyAuditLog,
+    archiveUrl: auditArchiveDownloadUrl
+  },
+  billing: {
+    portalUrl: billingPortalUrl,
+    transferOwnership: transferCompanyOwnership
+  },
+  tags: { set: setRecordTags },
+  customFields: { set: setRecordCustomFields },
   printJob: {
     reprint: reprintPrintJob,
     delete: deletePrintJob,

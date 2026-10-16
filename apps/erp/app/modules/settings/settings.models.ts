@@ -87,6 +87,17 @@ export const apiKeyValidator = z.object({
   )
 });
 
+/** An API key form's fields as saved: the form posts its scopes as one JSON string. */
+export function apiKeyFields({
+  scopes,
+  ...form
+}: z.output<typeof apiKeyValidator>) {
+  return {
+    ...form,
+    scopes: (scopes ? JSON.parse(scopes) : {}) as Record<string, string[]>
+  };
+}
+
 const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
 
 /**
