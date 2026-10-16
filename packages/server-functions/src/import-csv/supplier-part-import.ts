@@ -93,6 +93,7 @@ export type SupplierPartRowDecision =
     }
   | { action: "error"; reason: string };
 
+/** The key of a supplier part: one per item and supplier. */
 export const supplierPartKey = (itemId: string, supplierId: string) =>
   `${itemId}::${supplierId}`;
 
@@ -200,6 +201,10 @@ export function supplierPartUpdate(
   return set;
 }
 
+/**
+ * Adds or updates the supplier part of each row's item and supplier, in one
+ * transaction.
+ */
 export async function importSupplierParts(
   db: Kysely<KyselyDatabase>,
   args: {

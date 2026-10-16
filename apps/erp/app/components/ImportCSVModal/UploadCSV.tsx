@@ -29,6 +29,10 @@ import { useUser } from "~/hooks/useUser";
 import { fieldMappings, type importSchemas } from "~/modules/shared";
 import { useCsvContext } from "./useCsvContext";
 
+/**
+ * The import wizard's first step: download the table's template, or pick a CSV,
+ * which is parsed for the mapping step and uploaded for the import.
+ */
 export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
   const { t } = useLingui();
   const { carbon } = useCarbon();
