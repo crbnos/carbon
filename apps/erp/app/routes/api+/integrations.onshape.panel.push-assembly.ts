@@ -45,7 +45,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
-import { ensureDraftMakeMethod } from "~/modules/settings/onshape-draft-method.server";
+import {
+  ensureDraftMakeMethod,
+  loadMethodWriteRefusals
+} from "~/modules/settings/onshape-draft-method.server";
 import {
   applyExistingItemFields,
   applyItemFieldWrites,
@@ -98,6 +101,8 @@ type ItemRow = {
   id: string;
   readableId: string;
   revision: string | null;
+  /** Absent on an item this push created (Design). */
+  revisionStatus?: Database["public"]["Enums"]["itemRevisionStatus"] | null;
   active?: boolean | null;
   type: string | null;
   defaultMethodType: string | null;
@@ -210,7 +215,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, type, defaultMethodType, sourcingType, unitOfMeasureCode"
+        "id, readableId, revision, revisionStatus, active, type, defaultMethodType, sourcingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -510,6 +515,26 @@ export async function action({ request }: ActionFunctionArgs) {
           methodByItemId.get(childItem.id))
         : null;
 
+  // Not written: a change notice's Draft, or a released revision under
+  // `enforce`. Rechecked here; the plan only listed them.
+  const refusalByItemId = await loadMethodWriteRefusals(
+    client,
+    companyId,
+    plan.methods.flatMap((planned) => {
+      const parentItem = itemByReadableId.get(planned.parentPartNumber);
+      const method = parentItem ? methodByItemId.get(parentItem.id) : undefined;
+      return parentItem && method
+        ? [
+            {
+              itemId: parentItem.id,
+              method,
+              revisionStatus: parentItem.revisionStatus
+            }
+          ]
+        : [];
+    })
+  );
+
   // An Active method is written through a Draft, made before ownership is read:
   // ownership is keyed by method id, so a later Draft's lines would read as manual.
   const targetMethodByItemId = new Map<string, string>();
@@ -609,7 +634,9 @@ export async function action({ request }: ActionFunctionArgs) {
     const method = methodByItemId.get(parentItem.id);
     if (!method) continue; // reported in the write loop
     if (method.status !== "Active") {
-      targetMethodByItemId.set(parentItem.id, method.id);
+      if (!refusalByItemId.has(parentItem.id)) {
+        targetMethodByItemId.set(parentItem.id, method.id);
+      }
       continue;
     }
     if (
@@ -619,6 +646,8 @@ export async function action({ request }: ActionFunctionArgs) {
       unchangedItemIds.add(parentItem.id);
       continue;
     }
+    // Checked before a Draft is made, so a refusal leaves no Draft behind.
+    if (refusalByItemId.has(parentItem.id)) continue;
     const draft = await ensureDraftMakeMethod(client, {
       itemId: parentItem.id,
       activeMethodId: method.id,
@@ -675,6 +704,11 @@ export async function action({ request }: ActionFunctionArgs) {
       summary.linesUnchanged += planned.writes.filter(
         (write) => !excluded.has(write.partNumber)
       ).length;
+      continue;
+    }
+    const refusal = refusalByItemId.get(parentItem.id);
+    if (refusal) {
+      summary.skipped.push(`${parentLabel}: ${refusal}`);
       continue;
     }
     const methodId = targetMethodByItemId.get(parentItem.id);

@@ -24,6 +24,9 @@ import {
 import { selectInBatches } from "./batched-filter";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
+// The plan and apply routes reach the panel's pure helpers through this barrel.
+export { withRefusedMethods } from "../panel/plan";
+
 // Carbon reads shared by the panel's plan and apply routes.
 
 type Client = SupabaseClient<Database>;
@@ -59,7 +62,11 @@ export async function loadPlanOptions(
   };
 }
 
-/** Throws on a failed read: an empty map reads as "no method" everywhere. */
+/**
+ * Throws on a failed read: an empty map reads as "no method" everywhere. With
+ * no Active method the view returns the newest Draft, which can be a change
+ * notice's; `changeOrderId` says so (the view does not carry it).
+ */
 export async function loadActiveMakeMethods(
   client: Client,
   companyId: string,
@@ -77,10 +84,30 @@ export async function loadActiveMakeMethods(
   if (rows.error) {
     throw new Error(`Failed to read make methods: ${rows.error.message}`);
   }
+  const draftIds = (rows.data ?? [])
+    .filter((row) => row.id && row.status !== "Active")
+    .map((row) => row.id as string);
+  const owners = await selectInBatches(draftIds, (batch) =>
+    client
+      .from("makeMethod")
+      .select("id, changeOrderId")
+      .eq("companyId", companyId)
+      .in("id", batch)
+  );
+  if (owners.error) {
+    throw new Error(`Failed to read make methods: ${owners.error.message}`);
+  }
+  const changeOrderIdByMethodId = new Map(
+    owners.data.map((row) => [row.id, row.changeOrderId])
+  );
   const byItemId = new Map<string, PlanMethodRow>();
   for (const row of rows.data ?? []) {
     if (row.id && row.itemId) {
-      byItemId.set(row.itemId, { id: row.id, status: row.status ?? "Draft" });
+      byItemId.set(row.itemId, {
+        id: row.id,
+        status: row.status ?? "Draft",
+        changeOrderId: changeOrderIdByMethodId.get(row.id) ?? null
+      });
     }
   }
   return byItemId;
@@ -306,7 +333,9 @@ export async function loadMethodLineOwnership(
 
   // Batches arrive in batch order; plan and apply must pair lines the same way.
   const ordered = [...(lines.data ?? [])].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    (a, b) =>
+      (a.order ?? 0) - (b.order ?? 0) ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
   );
   for (const line of ordered) {
     const methodId = line.makeMethodId;

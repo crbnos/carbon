@@ -65,6 +65,19 @@ export function releaseKeyFor(revision: ReleaseRevisionLike): string {
   );
 }
 
+/**
+ * Key of a released assembly's BOM read. A release can hold two configurations
+ * of one assembly element, each with its own BOM; the default one keys by the
+ * element id alone.
+ */
+export function releaseBomKey(item: {
+  elementId: string;
+  configuration?: string | null;
+}): string {
+  const configuration = normalizeConfiguration(item.configuration);
+  return configuration ? `${item.elementId}:${configuration}` : item.elementId;
+}
+
 /** Assemblies, then parts, then drawings. */
 function itemSortWeight(elementType: number): number {
   if (elementType === 1) return 0;

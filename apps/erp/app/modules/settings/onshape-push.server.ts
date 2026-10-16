@@ -12,6 +12,7 @@ import type {
   StandardFieldWriter
 } from "@carbon/ee";
 import { mergeExistingItemEdits, standardField } from "@carbon/ee";
+import { selectInBatches } from "@carbon/ee/onshape";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -225,77 +226,86 @@ export async function claimManualMethodLine(
   }
 }
 
+export type OpenReleaseNotice = {
+  id: string;
+  changeNoticeId: string;
+  affectedCount: number;
+};
+
 /**
  * The notice an earlier push of this release made, while it still takes items:
  * a release spanning two documents is pushed once per document into one notice.
+ * Fails closed: a read that fails is an error, never "no open notice", which
+ * would open a second notice for the release.
  */
 export async function findOpenReleaseNotice(
   client: SupabaseClient<Database>,
   companyId: string,
   releaseId: string
-): Promise<{
-  id: string;
-  changeNoticeId: string;
-  affectedCount: number;
-} | null> {
+): Promise<
+  | { data: OpenReleaseNotice | null; error: null }
+  | { data: null; error: string }
+> {
+  const failed = (what: string, error: unknown) => {
+    logger.error("Could not read a release's earlier push", {
+      companyId,
+      releaseId,
+      read: what,
+      error
+    });
+    return {
+      data: null,
+      error: `Carbon couldn't read this release's earlier ${what}`
+    };
+  };
+
+  // Matched on the release id the link's metadata carries, not a LIKE on the
+  // key: a synthetic release id holds a part number, which may contain % or _.
   const links = await client
     .from("externalIntegrationMapping")
     .select("entityId")
     .eq("companyId", companyId)
     .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
     .eq("entityType", "item")
-    .like("externalId", `release:${releaseId}:%`);
-  if (links.error) {
-    logger.warn("Could not read a release's earlier links", {
-      companyId,
-      releaseId,
-      error: links.error
-    });
-    return null;
-  }
-  if (!links.data?.length) return null;
-  const items = await client
-    .from("item")
-    .select("changeOrderId")
-    .eq("companyId", companyId)
-    .in(
-      "id",
-      links.data.map((link) => link.entityId)
-    )
-    .not("changeOrderId", "is", null);
+    .like("externalId", "release:%")
+    .eq("metadata->>releaseId", releaseId);
+  if (links.error) return failed("links", links.error);
+  if (!links.data?.length) return { data: null, error: null };
+
+  const items = await selectInBatches(
+    links.data.map((link) => link.entityId),
+    (batch) =>
+      client
+        .from("item")
+        .select("changeOrderId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .not("changeOrderId", "is", null)
+  );
+  if (items.error) return failed("items", items.error);
   const noticeIds = [
     ...new Set(
-      (items.data ?? [])
+      items.data
         .map((item) => item.changeOrderId)
         .filter((id): id is string => !!id)
     )
   ];
-  if (items.error) {
-    logger.warn("Could not read a release's earlier items", {
-      companyId,
-      releaseId,
-      error: items.error
-    });
-    return null;
-  }
-  if (noticeIds.length === 0) return null;
-  const notices = await client
-    .from("changeOrder")
-    .select("id, changeOrderId, status, changeOrderAffectedItem(id)")
-    .eq("companyId", companyId)
-    .in("id", noticeIds)
-    .order("createdAt", { ascending: true });
-  if (notices.error) {
-    logger.warn("Could not read a release's earlier change notices", {
-      companyId,
-      releaseId,
-      error: notices.error
-    });
-    return null;
-  }
-  const editable = (notices.data ?? []).filter((notice) =>
-    canEditChangeNoticeEngineering(notice.status)
+  if (noticeIds.length === 0) return { data: null, error: null };
+
+  const notices = await selectInBatches(noticeIds, (batch) =>
+    client
+      .from("changeOrder")
+      .select(
+        "id, changeOrderId, status, createdAt, changeOrderAffectedItem(id)"
+      )
+      .eq("companyId", companyId)
+      .in("id", batch)
   );
+  if (notices.error) return failed("change notices", notices.error);
+  // Batches arrive in batch order: the oldest open notice wins.
+  const editable = notices.data
+    .filter((notice) => canEditChangeNoticeEngineering(notice.status))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   // A pending approval freezes the notice's engineering content; one can be
   // pending only at Engineering Complete. approvalRequest is service-role only.
   const awaitingIds = editable
@@ -303,31 +313,29 @@ export async function findOpenReleaseNotice(
     .map((notice) => notice.id);
   const awaiting = new Set<string>();
   if (awaitingIds.length > 0) {
-    const pending = await getCarbonServiceRole()
-      .from("approvalRequest")
-      .select("documentId")
-      .eq("companyId", companyId)
-      .eq("documentType", "changeOrder")
-      .eq("status", "Pending")
-      .in("documentId", awaitingIds);
-    if (pending.error) {
-      logger.warn("Could not read a release's change notice approvals", {
-        companyId,
-        releaseId,
-        error: pending.error
-      });
-      return null;
-    }
-    for (const row of pending.data ?? []) awaiting.add(row.documentId);
+    const pending = await selectInBatches(awaitingIds, (batch) =>
+      getCarbonServiceRole()
+        .from("approvalRequest")
+        .select("documentId")
+        .eq("companyId", companyId)
+        .eq("documentType", "changeOrder")
+        .eq("status", "Pending")
+        .in("documentId", batch)
+    );
+    if (pending.error) return failed("change notice approvals", pending.error);
+    for (const row of pending.data) awaiting.add(row.documentId);
   }
   const open = editable.find((notice) => !awaiting.has(notice.id));
-  return open
-    ? {
-        id: open.id,
-        changeNoticeId: open.changeOrderId,
-        affectedCount: open.changeOrderAffectedItem?.length ?? 0
-      }
-    : null;
+  return {
+    data: open
+      ? {
+          id: open.id,
+          changeNoticeId: open.changeOrderId,
+          affectedCount: open.changeOrderAffectedItem?.length ?? 0
+        }
+      : null,
+    error: null
+  };
 }
 
 /**

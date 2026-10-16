@@ -900,6 +900,9 @@ export async function getOnshapeClient(
 > {
   // Either sync connection — the public app or a Government private app.
   // Past authorization they are the same API, just on a different host.
+  // The panel's connection must be active: uninstalling only sets
+  // `active = false` and leaves the tokens, so without the filter an
+  // uninstalled panel kept reading Onshape.
   const integration =
     requestedIntegrationId && !isOnshapeIntegrationId(requestedIntegrationId)
       ? await client
@@ -907,6 +910,7 @@ export async function getOnshapeClient(
           .select("*")
           .eq("id", requestedIntegrationId)
           .eq("companyId", companyId)
+          .eq("active", true)
           .maybeSingle()
       : await getOnshapeIntegration(client, companyId);
 

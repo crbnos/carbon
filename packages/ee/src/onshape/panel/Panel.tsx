@@ -36,6 +36,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -1920,7 +1921,8 @@ function AssemblySection({
             <LuTriangleAlert />
             <AlertTitle>This assembly has no part number</AlertTitle>
             <AlertDescription>
-              Set one on the assembly in Onshape, then press Refresh.
+              In Onshape, right-click the assembly's tab, choose Properties and
+              set Part number. Then press Refresh.
             </AlertDescription>
           </Alert>
         )
@@ -2339,7 +2341,7 @@ function ReleasesSection({
                     >
                       {release.releaseName ?? "Release"}
                       {release.createdAt
-                        ? ` · ${new Date(release.createdAt).toLocaleDateString()}`
+                        ? ` · ${formatDate(release.createdAt)}`
                         : ""}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">

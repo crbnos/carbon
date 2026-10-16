@@ -8,18 +8,89 @@ import type { DraftCandidate } from "@carbon/ee/onshape";
 import {
   DRAFT_MARKER_ENTITY_TYPE,
   loadReusableDrafts,
-  pairOwnedCopiedLines
+  pairOwnedCopiedLines,
+  selectInBatches
 } from "@carbon/ee/onshape";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { copyMakeMethod, upsertMakeMethodVersion } from "~/modules/items";
+import {
+  getLockVerdict,
+  type ReleaseControl
+} from "~/modules/items/items.server";
 import { getDatabaseClient } from "~/services/database.server";
+import { getCompanySettings } from "./settings.service";
 
 type Client = SupabaseClient<Database>;
 
 const logger = getLogger("erp", "onshape", "draft-method");
+
+type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
+
+/**
+ * Why the assembly push must not write a parent's BOM, per item id. A Draft a
+ * change notice holds is the notice's to change, whatever its stage. A
+ * released (Production) revision follows `plmReleaseControl` through
+ * `getLockVerdict`, as the BOM editor's `checkRevisionLock` does: `enforce`
+ * refuses, `warn` and `off` write. Two reads in all, not one per method.
+ */
+export async function loadMethodWriteRefusals(
+  client: Client,
+  companyId: string,
+  targets: Array<{
+    itemId: string;
+    method: { changeOrderId?: string | null };
+    revisionStatus: ItemRevisionStatus | null | undefined;
+  }>
+): Promise<Map<string, string>> {
+  const reasons = new Map<string, string>();
+  const changeOrderIds = [
+    ...new Set(
+      targets
+        .map((target) => target.method.changeOrderId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const anyProduction = targets.some(
+    (target) =>
+      !target.method.changeOrderId && target.revisionStatus === "Production"
+  );
+  const [notices, settings] = await Promise.all([
+    selectInBatches(changeOrderIds, (batch) =>
+      client
+        .from("changeOrder")
+        .select("id, changeOrderId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+    ),
+    anyProduction ? getCompanySettings(client, companyId) : null
+  ]);
+  // The notice's number is for the message only; the refusal stands without it.
+  const noticeNumber = new Map(
+    (notices.data ?? []).map((notice) => [notice.id, notice.changeOrderId])
+  );
+  const releaseControl = (settings?.data?.plmReleaseControl ??
+    "enforce") as ReleaseControl;
+  for (const target of targets) {
+    const changeOrderId = target.method.changeOrderId;
+    if (changeOrderId) {
+      const number = noticeNumber.get(changeOrderId);
+      reasons.set(
+        target.itemId,
+        `its make method is a Draft on ${number ? `change notice ${number}` : "a change notice"}. Change the BOM there.`
+      );
+      continue;
+    }
+    const verdict = getLockVerdict({
+      isLocked: target.revisionStatus === "Production",
+      releaseControl
+    });
+    if (!verdict.ok) reasons.set(target.itemId, verdict.message);
+  }
+  return reasons;
+}
 
 /**
  * The Draft a push writes into when the item's method is Active: the one this

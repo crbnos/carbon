@@ -235,6 +235,7 @@ export {
   drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
+  releaseBomKey,
   releaseDrawingFileName,
   releaseKeyFor,
   resolveReleaseStates

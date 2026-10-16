@@ -75,28 +75,123 @@ describe("chunkFilterValues", () => {
   });
 });
 
+/**
+ * A fake supabase-js builder over `rows`: `.in()` is the batch, `.order()` and
+ * `.range()` behave as PostgREST's do, and a page never exceeds `maxRows`.
+ */
+function fakeTable<Row extends { id: string; key: string }>(
+  rows: Row[],
+  log: { pages: Array<{ batch: string[]; from: number; to: number }> },
+  maxRows = 1000
+) {
+  return (batch: string[]) => {
+    const orders: string[] = [];
+    const query = {
+      order(column: string) {
+        orders.push(column);
+        return query;
+      },
+      range(from: number, to: number) {
+        log.pages.push({ batch, from, to });
+        const matched = rows
+          .filter((row) => batch.includes(row.key))
+          .sort((a, b) => {
+            for (const column of orders) {
+              const left = String(a[column as keyof Row]);
+              const right = String(b[column as keyof Row]);
+              if (left !== right) return left < right ? -1 : 1;
+            }
+            return 0;
+          });
+        const end = Math.min(to + 1, from + maxRows);
+        return Promise.resolve({
+          data: matched.slice(from, end),
+          error: null as { message: string } | null
+        });
+      }
+    };
+    return query;
+  };
+}
+
 describe("selectInBatches", () => {
   it("concatenates the rows from every batch", async () => {
     const values = Array.from({ length: 334 }, (_, i) => externalId(i));
-    const seen: string[][] = [];
-    const result = await selectInBatches(values, (batch) => {
-      seen.push(batch);
-      return Promise.resolve({
-        data: batch.map((value) => ({ value })),
-        error: null
-      });
-    });
-    expect(seen.length).toBeGreaterThan(1);
+    const log = {
+      pages: [] as Array<{ batch: string[]; from: number; to: number }>
+    };
+    const rows = values.map((key) => ({ id: key, key }));
+    const result = await selectInBatches(values, fakeTable(rows, log));
+    expect(log.pages.length).toBeGreaterThan(1);
     expect(result.error).toBeNull();
-    expect(result.data.map((row) => row.value)).toEqual(values);
+    // Batches arrive in batch order; each batch in id order.
+    expect(result.data.map((row) => row.key).sort()).toEqual(
+      [...values].sort()
+    );
+  });
+
+  it("pages a batch that matches more than 1,000 rows", async () => {
+    // One method id with 2,500 BOM lines: a single read stops at 1,000.
+    const rows = Array.from({ length: 2500 }, (_, i) => ({
+      id: `line-${String(i).padStart(5, "0")}`,
+      key: "method-1"
+    }));
+    const log = {
+      pages: [] as Array<{ batch: string[]; from: number; to: number }>
+    };
+    const result = await selectInBatches(["method-1"], fakeTable(rows, log));
+    expect(result.error).toBeNull();
+    expect(result.data).toHaveLength(2500);
+    expect(new Set(result.data.map((row) => row.id)).size).toBe(2500);
+    expect(log.pages.map((page) => [page.from, page.to])).toEqual([
+      [0, 999],
+      [1000, 1999],
+      [2000, 2999]
+    ]);
+  });
+
+  it("asks for one more page when the last one is exactly full", async () => {
+    const rows = Array.from({ length: 1000 }, (_, i) => ({
+      id: `line-${String(i).padStart(5, "0")}`,
+      key: "method-1"
+    }));
+    const log = {
+      pages: [] as Array<{ batch: string[]; from: number; to: number }>
+    };
+    const result = await selectInBatches(["method-1"], fakeTable(rows, log));
+    expect(result.data).toHaveLength(1000);
+    expect(log.pages).toHaveLength(2);
+  });
+
+  it("orders every page by id after the query's own order", async () => {
+    const orders: string[][] = [];
+    await selectInBatches(["a"], () => {
+      const seen: string[] = [];
+      orders.push(seen);
+      const query = {
+        order(column: string) {
+          seen.push(column);
+          return query;
+        },
+        range: () => Promise.resolve({ data: [], error: null })
+      };
+      return query.order("revision");
+    });
+    expect(orders).toEqual([["revision", "id"]]);
   });
 
   it("returns no rows alongside an error, and stops asking", async () => {
     const values = Array.from({ length: 334 }, (_, i) => externalId(i));
     let calls = 0;
     const result = await selectInBatches(values, () => {
-      calls += 1;
-      return Promise.resolve({ data: null, error: { message: "boom" } });
+      const query = {
+        order: () => query,
+        range: () => {
+          calls += 1;
+          return Promise.resolve({ data: null, error: { message: "boom" } });
+        }
+      };
+      return query;
     });
     expect(calls).toBe(1);
     expect(result.error).toEqual({ message: "boom" });
@@ -107,7 +202,11 @@ describe("selectInBatches", () => {
     let calls = 0;
     const result = await selectInBatches([], () => {
       calls += 1;
-      return Promise.resolve({ data: [], error: null });
+      const query = {
+        order: () => query,
+        range: () => Promise.resolve({ data: [], error: null })
+      };
+      return query;
     });
     expect(calls).toBe(0);
     expect(result.data).toEqual([]);

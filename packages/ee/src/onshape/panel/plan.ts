@@ -265,6 +265,8 @@ export function pickAdoptTarget(
 export type PlanMethodRow = {
   id: string;
   status: string;
+  /** Set when a change notice holds this method (a Draft it staged). */
+  changeOrderId?: string | null;
 };
 
 export type PlanLine = {
@@ -546,14 +548,19 @@ export function reconcileMethodForReplenishment(
   return allowed.includes(method) ? method : (allowed[0] ?? method);
 }
 
-/** Item page rule: Make pins Make to Order, Buy pins Purchase to Order. */
+/**
+ * Item page rule (`deriveItemMethodUpdate`): Make pins Make to Order, Buy pins
+ * Purchase to Order. Buy and Make keeps the method only when the pair allows
+ * it; the item page would keep Make to Order too, which apply refuses
+ * (`mergeExistingItemEdits`), so that one takes the Part form's rule.
+ */
 export function methodForReplenishment(
   replenishment: ItemReplenishmentSystem,
   method: ItemMethodType
 ): ItemMethodType {
   if (replenishment === "Make") return "Make to Order";
   if (replenishment === "Buy") return "Purchase to Order";
-  return method;
+  return reconcileMethodForReplenishment(replenishment, method);
 }
 
 /** The method a Sourcing sets (`deriveItemMethodUpdate`); Specified leaves it. */
@@ -1770,6 +1777,34 @@ export function buildAssemblyPlan({
   };
 }
 
+/**
+ * Takes out the methods the push must not write (a change notice's Draft, a
+ * locked revision) and lists each under `skipped` with its reason, keyed by
+ * parent item id. An Active method that stays unchanged writes nothing, so it
+ * is not refused. Apply checks again before it writes.
+ */
+export function withRefusedMethods(
+  plan: AssemblyPlan,
+  reasonByItemId: ReadonlyMap<string, string>
+): AssemblyPlan {
+  const reasonFor = (method: AssemblyPlanMethod) =>
+    method.parentItemId && !method.unchanged
+      ? reasonByItemId.get(method.parentItemId)
+      : undefined;
+  const refused = plan.methods.filter((method) => reasonFor(method));
+  if (refused.length === 0) return plan;
+  return {
+    ...plan,
+    methods: plan.methods.filter((method) => !reasonFor(method)),
+    skipped: [
+      ...plan.skipped,
+      ...refused.map(
+        (method) => `${method.parentPartNumber}: ${reasonFor(method)}`
+      )
+    ]
+  };
+}
+
 export type ReleasePlanItemAction =
   /** An item already exists at the released letter. */
   | "reuse"
@@ -1859,7 +1894,10 @@ export function buildReleasePlan({
   release: PanelRelease;
   /** Every Carbon revision row for the release's and the BOMs' part numbers. */
   items: PlanItemRow[];
-  /** Null when the read failed; apply then leaves that method alone. */
+  /**
+   * Keyed by `releaseBomKey` (element plus configuration). Null when the read
+   * failed; apply then leaves that method alone.
+   */
   bomLinesByElementId: Record<string, OnshapeBomNode[] | null>;
   methodByItemId: Map<string, PlanMethodRow>;
   options: PlanOptions;

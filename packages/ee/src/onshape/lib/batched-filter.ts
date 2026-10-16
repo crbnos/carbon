@@ -45,24 +45,60 @@ export function chunkFilterValues(
   return batches;
 }
 
+// PostgREST's `max_rows` cap. A page shorter than this is the last one.
+const PAGE_SIZE = 1000;
+// Backstop only: a server that ignored `Range` would otherwise loop forever.
+const MAX_PAGES = 1000;
+
 /**
- * Runs the query once per batch and concatenates the rows. The first error
- * returns no rows: a partial result read as whole makes a sync delete rows.
+ * What paging needs from a batch query. Structural, as `fetchAllRecords`
+ * (`@carbon/database`) types it: naming the supabase-js builder makes the
+ * compiler walk the whole schema per call.
+ */
+export type BatchQuery<Row, Err> = {
+  order(
+    column: string,
+    options?: { ascending?: boolean }
+  ): BatchQuery<Row, Err>;
+  range(
+    from: number,
+    to: number
+  ): PromiseLike<{ data: Row[] | null; error: Err | null }>;
+};
+
+/**
+ * Runs the query once per batch and concatenates the rows. Each batch is paged
+ * past PostgREST's 1,000-row cap: a batch of values can match more rows than
+ * that (lines of many methods), and a cut read loses rows silently. Pages are
+ * ordered by `orderBy` (default `id`), appended after any order the query
+ * sets, so offsets are stable. `buildBatch` is called once per page:
+ * supabase-js builders are mutable. The first error returns no rows: a partial
+ * result read as whole makes a sync delete rows.
  */
 export async function selectInBatches<Row, Err>(
   values: string[],
-  runBatch: (batch: string[]) => PromiseLike<{
-    data: Row[] | null;
-    error: Err | null;
-  }>,
-  options: { budgetBytes?: number } = {}
+  buildBatch: (batch: string[]) => BatchQuery<Row, Err>,
+  options: { budgetBytes?: number; orderBy?: string } = {}
 ): Promise<{ data: Row[]; error: Err | null }> {
   const batches = chunkFilterValues(values, options);
+  const orderBy = options.orderBy ?? "id";
   const rows: Row[] = [];
   for (const batch of batches) {
-    const result = await runBatch(batch);
-    if (result.error) return { data: [], error: result.error };
-    if (result.data) rows.push(...result.data);
+    for (let page = 0; ; page += 1) {
+      if (page === MAX_PAGES) {
+        throw new Error(
+          `selectInBatches exceeded ${MAX_PAGES} pages; refusing a partial read`
+        );
+      }
+      const from = page * PAGE_SIZE;
+      const result = await buildBatch(batch)
+        .order(orderBy)
+        .range(from, from + PAGE_SIZE - 1);
+      if (result.error) return { data: [], error: result.error };
+      const pageRows = result.data ?? [];
+      rows.push(...pageRows);
+      if (pageRows.length < PAGE_SIZE) break;
+    }
   }
   return { data: rows, error: null };
 }

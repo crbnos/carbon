@@ -17,6 +17,7 @@ import {
   missingBomColumnsMessage,
   parseBomTree,
   parseProperties,
+  releaseBomKey,
   withoutProperties
 } from "@carbon/ee";
 import type { StoredReleasePlan } from "@carbon/ee/onshape";
@@ -189,7 +190,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
   const methodByItemId = methods.byItemId;
-  const refusedElementIds = new Set(
+  const refusedBomKeys = new Set(
     modelItems
       .filter((item) => item.elementType === 1)
       .filter((item) =>
@@ -200,17 +201,19 @@ export async function action({ request }: ActionFunctionArgs) {
             methodByItemId.get(row.id)?.status === "Active"
         )
       )
-      .map((item) => item.elementId)
+      .map(releaseBomKey)
   );
 
   // BOMs are read sequentially: parallel bursts hit Onshape rate limits. Null
   // lines (a failed read) tell the apply to leave the method alone; an empty
-  // array is an empty BOM.
+  // array is an empty BOM. Keyed by `releaseBomKey`: two configurations of one
+  // element have two BOMs.
   const bomLinesByElementId: Record<string, OnshapeBomNode[] | null> = {};
   for (const item of modelItems) {
     if (item.elementType !== 1) continue;
-    if (refusedElementIds.has(item.elementId)) {
-      bomLinesByElementId[item.elementId] = null;
+    const bomKey = releaseBomKey(item);
+    if (refusedBomKeys.has(bomKey)) {
+      bomLinesByElementId[bomKey] = null;
       continue;
     }
     try {
@@ -220,11 +223,12 @@ export async function action({ request }: ActionFunctionArgs) {
           wvm: OnshapeWVMType.VERSION,
           wvmId: item.versionId
         },
-        item.elementId
+        item.elementId,
+        item.configuration ?? null
       );
       const { lines, missingColumns } = parseBomTree(bom);
       if (missingColumns.length > 0) {
-        bomLinesByElementId[item.elementId] = null;
+        bomLinesByElementId[bomKey] = null;
         warnings.push(
           `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(
             missingColumns
@@ -232,9 +236,9 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         continue;
       }
-      bomLinesByElementId[item.elementId] = lines;
+      bomLinesByElementId[bomKey] = lines;
     } catch (error) {
-      bomLinesByElementId[item.elementId] = null;
+      bomLinesByElementId[bomKey] = null;
       warnings.push(
         `${item.partNumber} Rev ${item.revision}: ${
           onshapeFailure(error, "bom").body.error
@@ -363,17 +367,25 @@ export async function action({ request }: ActionFunctionArgs) {
   // A release pushed from a second document adds to the first push's notice.
   const openNotice = built.changeNotice
     ? await findOpenReleaseNotice(client, companyId, built.releaseId)
-    : null;
-  const plan = openNotice
-    ? { ...built, existingChangeNotice: openNotice.changeNoticeId }
+    : { data: null, error: null };
+  if (openNotice.error !== null) {
+    return data(
+      {
+        error: `${openNotice.error}, so it can't tell which change notice to use. Try again.`
+      },
+      { status: 500 }
+    );
+  }
+  const plan = openNotice.data
+    ? { ...built, existingChangeNotice: openNotice.data.changeNoticeId }
     : built;
 
   // Only the stored copy carries the BOM lines the apply walks, minus cells.
   const stored: StoredReleasePlan = {
     ...plan,
     bomLinesByElementId: Object.fromEntries(
-      Object.entries(bomLinesByElementId).map(([elementId, lines]) => [
-        elementId,
+      Object.entries(bomLinesByElementId).map(([bomKey, lines]) => [
+        bomKey,
         lines ? withoutProperties(lines) : null
       ])
     )

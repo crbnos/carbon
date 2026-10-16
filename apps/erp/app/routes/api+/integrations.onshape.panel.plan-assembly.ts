@@ -29,12 +29,14 @@ import {
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
-  selectInBatches
+  selectInBatches,
+  withRefusedMethods
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { loadMethodWriteRefusals } from "~/modules/settings/onshape-draft-method.server";
 
 export const config = {
   runtime: "nodejs"
@@ -177,7 +179,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode, sourcingType, mpn"
+        "id, readableId, revision, revisionStatus, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode, sourcingType, mpn"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -190,6 +192,9 @@ export async function action({ request }: ActionFunctionArgs) {
     ...row,
     revision: row.revision ?? "0"
   }));
+  const revisionStatusByItemId = new Map(
+    existing.data.map((row) => [row.id, row.revisionStatus])
+  );
 
   // Every revision row of a parent is included so the ownership read covers
   // whichever row the builder pins.
@@ -336,7 +341,19 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const plan = buildAssemblyPlan({
+  // The review lists a BOM the push will not write: a change notice's Draft, or
+  // a locked released revision. Apply checks again.
+  const refusals = await loadMethodWriteRefusals(
+    client,
+    companyId,
+    [...methodByItemId.entries()].map(([itemId, method]) => ({
+      itemId,
+      method,
+      revisionStatus: revisionStatusByItemId.get(itemId)
+    }))
+  );
+
+  const built = buildAssemblyPlan({
     documentId,
     wv,
     wvId,
@@ -363,6 +380,7 @@ export async function action({ request }: ActionFunctionArgs) {
       elementMetadata !== null ? parseProperties(elementMetadata) : null,
     released
   });
+  const plan = withRefusedMethods(built, refusals);
 
   // The apply walks the stored BOM structure; the property cells are dropped.
   const stored: StoredAssemblyPlan = {

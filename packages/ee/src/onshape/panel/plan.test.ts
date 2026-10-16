@@ -27,7 +27,8 @@ import {
   planExistingItem,
   proposeItem,
   proposeMappedItem,
-  reconcileMethodForReplenishment
+  reconcileMethodForReplenishment,
+  withRefusedMethods
 } from "./plan";
 import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
 import type { PlanItemField, PropertyMapEntry } from "./properties";
@@ -495,6 +496,44 @@ describe("buildAssemblyPlan", () => {
       expect(method?.status).toBe("active");
       expect(method?.reusedDraftVersion).toBeUndefined();
       expect(method?.replaces).toEqual([{ readableId: "OLD-1", quantity: 1 }]);
+    });
+
+    it("takes a refused method out and lists it with its reason", () => {
+      const plan = withRefusedMethods(
+        build(),
+        new Map([["root", "its make method is a Draft on change notice CN-1."]])
+      );
+      expect(plan.methods).toEqual([]);
+      expect(plan.skipped).toContain(
+        "WB-100: its make method is a Draft on change notice CN-1."
+      );
+    });
+
+    it("does not refuse an Active method the push leaves unchanged", () => {
+      const built = buildAssemblyPlan({
+        documentId: "d",
+        wv: "w",
+        wvId: "w1",
+        elementId: "e",
+        root: {
+          partNumber: "WB-100",
+          name: "Workbench",
+          description: null,
+          revision: null
+        },
+        nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
+        items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
+        methodByItemId: new Map([["root", { id: "active", status: "Active" }]]),
+        mappedLinesByMethodId: new Map([
+          ["active", [{ readableId: "TOP-001", quantity: 1 }]]
+        ]),
+        manualLinesByMethodId: new Map(),
+        options
+      });
+      expect(built.methods[0]?.unchanged).toBe(true);
+      expect(withRefusedMethods(built, new Map([["root", "released"]]))).toBe(
+        built
+      );
     });
 
     it("counts the reused Draft's lines and names its version", () => {
@@ -2037,6 +2076,18 @@ describe("planExistingItem — modes", () => {
       defaultMethodType: "Purchase to Order"
     });
     expect(planned.mappedFieldProblems).toBeUndefined();
+  });
+
+  it("moves Make to Order off an every-push Buy and Make, so apply accepts the pair", () => {
+    // Make / Make to Order item; Onshape maps Replenishment to Buy and Make.
+    const planned = plan([itemField("replenishmentSystem", "Buy and Make")]);
+    expect(planned.target).toMatchObject({
+      replenishmentSystem: "Buy and Make",
+      defaultMethodType: "Pull from Inventory"
+    });
+    expect(planned.mappedFieldProblems).toBeUndefined();
+    const applied = mergeExistingItemEdits(current, null, planned.target);
+    expect(applied.ok).toBe(true);
   });
 
   it("lists only the mapped values a new item takes", () => {

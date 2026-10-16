@@ -25,7 +25,8 @@ import {
   mergeEditsForCreates,
   pickBomChildRow,
   pickRevisionBase,
-  proposeItem
+  proposeItem,
+  releaseBomKey
 } from "@carbon/ee";
 import type {
   ReleaseExportSelection,
@@ -55,6 +56,7 @@ import {
   updateDefaultRevision,
   upsertPart
 } from "~/modules/items";
+import { requireChangeNoticeEditable } from "~/modules/items/items.server";
 import {
   applyExistingItemFields,
   applyItemFieldWrites,
@@ -422,7 +424,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (
       decision.kind !== "reuse" &&
       decision.item.elementType === 1 &&
-      plan.bomLinesByElementId[decision.item.elementId] === null
+      plan.bomLinesByElementId[releaseBomKey(decision.item)] === null
     ) {
       summary.errors.push(
         `${decision.item.partNumber} Rev ${decision.item.revision}: the BOM was not read at review — review and push again`
@@ -433,7 +435,7 @@ export async function action({ request }: ActionFunctionArgs) {
     (decision) =>
       decision.kind === "reuse" ||
       decision.item.elementType !== 1 ||
-      plan.bomLinesByElementId[decision.item.elementId] !== null
+      plan.bomLinesByElementId[releaseBomKey(decision.item)] !== null
   );
   decisions.length = 0;
   decisions.push(...applicable);
@@ -538,6 +540,87 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // A reused revision held by a change notice whose engineering content is
+  // locked (Implementation onward, or awaiting approval) takes no writes: not
+  // its fields, not its BOM. A method's changeOrderId is cleared at release, so
+  // a set one means a notice holds the item now.
+  const lockedByItemId = new Map<string, string>();
+  const reusedItemIds = decisions.flatMap((decision) =>
+    decision.kind === "reuse" ? [decision.row.id] : []
+  );
+  if (reusedItemIds.length > 0) {
+    const held = await selectInBatches(reusedItemIds, (batch) =>
+      client
+        .from("makeMethod")
+        .select("itemId, changeOrderId, changeOrder(changeOrderId)")
+        .eq("companyId", companyId)
+        .in("itemId", batch)
+        .not("changeOrderId", "is", null)
+    );
+    if (held.error) {
+      return data(
+        {
+          error: `Couldn't check the change notices that hold the existing revisions (${held.error.message}); nothing was written. Try again.`
+        },
+        { status: 500 }
+      );
+    }
+    const noticeIds = [
+      ...new Set(
+        held.data.flatMap((method) =>
+          method.changeOrderId ? [method.changeOrderId] : []
+        )
+      )
+    ];
+    // One check per notice; a release's revisions share one or two.
+    const lockByNoticeId = new Map(
+      await Promise.all(
+        noticeIds.map(
+          async (changeNoticeId) =>
+            [
+              changeNoticeId,
+              (
+                await requireChangeNoticeEditable(client, {
+                  changeNoticeId,
+                  companyId,
+                  scope: "engineering"
+                })
+              )?.error.message ?? null
+            ] as const
+        )
+      )
+    );
+    for (const method of held.data) {
+      const lock = method.changeOrderId
+        ? lockByNoticeId.get(method.changeOrderId)
+        : null;
+      if (!lock || lockedByItemId.has(method.itemId)) continue;
+      const notice = method.changeOrder?.changeOrderId;
+      lockedByItemId.set(
+        method.itemId,
+        notice ? `change notice ${notice}: ${lock}` : lock
+      );
+    }
+  }
+
+  // The notice exists before the first item write, so each item is staged as it
+  // is written. A second document of the same release reuses the open notice.
+  // Read before the take: a failed read must not open a second notice.
+  const needsNotice =
+    (createChangeNoticeChoice ?? true) &&
+    decisions.some((decision) => decision.kind !== "reuse");
+  const openNotice = needsNotice
+    ? await findOpenReleaseNotice(client, companyId, plan.releaseId)
+    : { data: null, error: null };
+  if (openNotice.error !== null) {
+    return data(
+      {
+        error: `${openNotice.error}, so it can't tell which change notice to add to; nothing was written. Try again.`
+      },
+      { status: 500 }
+    );
+  }
+
   // Taken after the reads the writes depend on, so a failed read keeps the review;
   // one-shot, so a concurrent apply of the same review finds nothing.
   if (!(await takePanelPlan(planId, { companyId, userId }))) {
@@ -547,25 +630,17 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // The notice exists before the first item write, so each item is staged as it
-  // is written. A second document of the same release reuses the open notice.
   let changeNotice: { id: string; changeNoticeId: string } | null = null;
   let noticeReused = false;
   let noticeSortOrder = 0;
-  const needsNotice =
-    (createChangeNoticeChoice ?? true) &&
-    decisions.some((decision) => decision.kind !== "reuse");
-  const openNotice = needsNotice
-    ? await findOpenReleaseNotice(client, companyId, plan.releaseId)
-    : null;
-  if (openNotice) {
+  if (openNotice.data) {
     changeNotice = {
-      id: openNotice.id,
-      changeNoticeId: openNotice.changeNoticeId
+      id: openNotice.data.id,
+      changeNoticeId: openNotice.data.changeNoticeId
     };
     noticeReused = true;
-    noticeSortOrder = openNotice.affectedCount;
-    summary.changeNotice = openNotice.changeNoticeId;
+    noticeSortOrder = openNotice.data.affectedCount;
+    summary.changeNotice = openNotice.data.changeNoticeId;
   } else if (needsNotice) {
     const description = changeNoticeDescriptionJson(
       changeNoticeValues.description
@@ -629,6 +704,15 @@ export async function action({ request }: ActionFunctionArgs) {
     if (decision.kind === "reuse") {
       summary.reused += 1;
       revisionItemByPartNumber.set(item.partNumber, decision.row);
+      const lock = lockedByItemId.get(decision.row.id);
+      if (lock) {
+        // Also keeps the BOM-child pass from writing its fields.
+        fieldEditsApplied.add(item.partNumber);
+        summary.skipped.push(
+          `${item.partNumber} Rev ${item.revision}: ${lock} Its fields and BOM were left as they are.`
+        );
+        continue;
+      }
       await applyItemFieldEdit(item.partNumber, decision.row);
       continue;
     }
@@ -802,10 +886,12 @@ export async function action({ request }: ActionFunctionArgs) {
       );
       continue;
     }
+    // Reported with its fields above.
+    if (lockedByItemId.has(target.id)) continue;
 
     // null: the review could not read the BOM, so the method is left alone. An
     // empty BOM is [] and is applied.
-    const lines = plan.bomLinesByElementId[item.elementId];
+    const lines = plan.bomLinesByElementId[releaseBomKey(item)];
     if (!lines) {
       summary.skipped.push(
         `${label}: the BOM was not read at review — review and push again`
@@ -831,6 +917,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const childItemByPartNumber = new Map<string, ItemRow>();
   const childFailed = new Set<string>();
+  const releaseItemByPartNumber = new Map(
+    modelItems.map((item) => [item.partNumber, item])
+  );
   for (const target of bomTargets) {
     for (const child of target.lines) {
       if (!child.partNumber) continue;
@@ -838,6 +927,16 @@ export async function action({ request }: ActionFunctionArgs) {
         childItemByPartNumber.has(child.partNumber) ||
         childFailed.has(child.partNumber)
       ) {
+        continue;
+      }
+      // A release item that was held back or failed (its error is reported
+      // above) is neither created off the notice nor swapped for another revision.
+      const releaseItem = releaseItemByPartNumber.get(child.partNumber);
+      if (releaseItem && !revisionItemByPartNumber.has(child.partNumber)) {
+        summary.errors.push(
+          `${target.label} → ${child.partNumber}: line not written, because ${child.partNumber} Rev ${releaseItem.revision} was not pushed`
+        );
+        childFailed.add(child.partNumber);
         continue;
       }
       const existingChild =

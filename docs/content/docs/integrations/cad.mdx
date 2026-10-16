@@ -79,9 +79,9 @@ the same for cloud and self-hosted Carbon.
 
   Carbon reads the parameters by the names on the left of each `=`; the `{$…}`
   placeholders are substituted by Onshape. Onshape appends `server`, `companyId`,
-  `userId`, `locale` and `clientId` on its own; do not add them. The panel trusts
-  messages only from the Onshape origin in `server`, which is why it refuses to work
-  when opened outside Onshape.
+  `userId`, `locale` and `clientId` on its own; do not add them. The panel tells
+  Onshape it is ready at the `server` origin. Without `server` it shows "Open this
+  panel from Onshape".
   </Step>
   <Step>
   ### Subscribe the users who should see the panel
@@ -234,10 +234,9 @@ nothing is written yet:
   ones it keeps.
 - for a release, every revision it creates and the change notice it uses.
 
-Untick a part, or a BOM item that would be created, to leave it out. **Push _n_ to
-Carbon** applies the review as shown; **Cancel** writes nothing. A review is held for
-15 minutes; after that, **Review again**. A choice made in the review is written to
-Carbon only; Onshape keeps its values.
+**Push _n_ to Carbon** applies the review as shown; **Cancel** writes nothing. A
+review is held for 15 minutes; after that, **Review again**. A choice made in the
+review is written to Carbon only; Onshape keeps its values.
 
 ### Push a part
 

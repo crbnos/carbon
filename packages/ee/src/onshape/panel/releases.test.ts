@@ -7,6 +7,7 @@ import type { ReleaseRevisionLike } from "./releases";
 import {
   drawingModels,
   groupRevisionsIntoReleases,
+  releaseBomKey,
   releaseDrawingFileName,
   releaseExportSelection,
   resolveReleaseStates
@@ -213,5 +214,36 @@ describe("drawingModels", () => {
         pkgItem("prt", "drw", 0, "PAD-005", null)
       ])
     ).toEqual(new Map([["e-drw", { partNumber: "PAD-005", revision: null }]]));
+  });
+});
+
+describe("releaseBomKey", () => {
+  it("keys the default configuration by the element id alone", () => {
+    expect(releaseBomKey({ elementId: "e-asm" })).toBe("e-asm");
+    expect(releaseBomKey({ elementId: "e-asm", configuration: null })).toBe(
+      "e-asm"
+    );
+    expect(
+      releaseBomKey({ elementId: "e-asm", configuration: " default " })
+    ).toBe("e-asm");
+  });
+
+  it("gives two configurations of one element different keys", () => {
+    const long = releaseBomKey({
+      elementId: "e-asm",
+      configuration: "Length=100+mm"
+    });
+    const short = releaseBomKey({
+      elementId: "e-asm",
+      configuration: "Length=50+mm"
+    });
+    expect(long).toBe("e-asm:Length=100+mm");
+    expect(short).not.toBe(long);
+  });
+
+  it("matches an encoded and a decoded configuration", () => {
+    expect(
+      releaseBomKey({ elementId: "e-asm", configuration: "Size%3DLarge" })
+    ).toBe(releaseBomKey({ elementId: "e-asm", configuration: "Size=Large" }));
   });
 });
