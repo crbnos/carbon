@@ -15,12 +15,14 @@ in the migrations — **newest wins**; core tables created in
 
 ## Code (real paths)
 
-- `quality.service.ts` — issue/task/association/reviewer service functions.
+- `quality.service.ts` — the building blocks: issue/task/association/reviewer
+  queries and writes, `closeIssue`, the disposition writers
+  (`dispositionInspection`) and the inspection engine bindings
+  (`@carbon/database/quality`).
 - `quality.models.ts` — zod validators + status/enum const arrays.
-- `quality.server.ts` — the operations (`defineServiceFn`, listed in
-  `index.server.ts` as `quality.issue.*`, `quality.inspection.reject`, …) and
-  the inspection engine bindings. `closeIssue` and the disposition writers are in
-  `quality-disposition.server.ts`.
+- `quality.server.ts` — the operations, one `defineServiceFn` const each
+  (`createIssue`, `setIssueStatus`, `completeIssue`, `rejectInspection`, …).
+  A route calls them as `api.quality.setIssueStatus(input)`.
 - `ui/Issue/` — `IssueHeader`, `IssueContent`, `IssueForm`, `IssueProperties`,
   `IssueStatus`, `DispositionStatus`, `IssueTask`, `ActionTasksList`,
   `ReviewersList`, `AssociatedItemsList`, `IssueAssociations`, `IssuesTable`
@@ -54,8 +56,8 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
   an inline-editable quantity + disposition `Select` (no entity chips; "Move entities"
   stays gated on `links.length > 0`). The quantity saves through `item+/update.tsx`
-  (`field: "quantity"`) → `quality.issue.item.updateField` → `updateIssueItemQuantity`
-  (`quality-disposition.server.ts`),
+  (`field: "quantity"`) → `updateIssueItemField` → `updateIssueItemQuantity`
+  (`quality.service.ts`),
   which refuses rows with entity links (their quantity is the link sum) and any NCR with
   a `nonConformanceInspection` link (the reject already wrote off the lot, and
   `closeIssue` restores `row.quantity` on Use As Is / Rework). The write is a
@@ -98,8 +100,8 @@ in the migrations — **newest wins**; core tables created in
 
 `IssueHeader.tsx` (all gated by `permissions.can("update","quality")`):
 - **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`
-  → `quality.issue.setStatus`, which takes only Registered / In Progress.
-- **Complete** (when `In Progress`) → `path.to.closeIssue(id)` → `quality.issue.close`
+  → `setIssueStatus`, which takes only Registered / In Progress.
+- **Complete** (when `In Progress`) → `path.to.closeIssue(id)` → `completeIssue`
   (posts the dispositions, sets `Closed`, clears assignee, sets `closeDate`).
 - **Reopen** (when `In Progress`/`Closed`, not locked) → `issueStatus` `{status:"Registered"}`.
 - **Delete Issue** → `path.to.deleteIssue(id)`.
@@ -109,7 +111,7 @@ the issue is still `Registered` (`IssueTask.tsx`, one-shot).
 
 Tasks (`IssueTask.tsx` `statusActions`): **Start** (`Pending`→`In Progress`),
 **Complete** (`In Progress`→`Completed`), **Reopen** (`Completed`/`Skipped`→`Pending`).
-Task status writes go to `path.to.issueTaskStatus` → `quality.issue.task.setStatus`;
+Task status writes go to `path.to.issueTaskStatus` → `setIssueTaskStatus`;
 `updateIssueTaskStatus` sets `completedDate` on `Completed`.
 
 ## Required actions & system action types

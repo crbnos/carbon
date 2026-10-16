@@ -110,7 +110,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { thingValidator } from "~/modules/things";
+import { thingValidator } from "~/modules/things/things.models";
 import { path } from "~/utils/path";
 
 type ThingFormProps = {
@@ -205,7 +205,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { thingValidator, upsertThing } from "~/modules/things";
+import { thingValidator } from "~/modules/things/things.models";
+import { upsertThing } from "~/modules/things/things.service";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -265,7 +266,13 @@ export async function action({ request }: ActionFunctionArgs) {
 | Success (page) | `throw redirect(...)` - NOT `return redirect()` (some modal branches `return redirect(...)` / `return data(row, { status: 201 })`) |
 
 Actions return **plain objects** or `data(value, init)`. Do NOT use `json(...)` -
-that is the old Remix helper and is not used here. Edit actions live in the
+that is the old Remix helper and is not used here.
+
+A module that has its operations as service functions calls one instead of a
+building block: `const api = await carbon(request)`, then
+`api.things.upsertThing(input)`, answered with the result (a fetcher form) or
+`respond(request, result).redirect(to, { message })` (a page form). See
+`module-files.md`. Edit actions live in the
 `${id}` route and use `update: "module"` permission instead of `create`.
 
 ## 4. Route Default Export
@@ -381,7 +388,7 @@ const fetcher = useAction<typeof action>({
 ## Checklist
 
 - [ ] Zod validator in `{module}.models.ts` (`import { z } from "zod"` + `zfd`)
-- [ ] Validator exported from the module `index.ts` barrel
+- [ ] Validator imported from `~/modules/{module}/{module}.models` (modules have no barrel)
 - [ ] Form component with `ValidatedForm`, raw schema in `validator` prop
 - [ ] Props typed with `z.infer<typeof validator>`; `<Hidden name="id" />` present
 - [ ] Route action: `assertIsPost` → `requirePermissions` →

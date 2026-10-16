@@ -3699,3 +3699,43 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## A text replace on a function name also renames its prefix siblings
+
+**Context:** The service-function migration (2026-10-16) renamed thousands of call sites with scripts.
+
+**Problem:** A string or regex replace of `getJob` also matched `getJobs`, `getJobOperation` and every other name that starts with it, and matched the name inside strings and comments. One pass also left a stray suffix on a public name (`createSupplierInteractionLineDocumentUploadUrlTool`), which renamed an MCP tool without anyone asking for it.
+
+**Rule:** Rename code through ts-morph references (`findReferencesAsNodes`, `rename`), never through text. After a mass rename, diff the published tool names against main (`tool-manifest.digest.json`) and explain every added and removed name.
+
+**Applies to:** codemods over `apps/erp/app/modules/**` and any script that renames exports.
+
+## A mock of a function in the same file does not intercept
+
+**Context:** The migration moved callers into the same module file as the functions they call (2026-10-16).
+
+**Problem:** `vi.mock` replaces a module's exports for importers in other files. A call from one function to another inside the same file goes to the real function, so tests that mocked the callee started calling the database, or passed while testing nothing.
+
+**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing-no-mock-theater.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
+
+**Applies to:** tests under `apps/erp/test/` and `apps/erp/app/modules/**`.
+
+## ts-morph re-resolves the whole program after every edit
+
+**Context:** The barrel-removal codemod (2026-10-16) resolved each import's target, edited it, then resolved the next one.
+
+**Problem:** Each edit invalidates the type checker, so the next symbol lookup rebuilt the program. The script took many minutes for what should take seconds.
+
+**Rule:** In a ts-morph codemod, resolve everything first (symbols, targets, references) into plain data, then make all the edits, then save once.
+
+**Applies to:** scratch codemods using ts-morph over the ERP project.
+
+## zsh does not split an unquoted variable into words
+
+**Context:** Running Biome on a list of changed files held in a shell variable (2026-10-16).
+
+**Problem:** In zsh, `biome check $files` passes the whole list as ONE argument. Biome reported "File name too long" and "No files were processed", which reads as a Biome bug, not a shell one.
+
+**Rule:** Pass file lists through `xargs` (`git diff --name-only | xargs biome check`) or use zsh's `${=files}`. Don't trust a tool error about a path until you have checked how the shell passed it.
+
+**Applies to:** every Bash call in this environment (the login shell is zsh).

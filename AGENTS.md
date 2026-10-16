@@ -33,10 +33,10 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never expose cross-tenant data or skip `companyId` scoping.
 - Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
 - Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (inside a server function when apps, the API or jobs share the write), or an RPC when it must also be callable through PostgREST.
-- Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — service files are re-exported through the module barrel that client components import, so they are bundled for the browser. Build the client in a `.server` file (`getDatabaseClient()` from `~/services/database.server`) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
+- Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — a building block takes `db: Kysely<KyselyDatabase>` as an argument; inside a service function that handle is `ctx.asSystem.pg`. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never name a field, column, enum or form label "Kind" (or `*Kind`). Name what the choice decides — `revenueType` (One-time / Recurring), `billingFrequency`, `entryType`. "Kind" tells the reader nothing (see `.claude/rules/conventions-database.md`).
-- Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
+- Never scatter module files — one `{module}.server.ts` (its `defineServiceFn` operations), one `{module}.service.ts` (the building blocks) and one `{module}.models.ts` per module, and no `index.ts` barrel (see `.claude/rules/module-files.md`).
 - Never rebuild the database to test changes — wait for the user.
 - Never commit credentials, tokens, or private keys.
 
@@ -84,7 +84,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | RLS policies and RLS helpers (authz manifest) | `.claude/rules/authz-manifest.md` |
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
-| Writing service functions | `.claude/rules/conventions-services.md` |
+| Writing service functions | `.claude/rules/conventions-services.md` + `.claude/rules/module-files.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
@@ -226,13 +226,16 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ```
 apps/erp/app/modules/{module}/
+├── {module}.server.ts    # defineServiceFn operations: the module's API
+├── {module}.service.ts   # building blocks the operations call (server-only)
 ├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # Supabase/Kysely data operations
-├── {module}.server.ts    # server-only helpers (optional)
+├── {module}.utils.ts     # browser-safe helpers (optional)
 ├── types.ts              # shared types (optional)
-├── index.ts              # barrel re-export
 └── ui/                   # feature components
 ```
+
+No barrel: import from the file that defines the thing. Routes call operations
+through `carbon(request)` (`@carbon/api/carbon.server`). See `.claude/rules/module-files.md`.
 
 MES is lighter: services in `apps/mes/app/services/`, components in `apps/mes/app/components/`.
 

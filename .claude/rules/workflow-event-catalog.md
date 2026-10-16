@@ -145,12 +145,12 @@ inside a function designed never to throw.
 
 Three rules the raise sites follow:
 
-- **Raise in the service function, not the route, wherever a service function exists.** Every
-  `apps/erp/app/modules/*/*.service.ts` export is also callable over `POST /api/mcp` through
-  `apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts` (enforced by the Carbon API
-dispatch and the `gate()` middleware). A
-  route-level raise silently misses every MCP caller. After changing a service signature, run
-  `pnpm run generate:mcp` — the executor maps arguments by declared parameter name.
+- **Raise in the service function, not the route, wherever a service function exists.** Each
+  operation is one `defineServiceFn` const in `apps/erp/app/modules/<module>/<module>.server.ts`.
+  The route, the HTTP API, MCP and workflows all call that same const, so raise in it or in a
+  building block it calls (`<module>.service.ts`). A route-level raise silently misses every
+  API, MCP and workflow caller. After changing a published function's input, run
+  `pnpm run generate:mcp` to regenerate the tool metadata.
 - **Raise after the write commits, and only if it did.** For the four posting moments the write
   happens inside a server function (`@carbon/server-functions`) that cannot import app code, so the
   route raises once the call returns cleanly. Place the raise **below** the route's rollback `catch`, not inside the

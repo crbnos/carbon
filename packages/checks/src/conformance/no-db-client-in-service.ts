@@ -6,28 +6,20 @@ import type { ConformanceCheck, Violation } from "../check";
 
 /**
  * A `*.service.ts` file must never CONSTRUCT a database connection, pool, or
- * Kysely client. Service files are re-exported through the module barrel that
- * client components value-import (see each module's `index.ts` barrel), so
- * anything a service statically pulls in is bundled for the BROWSER. A `pg`
- * pool / Kysely driver constructed there either leaks server-only code into the
- * client bundle or forces a dynamic-`import()` workaround to hide it — both are
- * a smell for the same missing seam.
- *
- * The seam: the Kysely handle is built ONCE in a `.server` file
- * (`getDatabaseClient()` in `~/services/database.server`), the route action
- * imports it, and it is PASSED INTO the service as a
- * `db: Kysely<KyselyDatabase>` argument — the same convention the multi-row
- * transaction helpers already follow (see `.claude/rules/database-patterns.md`
- * and `conventions-services.md`).
+ * Kysely client. Its functions are building blocks that a service function
+ * calls, and they take the handle they run on as a
+ * `db: Kysely<KyselyDatabase>` argument: `ctx.asSystem.pg`, or the `tx` of an
+ * open `ctx.transaction`. A client built inside the service writes outside the
+ * caller's transaction, so a refusal that should roll the write back cannot.
  *
  * We flag the CONSTRUCTION primitives, not imports: `import type { Kysely,
  * KyselyDatabase }` and `import { sql } from "kysely"` are ordinary, allowed
- * service-layer imports and must never trip this. `.server.ts` files (the
- * sanctioned home for a client) and route actions (which legitimately call
- * `getDatabaseClient()`) are out of scope — only `*.service.ts` is scanned.
+ * service-layer imports and must never trip this. `.server.ts` files and route
+ * actions (which legitimately call `getDatabaseClient()`) are out of scope —
+ * only `*.service.ts` is scanned.
  */
 const MESSAGE =
-  "A *.service.ts must not construct a DB pool/Kysely client — this file is bundled for the browser via the module barrel. Build it in a .server file (getDatabaseClient in ~/services/database.server) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action.";
+  "A *.service.ts must not construct a DB pool/Kysely client — take a `db: Kysely<KyselyDatabase>` argument and let the service function pass ctx.asSystem.pg (or its transaction), so the write joins the caller's transaction.";
 
 const BANNED = [
   {

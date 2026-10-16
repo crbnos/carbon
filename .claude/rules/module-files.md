@@ -83,7 +83,7 @@ The ERP hands `carbon()` its router and caller context once
 ```ts
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(jobValidator).request(args, { params: ["jobId"] });
-  if (input.invalid) return input.invalid;
+  if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.production.cancelJob({ jobId: input.params.jobId });
   return result; // a fetcher form: the component's useAction toasts it

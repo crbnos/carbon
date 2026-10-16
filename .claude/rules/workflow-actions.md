@@ -72,9 +72,10 @@ that disagrees with a present foreign key is a build error.
 ## The dispatcher seam
 
 `packages/jobs` cannot import `~/modules/*` — the dependency only runs app → package.
-But the four `*.create` actions must go through the ERP's own `upsert*` service
-functions, so sequence numbers, defaults and required-field logic are the ones the
-app already uses.
+But the four `*.create` actions must go through the ERP's own service functions
+(`production_insertJob`, `quality_insertIssue`, `purchasing_insertPurchaseOrder`,
+`sales_insertSalesOrder`), so sequence numbers, defaults and required-field logic are
+the ones the app already uses.
 
 So `packages/jobs/src/workflows/actions/dispatcher.ts` holds one module-level
 slot:
@@ -126,8 +127,8 @@ and `create.ts` handles both that and the legacy envelope shape: it checks
 `envelope.error` when the payload looks like one, and `idIn` walks a list if one
 came back. No id means `"The record was created but could not be read back."`,
 never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
-the dispatch layer (`enrichWithAuthContext` in
-`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`).
+the service function itself (`stamp`, `@carbon/api/service-tools.server`), from
+its context, never from the input.
 
 ## `createWorkflowServices` — the one port
 

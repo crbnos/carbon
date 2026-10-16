@@ -192,7 +192,8 @@ every write inside it, and rolls everything back on any error.
 
 ### Service function example
 
-`Kysely<KyselyDatabase>` is the first arg by convention. The route passes `getDatabaseClient()`.
+`Kysely<KyselyDatabase>` is the first arg by convention. A service function passes
+`ctx.asSystem.pg`; a route that calls the building block directly passes `getDatabaseClient()`.
 Real precedents: `items.service.ts → upsertPickMethodWithShelfLife`, and the drag-sort
 reorders (`update<Entity>LineOrder` in purchasing/sales/invoicing,
 `updateAssemblyInstructionStep{,Material}Order`, `updateChangeNoticeActionOrder`), which are
@@ -227,18 +228,20 @@ AND t."companyId" = $ AND t.<parent> = $ RETURNING t.id` inside a transaction an
 back) when fewer rows come back than were sent — an id from another company, another document,
 or a missing row aborts the whole reorder. A row one hop from the document uses
 `parent: { column, via: { table, column, id } }` (assembly step materials → step → instruction).
-It is deliberately NOT in a `*.service.ts`, so the generic "reorder any table" function never
-becomes an API/MCP tool. Its compiled SQL is pinned by `shared/sort-order.test.ts`.
+Only the per-table wrappers are published, each as a `defineServiceFn` const
+(`purchasing.server.ts → updatePurchaseOrderLineOrder`, tool
+`purchasing_updatePurchaseOrderLineOrder`). The generic "reorder any table" helper is never a
+tool. Its compiled SQL is pinned by `shared/sort-order.test.ts`.
 
-Keep `companyId`/`userId` as positional params named exactly that: the API dispatcher
-(`api+/v1+/lib/dispatch.server.ts`) fills them from the authenticated context, never the body.
-The parent document id is an ordinary payload param.
+The wrapper takes `companyId`/`userId` as positional params. The service function fills them
+from its context (`ctx.company.id`, `ctx.auditUserId`), never from the input. The parent
+document id is an ordinary input field.
 
 ### Route handler example
 
 ```typescript
 import { getDatabaseClient } from "~/services/database.server";
-import { updatePurchaseOrderLineOrder } from "~/modules/purchasing";
+import { updatePurchaseOrderLineOrder } from "~/modules/purchasing/purchasing.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, { update: "purchasing" });

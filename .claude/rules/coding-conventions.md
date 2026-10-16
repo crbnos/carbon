@@ -13,7 +13,7 @@ rules — this file does not repeat them:
 |-------|------|
 | DB / migrations / RLS / multi-tenancy | [conventions-database.md](conventions-database.md) |
 | ValidatedForm + zod validators + actions | [conventions-forms.md](conventions-forms.md) |
-| Service functions (`{module}.service.ts`) | [conventions-services.md](conventions-services.md) |
+| Service functions (`{module}.server.ts`, `{module}.service.ts`) | [conventions-services.md](conventions-services.md), [module-files.md](module-files.md) |
 | Components, animation, polish | [conventions-ui.md](conventions-ui.md) |
 
 ## Stack & Tooling
@@ -65,17 +65,17 @@ ERP feature code is organized by module under `apps/erp/app/modules/{module}/`:
 
 ```
 modules/{module}/
+├── {module}.server.ts    # defineServiceFn operations: the module's API
+├── {module}.service.ts   # building blocks the operations call (server-only)
 ├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # Supabase/Kysely data operations
-├── {module}.server.ts    # server-only helpers (optional)
+├── {module}.utils.ts     # browser-safe helpers (optional)
 ├── types.ts              # shared types (optional)
-├── index.ts              # barrel: re-exports models/service/types
 └── ui/                   # feature components
 ```
 
-`index.ts` is a barrel of `export * from "./..."` (see
-`apps/erp/app/modules/sales/index.ts`). Import from the module root
-(`~/modules/sales`), not deep files.
+There is no barrel. Import from the file that defines the thing
+(`~/modules/sales/sales.models`, never `~/modules/sales`). Full rules and the
+checks that enforce them: [module-files.md](module-files.md).
 
 **Folder names are kebab-case.** Multi-word directories use hyphens, not
 camelCase — `packages/ee/src/paperless-parts`, `packages/ee/src/rules` (not
@@ -86,9 +86,9 @@ as are the React component filenames inside them (`StorageRuleForm.tsx`). The
 `{module}.*.ts` service/model file prefixes mirror their folder name.
 
 **A feature is not automatically a module.** A module is a business domain, and
-it owns exactly one `{module}.models.ts` / `{module}.service.ts` pair. Sub-features
+it owns exactly one `{module}.server.ts` / `{module}.service.ts` / `{module}.models.ts` set. Sub-features
 live *inside* their domain module as a `ui/{Feature}/` folder plus functions in
-that one service/models file — e.g. storage rules live in `~/modules/inventory`
+those files — e.g. storage rules live in `~/modules/inventory`
 and sales rules in `~/modules/sales`, not in standalone `modules/storage-rules` /
 `modules/sales-rules` directories. Create a new module only for a genuinely new
 domain.
