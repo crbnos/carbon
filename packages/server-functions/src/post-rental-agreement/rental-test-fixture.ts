@@ -3,8 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // A live-database rental agreement for the rental tests: one Active agreement
-// that started 2026-09-01, billed monthly, with N serial fleet units on
-// Pending lines. September is invoiced, October is not.
+// billed monthly at 300, with N serial fleet units on Pending lines. Calendar
+// Month (the default) starts 2026-09-01: September is invoiced, October is
+// not. Monthly starts 2026-09-07: 7 Sep – 6 Oct is invoiced, 7 Oct – 6 Nov is
+// not.
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { sql } from "kysely";
@@ -16,6 +18,7 @@ const USER = "system";
 export async function rentalFixture(options?: {
   units?: number; // default 1
   billingTiming?: "Advance" | "Arrears"; // default "Advance"
+  billingCycle?: "Calendar Month" | "Monthly"; // default "Calendar Month"
 }): Promise<{
   db: Kysely<KyselyDatabase>;
   ctx: ServerFnContext;
@@ -33,6 +36,17 @@ export async function rentalFixture(options?: {
 }> {
   const units = options?.units ?? 1;
   const billingTiming = options?.billingTiming ?? "Advance";
+  const billingCycle = options?.billingCycle ?? "Calendar Month";
+  const periods =
+    billingCycle === "Monthly"
+      ? [
+          { start: "2026-09-07", end: "2026-10-06", days: 30 },
+          { start: "2026-10-07", end: "2026-11-06", days: 31 }
+        ]
+      : [
+          { start: "2026-09-01", end: "2026-09-30", days: 30 },
+          { start: "2026-10-01", end: "2026-10-31", days: 31 }
+        ];
 
   const db = await connectLocalTestDatabase();
   const prefix = `rentfx-${crypto
@@ -97,6 +111,12 @@ export async function rentalFixture(options?: {
     await trx
       .insertInto("sequence")
       .values([
+        {
+          table: "salesInvoice",
+          name: "Sales Invoice",
+          prefix: "INV-",
+          companyId
+        },
         { table: "shipment", name: "Shipment", prefix: "SHP-", companyId },
         { table: "receipt", name: "Receipt", prefix: "RCV-", companyId },
         { table: "fixedAsset", name: "Fixed Asset", prefix: "FA", companyId },
@@ -209,9 +229,9 @@ export async function rentalFixture(options?: {
         locationId,
         currencyCode: "USD",
         discountRate: 0,
-        startDate: "2026-09-01",
+        startDate: periods[0]!.start,
         endDate: null,
-        billingCycle: "Calendar Month",
+        billingCycle,
         billingTiming,
         status: "Active",
         companyId,
@@ -239,30 +259,19 @@ export async function rentalFixture(options?: {
     await trx
       .insertInto("rentalBillingPeriod")
       .values(
-        lineIds.flatMap((lineId) => [
-          {
+        lineIds.flatMap((lineId) =>
+          periods.map((period, i) => ({
             rentalAgreementLineId: lineId,
-            periodStart: "2026-09-01",
-            periodEnd: "2026-09-30",
-            days: 30,
+            periodStart: period.start,
+            periodEnd: period.end,
+            days: period.days,
             amount: 300,
-            dueOn: "2026-09-01",
-            status: "Invoiced" as const,
+            dueOn: period.start,
+            status: i === 0 ? ("Invoiced" as const) : ("Pending" as const),
             companyId,
             createdBy: USER
-          },
-          {
-            rentalAgreementLineId: lineId,
-            periodStart: "2026-10-01",
-            periodEnd: "2026-10-31",
-            days: 31,
-            amount: 300,
-            dueOn: "2026-10-01",
-            status: "Pending" as const,
-            companyId,
-            createdBy: USER
-          }
-        ])
+          }))
+        )
       )
       .execute();
   });

@@ -262,6 +262,21 @@ function monthlyPeriodsInTerm(startDate: string, endDate: string): number {
   return leaseMonthsThrough(startDate, endDate);
 }
 
+/** Whole months of a rental agreement's term, as its classification counts
+ *  them; null when it is open-ended. A Monthly cycle counts the months its
+ *  billing cuts (`monthlyPeriodsInTerm`); the others count calendar months
+ *  (`wholeMonthsInTerm`). The two differ only for a start on the 29th–31st. */
+export function rentalTermMonths(
+  cycle: RentalBillingCycle,
+  startDate: string,
+  endDate: string | null
+): number | null {
+  if (endDate === null) return null;
+  return cycle === "Monthly"
+    ? monthlyPeriodsInTerm(startDate, endDate)
+    : wholeMonthsInTerm(startDate, endDate);
+}
+
 export type LeasePaymentTerms = {
   /** Whole months of the term; null when the agreement is open-ended. */
   termMonths: number | null;
@@ -316,12 +331,7 @@ export function leasePaymentTerms(args: {
   decimals: number;
 }): LeasePaymentTerms {
   const { cycle, rateUnit, rate, startDate, endDate, decimals } = args;
-  const termMonths =
-    endDate === null
-      ? null
-      : cycle === "Monthly"
-        ? monthlyPeriodsInTerm(startDate, endDate)
-        : wholeMonthsInTerm(startDate, endDate);
+  const termMonths = rentalTermMonths(cycle, startDate, endDate);
 
   if (cycle === "Calendar Month" || cycle === "Monthly") {
     const payment =

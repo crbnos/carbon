@@ -5,6 +5,7 @@
 import { Checkbox, ChoiceCardGroup } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import {
   LuCalendarCheck,
   LuCalendarClock,
@@ -56,6 +57,10 @@ const RentalAgreementBilling = ({
     rentalAgreement.status !== "Draft" || !permissions.can("update", "sales");
   const billingCycle: BillingCycle =
     rentalAgreement.billingCycle ?? "Calendar Month";
+  // The Monthly alignment the user left behind by picking 28 Days, so picking
+  // Monthly again restores it rather than re-ticking the box.
+  const [monthlyCycle, setMonthlyCycle] =
+    useState<Exclude<BillingCycle, "28 Days">>();
 
   const onChange = (
     field: Parameters<typeof save>[0],
@@ -97,12 +102,14 @@ const RentalAgreementBilling = ({
             direction="row"
             label={t`Billing Cycle`}
             value={billingCycle === "28 Days" ? "28 Days" : "Monthly"}
-            onChange={(value) =>
-              onChange(
-                "billingCycle",
-                value === "Monthly" ? "Calendar Month" : value
-              )
-            }
+            onChange={(value) => {
+              if (value === "28 Days") {
+                if (billingCycle !== "28 Days") setMonthlyCycle(billingCycle);
+                onChange("billingCycle", value);
+              } else {
+                onChange("billingCycle", monthlyCycle ?? "Calendar Month");
+              }
+            }}
             options={[
               {
                 value: "Monthly",

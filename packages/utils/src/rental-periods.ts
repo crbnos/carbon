@@ -370,8 +370,10 @@ export function generateRentalBillingPeriods(args: {
       decimals
     });
 
-  // A period cut short (a mid-period end date) is followed by one that runs
-  // to the cycle's next boundary, not a whole cycle from its own start.
+  // Calendar Month and Monthly snap to the cycle's grid, so a period that
+  // starts mid-grid (a holdover after a mid-period end date) runs only to the
+  // next boundary. 28 Days has no grid: every period is 28 days from its own
+  // start.
   const naturalEnd = (from: string): string => {
     switch (cycle) {
       case "Calendar Month":
