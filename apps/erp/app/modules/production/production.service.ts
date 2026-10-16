@@ -4,7 +4,7 @@
 
 import { appendFileSync } from "node:fs";
 import { NotFoundError } from "@carbon/api/errors";
-import type { Permissions } from "@carbon/api/permissions";
+import type { PermissionRule } from "@carbon/api/permissions";
 import type {
   CarbonError,
   ServiceContext
@@ -3579,7 +3579,8 @@ async function assignJobSerialNumbers(
   const { error } = await invokePosting(
     { client, db, companyId: args.companyId, userId: args.userId },
     "assign-serial-numbers",
-    (ctx) => assignSerialNumbers(ctx, { jobId: args.jobId }),
+    { jobId: args.jobId },
+    assignSerialNumbers,
     { as: assignSerialNumbersPermission }
   );
   if (error) {
@@ -12609,7 +12610,7 @@ export const assignSerialNumbersInput = z.object({
  */
 export const assignSerialNumbersPermission = {
   update: "production"
-} satisfies Permissions;
+} satisfies PermissionRule<z.output<typeof assignSerialNumbersInput>>;
 
 export async function assignSerialNumbers(
   ctx: ServiceContext,
