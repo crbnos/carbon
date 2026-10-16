@@ -39,7 +39,6 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
 import {
   applyRate,
   datetime,
@@ -68,6 +67,7 @@ import {
 } from "~/modules/settings/settings.service";
 import {
   getLocationTimeZone,
+  invokePosting,
   isActiveCompanyEmployee,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
@@ -339,9 +339,12 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
       getUser(client, userId)
     ]);
 
-    const finalize = await serverFns
-      .system({ db: ctx.asSystem.pg, companyId, userId })
-      .invoke("finalize-purchasing-rfq", { rfqId });
+    const finalize = await invokePosting(
+      ctx,
+      "finalize-purchasing-rfq",
+      { rfqId },
+      service.finalizePurchasingRfq
+    );
     if (finalize.error) {
       return service.fromServerFn(
         ctx,
@@ -576,9 +579,12 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
     });
     if (link instanceof CarbonError) return link;
 
-    const finalize = await serverFns
-      .system({ db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId })
-      .invoke("finalize-supplier-quote", { supplierQuoteId });
+    const finalize = await invokePosting(
+      ctx,
+      "finalize-supplier-quote",
+      { supplierQuoteId },
+      service.finalizeSupplierQuote
+    );
     if (finalize.error) {
       return service.fromServerFn(
         ctx,

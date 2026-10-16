@@ -25,7 +25,6 @@ import {
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
 import { async, datetime, unchecked } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -38,6 +37,7 @@ import {
 } from "~/modules/purchasing/purchasing.service";
 import {
   getLocationTimeZone,
+  invokePosting,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
@@ -1270,9 +1270,10 @@ export const rejectInspection = defineServiceFn({
 
     const writeOff = rejected.data?.writeOff;
     if (writeOff) {
-      const post = await serverFns
-        .as({ client, db: ctx.asSystem.pg, companyId, userId })
-        .invoke("post-nonconformance", {
+      const post = await invokePosting(
+        ctx,
+        "post-nonconformance",
+        {
           documentType: "Inbound Inspection",
           documentId: id,
           description: "Inbound inspection lot rejected",
@@ -1284,7 +1285,9 @@ export const rejectInspection = defineServiceFn({
               quantity: writeOff.quantity
             }
           ]
-        });
+        },
+        service.postNonconformance
+      );
       if (post.error) {
         return ctx.error(
           "internal",

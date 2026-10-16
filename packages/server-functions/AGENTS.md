@@ -343,29 +343,10 @@ each company (`journalLegacyDocumentsForAllCompanies`,
   (`ci/src/one-off-scripts.ts`): the runner records nothing and runs it again on the
   next deploy.
 
-`seed-company` leaves a new company without a cutover, so it posts `Provisional`
+`seedCompany` (ERP settings module, ported from `seed-company`) leaves a new company without a cutover, so it posts `Provisional`
 journals until the activation wizard sets one. A subsidiary copies its `accountDefault`
 ids and fixed asset class accounts from a company already in the group; the seeded
 account numbers are only the fallback for a group with none.
-
-### `apply-account-import`
-
-Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ chart,
-defaults, resolutions }`, trimmed and size-capped, permission `update: accounting`) in one
-transaction. It locks every company's `companySettings` FOR SHARE, then the group's
-accounts FOR UPDATE, re-plans with `planAccountImport`, and refuses a plan with errors or
-an open replacement — including any company of the group with an accounting cutover. It
-sets `app.account_import` (`set_config(…, true)`), which lets the charge and reimbursement
-guards accept an account-only change on a posted row (`20261013035046`). It frees the
-number and name of every updated, merged and deleted account (temporary values, so a swap
-works), creates groups and accounts, sets every company's defaults in one statement and
-every fixed asset class in one, re-points each merge source by `REFERENCE_POLICY` plus
-the references with no foreign key (`intercompanyEliminationLine`,
-`companyIntegration.metadata.paymentFeeAccount`) — posted documents included, since their
-journals are still Provisional — deletes the removed accounts and their
-`externalIntegrationMapping` rows, deletes empty groups, and checks a postcondition (every
-chart row written with its class, type and group; every required default and class
-account set). A failed postcondition is a 500: the plan and the apply disagree.
 
 ## Validation Commands
 
@@ -408,8 +389,9 @@ re-cost (`recostOutbound`), the opening layer cost (`getCutoverInventory`) and t
 movement costs all use it. A job return is not a layer: `isCostLayer` leaves out a
 positive "Job Consumption" row.
 
-Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
-(the company's expired-entity policy and expiry checks, used by `issue` and
-`post-stock-transfer`) and `tracked-entity-attributes.ts` (`attributesContain`, the
-`"attributes" @> …` form the `trackedEntity` GIN index serves, used by
-`assign-serial-numbers`, `post-picking` and `post-stock-transfer`).
+Two more helpers sit at the `src/` root, exported for the functions ported into the
+ERP: `shelf-life.ts` (the company's expired-entity policy and expiry checks, used by
+`issue` and the ERP's `postStockTransfer`) and `tracked-entity-attributes.ts`
+(`attributesContain`, the `"attributes" @> …` form the `trackedEntity` GIN index
+serves, used by `post-picking` and the ERP's `assignSerialNumbers` and
+`postStockTransfer`).

@@ -4,13 +4,15 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import finalizeSupplierQuote from "../finalize-supplier-quote";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "../local-database-test-fixture";
-import { ServerFnContext } from "../server-fn-context";
-import finalizePurchasingRfq from ".";
+} from "@carbon/server-functions/local-database-test-fixture";
+import {
+  finalizePurchasingRfq,
+  finalizeSupplierQuote
+} from "../../app/modules/purchasing/purchasing.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 
 // One company with two suppliers, one bought part, a Draft RFQ for it and a
 // supplier quote with two price breaks (purchase unit = 2 inventory units).
@@ -93,7 +95,7 @@ async function fixture() {
     db,
     companyId,
     ids,
-    ctx: ServerFnContext.system({ db, companyId, userId: "system" }),
+    ctx: ({ db, companyId, userId: "system" }),
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -129,7 +131,7 @@ databaseTest("an RFQ is finalized once", async () => {
   const f = await fixture();
   try {
     const quotesBefore = await count(f, "supplierQuote");
-    const first = await finalizePurchasingRfq(f.ctx, { rfqId: f.ids.rfq });
+    const first = await invokePosting(f.ctx, "finalize-purchasing-rfq", { rfqId: f.ids.rfq }, finalizePurchasingRfq);
     expect(first.error).toBeNull();
     expect(first.data?.quotes).toHaveLength(2);
     expect(await count(f, "supplierQuote")).toBe(quotesBefore + 2);
@@ -144,7 +146,7 @@ databaseTest("an RFQ is finalized once", async () => {
     expect(rfq.status).toBe("Requested");
 
     // A repeated request finds it Requested and creates nothing.
-    const second = await finalizePurchasingRfq(f.ctx, { rfqId: f.ids.rfq });
+    const second = await invokePosting(f.ctx, "finalize-purchasing-rfq", { rfqId: f.ids.rfq }, finalizePurchasingRfq);
     expect(second.error?.status).toBe(400);
     expect(await count(f, "supplierQuote")).toBe(quotesBefore + 2);
   } finally {
@@ -155,12 +157,12 @@ databaseTest("an RFQ is finalized once", async () => {
 databaseTest("another company's RFQ is not found", async () => {
   const f = await fixture();
   try {
-    const other = ServerFnContext.system({
+    const other = ({
       db: f.db,
       companyId: "another-company",
       userId: "system"
     });
-    const result = await finalizePurchasingRfq(other, { rfqId: f.ids.rfq });
+    const result = await invokePosting(other, "finalize-purchasing-rfq", { rfqId: f.ids.rfq }, finalizePurchasingRfq);
     expect(result.error?.status).toBe(404);
     expect(await count(f, "supplierQuote")).toBe(1);
   } finally {
@@ -173,9 +175,9 @@ databaseTest(
   async () => {
     const f = await fixture();
     try {
-      const result = await finalizeSupplierQuote(f.ctx, {
+      const result = await invokePosting(f.ctx, "finalize-supplier-quote", {
         supplierQuoteId: f.ids.quote
-      });
+      }, finalizeSupplierQuote);
       expect(result.error).toBeNull();
 
       const part = await f.db
@@ -211,7 +213,7 @@ databaseTest(
       );
 
       // Finalizing again rewrites the same breaks rather than adding more.
-      await finalizeSupplierQuote(f.ctx, { supplierQuoteId: f.ids.quote });
+      await invokePosting(f.ctx, "finalize-supplier-quote", { supplierQuoteId: f.ids.quote }, finalizeSupplierQuote);
       expect(await count(f, "supplierPartPrice")).toBe(2);
     } finally {
       await f.cleanup();
@@ -230,9 +232,9 @@ databaseTest(
         .where("id", "=", f.ids.quote)
         .execute();
 
-      const result = await finalizeSupplierQuote(f.ctx, {
+      const result = await invokePosting(f.ctx, "finalize-supplier-quote", {
         supplierQuoteId: f.ids.quote
-      });
+      }, finalizeSupplierQuote);
       expect(result.error).toBeNull();
 
       const part = await f.db
@@ -271,9 +273,9 @@ databaseTest(
         })
         .execute();
 
-      const result = await finalizeSupplierQuote(f.ctx, {
+      const result = await invokePosting(f.ctx, "finalize-supplier-quote", {
         supplierQuoteId: f.ids.quote
-      });
+      }, finalizeSupplierQuote);
       expect(result.error).toBeNull();
 
       const part = await f.db
@@ -315,9 +317,9 @@ databaseTest(
         .where("supplierQuoteId", "=", f.ids.quote)
         .execute();
 
-      const result = await finalizeSupplierQuote(f.ctx, {
+      const result = await invokePosting(f.ctx, "finalize-supplier-quote", {
         supplierQuoteId: f.ids.quote
-      });
+      }, finalizeSupplierQuote);
       expect(result.error?.status).toBe(400);
       expect(result.error?.message).toContain("P-1");
 

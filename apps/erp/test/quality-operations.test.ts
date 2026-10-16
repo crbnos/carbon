@@ -12,15 +12,23 @@ vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
 }));
 
-const { disposition, invoke } = vi.hoisted(() => ({
+const { disposition, invoke, postNonconformance } = vi.hoisted(() => ({
   // The inspection engine's lot disposition.
   disposition: vi.fn(),
-  // The server functions (`post-nonconformance`, `create`).
-  invoke: vi.fn()
+  // The server functions (`create`).
+  invoke: vi.fn(),
+  // The inventory write-off's posting.
+  postNonconformance: vi.fn()
 }));
 vi.mock("@carbon/database/quality", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/database/quality")>()),
   dispositionInspection: disposition
+}));
+vi.mock("../app/modules/quality/quality.service", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("../app/modules/quality/quality.service")
+  >()),
+  postNonconformance
 }));
 vi.mock("@carbon/server-functions", () => ({
   serverFns: { as: () => ({ invoke }), system: () => ({ invoke }) }
@@ -92,6 +100,7 @@ function contextWith(rows: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   invoke.mockResolvedValue({ data: { journalId: null }, error: null });
+  postNonconformance.mockResolvedValue({ journalId: null });
 });
 
 describe("rejecting an inspection lot", () => {
@@ -118,7 +127,7 @@ describe("rejecting an inspection lot", () => {
       decision: "Reject",
       requireSource: "Receipt"
     });
-    expect(invoke).toHaveBeenCalledWith("post-nonconformance", {
+    expect(postNonconformance).toHaveBeenCalledWith(expect.anything(), {
       documentType: "Inbound Inspection",
       documentId: "insp-1",
       description: "Inbound inspection lot rejected",
@@ -139,7 +148,7 @@ describe("rejecting an inspection lot", () => {
     });
 
     expect(result.error).toBeNull();
-    expect(invoke).not.toHaveBeenCalled();
+    expect(postNonconformance).not.toHaveBeenCalled();
   });
 
   // Closing the issue restores value on Use As Is on the assumption the
@@ -150,7 +159,7 @@ describe("rejecting an inspection lot", () => {
       data: { id: "insp-1", status: "Failed", writeOff },
       error: null
     });
-    invoke.mockResolvedValue({ data: null, error: new Error("no account") });
+    postNonconformance.mockRejectedValue(new Error("no account"));
     const { ctx, writes } = contextWith();
 
     const result = await rejectInspection(ctx, { id: "insp-1" });
@@ -174,7 +183,7 @@ describe("rejecting an inspection lot", () => {
       category: "rule",
       message: "Failed to reject lot"
     });
-    expect(invoke).not.toHaveBeenCalled();
+    expect(postNonconformance).not.toHaveBeenCalled();
   });
 });
 

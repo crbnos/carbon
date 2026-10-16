@@ -12,7 +12,7 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type {
   KyselyDatabase as DB,
   Kysely,
@@ -20,13 +20,14 @@ import type {
 } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
+  assertPostingStatusUnchanged,
   journalPostingStatus
 } from "@carbon/database/journal-posting-status";
 import {
   type LinesideClaim,
   linesideCredit
 } from "@carbon/database/picked-consumption";
-import { inOrder } from "@carbon/database/rows";
+import { inOrder, many, notNull, single } from "@carbon/database/rows";
 import { expandSerialTrackedLines } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
@@ -35,9 +36,13 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import { assertCompanyRecords } from "@carbon/server-functions/company-records";
 import { buildOffsetLines } from "@carbon/server-functions/lib/asset-transfer";
 import { calculateCOGS } from "@carbon/server-functions/lib/calculate-cogs";
-import { getAccountingPeriodForDate } from "@carbon/server-functions/lib/get-accounting-period";
+import {
+  getAccountingPeriodForDate,
+  getCurrentAccountingPeriod
+} from "@carbon/server-functions/lib/get-accounting-period";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount
@@ -47,27 +52,48 @@ import {
   buildCostLedgerRow,
   buildJournalLineDimensions
 } from "@carbon/server-functions/lib/plan-adjustment";
-import { createAdjustmentJournal } from "@carbon/server-functions/lib/post-adjustment";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "@carbon/server-functions/lib/post-adjustment";
 import {
   serialUnitCost,
   type UnitCostChild
 } from "@carbon/server-functions/lib/serial-unit-cost";
+import { getTrackedEntityOnHandInBin } from "@carbon/server-functions/lib/storage-units";
+import {
+  type ExpiredEntityPolicy,
+  type ExpiryOverride,
+  expiredEntities,
+  expiryVerdict,
+  getExpiredEntityPolicy
+} from "@carbon/server-functions/shelf-life";
+import { attributesContain } from "@carbon/server-functions/tracked-entity-attributes";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
+  assertEntityCoversPick,
   async,
+  buildBatchSplitRecords,
   datetime,
   getErrorMessage,
   indexByMapped,
+  isFullDraw,
+  PickGuardError,
   pluckUnique,
+  resolvePick,
   round,
+  settleQuantity,
   type Violation
 } from "@carbon/utils";
+import type { CalendarDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { Insertable, Transaction } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
+import { invokePosting } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
 import {
@@ -4994,10 +5020,12 @@ export async function postStockTransferLine(
   },
   failure: (error: ServerFnError) => string
 ) {
-  const moved = await system(ctx).invoke(
+  const moved = await invokePosting(
+    ctx,
     "post-stock-transfer",
-    // One body for every `type`; the server function validates it per type.
-    input as ServerFnInput<"post-stock-transfer">
+    // One body for every `type`; the function validates it per type.
+    input as z.input<typeof postStockTransferInput>,
+    postStockTransfer
   );
   if (moved.error)
     return serverFnFailure(ctx, moved.error, failure(moved.error));
@@ -6078,5 +6106,1641 @@ async function loadAccounting(
     },
     offsetAccount,
     dimensions
+  };
+}
+// Pure decision for how a counted tracked entity's quantity and status settle.
+// A count books its ledger delta from the SNAPSHOT taken when the count was
+// generated; the entity's live quantity may have moved since. Applying the same
+// delta to the live quantity keeps entity and ledger in step — but if that lands
+// below zero the two have genuinely diverged, so we refuse (recount) rather than
+// clamp, which would desync the entity from the already-booked ledger delta.
+
+export function resolveCountedEntity<S extends string>(input: {
+  currentQuantity: number;
+  delta: number;
+  currentStatus: S;
+}): { quantity: number; status: S | "Consumed" } {
+  return settleQuantity({
+    quantity: input.currentQuantity + input.delta,
+    status: input.currentStatus,
+    refusal:
+      "Stock moved since the count was taken; recount this line before posting"
+  });
+}
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// Pure planning core for posting an inventory count, extracted so the delta math
+// can be unit-tested without a database.
+//
+// Reconciliation model: post the variance the counter reviewed against the
+// FROZEN snapshot — `delta = counted - systemQuantity` — NOT against live on-hand.
+// This preserves any stock movements that posted between the snapshot and the
+// post (a receipt/shipment isn't clobbered; the count's correction is applied on
+// top of it). A line whose delta is 0 is still returned; the caller skips writing
+// it.
+
+export type PlannableLine = {
+  id: string;
+  itemId: string;
+  systemQuantity: number | string | null;
+  // Callers pass only counted lines; null is tolerated for the row type and
+  // coerces to 0 (delta = −systemQuantity), never actually reached.
+  countedQuantity: number | string | null;
+};
+
+export type PlanResult<L extends PlannableLine> = {
+  planned: { line: L; delta: number }[];
+};
+
+export function planInventoryCountPost<L extends PlannableLine>(
+  lines: L[]
+): PlanResult<L> {
+  const planned = lines.map((line) => ({
+    line,
+    delta: Number(line.countedQuantity) - Number(line.systemQuantity)
+  }));
+  return { planned };
+}
+// Base for post-blocking validation errors. Carries the offending line ids so
+// the response can hand them to the UI to highlight the rows.
+// A 400 whose `body.invalidLineIds` the caller reads to highlight the rows.
+class InvalidLinesError extends InvalidInputError {
+  constructor(message: string, lineIds: string[]) {
+    super(message, { invalidLineIds: lineIds });
+    this.name = "InvalidLinesError";
+  }
+}
+
+// Thrown when a serial-tracked line is counted as anything other than 0 or 1
+// (a serial entity is a single unique unit).
+class SerialQuantityError extends InvalidLinesError {
+  constructor(lineIds: string[]) {
+    super(
+      `${lineIds.length} serial line(s) must be counted as 0 or 1 — a serial number is a single unit.`,
+      lineIds
+    );
+    this.name = "SerialQuantityError";
+  }
+}
+
+// Inventory Count posting uses snapshot-delta reconciliation: for each counted
+// line we post a single Positive/Negative adjustment for the variance the counter
+// reviewed — `counted - systemQuantity` (the FROZEN snapshot on the line), NOT
+// `counted - live on-hand`. This preserves any stock movements that posted between
+// the snapshot and the post (a receipt/shipment isn't clobbered; the correction is
+// applied on top of it). Each variance books through the shared posting core:
+// item ledger + cost layers + a GL journal (Provisional before the accounting
+// cutover, Posted after it) against the inventory adjustment variance account.
+// A count posts exactly once (Posted is terminal). Fixing a posted movement
+// happens per-movement via the correct-stock-movement server function, which
+// links the fix through itemLedger.correctionOfItemLedgerId.
+export const postInventoryCountInput = z.object({
+  inventoryCountId: z.string()
+});
+
+export const postInventoryCountPermission = {
+  update: "inventory"
+} satisfies PermissionRule<z.output<typeof postInventoryCountInput>>;
+
+/** Posts a Pending inventory count: one adjustment per counted variance, atomically. */
+export async function postInventoryCount(
+  ctx: ServiceContext,
+  raw: z.input<typeof postInventoryCountInput>
+) {
+  const { inventoryCountId } = postInventoryCountInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+  const nowIso = datetime.timestamp();
+
+  const inventoryCount = await single(db, "inventoryCount", {
+    id: inventoryCountId,
+    companyId
+  });
+
+  if (inventoryCount.error)
+    throw new NotFoundError("Inventory count not found");
+
+  const lines = await many(db, "inventoryCountLine", {
+    inventoryCountId,
+    companyId,
+    countedQuantity: notNull
+  });
+
+  if (lines.error) throw new Error(lines.error.message);
+
+  const comment = `Inventory Count ${inventoryCount.data.inventoryCountId}`;
+  const countedLines = (lines.data ?? []).filter(
+    (line) => line.countedQuantity !== null
+  );
+
+  // Serial validation: a serial-tracked item is a single unique unit, so each
+  // serial line can only be counted 0 or 1. Block the post (before any write)
+  // and return the offending line ids so the UI can highlight them.
+  const itemIds = [...new Set(countedLines.map((line) => line.itemId))];
+  const items = itemIds.length
+    ? await many(
+        db,
+        "item",
+        { id: itemIds, companyId },
+        { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+      )
+    : null;
+  if (items?.error) throw new Error(items.error.message);
+
+  const trackingTypeByItem = new Map<string, string | null>(
+    (items?.data ?? []).map((item) => [item.id, item.itemTrackingType])
+  );
+  // Explicit row types for these selects.
+  type CountItemRow = {
+    id: string;
+    replenishmentSystem:
+      | Database["public"]["Enums"]["itemReplenishmentSystem"]
+      | null;
+  };
+  type CountItemCostRow = {
+    itemId: string;
+    costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
+    unitCost: number | null;
+    standardCost: number | null;
+    itemPostingGroupId: string | null;
+  };
+  const replenishmentByItem = new Map(
+    ((items?.data ?? []) as CountItemRow[]).map((item) => [
+      item.id,
+      item.replenishmentSystem
+    ])
+  );
+
+  const itemCosts = itemIds.length
+    ? await many(
+        db,
+        "itemCost",
+        { itemId: itemIds, companyId },
+        {
+          columns: [
+            "itemId",
+            "costingMethod",
+            "unitCost",
+            "standardCost",
+            "itemPostingGroupId"
+          ]
+        }
+      )
+    : null;
+  if (itemCosts?.error) throw new Error(itemCosts.error.message);
+  const itemCostByItem = new Map(
+    ((itemCosts?.data ?? []) as CountItemCostRow[]).map((cost) => [
+      cost.itemId,
+      cost
+    ])
+  );
+  const serialInvalidLineIds = countedLines
+    .filter((line) => {
+      if (trackingTypeByItem.get(line.itemId) !== "Serial") return false;
+      const counted = Number(line.countedQuantity);
+      return counted !== 0 && counted !== 1;
+    })
+    .map((line) => line.id);
+  if (serialInvalidLineIds.length > 0) {
+    throw new SerialQuantityError(serialInvalidLineIds);
+  }
+
+  // Reconcile against the frozen snapshot — no live on-hand read needed.
+  const { planned } = planInventoryCountPost(countedLines);
+
+  // Every variance that carries value posts to ONE journal: Provisional
+  // before the company's accounting cutover, Posted after it. Resolve the
+  // status + period BEFORE the transaction (REST hops mid-transaction park
+  // the size-1 pool in idle-in-transaction); the status is read again inside.
+  const postingStatus = await journalPostingStatus(db, companyId);
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, db, today)
+      : null;
+
+  // Active dimensions for the company group (post-shipment precedent) —
+  // journal lines get Item / ItemPostingGroup / Location tags.
+  const dimensionMap: Record<string, string> = {};
+  const companyRecord = await single(
+    db,
+    "company",
+    { id: companyId },
+    { columns: ["companyGroupId"] }
+  );
+  if (companyRecord.error) throw new Error("Failed to fetch company");
+  const dimensions = await many(
+    db,
+    "dimension",
+    {
+      companyGroupId: companyRecord.data.companyGroupId!,
+      active: true,
+      entityType: ["Item", "ItemPostingGroup", "Location"]
+    },
+    { columns: ["id", "entityType"] }
+  );
+  // Fail closed: journal lines must not silently lose dimension tags.
+  if (dimensions.error) throw new Error("Failed to fetch dimensions");
+  for (const dim of dimensions.data ?? []) {
+    if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+  }
+
+  const accounting = {
+    postingStatus,
+    accountingPeriodId,
+    accountDefaults: {
+      rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+      finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+      inventoryAdjustmentVarianceAccount:
+        accountDefaults.data.inventoryAdjustmentVarianceAccount
+    },
+    description: comment,
+    userId,
+    dimensions: dimensionMap
+  };
+
+  await db.transaction().execute(async (trx) => {
+    // Concurrency guard: lock the header and re-assert it is still Pending so
+    // two concurrent posts can't both apply the delta (double-post). Mirrors
+    // the FOR UPDATE guard in post-payment / post-memo; the end-of-transaction
+    // guarded UPDATE below is the backstop.
+    const locked = await trx
+      .selectFrom("inventoryCount")
+      .select(["id", "status"])
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!locked) throw new NotFoundError("Inventory count not found");
+    if (locked.status !== "Pending") {
+      throw new Error("Inventory count is no longer pending");
+    }
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+    // ONE journal per count post: created lazily on the first variance that
+    // carries value, then shared by every line's journal-line pair.
+    let sharedJournalId: string | null = null;
+    const accountingForLines = {
+      ...accounting,
+      getJournalId: async () => {
+        if (!sharedJournalId) {
+          sharedJournalId = await createAdjustmentJournal(trx, {
+            companyId,
+            accountingPeriodId: accounting.accountingPeriodId,
+            status: postingStatus,
+            description: accounting.description,
+            postingDate: today,
+            userId
+          });
+        }
+        return sharedJournalId;
+      }
+    };
+
+    // Post the reviewed variance for each line as an inventory adjustment,
+    // booked through the shared core (ledger + cost layers + journal).
+    for (const { line, delta } of planned) {
+      if (delta === 0) continue;
+
+      const itemCost = itemCostByItem.get(line.itemId);
+      if (!itemCost) {
+        throw new Error(`Missing item cost for item ${line.itemId}`);
+      }
+
+      const booked = await bookAdjustment(trx, {
+        ledger: {
+          postingDate: today,
+          itemId: line.itemId,
+          quantity: delta,
+          locationId: line.locationId,
+          storageUnitId: line.storageUnitId,
+          trackedEntityId: line.trackedEntityId,
+          entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
+          documentType: "Inventory Count",
+          documentId: inventoryCountId,
+          comment,
+          companyId,
+          createdBy: userId
+        },
+        item: {
+          itemTrackingType: trackingTypeByItem.get(line.itemId) ?? null,
+          replenishmentSystem: replenishmentByItem.get(line.itemId) ?? null,
+          itemPostingGroupId: itemCost.itemPostingGroupId
+        },
+        itemCost,
+        accounting: accountingForLines
+      });
+
+      // Tracked lines: apply the same delta to the entity's quantity (not a
+      // set-to-counted) so movements since the snapshot aren't overwritten.
+      // Lock and read the live row so the guard sees the current quantity;
+      // a delta that would drive it negative means stock moved since the
+      // count, so we throw to roll back rather than clamp (which would desync
+      // the entity from the ledger delta already booked above). Landing on
+      // zero flips the lot Consumed.
+      if (line.trackedEntityId) {
+        const entity = await trx
+          .selectFrom("trackedEntity")
+          .select(["quantity", "status"])
+          .where("id", "=", line.trackedEntityId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        const settled = resolveCountedEntity({
+          currentQuantity: Number(entity?.quantity ?? 0),
+          delta,
+          currentStatus: entity?.status ?? "Available"
+        });
+        await trx
+          .updateTable("trackedEntity")
+          .set({ quantity: settled.quantity, status: settled.status })
+          .where("id", "=", line.trackedEntityId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      await trx
+        .updateTable("inventoryCountLine")
+        .set({ postedItemLedgerId: booked.itemLedgerId })
+        .where("id", "=", line.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    // Guard the transition inside the transaction: only a still-Pending count
+    // can be posted. If a concurrent post already moved it to Posted, this
+    // matches 0 rows and we throw to roll back this transaction's ledger
+    // writes — preventing a double-post.
+    const posted = await trx
+      .updateTable("inventoryCount")
+      .set({
+        status: "Posted",
+        postedBy: userId,
+        postedAt: nowIso,
+        updatedBy: userId,
+        updatedAt: nowIso
+      })
+      .where("id", "=", inventoryCountId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Pending")
+      .returning(["id"])
+      .executeTakeFirst();
+
+    if (!posted) {
+      throw new Error("Inventory count is no longer pending");
+    }
+  });
+
+  return { success: true };
+}
+const postStockTransferLogger = getLogger(
+  "server-functions",
+  "post-stock-transfer"
+);
+
+/**
+ * A line moves stock out of the bin it names, and only that bin (`null` is the
+ * unassigned bin). Picking a unit held elsewhere would book its -1 against a
+ * bin that does not hold it.
+ */
+async function assertInSourceBin(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    trackedEntityId: string;
+    readableId: string | null;
+    quantity: number;
+    locationId: string;
+    storageUnitId: string | null;
+    companyId: string;
+  }
+) {
+  const onHand = await getTrackedEntityOnHandInBin(trx, args);
+  if (round(onHand) < round(args.quantity)) {
+    throw new PickGuardError(
+      "over-pick",
+      `${args.readableId ?? args.trackedEntityId} is not in this line's source storage unit`
+    );
+  }
+}
+
+/**
+ * Applies the company's expired-entity policy to one entity about to be
+ * transferred: a warning under `Warn`, a throw when blocked. An override with
+ * a reason passes under `BlockWithOverride`.
+ */
+function checkExpiredEntity(
+  entity: { id: string; expirationDate: string | null },
+  policy: ExpiredEntityPolicy,
+  override: ExpiryOverride,
+  today: CalendarDate
+): { warning?: string } {
+  if (expiredEntities([entity], today).length === 0) return {};
+  switch (expiryVerdict(policy, override)) {
+    case "warn":
+      return { warning: `Transferred expired tracked entity: ${entity.id}` };
+    case "allow":
+      return {};
+    case "block":
+      throw new Error(`Cannot transfer expired tracked entity: ${entity.id}`);
+  }
+}
+
+export const postStockTransferInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("inventory"),
+    stockTransferId: z.string(),
+    stockTransferLineId: z.string(),
+    quantity: z.number().positive(),
+    locationId: z.string()
+  }),
+  z.object({
+    type: z.literal("unpickInventory"),
+    stockTransferId: z.string(),
+    stockTransferLineId: z.string(),
+    locationId: z.string()
+  }),
+  z.object({
+    type: z.literal("serial"),
+    stockTransferId: z.string(),
+    stockTransferLineId: z.string(),
+    trackedEntityId: z.string(),
+    locationId: z.string()
+  }),
+  z.object({
+    type: z.literal("batch"),
+    stockTransferId: z.string(),
+    stockTransferLineId: z.string(),
+    trackedEntityId: z.string(),
+    quantity: z.number().positive(),
+    overrideExpired: z.boolean().optional(),
+    overrideReason: z.string().optional(),
+    locationId: z.string()
+  }),
+  z.object({
+    type: z.literal("unpickSerial"),
+    stockTransferId: z.string(),
+    stockTransferLineId: z.string(),
+    trackedEntityId: z.string(),
+    locationId: z.string()
+  }),
+  z.object({
+    type: z.literal("unpickBatch"),
+    stockTransferId: z.string(),
+    stockTransferLineId: z.string(),
+    trackedEntityId: z.string(),
+    locationId: z.string()
+  })
+]);
+
+export const postStockTransferPermission = {} satisfies PermissionRule<
+  z.output<typeof postStockTransferInput>
+>;
+
+/** Picks or un-picks stock-transfer lines (untracked, serial or batch), per `type`. */
+export async function postStockTransfer(
+  ctx: ServiceContext,
+  raw: z.input<typeof postStockTransferInput>
+) {
+  const input = postStockTransferInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const validatedPayload = {
+    ...input,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  };
+
+  // The permission check proves the caller may act in companyId, not that the
+  // body's ids belong to it. Every case writes stockTransferId as the
+  // ledger/activity documentId and locationId onto this company's ledger
+  // rows, so they are re-read under companyId — and the line must be on the
+  // transfer the body names.
+  {
+    const { companyId, stockTransferId, stockTransferLineId, locationId } =
+      validatedPayload;
+    const line = await db
+      .selectFrom("stockTransferLine")
+      .select("id")
+      .where("id", "=", stockTransferLineId)
+      .where("stockTransferId", "=", stockTransferId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!line) throw new NotFoundError("Stock transfer line not found");
+    await assertCompanyRecords(
+      db,
+      "location",
+      [locationId],
+      companyId,
+      "Location"
+    );
+  }
+
+  const companyToday = datetime.today(
+    await getCompanyTimeZone(db, validatedPayload.companyId)
+  );
+  const today = companyToday.toString();
+  let expiredWarning: string | undefined;
+  let splitEntityId: string | undefined;
+
+  postStockTransferLogger.info({
+    function: "post-stock-transfer",
+    ...validatedPayload
+  });
+
+  switch (validatedPayload.type) {
+    case "inventory": {
+      const {
+        stockTransferId,
+        stockTransferLineId,
+        quantity,
+        locationId,
+        userId,
+        companyId
+      } = validatedPayload;
+
+      await db.transaction().execute(async (trx) => {
+        // Get stock transfer line details
+        const stockTransferLine = await trx
+          .selectFrom("stockTransferLine")
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .executeTakeFirstOrThrow();
+
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+
+        // Create item ledger entries for inventory transfer
+        itemLedgerInserts.push({
+          postingDate: today,
+          itemId: stockTransferLine.itemId,
+          quantity: round(-quantity),
+          locationId: locationId,
+          storageUnitId: stockTransferLine.fromStorageUnitId,
+          entryType: "Transfer",
+          documentType: "Direct Transfer",
+          documentId: stockTransferId,
+          createdBy: userId,
+          companyId
+        });
+
+        itemLedgerInserts.push({
+          postingDate: today,
+          itemId: stockTransferLine.itemId,
+          quantity: round(quantity),
+          locationId: locationId,
+          storageUnitId: stockTransferLine.toStorageUnitId,
+          entryType: "Transfer",
+          documentType: "Direct Transfer",
+          documentId: stockTransferId,
+          createdBy: userId,
+          companyId
+        });
+
+        // Insert item ledger entries
+        if (itemLedgerInserts.length > 0) {
+          await trx
+            .insertInto("itemLedger")
+            .values(itemLedgerInserts)
+            .execute();
+        }
+
+        // Update stock transfer line with picked quantity
+        await trx
+          .updateTable("stockTransferLine")
+          .set({
+            pickedQuantity: (stockTransferLine.pickedQuantity ?? 0) + quantity,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      break;
+    }
+
+    case "unpickInventory": {
+      const {
+        stockTransferId,
+        stockTransferLineId,
+        locationId,
+        userId,
+        companyId
+      } = validatedPayload;
+
+      await db.transaction().execute(async (trx) => {
+        // Get stock transfer line details
+        const stockTransferLine = await trx
+          .selectFrom("stockTransferLine")
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .executeTakeFirstOrThrow();
+
+        const currentPickedQuantity = stockTransferLine.pickedQuantity ?? 0;
+
+        if (currentPickedQuantity > 0) {
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+
+          // Create reverse item ledger entries to undo the transfer
+          itemLedgerInserts.push({
+            postingDate: today,
+            itemId: stockTransferLine.itemId,
+            quantity: round(currentPickedQuantity), // Positive to restore inventory at from shelf
+            locationId: locationId,
+            storageUnitId: stockTransferLine.fromStorageUnitId,
+            entryType: "Transfer",
+            documentType: "Direct Transfer",
+            documentId: stockTransferId,
+            createdBy: userId,
+            companyId
+          });
+
+          itemLedgerInserts.push({
+            postingDate: today,
+            itemId: stockTransferLine.itemId,
+            quantity: round(-currentPickedQuantity), // Negative to remove inventory from to shelf
+            locationId: locationId,
+            storageUnitId: stockTransferLine.toStorageUnitId,
+            entryType: "Transfer",
+            documentType: "Direct Transfer",
+            documentId: stockTransferId,
+            createdBy: userId,
+            companyId
+          });
+
+          // Insert reverse item ledger entries
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+          }
+        }
+
+        // Reset picked quantity to 0
+        await trx
+          .updateTable("stockTransferLine")
+          .set({
+            trackedEntityId: null,
+            pickedQuantity: 0,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      break;
+    }
+
+    case "serial": {
+      const {
+        stockTransferId,
+        stockTransferLineId,
+        trackedEntityId,
+        locationId,
+        userId,
+        companyId
+      } = validatedPayload;
+
+      await db.transaction().execute(async (trx) => {
+        // Get stock transfer line details. Lock the row so concurrent scans
+        // of the same line cannot both write a +1 over a stale read.
+        const stockTransferLine = await trx
+          .selectFrom("stockTransferLine")
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        // Refuse a scan that would exceed the line's serial count.
+        const newPickedQuantity = resolvePick({
+          lineQuantity: Number(stockTransferLine.quantity ?? 0),
+          pickedQuantity: Number(stockTransferLine.pickedQuantity ?? 0),
+          transferQuantity: 1
+        });
+
+        // Lock the serial itself BEFORE the repeat-scan query: the guard
+        // below reads trackedActivityInput, and two concurrent scans of the
+        // same serial would both read "not on this transfer" and both post a
+        // Transfer activity + ledger pair. The batch case takes the same
+        // lock; here it serializes the guard rather than an on-hand draw.
+        const trackedEntity = await trx
+          .selectFrom("trackedEntity")
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .select(["id", "readableId"])
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        const fromStorageUnitId = stockTransferLine.fromStorageUnitId;
+        await assertInSourceBin(trx, {
+          trackedEntityId,
+          readableId: trackedEntity.readableId,
+          quantity: 1,
+          locationId,
+          storageUnitId: fromStorageUnitId,
+          companyId
+        });
+
+        // Refuse a REPEAT scan of the same serial on this transfer. Each scan
+        // posts a Transfer activity + a −1/+1 ledger pair, so a silent no-op
+        // would let the ledger double; the guard is an explicit 400.
+        const alreadyOnTransfer = await trx
+          .selectFrom("trackedActivityInput as tai")
+          .innerJoin("trackedActivity as ta", "ta.id", "tai.trackedActivityId")
+          .where("tai.trackedEntityId", "=", trackedEntityId)
+          .where("tai.companyId", "=", companyId)
+          .where("ta.type", "=", "Transfer")
+          .where("ta.sourceDocument", "=", "Stock Transfer")
+          .where("ta.sourceDocumentId", "=", stockTransferId)
+          .select("tai.trackedEntityId")
+          .executeTakeFirst();
+        if (alreadyOnTransfer) {
+          throw new PickGuardError(
+            "already-picked",
+            `Serial ${trackedEntity.readableId ?? trackedEntityId} is already picked on this transfer`
+          );
+        }
+
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+
+        // Create transfer activity
+        const transferActivityId = nanoid();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: transferActivityId,
+            type: "Transfer",
+            sourceDocument: "Stock Transfer",
+            sourceDocumentId: stockTransferId,
+            attributes: {
+              "Stock Transfer": stockTransferId,
+              "Stock Transfer Line": stockTransferLineId,
+              "From Location": locationId,
+              "To Location": locationId,
+              "From Shelf": fromStorageUnitId,
+              "To Shelf": stockTransferLine.toStorageUnitId
+            },
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+
+        // Record tracked entity as input to transfer
+        await trx
+          .insertInto("trackedActivityInput")
+          .values({
+            trackedActivityId: transferActivityId,
+            trackedEntityId: trackedEntityId,
+            quantity: 1,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+
+        // Create item ledger entries for transfer
+        itemLedgerInserts.push({
+          postingDate: today,
+          itemId: stockTransferLine.itemId,
+          quantity: -1,
+          locationId: locationId,
+          storageUnitId: fromStorageUnitId,
+          entryType: "Transfer",
+          documentType: "Direct Transfer",
+          documentId: stockTransferId,
+          trackedEntityId: trackedEntityId,
+          createdBy: userId,
+          companyId
+        });
+
+        itemLedgerInserts.push({
+          postingDate: today,
+          itemId: stockTransferLine.itemId,
+          quantity: 1,
+          locationId: locationId,
+          storageUnitId: stockTransferLine.toStorageUnitId,
+          entryType: "Transfer",
+          documentType: "Direct Transfer",
+          documentId: stockTransferId,
+          trackedEntityId: trackedEntityId,
+          createdBy: userId,
+          companyId
+        });
+
+        // Insert item ledger entries
+        if (itemLedgerInserts.length > 0) {
+          await trx
+            .insertInto("itemLedger")
+            .values(itemLedgerInserts)
+            .execute();
+        }
+
+        // Update stock transfer line with the accumulated picked quantity.
+        await trx
+          .updateTable("stockTransferLine")
+          .set({
+            trackedEntityId,
+            pickedQuantity: newPickedQuantity,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      break;
+    }
+
+    case "batch": {
+      const {
+        stockTransferId,
+        stockTransferLineId,
+        trackedEntityId,
+        quantity,
+        overrideExpired,
+        overrideReason,
+        locationId,
+        userId,
+        companyId
+      } = validatedPayload;
+
+      const policy = await getExpiredEntityPolicy(db, companyId);
+
+      await db.transaction().execute(async (trx) => {
+        // Get stock transfer line details. Lock the row so two concurrent
+        // scans of the same line accumulate instead of racing to overwrite
+        // pickedQuantity (the ledger would double otherwise).
+        const stockTransferLine = await trx
+          .selectFrom("stockTransferLine")
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        // Get tracked entity details. Lock it too so the on-hand this pick
+        // draws against cannot be spent by a concurrent transaction.
+        const trackedEntity = await trx
+          .selectFrom("trackedEntity")
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        // Refuse a pick that over-draws the line or the source lot before any
+        // record is written; resolvePick returns the new running total.
+        const newPickedQuantity = resolvePick({
+          lineQuantity: Number(stockTransferLine.quantity ?? 0),
+          pickedQuantity: Number(stockTransferLine.pickedQuantity ?? 0),
+          transferQuantity: quantity
+        });
+        assertEntityCoversPick({
+          entityQuantity: Number(trackedEntity.quantity),
+          transferQuantity: quantity
+        });
+        const fromStorageUnitId = stockTransferLine.fromStorageUnitId;
+        await assertInSourceBin(trx, {
+          trackedEntityId,
+          readableId: trackedEntity.readableId,
+          quantity,
+          locationId,
+          storageUnitId: fromStorageUnitId,
+          companyId
+        });
+
+        // Expiry policy gate (throws on hard reject; returns warning for 'Warn').
+        const expiredCheck = checkExpiredEntity(
+          {
+            id: trackedEntity.id,
+            expirationDate: trackedEntity.expirationDate
+          },
+          policy,
+          { allowed: !!overrideExpired, reason: overrideReason ?? null },
+          companyToday
+        );
+        if (expiredCheck.warning) {
+          expiredWarning = expiredCheck.warning;
+        }
+
+        // Round BOTH operands once, here: everything downstream — the split
+        // gate, the split records, the Transfer activity input and the two
+        // ledger rows — derives from these, so a residue draw can never book
+        // an unrounded quantity against a lot the gate treated as whole.
+        const entityQuantity = round(Number(trackedEntity.quantity));
+        const transferQuantity = round(quantity);
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+
+        // Split the batch when transferring less than the whole entity: the
+        // source entity keeps its id and is decremented; a NEW child entity
+        // departs to the destination bin with the transfer quantity.
+        let transferredEntityId = trackedEntityId;
+        if (!isFullDraw(entityQuantity, transferQuantity)) {
+          const childId = nanoid();
+          splitEntityId = childId;
+          transferredEntityId = childId;
+
+          const split = buildBatchSplitRecords({
+            parent: {
+              id: trackedEntity.id,
+              readableId: trackedEntity.readableId,
+              quantity: entityQuantity,
+              sourceDocument: trackedEntity.sourceDocument,
+              sourceDocumentId: trackedEntity.sourceDocumentId,
+              sourceDocumentReadableId: trackedEntity.sourceDocumentReadableId,
+              itemId: trackedEntity.itemId ?? null,
+              expirationDate: trackedEntity.expirationDate ?? null,
+              attributes: trackedEntity.attributes as Record<
+                string,
+                unknown
+              > | null
+            },
+            drawQuantity: transferQuantity,
+            childId,
+            splitActivityId: nanoid(),
+            activitySourceDocument: "Stock Transfer",
+            activitySourceDocumentId: stockTransferId,
+            bin: { storageUnitId: fromStorageUnitId, locationId },
+            itemLedgerItemId: stockTransferLine.itemId,
+            companyId,
+            userId,
+            postingDate: today,
+            childStatus: "Available"
+          });
+
+          await trx
+            .insertInto("trackedActivity")
+            .values(
+              split.activityInsert as Insertable<
+                KyselyDatabase["trackedActivity"]
+              >
+            )
+            .execute();
+
+          await trx
+            .insertInto("trackedEntity")
+            .values(
+              split.childEntityInsert as Insertable<
+                KyselyDatabase["trackedEntity"]
+              >
+            )
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityInput")
+            .values(split.activityInputInsert)
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityOutput")
+            .values(split.activityOutputInsert)
+            .execute();
+
+          await trx
+            .updateTable("trackedEntity")
+            .set(split.parentUpdate)
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          itemLedgerInserts.push(
+            ...(split.ledgerInserts.map((ledgerRow) => ({
+              ...ledgerRow,
+              quantity: round(ledgerRow.quantity)
+            })) as typeof itemLedgerInserts)
+          );
+        }
+
+        // Create transfer activity
+        const transferActivityId = nanoid();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: transferActivityId,
+            type: "Transfer",
+            sourceDocument: "Stock Transfer",
+            sourceDocumentId: stockTransferId,
+            attributes: {
+              "Stock Transfer": stockTransferId,
+              "Stock Transfer Line": stockTransferLineId,
+              "From Location": locationId,
+              "To Location": locationId,
+              "From Shelf": fromStorageUnitId,
+              "To Shelf": stockTransferLine.toStorageUnitId
+            },
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+
+        // Record the DEPARTING entity (split child, or the whole entity on
+        // a full-quantity transfer) as input to the transfer.
+        await trx
+          .insertInto("trackedActivityInput")
+          .values({
+            trackedActivityId: transferActivityId,
+            trackedEntityId: transferredEntityId,
+            quantity: transferQuantity,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+
+        // A transfer MOVES the batch between bins — it stays Available
+        // (consumed at production). Matches the serial case and post-picking.
+
+        // Create item ledger entries for transfer
+        itemLedgerInserts.push(
+          {
+            postingDate: today,
+            itemId: stockTransferLine.itemId,
+            quantity: round(-transferQuantity),
+            locationId: locationId,
+            storageUnitId: fromStorageUnitId,
+            entryType: "Transfer",
+            documentType: "Direct Transfer",
+            documentId: stockTransferId,
+            trackedEntityId: transferredEntityId,
+            createdBy: userId,
+            companyId
+          },
+          {
+            postingDate: today,
+            itemId: stockTransferLine.itemId,
+            quantity: round(transferQuantity),
+            locationId: locationId,
+            storageUnitId: stockTransferLine.toStorageUnitId,
+            entryType: "Transfer",
+            documentType: "Direct Transfer",
+            documentId: stockTransferId,
+            trackedEntityId: transferredEntityId,
+            createdBy: userId,
+            companyId
+          }
+        );
+
+        // Insert item ledger entries
+        if (itemLedgerInserts.length > 0) {
+          await trx
+            .insertInto("itemLedger")
+            .values(itemLedgerInserts)
+            .execute();
+        }
+
+        // Update stock transfer line with the accumulated picked quantity.
+        // trackedEntityId is keep-last: each partial pick mints a fresh child
+        // entity, so the line points at the newest departing lot (matching
+        // serial). Unpick reverses only the last activity on such a line.
+        await trx
+          .updateTable("stockTransferLine")
+          .set({
+            trackedEntityId: transferredEntityId,
+            pickedQuantity: newPickedQuantity,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      break;
+    }
+
+    case "unpickSerial": {
+      const {
+        stockTransferId,
+        stockTransferLineId,
+        trackedEntityId,
+        locationId,
+        userId,
+        companyId
+      } = validatedPayload;
+
+      await db.transaction().execute(async (trx) => {
+        // Lock the line AND the entity: an unpick read-modify-writes the
+        // entity's quantity/status and the line's pickedQuantity, so two
+        // concurrent unpicks of the same child would both credit the parent
+        // and both decrement the line off the same stale read. Same locks the
+        // pick paths take.
+        const stockTransferLine = await trx
+          .selectFrom("stockTransferLine")
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        const trackedEntity = await trx
+          .selectFrom("trackedEntity")
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        // Find the transfer activity for this tracked entity
+        const transferActivity = await trx
+          .selectFrom("trackedActivity")
+          .innerJoin(
+            "trackedActivityInput",
+            "trackedActivity.id",
+            "trackedActivityInput.trackedActivityId"
+          )
+          .where("trackedActivity.type", "=", "Transfer")
+          .where("trackedActivity.sourceDocument", "=", "Stock Transfer")
+          .where("trackedActivity.sourceDocumentId", "=", stockTransferId)
+          .where("trackedActivityInput.trackedEntityId", "=", trackedEntityId)
+          .where("trackedActivity.companyId", "=", companyId)
+          .selectAll("trackedActivity")
+          .executeTakeFirstOrThrow();
+
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+
+        // Create reverse item ledger entries to undo the transfer
+        // First, remove the entity from the destination shelf (toStorageUnitId)
+        itemLedgerInserts.push({
+          postingDate: today,
+          itemId: stockTransferLine.itemId,
+          quantity: -1, // Negative to remove inventory from to shelf
+          locationId: locationId,
+          storageUnitId: stockTransferLine.toStorageUnitId,
+          entryType: "Transfer",
+          documentType: "Direct Transfer",
+          documentId: stockTransferId,
+          trackedEntityId: trackedEntityId,
+          createdBy: userId,
+          companyId
+        });
+
+        // Then, restore the entity to the source shelf (fromStorageUnitId)
+        itemLedgerInserts.push({
+          postingDate: today,
+          itemId: stockTransferLine.itemId,
+          quantity: 1, // Positive to restore inventory at from shelf
+          locationId: locationId,
+          storageUnitId: stockTransferLine.fromStorageUnitId,
+          entryType: "Transfer",
+          documentType: "Direct Transfer",
+          documentId: stockTransferId,
+          trackedEntityId: trackedEntityId,
+          createdBy: userId,
+          companyId
+        });
+
+        // Insert reverse item ledger entries
+        if (itemLedgerInserts.length > 0) {
+          await trx
+            .insertInto("itemLedger")
+            .values(itemLedgerInserts)
+            .execute();
+        }
+
+        // Delete the tracked activity and its related records
+        await trx
+          .deleteFrom("trackedActivityInput")
+          .where("trackedActivityId", "=", transferActivity.id!)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await trx
+          .deleteFrom("trackedActivity")
+          .where("id", "=", transferActivity.id!)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        // Update tracked entity status back to available and restore shelf location
+        await trx
+          .updateTable("trackedEntity")
+          .set({
+            status: "Available",
+            attributes: {
+              ...(trackedEntity.attributes as Record<string, unknown>),
+              Shelf: stockTransferLine.fromStorageUnitId
+            }
+          })
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        // Update stock transfer line with reduced picked quantity
+        await trx
+          .updateTable("stockTransferLine")
+          .set({
+            trackedEntityId: null,
+            pickedQuantity: Math.max(
+              0,
+              (stockTransferLine.pickedQuantity ?? 0) - 1
+            ),
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      break;
+    }
+
+    case "unpickBatch": {
+      const {
+        stockTransferId,
+        stockTransferLineId,
+        trackedEntityId,
+        locationId,
+        userId,
+        companyId
+      } = validatedPayload;
+
+      await db.transaction().execute(async (trx) => {
+        // Lock the line AND the entity: an unpick read-modify-writes the
+        // entity's quantity/status and the line's pickedQuantity, so two
+        // concurrent unpicks of the same child would both credit the parent
+        // and both decrement the line off the same stale read. Same locks the
+        // pick paths take.
+        const stockTransferLine = await trx
+          .selectFrom("stockTransferLine")
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        const trackedEntity = await trx
+          .selectFrom("trackedEntity")
+          .where("id", "=", trackedEntityId)
+          .where("companyId", "=", companyId)
+          .selectAll()
+          .forUpdate()
+          .executeTakeFirstOrThrow();
+
+        // Find the transfer activity for this tracked entity
+        const transferActivity = await trx
+          .selectFrom("trackedActivity")
+          .innerJoin(
+            "trackedActivityInput",
+            "trackedActivity.id",
+            "trackedActivityInput.trackedActivityId"
+          )
+          .where("trackedActivity.type", "=", "Transfer")
+          .where("trackedActivity.sourceDocument", "=", "Stock Transfer")
+          .where("trackedActivity.sourceDocumentId", "=", stockTransferId)
+          .where("trackedActivityInput.trackedEntityId", "=", trackedEntityId)
+          .where("trackedActivity.companyId", "=", companyId)
+          .selectAll("trackedActivity")
+          .executeTakeFirstOrThrow();
+
+        // The whole child returns to its parent, so round once here and let
+        // the parent increase, the ledger pair and the pickedQuantity
+        // decrement all derive from the same value.
+        const transferQuantity = round(Number(trackedEntity.quantity));
+
+        // Re-checked UNDER the lock: a lot holding nothing has either already
+        // been unpicked or been consumed at production. Either way there is
+        // nothing to return, and proceeding would delete the transfer
+        // activity and reset pickedQuantity for a no-op.
+        if (transferQuantity <= 0) {
+          throw new PickGuardError(
+            "already-picked",
+            `Lot ${trackedEntity.readableId ?? trackedEntityId} has no quantity left to unpick`
+          );
+        }
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+
+        const entityAttributes = (trackedEntity.attributes ?? {}) as Record<
+          string,
+          unknown
+        >;
+        // New convention: the line's entity is a split CHILD carrying a
+        // back-pointer to the parent that stayed at the source bin.
+        const splitFromParentId = entityAttributes["Split From Entity ID"] as
+          | string
+          | undefined;
+        // Legacy convention (pre-flip rows): the departed ORIGINAL carries a
+        // forward pointer to the remainder entity it left behind.
+        const legacyRemainderId = entityAttributes["Split Entity ID"] as
+          | string
+          | undefined;
+
+        if (splitFromParentId) {
+          // Merge the child fully back into its parent and delete the Split
+          // — a clean undo, as if the partial transfer never happened.
+          // Locked too — its quantity is incremented from this read.
+          const parent = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", splitFromParentId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .forUpdate()
+            .executeTakeFirstOrThrow();
+
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              quantity: round(round(Number(parent.quantity)) + transferQuantity)
+            })
+            .where("id", "=", parent.id)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          // Drain the child (don't delete it — ledger history keeps the FK).
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              status: "Consumed",
+              quantity: 0
+            })
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          itemLedgerInserts.push(
+            {
+              postingDate: today,
+              itemId: stockTransferLine.itemId,
+              quantity: round(-transferQuantity), // drain the child at the destination
+              locationId: locationId,
+              storageUnitId: stockTransferLine.toStorageUnitId,
+              entryType: "Negative Adjmt.",
+              documentType: "Direct Transfer",
+              documentId: stockTransferId!,
+              trackedEntityId: trackedEntityId,
+              createdBy: userId,
+              companyId
+            },
+            {
+              postingDate: today,
+              itemId: stockTransferLine.itemId,
+              quantity: round(transferQuantity), // restore the parent at the source
+              locationId: locationId,
+              storageUnitId: stockTransferLine.fromStorageUnitId,
+              entryType: "Positive Adjmt.",
+              documentType: "Direct Transfer",
+              documentId: stockTransferId!,
+              trackedEntityId: parent.id,
+              createdBy: userId,
+              companyId
+            }
+          );
+
+          // Delete the Split activity that minted the child — scoped to the
+          // entity AND this transfer (a bare sourceDocumentId lookup grabs
+          // a sibling line's split on multi-line transfers).
+          const splitActivity = await trx
+            .selectFrom("trackedActivity")
+            .where("type", "=", "Split")
+            .where("sourceDocument", "=", "Stock Transfer")
+            .where("sourceDocumentId", "=", stockTransferId)
+            .where(attributesContain({ "Split Entity ID": trackedEntityId }))
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirst();
+
+          if (splitActivity) {
+            await trx
+              .deleteFrom("trackedActivityOutput")
+              .where("trackedActivityId", "=", splitActivity.id!)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            await trx
+              .deleteFrom("trackedActivityInput")
+              .where("trackedActivityId", "=", splitActivity.id!)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            await trx
+              .deleteFrom("trackedActivity")
+              .where("id", "=", splitActivity.id!)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+        } else if (legacyRemainderId) {
+          // This entity was created from a split, need to merge it back
+          const originalEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", legacyRemainderId)
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          const originalQuantity = round(
+            round(Number(originalEntity.quantity)) + transferQuantity
+          );
+
+          // Find the split activity — scoped to the remainder entity this
+          // pointer names, not just the transfer (multi-line safety).
+          const splitActivity = await trx
+            .selectFrom("trackedActivity")
+            .where("type", "=", "Split")
+            .where("sourceDocument", "=", "Stock Transfer")
+            .where("sourceDocumentId", "=", stockTransferId)
+            .where(attributesContain({ "Split Entity ID": legacyRemainderId }))
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          // Update original entity with merged quantity and restore shelf location
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              status: "Consumed",
+              quantity: 0
+            })
+            .where("id", "=", legacyRemainderId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          // Mark the split entity as consumed (don't delete it)
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              status: "Available",
+              quantity: originalQuantity
+            })
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          // Create item ledger entries for merge
+          // Both entities are on the fromStorageUnitId during the merge operation
+          itemLedgerInserts.push(
+            {
+              postingDate: today,
+              itemId: stockTransferLine.itemId,
+              quantity: round(originalQuantity), // zero out the split entity
+              locationId: locationId,
+              storageUnitId: stockTransferLine.fromStorageUnitId,
+              entryType: "Positive Adjmt.",
+              documentType: "Direct Transfer",
+              documentId: stockTransferId!,
+              trackedEntityId: trackedEntityId,
+              createdBy: userId,
+              companyId
+            },
+            {
+              postingDate: today,
+              itemId: stockTransferLine.itemId,
+              quantity: round(-transferQuantity), // Positive to restore to original entity
+              locationId: locationId,
+              storageUnitId: stockTransferLine.toStorageUnitId, // Both entities are on the source shelf
+              entryType: "Negative Adjmt.",
+              documentType: "Direct Transfer",
+              documentId: stockTransferId!,
+              trackedEntityId: trackedEntityId,
+              createdBy: userId,
+              companyId
+            },
+            {
+              postingDate: today,
+              itemId: stockTransferLine.itemId,
+              quantity: round(-(originalQuantity - transferQuantity)), // Positive to restore to original entity
+              locationId: locationId,
+              storageUnitId: stockTransferLine.fromStorageUnitId, // Both entities are on the source shelf
+              entryType: "Negative Adjmt.",
+              documentType: "Direct Transfer",
+              documentId: stockTransferId!,
+              trackedEntityId: legacyRemainderId,
+              createdBy: userId,
+              companyId
+            }
+          );
+
+          // Delete split activity records
+          await trx
+            .deleteFrom("trackedActivityOutput")
+            .where("trackedActivityId", "=", splitActivity.id!)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          await trx
+            .deleteFrom("trackedActivityInput")
+            .where("trackedActivityId", "=", splitActivity.id!)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          await trx
+            .deleteFrom("trackedActivity")
+            .where("id", "=", splitActivity.id!)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          // This was a direct transfer, just restore the entity and shelf location
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              status: "Available",
+              attributes: {
+                ...(trackedEntity.attributes as Record<string, unknown>),
+                Shelf: stockTransferLine.fromStorageUnitId
+              }
+            })
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          // Create reverse item ledger entries to undo the transfer
+          itemLedgerInserts.push({
+            postingDate: today,
+            itemId: stockTransferLine.itemId,
+            quantity: round(transferQuantity), // Positive to restore inventory at from shelf
+            locationId: locationId,
+            storageUnitId: stockTransferLine.fromStorageUnitId,
+            entryType: "Transfer",
+            documentType: "Direct Transfer",
+            documentId: stockTransferId,
+            trackedEntityId: trackedEntityId,
+            createdBy: userId,
+            companyId
+          });
+
+          itemLedgerInserts.push({
+            postingDate: today,
+            itemId: stockTransferLine.itemId,
+            quantity: round(-transferQuantity), // Negative to remove inventory from to shelf
+            locationId: locationId,
+            storageUnitId: stockTransferLine.toStorageUnitId,
+            entryType: "Transfer",
+            documentType: "Direct Transfer",
+            documentId: stockTransferId,
+            trackedEntityId: trackedEntityId,
+            createdBy: userId,
+            companyId
+          });
+        }
+
+        // Insert item ledger entries
+        if (itemLedgerInserts.length > 0) {
+          await trx
+            .insertInto("itemLedger")
+            .values(itemLedgerInserts)
+            .execute();
+        }
+
+        // Delete the transfer activity and its related records
+        await trx
+          .deleteFrom("trackedActivityInput")
+          .where("trackedActivityId", "=", transferActivity.id!)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await trx
+          .deleteFrom("trackedActivity")
+          .where("id", "=", transferActivity.id!)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        // Update stock transfer line with reduced picked quantity
+        await trx
+          .updateTable("stockTransferLine")
+          .set({
+            trackedEntityId: null,
+            pickedQuantity: Math.max(
+              0,
+              round(
+                round(stockTransferLine.pickedQuantity ?? 0) - transferQuantity
+              )
+            ),
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", stockTransferLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      break;
+    }
+  }
+
+  return {
+    success: true,
+    warning: expiredWarning,
+    splitEntityId
   };
 }

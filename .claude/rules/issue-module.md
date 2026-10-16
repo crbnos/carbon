@@ -81,7 +81,7 @@ in the migrations — **newest wins**; core tables created in
   the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
   rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.
 - **Disposition GL/cost posting** (`closeIssue` + inspection reject): inventory value
-  movements go through the **`post-nonconformance` server function** (`itemLedger` +
+  movements go through the **`post-nonconformance` posting** (`postNonconformance`, `quality.service.ts`: `itemLedger` +
   `costLedger` relief via `calculateCOGS` + a balanced `journal` offset to
   `accountDefault.scrapAccount` for every company — Provisional before the accounting
   cutover, when an empty `scrapAccount` becomes a stand-in line on retained earnings;

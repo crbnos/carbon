@@ -56,7 +56,7 @@ pnpm run check:manifest        # digest current?
 | `./carbon.server` | What a route calls: `carbon(request)` (the operations bound to the caller, typed through the app's `Register` augmentation), `respond(request, result).redirect(to, { message, onError })`, `registerCarbon` (the app's router and context, called once from `entry.server.tsx` via `apps/erp/app/modules/carbon.server.ts`), `bindServiceFns` / `Api` |
 | `./permissions` | `hasPermissions`, `permissionsFromClaims`, `resolvePermissions` and the `Permissions` / `PermissionRule` / `ModulePermissions` types. Pure; the `defineServiceFn` gate and `@carbon/server-functions`' `defineServerFn` both check by these rules |
 | `./errors` | `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError` — the server functions' error classes, until that package is dissolved |
-| `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag` |
+| `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag`; for a body ported from `@carbon/server-functions`, `settle` (a throw becomes the `CarbonError` `defineServerFn` would have made) and `attempt` (the `{ data, error }` with the `ServerFnError` itself, as `invoke` returned it) |
 
 ## Consumers
 

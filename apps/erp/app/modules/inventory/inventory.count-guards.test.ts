@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { resolveCountedEntity } from "./count-guards";
+import { resolveCountedEntity } from "./inventory.service";
 
 it("applies the delta to the live quantity", () => {
   expect(

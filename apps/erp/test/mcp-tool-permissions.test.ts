@@ -33,6 +33,9 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
     module: "accounting",
     actions: ["create"]
   },
+  // A serial unit's carrying cost, and re-booking it, are accounting figures.
+  inventory_getSerialUnitCosts: { module: "accounting", actions: ["view"] },
+  inventory_recostSerialUnit: { module: "accounting", actions: ["update"] },
   // Bank accounts: the table's RLS and every bank-account screen are accounting.
   purchasing_getSupplierBankAccounts: { module: "accounting", actions: ["view"] },
   purchasing_createSupplierBankAccount: {

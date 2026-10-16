@@ -2,7 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { isDataLayerError } from "@carbon/api/errors";
+import {
+  InvalidInputError,
+  isDataLayerError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
 import {
   CarbonError,
   type ErrorCategory,
@@ -18,6 +24,8 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { many, selectRows } from "@carbon/database/rows";
+import { getNextSequence } from "@carbon/database/sequence";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -33,12 +41,14 @@ import {
   cutLeasePaymentRows,
   type DraftedLeaseInvoice
 } from "@carbon/server-functions/create-lease-invoices";
+import { getSupplierPartPriceConverter } from "@carbon/server-functions/lib/supplier-part-currency";
 import {
   async,
   datetime,
   EPSILON,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
+  groupBy,
   openEndedLeaseHorizon,
   RoundingMode,
   round
@@ -51,7 +61,7 @@ import {
   type SupabaseClient
 } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
-import type { z } from "zod";
+import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   createDocumentUploadUrl,
@@ -474,30 +484,6 @@ export async function getPurchaseOrder(
     .select("*")
     .eq("id", purchaseOrderId)
     .single();
-}
-
-/** Not published: `purchasing_finalizeSupplierQuoteWithLink` finalizes, with the supplier contact rule and share link. */
-export async function finalizeSupplierQuote(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  payload: { supplierQuoteId: string; companyId: string; userId: string }
-) {
-  const { companyId, userId, ...input } = payload;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("finalize-supplier-quote", input);
-}
-
-/** Not published: `purchasing_finalizePurchasingRfqAndNotify` sends an RFQ, and emails the suppliers. */
-export async function finalizePurchasingRfq(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  payload: { rfqId: string; companyId: string; userId: string }
-) {
-  const { companyId, userId, ...input } = payload;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("finalize-purchasing-rfq", input);
 }
 
 export async function getPurchaseOrders(
@@ -6748,4 +6734,419 @@ export function worklistChange(
         : ""
     }`
   };
+}
+export const finalizeSupplierQuoteInput = z.object({
+  supplierQuoteId: z.string()
+});
+
+export const finalizeSupplierQuotePermission = {
+  create: "purchasing"
+} satisfies PermissionRule<z.output<typeof finalizeSupplierQuoteInput>>;
+
+/**
+ * Marks a supplier quote Active and copies its prices into the supplier's
+ * price list, in one transaction: a supplier part per quoted item (created
+ * when the supplier has none), one price break per quoted quantity, and the
+ * lowest quoted price as the part's own.
+ *
+ * Prices are recorded as quoted — per purchase unit, in the quote's currency.
+ * A part created here takes the quote's currency; an existing part in another
+ * currency gets the price converted into its own.
+ */
+export async function finalizeSupplierQuote(
+  ctx: ServiceContext,
+  raw: z.input<typeof finalizeSupplierQuoteInput>
+) {
+  const { supplierQuoteId } = finalizeSupplierQuoteInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  await db.transaction().execute(async (trx) => {
+    const quote = await trx
+      .selectFrom("supplierQuote")
+      .select(["id", "supplierId", "currencyCode", "exchangeRate"])
+      .where("id", "=", supplierQuoteId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!quote) throw new NotFoundError("Supplier quote not found");
+    if (!quote.supplierId) {
+      throw new ServerFnError("Supplier quote has no supplier", 400);
+    }
+    const supplierId = quote.supplierId;
+
+    const lines = await selectRows(
+      trx,
+      "supplierQuoteLine",
+      { supplierQuoteId, companyId },
+      {
+        columns: [
+          "id",
+          "itemId",
+          "supplierPartId",
+          "purchaseUnitOfMeasureCode",
+          "conversionFactor"
+        ],
+        orderBy: ["sortOrder", "id"]
+      }
+    );
+    const prices = await many(trx, "supplierQuoteLinePrice", {
+      supplierQuoteId,
+      companyId
+    });
+    const pricesByLine = groupBy(
+      prices.data,
+      (price) => price.supplierQuoteLineId
+    );
+
+    // Every line needs one quantity with a price and a lead time: a price
+    // list entry without either is worse than none.
+    const unpriced = lines.find(
+      (line) =>
+        !(pricesByLine[line.id] ?? []).some(
+          (price) => price.supplierUnitPrice && price.leadTime
+        )
+    );
+    if (unpriced) {
+      const item = unpriced.itemId
+        ? await trx
+            .selectFrom("item")
+            .select("readableIdWithRevision")
+            .where("id", "=", unpriced.itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+      throw new InvalidInputError(
+        `Line ${item?.readableIdWithRevision ?? unpriced.id} must have at least one quantity with price and lead time`
+      );
+    }
+
+    await trx
+      .updateTable("supplierQuote")
+      .set({
+        status: "Active",
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .where("id", "=", supplierQuoteId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const pricedLines = lines.flatMap((line) => {
+      const linePrices = pricesByLine[line.id] ?? [];
+      return line.itemId && linePrices.length > 0
+        ? [{ ...line, itemId: line.itemId, prices: linePrices }]
+        : [];
+    });
+    if (pricedLines.length === 0) return;
+
+    // An item the supplier already has a part for keeps that part as it is.
+    await trx
+      .insertInto("supplierPart")
+      .values(
+        pricedLines.map((line) => ({
+          itemId: line.itemId,
+          supplierId,
+          supplierPartId: line.supplierPartId ?? undefined,
+          supplierUnitOfMeasureCode:
+            line.purchaseUnitOfMeasureCode ?? undefined,
+          conversionFactor: line.conversionFactor ?? 1,
+          currencyCode: quote.currencyCode,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .onConflict((oc) =>
+        oc.columns(["itemId", "supplierId", "companyId"]).doNothing()
+      )
+      .execute();
+
+    const supplierParts = await trx
+      .selectFrom("supplierPart")
+      .select(["id", "itemId", "currencyCode"])
+      .where("supplierId", "=", supplierId)
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", [
+        ...new Set(pricedLines.map((line) => line.itemId))
+      ])
+      .execute();
+    const supplierPartByItem = new Map(
+      supplierParts.map((part) => [part.itemId, part])
+    );
+    const converter = await getSupplierPartPriceConverter(
+      trx,
+      companyId,
+      {
+        currencyCode: quote.currencyCode,
+        exchangeRate: quote.exchangeRate ?? 1
+      },
+      supplierParts.map((part) => part.currencyCode)
+    );
+
+    // Keyed by (part, quantity): when two lines quote one item at one
+    // quantity the later line wins, as it did when these were written in turn.
+    const priceBreaks = new Map<
+      string,
+      {
+        supplierPartId: string;
+        quantity: number;
+        supplierUnitPrice: number;
+        leadTime: number;
+      }
+    >();
+    const updatedAt = datetime.timestamp();
+
+    for (const line of pricedLines) {
+      const supplierPart = supplierPartByItem.get(line.itemId);
+      if (!supplierPart) {
+        throw new ServerFnError("Failed to create supplier part", 500);
+      }
+      const supplierPartId = supplierPart.id;
+      // Quote prices are per purchase unit, the basis a supplier part keeps.
+      const toPartCurrency = (price: number) =>
+        converter.toPartCurrency(price, supplierPart.currencyCode);
+
+      for (const price of line.prices) {
+        if (!price.supplierUnitPrice) continue;
+        const quantity = price.quantity ?? 1;
+        priceBreaks.set(`${supplierPartId}:${quantity}`, {
+          supplierPartId,
+          quantity,
+          supplierUnitPrice: toPartCurrency(price.supplierUnitPrice),
+          leadTime: price.leadTime ?? 0
+        });
+      }
+
+      const bestPrice = line.prices
+        .filter((price) => !!price.supplierUnitPrice)
+        .sort((a, b) => a.supplierUnitPrice - b.supplierUnitPrice)[0];
+      if (bestPrice) {
+        await trx
+          .updateTable("supplierPart")
+          .set({
+            supplierUnitPrice: toPartCurrency(bestPrice.supplierUnitPrice),
+            minimumOrderQuantity: bestPrice.quantity ?? 1
+          })
+          .where("id", "=", supplierPartId)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+
+    if (priceBreaks.size > 0) {
+      await trx
+        .insertInto("supplierPartPrice")
+        .values(
+          [...priceBreaks.values()].map((priceBreak) => ({
+            ...priceBreak,
+            sourceType: "Quote" as const,
+            sourceDocumentId: supplierQuoteId,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId,
+            updatedAt
+          }))
+        )
+        .onConflict((oc) =>
+          oc.columns(["supplierPartId", "quantity"]).doUpdateSet((eb) => ({
+            supplierUnitPrice: eb.ref("excluded.supplierUnitPrice"),
+            leadTime: eb.ref("excluded.leadTime"),
+            sourceType: eb.ref("excluded.sourceType"),
+            sourceDocumentId: eb.ref("excluded.sourceDocumentId"),
+            companyId: eb.ref("excluded.companyId"),
+            createdBy: eb.ref("excluded.createdBy"),
+            updatedBy: eb.ref("excluded.updatedBy"),
+            updatedAt: eb.ref("excluded.updatedAt")
+          }))
+        )
+        .execute();
+    }
+  });
+
+  return { success: true };
+}
+export const finalizePurchasingRfqInput = z.object({
+  rfqId: z.string()
+});
+
+const ITEM_TYPES = [
+  "Part",
+  "Material",
+  "Tool",
+  "Consumable",
+  "Service"
+] as const;
+
+export type FinalizedSupplierQuote = {
+  id: string;
+  supplierQuoteId: string;
+  supplierId: string;
+  externalLinkId: string;
+};
+
+export const finalizePurchasingRfqPermission = {
+  create: "purchasing"
+} satisfies PermissionRule<z.output<typeof finalizePurchasingRfqInput>>;
+
+/**
+ * Sends a purchasing RFQ out: one Draft supplier quote per RFQ supplier, each
+ * with its share link and a line per RFQ line that names an item, then the RFQ
+ * is marked Requested. One transaction — a failure leaves no quotes behind,
+ * and only a Draft RFQ is finalized, so a repeated request creates nothing.
+ */
+export async function finalizePurchasingRfq(
+  ctx: ServiceContext,
+  raw: z.input<typeof finalizePurchasingRfqInput>
+) {
+  const { rfqId } = finalizePurchasingRfqInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const quotes = await db.transaction().execute(async (trx) => {
+    // Locked: a second submit waits here, then finds the RFQ Requested.
+    const rfq = await trx
+      .selectFrom("purchasingRfq")
+      .select(["id", "status"])
+      .where("id", "=", rfqId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!rfq) throw new NotFoundError("RFQ not found");
+    if (rfq.status !== "Draft") {
+      throw new InvalidInputError(
+        `Only a draft RFQ can be finalized; this one is ${rfq.status}`
+      );
+    }
+
+    const suppliers = await trx
+      .selectFrom("purchasingRfqSupplier")
+      .select("supplierId")
+      .where("purchasingRfqId", "=", rfqId)
+      .where("companyId", "=", companyId)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    if (suppliers.length === 0) {
+      throw new InvalidInputError("No suppliers found for this RFQ");
+    }
+
+    const lines = await selectRows(
+      trx,
+      "purchasingRfqLines",
+      { purchasingRfqId: rfqId, companyId },
+      { orderBy: ["order"] }
+    );
+    if (lines.length === 0) {
+      throw new InvalidInputError("No line items found for this RFQ");
+    }
+    // supplierQuoteLine.itemId is NOT NULL
+    const quotableLines = lines.flatMap((line) =>
+      line.itemId ? [{ ...line, itemId: line.itemId }] : []
+    );
+
+    const created: FinalizedSupplierQuote[] = [];
+    for (const { supplierId } of suppliers) {
+      const supplierQuoteId = await getNextSequence(
+        trx,
+        "supplierQuote",
+        companyId
+      );
+      const interaction = await trx
+        .insertInto("supplierInteraction")
+        .values({ companyId, supplierId })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const now = datetime.timestamp();
+      const quote = await trx
+        .insertInto("supplierQuote")
+        .values({
+          supplierQuoteId,
+          supplierId,
+          supplierInteractionId: interaction.id,
+          status: "Draft",
+          exchangeRate: 1,
+          exchangeRateUpdatedAt: now,
+          quotedDate: now,
+          supplierQuoteType: "Purchase",
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const externalLink = await trx
+        .insertInto("externalLink")
+        .values({
+          documentType: "SupplierQuote",
+          documentId: quote.id,
+          supplierId,
+          companyId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await trx
+        .updateTable("supplierQuote")
+        .set({ externalLinkId: externalLink.id })
+        .where("id", "=", quote.id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if (quotableLines.length > 0) {
+        await trx
+          .insertInto("supplierQuoteLine")
+          .values(
+            quotableLines.map((line, index) => ({
+              supplierQuoteId: quote.id,
+              supplierQuoteLineType: ITEM_TYPES.some(
+                (type) => type === line.itemType
+              )
+                ? (line.itemType as string)
+                : "Part",
+              itemId: line.itemId,
+              description: line.description ?? "",
+              quantity: line.quantity ?? [1],
+              inventoryUnitOfMeasureCode:
+                line.inventoryUnitOfMeasureCode ?? "EA",
+              purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "EA",
+              conversionFactor: line.conversionFactor ?? 1,
+              sortOrder: index + 1,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+
+      await trx
+        .insertInto("purchasingRfqToSupplierQuote")
+        .values({
+          purchasingRfqId: rfqId,
+          supplierQuoteId: quote.id,
+          companyId
+        })
+        .execute();
+
+      created.push({
+        id: quote.id,
+        supplierQuoteId,
+        supplierId,
+        externalLinkId: externalLink.id
+      });
+    }
+
+    await trx
+      .updateTable("purchasingRfq")
+      .set({
+        status: "Requested",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", rfqId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return created;
+  });
+
+  return { quotes };
 }

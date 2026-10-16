@@ -30,6 +30,7 @@ import {
   unpackBackupArchive,
   updateCompany
 } from "~/modules/settings/settings.service";
+import { invokePosting } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
@@ -55,11 +56,11 @@ export async function provisionCompanyData(
   }
 ): Promise<void> {
   if (!backup) {
-    const seed = await seedCompany(
-      serviceRole,
-      getDatabaseClient(),
-      companyId,
-      userId
+    const seed = await invokePosting(
+      { db: getDatabaseClient(), companyId, userId },
+      "seed-company",
+      { identityOnly: false },
+      seedCompany
     );
     if (seed.error) {
       logger.error("Failed to seed company", { error: seed.error });
@@ -68,14 +69,11 @@ export async function provisionCompanyData(
     return;
   }
 
-  const seed = await seedCompany(
-    serviceRole,
-    getDatabaseClient(),
-    companyId,
-    userId,
-    {
-      identityOnly: true
-    }
+  const seed = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "seed-company",
+    { identityOnly: true },
+    seedCompany
   );
   if (seed.error) {
     logger.error("Failed to seed company", { error: seed.error });

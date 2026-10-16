@@ -295,7 +295,7 @@ discrete entity per sample; non-serial (Batch/Inventory/Non-Inventory) record pa
 status to flip, so a Reject posts a compensating write-off instead (see disposition).
 
 **Reject / disposition GL posting.** A non-tracked `Inventory` reject and every NCR disposition
-route their inventory value through the **`post-nonconformance` server function** (`itemLedger` +
+route their inventory value through the **`post-nonconformance` posting** (`postNonconformance`, `quality.service.ts`: `itemLedger` +
 `costLedger` relief + a `journal` offset to `accountDefault.scrapAccount` for every company,
 Provisional before the accounting cutover; idempotent per `(documentType, documentId)`). The reject route
 (`$id.reject.tsx`) invokes it with the lot write-off (`documentType 'Inbound Inspection'`,

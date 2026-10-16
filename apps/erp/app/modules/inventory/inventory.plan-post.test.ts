@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { type PlannableLine, planInventoryCountPost } from "./plan-post";
+import {
+  type PlannableLine,
+  planInventoryCountPost
+} from "./inventory.service";
 
 // Unit tests for the pure planning core: the reconciliation delta math
 // (`counted - systemQuantity`). The FOR UPDATE lock, status flip, and serial 0/1

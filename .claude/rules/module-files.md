@@ -81,6 +81,12 @@ function keeps its logic as is:
   throws with messages written for the person (673 plain `Error`s); `settle`
   turns a throw into a refusal by `defineServerFn`'s rules, so the message and
   status a caller sees do not change. A plain `run` would withhold them.
+- A caller that read the `{ data, error }` `invoke` returned (a fallback
+  message, the error's `status` or `body`) calls `invokePosting(ctx, "<name>",
+  input, service.<name>)` (`~/modules/shared/shared.service`) instead: the same
+  shape and the same `ServerFnError`. An older building block that holds `db`,
+  `companyId` and `userId` passes those in place of `ctx`; with `{ as: rule }`
+  it checks the caller behind `client` first, as `serverFns.as` did.
 - The operation keeps the function's permission exactly
   (`src/__snapshots__/permissions-manifest.test.ts.snap`), and the function
   leaves the package's registry (`src/invoke.ts`).
@@ -93,7 +99,7 @@ function keeps its logic as is:
 | Import | From |
 |---|---|
 | `defineServiceFn`, `CarbonError`, `ServiceContext`, `toResult` | `@carbon/api/service-fn.server` |
-| `stamp`, `envelope`, `paged`, `plain`, `envelopes`, `flag` | `@carbon/api/service-tools.server` |
+| `stamp`, `envelope`, `paged`, `plain`, `envelopes`, `flag`, `settle`, `attempt` | `@carbon/api/service-tools.server` |
 | `carbon`, `respond` | `@carbon/api/carbon.server` |
 
 The ERP hands `carbon()` its router and caller context once

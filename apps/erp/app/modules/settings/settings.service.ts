@@ -4,6 +4,8 @@
 
 import type { Readable } from "node:stream";
 import { createGunzip } from "node:zlib";
+import { NotFoundError } from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
 import type {
   CarbonError,
   ErrorCategory,
@@ -20,7 +22,32 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { single, updateRows } from "@carbon/database/rows";
+import {
+  accountDefaults,
+  accounts,
+  changeOrderRequiredActions,
+  changeOrderTypes,
+  currencies,
+  customerStatuses,
+  dimensions,
+  failureModes,
+  fiscalYearSettings,
+  fixedAssetClasses,
+  gaugeTypes,
+  getGroupId,
+  groups,
+  nonConformanceRequiredActions,
+  nonConformanceTypes,
+  paymentTerms,
+  periodCloseTaskDefinitions,
+  returnReasons,
+  scrapReasons,
+  sequences,
+  unitOfMeasures
+} from "@carbon/database/seed-data";
 import type {
   DocumentBlock,
   DocumentSectionPlacement,
@@ -89,7 +116,6 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
 import {
   datetime,
   isInternalEmail,
@@ -97,9 +123,10 @@ import {
   redirectExternal
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Insertable, type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { extract as tarExtract } from "tar-stream";
-import type { z } from "zod";
+import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
@@ -920,21 +947,6 @@ export async function updateSubsidiary(
 ) {
   const { id: _, ...data } = subsidiary;
   return client.from("company").update(data).eq("id", id);
-}
-
-export async function seedCompany(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  userId: string,
-  opts?: { parentCompanyId?: string; identityOnly?: boolean }
-) {
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("seed-company", {
-      parentCompanyId: opts?.parentCompanyId,
-      identityOnly: opts?.identityOnly ?? false
-    });
 }
 
 export async function updateCompanyPlan(
@@ -3296,4 +3308,692 @@ export async function saveIntegrationMetadata(
   if (update.error) return ctx.error("internal", failure, update.error);
   await invalidateIntegrationHealthCache(integrationId, ctx.company.id);
   return null;
+}
+type Account = Pick<
+  Database["public"]["Tables"]["account"]["Row"],
+  | "id"
+  | "name"
+  | "companyGroupId"
+  | "active"
+  | "isGroup"
+  | "class"
+  | "incomeBalance"
+  | "accountType"
+  | "consolidatedRate"
+  | "parentId"
+>;
+
+export function resolveShippingDefault({
+  parentDefaultId,
+  accounts,
+  companyGroupId
+}: {
+  parentDefaultId: string | null;
+  accounts: readonly Account[];
+  companyGroupId: string;
+}): string {
+  const eligible = (account: Account) =>
+    account.companyGroupId === companyGroupId &&
+    account.active === true &&
+    account.isGroup === false &&
+    account.class === "Revenue" &&
+    account.incomeBalance === "Income Statement";
+  const mapped = accounts.find((account) => account.id === parentDefaultId);
+  if (mapped && eligible(mapped)) return mapped.id;
+
+  const byId = new Map(accounts.map((account) => [account.id, account]));
+  const candidates = accounts.filter((account) => {
+    const parent = account.parentId ? byId.get(account.parentId) : undefined;
+    return (
+      eligible(account) &&
+      account.name === "Shipping Revenue" &&
+      account.accountType === "Income" &&
+      account.consolidatedRate === "Average" &&
+      parent?.companyGroupId === companyGroupId &&
+      parent.active === true &&
+      parent.isGroup === true &&
+      parent.class === "Revenue" &&
+      parent.accountType === "Income" &&
+      parent.incomeBalance === "Income Statement"
+    );
+  });
+  if (candidates.length !== 1) {
+    throw new Error(
+      "A unique compatible Shipping Revenue default is required for this company group"
+    );
+  }
+  return candidates[0]!.id;
+}
+const seedCompanyLogger = getLogger("server-functions", "seed-company");
+
+export const seedCompanyInput = z.object({
+  parentCompanyId: z.string().optional(),
+  identityOnly: z.boolean().optional()
+});
+
+export const seedCompanyPermission = "system" satisfies PermissionRule<
+  z.output<typeof seedCompanyInput>
+>;
+
+/** Seeds a new company's reference data, groups and admin link, in one transaction. */
+export async function seedCompany(
+  ctx: ServiceContext,
+  raw: z.input<typeof seedCompanyInput>
+) {
+  const { parentCompanyId, identityOnly } = seedCompanyInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  seedCompanyLogger.info({
+    companyId,
+    userId,
+    parentCompanyId,
+    identityOnly: identityOnly === true
+  });
+
+  const company = await single(db, "company", { id: companyId });
+  if (company.error) throw new Error(company.error.message);
+  if (!company.data) throw new NotFoundError("Company not found");
+
+  // Idempotency guard. The whole seed runs in a single transaction, so a
+  // committed run has inserted `userToCompany(userId, companyId)`. A caller
+  // that retries a seed which already committed would otherwise throw 23505
+  // on the identity inserts. If the link already exists, the prior run
+  // finished: no-op.
+  const existingLink = await db
+    .selectFrom("userToCompany")
+    .select("userId")
+    .where("userId", "=", userId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  if (existingLink) {
+    return { success: true, alreadySeeded: true };
+  }
+
+  // Determine if this is a new root company or joining an existing group
+  let companyGroupId = company.data.companyGroupId;
+  const isNewGroup = !companyGroupId && !parentCompanyId;
+
+  // If this is a subsidiary, get the parent's companyGroupId
+  if (parentCompanyId && !companyGroupId) {
+    const parent = await single(
+      db,
+      "company",
+      { id: parentCompanyId },
+      { columns: ["companyGroupId"] }
+    );
+    if (parent.error) throw new Error(parent.error.message);
+    if (!parent.data?.companyGroupId)
+      throw new Error("Parent company has no group");
+    companyGroupId = parent.data.companyGroupId;
+  }
+
+  await db.transaction().execute(async (trx) => {
+    // If no companyGroupId, create a new company group and assign it
+    if (isNewGroup) {
+      const companyGroupResult = await trx
+        .insertInto("companyGroup")
+        .values({
+          name: company.data.name,
+          createdBy: userId,
+          ownerId: userId
+        })
+        .returning(["id"])
+        .execute();
+
+      companyGroupId = companyGroupResult[0]!.id;
+      if (!companyGroupId) throw new Error("Failed to create company group");
+
+      await trx
+        .updateTable("company")
+        .set({ companyGroupId })
+        .where("id", "=", companyId)
+        .execute();
+    }
+
+    // For subsidiaries, companyGroupId + parentCompanyId are set LATER (just
+    // before the elimination-entity block), not here. Setting companyGroupId
+    // fires the `company_sync_ic_partners` trigger, which inserts an
+    // intercompany supplier/customer row in this company for each sibling. Those
+    // inserts rely on the `set_{supplier,customer}_readable_id_on_insert`
+    // triggers to stamp a readableId from the company's sequence — and the
+    // sequences aren't seeded until the reference-data block below. Firing the
+    // trigger here left every intercompany row with readableId '' (the auto-fill
+    // no-ops when no sequence row exists yet). Since
+    // `supplier_readableId_companyId_unique` treats '' as a real value, only the
+    // FIRST sibling's row survived; every later sibling collided on
+    // (companyId, '') and was silently dropped by ON CONFLICT DO NOTHING — so a
+    // company created into a group of 3+ only ever saw one sibling.
+
+    // The generated types cover the public schema only.
+    await (
+      trx.withSchema("storage") as unknown as Kysely<{
+        buckets: { id: string; name: string; public: boolean };
+      }>
+    )
+      .insertInto("buckets")
+      .values({
+        id: companyId,
+        name: companyId,
+        public: false
+      })
+      .onConflict((oc) => oc.column("id").doNothing())
+      .execute();
+
+    await trx
+      .insertInto("userToCompany")
+      .values([{ userId, companyId, role: "employee" }])
+      .execute();
+
+    // high-order groups — identity infrastructure: the employeeType insert
+    // below fires a trigger that creates a membership row referencing these,
+    // so they must exist even in identity-only mode. (The onboarding import
+    // skips `group` so the template doesn't duplicate them.)
+    await trx
+      .insertInto("group")
+      .values(
+        groups.map(({ idPrefix, ...g }) => ({
+          ...g,
+          id: getGroupId(idPrefix, companyId),
+          companyId
+        }))
+      )
+      .execute();
+
+    const employeeTypes = await trx
+      .insertInto("employeeType")
+      .values([
+        {
+          name: "Admin",
+          companyId,
+          protected: true,
+          systemType: "Admin" as const
+        }
+      ])
+      .returning(["id"])
+      .execute();
+
+    const employeeTypeId = employeeTypes[0]!.id;
+    if (!employeeTypeId)
+      throw new Error("Failed to insert admin employee type");
+
+    // get the modules
+    const modules = (await trx
+      .selectFrom("modules")
+      .select("name")
+      .execute()) as { name: string }[];
+
+    // create employee type permissions for admin
+    const employeeTypePermissions = modules.reduce<
+      Database["public"]["Tables"]["employeeTypePermission"]["Insert"][]
+    >((acc, module) => {
+      if (module.name) {
+        acc.push({
+          employeeTypeId: employeeTypeId,
+          // @ts-expect-error - it's legit, chill typescript
+          module: module.name,
+          create: [companyId],
+          update: [companyId],
+          delete: [companyId],
+          view: [companyId]
+        });
+      }
+      return acc;
+    }, []);
+
+    // insert employee type permissions
+    await trx
+      .insertInto("employeeTypePermission")
+      .values(employeeTypePermissions)
+      .execute();
+
+    // insert employee
+    await trx
+      .insertInto("employee")
+      .values([
+        {
+          id: String(userId),
+          employeeTypeId,
+          companyId,
+          active: true
+        }
+      ])
+      .execute();
+
+    // Reference + accounting data (customer statuses, UoMs, sequences,
+    // chart of accounts, …). Skipped in identity-only mode — a company
+    // backup carries all of this, so onboarding-from-a-backup seeds only
+    // the identity layer above and lets the import provide the rest.
+    if (!identityOnly) {
+      // customer status
+      await trx
+        .insertInto("customerStatus")
+        .values(
+          customerStatuses.map((name) => ({
+            name,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      // scrap reason codes
+      await trx
+        .insertInto("scrapReason")
+        .values(
+          scrapReasons.map((name) => ({
+            name,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      // return reason codes (shared by customer RMAs and supplier returns)
+      await trx
+        .insertInto("returnReason")
+        .values(
+          returnReasons.map((name) => ({
+            name,
+            inventoryValueZero: false,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      // payment terms
+      await trx
+        .insertInto("paymentTerm")
+        .values(paymentTerms.map((pt) => ({ ...pt, companyId })))
+        .execute();
+
+      await trx
+        .insertInto("unitOfMeasure")
+        .values(unitOfMeasures.map((uom) => ({ ...uom, companyId })))
+        .execute();
+
+      await trx
+        .insertInto("gaugeType")
+        .values(
+          gaugeTypes.map((gt) => ({
+            name: gt,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      await trx
+        .insertInto("maintenanceFailureMode")
+        .values(
+          failureModes.map((name) => ({
+            name,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      await trx
+        .insertInto("nonConformanceType")
+        .values(nonConformanceTypes.map((nc) => ({ ...nc, companyId })))
+        .execute();
+
+      await trx
+        .insertInto("nonConformanceRequiredAction")
+        .values(
+          nonConformanceRequiredActions.map((nc) => ({ ...nc, companyId }))
+        )
+        .execute();
+
+      // change-order default types (the changeOrderType lookup). New on this
+      // branch and not yet in the cloud-generated Kysely types, so the insert
+      // goes through a cast (mirrors changeOrderRequiredAction below).
+      await (trx as any)
+        .insertInto("changeOrderType")
+        .values(changeOrderTypes.map((ct) => ({ ...ct, companyId })))
+        .execute();
+
+      // change-order default actions (system template rows). New on this branch
+      // and not yet in the cloud-generated Kysely types, so the insert goes
+      // through a cast (mirrors periodCloseTaskDefinition below).
+      await (trx as any)
+        .insertInto("changeOrderRequiredAction")
+        .values(changeOrderRequiredActions.map((ca) => ({ ...ca, companyId })))
+        .execute();
+
+      await trx
+        .insertInto("sequence")
+        .values(sequences.map((s) => ({ ...s, companyId })))
+        .execute();
+
+      // period-close checklist definitions (system template rows). The table is
+      // new on this branch and not yet in the cloud-generated Kysely types, so
+      // the insert goes through a cast (mirrors accounting.service.ts).
+      await (trx as any)
+        .insertInto("periodCloseTaskDefinition")
+        .values(
+          periodCloseTaskDefinitions.map((d) => ({
+            ...d,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      // Shared tables: only seed for new groups (existing groups already have these)
+      let accountIdByKey: Record<string, string> = {};
+      let siblingDefaults:
+        | Selectable<KyselyDatabase["accountDefault"]>
+        | undefined;
+      let siblingAssetClasses: Selectable<KyselyDatabase["fixedAssetClass"]>[] =
+        [];
+      if (isNewGroup) {
+        await trx
+          .insertInto("currency")
+          .values(
+            currencies.map((c) => ({ ...c, companyGroupId: companyGroupId! }))
+          )
+          .execute();
+
+        // Insert accounts in order, resolving parentKey to parentId
+        for (const { key, parentKey, ...acc } of accounts) {
+          const result = await trx
+            .insertInto("account")
+            .values({
+              ...acc,
+              companyGroupId: companyGroupId!,
+              parentId: parentKey ? (accountIdByKey[parentKey] ?? null) : null
+            })
+            .returning(["id"])
+            .execute();
+          if (result[0]?.id) {
+            accountIdByKey[key] = result[0].id;
+          }
+        }
+
+        await trx
+          .insertInto("dimension")
+          .values(
+            dimensions.map((d) => ({
+              name: d.name,
+              entityType: d.entityType,
+              companyGroupId: companyGroupId!,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      } else {
+        // A subsidiary joining an existing group copies the account ids of a
+        // company already in it. Its chart may have been imported, so the
+        // seeded numbers below are only the fallback for a group with none.
+        const sibling = await trx
+          .selectFrom("accountDefault")
+          .innerJoin("company", "company.id", "accountDefault.companyId")
+          .selectAll("accountDefault")
+          .where("company.companyGroupId", "=", companyGroupId!)
+          .where("accountDefault.companyId", "!=", companyId)
+          .orderBy(
+            sql`"accountDefault"."companyId" = ${parentCompanyId ?? ""}`,
+            "desc"
+          )
+          .orderBy("accountDefault.companyId")
+          .executeTakeFirst();
+        if (sibling) {
+          siblingDefaults = sibling;
+          siblingAssetClasses = await trx
+            .selectFrom("fixedAssetClass")
+            .selectAll()
+            .where("companyId", "=", sibling.companyId)
+            .execute();
+        } else {
+          const existingAccounts = await trx
+            .selectFrom("account")
+            .select([
+              "id",
+              "number",
+              "name",
+              "companyGroupId",
+              "active",
+              "isGroup",
+              "class",
+              "incomeBalance",
+              "accountType",
+              "consolidatedRate",
+              "parentId"
+            ])
+            .where("companyGroupId", "=", companyGroupId!)
+            .execute();
+          for (const acc of existingAccounts) {
+            if (acc.number) {
+              accountIdByKey[acc.number] = acc.id;
+            }
+          }
+          accountIdByKey["4050"] = resolveShippingDefault({
+            parentDefaultId: null,
+            accounts: existingAccounts.filter(
+              (account) => account.id !== accountIdByKey["4010"]
+            ),
+            companyGroupId: companyGroupId!
+          });
+        }
+      }
+
+      // Resolve account numbers to IDs for account defaults
+      const resolvedDefaults: Record<string, string | null> = {};
+      for (const [key, number] of Object.entries(accountDefaults)) {
+        resolvedDefaults[key] = accountIdByKey[number] ?? null;
+      }
+      // A sibling's defaults are copied exactly, empty ones included: after
+      // a chart import the seeded numbers may name unrelated accounts.
+      if (siblingDefaults) {
+        for (const column of ACCOUNT_DEFAULT_COLUMNS) {
+          resolvedDefaults[column] =
+            (siblingDefaults[column] as string | null) ?? null;
+        }
+      }
+
+      // These defaults are NOT NULL in the schema. If a customized COA
+      // on an existing group is missing one of their accounts
+      // (6050/4130/4120/7060/1150/1210/1220), the lookup yields null and the
+      // insert below would violate the not-null constraint. Fall back to an
+      // existing default of the same nature so the insert can't fail — mirrors
+      // the COALESCE backfills in 20260630093809_ar-ap-payments.sql,
+      // 20260711155312_supplier-prepayment-account.sql, and
+      // 20260713190909_raw-materials-finished-goods-accounts.sql.
+      // Order matters: rawMaterialsAccount resolves before finishedGoodsAccount
+      // chains onto it.
+      const arApDefaultFallbacks: Record<string, string> = {
+        customerWriteOffAccount: "salesDiscountAccount",
+        supplierWriteOffAccount: "salesAccount",
+        realizedExchangeGainAccount: "salesAccount",
+        realizedExchangeLossAccount: "interestAccount",
+        assetGainOnDisposalAccount: "assetLossOnDisposalAccount",
+        supplierPrepaymentAccount: "receivablesAccount",
+        rawMaterialsAccount: "workInProgressAccount",
+        finishedGoodsAccount: "rawMaterialsAccount"
+      };
+      for (const [key, fallbackKey] of Object.entries(arApDefaultFallbacks)) {
+        if (!resolvedDefaults[key]) {
+          resolvedDefaults[key] = resolvedDefaults[fallbackKey] ?? null;
+        }
+      }
+
+      // Company-specific accounting defaults and posting groups
+      await trx
+        .insertInto("accountDefault")
+        .values([
+          {
+            ...resolvedDefaults,
+            companyId
+          } as Insertable<KyselyDatabase["accountDefault"]>
+        ])
+        .execute();
+
+      await trx
+        .insertInto("fiscalYearSettings")
+        .values([{ ...fiscalYearSettings, companyId }])
+        .execute();
+
+      // A new company stays Provisional until the activation wizard sets
+      // its cutover, so the chart can be imported before anything is
+      // Posted (.ai/specs/2026-10-12-chart-of-accounts-import.md).
+
+      // A subsidiary copies the group's fixed asset classes from a sibling,
+      // every setting included; a new group seeds them by account number.
+      const classRows = siblingDefaults
+        ? siblingAssetClasses.map(
+            ({
+              id: _id,
+              createdAt: _createdAt,
+              updatedAt: _updatedAt,
+              updatedBy: _updatedBy,
+              ...fac
+            }) => ({ ...fac, companyId, createdBy: userId })
+          )
+        : fixedAssetClasses.map((fac) => ({
+            name: fac.name,
+            depreciationMethod: fac.depreciationMethod,
+            usefulLifeMonths: fac.usefulLifeMonths,
+            residualValuePercent: fac.residualValuePercent,
+            assetAccountId: accountIdByKey[fac.assetAccount]!,
+            accumulatedDepreciationAccountId:
+              accountIdByKey[fac.accumulatedDepreciationAccount]!,
+            depreciationExpenseAccountId:
+              accountIdByKey[fac.depreciationExpenseAccount]!,
+            writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
+            writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
+            gainOnDisposalAccountId: accountIdByKey[fac.gainOnDisposalAccount]!,
+            lossOnDisposalAccountId: accountIdByKey[fac.lossOnDisposalAccount]!,
+            isConstructionInProgress: fac.isConstructionInProgress,
+            companyId,
+            createdBy: userId
+          }));
+      if (classRows.length > 0) {
+        await trx.insertInto("fixedAssetClass").values(classRows).execute();
+      }
+    } // end if (!identityOnly)
+
+    const user = await single(
+      trx,
+      "userPermission",
+      { id: userId },
+      { columns: ["permissions"] }
+    );
+    if (user.error) throw new Error(user.error.message);
+
+    const currentPermissions = (user.data?.permissions ?? {}) as Record<
+      string,
+      string[]
+    >;
+    const newPermissions = { ...currentPermissions };
+    modules.forEach(({ name }) => {
+      const module = name?.toLowerCase();
+      if (`${module}_view` in newPermissions) {
+        newPermissions[`${module}_view`]!.push(companyId);
+      } else {
+        newPermissions[`${module}_view`] = [companyId];
+      }
+
+      if (`${module}_create` in newPermissions) {
+        newPermissions[`${module}_create`]!.push(companyId);
+      } else {
+        newPermissions[`${module}_create`] = [companyId];
+      }
+
+      if (`${module}_update` in newPermissions) {
+        newPermissions[`${module}_update`]!.push(companyId);
+      } else {
+        newPermissions[`${module}_update`] = [companyId];
+      }
+
+      if (`${module}_delete` in newPermissions) {
+        newPermissions[`${module}_delete`]!.push(companyId);
+      } else {
+        newPermissions[`${module}_delete`] = [companyId];
+      }
+    });
+
+    const { error } = await updateRows(
+      trx,
+      "userPermission",
+      { permissions: newPermissions },
+      { id: userId }
+    );
+    if (error) throw new Error(error.message);
+
+    // For subsidiaries: set companyGroupId + parentCompanyId now that the
+    // reference data (including the supplier/customer sequences) has been
+    // seeded. This is what fires `company_sync_ic_partners`; running it here
+    // guarantees the readableId auto-fill triggers can stamp a real id on every
+    // intercompany partner row, so no two siblings collide on (companyId, '').
+    if (parentCompanyId) {
+      await trx
+        .updateTable("company")
+        .set({ companyGroupId, parentCompanyId })
+        .where("id", "=", companyId)
+        .execute();
+    }
+
+    // Auto-create elimination entity if this is a subsidiary
+    if (parentCompanyId && companyGroupId) {
+      const siblings = await trx
+        .selectFrom("company")
+        .select(["id", "isEliminationEntity"])
+        .where("companyGroupId", "=", companyGroupId)
+        .where("parentCompanyId", "=", parentCompanyId)
+        .execute();
+
+      const hasElimination = siblings.some((s) => s.isEliminationEntity);
+
+      if (!hasElimination) {
+        const parent = await trx
+          .selectFrom("company")
+          .select(["name", "baseCurrencyCode", "countryCode"])
+          .where("id", "=", parentCompanyId)
+          .executeTakeFirst();
+
+        const eliminationCompany = await trx
+          .insertInto("company")
+          .values({
+            name: `Elimination - ${parent?.name ?? "Unknown"}`,
+            addressLine1: "",
+            city: "",
+            stateProvince: "",
+            postalCode: "",
+            baseCurrencyCode:
+              parent?.baseCurrencyCode ?? company.data.baseCurrencyCode,
+            countryCode: parent?.countryCode ?? company.data.countryCode ?? "",
+            parentCompanyId,
+            isEliminationEntity: true,
+            companyGroupId
+          })
+          .returning(["id"])
+          .executeTakeFirst();
+
+        // Seed sequences for the elimination entity. It is otherwise a bare
+        // consolidation shell, but generateEliminationEntries posts an
+        // elimination journal on it and stamps journalEntryId from
+        // get_next_sequence('journalEntry', <elim>) — without its own
+        // sequence rows that raises "Sequence not found".
+        if (eliminationCompany?.id) {
+          await trx
+            .insertInto("sequence")
+            .values(
+              sequences.map((s) => ({
+                ...s,
+                companyId: eliminationCompany.id
+              }))
+            )
+            .execute();
+        }
+      }
+    }
+  });
+
+  return { success: true };
 }

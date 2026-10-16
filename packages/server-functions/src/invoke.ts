@@ -14,7 +14,6 @@ import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
   "activate-accounting": () => import("./activate-accounting"),
-  "apply-account-import": () => import("./apply-account-import"),
   "batch-operations": () => import("./batch-operations"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-lease-invoices": () => import("./create-lease-invoices"),
@@ -22,8 +21,6 @@ const registry = {
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),
   create: () => import("./create"),
-  "finalize-purchasing-rfq": () => import("./finalize-purchasing-rfq"),
-  "finalize-supplier-quote": () => import("./finalize-supplier-quote"),
   "get-method": () => import("./get-method"),
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
@@ -32,11 +29,9 @@ const registry = {
   "post-charge": () => import("./post-charge"),
   "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
-  "post-inventory-count": () => import("./post-inventory-count"),
   "post-lease": () => import("./post-lease"),
   "post-maintenance-event": () => import("./post-maintenance-event"),
   "post-memo": () => import("./post-memo"),
-  "post-nonconformance": () => import("./post-nonconformance"),
   "post-payment": () => import("./post-payment"),
   "post-picking": () => import("./post-picking"),
   "post-production-event": () => import("./post-production-event"),
@@ -46,7 +41,6 @@ const registry = {
   "post-rental-agreement": () => import("./post-rental-agreement"),
   "post-sales-invoice": () => import("./post-sales-invoice"),
   "post-shipment": () => import("./post-shipment"),
-  "post-stock-transfer": () => import("./post-stock-transfer"),
   "preview-revenue-recognition-run": () =>
     import("./preview-revenue-recognition-run"),
   "propose-revenue-recognition-run": () =>
@@ -55,7 +49,6 @@ const registry = {
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
-  "seed-company": () => import("./seed-company"),
   sync: () => import("./sync"),
   "trigger-rework": () => import("./trigger-rework"),
   "update-purchased-prices": () => import("./update-purchased-prices")

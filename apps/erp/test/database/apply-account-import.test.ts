@@ -22,9 +22,9 @@ import { afterEach, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "../local-database-test-fixture";
-import { ServerFnContext } from "../server-fn-context";
-import applyAccountImport from ".";
+} from "@carbon/server-functions/local-database-test-fixture";
+import { applyAccountImport } from "../../app/modules/accounting/accounting.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 
 const USER = "system";
 
@@ -171,7 +171,7 @@ async function fixture({ cutover = false } = {}) {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({
+  const ctx = ({
     db,
     companyId: companies[0]!,
     userId: USER
@@ -438,11 +438,11 @@ describe("apply-account-import", () => {
     "updates the accounts behind the defaults and deletes the rest",
     async () => {
       f = await fixture();
-      const result = await applyAccountImport(f.ctx, {
+      const result = await invokePosting(f.ctx, "apply-account-import", {
         chart: customerChart(),
         defaults: defaultsFile(STANDARD, "10000"),
         resolutions: { targets: {} }
-      });
+      }, applyAccountImport);
       expect(result.error).toBeNull();
       expect(await accountRow(f.db, f.account("1010"))).toMatchObject({
         number: "10000",
@@ -475,7 +475,7 @@ describe("apply-account-import", () => {
       ["4010", "Sales", "Revenue", "Revenue"],
       ["4050", "Shipping Revenue", "Revenue", "Revenue"]
     ]);
-    const result = await applyAccountImport(f.ctx, {
+    const result = await invokePosting(f.ctx, "apply-account-import", {
       chart,
       defaults: defaultsFile(
         {
@@ -488,7 +488,7 @@ describe("apply-account-import", () => {
         "1110"
       ),
       resolutions: { targets: {} }
-    });
+    }, applyAccountImport);
     expect(result.error).toBeNull();
     expect((await accountRow(f.db, f.account("1010")))?.number).toBe("1110");
     expect((await accountRow(f.db, f.account("1110")))?.number).toBe("1010");
@@ -500,14 +500,14 @@ describe("apply-account-import", () => {
       f = await fixture();
       await f.provisionalLine(f.account("4050"), 25);
       const chart = customerChart().filter((r) => r.number !== "40500");
-      const result = await applyAccountImport(f.ctx, {
+      const result = await invokePosting(f.ctx, "apply-account-import", {
         chart,
         defaults: defaultsFile(
           { ...STANDARD, salesShippingRevenueAccount: "40000" },
           "10000"
         ),
         resolutions: { targets: {} }
-      });
+      }, applyAccountImport);
       expect(result.error).toBeNull();
       expect(await accountRow(f.db, f.account("4050"))).toBeUndefined();
       const lines = await f.db
@@ -530,14 +530,14 @@ describe("apply-account-import", () => {
         defaults: defaultsFile(STANDARD, "10000"),
         resolutions: { targets: {} as Record<string, number> }
       };
-      const refused = await applyAccountImport(f.ctx, input);
+      const refused = await invokePosting(f.ctx, "apply-account-import", input, applyAccountImport);
       expect(refused.error?.message).toContain(
         "0 error(s) and 1 account(s) that need a replacement"
       );
       expect(await accountRow(f.db, f.account("1900"))).toBeDefined();
 
       input.resolutions.targets[f.account("1900")] = chart[0]!.line;
-      const result = await applyAccountImport(f.ctx, input);
+      const result = await invokePosting(f.ctx, "apply-account-import", input, applyAccountImport);
       expect(result.error).toBeNull();
       expect(await accountRow(f.db, f.account("1900"))).toBeUndefined();
     }
@@ -557,13 +557,13 @@ describe("apply-account-import", () => {
       };
       // Posted documents are movable: the plan asks for a replacement and
       // reports no error (before, they made the account history).
-      const refused = await applyAccountImport(f.ctx, input);
+      const refused = await invokePosting(f.ctx, "apply-account-import", input, applyAccountImport);
       expect(refused.error?.message).toContain(
         "0 error(s) and 1 account(s) that need a replacement"
       );
 
       input.resolutions.targets[f.account("1900")] = chart[0]!.line;
-      const result = await applyAccountImport(f.ctx, input);
+      const result = await invokePosting(f.ctx, "apply-account-import", input, applyAccountImport);
       expect(result.error).toBeNull();
       expect(await accountRow(f.db, f.account("1900"))).toBeUndefined();
       const payment = await f.db
@@ -665,7 +665,7 @@ describe("apply-account-import", () => {
 
   databaseTest("sets the fixed asset class accounts", async () => {
     f = await fixture();
-    const result = await applyAccountImport(f.ctx, {
+    const result = await invokePosting(f.ctx, "apply-account-import", {
       chart: customerChart(),
       defaults: defaultsFile(
         {
@@ -675,7 +675,7 @@ describe("apply-account-import", () => {
         "10000"
       ),
       resolutions: { targets: {} }
-    });
+    }, applyAccountImport);
     expect(result.error).toBeNull();
     const fac = await f.db
       .selectFrom("fixedAssetClass")
@@ -690,11 +690,11 @@ describe("apply-account-import", () => {
     "refuses once a company of the group has activated accounting",
     async () => {
       f = await fixture({ cutover: true });
-      const result = await applyAccountImport(f.ctx, {
+      const result = await invokePosting(f.ctx, "apply-account-import", {
         chart: customerChart(),
         defaults: defaultsFile(STANDARD, "10000"),
         resolutions: { targets: {} }
-      });
+      }, applyAccountImport);
       expect(result.error?.message).toContain("Accounting is already set up");
       expect((await accountRow(f.db, f.account("1010")))?.number).toBe("1010");
     }

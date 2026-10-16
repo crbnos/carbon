@@ -653,6 +653,6 @@ feature and is unaffected.
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally runs the `seed-company` server function
-(`@carbon/server-functions/seed-company`, for the chart of accounts and other reference data)
+browser onboarding flow additionally runs `seedCompany` (`settings.service.ts`, ported
+from the `seed-company` server function, for the chart of accounts and other reference data)
 before the template step ever runs, in-process in the ERP.

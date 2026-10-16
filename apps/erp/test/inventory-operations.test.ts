@@ -40,13 +40,15 @@ vi.mock("../app/modules/sales/sales.service", async (importOriginal) => ({
 vi.mock("../app/modules/inventory/inventory.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getInventoryCount: vi.fn(),
-  insertManualInventoryAdjustment: vi.fn()
+  insertManualInventoryAdjustment: vi.fn(),
+  postInventoryCount: vi.fn()
 }));
 
 import { ServerFnError } from "@carbon/api/errors";
 import {
   getInventoryCount,
-  insertManualInventoryAdjustment
+  insertManualInventoryAdjustment,
+  postInventoryCount as postCount
 } from "../app/modules/inventory/inventory.service";
 import {
   adjustInventory,
@@ -190,19 +192,18 @@ describe("postInventoryCount", () => {
     const result = await postInventoryCount(ctx(), { inventoryCountId: "c1" });
 
     expect(result.error).toMatchObject({ category: "rule" });
-    expect(invoke).not.toHaveBeenCalled();
+    expect(postCount).not.toHaveBeenCalled();
   });
 
   it("returns the lines that cannot post, so the page can mark them", async () => {
     vi.mocked(getInventoryCount).mockResolvedValue({
       data: { status: "Pending" }
     } as any);
-    invoke.mockResolvedValue({
-      data: null,
-      error: new ServerFnError("1 serial line(s) must be counted as 0 or 1", 400, {
+    vi.mocked(postCount).mockRejectedValue(
+      new ServerFnError("1 serial line(s) must be counted as 0 or 1", 400, {
         invalidLineIds: ["line-1"]
       })
-    });
+    );
 
     const result = await postInventoryCount(ctx(), { inventoryCountId: "c1" });
 
@@ -216,10 +217,9 @@ describe("postInventoryCount", () => {
     vi.mocked(getInventoryCount).mockResolvedValue({
       data: { status: "Pending" }
     } as any);
-    invoke.mockResolvedValue({
-      data: null,
-      error: new ServerFnError("Inventory count not found", 404)
-    });
+    vi.mocked(postCount).mockRejectedValue(
+      new ServerFnError("Inventory count not found", 404)
+    );
 
     const result = await postInventoryCount(ctx(), { inventoryCountId: "c1" });
 

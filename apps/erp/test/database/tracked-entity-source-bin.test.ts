@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+// Runs against the local database (SUPABASE_DB_URL); skipped without one.
+
 // A serial leaves the bin it is actually in. A sales shipment booked it against
 // the line's bin, and a stock transfer pick took it from wherever it sat, so a
 // bin it was never in went negative while the real bin kept a unit that had
@@ -15,11 +17,15 @@ import {
   seed,
   USER,
   unwrap
-} from "./always-post-test-fixture";
-import create from "./create";
-import { databaseTest, hasLocalDatabase } from "./local-database-test-fixture";
-import postShipment from "./post-shipment";
-import postStockTransfer from "./post-stock-transfer";
+} from "@carbon/server-functions/always-post-test-fixture";
+import create from "@carbon/server-functions/create";
+import {
+  databaseTest,
+  hasLocalDatabase
+} from "@carbon/server-functions/local-database-test-fixture";
+import postShipment from "@carbon/server-functions/post-shipment";
+import { postStockTransfer } from "../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 
 describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
   let f: Fixture;
@@ -361,13 +367,18 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
         .execute();
     });
     return (trackedEntityId: string) =>
-      postStockTransfer(f.ctx, {
-        type: "serial",
-        stockTransferId,
-        stockTransferLineId: lineId,
-        trackedEntityId,
-        locationId: f.locationId
-      });
+      invokePosting(
+        f.service,
+        "post-stock-transfer",
+        {
+          type: "serial",
+          stockTransferId,
+          stockTransferLineId: lineId,
+          trackedEntityId,
+          locationId: f.locationId
+        },
+        postStockTransfer
+      );
   }
 
   databaseTest(

@@ -2,17 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServerFnError } from "@carbon/api/errors";
 import {
   type PermissionRule,
   type Permissions,
   resolvePermissions
 } from "@carbon/api/permissions";
 import {
-  CarbonError,
+  type CarbonError,
   createServiceContext,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import { settle } from "@carbon/api/service-tools.server";
+import { attempt } from "@carbon/api/service-tools.server";
 import {
   error,
   getAppUrl,
@@ -1719,9 +1720,9 @@ export async function invokePosting<I, R>(
     as?: PermissionRule<I> | ((input: I) => Permissions);
     defaultStatus?: number;
   } = {}
-): Promise<{ data: R; error: null } | { data: null; error: CarbonError }> {
+): Promise<{ data: R; error: null } | { data: null; error: ServerFnError }> {
   const ctx = "actor" in from ? from : postingContext(from);
-  const out = await settle(
+  return attempt(
     ctx,
     name,
     async () => {
@@ -1741,9 +1742,6 @@ export async function invokePosting<I, R>(
     },
     options.defaultStatus
   );
-  return out instanceof CarbonError
-    ? { data: null, error: out }
-    : { data: out, error: null };
 }
 
 function postingContext(handles: PostingHandles): ServiceContext {

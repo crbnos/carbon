@@ -12,7 +12,6 @@ import {
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
 import type { RunType } from "@carbon/database/run-type";
-import { applyAccountImportInput } from "@carbon/server-functions/apply-account-import";
 import { round } from "@carbon/utils";
 import { z } from "zod";
 import {
@@ -20,6 +19,7 @@ import {
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { insertSalesOrder } from "~/modules/sales/sales.service";
+import { invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
 import * as service from "./accounting.service";
 import {
@@ -1934,12 +1934,15 @@ export const moveAccount = defineServiceFn({
  * @mcp destructive
  */
 export const importChartOfAccounts = defineServiceFn({
-  input: applyAccountImportInput,
+  input: service.applyAccountImportInput,
   permission: { update: "accounting" },
   async run(ctx, input) {
-    const result = await service
-      .asCaller(ctx)
-      .invoke("apply-account-import", input);
+    const result = await invokePosting(
+      ctx,
+      "apply-account-import",
+      input,
+      service.applyAccountImport
+    );
     if (result.error) {
       return service.fromServerFn(
         ctx,

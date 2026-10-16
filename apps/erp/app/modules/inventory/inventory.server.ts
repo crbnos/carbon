@@ -58,6 +58,7 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
+  invokePosting,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -2717,9 +2718,12 @@ export const postInventoryCount = defineServiceFn({
       );
     }
 
-    const posted = await service.system(ctx).invoke("post-inventory-count", {
-      inventoryCountId
-    });
+    const posted = await invokePosting(
+      ctx,
+      "post-inventory-count",
+      { inventoryCountId },
+      service.postInventoryCount
+    );
     if (posted.error) {
       const message = getErrorMessage(
         posted.error,

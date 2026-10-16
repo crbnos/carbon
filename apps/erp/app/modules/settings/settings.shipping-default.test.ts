@@ -7,7 +7,7 @@ import {
   accounts as seedAccounts
 } from "@carbon/database/seed-data";
 import { expect, it } from "vitest";
-import { resolveShippingDefault } from "./shipping-default";
+import { resolveShippingDefault } from "./settings.service";
 
 const parent = {
   id: "revenue",

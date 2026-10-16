@@ -5,9 +5,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "activate-accounting": {
     "update": "accounting",
   },
-  "apply-account-import": {
-    "update": "accounting",
-  },
   "batch-operations": {
     "update": "production",
   },
@@ -122,12 +119,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "create-rental-invoices": {
     "create": "invoicing",
     "update": "sales",
-  },
-  "finalize-purchasing-rfq": {
-    "create": "purchasing",
-  },
-  "finalize-supplier-quote": {
-    "create": "purchasing",
   },
   "get-method": {
     "update": "production",
@@ -305,9 +296,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-inventory-adjustment": {
     "update": "inventory",
   },
-  "post-inventory-count": {
-    "update": "inventory",
-  },
   "post-lease": {
     "update": "purchasing",
   },
@@ -316,9 +304,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   },
   "post-memo": {
     "update": "invoicing",
-  },
-  "post-nonconformance": {
-    "update": "quality",
   },
   "post-payment": {
     "update": "invoicing",
@@ -345,7 +330,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-shipment": {
     "update": "inventory",
   },
-  "post-stock-transfer": {},
   "preview-revenue-recognition-run": {
     "view": "accounting",
   },
@@ -361,7 +345,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "reschedule": {
     "update": "production",
   },
-  "seed-company": "system",
   "sync": {
     "update": "resources",
   },

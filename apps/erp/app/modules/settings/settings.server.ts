@@ -78,6 +78,7 @@ import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import {
   invalidateCompanyTimeZone,
+  invokePosting,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
@@ -954,11 +955,11 @@ export const createCompany = defineServiceFn({
     }
     const companyId = inserted.data.id;
 
-    const seed = await service.seedCompany(
-      client,
-      ctx.asSystem.pg,
-      companyId,
-      ctx.auditUserId
+    const seed = await invokePosting(
+      { db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId },
+      "seed-company",
+      { identityOnly: false },
+      service.seedCompany
     );
     if (seed.error) {
       return ctx.error("internal", "Failed to seed company", seed.error);
@@ -1019,12 +1020,11 @@ export const createSubsidiary = defineServiceFn({
     }
     const companyId = inserted.data.id;
 
-    const seed = await service.seedCompany(
-      client,
-      ctx.asSystem.pg,
-      companyId,
-      ctx.auditUserId,
-      { parentCompanyId }
+    const seed = await invokePosting(
+      { db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId },
+      "seed-company",
+      { parentCompanyId, identityOnly: false },
+      service.seedCompany
     );
     if (seed.error) {
       return ctx.error("internal", "Failed to seed company", seed.error);

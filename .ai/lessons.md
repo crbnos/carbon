@@ -357,7 +357,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
 
-**Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `packages/server-functions/src/seed-company/index.ts`, `seed-dev.ts`.
+**Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `seedCompany` (`apps/erp/app/modules/settings/settings.service.ts`), `seed-dev.ts`.
 
 ## meshopt vertex codec requires a stride that is a multiple of 4 — i16 VEC3 normals break it
 
@@ -3615,7 +3615,7 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
 
-**Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `packages/server-functions/src/apply-account-import/`.
+**Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `applyAccountImport` (`apps/erp/app/modules/accounting/accounting.service.ts`) and its live test `apps/erp/test/database/apply-account-import.test.ts`.
 
 ## Committing with the hook off skips Biome too
 

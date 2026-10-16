@@ -231,27 +231,39 @@ export function flag<R>(ctx: ServiceContext, result: R): R | CarbonError {
  * status decides the category (`NotFoundError` → `notFound`). One span per
  * call, named `function <name>` as before.
  */
-export function settle<R>(
+export async function settle<R>(
   ctx: ServiceContext,
   name: string,
   body: () => Promise<R>,
   defaultStatus = 500
 ): Promise<R | CarbonError> {
+  const out = await attempt(ctx, name, body, defaultStatus);
+  return out.error
+    ? (serviceResult(ctx, out, "envelope") as CarbonError)
+    : out.data;
+}
+
+/**
+ * {@link settle}, but the refusal is the `ServerFnError` itself, as
+ * `serverFns.invoke` returned it: for a caller that reads its status or body.
+ */
+export function attempt<R>(
+  ctx: ServiceContext,
+  name: string,
+  body: () => Promise<R>,
+  defaultStatus = 500
+): Promise<{ data: R; error: null } | { data: null; error: ServerFnError }> {
   return inSpan(
     `function ${name}`,
     { "carbon.function": name, "carbon.function.actor": ctx.actor.type },
     async (span) => {
       try {
-        return await body();
+        return { data: await body(), error: null };
       } catch (err) {
         const error = toServerFnError(name, err, defaultStatus);
         span.setAttribute("carbon.function.status", error.status);
         if (error.status >= 500) failSpan(span, error.message);
-        return serviceResult(
-          ctx,
-          { data: null, error },
-          "envelope"
-        ) as CarbonError;
+        return { data: null, error };
       }
     }
   );
