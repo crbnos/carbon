@@ -7,6 +7,8 @@ import {
   ONSHAPE_CLIENT_ID,
   ONSHAPE_CLIENT_SECRET,
   ONSHAPE_OAUTH_REDIRECT_URL,
+  ONSHAPE_V2_CLIENT_ID,
+  ONSHAPE_V2_CLIENT_SECRET,
   ONSHAPE_V2_OAUTH_REDIRECT_URL
 } from "@carbon/env";
 import {
@@ -25,9 +27,11 @@ import {
  * Where to authorize, which client to authorize as, and which API host the
  * resulting token is good for.
  *
- * The public app's client lives in this Carbon instance's environment. A
- * Government customer's private app lives in THEIR Enterprise, so its client id,
- * secret and hosts come from the integration's own (vaulted) settings instead.
+ * The sync integration and the panel are two Onshape apps, each with its own
+ * client in this Carbon instance's environment (`ONSHAPE_*` and
+ * `ONSHAPE_V2_*`). A Government customer's private app lives in THEIR
+ * Enterprise, so its client id, secret and hosts come from the integration's
+ * own (vaulted) settings instead.
  */
 export type OnshapeOAuthConfig = {
   clientId: string;
@@ -89,17 +93,25 @@ export function getOnshapeOAuthConfig(
     };
   }
 
-  // The panel uses the same public app through a second redirect URI.
-  const redirectUri =
+  // The panel is its own Onshape app: it never falls back to the sync app's client.
+  const { clientId, clientSecret, redirectUri } =
     integrationId === ONSHAPE_V2_INTEGRATION_ID
-      ? ONSHAPE_V2_OAUTH_REDIRECT_URL
-      : ONSHAPE_OAUTH_REDIRECT_URL;
-  if (!ONSHAPE_CLIENT_ID || !ONSHAPE_CLIENT_SECRET || !redirectUri) {
+      ? {
+          clientId: ONSHAPE_V2_CLIENT_ID,
+          clientSecret: ONSHAPE_V2_CLIENT_SECRET,
+          redirectUri: ONSHAPE_V2_OAUTH_REDIRECT_URL
+        }
+      : {
+          clientId: ONSHAPE_CLIENT_ID,
+          clientSecret: ONSHAPE_CLIENT_SECRET,
+          redirectUri: ONSHAPE_OAUTH_REDIRECT_URL
+        };
+  if (!clientId || !clientSecret || !redirectUri) {
     return null;
   }
   return {
-    clientId: ONSHAPE_CLIENT_ID,
-    clientSecret: ONSHAPE_CLIENT_SECRET,
+    clientId,
+    clientSecret,
     redirectUri,
     baseUrl: ONSHAPE_DEFAULT_BASE_URL,
     ...oauthEndpoints(ONSHAPE_DEFAULT_OAUTH_URL)

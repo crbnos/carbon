@@ -6,10 +6,10 @@ description: Sync CAD data from Onshape and Onshape Government into Carbon, or p
 
 ## Two Onshape integrations
 
-Carbon ships two Onshape integrations side by side. They share the Onshape OAuth
-application and nothing else: each has its own connection, its own credentials and
-its own record of which Carbon items are linked. A company can connect either, both,
-or neither, and disconnecting one never affects the other.
+Carbon ships two Onshape integrations side by side. They share nothing: each is its
+own Onshape OAuth application, with its own connection, its own credentials and its
+own record of which Carbon items are linked. A company can connect either, both, or
+neither, and disconnecting one never affects the other.
 
 | Integration | Id | Direction | What it does |
 | --- | --- | --- | --- |
@@ -25,22 +25,33 @@ Onshape but the panel reports that nothing is connected, the company connected
 **Onshape** and not **Onshape V2** — connect V2 as well.
 
 <Callout type="warn">
-Both cards only appear when the Onshape OAuth client is configured server-side
-(`ONSHAPE_CLIENT_ID`). The panel's Connect button additionally needs
-`ONSHAPE_V2_OAUTH_REDIRECT_URL`; the pull integration needs
-`ONSHAPE_OAUTH_REDIRECT_URL`. See
+Each card appears only when its own OAuth client is configured server-side:
+**Onshape V2** needs `ONSHAPE_V2_CLIENT_ID`, **Onshape** needs `ONSHAPE_CLIENT_ID`.
+Connect also needs that integration's client secret and redirect URL. See
 [Environment variables](/docs/platform/self-hosting/environment-variables) and the
 setup section below.
 </Callout>
 
-## Set up the Onshape application
+## Set up the Onshape applications
 
 Everything below is done once per Carbon deployment, by whoever operates it. It is
-the same for cloud and self-hosted Carbon.
+the same for cloud and self-hosted Carbon. Each integration has its own OAuth
+application in the Onshape developer portal, and each reads only its own variables:
+
+| | Onshape V2 (panel) | Onshape (pull) |
+| --- | --- | --- |
+| Client id | `ONSHAPE_V2_CLIENT_ID` | `ONSHAPE_CLIENT_ID` |
+| Client secret | `ONSHAPE_V2_CLIENT_SECRET` | `ONSHAPE_CLIENT_SECRET` |
+| Redirect URL | `ONSHAPE_V2_OAUTH_REDIRECT_URL` | `ONSHAPE_OAUTH_REDIRECT_URL` |
+| Redirect URI to register | `https://<erp-host>/api/integrations/onshape-v2/oauth` | `https://<erp-host>/api/integrations/onshape/oauth` |
+| Panel extension | Yes | No |
+
+Set up **Onshape V2** to use the panel. Set up **Onshape** only if you want
+released-asset sync.
 
 <Steps>
   <Step>
-  ### Create an OAuth application in the Onshape developer portal
+  ### Create an OAuth application for each integration
 
   Sign in at [dev-portal.onshape.com](https://dev-portal.onshape.com), create an
   OAuth application, and grant it both the read scope (`OAuth2Read`) and the write
@@ -49,19 +60,15 @@ the same for cloud and self-hosted Carbon.
   `invalid_scope` unless the application holds every scope Carbon asks for, and
   Carbon asks for both.
 
-  Copy the client id and secret into `ONSHAPE_CLIENT_ID` and `ONSHAPE_CLIENT_SECRET`.
+  Copy the application's client id and secret into that integration's variables
+  from the table above.
   </Step>
   <Step>
-  ### Register two redirect URIs on that application
+  ### Register each application's redirect URI
 
-  Each integration completes OAuth at its own callback, and Onshape allows several
-  redirect URIs per application. Register both, replacing the host with your Carbon
-  ERP origin:
-
-  | Env var | Redirect URI |
-  | --- | --- |
-  | `ONSHAPE_OAUTH_REDIRECT_URL` | `https://<erp-host>/api/integrations/onshape/oauth` |
-  | `ONSHAPE_V2_OAUTH_REDIRECT_URL` | `https://<erp-host>/api/integrations/onshape-v2/oauth` |
+  Each integration completes OAuth at its own callback. On each application,
+  register that integration's redirect URI from the table above, with your Carbon
+  ERP origin as the host, and put the same value in its redirect URL variable.
 
   The value in each env var must match the registered URI character for character.
   A mismatch fails the token exchange, which the Connect popup reports as a
@@ -70,8 +77,8 @@ the same for cloud and self-hosted Carbon.
   <Step>
   ### Add an extension for the panel
 
-  On the same application, add an extension with location **Element right panel**
-  and this action URL, again with your Carbon ERP origin:
+  On the **Onshape V2** application, add an extension with location **Element right
+  panel** and this action URL, again with your Carbon ERP origin:
 
   ```
   https://<erp-host>/onshape/panel?documentId={$documentId}&wv={$workspaceOrVersion}&wvId={$workspaceOrVersionId}&elementId={$elementId}&partNumber={$partNumber}&revision={$revision}&nodeId={$nodeId}&occurrencePath={$occurrencePath}&configuration={$configuration}
@@ -87,7 +94,7 @@ the same for cloud and self-hosted Carbon.
   ### Subscribe the users who should see the panel
 
   An extension renders only for Onshape users who are **subscribed** to the
-  application. Publish the application to your private App Store and have each
+  **Onshape V2** application. Publish it to your private App Store and have each
   user open it there and choose **Get for free**. Completing OAuth in Carbon does
   not do this — a user with a working Carbon connection and no subscription sees no
   Carbon icon in Onshape at all.
@@ -98,6 +105,9 @@ the same for cloud and self-hosted Carbon.
   The env vars are read at boot. On the Carbon side the `onshape-v2` integration
   row is seeded by a database migration, so a deployment that is behind on
   migrations shows only the **Onshape** card.
+
+  A connection belongs to the application that authorized it. If you change an
+  integration's client id, every company must connect that integration again.
   </Step>
 </Steps>
 
@@ -132,9 +142,9 @@ If the popup ends in an error:
 
 | Message | Cause | Fix |
 | --- | --- | --- |
-| *Onshape isn't configured* | `ONSHAPE_CLIENT_ID`, `ONSHAPE_CLIENT_SECRET` or the integration's redirect URL env var is missing. Each integration checks its own redirect variable. | Set the variable for that integration and restart. |
+| *Onshape isn't configured* | The integration's client id, client secret or redirect URL env var is missing. Each integration reads only its own three variables. | Set the variable for that integration and restart. |
 | *Onshape denied the connection*, mentioning write permission | Onshape returned `invalid_scope`. | Grant `OAuth2Write` on the OAuth application. |
-| *Onshape rejected the authorization* | The token exchange failed: redirect URI mismatch, or wrong client secret. | Compare the env var to the registered URI character for character. |
+| *Onshape rejected the authorization* | The token exchange failed: redirect URI mismatch, wrong client secret, or the redirect URI is registered on the other integration's application. | Compare the env var to the URI registered on that integration's own application, character for character. |
 | *Couldn't save the Onshape connection* | Onshape authorized but the database write failed. | Check the server logs; retry. |
 | Nothing happens on Connect | The browser blocked the popup. | Allow popups for the Carbon origin and retry. |
 
@@ -383,7 +393,7 @@ the push defaults together.
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| No Carbon icon in the Onshape right panel | The Onshape user is not subscribed to the application, or the extension is missing. | Subscribe via the private App Store; check the extension exists with location Element right panel. |
+| No Carbon icon in the Onshape right panel | The Onshape user is not subscribed to the **Onshape V2** application, or the extension is missing from it. | Subscribe via the private App Store; check the extension exists with location Element right panel. |
 | *Open this panel from Onshape* | The page was opened outside Onshape, so no Onshape `server` origin arrived with it. | Open the panel from the Onshape right panel; check the extension's action URL points at the ERP host. |
 | Panel is blank inside Onshape | The route is framed from an origin other than `*.onshape.com`, or the ERP host is unreachable from the browser. | Carbon only allows Onshape to frame it; check the ERP origin in the action URL. |
 | Sign-in popup shows *Open this page from the Carbon panel in Onshape* | The popup was opened directly, not from the panel. | Use the **Sign in to Carbon** button. |

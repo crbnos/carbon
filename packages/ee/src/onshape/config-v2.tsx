@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
+import { ONSHAPE_V2_CLIENT_ID } from "@carbon/auth";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { beginOAuthPopup } from "../oauth-popup";
@@ -12,7 +12,7 @@ import { ONSHAPE_V2_INTEGRATION_ID } from "./lib/integration-id";
 export const OnshapeV2 = defineIntegration({
   name: "Onshape V2",
   id: ONSHAPE_V2_INTEGRATION_ID,
-  active: !!ONSHAPE_CLIENT_ID,
+  active: !!ONSHAPE_V2_CLIENT_ID,
   category: "CAD",
   logo: Logo,
   description:
