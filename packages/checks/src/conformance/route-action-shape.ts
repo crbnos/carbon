@@ -12,7 +12,9 @@ const ROUTES = /^apps\/erp\/app\/routes\//;
 const WRITES = [
   /\.from\(\s*["'`][^"'`]+["'`]\s*\)\s*\.(?:insert|upsert|update|delete)\(/g,
   /\.(?:insertInto|updateTable|deleteFrom)\(/g,
-  /\bserverFns\s*\.\s*(?:system|as)\(/g
+  /\bserverFns\s*\.\s*(?:system|as)\(/g,
+  // a posting body ported from @carbon/server-functions
+  /\binvokePosting(?:OrThrow)?\(/g
 ];
 
 export const routeActionShape: ConformanceCheck = {

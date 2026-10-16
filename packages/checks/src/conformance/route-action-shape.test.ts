@@ -21,9 +21,9 @@ describe("route-action-shape", () => {
   it("flags Kysely writes and server-function calls", () => {
     expect(
       scan(
-        'await db.updateTable("job").set({}).execute();\nawait serverFns.system(fields).invoke("post-receipt", {});'
+        'await db.updateTable("job").set({}).execute();\nawait serverFns.system(fields).invoke("issue", {});\nawait invokePosting(ctx, "post-receipt", {}, postReceipt);'
       )
-    ).toEqual([".updateTable(", "serverFns.system("]);
+    ).toEqual([".updateTable(", "serverFns.system(", "invokePosting("]);
   });
 
   it("leaves reads and non-database deletes alone", () => {

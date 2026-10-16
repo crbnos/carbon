@@ -18,9 +18,9 @@
   - [x] Their live tests run from `apps/erp/test/database/`
   - [x] Every function only the ERP, jobs and ee call is ported; the postings registry runs only ported bodies
   - [x] The seam for jobs and ee (steps 2 and 3): `@carbon/api/postings.server`. The ERP registers 12 postings at start; jobs and ee call `posting(name, handles, input)`
-  - [ ] The shared `lib` helpers (step 4)
   - [ ] The 10 functions of the MES closure stay until Phase 6 (step 5): `batch-operations`, `create`, `issue`, `post-inventory-adjustment`, `post-maintenance-event`, `post-picking`, `post-production-event`, `recalculate`, `reschedule`, `trigger-rework`
-  - [ ] Retire `server-fn-authorizes-caller` and the `serverFns` pattern of `route-action-shape`
+  - [x] `route-action-shape` also flags `invokePosting` in a route. `server-fn-authorizes-caller` and the `serverFns` pattern stay while the 10 MES functions are in the package
+  - [ ] The shared `lib` helpers move when the MES functions do: they import them, and a package cannot import the ERP
 - [ ] Phase 6 — MES calls ERP's API (auth design needs approval first)
 - [ ] Phase 7 — Clean up
   - [x] Module layout: `<module>.server.ts` operations, `<module>.service.ts` building blocks, no barrels; flat names `<module>_<function>`; `account` merged into `users`
