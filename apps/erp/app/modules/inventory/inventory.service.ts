@@ -200,7 +200,6 @@ export async function deleteWarehouseTransferLine(
   return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
 }
 
-/** @mcp read */
 export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -370,7 +369,6 @@ export async function getInventoryItems(
   return query;
 }
 
-/** @mcp read */
 export async function getInventoryItemsCount(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -605,7 +603,6 @@ export async function getStockTransfer(
     .single();
 }
 
-/** @mcp read */
 export async function getStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLineId: string
@@ -630,7 +627,6 @@ export async function getStockTransferLines(
     .order("createdAt", { ascending: true });
 }
 
-/** @mcp read */
 export async function getStockTransferTracking(
   client: SupabaseClient<Database>,
   stockTransferId: string,
@@ -690,7 +686,6 @@ export async function getStockTransfers(
   return query;
 }
 
-/** @mcp read */
 export async function getDefaultStorageUnitOrStorageUnitWithHighestQuantity(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -837,7 +832,6 @@ export async function getReceiptTracking(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getReceiptLineTracking(
   client: SupabaseClient<Database>,
   receiptLineId: string,
@@ -857,7 +851,6 @@ export async function getReceiptLineTracking(
  * (edited serial) entities would otherwise become phantom Available serials.
  * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
  * stays in lockstep with the post-time validation in ReceiptPostModal.
- * @mcp action destructive
  */
 export async function reconcileReceiptSerialEntities(
   client: SupabaseClient<Database>,
@@ -1042,7 +1035,6 @@ export async function getBatchNumbersForItem(
     .order("createdAt", { ascending: true });
 }
 
-/** @mcp read */
 export async function getStorageUnitsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1379,7 +1371,6 @@ export async function getShipmentLines(
     .eq("shipmentId", shipmentId);
 }
 
-/** @mcp read */
 export async function getShipmentLinesWithDetails(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -1387,7 +1378,6 @@ export async function getShipmentLinesWithDetails(
   return client.from("shipmentLines").select("*").eq("shipmentId", shipmentId);
 }
 
-/** @mcp read */
 export async function getShipmentFiles(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1520,7 +1510,6 @@ export async function getRentalReceiptLines(
   );
 }
 
-/** @mcp read */
 export async function getShipmentLineTracking(
   client: SupabaseClient<Database>,
   shipmentLineId: string,
@@ -1638,7 +1627,6 @@ export async function recostSerialUnit(
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
 // quantity, earliest expiry) with genealogy back to every parent. The issue
 // server fn owns the writes; see `buildBatchMergeRecords` (@carbon/utils).
-/** @mcp action */
 export async function mergeTrackedEntities(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -1792,7 +1780,6 @@ export async function updateTrackedEntityExpiry(
     .eq("id", args.trackedEntityId);
 }
 
-/** @mcp read */
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
   operationId: string,
@@ -2237,7 +2224,6 @@ export async function deleteInventoryCount(
 // empty bins and correct discrepancies. On-hand is summed from `itemLedger`
 // (status-aware: excludes Rejected, matching `get_inventory_quantities`).
 // Idempotent: safe to re-run to re-snapshot while the count is Draft.
-/** @mcp create destructive */
 export async function generateInventoryCountLines(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -2875,7 +2861,6 @@ export async function upsertWarehouseTransferLine(
   }
 }
 
-/** @mcp read */
 export async function getDefaultStorageUnitForJob(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2919,7 +2904,6 @@ export async function getDefaultStorageUnitForJob(
 // defined in 20260417000200_storage-unit-nesting-and-type.sql)
 // ----------------------------------------------------------------------------
 
-/** @mcp read */
 export async function getStorageUnitTree(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3406,7 +3390,6 @@ export async function getPickingListLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPickingListLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineId: string
@@ -3568,7 +3551,6 @@ export type UnresolvedPickingListLine = {
 // operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
 // silently left behind. `hasShort` reports whether any acknowledged shortfall
 // exists, which forces the final header status to Partial rather than Completed.
-/** @mcp read */
 export async function getUnresolvedPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -3614,7 +3596,6 @@ export async function getUnresolvedPickingListLines(
   return { unresolved, hasShort, error: null };
 }
 
-/** @mcp action */
 export async function cancelOpenPickingListsForJob(
   db: Kysely<KyselyDatabase>,
   args: { jobId: string; companyId: string; userId: string }

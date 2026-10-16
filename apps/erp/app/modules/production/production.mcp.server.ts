@@ -119,7 +119,6 @@ export async function issueMaterial(
  * `production` update permission for every caller. `client` MUST stay named
  * `client` and first — the MCP executor injects it positionally by that exact
  * name; renaming breaks the tool.
- * @mcp action
  */
 export async function scheduleJob(
   client: SupabaseClient<Database>,

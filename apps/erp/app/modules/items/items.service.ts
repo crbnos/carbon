@@ -536,7 +536,6 @@ export async function createRevision(
 }
 
 // getNextRevision — numeric → +1, A → …→ Z → AA, AA → AB, etc.
-/** @mcp read */
 export function getNextRevision(maxRevision: string): string {
   if (/^\d+$/.test(maxRevision)) {
     return (parseInt(maxRevision) + 1).toString();
@@ -918,7 +917,6 @@ export async function getConsumables(
   return query;
 }
 
-/** @mcp read */
 export async function getConsumablesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1353,7 +1351,6 @@ export async function getItemSupersessionsForItems(
 }
 
 // Parts that point to this item as their successor (the "Supersedes" back-ref).
-/** @mcp read */
 export async function getItemSupersededBy(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1424,7 +1421,6 @@ export async function getItemStorageUnitQuantities(
   });
 }
 
-/** @mcp read */
 export async function getItemSupply(
   client: SupabaseClient<Database>,
   {
@@ -1478,7 +1474,6 @@ export async function getItemUnitSalePrice(
     .single();
 }
 
-/** @mcp read */
 export async function getJobMaterialUsageForItem(
   client: SupabaseClient<Database>,
   { itemId, companyId }: { itemId: string; companyId: string }
@@ -1612,7 +1607,6 @@ export async function getMaterials(
   return query;
 }
 
-/** @mcp read */
 export async function getMaterialsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1880,7 +1874,6 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
-/** @mcp read */
 export async function getMethodMaterial(
   client: SupabaseClient<Database>,
   materialId: string
@@ -2023,7 +2016,6 @@ export async function getMethodTree(
   };
 }
 
-/** @mcp read */
 export async function getMethodTreeArray(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -2586,7 +2578,6 @@ export async function getTools(
   return query;
 }
 
-/** @mcp read */
 export async function getToolsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -3908,7 +3899,6 @@ export async function upsertConsumable(
  *
  * Callers that also have a customer/supplier part mapping should try that
  * first; this covers the readableId/name half of the match.
- * @mcp read
  */
 export async function matchItemIdByText(
   client: SupabaseClient<Database>,
@@ -5978,7 +5968,6 @@ export async function upsertMaterial(
  * the substance, dimension to the shape, and type to both. With generated
  * material IDs on, every revision's readable id and name are regenerated once
  * the material has a substance and a shape.
- * @mcp update
  */
 export async function updateMaterialProperties(
   client: SupabaseClient<Database>,
@@ -6752,7 +6741,6 @@ export async function getSupplierPriceBreaksForItems(
  * lookupBuyPriceFromMap.
  *
  * Used in quote creation where the specific supplier isn't known.
- * @mcp read
  */
 export async function lookupBuyPrice(
   client: SupabaseClient<Database>,
@@ -6770,7 +6758,6 @@ export async function lookupBuyPrice(
  * that currency's CURRENT exchange rate, so `resolveSupplierPrice` can convert
  * them into the document's currency. A part in the document's own currency
  * needs no rate; a missing rate is an error, never par.
- * @mcp read
  */
 export async function getSupplierPartPricing(
   client: SupabaseClient<Database>,
@@ -6826,7 +6813,6 @@ export async function getSupplierPartPricing(
  * Fetch price breaks array for a specific supplier part, as the supplier
  * quoted them: purchase quantity and price per purchase unit, in the supplier
  * part's currency. Used by PO and Invoice forms to cache breaks in state.
- * @mcp read
  */
 export async function getSupplierPartPriceBreaks(
   client: SupabaseClient<Database>,
@@ -7226,7 +7212,6 @@ export async function deleteChangeNoticeType(
 // embeds — TS2589 budget); a per-item origin set that only grows drives a fixpoint,
 // so a corrupt/cyclic BOM can't loop forever and provenance fully propagates.
 // `nodeBudget` is a pure infinite-loop backstop, not a depth limit.
-/** @mcp read */
 export async function getTopLevelProductsForItems(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -8270,7 +8255,6 @@ export type ChangeNoticeForItem = {
  * a supersession, or as the revision a notice created. One request
  * (`get_item_change_notices`); it was eight in five steps, awaited by every
  * item page.
- * @mcp read
  */
 export async function findChangeNoticesForItem(
   client: SupabaseClient<Database>,
@@ -8313,7 +8297,6 @@ export async function getChangeNoticesForNonConformance(
 // Reuses the canonical G6 query at the open-status filter. A non-empty result
 // means adding the part here would create a parallel open CO — the routes (and
 // the staging service) reject it.
-/** @mcp read */
 export async function findOtherOpenChangeNoticesForItem(
   client: SupabaseClient<Database>,
   args: { itemId: string; companyId: string; excludeChangeNoticeId: string }
@@ -8330,7 +8313,6 @@ export async function findOtherOpenChangeNoticesForItem(
 // item detail page (part/tool/material) — the CO history for the item plus the
 // type lookup used to label rows. One shared source so the detail routes don't
 // each re-implement the pair of reads.
-/** @mcp read */
 export async function getItemChangeNoticeData(
   client: SupabaseClient<Database>,
   itemId: string,

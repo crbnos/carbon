@@ -57,15 +57,6 @@ describe("mcp tool-metadata generator", () => {
     expect(get("sales_upsertQuoteLinePrices").classification).toBe("DESTRUCTIVE");
   });
 
-  // #5 — a validator field after an `errorMap: () => (...)` is not truncated.
-  it("upsertQuoteLine still exposes fields that follow an errorMap arrow", () => {
-    const p = props(get("sales_upsertQuoteLine"));
-    expect(p.quantity?.type).toBe("array");
-    for (const field of ["description", "methodType", "unitOfMeasureCode"]) {
-      expect(Object.keys(p)).toContain(field);
-    }
-  });
-
   // #9 — a `applyX(baseValidator.merge(z.object({...})))` param resolves to real
   // fields instead of an opaque {}. Guard the whole item-validator family.
   it("resolves merge/wrapper validator params to real fields", () => {
@@ -154,18 +145,6 @@ describe("mcp tool-metadata generator", () => {
     expect(quoteMaterial.schema.required).toContain("quoteId");
     expect(quoteMaterial.schema.required).toContain("quoteLineId");
 
-    // Create branch omits `id` (server-minted), update branch has it → optional.
-    const quoteOperation = get("sales_upsertQuoteOperation");
-    expect(Object.keys(props(quoteOperation))).toContain("id");
-    expect(quoteOperation.schema.required ?? []).not.toContain("id");
-  });
-
-  // An `Omit<…, "field">` in the service signature is honored — the field the
-  // service explicitly refuses must not be re-published from the validator.
-  it("honors Omit<> in composed signatures", () => {
-    expect(Object.keys(props(get("purchasing_insertSupplier")))).not.toContain(
-      "id"
-    );
   });
 
   // `zfd.text(z.string().transform((v) => v === "true"))` — the form-post
@@ -245,13 +224,6 @@ describe("mcp tool-metadata generator", () => {
     expect(tag?.properties?.createdBy).toBeUndefined();
   });
 
-  // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
-  it("resolves Array<T> generic params to typed arrays", () => {
-    const sourceTools = props(get("production_maxToolQuantityByItem")).sourceTools;
-    expect(sourceTools?.type).toBe("array");
-    expect(Object.keys(sourceTools?.items?.properties ?? {})).toContain("itemId");
-  });
-
   // A bare type alias declared in the module's own sources (service file,
   // types.ts, models, or shared) resolves; Partial<{...}> drops required.
   // `diffMethod(input: DiffMethodInput)` — DiffMethodInput is a named type
@@ -318,8 +290,6 @@ describe("mcp tool-metadata generator", () => {
   });
 
   it("gives an upsert rule to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
-    // Inverted (`"updatedBy" in`), id decides.
-    expect(get("production_upsertJob").upsert).toEqual({ keys: ["id"] });
     // Inverted, id required either way — looked up.
     expect(get("sales_upsertQuoteMaterial").upsert?.lookups).toEqual([
       { table: "quoteMaterial", match: { id: "id" } }
@@ -379,8 +349,7 @@ describe("published defaults", () => {
     for (const name of [
       "purchasing_updateSupplierTax",
       "sales_updateCustomerTax",
-      "sales_updatePricingRule",
-      "invoicing_updateReimbursement"
+      "sales_updatePricingRule"
     ]) {
       expect(publishes(get(name)), name).toBe(false);
     }

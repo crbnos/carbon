@@ -179,7 +179,6 @@ function applyRootSignCorrection<
   });
 }
 
-/** @mcp read */
 export async function getTrialBalance(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -401,7 +400,6 @@ export async function getFinancialStatementBalances(
   };
 }
 
-/** @mcp read */
 export async function getAccountPeriodSeries(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -1003,7 +1001,6 @@ export async function getFinancialStatementPeriodSeries(
  * getConsolidatedBalances: per-company series (including auto-resolved
  * elimination entities) summed per account and bucket, with per-bucket
  * currency translation and CTA.
- * @mcp read
  */
 export async function getConsolidatedPeriodSeries(
   client: SupabaseClient<Database>,
@@ -2017,7 +2014,6 @@ export async function getAccount(
   return client.from("account").select("*").eq("id", accountId).single();
 }
 
-/** @mcp read */
 export async function getAccounts(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -2195,7 +2191,6 @@ export async function getCurrency(
  * Settlement decimals for the company's base currency. Fixed-asset and GL
  * amounts are booked in base currency, so this is the scale their rounding must
  * use. Falls back to 2 only when the currency row is unreachable.
- * @mcp read
  */
 export async function getBaseCurrencyDecimalPlaces(
   client: SupabaseClient<Database>,
@@ -2400,7 +2395,6 @@ export async function getCurrenciesList(
   };
 }
 
-/** @mcp read */
 export async function getCurrentAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2428,7 +2422,6 @@ type AccountingPeriodCloseColumns = {
  * Only a posting in the company's current month changes the Active period: a
  * catch-up run or a back-dated document resolves its own period and leaves the
  * Active one alone.
- * @mcp action
  */
 export async function getOrCreateAccountingPeriod(
   client: SupabaseClient<Database>,
@@ -3148,7 +3141,6 @@ const TERMINAL_SYNC_OPERATION_STATUSES = new Set([
  * journal (reversalOfId set) is delivered through the ORIGINAL journal's
  * "<id>:reversal" operation — the reversal row never gets its own ledger
  * entry (see getJournalSyncCompleteness).
- * @mcp read
  */
 export async function getPeriodExternalGlSyncReadiness(
   client: SupabaseClient<Database>,
@@ -3730,7 +3722,6 @@ export async function computePeriodReadiness(
   return { checks, blockers, warnings };
 }
 
-/** @mcp read */
 export async function getPeriodCloseReadiness(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4183,7 +4174,6 @@ export async function addCloseTask(
     .single();
 }
 
-/** @mcp read */
 export async function getPeriodCloseTaskDefinitions(
   client: SupabaseClient<Database>,
   companyId: string
@@ -4487,7 +4477,6 @@ export async function upsertAccount(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertCurrency(
   client: SupabaseClient<Database>,
   currency:
@@ -4560,7 +4549,6 @@ export async function getCostCenter(
   return client.from("costCenter").select("*").eq("id", costCenterId).single();
 }
 
-/** @mcp read */
 export async function getCostCenters(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5385,7 +5373,6 @@ async function resolveConsolidationCompanyIds(
   return [...companyIds, ...eliminationIds];
 }
 
-/** @mcp read */
 export async function getConsolidatedBalances(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5677,7 +5664,6 @@ export async function createIntercompanyTransaction(
   return intercompanyTransaction;
 }
 
-/** @mcp read */
 export async function getIntercompanyEliminationLines(
   client: SupabaseClient<Database>,
   transactionIds: string[]
@@ -5719,7 +5705,6 @@ export async function generateEliminations(
   });
 }
 
-/** @mcp read */
 export async function getIntercompanyBalance(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -6865,7 +6850,6 @@ export async function getFixedAsset(
     .single();
 }
 
-/** @mcp read */
 export async function getFixedAssetsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -6878,7 +6862,6 @@ export async function getFixedAssetsList(
     .order("fixedAssetId");
 }
 
-/** @mcp read */
 export async function getFixedAssetsListForSale(
   client: SupabaseClient<Database>,
   companyId: string
@@ -7443,7 +7426,6 @@ export async function getDepreciationRunLines(
 
 // -- Revenue Recognition --
 
-/** @mcp read */
 export async function getRevenueRecognitionRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7535,7 +7517,6 @@ export async function getPeriodRunRelatedItems(
   };
 }
 
-/** @mcp read */
 export async function getRevenueSchedules(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8456,7 +8437,6 @@ export async function getFixedAssetDisposal(
 
 // -- Usage Logs --
 
-/** @mcp read */
 export async function getFixedAssetUsageLogs(
   client: SupabaseClient<Database>,
   fixedAssetId: string
@@ -8516,7 +8496,6 @@ export async function getFleetAssets(
   return query;
 }
 
-/** @mcp read */
 export async function getUnderConstructionAssets(
   client: SupabaseClient<Database>,
   companyId: string
@@ -8895,7 +8874,6 @@ export type JournalSyncCompleteness = {
  * (this module deliberately does not import @carbon/ee/accounting — see the
  * TS2589 notes in the settings Integrations components) and passes
  * syncFromDate explicitly.
- * @mcp read
  */
 export async function getJournalSyncCompleteness(
   client: SupabaseClient<Database>,

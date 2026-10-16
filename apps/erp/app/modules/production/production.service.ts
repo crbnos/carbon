@@ -457,7 +457,6 @@ export async function convertSalesOrderLinesToJobs(
  * @param client - Supabase client
  * @param params - Job details
  * @returns The calculated priority number
- * @mcp action
  */
 export async function calculateJobPriority(
   client: SupabaseClient<Database>,
@@ -819,7 +818,6 @@ export async function deleteMaintenanceDispatchEvent(
   return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
 }
 
-/** @mcp delete */
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
@@ -852,7 +850,6 @@ export async function deleteMaintenanceScheduleItem(
   return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
 }
 
-/** @mcp read */
 export async function getDemandForecasts(
   client: SupabaseClient<Database>,
   params: {
@@ -1090,7 +1087,6 @@ export async function getJobPurchaseOrderLines(
     .eq("jobId", jobId);
 }
 
-/** @mcp read */
 export async function getJobOperationsForTimeline(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1106,7 +1102,6 @@ export async function getJobOperationsForTimeline(
     .order("order");
 }
 
-/** @mcp read */
 export async function getCapacityReservationsByJob(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1226,7 +1221,6 @@ export async function getMaintenanceDowntimeForResources(
   return query.order("plannedStartTime");
 }
 
-/** @mcp read */
 export async function getProductionEventsByJob(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1324,7 +1318,6 @@ export async function getRootMakeMethod(
     .single();
 }
 
-/** @mcp read */
 export async function getJobMaterialsWithQuantityOnHand(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1403,7 +1396,6 @@ function methodAllocationRank(methodType: MethodType | null): number {
 //      "in stock" on one line and "needs order" on another.
 // Stock is shared with no per-job reservation, so order matters. Result is keyed
 // by jobMaterial id (the line), not item id.
-/** @mcp read */
 export async function getJobMaterialShortfallByItem(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1824,7 +1816,6 @@ export async function getJobMethodTree(
   };
 }
 
-/** @mcp read */
 export async function getJobMethodTreeArray(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1932,7 +1923,6 @@ export async function getJobMaterialsByMethodId(
   return result;
 }
 
-/** @mcp read */
 export async function getJobOperation(
   client: SupabaseClient<Database>,
   jobOperationId: string
@@ -1986,7 +1976,6 @@ export async function getJobOperationDependencies(
     .eq("jobId", jobId);
 }
 
-/** @mcp read */
 export async function getJobOperationsAssignedToEmployee(
   client: SupabaseClient<Database>,
   employeeId: string,
@@ -2114,7 +2103,6 @@ export async function getProcedure(
     .single();
 }
 
-/** @mcp read */
 export async function getProcedureSteps(
   client: SupabaseClient<Database>,
   procedureId: string
@@ -2125,7 +2113,6 @@ export async function getProcedureSteps(
     .eq("procedureId", procedureId);
 }
 
-/** @mcp read */
 export async function getProcedureParameters(
   client: SupabaseClient<Database>,
   procedureId: string
@@ -2238,7 +2225,6 @@ export async function getProductionEvents(
   return query;
 }
 
-/** @mcp read */
 export async function getProductionEventsPage(
   client: SupabaseClient<Database>,
   jobOperationId: string,
@@ -2272,7 +2258,6 @@ export async function getProductionEventsPage(
   };
 }
 
-/** @mcp read */
 export async function getProductionEventsByOperations(
   client: SupabaseClient<Database>,
   jobOperationIds: string[]
@@ -2563,7 +2548,6 @@ export async function getMaintenanceDispatch(
     .single();
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2632,7 +2616,6 @@ export async function getMaintenanceDispatchItems(
     .eq("maintenanceDispatchId", dispatchId);
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchWorkCenters(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -2661,7 +2644,6 @@ export async function getMaintenanceSchedule(
     .single();
 }
 
-/** @mcp read */
 export async function getMaintenanceSchedules(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2689,7 +2671,6 @@ export async function getMaintenanceSchedules(
   return query;
 }
 
-/** @mcp read */
 export async function getMaintenanceScheduleItems(
   client: SupabaseClient<Database>,
   scheduleId: string
@@ -2804,7 +2785,6 @@ export async function getJobReceiptSnapshot(
 /**
  * Reschedule a job using the unified scheduling engine.
  * This recalculates dates, work centers, and priorities for all operations.
- * @mcp update
  */
 export async function recalculateJobOperationDependencies(
   client: SupabaseClient<Database>,
@@ -2864,7 +2844,6 @@ export async function recalculateJobRequirements(
     });
 }
 
-/** @mcp update */
 export async function recalculateJobMakeMethodRequirements(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -3964,7 +3943,6 @@ export async function updatePlanningJob(
 
 /**
  * @deprecated Use insertJob for new jobs, updateJob for existing jobs
- * @mcp upsert
  */
 export async function upsertJob(
   client: SupabaseClient<Database>,
@@ -4377,7 +4355,6 @@ export async function upsertJobOperationParameter(
  * Implements the §7 `{ date, confidence? }` contract — confidence is a string
  * enum, "low" when the schedule may not hold (a conflicted op or a pending
  * replan) and "scheduled" otherwise.
- * @mcp read
  */
 export async function getJobPromiseDate(
   client: SupabaseClient<Database>,
@@ -4754,7 +4731,6 @@ export async function upsertJobMaterialMakeMethod(
  * method (BOM + operations) into it. Shared by the job-material create and edit
  * routes: both flip a material to "Make to Order" and must populate the newly
  * created child make method.
- * @mcp action
  */
 export async function pullJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
@@ -7290,7 +7266,6 @@ export async function getAssemblyInstructionsForItem(
  * their model via item.modelUploadId. Conversion to viewer artifacts (GLB +
  * graph) is lazy — `modelState` tells the caller whether the model is ready,
  * convertible on demand, or unusable.
- * @mcp read
  */
 export async function getModelForItem(
   client: SupabaseClient<Database>,
@@ -9149,7 +9124,6 @@ function insertAssemblyStepMaterialSeeds(
  * assemblyComponentMapping) as step materials. Additive and best-effort:
  * existing rows are never updated or removed — manual quantities and
  * deliberate deletions survive — and failures never block the caller.
- * @mcp update
  */
 export async function syncAssemblyStepMaterialsFromMappings(
   client: SupabaseClient<Database>,
@@ -9309,7 +9283,6 @@ export async function deleteAssemblyUnit(
 /**
  * Latest successful motion plan for a model. The editor uses plan.json to
  * auto-fill step motions and to generate draft step sequences.
- * @mcp read
  */
 export async function getLatestAssemblyPlan(
   client: SupabaseClient<Database>,
@@ -9892,7 +9865,6 @@ export function planAssemblyStepMarkerSync(
 /**
  * The re-sync ratchets a tool's operation-level quantity up to the max quantity
  * any source step asks for (operation-level rows are never lowered or deleted).
- * @mcp read
  */
 export function maxToolQuantityByItem(
   sourceTools: { itemId: string; quantity: number | null }[]
@@ -10713,7 +10685,6 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
 // Purchase order lines for a job's materials, scoped by item + location (not
 // jobId, since planning-generated POs aren't linked to the job). Flattened to
 // the procurement-status shape used by the BoM tree and the Materials table.
-/** @mcp read */
 export async function getJobMaterialPurchaseOrderLines(
   client: SupabaseClient<Database>,
   materials: Array<{ jobMaterialItemId: string | null }>,
@@ -10750,7 +10721,6 @@ export async function getJobMaterialPurchaseOrderLines(
 // Active jobs that produce these material items — the supply-side counterpart to
 // getJobMaterialPurchaseOrderLines. A manufactured material is "covered" when an
 // active job (its own itemId) is planned/in-flight at the same location.
-/** @mcp read */
 export async function getJobMaterialSupplyJobLines(
   client: SupabaseClient<Database>,
   materials: Array<{ jobMaterialItemId: string | null }>,
@@ -10808,7 +10778,6 @@ export async function getJobMaterialSupplyJobLines(
  *
  * NOTE: mirrors apps/mes complete.tsx (non-tracked branch) + finishJobOperation; these should share
  * a service function eventually rather than duplicate the orchestration.
- * @mcp action
  */
 export async function completeOperation(
   client: SupabaseClient<Database>,

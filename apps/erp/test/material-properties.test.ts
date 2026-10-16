@@ -246,10 +246,10 @@ describe("material tools over MCP", () => {
     expect(tool(name)?.injectAuth).toEqual(["companyId"]);
   });
 
-  it("items_updateMaterialProperties is reachable with a database client", () => {
-    const update = tool("items_updateMaterialProperties");
-    expect(update?.serviceParams).toEqual(["client", "db", "material"]);
-    expect(update?.injectAuth).toEqual(
+  it("items_upsertMaterial is reachable with a database client", () => {
+    const upsert = tool("items_upsertMaterial");
+    expect(upsert?.serviceParams).toEqual(["client", "db", "material"]);
+    expect(upsert?.injectAuth).toEqual(
       expect.arrayContaining(["companyId", "updatedBy"])
     );
   });

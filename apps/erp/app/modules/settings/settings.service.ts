@@ -243,7 +243,6 @@ export async function getCompany(
   };
 }
 
-/** @mcp read */
 export async function getCompanyIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
@@ -254,7 +253,6 @@ export async function getCompanyIntegrations(
     .eq("companyId", companyId);
 }
 
-/** @mcp read */
 export async function getCompanyPlan(
   client: SupabaseClient,
   companyId: string
@@ -370,7 +368,6 @@ export async function getIntegration(
     .maybeSingle();
 }
 
-/** @mcp read */
 export async function getIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
@@ -405,7 +402,6 @@ export async function getNextSequence(
   });
 }
 
-/** @mcp read */
 export async function getPlanById(client: SupabaseClient, planId: string) {
   return client.from("plan").select("*").eq("id", planId).single();
 }
@@ -512,7 +508,6 @@ export async function getItemSerialSequence(
     .single();
 }
 
-/** @mcp read */
 export async function getItemSerialSequenceByItemId(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -655,7 +650,6 @@ export async function upsertDocumentTemplate(
   );
 }
 
-/** @mcp read */
 export async function getDocumentSections(
   client: SupabaseClient<Database>,
   companyId: string
@@ -681,7 +675,6 @@ export async function getDocumentSection(
     .maybeSingle();
 }
 
-/** @mcp read */
 export async function getDocumentSectionsByIds(
   client: SupabaseClient<Database>,
   companyId: string,

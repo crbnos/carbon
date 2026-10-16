@@ -161,7 +161,6 @@ export async function deleteGroup(
   return client.from("group").delete().eq("id", groupId);
 }
 
-/** @mcp read */
 export async function getCompaniesForUser(
   client: SupabaseClient<Database>,
   userId: string
@@ -568,7 +567,6 @@ export async function getSuppliers(
   return query;
 }
 
-/** @mcp read */
 export async function getUsers(client: SupabaseClient<Database>) {
   return fetchAllFromTable<{
     id: string;
@@ -585,7 +583,6 @@ export async function getUsers(client: SupabaseClient<Database>) {
   );
 }
 
-/** @mcp read */
 export async function getUserEmails(
   client: SupabaseClient<Database>,
   userIds: string[]

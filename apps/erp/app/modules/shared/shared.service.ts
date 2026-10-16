@@ -120,7 +120,6 @@ export async function getCountries(client: SupabaseClient<Database>) {
  * Timezone names from the database's own tzdata (pg_timezone_names via the
  * get_timezone_names RPC) — the authoritative list for what AT TIME ZONE
  * resolves.
- * @mcp read
  */
 export async function getTimezoneNames(client: SupabaseClient<Database>) {
   return client.rpc("get_timezone_names");
@@ -188,7 +187,6 @@ export async function getNotes(
     .order("createdAt");
 }
 
-/** @mcp read */
 export async function getPeriods(
   client: SupabaseClient<Database>,
   { startDate, endDate }: { startDate: string; endDate: string }
@@ -201,7 +199,6 @@ export async function getPeriods(
     .lte("endDate", endWithTime);
 }
 
-/** @mcp read */
 export async function getSavedViews(
   client: SupabaseClient<Database>,
   userId: string,
@@ -281,7 +278,6 @@ export async function getExternalLink(
   return query;
 }
 
-/** @mcp upsert */
 export async function upsertExternalLink(
   client: SupabaseClient<Database>,
   externalLink:
@@ -461,7 +457,6 @@ export async function updateSavedViewOrder(
  * Core sync lookup: given price break tiers and a requested quantity,
  * return the unit price from the highest qualifying tier
  * (where tier.quantity <= requestedQty). Falls back to fallbackPrice.
- * @mcp read
  */
 export function lookupPriceFromBreaks(
   priceBreaks: PriceBreak[],
@@ -480,7 +475,6 @@ export function lookupPriceFromBreaks(
 /**
  * Map-aware wrapper: look up itemId in a SupplierPriceMap, then resolve
  * via lookupPriceFromBreaks. Used by useLineCosts for BOM tree costing.
- * @mcp read
  */
 export function lookupBuyPriceFromMap(
   itemId: string,
@@ -504,7 +498,6 @@ export function lookupBuyPriceFromMap(
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
  * Mirrored in `packages/database/src/methods.ts`.
- * @mcp action
  */
 export function resolveBuyUnitCost(
   material: {
@@ -535,7 +528,6 @@ export function resolveBuyUnitCost(
  * `documentFallbackPrice` (already in the document's currency) is used.
  *
  * @param document the document's currency and its exchange rate (foreign per base)
- * @mcp read
  */
 export function resolveSupplierPrice(
   pricing: SupplierPartPricing | null,

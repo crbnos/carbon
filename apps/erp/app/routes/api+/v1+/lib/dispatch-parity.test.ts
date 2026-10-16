@@ -23,16 +23,15 @@ vi.mock("@lingui/core/macro", () => ({
 
 const spies = vi.hoisted(() => ({
   getAccountLedger: vi.fn(),
-  getTrialBalance: vi.fn(),
+  getAccountLedgerSummary: vi.fn(),
   upsertAccount: vi.fn(),
   upsertContractor: vi.fn(),
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
-  recalculateQuoteLinePrices: vi.fn(),
+  updateInventoryCountLine: vi.fn(),
   updateQuoteMaterialOrder: vi.fn(),
   cancelSalesOrder: vi.fn(),
-  generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
   deleteProject: vi.fn(),
@@ -66,14 +65,14 @@ vi.mock("~/modules/account/account.service", () => ({
 }));
 vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
-  getTrialBalance: spies.getTrialBalance,
+  getAccountLedgerSummary: spies.getAccountLedgerSummary,
   getPurchaseLinePivot: spies.getPurchaseLinePivot,
   upsertAccount: spies.upsertAccount,
   deleteProject: spies.deleteProject
 }));
 vi.mock("~/modules/documents/documents.service", () => ({}));
 vi.mock("~/modules/inventory/inventory.service", () => ({
-  generateInventoryCountLines: spies.generateInventoryCountLines
+  updateInventoryCountLine: spies.updateInventoryCountLine
 }));
 vi.mock("~/modules/invoicing/invoicing.service", () => ({
   replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
@@ -104,7 +103,6 @@ vi.mock("~/modules/resources/resources.service", () => ({
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
-  recalculateQuoteLinePrices: spies.recalculateQuoteLinePrices,
   updateQuoteMaterialOrder: spies.updateQuoteMaterialOrder,
   cancelSalesOrder: spies.cancelSalesOrder,
   deleteCustomer: spies.deleteCustomer,
@@ -216,16 +214,15 @@ async function runDispatch(
 
 const allSpies = [
   spies.getAccountLedger,
-  spies.getTrialBalance,
+  spies.getAccountLedgerSummary,
   spies.upsertAccount,
   spies.upsertContractor,
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.updateQuoteLineOrder,
-  spies.recalculateQuoteLinePrices,
+  spies.updateInventoryCountLine,
   spies.updateQuoteMaterialOrder,
   spies.cancelSalesOrder,
-  spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
   spies.deleteProject,
@@ -389,16 +386,21 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
 
   it("a2. fills context positional params (companyGroupId, companyId) from context", async () => {
     const r = await runDispatch(
-      "accounting_getTrialBalance",
-      spies.getTrialBalance,
-      { startDate: "2026-01-01" }
+      "accounting_getAccountLedgerSummary",
+      spies.getAccountLedgerSummary,
+      { accountId: "a1", startDate: "2026-01-01", endDate: null }
     );
     expect(r.calls).toEqual([
       [
         spies.FAKE_CLIENT,
         "g1",
         "c1",
-        { startDate: "2026-01-01", companyId: "c1" }
+        {
+          accountId: "a1",
+          startDate: "2026-01-01",
+          endDate: null,
+          companyId: "c1"
+        }
       ]
     ]);
   });
@@ -706,11 +708,11 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     const pgError = { code: "23503", message: "violates foreign key" };
 
     it("a bare { error } with no data", async () => {
-      spies.recalculateQuoteLinePrices.mockResolvedValue({ error: pgError });
+      spies.updateInventoryCountLine.mockResolvedValue({ error: pgError });
       const r = await runDispatch(
-        "sales_recalculateQuoteLinePrices",
-        spies.recalculateQuoteLinePrices,
-        { quoteId: "q1", quoteLineId: "ql1" }
+        "inventory_updateInventoryCountLine",
+        spies.updateInventoryCountLine,
+        { id: "l1", countedBy: "u1" }
       );
       expect(r.dispatch).toBeUndefined();
       expect(r.dispatchError).toMatchObject({
@@ -720,11 +722,11 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     });
 
     it("a bare { error: null } is still the result", async () => {
-      spies.recalculateQuoteLinePrices.mockResolvedValue({ error: null });
+      spies.updateInventoryCountLine.mockResolvedValue({ error: null });
       const r = await runDispatch(
-        "sales_recalculateQuoteLinePrices",
-        spies.recalculateQuoteLinePrices,
-        { quoteId: "q1", quoteLineId: "ql1" }
+        "inventory_updateInventoryCountLine",
+        spies.updateInventoryCountLine,
+        { id: "l1", countedBy: "u1" }
       );
       expect(r.dispatchError).toBeUndefined();
       expect(r.dispatch).toEqual({ data: { error: null } });
@@ -1063,19 +1065,14 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
 
   it("i. a `db` service param receives the Kysely client from getDatabaseClient()", async () => {
     const r = await runDispatch(
-      "inventory_generateInventoryCountLines",
-      spies.generateInventoryCountLines,
-      { locationId: "loc1" }
+      "inventory_updateInventoryCountLine",
+      spies.updateInventoryCountLine,
+      { id: "l1", countedBy: "u1" }
     );
     expect(r.calls).toEqual([
       [
         spies.FAKE_DB,
-        {
-          locationId: "loc1",
-          companyId: "c1",
-          createdBy: "u1",
-          updatedBy: "u1"
-        }
+        { id: "l1", countedBy: "u1", companyId: "c1", updatedBy: "u1" }
       ]
     ]);
   });

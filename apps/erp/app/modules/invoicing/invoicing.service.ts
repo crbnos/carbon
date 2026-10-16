@@ -96,7 +96,6 @@ const SALES_INVOICES_LIST_COLUMNS =
  *
  * The date arithmetic is `calculateDueDate` (@carbon/utils), the same one
  * invoice posting uses.
- * @mcp read
  */
 export async function computeInvoiceDateDue(
   client: SupabaseClient<Database>,
@@ -140,7 +139,6 @@ export async function computeInvoiceDateDue(
  * The deadline uses the same calculationMethod anchoring as the due date (see
  * computeInvoiceDateDue) but with `daysDiscount` instead of `daysDue`. Terms are
  * batch-loaded in one query — never per invoice (N+1).
- * @mcp read
  */
 export async function computeEarlyPaymentDiscounts(
   client: SupabaseClient<Database>,
@@ -440,7 +438,6 @@ export async function getSalesInvoice(
     .single();
 }
 
-/** @mcp read */
 export async function getSalesInvoiceCustomerDetails(
   client: SupabaseClient<Database>,
   salesInvoiceId: string
@@ -537,7 +534,6 @@ export async function updatePurchaseInvoiceExchangeRate(
   return client.from("purchaseInvoice").update(update).eq("id", update.id);
 }
 
-/** @mcp update */
 export async function updateSalesInvoiceExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1561,7 +1557,6 @@ export async function getReimbursementRelatedItems(
  * document is immutable, and a caller that tries gets zero rows rather than
  * a silent partial write. There is deliberately no insert branch: the Ramp
  * sync is the only thing that creates a reimbursement.
- * @mcp update
  */
 export async function updateReimbursement(
   client: SupabaseClient<Database>,
@@ -2828,7 +2823,6 @@ export async function getAvailableOnAccountCreditSources(
 
 /**
  * Base-total contract for other readers; the composer uses typed document sources.
- * @mcp read
  */
 export async function getAvailableOnAccountCredit(
   client: SupabaseClient<Database>,

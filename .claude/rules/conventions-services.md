@@ -288,6 +288,8 @@ export async function upsertCustomer(…)
   change that is not a row edit). It sets the permission the caller needs and the
   audit fields the payload is handed. Add `destructive` after a write verb when
   the call can remove rows the caller did not name.
+- Tag only a function a route calls directly. A function that only an
+  operation calls stays untagged: the operation is what is published.
 - Leave the tag off unless the function is safe to call with nothing but its
   payload — whatever gate or orchestration its route performs does not run for
   an API caller.

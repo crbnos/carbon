@@ -251,6 +251,15 @@ The ERP is moving its operations into `defineServiceFn` consts that routes,
 the API and MCP all call (`.ai/plans/2026-10-15-service-function-migration.md`).
 These are published from the ERP router, not from a `*.service.ts`:
 
+- **What is published**: what a route uses. An operation a route action calls,
+  and a legacy `*.service.ts` read or write a route (loader or action) calls
+  directly. A function only another function calls is not published: its
+  operation is. The exception is the two-step file upload
+  (`*DocumentUploadUrl`, `documents_insertUploadedDocument`), which is the API's
+  equivalent of the browser's direct upload to storage. The workflow catalog's
+  tools (`packages/ee/src/workflows/catalog/actions.ts`) and the deprecated
+  aliases in `operations.server.ts` stay published while they name them.
+
 - **Source**: `apps/erp/app/modules/router.server.ts` combines each module's
   `{module}/index.server.ts` namespace (`production.job.release`). The
   generator (`scripts/lib/service-fn-metadata.ts`) walks it with the same

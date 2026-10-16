@@ -168,7 +168,6 @@ export async function getDepartment(
   return client.from("department").select("*").eq("id", departmentId).single();
 }
 
-/** @mcp read */
 export async function getDepartments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -382,7 +381,6 @@ export async function getPeople(
   };
 }
 
-/** @mcp read */
 export async function getContacts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -909,7 +907,6 @@ export async function deleteTimeCardEntry(
   return client.from("timeCardEntry").delete().eq("id", entryId);
 }
 
-/** @mcp read */
 export async function getClockedInEmployees(
   client: SupabaseClient<Database>,
   companyId: string
@@ -937,7 +934,6 @@ export async function getOpenClockEntry(
     .maybeSingle();
 }
 
-/** @mcp read */
 export async function getRecentTimecards(
   client: SupabaseClient<Database>,
   companyId: string
@@ -950,7 +946,6 @@ export async function getRecentTimecards(
     .limit(100);
 }
 
-/** @mcp read */
 export async function getScheduledEmployeesToday(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1054,7 +1049,6 @@ export async function getTimecardEntries(
   return query;
 }
 
-/** @mcp read */
 export async function getWeeklyHoursForEmployees(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -115,9 +115,8 @@ describe("payload userId injection", () => {
 
   it("covers the edge-function wrappers that surfaced this", () => {
     for (const name of [
-      "production_pullJobMaterialMakeMethod",
-      "production_recalculateJobMakeMethodRequirements",
-      "production_recalculateJobOperationDependencies"
+      "accounting_reverseJournalEntry",
+      "accounting_invokeAssetTransfer"
     ]) {
       const tool = tools.find((t) => t.name === name);
       expect(tool?.injectAuth).toContain("userId");

@@ -531,7 +531,6 @@ export async function getPurchaseOrderDelivery(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderLocations(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -580,7 +579,6 @@ export async function getPurchaseOrderLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderSuppliers(
   client: SupabaseClient<Database>,
   companyId: string
@@ -690,7 +688,6 @@ export async function getPurchasingPlanning(
   return query;
 }
 
-/** @mcp read */
 export async function getPurchasingTerms(
   client: SupabaseClient<Database>,
   companyId: string
@@ -901,7 +898,6 @@ export async function getSupplierPayment(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierProcessById(
   client: SupabaseClient<Database>,
   supplierProcessId: string
@@ -947,7 +943,6 @@ export async function getSupplierQuote(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuoteByInteractionId(
   client: SupabaseClient<Database>,
   interactionId: string
@@ -1043,7 +1038,6 @@ export async function getSupplierQuoteLinePricesByQuoteId(
     .order("supplierQuoteLineId", { ascending: true });
 }
 
-/** @mcp read */
 export async function getSupplierQuotesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1209,7 +1203,6 @@ export async function getSupplierTypesList(
     .order("name");
 }
 
-/** @mcp create */
 export async function insertSupplier(
   client: SupabaseClient<Database>,
   supplier: Omit<z.infer<typeof supplierValidator>, "id"> & {
@@ -1902,7 +1895,6 @@ export async function updatePurchaseOrder(
 
 /**
  * @deprecated Use insertPurchaseOrder for new orders, updatePurchaseOrder for existing orders
- * @mcp upsert
  */
 export async function upsertPurchaseOrder(
   client: SupabaseClient<Database>,
@@ -3206,7 +3198,6 @@ type LinkedSupplierQuote = {
     | null;
 };
 
-/** @mcp read */
 export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3488,7 +3479,6 @@ export async function getLinkedSupplierQuotes(
     .eq("purchasingRfqId", purchasingRfqId);
 }
 
-/** @mcp read */
 export async function getLinkedPurchasingRfqs(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -3504,7 +3494,6 @@ export async function getLinkedPurchasingRfqs(
     .eq("supplierQuoteId", supplierQuoteId);
 }
 
-/** @mcp read */
 export async function getLinkedPurchasingRfqsForInteraction(
   client: SupabaseClient<Database>,
   supplierInteractionId: string
@@ -3568,7 +3557,6 @@ export async function getSiblingQuotesForQuote(
 }
 
 // Direct Order→RFQ lookup (more efficient than going through interaction)
-/** @mcp read */
 export async function getLinkedPurchasingRfqsForOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -4716,7 +4704,6 @@ export async function getReturnableEntitiesForSupplier(
  * The Available tracked entities that came in on ONE receipt line, for the item.
  * Used to pre-select the batch/serial when a return line is added from a specific
  * receipt — provenance is the `Receipt Line` attribute stamped at receipt.
- * @mcp read
  */
 export async function getReturnableEntitiesForReceiptLine(
   client: SupabaseClient<Database>,

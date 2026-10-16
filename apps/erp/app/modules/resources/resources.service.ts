@@ -107,7 +107,6 @@ export async function deleteMaintenanceDispatchEvent(
   return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
 }
 
-/** @mcp delete */
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
@@ -567,7 +566,6 @@ export async function getMaintenanceDispatchItems(
     .eq("maintenanceDispatchId", dispatchId);
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchItemTrackedEntities(
   client: SupabaseClient<Database>,
   maintenanceDispatchItemId: string
@@ -583,7 +581,6 @@ export async function getMaintenanceDispatchItemTrackedEntities(
     .eq("maintenanceDispatchItemId", maintenanceDispatchItemId);
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -636,7 +633,6 @@ export async function getMaintenanceDispatchesByLocation(
   return query;
 }
 
-/** @mcp read */
 export async function getMaintenanceDispatchWorkCenters(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -665,7 +661,6 @@ export async function getMaintenanceSchedule(
     .single();
 }
 
-/** @mcp read */
 export async function getMaintenanceScheduleItems(
   client: SupabaseClient<Database>,
   scheduleId: string
@@ -679,7 +674,6 @@ export async function getMaintenanceScheduleItems(
     .eq("maintenanceScheduleId", scheduleId);
 }
 
-/** @mcp read */
 export async function getMaintenanceSchedules(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1069,7 +1063,6 @@ export async function getTrainingAssignmentSummary(
   });
 }
 
-/** @mcp read */
 export async function getTrainingQuestions(
   client: SupabaseClient<Database>,
   trainingId: string
@@ -1326,7 +1319,6 @@ export async function deleteTrainingCompletion(
  * Completing training upserts an `employeeAbility` via the
  * `grant_ability_on_training_completion` trigger, so the caller can restamp the
  * scheduler (`notifyScheduleInputsChanged`) for that ability's operator pool.
- * @mcp read
  */
 export async function getTrainingGrantedAbilityId(
   client: SupabaseClient<Database>,

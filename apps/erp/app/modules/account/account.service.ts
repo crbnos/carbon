@@ -172,7 +172,6 @@ export async function getCurrentUser(
     .single();
 }
 
-/** @mcp read */
 export async function getAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -198,7 +197,6 @@ export async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
-/** @mcp read */
 export async function getPrivateAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -207,7 +205,6 @@ export async function getPrivateAttributes(
   return getAttributes(client, userId, companyId, false);
 }
 
-/** @mcp read */
 export async function getPublicAttributes(
   client: SupabaseClient<Database>,
   userId: string,

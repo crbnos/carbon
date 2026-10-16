@@ -231,7 +231,6 @@ export async function convertQuoteToOrder(
   return result;
 }
 
-/** @mcp create */
 export async function copyQuoteLine(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -535,7 +534,6 @@ export async function deleteQuoteLine(
   return client.from("quoteLine").delete().eq("id", quoteLineId);
 }
 
-/** @mcp delete */
 export async function deleteQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterialId: string
@@ -833,7 +831,6 @@ export async function getCustomerTax(
   return query.single();
 }
 
-/** @mcp read */
 export async function getCustomerTypeItemPriceOverride(
   client: SupabaseClient<Database>,
   customerTypeId: string,
@@ -857,7 +854,6 @@ export async function getCustomerTypeItemPriceOverride(
   return { data: applyBreakToParent(data, quantity, date), error: null };
 }
 
-/** @mcp read */
 export async function getAllCustomersItemPriceOverride(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1125,7 +1121,6 @@ export async function getModelByQuoteLineId(
   return getModelByItemId(client, quoteLine.data.itemId);
 }
 
-/** @mcp read */
 export async function getNoQuoteReasonsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1361,7 +1356,6 @@ export async function getQuotesList(
   );
 }
 
-/** @mcp read */
 export async function getQuoteAssembliesByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -1372,7 +1366,6 @@ export async function getQuoteAssembliesByLine(
     .eq("quoteLineId", quoteLineId);
 }
 
-/** @mcp read */
 export async function getQuoteAssemblies(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -1461,7 +1454,6 @@ export async function getQuoteMethodTrees(
   };
 }
 
-/** @mcp read */
 export async function getQuoteMethodTreeArray(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -1562,7 +1554,6 @@ export async function getQuoteLinePricesByQuoteId(
     .order("quoteLineId", { ascending: true });
 }
 
-/** @mcp read */
 export async function getQuoteLinePricesByItemId(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1577,7 +1568,6 @@ export async function getQuoteLinePricesByItemId(
     .order("qty", { ascending: true });
 }
 
-/** @mcp read */
 export async function getQuoteLinePricesByItemIds(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -1593,7 +1583,6 @@ export async function getQuoteLinePricesByItemIds(
     .limit(10);
 }
 
-/** @mcp read */
 export async function getQuoteMaterials(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -1601,7 +1590,6 @@ export async function getQuoteMaterials(
   return client.from("quoteMaterial").select("*").eq("quoteId", quoteId);
 }
 
-/** @mcp read */
 export async function getQuoteMaterial(
   client: SupabaseClient<Database>,
   materialId: string
@@ -1613,7 +1601,6 @@ export async function getQuoteMaterial(
     .single();
 }
 
-/** @mcp read */
 export async function getQuoteMaterialsByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -1636,7 +1623,6 @@ export async function getQuoteMaterialsByMethodId(
     .order("order", { ascending: true });
 }
 
-/** @mcp read */
 export async function getQuoteMaterialsByOperation(
   client: SupabaseClient<Database>,
   quoteOperationId: string
@@ -1647,7 +1633,6 @@ export async function getQuoteMaterialsByOperation(
     .eq("quoteOperationId", quoteOperationId);
 }
 
-/** @mcp read */
 export async function getQuoteOperation(
   client: SupabaseClient<Database>,
   quoteOperationId: string
@@ -1659,7 +1644,6 @@ export async function getQuoteOperation(
     .single();
 }
 
-/** @mcp read */
 export async function getQuoteOperationsByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -1778,7 +1762,6 @@ export async function getSalesOrder(
   return client.from("salesOrders").select("*").eq("id", salesOrderId).single();
 }
 
-/** @mcp read */
 export async function getSalesOrderCustomerDetails(
   client: SupabaseClient<Database>,
   salesOrderId: string
@@ -1887,7 +1870,6 @@ export async function getSalesOrdersList(
   );
 }
 
-/** @mcp read */
 export async function getSalesOrdersByIds(
   client: SupabaseClient<Database>,
   ids: string[]
@@ -1927,7 +1909,6 @@ export async function getSalesOrderShipment(
     .single();
 }
 
-/** @mcp read */
 export async function getSalesOrderCustomers(client: SupabaseClient<Database>) {
   return client.from("salesOrderCustomers").select("id, name");
 }
@@ -1991,7 +1972,6 @@ export async function getSalesOrderInvoicePaymentsByIds(
   );
 }
 
-/** @mcp read */
 export async function getSalesOrderLinesByItemId(
   client: SupabaseClient<Database>,
   itemId: string
@@ -2027,7 +2007,6 @@ export async function getOpenSalesOrderLinesForItem(
     .order("createdAt", { ascending: false });
 }
 
-/** @mcp read */
 export async function getSalesOrderLinesByItemIds(
   client: SupabaseClient<Database>,
   itemIds: string[]
@@ -3215,7 +3194,6 @@ export async function getCustomerItemPriceOverrideById(
     .single();
 }
 
-/** @mcp read */
 export async function getCustomerItemPriceOverridesList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3999,7 +3977,6 @@ export async function updateQuote(
 
 /**
  * @deprecated Use insertQuote for new quotes, updateQuote for existing quotes
- * @mcp upsert
  */
 export async function upsertQuote(
   client: SupabaseClient<Database>,
@@ -4185,7 +4162,6 @@ export async function upsertQuote(
   }
 }
 
-/** @mcp upsert */
 export async function upsertQuoteLine(
   client: SupabaseClient<Database>,
   quotationLine:
@@ -4760,7 +4736,6 @@ async function getConfiguredSalePrice(
   return { data: data?.unitSalePrice ?? null, error };
 }
 
-/** @mcp action */
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -4895,7 +4870,6 @@ export async function buildMakeToOrderPriceRows(
   return { rows: priceRows, error: null };
 }
 
-/** @mcp action */
 export async function calculatePricesForQuantities(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -4924,7 +4898,6 @@ export async function calculatePricesForQuantities(
   return { error: null };
 }
 
-/** @mcp action */
 export async function buildPullFromInventoryPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4993,7 +4966,6 @@ export async function buildPullFromInventoryPriceRows(
   return { rows: priceRows, error: null };
 }
 
-/** @mcp action */
 export async function resolveQuoteLinePrices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5024,7 +4996,6 @@ export async function resolveQuoteLinePrices(
   return { error: null };
 }
 
-/** @mcp action */
 export async function buildPurchaseToOrderPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5099,7 +5070,6 @@ export async function buildPurchaseToOrderPriceRows(
   return { rows: priceRows, error: null };
 }
 
-/** @mcp action */
 export async function resolvePurchaseToOrderPrices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5130,7 +5100,6 @@ export async function resolvePurchaseToOrderPrices(
   return { error: null };
 }
 
-/** @mcp update */
 export async function recalculateQuoteLinePrices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5551,7 +5520,6 @@ export async function repriceQuoteLineFromRules(
   return { data: null, error: null };
 }
 
-/** @mcp upsert */
 export async function upsertQuoteLineMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -5661,7 +5629,6 @@ export async function upsertQuoteMaterial(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertQuoteMaterialMakeMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -5728,10 +5695,6 @@ export async function upsertQuoteMaterialMakeMethod(
   return { data: null, error: null };
 }
 
-/**
- * @mcp upsert
- * @mcp key quoteOperation id
- */
 export async function upsertQuoteOperation(
   client: SupabaseClient<Database>,
   operation:
@@ -6324,7 +6287,6 @@ export async function cancelSalesOrder(
 
 /**
  * @deprecated Use insertSalesOrder for new orders, updateSalesOrder for existing orders
- * @mcp upsert
  */
 export async function upsertSalesOrder(
   client: SupabaseClient<Database>,
@@ -6689,7 +6651,6 @@ export async function upsertSalesOrderPayment(
     .single();
 }
 
-/** @mcp create */
 export async function insertSalesRFQ(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7216,7 +7177,6 @@ export async function getSalesReturnOrderLine(
     .single();
 }
 
-/** @mcp read */
 export async function getSalesReturnOrderLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineIds: string[]
@@ -8810,7 +8770,6 @@ export async function updateRentalAgreement(
  *  operational preference, not a term, so it stays editable while Active.
  *  Null falls back to the company's setting. Sending needs an email to send
  *  to, so `Post and Email` is refused when the contact has none.
- *  @mcp update
  */
 export async function updateRentalAgreementInvoiceAutomation(
   client: SupabaseClient<Database>,
@@ -9577,8 +9536,7 @@ export async function deleteCustomerItemRentalRate(
 }
 
 /** The live rental line a fleet unit is on rent under, if any — a unit on
- *  rent cannot be taken out of service; return it from the agreement first. * @mcp read
- */
+ *  rent cannot be taken out of service; return it from the agreement first. */
 export async function getOnRentLineForAsset(
   client: SupabaseClient<Database>,
   fixedAssetId: string,

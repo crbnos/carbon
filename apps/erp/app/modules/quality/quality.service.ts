@@ -952,7 +952,6 @@ export async function getIssueSuppliers(
     .order("id", { ascending: true });
 }
 
-/** @mcp read */
 export async function getIssueTasks(
   client: SupabaseClient<Database>,
   id: string,
@@ -1120,7 +1119,6 @@ export async function getQualityDocument(
     .single();
 }
 
-/** @mcp read */
 export async function getQualityDocumentSteps(
   client: SupabaseClient<Database>,
   qualityDocumentId: string
@@ -1172,7 +1170,6 @@ export async function getQualityDocuments(
   return query;
 }
 
-/** @mcp read */
 export async function getQualityDocumentsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1416,7 +1413,6 @@ export async function updateIssueTaskStatus(
     .single();
 }
 
-/** @mcp update */
 export async function updateIssueTaskContent(
   client: SupabaseClient<Database>,
   args: {
