@@ -62,6 +62,7 @@ const ready = (id: string, overrides: Record<string, unknown> = {}) => ({
   missingAssemblies: [],
   outsideOperationsWithoutSupplier: [],
   supplierIds: [] as string[],
+  materialsWithoutStorageUnit: [],
   ...overrides
 });
 

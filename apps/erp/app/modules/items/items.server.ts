@@ -693,7 +693,11 @@ async function releaseAffectedItem(
     userId
   });
   if (activated.error) {
-    return { error: { message: "Failed to activate method" } };
+    return {
+      error: {
+        message: activated.error.message || "Failed to activate method"
+      }
+    };
   }
 
   // Reveal the new item for Revision / New Part (Version edits the same item).

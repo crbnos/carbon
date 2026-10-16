@@ -13,6 +13,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { inspectionCompletePassedValidator } from "~/services/models";
 import { returnPickedRemainders } from "~/services/operations.service";
 import {
+  checkStrictBackflush,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
   postBulkCompletion,
@@ -106,6 +107,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
         `Passed units (${candidates.length}) exceed the operation's remaining quantity (${state.opRemaining}) — quantities were already recorded from the actions menu`
       );
     }
+    // Strict backflush: refuse before the first unit completes, not after
+    // some of them.
+    const backflushCheck = await checkStrictBackflush({
+      jobOperationId: state.jobOperationId,
+      quantity: candidates.length,
+      companyId,
+      userId
+    });
+    if (backflushCheck.error) {
+      return fail(backflushCheck.error, backflushCheck.message!);
+    }
     const completions = await postSerialCompletions(serviceRole, {
       candidates,
       jobOperationId: state.jobOperationId,
@@ -143,6 +155,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (quantity <= 0) {
     return fail(null, "No passed units to complete");
+  }
+
+  // Strict backflush: refuse before the production quantity is recorded.
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity,
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
   }
 
   const completion = await postBulkCompletion(serviceRole, client, state, {

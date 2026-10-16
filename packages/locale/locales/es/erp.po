@@ -524,6 +524,9 @@ msgstr "{hiddenCount} más: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección, {1} omitidos."
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# orden de trabajo abierta tiene materiales sin unidad de almacenamiento} other {# órdenes de trabajo abiertas tienen materiales sin unidad de almacenamiento}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} se utiliza en documentos, asientos o cuentas predeterminadas, por lo que no se puede eliminar."
 
@@ -550,6 +553,9 @@ msgstr "{maxSizeMB}MB límite"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# paso} other {# pasos}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# método activo tiene materiales sin Extraer de} other {# métodos activos tienen materiales sin Extraer de}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} meses con totales no coincidentes"
@@ -720,6 +726,9 @@ msgstr "↩ {0} redirigido desde {1} obsoleto"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}h"
+
+msgid "+{more} more"
+msgstr "+{more} más"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Agregue una parte de proveedor</0> para este artículo para establecer un proveedor preferido."
@@ -1107,6 +1116,9 @@ msgstr "Un material es un artículo físico utilizado para hacer una pieza que s
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Un instrumento de medición (calibrador, micrómetro, calibrador de pasadores, MMC) rastreado como un registro y sujeto a un cronograma de calibración recurrente."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Una versión del método necesita una unidad de almacenamiento de origen en cada material antes de que pueda activarse."
+
 msgid "A name is required to save a view"
 msgstr "Se requiere un nombre para guardar una vista"
 
@@ -1427,6 +1439,12 @@ msgstr "El estado de un envío cambia"
 
 msgid "A shipment's tracking number changes"
 msgstr "El número de seguimiento de un envío cambia"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Una unidad de almacenamiento con existencias insuficientes recurre a otra unidad de almacenamiento con existencias."
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "Una unidad de almacenamiento insuficiente desciende por debajo de cero, y la operación u orden de trabajo aún se completa."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Un arrendamiento a corto plazo no puede extenderse más allá de 12 meses desde el comienzo. Finalícelo e ingrese la extensión como un nuevo arrendamiento."
@@ -1804,6 +1822,9 @@ msgstr "Activo"
 
 msgid "Active Jobs"
 msgstr "Órdenes de trabajo activas"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "Métodos Activos sin Extraer de"
 
 msgid "Active Statuses"
 msgstr "Estados Activos"
@@ -2607,6 +2628,9 @@ msgstr "Una operación realizada por un proveedor externo en lugar de un centro 
 msgid "An operation on this job runs in this batch"
 msgstr "Una operación de este trabajo se ejecuta en este lote"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "Una operación u orden de trabajo que llevaría su unidad de almacenamiento por debajo de cero se detiene hasta que las existencias estén disponibles."
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "La posición de una operación en la cola de su centro de trabajo — el orden en que el piso toma el trabajo. El motor lo numera según el orden de colocación (inicio proyectado más temprano primero); reordenar tarjetas en el tablero de centros de trabajo la reemplaza sin cambiar fechas."
 
@@ -2779,6 +2803,9 @@ msgstr "Se aplica a todos los centros de trabajo"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Se aplica a las características sin su propia regla y al lote cuando este plan impulsa una inspección."
+
+msgid "Applies when strict backflush is on."
+msgstr "Se aplica cuando el consumo retroactivo estricto está activo."
 
 msgid "Apply"
 msgstr "Aplicar"
@@ -3821,6 +3848,9 @@ msgstr "Volver a trazabilidad"
 
 msgid "Backflush"
 msgstr "Consumo retroactivo"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "Consumo retroactivo de cada material solo desde la unidad de almacenamiento en su línea de material, nunca desde otra unidad de almacenamiento."
 
 msgid "Background"
 msgstr "Fondo"
@@ -6020,6 +6050,12 @@ msgstr "No se pudo analizar la región: {0}"
 
 msgid "Could not build PDF. Try again."
 msgstr "No se pudo crear el PDF. Intenta de nuevo."
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "No se pudo verificar métodos activos y órdenes de trabajo abiertas con brechas. Recarga la página para volver a intentar."
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "No se pudieron verificar las unidades de almacenamiento de los materiales de esta orden de trabajo. Cierra este diálogo y ábrelo de nuevo para volver a intentar."
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13251,6 +13287,12 @@ msgstr "Los materiales están incluidos"
 msgid "Materials are not included"
 msgstr "Los materiales no están incluidos"
 
+msgid "Materials missing a Pull From"
+msgstr "Materiales sin Extraer de"
+
+msgid "Materials with no storage unit"
+msgstr "Materiales sin unidad de almacenamiento"
+
 msgid "Matrix"
 msgstr "Matriz"
 
@@ -13446,6 +13488,9 @@ msgstr "Operaciones Faltantes"
 
 msgid "Missing Shipping Costs"
 msgstr "Costos de envío faltantes"
+
+msgid "Missing Storage Units"
+msgstr "Unidades de almacenamiento faltantes"
 
 msgid "Missing Suppliers"
 msgstr "Proveedores Faltantes"
@@ -15523,6 +15568,9 @@ msgstr "Órdenes de trabajo abiertas"
 msgid "Open Jobs"
 msgstr "Órdenes de trabajo Abiertas"
 
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "Órdenes de trabajo abiertas sin Unidad de almacenamiento"
+
 msgid "Open menu"
 msgstr "Abrir menú"
 
@@ -16809,6 +16857,9 @@ msgstr "Presione «/» para comandos"
 
 msgid "Prev"
 msgstr "Anterior"
+
+msgid "Prevent negative stock"
+msgstr "Prevenir existencias negativas"
 
 msgid "Preventive action"
 msgstr "Acción preventiva"
@@ -20239,6 +20290,15 @@ msgstr "Sesión bloqueada"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Establezca un cliente en esta devolución para agregar desde un envío."
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "Establezca un Extraer de en cada uno a través de una nueva versión."
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "establecer una unidad de almacenamiento de extracción para {names}"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "establecer una unidad de almacenamiento de extracción para {names} y {more} más"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Establecer un proveedor en esta devolución para agregar desde una recepción."
 
@@ -21278,6 +21338,9 @@ msgstr "unidades de almacenamiento"
 msgid "Storage Units"
 msgstr "Unidades de Almacenamiento"
 
+msgid "Storage Units Not Checked"
+msgstr "Unidades de almacenamiento sin verificar"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "Almacenar cantidad fija de días en este artículo. La fecha de inicio de caducidad se establece en cada lote de producción o serial cuando se crea (o cuando se ejecuta el proceso de desencadenador, si se configura)."
 
@@ -21295,6 +21358,18 @@ msgstr "Amortización lineal de activos de derecho de uso de arrendamiento finan
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Costo de arrendamiento lineal de arrendamientos operativos y los pagos de arrendamientos a corto plazo"
+
+msgid "Strict Backflush"
+msgstr "Consumo retroactivo estricto"
+
+msgid "Strict backflush is off"
+msgstr "Consumo retroactivo estricto está desactivado"
+
+msgid "Strict backflush is on"
+msgstr "Consumo retroactivo estricto está activado"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Consumo retroactivo estricto está activado. Configure una unidad de almacenamiento de origen en estos materiales antes de liberar:"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23149,6 +23224,9 @@ msgstr "Las horas de trabajo y calendarios que impulsan la programación"
 
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Sus fechas y divisiones se planifican nuevamente a partir de las líneas."
+
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "Su próximo consumo retroactivo será rechazado hasta que cada material tenga una unidad de almacenamiento."
 
 msgid "Theme"
 msgstr "Tema"

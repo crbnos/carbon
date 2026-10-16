@@ -258,3 +258,49 @@ export const filterOperatorLabels = Object.entries(filterOperators).map(
     label: value
   })
 );
+
+/**
+ * Search, sort and page a list held in memory, honouring the shared `Table`'s
+ * URL parameters (`search`, `sort`, `limit`, `offset`). For lists computed in
+ * TypeScript from a whole-company read (the strict backflush drawers), where
+ * PostgREST cannot do the paging. Array values sort by their first entry.
+ */
+export function pageInMemory<T extends Record<string, unknown>>(
+  rows: T[],
+  searchParams: URLSearchParams,
+  searchable: (row: T) => (string | null | undefined)[]
+): { rows: T[]; count: number } {
+  const search = searchParams.get("search")?.trim().toLowerCase() ?? "";
+  const { limit, offset, sorts } = getGenericQueryFilters(searchParams);
+
+  const matching = search
+    ? rows.filter((row) =>
+        searchable(row).some((value) =>
+          (value ?? "").toLowerCase().includes(search)
+        )
+      )
+    : [...rows];
+
+  const sortValue = (row: T, key: string) => {
+    const value = row[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+  for (const { sortBy, sortAsc } of [...(sorts ?? [])].reverse()) {
+    matching.sort((a, b) => {
+      const left = sortValue(a, sortBy);
+      const right = sortValue(b, sortBy);
+      const order =
+        typeof left === "number" && typeof right === "number"
+          ? left - right
+          : String(left ?? "").localeCompare(String(right ?? ""), undefined, {
+              numeric: true
+            });
+      return sortAsc ? order : -order;
+    });
+  }
+
+  return {
+    rows: matching.slice(offset, offset + limit),
+    count: matching.length
+  };
+}

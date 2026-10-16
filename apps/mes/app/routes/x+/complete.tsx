@@ -20,6 +20,7 @@ import {
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { checkStrictBackflush } from "~/services/quality.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -190,6 +191,21 @@ export async function action({ request }: ActionFunctionArgs) {
     const newTrackedEntityId = response.data?.newTrackedEntityId as
       | string
       | undefined;
+    // A refused completion (a strict backflush shortfall) rolled back: print
+    // nothing for it.
+    if (response.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
+          flash: "error"
+        })
+      );
+    }
+
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
@@ -203,16 +219,6 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId
       });
-    }
-
-    if (response.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
-          flash: "error"
-        })
-      );
     }
 
     if (willBeFinished) {
@@ -273,7 +279,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
           flash: "error"
         })
       );
@@ -325,6 +334,27 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
     const { trackedEntityId, trackingType, ...d } = validation.data;
+
+    // Strict backflush: refuse before the production quantity is recorded, so
+    // a short storage unit never leaves units completed with no material
+    // consumed. A no-op when strict backflush is off.
+    const check = await checkStrictBackflush({
+      jobOperationId: validation.data.jobOperationId,
+      quantity: validation.data.quantity,
+      companyId,
+      userId
+    });
+
+    if (check.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(check.error, check.message!),
+          flash: "error"
+        })
+      );
+    }
+
     const insertProduction = await insertProductionQuantity(client, {
       ...d,
       companyId,
@@ -353,10 +383,15 @@ export async function action({ request }: ActionFunctionArgs) {
       });
 
     if (issued.error) {
+      // The units are recorded: say so, or the operator retries and records
+      // them twice.
       return data(
         {},
         await flash(request, {
-          ...error(issued.error, "Failed to issue materials"),
+          ...error(
+            issued.error,
+            `Units completed, but ${issued.error.message || "failed to issue materials"}`
+          ),
           flash: "error"
         })
       );

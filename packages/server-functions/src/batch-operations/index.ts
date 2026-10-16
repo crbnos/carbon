@@ -457,6 +457,31 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  // Strict backflush: phase 2 issues each member's materials after phase 1 has
+  // committed, so a short storage unit is refused here first, before anything
+  // is written. Each member is checked on its own; two members drawing the
+  // same bin can still fail in phase 2, which leaves the batch resumable.
+  // A no-op when strict backflush is off.
+  // A completed batch skips the check, so a retry still gets the
+  // "already completed" answer from the transaction below.
+  const batchStatus = await db
+    .selectFrom("jobOperationBatch")
+    .select("status")
+    .where("id", "=", batchId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const system = ServerFnContext.system({ db, companyId, userId });
+  for (const m of batchStatus?.status === "Completed" ? [] : members) {
+    if (m.quantity <= 0) continue;
+    const check = await issue(system, {
+      id: m.jobOperationId,
+      type: "jobOperation",
+      quantity: m.quantity,
+      dryRun: true
+    });
+    if (check.error) throw check.error;
+  }
+
   await db.transaction().execute(async (trx) => {
     const batch = await trx
       .selectFrom("jobOperationBatch")
@@ -710,7 +735,6 @@ async function completeBatch(
   // Phase 2 (post-commit, idempotent). Any throw leaves the batch Completing; a
   // retry re-runs these steps alone. Runs as the system: the batch completion
   // itself was authorized.
-  const system = ServerFnContext.system({ db, companyId, userId });
   for (const m of members) {
     if (m.quantity <= 0) continue;
     const issued = await issue(system, {
@@ -719,8 +743,12 @@ async function completeBatch(
       quantity: m.quantity
     });
     if (issued.error) {
-      throw new Error(
-        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`
+      // Keep the refusal's status: a strict backflush shortfall is a 409 the
+      // operator fixes by stocking the bin and completing again (which
+      // resumes), not a server error.
+      throw new ServerFnError(
+        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`,
+        issued.error instanceof ServerFnError ? issued.error.status : 500
       );
     }
   }

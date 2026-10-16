@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { MESSAGE_LIST_LIMIT } from "@carbon/database/strict-backflush";
 import {
   Alert,
   AlertDescription,
@@ -45,6 +46,18 @@ export function BatchReleaseModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  // The first few parts, then a count — a whole translated sentence either
+  // way, so the "and N more" is translated too.
+  const storageUnitReason = (materials: { description: string }[]) => {
+    const names = materials
+      .slice(0, MESSAGE_LIST_LIMIT)
+      .map((material) => material.description)
+      .join(", ");
+    const more = materials.length - MESSAGE_LIST_LIMIT;
+    return more > 0
+      ? t`set a Pull From storage unit on ${names} and ${more} more`
+      : t`set a Pull From storage unit on ${names}`;
+  };
   const readinessFetcher = useFetcher<
     JobReleaseReadiness | { error: string }
   >();
@@ -73,7 +86,8 @@ export function BatchReleaseModal({
     (job) =>
       job.manufacturingBlocked ||
       job.missingAssemblies.length > 0 ||
-      job.outsideOperationsWithoutSupplier.length > 0
+      job.outsideOperationsWithoutSupplier.length > 0 ||
+      job.materialsWithoutStorageUnit.length > 0
   );
   const jobIds = (readiness?.jobs ?? []).map((job) => job.jobId);
   const canRelease = !!readiness && blocked.length === 0 && !isSubmitting;
@@ -136,7 +150,9 @@ export function BatchReleaseModal({
                               op.missing === "choose"
                                 ? t`choose a supplier for ${op.description} on the job`
                                 : t`${op.description} has no supplier`
-                            )
+                            ),
+                            job.materialsWithoutStorageUnit.length > 0 &&
+                              storageUnitReason(job.materialsWithoutStorageUnit)
                           ]
                             .filter(Boolean)
                             .join("; ")}

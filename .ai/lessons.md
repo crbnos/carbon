@@ -3699,3 +3699,33 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
+
+**Context:** Strict backflush (2026-10-16) consumed what no pick covered from `jobMaterial.storageUnitId`.
+
+**Problem:** Posting a pick calls `pointJobMaterialAtLineside`, which overwrites `jobMaterial.storageUnitId` with the lineside bin. After a partial pick, the remainder was checked against lineside (already drawn) instead of the warehouse bin the BoM named. With negative stock prevented it refused a completion the shelf could cover. With it allowed, it drove lineside negative. The TypeScript and SQL paths had the same bug, and no test picked anything.
+
+**Rule:** Never read `jobMaterial.storageUnitId` as "the Pull From" once picking may have run. The pick line keeps the source (`pickingListLine.storageUnitId`). Use the oldest pick line into the line's current bin (`pullFromStorageUnit`, `@carbon/database/strict-backflush`). A later list is sourced from the fullest bin, so do not use the newest one. Any test of a bin rule needs a case with a partial pick.
+
+**Applies to:** strict backflush, and any rule keyed on a job material's bin (picking, returns, lineside credit, consumption).
+
+## A module the browser bundles must not reach the Kysely runtime, even through a helper
+
+**Context:** Strict backflush (2026-10-16). `@carbon/database/strict-backflush` is imported by BoM UI components and by `settings.service.ts`, which the module barrel bundles for the browser.
+
+**Problem:** Using `inOrder` from `@carbon/database/rows` there would have imported `kysely` at runtime into the client bundle; typecheck does not see it. Separately, `settings.server.ts` gained an import of `~/utils/query`, which imports the `@carbon/auth` barrel. That barrel runs a Lingui `msg` macro, which plain vitest cannot compile, so 2 unrelated test files stopped loading.
+
+**Rule:** In a client-bundled module, import only types from `kysely` and `./client`. Run two awaits instead of `inOrder`. Raw `sql` belongs in a `*.server.ts`. Before adding an import to a file that tests import, check what that import's barrel pulls in, then run the module's tests.
+
+**Applies to:** `@carbon/database` subpaths read by UI, `{module}.service.ts`, `{module}.server.ts` imported by vitest files.
+
+## A Lingui placeholder is named after its expression, so a refactor can silently drop translations
+
+**Context:** Strict backflush (2026-10-16) changed `<Plural value={methodsMissingPullFrom} …>` to `<Plural value={gaps.methods} …>`.
+
+**Problem:** A member expression has no name, so the message id changed from `{methodsMissingPullFrom, plural, …}` to `{0, plural, …}`. `lingui:extract --clean` then deleted the old id and its 12 translations, and the new id came back untranslated.
+
+**Rule:** Pass a plain, named variable to `Plural`, `t` and `Trans` placeholders, and keep the name when refactoring. If extract drops translations by mistake, restore the catalogs from git (`git checkout HEAD -- packages/locale/locales`), fix the name, and extract again.
+
+**Applies to:** every `Plural` / `t\`…${x}\`` / `<Trans>` with an interpolation.

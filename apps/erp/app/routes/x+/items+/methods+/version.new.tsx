@@ -6,6 +6,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  activationRefusalMessage,
+  getMethodPartsMissingPullFrom,
+  getStrictBackflushSettings
+} from "@carbon/database/strict-backflush";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -36,6 +41,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // No change-order gate here: the V1 change-order model applies BOM edits by
   // spinning fresh method versions at Done and never stages/reserves a pending
   // revision, so there is nothing for an open CO to lock against.
+
+  // A single Draft version becomes Active as the new one is created. Strict
+  // backflush refuses that activation the way the Activate action does
+  // (`convert` methodVersionToActive), before anything is written.
+  if (validation.data.activeVersionId) {
+    const db = getDatabaseClient();
+    const { strict } = await getStrictBackflushSettings(db, companyId);
+    if (strict) {
+      const parts = await getMethodPartsMissingPullFrom(db, {
+        makeMethodId: validation.data.activeVersionId,
+        companyId
+      });
+      if (parts.length > 0) {
+        return data(
+          { id: null },
+          await flash(request, error(null, activationRefusalMessage(parts)))
+        );
+      }
+    }
+  }
 
   const insertMethodOperation = await upsertMakeMethodVersion(client, {
     ...validation.data,

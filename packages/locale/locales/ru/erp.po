@@ -524,6 +524,9 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# открытый производственный заказ имеет материалы без единицы хранения} other {# открытых производственных заказов имеют материалы без единиц хранения}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} используется документами, операциями или учетными записями по умолчанию, поэтому не может быть удалена."
 
@@ -550,6 +553,9 @@ msgstr "{maxSizeMB}МБ максимум"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# шаг} other {# шагов}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# активный метод имеет материалы без источника} other {# активных методов имеют материалы без источников}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} месяцев с несовпадающими итогами"
@@ -720,6 +726,9 @@ msgstr "↩ {0} перенаправлено из снятых с произво
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}ч"
+
+msgid "+{more} more"
+msgstr "+{more} еще"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Добавить поставщика деталей</0> для этой номенклатуры, чтобы установить основного поставщика."
@@ -1107,6 +1116,9 @@ msgstr "Материал — это физический элемент, при�
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Средство измерения (кронциркуль, микрометр, щуп, CMM) отслеживаемое как запись и регулярно проходящее калибровку по графику."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Версия метода требует установки единицы хранения для получения на каждом материале перед тем, как её можно сделать активной."
+
 msgid "A name is required to save a view"
 msgstr "Требуется имя для сохранения представления"
 
@@ -1427,6 +1439,12 @@ msgstr "Статус отгрузки изменился"
 
 msgid "A shipment's tracking number changes"
 msgstr "Номер отслеживания отгрузки изменился"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Единица хранения с недостаточным запасом переходит на другую единицу хранения с наличием."
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "Единица хранения опускается ниже нуля, и Операция или Производственный заказ все еще завершается."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Краткосрочный актив не может длиться более 12 месяцев с момента начала. Завершите его и введите продление как новую аренду."
@@ -1804,6 +1822,9 @@ msgstr "Активно"
 
 msgid "Active Jobs"
 msgstr "Активные производственные заказы"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "Активные методы без источника"
 
 msgid "Active Statuses"
 msgstr "Активные статусы"
@@ -2607,6 +2628,9 @@ msgstr "Операция, выполняемая внешним поставщи
 msgid "An operation on this job runs in this batch"
 msgstr "Операция этого задания входит в эту партию"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "Операция или Производственный заказ, которые привели бы Единицу хранения ниже нуля, блокируются до появления необходимого Запаса."
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Позиция операции в очереди ее рабочего центра — порядок, в котором цех берет работу. Двигатель нумерует ее по порядку размещения (самое раннее предполагаемое начало в первую очередь); переупорядочение карт на доске Рабочих центров переопределяет его без изменения дат."
 
@@ -2779,6 +2803,9 @@ msgstr "Применяется ко всем рабочим центрам"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Применяется к характеристикам без собственного правила и к партии, когда этот план контроля проводит контроль."
+
+msgid "Applies when strict backflush is on."
+msgstr "Применяется при включении строгого Ретроградного списания."
 
 msgid "Apply"
 msgstr "Применить"
@@ -3821,6 +3848,9 @@ msgstr "Вернуться к прослеживаемости"
 
 msgid "Backflush"
 msgstr "Ретроградное списание"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "Производить Ретроградное списание Материала только из Единицы хранения в строке Материала, но не из других Единиц хранения."
 
 msgid "Background"
 msgstr "Фон"
@@ -6020,6 +6050,12 @@ msgstr "Не удалось проанализировать регион: {0}"
 
 msgid "Could not build PDF. Try again."
 msgstr "Не удалось создать PDF. Попробуйте еще раз."
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "Не удалось проверить действующие методы и незакрытые производственные заказы на наличие разрывов. Перезагрузите страницу, чтобы повторить попытку."
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "Не удалось проверить единицы хранения материалов этого производственного заказа. Закройте это диалоговое окно и откройте его снова, чтобы повторить попытку."
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13251,6 +13287,12 @@ msgstr "Материалы включены"
 msgid "Materials are not included"
 msgstr "Материалы не включены"
 
+msgid "Materials missing a Pull From"
+msgstr "Материалы без источника"
+
+msgid "Materials with no storage unit"
+msgstr "Материалы без единицы хранения"
+
 msgid "Matrix"
 msgstr "Матрица"
 
@@ -13446,6 +13488,9 @@ msgstr "Отсутствуют операции"
 
 msgid "Missing Shipping Costs"
 msgstr "Отсутствующие стоимости доставки"
+
+msgid "Missing Storage Units"
+msgstr "Отсутствующие единицы хранения"
 
 msgid "Missing Suppliers"
 msgstr "Отсутствуют поставщики"
@@ -15523,6 +15568,9 @@ msgstr "Открытые производственные заказы"
 msgid "Open Jobs"
 msgstr "Открытые производственные заказы"
 
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "Открытые производственные заказы без единицы хранения"
+
 msgid "Open menu"
 msgstr "Открыть меню"
 
@@ -16809,6 +16857,9 @@ msgstr "Нажмите '/' для команд"
 
 msgid "Prev"
 msgstr "Пред"
+
+msgid "Prevent negative stock"
+msgstr "Предотвращение отрицательного Запаса"
 
 msgid "Preventive action"
 msgstr "Предупреждающее действие"
@@ -20239,6 +20290,15 @@ msgstr "Сеанс заблокирован"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Укажите покупателя для этого возврата, чтобы добавить из отгрузки."
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "Установите источник для каждого из них через новую версию."
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "установить единицу хранения вытягивания для {names}"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "установить единицу хранения вытягивания для {names} и еще {more} наименований"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Установите поставщика для этого возврата, чтобы добавить из поступления."
 
@@ -21278,6 +21338,9 @@ msgstr "единицы хранения"
 msgid "Storage Units"
 msgstr "Единицы хранения"
 
+msgid "Storage Units Not Checked"
+msgstr "Единицы хранения не проверены"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "Хранить фиксированное количество дней для этой номенклатуры. Дата начала срока годности устанавливается для каждой серии или серийного номера при его создании (или когда запускается процесс триггера, если установлен)."
 
@@ -21295,6 +21358,18 @@ msgstr "Линейная амортизация активов прав поль
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Линейная себестоимость операционного лизинга и платежи краткосрочного лизинга"
+
+msgid "Strict Backflush"
+msgstr "Строгое ретроградное списание"
+
+msgid "Strict backflush is off"
+msgstr "строгое ретроградное списание отключено"
+
+msgid "Strict backflush is on"
+msgstr "строгое ретроградное списание включено"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Включено строгое ретроградное списание. Установите единицу хранения для получения на эти материалы перед отпуском:"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23149,6 +23224,9 @@ msgstr "Рабочие часы и календари, которые управ
 
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Их даты и разделения снова планируются на основе строк."
+
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "Следующее ретроградное списание будет отклонено, пока каждый материал не будет иметь единицу хранения."
 
 msgid "Theme"
 msgstr "Тема"

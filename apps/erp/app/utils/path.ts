@@ -268,6 +268,7 @@ export const path = {
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
+      pullFromLocations: `${api}/items/pull-from-locations`,
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
       purchaseOrderFinalize: (id: string) =>
@@ -1466,6 +1467,8 @@ export const path = {
     itemProperties: (id: string) => generatePath(`${x}/items/${id}/properties`),
     items: `${x}/items`,
     itemsSettings: `${x}/settings/items`,
+    itemsSettingsJobsMissingStorageUnit: `${x}/settings/items/jobs-missing-storage-unit`,
+    itemsSettingsMethodsMissingPullFrom: `${x}/settings/items/methods-missing-pull-from`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobBatchNumber: (id: string) => generatePath(`${x}/job/${id}/batch`),
     jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),

@@ -28,6 +28,10 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import getMethod from "../get-method";
+import {
+  assertMethodHasPullFrom,
+  isStrictBackflush
+} from "../lib/strict-backflush";
 import { getSupplierPartPriceConverter } from "../lib/supplier-part-currency";
 import { ServerFnContext } from "../server-fn-context";
 
@@ -186,6 +190,10 @@ const convert = defineServerFn({
         });
         if (makeMethod.error) throw new Error(makeMethod.error.message);
         if (!makeMethod.data) throw new NotFoundError("Make method not found");
+
+        if (await isStrictBackflush(db, companyId)) {
+          await assertMethodHasPullFrom(db, { makeMethodId, companyId });
+        }
 
         const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
           () =>

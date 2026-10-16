@@ -1219,6 +1219,30 @@ export async function updateBomExplorerReadableIdSetting(
 }
 
 /** @mcp update */
+export async function updateRequireBackflushStorageUnitSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireBackflushStorageUnit: boolean
+) {
+  return client
+    .from("companySettings")
+    .update({ requireBackflushStorageUnit })
+    .eq("id", companyId);
+}
+
+/** @mcp update */
+export async function updatePreventNegativeBackflushSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  preventNegativeBackflush: boolean
+) {
+  return client
+    .from("companySettings")
+    .update({ preventNegativeBackflush })
+    .eq("id", companyId);
+}
+
+/** @mcp update */
 export async function updatePlmReleaseControlSetting(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -8362,12 +8362,14 @@ export type Database = {
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
           plmReleaseControl: string
+          preventNegativeBackflush: boolean
           printing: Json | null
           productLabelSize: string | null
           purchasePriceUpdateTiming: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
           qualityDispatchNotificationGroup: string[] | null
           qualityIssueTarget: number
           quoteLineCategoryMarkups: Json | null
+          requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
           requireSupplierContactAndLocation: boolean
@@ -8435,12 +8437,14 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          preventNegativeBackflush?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean
@@ -8508,12 +8512,14 @@ export type Database = {
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
+          preventNegativeBackflush?: boolean
           printing?: Json | null
           productLabelSize?: string | null
           purchasePriceUpdateTiming?: Database["public"]["Enums"]["purchasePriceUpdateTiming"]
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
+          requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
           requireSupplierContactAndLocation?: boolean

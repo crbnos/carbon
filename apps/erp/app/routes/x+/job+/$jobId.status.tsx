@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { summarizeList } from "@carbon/database/strict-backflush";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
 import { serverFns } from "@carbon/server-functions";
@@ -58,11 +59,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  let readiness: Awaited<ReturnType<typeof getJobReleaseReadiness>> | null =
+    null;
   if (status === "Ready") {
     const { data } = await client
       .from("job")
       .select(
-        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+        "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
       )
       .eq("id", id)
       .single();
@@ -104,25 +107,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
     }
+
+    // Releasing (the dialog, or a plain post of Ready on a Draft or Planned
+    // job — the API and MCP path): strict backflush refuses a pulled line with
+    // no storage unit on every path. Resuming a Paused job is not a release.
+    if (
+      shouldSchedule ||
+      data?.status === "Draft" ||
+      data?.status === "Planned"
+    ) {
+      readiness = await getJobReleaseReadiness(client, [id], companyId);
+      if (readiness.error) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(request, error(readiness.error, "Failed to validate job"))
+        );
+      }
+
+      const withoutStorageUnit =
+        readiness.data?.jobs[0]?.materialsWithoutStorageUnit ?? [];
+      if (withoutStorageUnit.length > 0) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(
+            request,
+            error(
+              null,
+              `Set a Pull From storage unit before releasing: ${summarizeList(
+                withoutStorageUnit.map((m) => m.description)
+              )}`
+            )
+          )
+        );
+      }
+    }
   }
 
   // The Release dialog: the shared release path (also run by batch release),
   // re-checking what the dialog checked, then one schedule run for the location.
   if (status === "Ready" && shouldSchedule) {
-    const readiness = await getJobReleaseReadiness(client, [id], companyId);
-    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
-    if (readiness.error || missing.length > 0) {
+    const missing = readiness?.data?.jobs[0]?.missingAssemblies ?? [];
+    if (missing.length > 0) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(
           request,
           error(
-            readiness.error,
-            readiness.error
-              ? "Failed to validate job"
-              : `Assign an operation to each assembly before releasing: ${missing
-                  .map((m) => m.description)
-                  .join(", ")}`
+            null,
+            `Assign an operation to each assembly before releasing: ${missing
+              .map((m) => m.description)
+              .join(", ")}`
           )
         )
       );

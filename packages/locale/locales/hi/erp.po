@@ -524,6 +524,9 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} को दस्तावेज़, जर्नल या डिफ़ॉल्ट खातों द्वारा उपयोग किया जाता है, इसलिए इसे हटाया नहीं जा सकता।"
 
@@ -550,6 +553,9 @@ msgstr "{maxSizeMB}MB सीमा"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# चरण} other {# चरण}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# सक्रिय विधि में Pull From के बिना सामग्री है} other {# सक्रिय विधि में Pull From के बिना सामग्री हैं}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} महीने बेमेल कुल के साथ"
@@ -720,6 +726,9 @@ msgstr "↩ {0} अप्रचलित {1} से पुनर्निर्�
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}घंटे"
+
+msgid "+{more} more"
+msgstr "+{more} और"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>इस आइटम के लिए एक आपूर्तिकर्ता भाग जोड़ें</0> एक पसंदीदा आपूर्तिकर्ता सेट करने के लिए।"
@@ -1107,6 +1116,9 @@ msgstr "एक सामग्री एक भौतिक आइटम है 
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "एक माप उपकरण (कैलिपर, माइक्रोमीटर, पिन गेज, CMM) जिसे एक रिकॉर्ड के रूप में ट्रैक किया जाता है और एक आवर्ती अंशांकन शेड्यूल का पालन किया जाता है।"
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "एक विधि संस्करण को सक्रिय बनाने से पहले प्रत्येक खींची गई सामग्री पर एक खींचने की भंडारण इकाई की आवश्यकता होती है।"
+
 msgid "A name is required to save a view"
 msgstr "एक दृश्य को सहेजने के लिए एक नाम आवश्यक है"
 
@@ -1427,6 +1439,12 @@ msgstr "किसी शिपमेंट की स्थिति में �
 
 msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "एक अपर्याप्त भंडारण इकाई दूसरी भंडारण इकाई पर वापस आती है जिसमें स्टॉक है।"
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "एक छोटी भंडारण इकाई शून्य से नीचे चली जाती है, और ऑपरेशन या जॉब फिर भी पूर्ण हो जाता है।"
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "एक अल्पकालिक संपत्ति शुरुआत से 12 महीने के बाद नहीं चल सकती। इसे समाप्त करें और विस्तार को एक नई पट्टा के रूप में दर्ज करें।"
@@ -1804,6 +1822,9 @@ msgstr "सक्रिय"
 
 msgid "Active Jobs"
 msgstr "सक्रिय जॉब"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "Pull From के बिना सक्रिय विधि"
 
 msgid "Active Statuses"
 msgstr "सक्रिय स्थितियाँ"
@@ -2607,6 +2628,9 @@ msgstr "एक आपूर्तिकर्ता द्वारा किय
 msgid "An operation on this job runs in this batch"
 msgstr "इस जॉब की एक प्रक्रिया इस बैच में चल रही है"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "एक ऑपरेशन या जॉब जो इसकी भंडारण इकाई को शून्य से नीचे ले जाएगा, तब तक रुक जाता है जब तक स्टॉक उपलब्ध नहीं हो।"
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "एक ऑपरेशन की वर्क सेंटर की कतार में स्थिति — वह क्रम जिसमें फ्लोर काम लेता है। इंजन इसे प्लेसमेंट क्रम से संख्या देता है (सबसे पहली अनुमानित शुरुआत पहले); वर्क सेंटर बोर्ड पर कार्ड्स को पुनः क्रमित करना तारीख बदले बिना इसे निरस्त करता है।"
 
@@ -2779,6 +2803,9 @@ msgstr "सभी वर्क सेंटर पर लागू होता 
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "उन विशेषताओं पर लागू होता है जिनके अपने नियम नहीं हैं, और लॉट पर जब यह योजना निरीक्षण संचालित करती है।"
+
+msgid "Applies when strict backflush is on."
+msgstr "सख्त बैकफ्लश चालू होने पर लागू होता है।"
 
 msgid "Apply"
 msgstr "लागू करें"
@@ -3821,6 +3848,9 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
 msgid "Backflush"
 msgstr "बैकफ्लश"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "प्रत्येक सामग्री को केवल इसकी सामग्री पंक्ति की भंडारण इकाई से बैकफ्लश करें, किसी अन्य भंडारण इकाई से कभी नहीं।"
 
 msgid "Background"
 msgstr "पृष्ठभूमि"
@@ -6020,6 +6050,12 @@ msgstr "क्षेत्र का विश्लेषण नहीं क�
 
 msgid "Could not build PDF. Try again."
 msgstr "PDF नहीं बना सके। फिर से कोशिश करें।"
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "सक्रिय विधियों और अंतराल वाले खुले जॉब की जांच नहीं कर सके। पृष्ठ को फिर से लोड करने का प्रयास करें।"
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "इस जॉब की सामग्री की भंडारण इकाइयाँ जाँची नहीं जा सकीं। फिर से प्रयास करने के लिए इस संवाद को बंद करके दोबारा खोलें।"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13251,6 +13287,12 @@ msgstr "सामग्री शामिल है"
 msgid "Materials are not included"
 msgstr "सामग्री शामिल नहीं है"
 
+msgid "Materials missing a Pull From"
+msgstr "Pull From के बिना सामग्री"
+
+msgid "Materials with no storage unit"
+msgstr "भंडारण इकाई के बिना सामग्री"
+
 msgid "Matrix"
 msgstr "मैट्रिक्स"
 
@@ -13446,6 +13488,9 @@ msgstr "ऑपरेशन गायब हैं"
 
 msgid "Missing Shipping Costs"
 msgstr "शिपिंग लागत अनुपलब्ध"
+
+msgid "Missing Storage Units"
+msgstr "लापता भंडारण इकाइयाँ"
 
 msgid "Missing Suppliers"
 msgstr "आपूर्तिकर्ता गायब हैं"
@@ -15523,6 +15568,9 @@ msgstr "खुली जॉबें"
 msgid "Open Jobs"
 msgstr "खुली जॉब्स"
 
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "भंडारण इकाई के बिना खुले जॉब"
+
 msgid "Open menu"
 msgstr "मेनू खोलें"
 
@@ -16809,6 +16857,9 @@ msgstr "आदेशों के लिए '/' दबाएं"
 
 msgid "Prev"
 msgstr "पिछला"
+
+msgid "Prevent negative stock"
+msgstr "नकारात्मक स्टॉक रोकें"
 
 msgid "Preventive action"
 msgstr "निवारक कार्रवाई"
@@ -20239,6 +20290,15 @@ msgstr "सत्र लॉक किया गया"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "शिपमेंट से जोड़ने के लिए इस वापसी पर एक ग्राहक सेट करें।"
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "एक नए संस्करण के माध्यम से प्रत्येक पर Pull From निर्दिष्ट करें।"
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "{names} पर खींचने की भंडारण इकाई सेट करें"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "{names} और {more} अधिक पर खींचने की भंडारण इकाई सेट करें"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "प्राप्ति से जोड़ने के लिए इस रिटर्न पर एक आपूर्तिकर्ता सेट करें।"
 
@@ -21278,6 +21338,9 @@ msgstr "भंडारण इकाइयाँ"
 msgid "Storage Units"
 msgstr "भंडारण इकाइयाँ"
 
+msgid "Storage Units Not Checked"
+msgstr "भंडारण इकाइयाँ जाँची नहीं गईं"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "इस आइटम पर निश्चित संख्या के दिनों के लिए भंडारण करें। समाप्ति प्रारंभ तिथि प्रत्येक बैच या सीरीयल पर सेट की जाती है जब यह बनाया जाता है (या जब ट्रिगर प्रक्रिया चलती है, यदि सेट है)।"
 
@@ -21295,6 +21358,18 @@ msgstr "वित्त पट्टा उपयोग के अधिका�
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "परिचालन पट्टा की सरल-रेखा पट्टा लागत, और अल्पकालिक पट्टा का भुगतान"
+
+msgid "Strict Backflush"
+msgstr "सख्त बैकफ्लश"
+
+msgid "Strict backflush is off"
+msgstr "सख्त बैकफ्लश बंद है"
+
+msgid "Strict backflush is on"
+msgstr "सख्त बैकफ्लश चालू है"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "सख्त बैकफ्लश चालू है। इन सामग्रियों पर खींचने की भंडारण इकाई सेट करें रिलीज़ करने से पहले:"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23149,6 +23224,9 @@ msgstr "कार्य घंटे और कैलेंडर जो शे�
 
 msgid "Their dates and splits are planned again from the lines."
 msgstr "उनकी तारीखें और विभाजन पंक्तियों से फिर से योजनाबद्ध किए जाते हैं।"
+
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "प्रत्येक सामग्री के पास भंडारण इकाई होने तक उनका अगला बैकफ्लश अस्वीकार कर दिया जाएगा।"
 
 msgid "Theme"
 msgstr "थीम"
