@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { getNextSequence } from "@carbon/database/sequence";
@@ -15,7 +16,6 @@ import { getLogger } from "@carbon/logger";
 import { type Insertable, sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 
 const logger = getLogger("server-functions", "kanban-replenish");
 

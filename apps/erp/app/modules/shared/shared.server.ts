@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import {
   envelope,
@@ -42,7 +43,6 @@ import {
   getImplementationHub
 } from "@carbon/onboarding/server";
 import { serverFns } from "@carbon/server-functions";
-import type { RequiredPermissions } from "@carbon/server-functions/permissions";
 import {
   createConnectAccountLink,
   getOrCreateConnectAccount,

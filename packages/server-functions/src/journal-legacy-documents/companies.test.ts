@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError, toServerFnError } from "@carbon/api/errors";
 import { MissingAccountDefaultError } from "@carbon/database/journal-posting-status";
 import { describe, expect, it } from "vitest";
-import { InvalidInputError, toServerFnError } from "../errors";
 import { classifyRepairFailure } from "./companies";
 
 describe("classifyRepairFailure", () => {

@@ -7,6 +7,7 @@
 // no period, so the later steps of the enable re-cost, period, re-point and
 // promote them like every other Provisional journal.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
@@ -14,7 +15,6 @@ import { getNextSequences } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { chunkArray, datetime, formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
-import { InvalidInputError } from "../../errors";
 
 const logger = getLogger("server-functions", "legacy-journals");
 

@@ -43,7 +43,7 @@ vi.mock("../app/modules/inventory/inventory.service", async (importOriginal) => 
   insertManualInventoryAdjustment: vi.fn()
 }));
 
-import { ServerFnError } from "@carbon/server-functions/errors";
+import { ServerFnError } from "@carbon/api/errors";
 import {
   getInventoryCount,
   insertManualInventoryAdjustment

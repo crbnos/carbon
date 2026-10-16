@@ -17,7 +17,7 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
   companyHasFeature: vi.fn(async () => false)
 }));
 
-import type { ModulePermissions } from "@carbon/server-functions/permissions";
+import type { ModulePermissions } from "@carbon/api/permissions";
 import { uploadModel } from "../app/modules/documents/documents.server";
 import {
   type Actor,

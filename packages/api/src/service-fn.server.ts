@@ -6,15 +6,15 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import {
   hasPermissions,
   type ModulePermissions,
   type PermissionRule,
   type Permissions,
   resolvePermissions
-} from "@carbon/server-functions/permissions";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
+} from "./permissions";
 
 const logger = getLogger("api", "service-fn");
 

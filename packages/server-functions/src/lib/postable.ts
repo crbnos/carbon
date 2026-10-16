@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { ServerFnError } from "../errors";
 
 type PostableTable =
   | "receipt"

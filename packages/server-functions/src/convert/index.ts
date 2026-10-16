@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import { toJson } from "@carbon/database/json";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
@@ -26,7 +27,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 import getMethod from "../get-method";
 import { getSupplierPartPriceConverter } from "../lib/supplier-part-currency";
 import { ServerFnContext } from "../server-fn-context";

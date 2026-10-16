@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { type ServerFnError, toServerFnError } from "@carbon/api/errors";
+import {
+  type PermissionRule,
+  resolvePermissions
+} from "@carbon/api/permissions";
 import { failSpan, inSpan } from "@carbon/logger/span";
 import type { z } from "zod";
-import { type ServerFnError, toServerFnError } from "./errors";
-import { type PermissionRule, resolvePermissions } from "./permissions";
 import { authorize, type ServerFnContext } from "./server-fn-context";
 
 export type ServerFnResult<R> =

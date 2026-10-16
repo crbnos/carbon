@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import { getNextSerialNumbers } from "@carbon/database/sequence";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 import { attributesContain } from "../tracked-entity-attributes";
 
 export const assignSerialNumbersInput = z.object({

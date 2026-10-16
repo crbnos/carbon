@@ -11,6 +11,7 @@
 // `companySettings` FOR UPDATE throughout; every posting reads that row FOR
 // SHARE, so no posting can write a Provisional journal after the commit.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import {
   buildOpeningJournalLines,
   isMigrationClearingZero,
@@ -32,7 +33,6 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError, NotFoundError } from "../errors";
 import {
   getCurrentAccountingPeriod,
   resolveAccountingPeriod

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { getCompanyTimeZone } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
@@ -18,7 +19,6 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import {
   type AssetLines,

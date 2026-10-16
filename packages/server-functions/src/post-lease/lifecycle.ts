@@ -12,6 +12,7 @@
 // date, and records one `leaseEvent` per asset. Posted history is never
 // changed.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { equals } from "@carbon/database/precision";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
@@ -29,7 +30,6 @@ import {
   round
 } from "@carbon/utils";
 import { sql } from "kysely";
-import { InvalidInputError } from "../errors";
 import { currencyDecimals } from "../lib/currency-decimals";
 import { cutLeasePaymentRows } from "../lib/lease-payment-rows";
 import {

@@ -32,7 +32,7 @@ never published to npm.
   `pnpm check:manifest` (pre-commit gated) fails on a stale digest.
 - Add runtime dependencies beyond the `@orpc/*` client-side packages and the ones
   the service-function layer needs (`@carbon/auth`, `@carbon/database`, `@carbon/kv`,
-  `@carbon/logger`, `@carbon/server-functions`, `@carbon/utils`,
+  `@carbon/logger`, `@carbon/utils`,
   `@supabase/supabase-js`) without asking.
 - Import app code (`~/…`). An app hands in what is its own — its router and the
   context its callers run with — through `registerCarbon`, and its router's type
@@ -54,6 +54,8 @@ pnpm run check:manifest        # digest current?
 | `./schema` | `jsonSchema()` pass-through Standard Schema wrapper, `CarbonJsonSchemaConverter` (OpenAPI generator plugin), `CARBON_VENDOR` |
 | `./service-fn.server` | `defineServiceFn`, `CarbonError`, `ERROR_STATUS`, `createServiceContext`, `ServiceContext`, `Result`, `RouteResult`, `toResult` |
 | `./carbon.server` | What a route calls: `carbon(request)` (the operations bound to the caller, typed through the app's `Register` augmentation), `respond(request, result).redirect(to, { message, onError })`, `registerCarbon` (the app's router and context, called once from `entry.server.tsx` via `apps/erp/app/modules/carbon.server.ts`), `bindServiceFns` / `Api` |
+| `./permissions` | `hasPermissions`, `permissionsFromClaims`, `resolvePermissions` and the `Permissions` / `PermissionRule` / `ModulePermissions` types. Pure; the `defineServiceFn` gate and `@carbon/server-functions`' `defineServerFn` both check by these rules |
+| `./errors` | `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError` — the server functions' error classes, until that package is dissolved |
 | `./service-tools.server` | What a single-function leaf does around the service it calls: `stamp` (the caller's identity on the payload) and the result readers `envelope`, `paged`, `plain`, `envelopes`, `flag` |
 
 ## Consumers

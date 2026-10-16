@@ -2,12 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  InvalidInputError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Kysely } from "kysely";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { defineServerFn } from "./define-server-fn";
-import { InvalidInputError, NotFoundError, ServerFnError } from "./errors";
 import { ServerFnContext } from "./server-fn-context";
 
 vi.mock("@carbon/logger", () => ({

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServerFnError } from "@carbon/api/errors";
 import {
   type CarbonError,
   ERROR_STATUS,
@@ -23,7 +24,6 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import type { ServerFnError } from "@carbon/server-functions/errors";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   async,

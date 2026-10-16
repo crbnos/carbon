@@ -7,12 +7,12 @@
 // The void of a memo dated before the cutover negates it, so it nets the
 // opening line; the enable writes it for the memos posted with no journal.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import { buildMemoJournal } from "@carbon/database/posting";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import { InvalidInputError, NotFoundError } from "../errors";
 import { assertNoMigrationClearing } from "../lib/cutover-void";
 import {
   loadPartyDimensions,

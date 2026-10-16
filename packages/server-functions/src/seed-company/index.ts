@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { KyselyDatabase } from "@carbon/database/client";
@@ -33,7 +34,6 @@ import { getLogger } from "@carbon/logger";
 import { type Insertable, type Kysely, type Selectable, sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 import { resolveShippingDefault } from "./shipping-default";
 
 const logger = getLogger("server-functions", "seed-company");

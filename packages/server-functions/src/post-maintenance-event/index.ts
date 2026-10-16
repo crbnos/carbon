@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
@@ -12,7 +13,6 @@ import { credit, datetime, debit, indexBy } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError, NotFoundError } from "../errors";
 import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";

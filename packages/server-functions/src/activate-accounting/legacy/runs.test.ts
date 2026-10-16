@@ -8,8 +8,8 @@
 // with a message for the user. The lines themselves are pinned by
 // packages/database/src/run-journals.test.ts.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { describe, expect, it } from "vitest";
-import { InvalidInputError } from "../../errors";
 import {
   buildLegacyDepreciationJournals,
   buildLegacyRecognitionJournals,

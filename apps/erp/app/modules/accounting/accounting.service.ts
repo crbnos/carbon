@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isDataLayerError } from "@carbon/api/errors";
 import type {
   CarbonError,
   ErrorCategory,
@@ -41,7 +42,6 @@ import {
 } from "@carbon/database/run-type";
 import { getNextSequence as getNextSequenceInTransaction } from "@carbon/database/sequence";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import { isDataLayerError } from "@carbon/server-functions/errors";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   addDays,

@@ -42,6 +42,7 @@
 // stored cost, keyed on the day: a job and date with a journal line under the
 // document type is left alone.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
@@ -58,7 +59,6 @@ import {
 import { chunkArray, credit, debit, EPSILON, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
-import { InvalidInputError } from "../../errors";
 import { resolveInventoryAccount } from "../../lib/get-posting-group";
 import {
   type LegacyJournal,

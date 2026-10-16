@@ -39,6 +39,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
     "@types/pg": "8.15.6",
     "@types/react": "catalog:",

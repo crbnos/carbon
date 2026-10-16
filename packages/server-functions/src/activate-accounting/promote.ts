@@ -9,6 +9,7 @@
 // Provisional journal dated on or after the cutover; `journal-legacy-documents`
 // runs them for the journals it wrote, by id.
 
+import { ServerFnError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import {
@@ -20,7 +21,6 @@ import {
 import { datetime } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import { sql } from "kysely";
-import { ServerFnError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];

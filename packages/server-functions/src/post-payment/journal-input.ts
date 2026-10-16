@@ -9,6 +9,7 @@
 // and the enable's legacy payments) both assemble the `buildPaymentJournal`
 // input here, so a rebuilt journal is the journal the posting wrote.
 
+import { NotFoundError } from "@carbon/api/errors";
 import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
@@ -32,7 +33,6 @@ import {
   round
 } from "@carbon/utils";
 import { type Selectable, sql, type Transaction } from "kysely";
-import { NotFoundError } from "../errors";
 import { partyDimensionValuesFrom } from "../lib/party-dimensions";
 
 type Trx = Transaction<KyselyDatabase>;

@@ -7,10 +7,10 @@
 // superseded their journals and reset the cost layers they moved, so a
 // reversal of their own lines would undo nothing the opening journal opened.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { readAccountingCutoverDate } from "@carbon/database/journal-posting-status";
-import { InvalidInputError } from "../errors";
 
 export const INVENTORY_VOID_BEFORE_CUTOVER_ERROR =
   "This document is from before your accounting cutover. Record a return or an inventory adjustment instead.";

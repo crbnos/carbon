@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { getCompanyTimeZone } from "@carbon/database";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { ServerFnError } from "../errors";
 import { postMemoTransaction } from "./post-memo-transaction";
 
 export const postMemoInput = z.object({

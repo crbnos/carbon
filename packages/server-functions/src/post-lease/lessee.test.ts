@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { lesseeTerminationLegs, normalizeLesseeLegs } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
-import { InvalidInputError } from "../errors";
 import {
   commencementLines,
   type LesseeAccounts,

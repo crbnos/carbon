@@ -6,6 +6,7 @@
 // an operating line's billing is re-cut at the return date, and a sales-type
 // line's closing net investment moves into a new fleet asset or into stock.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import type { Json } from "@carbon/database";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
@@ -14,7 +15,6 @@ import {
   generateRentalBillingPeriods
 } from "@carbon/utils";
 import { sql } from "kysely";
-import { InvalidInputError, NotFoundError } from "../errors";
 import { currencyDecimals } from "../lib/currency-decimals";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";

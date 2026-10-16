@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { KyselyDatabase as DB, Kysely } from "@carbon/database/client";
 import {
   type AccountType,
   accountTypeFromClass,
   isAccountClass
 } from "@carbon/database/ledger";
-import { InvalidInputError } from "../errors";
 
 // The account an entered cost is credited to: where that value was booked
 // when it was spent (an expense this year, Retained Earnings for an earlier

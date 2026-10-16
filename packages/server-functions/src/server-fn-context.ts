@@ -2,17 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { type Kysely, sql } from "kysely";
-import { ForbiddenError } from "./errors";
+import { ForbiddenError } from "@carbon/api/errors";
 import {
   hasPermissions,
   type Permissions,
   permissionsFromClaims,
   type RequiredPermissions
-} from "./permissions";
+} from "@carbon/api/permissions";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Kysely, sql } from "kysely";
 
 let serviceRole: Promise<SupabaseClient<Database>> | undefined;
 

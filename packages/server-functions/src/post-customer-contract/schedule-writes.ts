@@ -8,6 +8,7 @@
 // what the planner returns. Every statement is scoped by `companyId`.
 // Plan: `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III Task 9 step 2.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
@@ -26,7 +27,6 @@ import {
 import { toJson } from "@carbon/database/json";
 import { round } from "@carbon/database/precision";
 import { type Selectable, sql } from "kysely";
-import { NotFoundError } from "../errors";
 
 type Enums = Database["public"]["Enums"];
 

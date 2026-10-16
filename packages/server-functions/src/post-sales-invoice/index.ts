@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
@@ -41,7 +42,6 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError, NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
 import {
   loadContractPositions,

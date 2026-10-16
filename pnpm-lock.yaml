@@ -2046,9 +2046,6 @@ importers:
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
-      '@carbon/server-functions':
-        specifier: workspace:*
-        version: link:../server-functions
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
@@ -2975,6 +2972,9 @@ importers:
         specifier: 'catalog:'
         version: 4.5.4
     devDependencies:
+      '@carbon/api':
+        specifier: workspace:*
+        version: link:../api
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
@@ -3801,6 +3801,9 @@ importers:
 
   packages/server-functions:
     dependencies:
+      '@carbon/api':
+        specifier: workspace:*
+        version: link:../api
       '@carbon/auth':
         specifier: workspace:*
         version: link:../auth

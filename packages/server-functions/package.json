@@ -6,8 +6,6 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./errors": "./src/errors.ts",
-    "./permissions": "./src/permissions.ts",
     "./*": "./src/*/index.ts"
   },
   "scripts": {
@@ -17,6 +15,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",

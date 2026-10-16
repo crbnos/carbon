@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isDataLayerError } from "@carbon/api/errors";
 import {
   CarbonError,
   type ErrorCategory,
@@ -32,7 +33,6 @@ import {
   cutLeasePaymentRows,
   type DraftedLeaseInvoice
 } from "@carbon/server-functions/create-lease-invoices";
-import { isDataLayerError } from "@carbon/server-functions/errors";
 import {
   async,
   datetime,

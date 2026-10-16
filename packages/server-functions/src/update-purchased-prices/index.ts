@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import { gte, inOrder, many, maybeSingle } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
@@ -10,7 +11,6 @@ import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 import { getSupplierPartPriceConverter } from "../lib/supplier-part-currency";
 
 const logger = getLogger("server-functions", "update-purchased-prices");

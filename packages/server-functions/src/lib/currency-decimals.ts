@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Transaction } from "kysely";
-import { InvalidInputError } from "../errors";
 
 /** A currency's settlement precision for this company: the group's
  *  `currency.decimalPlaces`, never a literal. Billed amounts (rental billing

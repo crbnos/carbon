@@ -17,11 +17,11 @@
 // a variable charge (a line with no payment row) debits the variable lease
 // expense in full.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { AccountClass } from "@carbon/database/ledger";
 import { chunkArray, equals } from "@carbon/utils";
-import { InvalidInputError } from "../errors";
 import type { PurchasePostingAmounts } from "./purchase-posting-amounts";
 
 type Enums = Database["public"]["Enums"];

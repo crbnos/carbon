@@ -38,6 +38,7 @@
 // every journal the backfill writes, each one gets an Excluded sync operation
 // per accounting integration (`insertProvisionalJournals`).
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import {
@@ -66,7 +67,6 @@ import { type AccountClass, chunkArray, isAccountClass } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
-import { InvalidInputError } from "../../errors";
 import {
   insertProvisionalJournals,
   type LegacyJournal,

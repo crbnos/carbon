@@ -27,6 +27,7 @@
 // Every line but a comment is written, at zero too. Each debit and its
 // payable share one `journalLineReference`.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
@@ -42,7 +43,6 @@ import {
   type VarianceAllocation
 } from "@carbon/utils";
 import { nanoid } from "nanoid";
-import { InvalidInputError } from "../errors";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import type { JournalLineDimensionValues } from "../lib/journal-line-dimensions";
 import type { LeaseAccount } from "./lease-lines";

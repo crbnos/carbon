@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RequiredPermissions } from "@carbon/api/permissions";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { parseCsv } from "@carbon/files/csv";
@@ -11,7 +12,6 @@ import { type Kysely, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import type { RequiredPermissions } from "../permissions";
 import { inChunks } from "./chunks";
 import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";

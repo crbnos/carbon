@@ -11,6 +11,7 @@
 // the Liability-class lease liability stores a negative amount. Every set is
 // balanced or it throws.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { type AccountClass, toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, EPSILON, round } from "@carbon/database/precision";
 import {
@@ -23,7 +24,6 @@ import {
   lesseeTerminationLegs,
   normalizeLesseeLegs
 } from "@carbon/utils";
-import { InvalidInputError } from "../errors";
 
 export type LeaseAccount = { id: string; class: AccountClass };
 

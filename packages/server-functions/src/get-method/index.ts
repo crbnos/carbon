@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { toJson, toJsonColumns } from "@carbon/database/json";
@@ -50,7 +51,6 @@ import { type QueryCreator, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 import { chunked } from "../import-csv/chunks";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";

@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import { NotFoundError } from "../errors";
 import { costCenterAndProjectDimensions } from "../lib/cost-center-project-dimensions";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { allocateJournalLineIds } from "../lib/journal-line-ids";

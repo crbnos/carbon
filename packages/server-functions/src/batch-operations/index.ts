@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError, ServerFnError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { many, neq, updateRows } from "@carbon/database/rows";
@@ -24,7 +25,6 @@ import { type Kysely, sql, type Transaction } from "kysely";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError, ServerFnError } from "../errors";
 import issue from "../issue";
 import postProductionEvent from "../post-production-event";
 import { ServerFnContext } from "../server-fn-context";

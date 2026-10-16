@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { datetime } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
-import { NotFoundError } from "../errors";
 import { postReimbursementJournal } from "./post-reimbursement-post";
 import { voidReimbursement } from "./post-reimbursement-void";
 

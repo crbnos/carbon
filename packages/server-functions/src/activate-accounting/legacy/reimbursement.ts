@@ -18,12 +18,12 @@
 // checks (active, posting, class) are not repeated, as the reimbursement
 // passed them when it posted.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { legacyReimbursements } from "@carbon/database/legacy-documents";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import { nanoid } from "nanoid";
-import { InvalidInputError } from "../../errors";
 import { costCenterAndProjectDimensions } from "../../lib/cost-center-project-dimensions";
 import { buildReimbursementJournal } from "../../post-reimbursement/build-reimbursement-journal";
 import { type LegacyDocumentJournal, readByIds } from "./write";

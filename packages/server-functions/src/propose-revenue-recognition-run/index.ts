@@ -8,6 +8,7 @@
 // human action under the period matrix.
 // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §1
 
+import { InvalidInputError } from "@carbon/api/errors";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
@@ -28,7 +29,6 @@ import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { InvalidInputError } from "../errors";
 import {
   loadContractPositions,
   lockContractPositions

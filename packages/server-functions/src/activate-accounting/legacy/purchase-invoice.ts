@@ -26,6 +26,7 @@
 // layers, and their write-up with them. The rest of the variance is purchase
 // variance, so a company that wrote no children books all of it there.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveDefaultAccount } from "@carbon/database/journal-posting-status";
@@ -35,7 +36,6 @@ import {
 } from "@carbon/database/legacy-documents";
 import { EPSILON } from "@carbon/utils";
 import { sql } from "kysely";
-import { InvalidInputError } from "../../errors";
 import {
   loadLeasePostingFacts,
   resolveLeasePostingLine

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServerFnError } from "@carbon/api/errors";
 // Types only at module scope: browser-bundled `*.service.ts` files import this
 // statically, and everything it runs is loaded on first use.
 import type { Database } from "@carbon/database";
@@ -9,7 +10,6 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateInput, CreateResultFor } from "./create";
 import type { ServerFnResult } from "./define-server-fn";
-import type { ServerFnError } from "./errors";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
@@ -105,7 +105,7 @@ class Invoker {
       ) => Promise<unknown>;
       return await fn(ctx, input);
     } catch (err) {
-      const { toServerFnError } = await import("./errors");
+      const { toServerFnError } = await import("@carbon/api/errors");
       return { data: null, error: toServerFnError(name, err) };
     }
   }

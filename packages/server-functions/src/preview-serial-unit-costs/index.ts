@@ -8,13 +8,13 @@
 // valued with `serialUnitCost`, the same arithmetic calculateCOGS runs, from
 // one read of the item's open layers.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import { inOrder } from "@carbon/database/rows";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
 import { serialUnitCost, type UnitCostChild } from "../lib/serial-unit-cost";
 
 export const previewSerialUnitCostsInput = z.object({

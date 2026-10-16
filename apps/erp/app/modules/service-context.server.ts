@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ModulePermissions } from "@carbon/api/permissions";
 import {
   createServiceContext,
   type ServiceContext
@@ -10,7 +11,6 @@ import type { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import type { ModulePermissions } from "@carbon/server-functions/permissions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
 

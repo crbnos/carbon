@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { readAccountingCutoverDate } from "@carbon/database/journal-posting-status";
 import type { Kysely, Transaction } from "kysely";
-import { InvalidInputError } from "../errors";
 
 // Manual accounting work (recognition runs here) runs only after the
 // company's accounting cutover: before it, journals are Provisional and count

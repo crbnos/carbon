@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   DOCUMENT_JOURNAL_STATUSES,
@@ -28,7 +29,6 @@ import {
 } from "@carbon/utils";
 import { type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import { NotFoundError } from "../errors";
 import {
   loadContractPositions,
   lockContractPositions,

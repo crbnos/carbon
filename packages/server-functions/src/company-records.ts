@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Kysely } from "kysely";
-import { NotFoundError } from "./errors";
 
 // Record ids in an input come straight from the caller and prove nothing about
 // tenancy: a permission check authorizes the CALLER for companyId, not the ids it

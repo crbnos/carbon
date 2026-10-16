@@ -8,7 +8,9 @@
     "./carbon.server": "./src/carbon.server.ts",
     "./schema": "./src/schema.ts",
     "./service-fn.server": "./src/service-fn.server.ts",
-    "./service-tools.server": "./src/service-tools.server.ts"
+    "./service-tools.server": "./src/service-tools.server.ts",
+    "./errors": "./src/errors.ts",
+    "./permissions": "./src/permissions.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
@@ -21,7 +23,6 @@
     "@carbon/database": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/contract": "catalog:",

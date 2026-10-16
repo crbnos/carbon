@@ -9,6 +9,7 @@
 // default a line needs) and `resolveSalesInvoiceAccounts` (the rows read,
 // validated). `posting-lines.ts` builds the journal on them.
 
+import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import {
   type AutomaticJournalStatus,
@@ -16,7 +17,6 @@ import {
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import type { SalesPostingAccount } from "@carbon/utils";
-import { InvalidInputError } from "../errors";
 import { salesInvoiceStandIns } from "../lib/sales-invoice-stand-ins";
 import type { ContractPostingAccounts } from "./contract-posting";
 
