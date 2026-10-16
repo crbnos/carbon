@@ -1707,11 +1707,29 @@ msgstr "用于记录实际成本与标准成本之间的差异的科目"
 msgid "Accounts Payable"
 msgstr "应付账款"
 
+msgid "Accounts payable billing address disabled"
+msgstr ""
+
+msgid "Accounts payable billing address enabled"
+msgstr ""
+
+msgid "Accounts payable billing address updated"
+msgstr ""
+
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "应付给供应商的金额的应付账款。"
 
 msgid "Accounts Receivable"
 msgstr "应收账款"
+
+msgid "Accounts receivable billing address disabled"
+msgstr ""
+
+msgid "Accounts receivable billing address enabled"
+msgstr ""
+
+msgid "Accounts receivable billing address updated"
+msgstr ""
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
@@ -4207,6 +4225,9 @@ msgstr "BoM + BoP"
 msgid "BoM Explorer"
 msgstr "物料清单浏览器"
 
+msgid "BoM explorer setting updated"
+msgstr ""
+
 msgid "BOM synced successfully"
 msgstr "BOM 同步成功"
 
@@ -5205,6 +5226,9 @@ msgstr "公司默认值"
 msgid "Company default ({companyLabel})"
 msgstr "公司默认值 ({companyLabel})"
 
+msgid "Company default updated"
+msgstr ""
+
 msgid "Company group"
 msgstr "公司集团"
 
@@ -5525,6 +5549,10 @@ msgstr "连接到"
 msgid "Console Mode"
 msgstr "控制台模式"
 
+#. placeholder {0}: data.pinError.toLowerCase()
+msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
+msgstr ""
+
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "控制台模式已启用。使用此 PIN 在 MES 终端上识别自己。"
 
@@ -5533,6 +5561,9 @@ msgstr "控制台模式已禁用"
 
 msgid "Console mode is enabled"
 msgstr "控制台模式已启用"
+
+msgid "Console mode settings updated"
+msgstr ""
 
 msgid "Console Operator"
 msgstr "控制台操作员"
@@ -6569,6 +6600,9 @@ msgstr "货币"
 msgid "Currency code"
 msgstr "货币代码"
 
+msgid "Currency display updated"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "货币折算"
 
@@ -6653,6 +6687,12 @@ msgstr "客户联系人"
 msgid "Customer Contact"
 msgstr "客户联系人"
 
+msgid "Customer contact requirement disabled"
+msgstr ""
+
+msgid "Customer contact requirement enabled"
+msgstr ""
+
 msgid "Customer contacts"
 msgstr "客户联系人"
 
@@ -6664,6 +6704,9 @@ msgstr "客户押金"
 
 msgid "Customer Details"
 msgstr "客户详情"
+
+msgid "Customer email settings updated"
+msgstr ""
 
 msgid "Customer engineering contact"
 msgstr "客户工程联系人"
@@ -6682,6 +6725,12 @@ msgstr "客户ID已隐藏"
 
 msgid "Customer IDs are shown"
 msgstr "客户ID已显示"
+
+msgid "Customer IDs hidden"
+msgstr ""
+
+msgid "Customer IDs shown"
+msgstr ""
 
 msgid "Customer Invoice Number"
 msgstr "客户发票号"
@@ -6838,6 +6887,9 @@ msgstr "深色"
 
 msgid "Dashboard"
 msgstr "仪表板"
+
+msgid "Dashboard settings updated"
+msgstr ""
 
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "数据只需流转一次，无需在各个工具间重复输入和对账。"
@@ -7081,6 +7133,9 @@ msgstr "非基础货币交易的默认现金账户。"
 
 msgid "Default cash account for transactions in your base currency."
 msgstr "您基础货币中交易的默认现金账户。"
+
+msgid "Default category markups updated"
+msgstr ""
 
 msgid "Default cc"
 msgstr "默认抄送"
@@ -7776,6 +7831,9 @@ msgstr "数字化报价单已拒绝者"
 
 msgid "Digital quote rejected by email"
 msgstr "通过电子邮件拒绝的数字化报价单"
+
+msgid "Digital quote setting updated"
+msgstr ""
 
 msgid "Digital Quotes"
 msgstr "数字报价"
@@ -9944,6 +10002,9 @@ msgstr "未能更新报价行"
 msgid "Failed to update supplier quote line"
 msgstr "未能更新供应商报价行"
 
+msgid "Failed to update the setting"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "无法更新缩略图路径"
 
@@ -10231,6 +10292,9 @@ msgstr "资产类别"
 msgid "Fixed Asset Class"
 msgstr "固定资产类别"
 
+msgid "Fixed asset settings updated"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "固定资产"
 
@@ -10294,6 +10358,9 @@ msgstr "预测消耗"
 msgid "Forecast Consumption"
 msgstr "预测消耗"
 
+msgid "Forecast consumption updated"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "预测方法: <0>{0}</0>。此行不是从活跃工单派生的，因此没有可用的父源。"
@@ -10318,6 +10385,12 @@ msgstr "基础"
 
 msgid "Foundation (everyone)"
 msgstr "基础（所有人）"
+
+msgid "Four-eyes enforcement disabled"
+msgstr ""
+
+msgid "Four-eyes enforcement enabled"
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "冻结旧系统，禁止新交易"
@@ -10428,6 +10501,9 @@ msgstr "量具"
 
 msgid "Gauge"
 msgstr "量具"
+
+msgid "Gauge calibration notification settings updated"
+msgstr ""
 
 msgid "Gauge Calibration Notifications"
 msgstr "量具校准通知"
@@ -11740,6 +11816,9 @@ msgstr "发票ID"
 msgid "Invoice Location"
 msgstr "发票地点"
 
+msgid "Invoice notification settings updated"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "立即开票"
 
@@ -11959,6 +12038,9 @@ msgstr "物品组"
 msgid "Item Group"
 msgstr "物品组"
 
+msgid "Item group ownership updated"
+msgstr ""
+
 msgid "item groups"
 msgstr "物品组"
 
@@ -11970,6 +12052,9 @@ msgstr "物品组"
 
 msgid "Item ID"
 msgstr "物品ID"
+
+msgid "Item ID casing setting updated"
+msgstr ""
 
 msgid "Item IDs"
 msgstr "物料编号"
@@ -12076,6 +12161,9 @@ msgstr "工单物料领料"
 msgid "Job Materials"
 msgstr "工单物料"
 
+msgid "Job notification settings updated"
+msgstr ""
+
 msgid "Job operation"
 msgstr "工单工序"
 
@@ -12154,6 +12242,9 @@ msgstr "看板 {kanbanName}"
 
 msgid "Kanban Output"
 msgstr "看板输出"
+
+msgid "Kanban output setting updated"
+msgstr ""
 
 msgid "Kanbans"
 msgstr "看板"
@@ -12367,6 +12458,12 @@ msgstr "提前期更新已禁用"
 msgid "Lead time updates are enabled"
 msgstr "提前期更新已启用"
 
+msgid "Lead time updates on receipt disabled"
+msgstr ""
+
+msgid "Lead time updates on receipt enabled"
+msgstr ""
+
 msgid "Lead Time:"
 msgstr "提前期："
 
@@ -12402,6 +12499,9 @@ msgstr "租赁负债"
 
 msgid "Lease Liability:"
 msgstr "租赁负债:"
+
+msgid "Lease policy updated"
+msgstr ""
 
 msgid "Lease Reminder Days"
 msgstr "租赁提醒天数"
@@ -12777,6 +12877,9 @@ msgstr "位置 / 物品"
 msgid "Location Name"
 msgstr "位置名称"
 
+msgid "Location ownership updated"
+msgstr ""
+
 msgid "Location shifts"
 msgstr "位置班次"
 
@@ -12954,6 +13057,9 @@ msgstr "维护"
 
 msgid "Maintenance Dispatch"
 msgstr "维护工单"
+
+msgid "Maintenance dispatch notification settings updated"
+msgstr ""
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "维护工单通知"
@@ -13282,6 +13388,9 @@ msgstr "原材料ID"
 msgid "Material IDs"
 msgstr "原材料IDs"
 
+msgid "Material IDs setting updated"
+msgstr ""
+
 msgid "Material is pre-selected"
 msgstr "原材料已预选"
 
@@ -13297,8 +13406,17 @@ msgstr "物料规划"
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
 msgstr "物料规划仅显示今天起 X 天内到期的操作和建议订单，以便远期需求不会造成干扰，直到需要时才显示。该物料自己的计划周期会覆盖此默认值。"
 
+msgid "Material pre-selection disabled"
+msgstr ""
+
+msgid "Material pre-selection enabled"
+msgstr ""
+
 msgid "Material Properties"
 msgstr "原材料属性"
+
+msgid "Material return timing updated"
+msgstr ""
 
 msgid "Material Review Board (MRB)"
 msgstr "材料评审委员会(MRB)"
@@ -13329,6 +13447,9 @@ msgstr "原材料类型"
 
 msgid "Material Types"
 msgstr "原材料类型"
+
+msgid "Material units setting updated"
+msgstr ""
 
 msgid "Material updated"
 msgstr ""
@@ -13777,6 +13898,9 @@ msgstr "MRP 将在每天 {time} ({timeZone}) 自动运行，但您也可以在�
 
 msgid "MRP Schedule"
 msgstr "MRP 时间表"
+
+msgid "MRP schedule updated"
+msgstr ""
 
 msgid "MRP Suggestions"
 msgstr "MRP 建议"
@@ -15773,6 +15897,12 @@ msgstr "操作数量"
 msgid "Operation supplier process"
 msgstr "工序供应商工艺"
 
+msgid "Operation timer auto-start disabled"
+msgstr ""
+
+msgid "Operation timer auto-start enabled"
+msgstr ""
+
 msgid "Operation type"
 msgstr "操作类型"
 
@@ -16622,6 +16752,9 @@ msgstr "拣货单"
 msgid "Picking List"
 msgstr "拣货单"
 
+msgid "Picking list completion policy updated"
+msgstr ""
+
 msgid "Picking List ID"
 msgstr "拣货单ID"
 
@@ -16729,6 +16862,9 @@ msgstr "计划周期"
 
 msgid "Planning Horizon (Days)"
 msgstr "计划周期（天）"
+
+msgid "Planning horizon updated"
+msgstr ""
 
 msgid "Planning Horizon:"
 msgstr "计划周期："
@@ -17178,6 +17314,9 @@ msgstr "生产数量"
 msgid "Production Quantity"
 msgstr "生产数量"
 
+msgid "Production settings updated"
+msgstr ""
+
 msgid "Production variance"
 msgstr "生产差异"
 
@@ -17453,6 +17592,9 @@ msgstr "采购计划"
 
 msgid "Purchase Price"
 msgstr "采购价格"
+
+msgid "Purchase price update timing updated"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "采购价格差异"
@@ -18012,6 +18154,9 @@ msgstr "应收款项账龄"
 msgid "Receivables Email"
 msgstr "应收款项电子邮件"
 
+msgid "Receivables email updated"
+msgstr ""
+
 msgid "Receive"
 msgstr "接收"
 
@@ -18170,6 +18315,9 @@ msgstr "注册"
 msgid "Recurring"
 msgstr "循环"
 
+msgid "Recurring invoice setting updated"
+msgstr ""
+
 msgid "Recurring Invoices"
 msgstr "循环发票"
 
@@ -18325,6 +18473,9 @@ msgstr "下达控制"
 
 msgid "Release Control"
 msgstr "下达控制"
+
+msgid "Release control setting updated"
+msgstr ""
 
 msgid "Release date"
 msgstr "释放日期"
@@ -18802,6 +18953,9 @@ msgstr "改期容差"
 msgid "Reschedule Tolerance"
 msgstr "重新安排容差"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "储备下限"
 
@@ -19234,6 +19388,9 @@ msgstr "询价单位置"
 msgid "RFQ Number"
 msgstr "询价单号"
 
+msgid "RFQ setting updated"
+msgstr ""
+
 msgid "RFQs"
 msgstr "询价单"
 
@@ -19579,6 +19736,9 @@ msgstr "销售规则"
 msgid "Sales rule \"{0}\""
 msgstr "销售规则 \"{0}\""
 
+msgid "Sales rule notification settings updated"
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "销售规则违规"
 
@@ -19629,6 +19789,9 @@ msgstr "抽样 — 特性{featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "抽样正常检验"
+
+msgid "Sampling standard updated"
+msgstr ""
 
 msgid "Saturday"
 msgstr "星期六"
@@ -20583,6 +20746,9 @@ msgstr "保质期"
 msgid "Shelf Life (Days)"
 msgstr "保质期（天）"
 
+msgid "Shelf life & expiry settings updated"
+msgstr ""
+
 msgid "Shelf Life Start Process"
 msgstr "保质期开始流程"
 
@@ -21167,6 +21333,12 @@ msgstr "人员配置可选"
 msgid "Staffing required"
 msgstr "人工配置必需"
 
+msgid "Staffing requirement disabled"
+msgstr ""
+
+msgid "Staffing requirement enabled"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "建立托管"
 
@@ -21645,6 +21817,9 @@ msgstr "您尚未下达的建议订单。"
 msgid "Suggestion"
 msgstr "建议"
 
+msgid "Suggestion notification settings updated"
+msgstr ""
+
 msgid "Suggestion Notifications"
 msgstr "建议通知"
 
@@ -21693,11 +21868,20 @@ msgstr "供应商联系人"
 msgid "Supplier Contact"
 msgstr "供应商联系人"
 
+msgid "Supplier contact requirement disabled"
+msgstr ""
+
+msgid "Supplier contact requirement enabled"
+msgstr ""
+
 msgid "Supplier Credit"
 msgstr "供应商贷项凭证"
 
 msgid "Supplier Credits"
 msgstr "供应商贷项凭证"
+
+msgid "Supplier email settings updated"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "供应商 ID"
@@ -21710,6 +21894,12 @@ msgstr "供应商ID已隐藏"
 
 msgid "Supplier IDs are shown"
 msgstr "供应商ID已显示"
+
+msgid "Supplier IDs hidden"
+msgstr ""
+
+msgid "Supplier IDs shown"
+msgstr ""
 
 msgid "Supplier interaction"
 msgstr "供应商互动"
@@ -21779,6 +21969,9 @@ msgstr "供应商报价"
 
 msgid "Supplier Quote ID"
 msgstr "供应商报价ID"
+
+msgid "Supplier quote notification setting updated"
+msgstr ""
 
 msgid "Supplier Quote Notifications"
 msgstr "供应商报价通知"
@@ -23899,6 +24092,9 @@ msgstr "时间利用率"
 msgid "Timecard"
 msgstr "时间卡"
 
+msgid "Timecard settings updated"
+msgstr ""
+
 msgid "Timecards"
 msgstr "工时记录"
 
@@ -24311,6 +24507,18 @@ msgstr "中转与机构"
 msgid "Trash"
 msgstr "垃圾桶"
 
+msgid "Traveler materials disabled"
+msgstr ""
+
+msgid "Traveler materials enabled"
+msgstr ""
+
+msgid "Traveler operations disabled"
+msgstr ""
+
+msgid "Traveler operations enabled"
+msgstr ""
+
 msgid "Treatment"
 msgstr "处理"
 
@@ -24365,8 +24573,14 @@ msgstr "双因素认证已启用"
 msgid "Two-Factor Authentication Enforcement"
 msgstr "双因素认证强制执行"
 
+msgid "Two-factor authentication is no longer required"
+msgstr ""
+
 msgid "Two-factor authentication is not enabled."
 msgstr "双因素认证未启用。"
+
+msgid "Two-factor authentication is now required"
+msgstr ""
 
 msgid "Two-factor authentication is optional"
 msgstr "双因素认证是可选的"
@@ -26160,6 +26374,13 @@ msgstr "库存核销报废或通过检验拒收和 NCR 处置退回"
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "在资产的生命周期内减少其价值——你创建的每月批次,作为草稿进行评审,然后过账。"
+
+msgid "Wrote the missing journal of 1 document"
+msgstr ""
+
+#. placeholder {0}: data.documents
+msgid "Wrote the missing journals of {0} documents"
+msgstr ""
 
 msgid "Year"
 msgstr "年份"

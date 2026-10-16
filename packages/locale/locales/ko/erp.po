@@ -1707,11 +1707,29 @@ msgstr "실제 원가와 표준원가의 차이를 기록하는 계정"
 msgid "Accounts Payable"
 msgstr "매입채무"
 
+msgid "Accounts payable billing address disabled"
+msgstr ""
+
+msgid "Accounts payable billing address enabled"
+msgstr ""
+
+msgid "Accounts payable billing address updated"
+msgstr ""
+
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "공급업체에 지급할 금액에 대한 매입채무"
 
 msgid "Accounts Receivable"
 msgstr "매출채권"
+
+msgid "Accounts receivable billing address disabled"
+msgstr ""
+
+msgid "Accounts receivable billing address enabled"
+msgstr ""
+
+msgid "Accounts receivable billing address updated"
+msgstr ""
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "고객이 지급할 금액에 대한 매출채권"
@@ -4207,6 +4225,9 @@ msgstr "BOM + BOP"
 msgid "BoM Explorer"
 msgstr "BoM Explorer"
 
+msgid "BoM explorer setting updated"
+msgstr ""
+
 msgid "BOM synced successfully"
 msgstr "BOM이 동기화되었습니다"
 
@@ -5205,6 +5226,9 @@ msgstr "회사 기본값"
 msgid "Company default ({companyLabel})"
 msgstr "회사 기본값({companyLabel})"
 
+msgid "Company default updated"
+msgstr ""
+
 msgid "Company group"
 msgstr "회사 그룹"
 
@@ -5525,6 +5549,10 @@ msgstr "연결 대상"
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
+#. placeholder {0}: data.pinError.toLowerCase()
+msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
+msgstr ""
+
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "콘솔 모드가 활성화되었습니다. MES 터미널에서 이 PIN으로 자신을 확인합니다."
 
@@ -5533,6 +5561,9 @@ msgstr "콘솔 모드가 비활성화됨"
 
 msgid "Console mode is enabled"
 msgstr "콘솔 모드가 활성화됨"
+
+msgid "Console mode settings updated"
+msgstr ""
 
 msgid "Console Operator"
 msgstr "콘솔 작업자"
@@ -6569,6 +6600,9 @@ msgstr "통화"
 msgid "Currency code"
 msgstr "통화 코드"
 
+msgid "Currency display updated"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "통화 환산"
 
@@ -6653,6 +6687,12 @@ msgstr "고객 담당자"
 msgid "Customer Contact"
 msgstr "고객 담당자"
 
+msgid "Customer contact requirement disabled"
+msgstr ""
+
+msgid "Customer contact requirement enabled"
+msgstr ""
+
 msgid "Customer contacts"
 msgstr "고객 담당자"
 
@@ -6664,6 +6704,9 @@ msgstr "고객 선금"
 
 msgid "Customer Details"
 msgstr "고객 세부정보"
+
+msgid "Customer email settings updated"
+msgstr ""
 
 msgid "Customer engineering contact"
 msgstr "고객 엔지니어링 담당자"
@@ -6682,6 +6725,12 @@ msgstr "고객 ID가 숨겨졌습니다"
 
 msgid "Customer IDs are shown"
 msgstr "고객 ID가 표시됩니다"
+
+msgid "Customer IDs hidden"
+msgstr ""
+
+msgid "Customer IDs shown"
+msgstr ""
 
 msgid "Customer Invoice Number"
 msgstr "고객 송장 번호"
@@ -6838,6 +6887,9 @@ msgstr "다크"
 
 msgid "Dashboard"
 msgstr "대시보드"
+
+msgid "Dashboard settings updated"
+msgstr ""
 
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "데이터가 여러 도구에 걸쳐 재입력되고 대조될 필요 없이 한 번에 흐릅니다."
@@ -7081,6 +7133,9 @@ msgstr "기준 통화 이외 통화 거래에 사용할 기본 현금 계정입�
 
 msgid "Default cash account for transactions in your base currency."
 msgstr "기준 통화 거래에 사용할 기본 현금 계정입니다."
+
+msgid "Default category markups updated"
+msgstr ""
 
 msgid "Default cc"
 msgstr "기본 참조자"
@@ -7776,6 +7831,9 @@ msgstr "디지털 견적서 거절자"
 
 msgid "Digital quote rejected by email"
 msgstr "이메일로 디지털 견적서 거절"
+
+msgid "Digital quote setting updated"
+msgstr ""
 
 msgid "Digital Quotes"
 msgstr "디지털 견적"
@@ -9944,6 +10002,9 @@ msgstr "견적 라인을 업데이트하지 못했습니다"
 msgid "Failed to update supplier quote line"
 msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
 
+msgid "Failed to update the setting"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "썸네일 경로를 업데이트하지 못했습니다"
 
@@ -10231,6 +10292,9 @@ msgstr "자산 클래스"
 msgid "Fixed Asset Class"
 msgstr "고정자산 클래스"
 
+msgid "Fixed asset settings updated"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "고정자산"
 
@@ -10294,6 +10358,9 @@ msgstr "예측 소모"
 msgid "Forecast Consumption"
 msgstr "예측 소모"
 
+msgid "Forecast consumption updated"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "예측 방법: <0>{0}</0>. 이 행은 활성 작업 지시에서 파생되지 않았으므로 부모 소스를 사용할 수 없습니다."
@@ -10318,6 +10385,12 @@ msgstr "파운데이션"
 
 msgid "Foundation (everyone)"
 msgstr "파운데이션(전체)"
+
+msgid "Four-eyes enforcement disabled"
+msgstr ""
+
+msgid "Four-eyes enforcement enabled"
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "기존 시스템 동결, 신규 거래 없음"
@@ -10428,6 +10501,9 @@ msgstr "계측기"
 
 msgid "Gauge"
 msgstr "계측기"
+
+msgid "Gauge calibration notification settings updated"
+msgstr ""
 
 msgid "Gauge Calibration Notifications"
 msgstr "계측기 교정 알림"
@@ -11740,6 +11816,9 @@ msgstr "송장 ID"
 msgid "Invoice Location"
 msgstr "송장 사업장"
 
+msgid "Invoice notification settings updated"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "지금 송장 작성"
 
@@ -11959,6 +12038,9 @@ msgstr "품목 그룹"
 msgid "Item Group"
 msgstr "품목 그룹"
 
+msgid "Item group ownership updated"
+msgstr ""
+
 msgid "item groups"
 msgstr "품목 그룹"
 
@@ -11970,6 +12052,9 @@ msgstr "품목 그룹"
 
 msgid "Item ID"
 msgstr "품목 ID"
+
+msgid "Item ID casing setting updated"
+msgstr ""
 
 msgid "Item IDs"
 msgstr "항목 ID"
@@ -12076,6 +12161,9 @@ msgstr "작업 지시 자재 불출"
 msgid "Job Materials"
 msgstr "작업 지시 자재"
 
+msgid "Job notification settings updated"
+msgstr ""
+
 msgid "Job operation"
 msgstr "작업 지시 공정"
 
@@ -12154,6 +12242,9 @@ msgstr "{kanbanName}의 칸반"
 
 msgid "Kanban Output"
 msgstr "칸반 산출물"
+
+msgid "Kanban output setting updated"
+msgstr ""
 
 msgid "Kanbans"
 msgstr "칸반"
@@ -12367,6 +12458,12 @@ msgstr "리드타임 업데이트가 비활성화되었습니다"
 msgid "Lead time updates are enabled"
 msgstr "리드타임 업데이트가 활성화되었습니다"
 
+msgid "Lead time updates on receipt disabled"
+msgstr ""
+
+msgid "Lead time updates on receipt enabled"
+msgstr ""
+
 msgid "Lead Time:"
 msgstr "리드타임:"
 
@@ -12402,6 +12499,9 @@ msgstr "리스 부채"
 
 msgid "Lease Liability:"
 msgstr "리스 부채:"
+
+msgid "Lease policy updated"
+msgstr ""
 
 msgid "Lease Reminder Days"
 msgstr "리스 알림 일수"
@@ -12777,6 +12877,9 @@ msgstr "위치 / 항목"
 msgid "Location Name"
 msgstr "위치 이름"
 
+msgid "Location ownership updated"
+msgstr ""
+
 msgid "Location shifts"
 msgstr "사업장 교대조"
 
@@ -12954,6 +13057,9 @@ msgstr "유지보수"
 
 msgid "Maintenance Dispatch"
 msgstr "유지보수 지시"
+
+msgid "Maintenance dispatch notification settings updated"
+msgstr ""
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "유지보수 지시 알림"
@@ -13282,6 +13388,9 @@ msgstr "자재 ID"
 msgid "Material IDs"
 msgstr "자재 ID"
 
+msgid "Material IDs setting updated"
+msgstr ""
+
 msgid "Material is pre-selected"
 msgstr "자재가 사전 선택됨"
 
@@ -13297,8 +13406,17 @@ msgstr "물질 계획"
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
 msgstr "자재 계획은 오늘부터 이 많은 날짜 내에 필요한 조치 및 제안된 주문만 표시하므로, 먼 미래의 필요는 중요해질 때까지 방해가 되지 않습니다. 품목의 자체 계획 호라이즌이 이 기본값보다 우선합니다."
 
+msgid "Material pre-selection disabled"
+msgstr ""
+
+msgid "Material pre-selection enabled"
+msgstr ""
+
 msgid "Material Properties"
 msgstr "자재 속성"
+
+msgid "Material return timing updated"
+msgstr ""
 
 msgid "Material Review Board (MRB)"
 msgstr "MRB 위원회"
@@ -13329,6 +13447,9 @@ msgstr "자재 유형"
 
 msgid "Material Types"
 msgstr "자재 유형"
+
+msgid "Material units setting updated"
+msgstr ""
 
 msgid "Material updated"
 msgstr ""
@@ -13777,6 +13898,9 @@ msgstr "MRP는 매일 {time}({timeZone})에 자동으로 실행되지만, 여기
 
 msgid "MRP Schedule"
 msgstr "MRP 일정"
+
+msgid "MRP schedule updated"
+msgstr ""
 
 msgid "MRP Suggestions"
 msgstr "MRP 제안"
@@ -15773,6 +15897,12 @@ msgstr "작업 수량"
 msgid "Operation supplier process"
 msgstr "공정 공급업체 공법"
 
+msgid "Operation timer auto-start disabled"
+msgstr ""
+
+msgid "Operation timer auto-start enabled"
+msgstr ""
+
 msgid "Operation type"
 msgstr "작업 유형"
 
@@ -16622,6 +16752,9 @@ msgstr "피킹 리스트"
 msgid "Picking List"
 msgstr "피킹 리스트"
 
+msgid "Picking list completion policy updated"
+msgstr ""
+
 msgid "Picking List ID"
 msgstr "피킹 리스트 ID"
 
@@ -16729,6 +16862,9 @@ msgstr "계획 호라이즌"
 
 msgid "Planning Horizon (Days)"
 msgstr "계획 호라이즌(일)"
+
+msgid "Planning horizon updated"
+msgstr ""
 
 msgid "Planning Horizon:"
 msgstr "계획 호라이즌:"
@@ -17178,6 +17314,9 @@ msgstr "생산 수량"
 msgid "Production Quantity"
 msgstr "생산 수량"
 
+msgid "Production settings updated"
+msgstr ""
+
 msgid "Production variance"
 msgstr "생산 차이"
 
@@ -17453,6 +17592,9 @@ msgstr "구매 계획"
 
 msgid "Purchase Price"
 msgstr "구매 가격"
+
+msgid "Purchase price update timing updated"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "구매가격차이"
@@ -18012,6 +18154,9 @@ msgstr "매출채권 연령분석"
 msgid "Receivables Email"
 msgstr "매출채권 이메일"
 
+msgid "Receivables email updated"
+msgstr ""
+
 msgid "Receive"
 msgstr "입고"
 
@@ -18170,6 +18315,9 @@ msgstr "회수 기간"
 msgid "Recurring"
 msgstr "반복"
 
+msgid "Recurring invoice setting updated"
+msgstr ""
+
 msgid "Recurring Invoices"
 msgstr "정기 송장"
 
@@ -18325,6 +18473,9 @@ msgstr "릴리스 제어"
 
 msgid "Release Control"
 msgstr "릴리스 제어"
+
+msgid "Release control setting updated"
+msgstr ""
 
 msgid "Release date"
 msgstr "릴리스 날짜"
@@ -18802,6 +18953,9 @@ msgstr "재일정 허용 범위"
 msgid "Reschedule Tolerance"
 msgstr "재일정 허용도"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
 
@@ -19234,6 +19388,9 @@ msgstr "RFQ 위치"
 msgid "RFQ Number"
 msgstr "RFQ 번호"
 
+msgid "RFQ setting updated"
+msgstr ""
+
 msgid "RFQs"
 msgstr "RFQ"
 
@@ -19579,6 +19736,9 @@ msgstr "판매 규칙"
 msgid "Sales rule \"{0}\""
 msgstr "영업 규칙 「{0}」"
 
+msgid "Sales rule notification settings updated"
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "판매 규칙 위반"
 
@@ -19629,6 +19789,9 @@ msgstr "샘플링 — 특성 {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "샘플링 표준"
+
+msgid "Sampling standard updated"
+msgstr ""
 
 msgid "Saturday"
 msgstr "토요일"
@@ -20583,6 +20746,9 @@ msgstr "보존 기간"
 msgid "Shelf Life (Days)"
 msgstr "보존 기간 (일)"
 
+msgid "Shelf life & expiry settings updated"
+msgstr ""
+
 msgid "Shelf Life Start Process"
 msgstr "보존 기간 시작 공법"
 
@@ -21167,6 +21333,12 @@ msgstr "인력 배치 선택사항"
 msgid "Staffing required"
 msgstr "인력 필수"
 
+msgid "Staffing requirement disabled"
+msgstr ""
+
+msgid "Staffing requirement enabled"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
 
@@ -21645,6 +21817,9 @@ msgstr "아직 발주하지 않은 제안 주문입니다."
 msgid "Suggestion"
 msgstr "제안"
 
+msgid "Suggestion notification settings updated"
+msgstr ""
+
 msgid "Suggestion Notifications"
 msgstr "제안 알림"
 
@@ -21693,11 +21868,20 @@ msgstr "공급업체 담당자"
 msgid "Supplier Contact"
 msgstr "공급업체 담당자"
 
+msgid "Supplier contact requirement disabled"
+msgstr ""
+
+msgid "Supplier contact requirement enabled"
+msgstr ""
+
 msgid "Supplier Credit"
 msgstr "공급업체 크레딧"
 
 msgid "Supplier Credits"
 msgstr "공급업체 크레딧"
+
+msgid "Supplier email settings updated"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "공급업체 ID"
@@ -21710,6 +21894,12 @@ msgstr "공급업체 ID가 숨겨졌습니다"
 
 msgid "Supplier IDs are shown"
 msgstr "공급업체 ID가 표시됩니다"
+
+msgid "Supplier IDs hidden"
+msgstr ""
+
+msgid "Supplier IDs shown"
+msgstr ""
 
 msgid "Supplier interaction"
 msgstr "공급업체 상호작용"
@@ -21779,6 +21969,9 @@ msgstr "공급업체 견적"
 
 msgid "Supplier Quote ID"
 msgstr "공급업체 견적 ID"
+
+msgid "Supplier quote notification setting updated"
+msgstr ""
 
 msgid "Supplier Quote Notifications"
 msgstr "공급업체 견적 알림"
@@ -23899,6 +24092,9 @@ msgstr "시간 이용률"
 msgid "Timecard"
 msgstr "근무기록"
 
+msgid "Timecard settings updated"
+msgstr ""
+
 msgid "Timecards"
 msgstr "타임카드"
 
@@ -24311,6 +24507,18 @@ msgstr "운송 및 기관"
 msgid "Trash"
 msgstr "휴지통"
 
+msgid "Traveler materials disabled"
+msgstr ""
+
+msgid "Traveler materials enabled"
+msgstr ""
+
+msgid "Traveler operations disabled"
+msgstr ""
+
+msgid "Traveler operations enabled"
+msgstr ""
+
 msgid "Treatment"
 msgstr "처리"
 
@@ -24365,8 +24573,14 @@ msgstr "2단계 인증이 활성화되었습니다"
 msgid "Two-Factor Authentication Enforcement"
 msgstr "2단계 인증 적용"
 
+msgid "Two-factor authentication is no longer required"
+msgstr ""
+
 msgid "Two-factor authentication is not enabled."
 msgstr "2단계 인증이 활성화되지 않았습니다."
+
+msgid "Two-factor authentication is now required"
+msgstr ""
 
 msgid "Two-factor authentication is optional"
 msgstr "2단계 인증은 선택 사항입니다"
@@ -26160,6 +26374,13 @@ msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 생성하여 초안으로 검토한 후 전기하는 배치 작업입니다."
+
+msgid "Wrote the missing journal of 1 document"
+msgstr ""
+
+#. placeholder {0}: data.documents
+msgid "Wrote the missing journals of {0} documents"
+msgstr ""
 
 msgid "Year"
 msgstr "연도"

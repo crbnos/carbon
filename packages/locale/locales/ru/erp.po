@@ -1707,11 +1707,29 @@ msgstr "Счета для учета разниц между фактическ�
 msgid "Accounts Payable"
 msgstr "Кредиторская задолженность"
 
+msgid "Accounts payable billing address disabled"
+msgstr ""
+
+msgid "Accounts payable billing address enabled"
+msgstr ""
+
+msgid "Accounts payable billing address updated"
+msgstr ""
+
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "Кредиторская задолженность перед поставщиками за задолженные суммы."
 
 msgid "Accounts Receivable"
 msgstr "Дебиторская задолженность"
+
+msgid "Accounts receivable billing address disabled"
+msgstr ""
+
+msgid "Accounts receivable billing address enabled"
+msgstr ""
+
+msgid "Accounts receivable billing address updated"
+msgstr ""
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность за суммы, причитающиеся от покупателей"
@@ -4207,6 +4225,9 @@ msgstr "BoM + BoP"
 msgid "BoM Explorer"
 msgstr "Обозреватель спецификации"
 
+msgid "BoM explorer setting updated"
+msgstr ""
+
 msgid "BOM synced successfully"
 msgstr "BOM успешно синхронизирован"
 
@@ -5205,6 +5226,9 @@ msgstr "По умолчанию организации"
 msgid "Company default ({companyLabel})"
 msgstr "Значение по умолчанию организации ({companyLabel})"
 
+msgid "Company default updated"
+msgstr ""
+
 msgid "Company group"
 msgstr "Группа организаций"
 
@@ -5525,6 +5549,10 @@ msgstr "Подключено к"
 msgid "Console Mode"
 msgstr "Режим консоли"
 
+#. placeholder {0}: data.pinError.toLowerCase()
+msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
+msgstr ""
+
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "Режим консоли включен. Используйте этот PIN для идентификации на терминалах MES."
 
@@ -5533,6 +5561,9 @@ msgstr "Режим консоли отключен"
 
 msgid "Console mode is enabled"
 msgstr "Режим консоли включен"
+
+msgid "Console mode settings updated"
+msgstr ""
 
 msgid "Console Operator"
 msgstr "Оператор консоли"
@@ -6569,6 +6600,9 @@ msgstr "Валюта"
 msgid "Currency code"
 msgstr "Код валюты"
 
+msgid "Currency display updated"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "Пересчет валют"
 
@@ -6653,6 +6687,12 @@ msgstr "Контактное лицо покупателя"
 msgid "Customer Contact"
 msgstr "Контактное лицо покупателя"
 
+msgid "Customer contact requirement disabled"
+msgstr ""
+
+msgid "Customer contact requirement enabled"
+msgstr ""
+
 msgid "Customer contacts"
 msgstr "Контактные лица покупателя"
 
@@ -6664,6 +6704,9 @@ msgstr "Депозит Покупателя"
 
 msgid "Customer Details"
 msgstr "Сведения о покупателе"
+
+msgid "Customer email settings updated"
+msgstr ""
 
 msgid "Customer engineering contact"
 msgstr "Инженерное контактное лицо покупателя"
@@ -6682,6 +6725,12 @@ msgstr "Идентификаторы покупателей скрыты"
 
 msgid "Customer IDs are shown"
 msgstr "Идентификаторы покупателей отображаются"
+
+msgid "Customer IDs hidden"
+msgstr ""
+
+msgid "Customer IDs shown"
+msgstr ""
 
 msgid "Customer Invoice Number"
 msgstr "Номер счета-фактуры"
@@ -6838,6 +6887,9 @@ msgstr "Тёмный"
 
 msgid "Dashboard"
 msgstr "Панель управления"
+
+msgid "Dashboard settings updated"
+msgstr ""
 
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "Данные проходят один раз вместо повторного ввода и согласования между инструментами."
@@ -7081,6 +7133,9 @@ msgstr "Счет наличных денежных средств по умол�
 
 msgid "Default cash account for transactions in your base currency."
 msgstr "Счет наличных денежных средств по умолчанию для операций в вашей базовой валюте."
+
+msgid "Default category markups updated"
+msgstr ""
 
 msgid "Default cc"
 msgstr "CC по умолчанию"
@@ -7776,6 +7831,9 @@ msgstr "Цифровое предложение отклонено"
 
 msgid "Digital quote rejected by email"
 msgstr "Цифровое предложение отклонено по электронной почте"
+
+msgid "Digital quote setting updated"
+msgstr ""
 
 msgid "Digital Quotes"
 msgstr "Цифровые предложения"
@@ -9944,6 +10002,9 @@ msgstr "Не удалось обновить строку предложения
 msgid "Failed to update supplier quote line"
 msgstr "Не удалось обновить строку предложения поставщика"
 
+msgid "Failed to update the setting"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "Не удалось обновить путь миниатюры"
 
@@ -10231,6 +10292,9 @@ msgstr "Класс основных средств"
 msgid "Fixed Asset Class"
 msgstr "Класс основных средств"
 
+msgid "Fixed asset settings updated"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Основные средства"
 
@@ -10294,6 +10358,9 @@ msgstr "Потребление прогноза"
 msgid "Forecast Consumption"
 msgstr "Потребление прогноза"
 
+msgid "Forecast consumption updated"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Метод прогноза: <0>{0}</0>. Эта строка не была получена из активных производственных заказов, поэтому нет доступных источников."
@@ -10318,6 +10385,12 @@ msgstr "Основа"
 
 msgid "Foundation (everyone)"
 msgstr "Основы (для всех)"
+
+msgid "Four-eyes enforcement disabled"
+msgstr ""
+
+msgid "Four-eyes enforcement enabled"
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Заморозить старую систему, новых транзакций нет"
@@ -10428,6 +10501,9 @@ msgstr "средство измерения"
 
 msgid "Gauge"
 msgstr "Средство измерения"
+
+msgid "Gauge calibration notification settings updated"
+msgstr ""
 
 msgid "Gauge Calibration Notifications"
 msgstr "Уведомления о калибровке средств измерения"
@@ -11740,6 +11816,9 @@ msgstr "Счет-фактура ID"
 msgid "Invoice Location"
 msgstr "Площадка счета-фактуры"
 
+msgid "Invoice notification settings updated"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "Выставить счет"
 
@@ -11959,6 +12038,9 @@ msgstr "группа товаров"
 msgid "Item Group"
 msgstr "Группа товаров"
 
+msgid "Item group ownership updated"
+msgstr ""
+
 msgid "item groups"
 msgstr "группы товаров"
 
@@ -11970,6 +12052,9 @@ msgstr "Группы товаров"
 
 msgid "Item ID"
 msgstr "ID товара"
+
+msgid "Item ID casing setting updated"
+msgstr ""
 
 msgid "Item IDs"
 msgstr "Коды элементов"
@@ -12076,6 +12161,9 @@ msgstr "Списание материалов заказа"
 msgid "Job Materials"
 msgstr "Материалы заказа"
 
+msgid "Job notification settings updated"
+msgstr ""
+
 msgid "Job operation"
 msgstr "Операция заказа"
 
@@ -12154,6 +12242,9 @@ msgstr "Канбан для {kanbanName}"
 
 msgid "Kanban Output"
 msgstr "Выпуск Канбана"
+
+msgid "Kanban output setting updated"
+msgstr ""
 
 msgid "Kanbans"
 msgstr "Канбаны"
@@ -12367,6 +12458,12 @@ msgstr "Обновления сроков поставки отключены"
 msgid "Lead time updates are enabled"
 msgstr "Обновления сроков поставки включены"
 
+msgid "Lead time updates on receipt disabled"
+msgstr ""
+
+msgid "Lead time updates on receipt enabled"
+msgstr ""
+
 msgid "Lead Time:"
 msgstr "Срок поставки:"
 
@@ -12402,6 +12499,9 @@ msgstr "Обязательство по аренде"
 
 msgid "Lease Liability:"
 msgstr "Обязательство по аренде:"
+
+msgid "Lease policy updated"
+msgstr ""
 
 msgid "Lease Reminder Days"
 msgstr "Дни напоминания об аренде"
@@ -12777,6 +12877,9 @@ msgstr "Местоположение / Товар"
 msgid "Location Name"
 msgstr "Название местоположения"
 
+msgid "Location ownership updated"
+msgstr ""
+
 msgid "Location shifts"
 msgstr "Смены на месторасположение"
 
@@ -12954,6 +13057,9 @@ msgstr "Техобслуживание"
 
 msgid "Maintenance Dispatch"
 msgstr "Заявка на техобслуживание"
+
+msgid "Maintenance dispatch notification settings updated"
+msgstr ""
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "Уведомления о заявках на техобслуживание"
@@ -13282,6 +13388,9 @@ msgstr "ID материала"
 msgid "Material IDs"
 msgstr "Идентификаторы материалов"
 
+msgid "Material IDs setting updated"
+msgstr ""
+
 msgid "Material is pre-selected"
 msgstr "Материал предварительно выбран"
 
@@ -13297,8 +13406,17 @@ msgstr "Планирование материалов"
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
 msgstr "Планирование материалов показывает только действия и рекомендуемые заказы, выполняемые в течение этого количества дней с сегодня, чтобы удаленные потребности оставались в стороне, пока они не станут важны. Собственный горизонт планирования номенклатуры переопределяет это значение по умолчанию."
 
+msgid "Material pre-selection disabled"
+msgstr ""
+
+msgid "Material pre-selection enabled"
+msgstr ""
+
 msgid "Material Properties"
 msgstr "Свойства материалов"
+
+msgid "Material return timing updated"
+msgstr ""
 
 msgid "Material Review Board (MRB)"
 msgstr "Комиссия по браку"
@@ -13329,6 +13447,9 @@ msgstr "Типы материалов"
 
 msgid "Material Types"
 msgstr "Типы материалов"
+
+msgid "Material units setting updated"
+msgstr ""
 
 msgid "Material updated"
 msgstr ""
@@ -13777,6 +13898,9 @@ msgstr "MRP запускается автоматически каждый де�
 
 msgid "MRP Schedule"
 msgstr "MRP График"
+
+msgid "MRP schedule updated"
+msgstr ""
 
 msgid "MRP Suggestions"
 msgstr "Предложения MRP"
@@ -15773,6 +15897,12 @@ msgstr "Количество операций"
 msgid "Operation supplier process"
 msgstr "Процесс поставщика операции"
 
+msgid "Operation timer auto-start disabled"
+msgstr ""
+
+msgid "Operation timer auto-start enabled"
+msgstr ""
+
 msgid "Operation type"
 msgstr "Тип операции"
 
@@ -16622,6 +16752,9 @@ msgstr "лист отбора"
 msgid "Picking List"
 msgstr "Лист отбора"
 
+msgid "Picking list completion policy updated"
+msgstr ""
+
 msgid "Picking List ID"
 msgstr "ID листа отбора"
 
@@ -16729,6 +16862,9 @@ msgstr "Горизонт планирования"
 
 msgid "Planning Horizon (Days)"
 msgstr "Горизонт планирования (дней)"
+
+msgid "Planning horizon updated"
+msgstr ""
 
 msgid "Planning Horizon:"
 msgstr "Горизонт планирования:"
@@ -17178,6 +17314,9 @@ msgstr "Производственное количество"
 msgid "Production Quantity"
 msgstr "Производственное количество"
 
+msgid "Production settings updated"
+msgstr ""
+
 msgid "Production variance"
 msgstr "Отклонение производства"
 
@@ -17453,6 +17592,9 @@ msgstr "Планирование закупок"
 
 msgid "Purchase Price"
 msgstr "Цена покупки"
+
+msgid "Purchase price update timing updated"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "Отклонение цены покупки"
@@ -18012,6 +18154,9 @@ msgstr "Старение дебиторской задолженности"
 msgid "Receivables Email"
 msgstr "Письмо дебиторской задолженности"
 
+msgid "Receivables email updated"
+msgstr ""
+
 msgid "Receive"
 msgstr "Получить"
 
@@ -18170,6 +18315,9 @@ msgstr "Зарегистрировать"
 msgid "Recurring"
 msgstr "Повторяющийся"
 
+msgid "Recurring invoice setting updated"
+msgstr ""
+
 msgid "Recurring Invoices"
 msgstr "Повторяющиеся счета-фактуры"
 
@@ -18325,6 +18473,9 @@ msgstr "Управление запуском в работу"
 
 msgid "Release Control"
 msgstr "Управление запуском в работу"
+
+msgid "Release control setting updated"
+msgstr ""
 
 msgid "Release date"
 msgstr "Дата освобождения"
@@ -18802,6 +18953,9 @@ msgstr "Допуск переноса"
 msgid "Reschedule Tolerance"
 msgstr "Допуск переноса"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
 
@@ -19234,6 +19388,9 @@ msgstr "Местоположение РЗП"
 msgid "RFQ Number"
 msgstr "Номер РФП"
 
+msgid "RFQ setting updated"
+msgstr ""
+
 msgid "RFQs"
 msgstr "РФЗ"
 
@@ -19579,6 +19736,9 @@ msgstr "Правило продажи"
 msgid "Sales rule \"{0}\""
 msgstr "Правило продаж «{0}»"
 
+msgid "Sales rule notification settings updated"
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "Нарушения правил продаж"
 
@@ -19629,6 +19789,9 @@ msgstr "Выборочный контроль — Характеристика {
 
 msgid "Sampling Standard"
 msgstr "Стандарт выборочного контроля"
+
+msgid "Sampling standard updated"
+msgstr ""
 
 msgid "Saturday"
 msgstr "Суббота"
@@ -20583,6 +20746,9 @@ msgstr "срок хранения"
 msgid "Shelf Life (Days)"
 msgstr "Срок хранения (дни)"
 
+msgid "Shelf life & expiry settings updated"
+msgstr ""
+
 msgid "Shelf Life Start Process"
 msgstr "Процесс запуска срока хранения"
 
@@ -21167,6 +21333,12 @@ msgstr "Укомплектование опционально"
 msgid "Staffing required"
 msgstr "Требуется персонал"
 
+msgid "Staffing requirement disabled"
+msgstr ""
+
+msgid "Staffing requirement enabled"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
 
@@ -21645,6 +21817,9 @@ msgstr "Предложенные заказы, которые вы еще не �
 msgid "Suggestion"
 msgstr "Предложение"
 
+msgid "Suggestion notification settings updated"
+msgstr ""
+
 msgid "Suggestion Notifications"
 msgstr "Уведомления о предложениях"
 
@@ -21693,11 +21868,20 @@ msgstr "Контактное лицо поставщика"
 msgid "Supplier Contact"
 msgstr "Контактное лицо поставщика"
 
+msgid "Supplier contact requirement disabled"
+msgstr ""
+
+msgid "Supplier contact requirement enabled"
+msgstr ""
+
 msgid "Supplier Credit"
 msgstr "Кредит поставщика"
 
 msgid "Supplier Credits"
 msgstr "Кредиты поставщика"
+
+msgid "Supplier email settings updated"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "ID поставщика"
@@ -21710,6 +21894,12 @@ msgstr "Идентификаторы поставщиков скрыты"
 
 msgid "Supplier IDs are shown"
 msgstr "Идентификаторы поставщиков отображаются"
+
+msgid "Supplier IDs hidden"
+msgstr ""
+
+msgid "Supplier IDs shown"
+msgstr ""
 
 msgid "Supplier interaction"
 msgstr "Взаимодействие поставщика"
@@ -21779,6 +21969,9 @@ msgstr "Предложение поставщика"
 
 msgid "Supplier Quote ID"
 msgstr "ID предложения поставщика"
+
+msgid "Supplier quote notification setting updated"
+msgstr ""
 
 msgid "Supplier Quote Notifications"
 msgstr "Уведомления о предложениях поставщиков"
@@ -23899,6 +24092,9 @@ msgstr "Использование времени"
 msgid "Timecard"
 msgstr "Табель учета рабочего времени"
 
+msgid "Timecard settings updated"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Табели учета рабочего времени"
 
@@ -24311,6 +24507,18 @@ msgstr "Транзит и учреждение"
 msgid "Trash"
 msgstr "Корзина"
 
+msgid "Traveler materials disabled"
+msgstr ""
+
+msgid "Traveler materials enabled"
+msgstr ""
+
+msgid "Traveler operations disabled"
+msgstr ""
+
+msgid "Traveler operations enabled"
+msgstr ""
+
 msgid "Treatment"
 msgstr "Учет"
 
@@ -24365,8 +24573,14 @@ msgstr "Двухфакторная аутентификация включена
 msgid "Two-Factor Authentication Enforcement"
 msgstr "Требование двухфакторной аутентификации"
 
+msgid "Two-factor authentication is no longer required"
+msgstr ""
+
 msgid "Two-factor authentication is not enabled."
 msgstr "Двухфакторная аутентификация не включена."
+
+msgid "Two-factor authentication is now required"
+msgstr ""
 
 msgid "Two-factor authentication is optional"
 msgstr "Двухфакторная аутентификация — опциональна"
@@ -26160,6 +26374,13 @@ msgstr "Списание запасов, забракованных или во�
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Уменьшение стоимости актива в течение его жизни — ежемесячная серия, которую вы создаете, рассматриваете как черновик, затем проводите."
+
+msgid "Wrote the missing journal of 1 document"
+msgstr ""
+
+#. placeholder {0}: data.documents
+msgid "Wrote the missing journals of {0} documents"
+msgstr ""
 
 msgid "Year"
 msgstr "Год"

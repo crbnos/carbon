@@ -244,6 +244,22 @@ export const digitalQuoteValidator = z.object({
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox()
 });
 
+/**
+ * A settings switch's form: `intent` names the switch and `enabled` is
+ * "true" or "false". Parses to the one field it saves, `{ [field]: boolean }`.
+ */
+export function settingsToggle<
+  const Intent extends string,
+  const Field extends string
+>(intent: Intent, field: Field) {
+  return z
+    .object({ intent: z.literal(intent), enabled: z.string().optional() })
+    .transform(
+      ({ enabled }) =>
+        ({ [field]: enabled === "true" }) as { [K in Field]: boolean }
+    );
+}
+
 export const jobCompletedValidator = z.object({
   inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
@@ -797,6 +813,18 @@ const billingAddress = {
 export const accountsPayableBillingAddressValidator = z.object(billingAddress);
 export const accountsReceivableBillingAddressValidator =
   z.object(billingAddress);
+
+/** A billing address form's fields as saved: a blank field clears it. */
+export function billingAddressFields(
+  form: z.output<typeof accountsPayableBillingAddressValidator>
+) {
+  return Object.fromEntries(
+    Object.keys(billingAddress).map((key) => [
+      key,
+      form[key as keyof typeof form] ?? null
+    ])
+  ) as { [K in keyof typeof billingAddress]: string | null };
+}
 
 export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()

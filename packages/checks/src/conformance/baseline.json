@@ -707,14 +707,9 @@
   "route-action-shape::apps/erp/app/routes/x+/resources+/processes.$processId.tsx::.from(\"process\").update(",
   "route-action-shape::apps/erp/app/routes/x+/resources+/processes.new.tsx::.from(\"process\").update(",
   "route-action-shape::apps/erp/app/routes/x+/resources+/suggestions.new.tsx::.from(\"suggestion\").insert(",
-  "route-action-shape::apps/erp/app/routes/x+/settings+/accounting.tsx::.from(\"accountDefault\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/settings+/accounting.tsx::serverFns.as(",
   "route-action-shape::apps/erp/app/routes/x+/settings+/billing.tsx::.from(\"companyGroup\").update(",
   "route-action-shape::apps/erp/app/routes/x+/settings+/printing.$id.delete.tsx::.from(\"companySettings\").update(",
   "route-action-shape::apps/erp/app/routes/x+/settings+/printing.jobs.tsx::.from(\"printJob\").delete(",
-  "route-action-shape::apps/erp/app/routes/x+/settings+/production.tsx::.from(\"companySettings\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/settings+/production.tsx::.from(\"location\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/settings+/quality.tsx::.from(\"companySettings\").update(",
   "route-action-shape::apps/erp/app/routes/x+/training+/update.tsx::.from(\"training\").update(",
   "route-action-shape::apps/erp/app/routes/x+/users+/revoke-invite.tsx::.from(\"invite\").update("
 ]

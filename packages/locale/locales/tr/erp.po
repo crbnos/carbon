@@ -1707,11 +1707,29 @@ msgstr "Fiili ve standart maliyetler arasındaki farklılıkları kaydetmek içi
 msgid "Accounts Payable"
 msgstr "Borç hesapları"
 
+msgid "Accounts payable billing address disabled"
+msgstr ""
+
+msgid "Accounts payable billing address enabled"
+msgstr ""
+
+msgid "Accounts payable billing address updated"
+msgstr ""
+
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "Tedarikçilere borçlu olunan tutarlar için ödenecek hesaplar."
 
 msgid "Accounts Receivable"
 msgstr "Alacak hesapları"
+
+msgid "Accounts receivable billing address disabled"
+msgstr ""
+
+msgid "Accounts receivable billing address enabled"
+msgstr ""
+
+msgid "Accounts receivable billing address updated"
+msgstr ""
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
@@ -4207,6 +4225,9 @@ msgstr "BOM + BOP"
 msgid "BoM Explorer"
 msgstr "BoM Gezgini"
 
+msgid "BoM explorer setting updated"
+msgstr ""
+
 msgid "BOM synced successfully"
 msgstr "BOM başarıyla senkronize edildi"
 
@@ -5205,6 +5226,9 @@ msgstr "Şirket varsayılanı"
 msgid "Company default ({companyLabel})"
 msgstr "Şirket varsayılanı ({companyLabel})"
 
+msgid "Company default updated"
+msgstr ""
+
 msgid "Company group"
 msgstr "Şirket grubu"
 
@@ -5525,6 +5549,10 @@ msgstr "Bağlı"
 msgid "Console Mode"
 msgstr "Konsol Modu"
 
+#. placeholder {0}: data.pinError.toLowerCase()
+msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
+msgstr ""
+
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "Konsol modu etkinleştirildi. Kendinizi MES terminallerinde tanımlamak için bu PIN'i kullanın."
 
@@ -5533,6 +5561,9 @@ msgstr "Konsol modu devre dışı"
 
 msgid "Console mode is enabled"
 msgstr "Konsol modu etkinleştirildi"
+
+msgid "Console mode settings updated"
+msgstr ""
 
 msgid "Console Operator"
 msgstr "Konsol Operatörü"
@@ -6569,6 +6600,9 @@ msgstr "Para Birimi"
 msgid "Currency code"
 msgstr "Para birimi kodu"
 
+msgid "Currency display updated"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "Kur çevrimi"
 
@@ -6653,6 +6687,12 @@ msgstr "Müşteri ilgili kişisi"
 msgid "Customer Contact"
 msgstr "Müşteri İlgili Kişi"
 
+msgid "Customer contact requirement disabled"
+msgstr ""
+
+msgid "Customer contact requirement enabled"
+msgstr ""
+
 msgid "Customer contacts"
 msgstr "Müşteri ilgili kişileri"
 
@@ -6664,6 +6704,9 @@ msgstr "Müşteri depozu"
 
 msgid "Customer Details"
 msgstr "Müşteri Detayları"
+
+msgid "Customer email settings updated"
+msgstr ""
 
 msgid "Customer engineering contact"
 msgstr "Müşteri mühendislik ilgili kişi"
@@ -6682,6 +6725,12 @@ msgstr "Müşteri ID'leri gizlendi"
 
 msgid "Customer IDs are shown"
 msgstr "Müşteri ID'leri gösteriliyor"
+
+msgid "Customer IDs hidden"
+msgstr ""
+
+msgid "Customer IDs shown"
+msgstr ""
 
 msgid "Customer Invoice Number"
 msgstr "Müşteri Fatura Numarası"
@@ -6838,6 +6887,9 @@ msgstr "Koyu"
 
 msgid "Dashboard"
 msgstr "Gösterge Paneli"
+
+msgid "Dashboard settings updated"
+msgstr ""
 
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "Veriler bir kez akış sağlar, farklı araçlar arasında yeniden girilmez ve uzlaştırılmaz."
@@ -7081,6 +7133,9 @@ msgstr "Temel olmayan para birimlerinde işlemler için varsayılan nakit hesab�
 
 msgid "Default cash account for transactions in your base currency."
 msgstr "Temel para biriminizde işlemler için varsayılan nakit hesabı"
+
+msgid "Default category markups updated"
+msgstr ""
 
 msgid "Default cc"
 msgstr "Varsayılan cc"
@@ -7776,6 +7831,9 @@ msgstr "Dijital teklif reddeden"
 
 msgid "Digital quote rejected by email"
 msgstr "Dijital teklif e-posta ile reddedildi"
+
+msgid "Digital quote setting updated"
+msgstr ""
 
 msgid "Digital Quotes"
 msgstr "Dijital Teklifler"
@@ -9944,6 +10002,9 @@ msgstr "Teklif satırını güncelleme başarısız oldu"
 msgid "Failed to update supplier quote line"
 msgstr "Tedarikçi teklif satırı güncellenemedi"
 
+msgid "Failed to update the setting"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "Küçük resim yolu güncellenemedi"
 
@@ -10231,6 +10292,9 @@ msgstr "Varlık sınıfı"
 msgid "Fixed Asset Class"
 msgstr "Sabit Kıymet Sınıfı"
 
+msgid "Fixed asset settings updated"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "Sabit kıymetler"
 
@@ -10294,6 +10358,9 @@ msgstr "Tahmin tüketimi"
 msgid "Forecast Consumption"
 msgstr "Tahmin Tüketimi"
 
+msgid "Forecast consumption updated"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Tahmin yöntemi: <0>{0}</0>. Bu satır aktif İş emirlerinden türetilmedi, bu nedenle kaynak yoktur."
@@ -10318,6 +10385,12 @@ msgstr "Temel"
 
 msgid "Foundation (everyone)"
 msgstr "Temel (herkes)"
+
+msgid "Four-eyes enforcement disabled"
+msgstr ""
+
+msgid "Four-eyes enforcement enabled"
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Eski sistemi dondur, yeni işlem yok"
@@ -10428,6 +10501,9 @@ msgstr "ölçüm aleti"
 
 msgid "Gauge"
 msgstr "Ölçüm aleti"
+
+msgid "Gauge calibration notification settings updated"
+msgstr ""
 
 msgid "Gauge Calibration Notifications"
 msgstr "Ölçüm Aleti Kalibrasyon Bildirimleri"
@@ -11740,6 +11816,9 @@ msgstr "Fatura Kimlik Numarası"
 msgid "Invoice Location"
 msgstr "Fatura Konumu"
 
+msgid "Invoice notification settings updated"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "Şimdi Fatura Oluştur"
 
@@ -11959,6 +12038,9 @@ msgstr "madde grubu"
 msgid "Item Group"
 msgstr "Ürün Grubu"
 
+msgid "Item group ownership updated"
+msgstr ""
+
 msgid "item groups"
 msgstr "madde grupları"
 
@@ -11970,6 +12052,9 @@ msgstr "Ürün Grupları"
 
 msgid "Item ID"
 msgstr "Ürün Kimliği"
+
+msgid "Item ID casing setting updated"
+msgstr ""
 
 msgid "Item IDs"
 msgstr "Ürün Kimlikleri"
@@ -12076,6 +12161,9 @@ msgstr "İş emri malzeme çıkışları"
 msgid "Job Materials"
 msgstr "İş emri malzemeleri"
 
+msgid "Job notification settings updated"
+msgstr ""
+
 msgid "Job operation"
 msgstr "İş emri operasyonu"
 
@@ -12154,6 +12242,9 @@ msgstr "Kanban için {kanbanName}"
 
 msgid "Kanban Output"
 msgstr "Kanban Çıktısı"
+
+msgid "Kanban output setting updated"
+msgstr ""
 
 msgid "Kanbans"
 msgstr "Kanbanlar"
@@ -12367,6 +12458,12 @@ msgstr "Tedarik süresi güncellemeleri devre dışı bırakıldı"
 msgid "Lead time updates are enabled"
 msgstr "Tedarik süresi güncellemeleri etkinleştirildi"
 
+msgid "Lead time updates on receipt disabled"
+msgstr ""
+
+msgid "Lead time updates on receipt enabled"
+msgstr ""
+
 msgid "Lead Time:"
 msgstr "Tedarik süresi:"
 
@@ -12402,6 +12499,9 @@ msgstr "Kira Yükümlülüğü"
 
 msgid "Lease Liability:"
 msgstr "Kira Yükümlülüğü:"
+
+msgid "Lease policy updated"
+msgstr ""
 
 msgid "Lease Reminder Days"
 msgstr "Kira Hatırlatma Günleri"
@@ -12777,6 +12877,9 @@ msgstr "Konum / Ürün"
 msgid "Location Name"
 msgstr "Konum Adı"
 
+msgid "Location ownership updated"
+msgstr ""
+
 msgid "Location shifts"
 msgstr "Konum vardiyaları"
 
@@ -12954,6 +13057,9 @@ msgstr "Bakım"
 
 msgid "Maintenance Dispatch"
 msgstr "Bakım emri"
+
+msgid "Maintenance dispatch notification settings updated"
+msgstr ""
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "Bakım emri bildirimleri"
@@ -13282,6 +13388,9 @@ msgstr "Malzeme Kimliği"
 msgid "Material IDs"
 msgstr "Malzeme Kimlikleri"
 
+msgid "Material IDs setting updated"
+msgstr ""
+
 msgid "Material is pre-selected"
 msgstr "Malzeme önceden seçilmiş"
 
@@ -13297,8 +13406,17 @@ msgstr "Malzeme Planlama"
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
 msgstr "Malzeme planlama yalnızca bu kadar gün içinde gerçekleşmesi gereken eylemleri ve önerilen siparişleri gösterir; böylece uzak gelecekteki gereksinimler önemli olana kadar yol dışında kalır. Bir stok kartının kendi planlama ufku bu varsayılanı geçersiz kılar."
 
+msgid "Material pre-selection disabled"
+msgstr ""
+
+msgid "Material pre-selection enabled"
+msgstr ""
+
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
+
+msgid "Material return timing updated"
+msgstr ""
 
 msgid "Material Review Board (MRB)"
 msgstr "Malzeme İnceleme Kurulu (MRB)"
@@ -13329,6 +13447,9 @@ msgstr "Malzeme Türleri"
 
 msgid "Material Types"
 msgstr "Malzeme Tipleri"
+
+msgid "Material units setting updated"
+msgstr ""
 
 msgid "Material updated"
 msgstr ""
@@ -13777,6 +13898,9 @@ msgstr "MRP her gün {time} ({timeZone}) saatinde otomatik olarak çalışır, a
 
 msgid "MRP Schedule"
 msgstr "MRP Çizelgesi"
+
+msgid "MRP schedule updated"
+msgstr ""
 
 msgid "MRP Suggestions"
 msgstr "MRP Önerileri"
@@ -15773,6 +15897,12 @@ msgstr "İşlem miktarı"
 msgid "Operation supplier process"
 msgstr "Operasyon tedarikçi prosesi"
 
+msgid "Operation timer auto-start disabled"
+msgstr ""
+
+msgid "Operation timer auto-start enabled"
+msgstr ""
+
 msgid "Operation type"
 msgstr "İşlem türü"
 
@@ -16622,6 +16752,9 @@ msgstr "Toplama listesi"
 msgid "Picking List"
 msgstr "Toplama Listesi"
 
+msgid "Picking list completion policy updated"
+msgstr ""
+
 msgid "Picking List ID"
 msgstr "Toplama Listesi ID"
 
@@ -16729,6 +16862,9 @@ msgstr "Planlama Ufku"
 
 msgid "Planning Horizon (Days)"
 msgstr "Planlama Ufku (Gün)"
+
+msgid "Planning horizon updated"
+msgstr ""
 
 msgid "Planning Horizon:"
 msgstr "Planlama Ufku:"
@@ -17178,6 +17314,9 @@ msgstr "Üretim miktarı"
 msgid "Production Quantity"
 msgstr "Üretim Miktarı"
 
+msgid "Production settings updated"
+msgstr ""
+
 msgid "Production variance"
 msgstr "Üretim sapması"
 
@@ -17453,6 +17592,9 @@ msgstr "Satın alma planlama"
 
 msgid "Purchase Price"
 msgstr "Satın Alma Fiyatı"
+
+msgid "Purchase price update timing updated"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "Satın Alma Fiyat Sapması"
@@ -18012,6 +18154,9 @@ msgstr "Alacaklar yaşlandırması"
 msgid "Receivables Email"
 msgstr "Alacaklar E-postası"
 
+msgid "Receivables email updated"
+msgstr ""
+
 msgid "Receive"
 msgstr "Teslim Al"
 
@@ -18170,6 +18315,9 @@ msgstr "Kayıt Yap"
 msgid "Recurring"
 msgstr "Tekrarlanan"
 
+msgid "Recurring invoice setting updated"
+msgstr ""
+
 msgid "Recurring Invoices"
 msgstr "Tekrarlanan Faturalar"
 
@@ -18325,6 +18473,9 @@ msgstr "Serbest bırakma kontrolü"
 
 msgid "Release Control"
 msgstr "Serbest Bırakma Kontrolü"
+
+msgid "Release control setting updated"
+msgstr ""
 
 msgid "Release date"
 msgstr "Serbest Bırakma Tarihi"
@@ -18802,6 +18953,9 @@ msgstr "Yeniden planlama toleransı"
 msgid "Reschedule Tolerance"
 msgstr "Yeniden Planlama Toleransı"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
 
@@ -19234,6 +19388,9 @@ msgstr "Tedarikçi İstemi Konumu"
 msgid "RFQ Number"
 msgstr "Teklif Numarası"
 
+msgid "RFQ setting updated"
+msgstr ""
+
 msgid "RFQs"
 msgstr "Teklif Talepleri"
 
@@ -19579,6 +19736,9 @@ msgstr "Satış kuralı"
 msgid "Sales rule \"{0}\""
 msgstr "Satış kuralı « {0} »"
 
+msgid "Sales rule notification settings updated"
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "Satış Kuralı İhlalleri"
 
@@ -19629,6 +19789,9 @@ msgstr "Örnekleme — Özellik {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Örnekleme Standardı"
+
+msgid "Sampling standard updated"
+msgstr ""
 
 msgid "Saturday"
 msgstr "Cumartesi"
@@ -20583,6 +20746,9 @@ msgstr "Raf ömrü"
 msgid "Shelf Life (Days)"
 msgstr "Raf Ömrü (Gün)"
 
+msgid "Shelf life & expiry settings updated"
+msgstr ""
+
 msgid "Shelf Life Start Process"
 msgstr "Raf Ömrü Başlangıç Süreci"
 
@@ -21167,6 +21333,12 @@ msgstr "Personel İsteğe Bağlı"
 msgid "Staffing required"
 msgstr "Personel gerekli"
 
+msgid "Staffing requirement disabled"
+msgstr ""
+
+msgid "Staffing requirement enabled"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
 
@@ -21645,6 +21817,9 @@ msgstr "Henüz yerleştirmediğiniz önerilen siparişler."
 msgid "Suggestion"
 msgstr "Öneri"
 
+msgid "Suggestion notification settings updated"
+msgstr ""
+
 msgid "Suggestion Notifications"
 msgstr "Öneri Bildirimleri"
 
@@ -21693,11 +21868,20 @@ msgstr "tedarikçi ilgili kişisi"
 msgid "Supplier Contact"
 msgstr "Tedarikçi İlgili Kişisi"
 
+msgid "Supplier contact requirement disabled"
+msgstr ""
+
+msgid "Supplier contact requirement enabled"
+msgstr ""
+
 msgid "Supplier Credit"
 msgstr "Tedarikçi Kredisi"
 
 msgid "Supplier Credits"
 msgstr "Tedarikçi Kredileri"
+
+msgid "Supplier email settings updated"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "Tedarikçi Kimliği"
@@ -21710,6 +21894,12 @@ msgstr "Tedarikçi ID'leri gizlendi"
 
 msgid "Supplier IDs are shown"
 msgstr "Tedarikçi ID'leri gösteriliyor"
+
+msgid "Supplier IDs hidden"
+msgstr ""
+
+msgid "Supplier IDs shown"
+msgstr ""
 
 msgid "Supplier interaction"
 msgstr "Tedarikçi etkileşimi"
@@ -21779,6 +21969,9 @@ msgstr "Tedarikçi Teklifi"
 
 msgid "Supplier Quote ID"
 msgstr "Tedarikçi Teklif Kimliği"
+
+msgid "Supplier quote notification setting updated"
+msgstr ""
 
 msgid "Supplier Quote Notifications"
 msgstr "Tedarikçi Teklif Bildirimleri"
@@ -23899,6 +24092,9 @@ msgstr "Zaman Kullanım Oranı"
 msgid "Timecard"
 msgstr "Çalışma Saati Kaydı"
 
+msgid "Timecard settings updated"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Puantaj"
 
@@ -24311,6 +24507,18 @@ msgstr "Geçiş ve Kurum"
 msgid "Trash"
 msgstr "Çöp Kutusu"
 
+msgid "Traveler materials disabled"
+msgstr ""
+
+msgid "Traveler materials enabled"
+msgstr ""
+
+msgid "Traveler operations disabled"
+msgstr ""
+
+msgid "Traveler operations enabled"
+msgstr ""
+
 msgid "Treatment"
 msgstr "Muhasebe Muamelesi"
 
@@ -24365,8 +24573,14 @@ msgstr "İki Faktörlü Kimlik Doğrulama Etkinleştirildi"
 msgid "Two-Factor Authentication Enforcement"
 msgstr "İki Faktörlü Kimlik Doğrulaması Zorunluluğu"
 
+msgid "Two-factor authentication is no longer required"
+msgstr ""
+
 msgid "Two-factor authentication is not enabled."
 msgstr "İki Faktörlü Kimlik Doğrulama Etkin Değildir."
+
+msgid "Two-factor authentication is now required"
+msgstr ""
 
 msgid "Two-factor authentication is optional"
 msgstr "İki faktörlü kimlik doğrulama isteğe bağlıdır"
@@ -26160,6 +26374,13 @@ msgstr "Muayene reddiyesi ve NCR kararları yoluyla hurdaya çıkarılan veya ia
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Bir varlığın değerini yaşamı boyunca azaltma — her ay oluşturduğunuz, taslak olarak incelediğiniz ve sonra muhasebeleştirdiğiniz bir işlem."
+
+msgid "Wrote the missing journal of 1 document"
+msgstr ""
+
+#. placeholder {0}: data.documents
+msgid "Wrote the missing journals of {0} documents"
+msgstr ""
 
 msgid "Year"
 msgstr "Yıl"
