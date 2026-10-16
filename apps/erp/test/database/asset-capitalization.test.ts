@@ -5,14 +5,19 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Insertable, sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "../local-database-test-fixture";
-import postAssetTransfer from "../post-asset-transfer";
-import { chargeFixture } from "../post-charge/post-charge-test-fixture";
-import { FILLER_ACCOUNT_DEFAULTS } from "../post-reimbursement/post-reimbursement-test-fixture";
-import previewSerialUnitCosts from "../preview-serial-unit-costs";
-import recostSerialUnit from "../recost-serial-unit";
-import { ServerFnContext } from "../server-fn-context";
-import previewAssetCapitalization from "./index";
+import { createServiceContext } from "@carbon/api/service-fn.server";
+import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { chargeFixture } from "@carbon/server-functions/post-charge/post-charge-test-fixture";
+import { FILLER_ACCOUNT_DEFAULTS } from "@carbon/server-functions/post-reimbursement/post-reimbursement-test-fixture";
+import {
+  postAssetTransfer,
+  previewAssetCapitalization
+} from "../../app/modules/accounting/accounting.service";
+import {
+  previewSerialUnitCosts,
+  recostSerialUnit
+} from "../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 
 type Fixture = Awaited<ReturnType<typeof chargeFixture>>;
 
@@ -169,17 +174,29 @@ async function capitalizationFixture(f: Fixture, unitCost: number) {
   };
 }
 
+// The system, as the posting functions ran these before they moved to the ERP.
 const context = (f: Fixture) =>
-  ServerFnContext.system({
-    db: f.db,
-    companyId: f.companyId,
-    userId: "system"
+  createServiceContext({
+    actor: { type: "system", onBehalfOf: "system" },
+    company: { id: f.companyId, groupId: "" },
+    caller: unavailable(),
+    system: unavailable,
+    pg: () => f.db,
+    kv: unavailable
   });
 
-async function preview(f: Fixture, trackedEntityId: string) {
-  const result = await previewAssetCapitalization(context(f), {
-    trackedEntityId
+function unavailable(): never {
+  return new Proxy({} as never, {
+    get() {
+      throw new Error("A posting body reads only the database");
+    }
   });
+}
+
+async function preview(f: Fixture, trackedEntityId: string) {
+  const result = await invokePosting(context(f), "preview-asset-capitalization", {
+    trackedEntityId
+  }, previewAssetCapitalization);
   if (result.error) throw result.error;
   return result.data.cost;
 }
@@ -216,14 +233,14 @@ databaseTest(
         .executeTakeFirstOrThrow();
       expect(Number(untouched.remainingQuantity)).toEqual(1);
 
-      const posted = await postAssetTransfer(context(f), {
+      const posted = await invokePosting(context(f), "post-asset-transfer", {
         type: "capitalize",
         fixedAssetClassId: c.assetClass.id,
         itemId: c.itemId,
         trackedEntityId: serial,
         locationId: c.locationId,
         transferDate: "2026-01-02"
-      });
+      }, postAssetTransfer);
       if (posted.error) throw posted.error;
       const asset = await f.db
         .selectFrom("fixedAsset")
@@ -247,14 +264,14 @@ databaseTest(
 
       expect(await preview(f, serial)).toEqual(0);
 
-      const posted = await postAssetTransfer(context(f), {
+      const posted = await invokePosting(context(f), "post-asset-transfer", {
         type: "capitalize",
         fixedAssetClassId: c.assetClass.id,
         itemId: c.itemId,
         trackedEntityId: serial,
         locationId: c.locationId,
         transferDate: "2026-01-02"
-      });
+      }, postAssetTransfer);
       expect(posted.error?.message).toMatch(/SN-2 has no cost in inventory/);
 
       // Rolled back: no asset, the unit still Available and in stock.
@@ -284,7 +301,7 @@ databaseTest(
       const c = await capitalizationFixture(f, 0);
       const serial = await c.unit("SN-3");
 
-      const posted = await postAssetTransfer(context(f), {
+      const posted = await invokePosting(context(f), "post-asset-transfer", {
         type: "capitalize",
         fixedAssetClassId: c.assetClass.id,
         itemId: c.itemId,
@@ -293,7 +310,7 @@ databaseTest(
         transferDate: "2026-01-02",
         cost: 4200,
         offsetAccountId: c.retainedEarnings
-      });
+      }, postAssetTransfer);
       if (posted.error) throw posted.error;
 
       const asset = await f.db
@@ -345,7 +362,7 @@ databaseTest(
       const c = await capitalizationFixture(f, 100);
       const serial = await c.unit("SN-4");
 
-      const posted = await postAssetTransfer(context(f), {
+      const posted = await invokePosting(context(f), "post-asset-transfer", {
         type: "capitalize",
         fixedAssetClassId: c.assetClass.id,
         itemId: c.itemId,
@@ -354,7 +371,7 @@ databaseTest(
         transferDate: "2026-01-02",
         cost: 4200,
         offsetAccountId: c.retainedEarnings
-      });
+      }, postAssetTransfer);
       expect(posted.error?.message).toMatch(
         /SN-4 is carried in inventory at a cost/
       );
@@ -395,14 +412,14 @@ databaseTest(
         .executeTakeFirstOrThrow();
 
       const adjust = (amount: number) =>
-        postAssetTransfer(context(f), {
+        invokePosting(context(f), "post-asset-transfer", {
           type: "adjustCost",
           fixedAssetId: asset.id,
           amount,
           offsetAccountId: c.retainedEarnings,
           locationId: c.locationId,
           transferDate: "2026-03-01"
-        });
+        }, postAssetTransfer);
 
       const first = await adjust(5000);
       if (first.error) throw first.error;
@@ -479,10 +496,10 @@ databaseTest(
         ])
         .execute();
 
-      const listed = await previewSerialUnitCosts(context(f), {
+      const listed = await invokePosting(context(f), "preview-serial-unit-costs", {
         itemId: c.itemId,
         locationId: c.locationId
-      });
+      }, previewSerialUnitCosts);
       if (listed.error) throw listed.error;
       expect(listed.data.costs).toEqual({ [own]: 60, [queued]: 40 });
       expect(await preview(f, own)).toEqual(60);
@@ -501,9 +518,9 @@ databaseTest(
           companyId: f.companyId
         })
         .execute();
-      const after = await previewSerialUnitCosts(context(f), {
+      const after = await invokePosting(context(f), "preview-serial-unit-costs", {
         itemId: c.itemId
-      });
+      }, previewSerialUnitCosts);
       if (after.error) throw after.error;
       expect(Object.keys(after.data.costs)).toEqual([own]);
     } finally {
@@ -547,7 +564,7 @@ databaseTest(
       const { retainedEarnings } = await withAccounting(f, c);
       const serial = await c.unit("SN-8");
 
-      const posted = await postAssetTransfer(context(f), {
+      const posted = await invokePosting(context(f), "post-asset-transfer", {
         type: "capitalize",
         fixedAssetClassId: c.assetClass.id,
         itemId: c.itemId,
@@ -556,7 +573,7 @@ databaseTest(
         transferDate: "2026-01-02",
         cost: 4200,
         offsetAccountId: retainedEarnings
-      });
+      }, postAssetTransfer);
       if (posted.error) throw posted.error;
       const capitalization = await f.db
         .selectFrom("fixedAssetTransfer")
@@ -571,14 +588,14 @@ databaseTest(
         [retainedEarnings, 4200]
       ]);
 
-      const adjusted = await postAssetTransfer(context(f), {
+      const adjusted = await invokePosting(context(f), "post-asset-transfer", {
         type: "adjustCost",
         fixedAssetId: posted.data.fixedAssetId,
         amount: 800,
         offsetAccountId: retainedEarnings,
         locationId: c.locationId,
         transferDate: "2026-01-03"
-      });
+      }, postAssetTransfer);
       if (adjusted.error) throw adjusted.error;
       const adjustment = await f.db
         .selectFrom("fixedAssetTransfer")
@@ -591,13 +608,13 @@ databaseTest(
       ]);
 
       // Without an offset account there is nothing to credit.
-      const refused = await postAssetTransfer(context(f), {
+      const refused = await invokePosting(context(f), "post-asset-transfer", {
         type: "adjustCost",
         fixedAssetId: posted.data.fixedAssetId,
         amount: 100,
         locationId: c.locationId,
         transferDate: "2026-01-03"
-      });
+      }, postAssetTransfer);
       expect(refused.error?.message).toMatch(/Choose the account/);
     } finally {
       await f.cleanup();
@@ -629,12 +646,12 @@ databaseTest(
         .execute();
 
       const recost = (unitCost: number) =>
-        recostSerialUnit(context(f), {
+        invokePosting(context(f), "recost-serial-unit", {
           trackedEntityId: serial,
           unitCost,
           offsetAccountId: retainedEarnings,
           postingDate: "2026-01-02"
-        });
+        }, recostSerialUnit);
 
       const raised = await recost(500);
       if (raised.error) throw raised.error;
@@ -645,9 +662,9 @@ databaseTest(
         [retainedEarnings, 500]
       ]);
 
-      const costs = await previewSerialUnitCosts(context(f), {
+      const costs = await invokePosting(context(f), "preview-serial-unit-costs", {
         itemId: c.itemId
-      });
+      }, previewSerialUnitCosts);
       if (costs.error) throw costs.error;
       expect(costs.data.costs).toEqual({ [serial]: 500 });
 
@@ -665,14 +682,14 @@ databaseTest(
 
       // Capitalizing now moves the recosted value out of inventory.
       expect(await preview(f, serial)).toEqual(400);
-      const posted = await postAssetTransfer(context(f), {
+      const posted = await invokePosting(context(f), "post-asset-transfer", {
         type: "capitalize",
         fixedAssetClassId: c.assetClass.id,
         itemId: c.itemId,
         trackedEntityId: serial,
         locationId: c.locationId,
         transferDate: "2026-01-03"
-      });
+      }, postAssetTransfer);
       if (posted.error) throw posted.error;
       const asset = await f.db
         .selectFrom("fixedAsset")
@@ -696,11 +713,11 @@ databaseTest("an Average item's unit cannot be recosted", async () => {
       .where("itemId", "=", c.itemId)
       .execute();
     const serial = await c.unit("SN-10");
-    const result = await recostSerialUnit(context(f), {
+    const result = await invokePosting(context(f), "recost-serial-unit", {
       trackedEntityId: serial,
       unitCost: 500,
       postingDate: "2026-01-02"
-    });
+    }, recostSerialUnit);
     expect(result.error?.message).toMatch(/uses Average costing/);
   } finally {
     await f.cleanup();

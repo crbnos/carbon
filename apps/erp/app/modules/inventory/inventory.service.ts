@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ServerFnError } from "@carbon/api/errors";
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
 import {
   type CarbonError,
   ERROR_STATUS,
@@ -11,11 +13,20 @@ import {
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type {
+  KyselyDatabase as DB,
+  Kysely,
+  KyselyDatabase
+} from "@carbon/database/client";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus
+} from "@carbon/database/journal-posting-status";
 import {
   type LinesideClaim,
   linesideCredit
 } from "@carbon/database/picked-consumption";
+import { inOrder } from "@carbon/database/rows";
 import { expandSerialTrackedLines } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
@@ -24,6 +35,23 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import { buildOffsetLines } from "@carbon/server-functions/lib/asset-transfer";
+import { calculateCOGS } from "@carbon/server-functions/lib/calculate-cogs";
+import { getAccountingPeriodForDate } from "@carbon/server-functions/lib/get-accounting-period";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount
+} from "@carbon/server-functions/lib/get-posting-group";
+import { getOffsetAccount } from "@carbon/server-functions/lib/offset-account";
+import {
+  buildCostLedgerRow,
+  buildJournalLineDimensions
+} from "@carbon/server-functions/lib/plan-adjustment";
+import { createAdjustmentJournal } from "@carbon/server-functions/lib/post-adjustment";
+import {
+  serialUnitCost,
+  type UnitCostChild
+} from "@carbon/server-functions/lib/serial-unit-cost";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   async,
@@ -35,8 +63,9 @@ import {
   type Violation
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
-import type { z } from "zod";
+import { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import type { StorageItem } from "~/types";
@@ -1542,42 +1571,6 @@ export async function getShippingTermsList(
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
-}
-
-/** What each serial unit of an item on hand would leave stock at — the
- *  `preview-serial-unit-costs` server function, valued the way a shipment or
- *  a capitalization would relieve it. Keyed by tracked entity id. */
-export async function getSerialUnitCosts(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    itemId: string;
-    locationId?: string | null;
-  }
-) {
-  const { companyId, userId, ...input } = args;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("preview-serial-unit-costs", input);
-}
-
-/** Recost one serial unit in stock — the `recost-serial-unit` server
- *  function: re-books the unit's layer at `unitCost` and posts the
- *  difference against the offset account. Requires accounting update. */
-export async function recostSerialUnit(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  args: ServerFnInput<"recost-serial-unit"> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  const { companyId, userId, ...input } = args;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("recost-serial-unit", input);
 }
 
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
@@ -5680,5 +5673,410 @@ export async function enrichActivityBinNames(
         }
       };
     })
+  };
+}
+export const previewSerialUnitCostsInput = z.object({
+  itemId: z.string().min(1),
+  // Only the units on hand at this location; every location when absent.
+  locationId: z.string().optional().nullable()
+});
+
+export type SerialUnitCosts = {
+  costs: Record<string, number>;
+  // Only a FIFO / LIFO item's unit can be recosted on its own.
+  costingMethod: Database["public"]["Enums"]["itemCostingMethod"] | null;
+};
+
+export const previewSerialUnitCostsPermission = {
+  view: "accounting"
+} satisfies PermissionRule<z.output<typeof previewSerialUnitCostsInput>>;
+
+export async function previewSerialUnitCosts(
+  ctx: ServiceContext,
+  raw: z.input<typeof previewSerialUnitCostsInput>
+) {
+  const { itemId, locationId } = previewSerialUnitCostsInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const item = await db
+    .selectFrom("item")
+    .select("itemTrackingType")
+    .where("id", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!item) throw new NotFoundError("Item not found");
+  if (item.itemTrackingType !== "Serial") {
+    return { costs: {}, costingMethod: null };
+  }
+
+  let onHandQuery = db
+    .selectFrom("itemLedger")
+    .select("trackedEntityId")
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "is not", null)
+    .groupBy("trackedEntityId")
+    .having(sql<number>`SUM("quantity")`, ">", 0);
+  if (locationId)
+    onHandQuery = onHandQuery.where("locationId", "=", locationId);
+
+  const [onHand, itemCost] = await inOrder([
+    () => onHandQuery.execute(),
+    () =>
+      db
+        .selectFrom("itemCost")
+        .select(["costingMethod", "unitCost", "standardCost"])
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst()
+  ]);
+  if (!itemCost) throw new NotFoundError("Item cost not found");
+  const units = onHand.flatMap((row) =>
+    row.trackedEntityId ? [row.trackedEntityId] : []
+  );
+  if (units.length === 0) {
+    return { costs: {}, costingMethod: itemCost.costingMethod };
+  }
+
+  const isLayered =
+    itemCost.costingMethod === "FIFO" || itemCost.costingMethod === "LIFO";
+  const direction = itemCost.costingMethod === "LIFO" ? "desc" : "asc";
+  // The layers calculateCOGS would consume from, in its order.
+  const layers = isLayered
+    ? await db
+        .selectFrom("costLedger")
+        .select([
+          "id",
+          "trackedEntityId",
+          "quantity",
+          "cost",
+          "remainingQuantity"
+        ])
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .where("remainingQuantity", ">", 0)
+        .where("adjustment", "=", false)
+        .where("appliesToCostLedgerId", "is", null)
+        .where((eb) =>
+          eb.or([
+            eb("documentType", "is", null),
+            eb("documentType", "!=", "Purchase Order")
+          ])
+        )
+        .orderBy("postingDate", direction)
+        .orderBy("createdAt", direction)
+        .execute()
+    : [];
+
+  const childrenByLayer = new Map<string, UnitCostChild[]>();
+  if (layers.length > 0) {
+    const children = await db
+      .selectFrom("costLedger")
+      .select([
+        "appliesToCostLedgerId",
+        "quantity",
+        "cost",
+        "remainingQuantity"
+      ])
+      .where(
+        "appliesToCostLedgerId",
+        "in",
+        layers.map((layer) => layer.id)
+      )
+      .where("companyId", "=", companyId)
+      .where("remainingQuantity", ">", 0)
+      .orderBy("createdAt", "asc")
+      .execute();
+    for (const child of children) {
+      if (!child.appliesToCostLedgerId) continue;
+      const list = childrenByLayer.get(child.appliesToCostLedgerId) ?? [];
+      list.push({
+        quantity: Number(child.quantity),
+        cost: Number(child.cost),
+        remainingQuantity: Number(child.remainingQuantity)
+      });
+      childrenByLayer.set(child.appliesToCostLedgerId, list);
+    }
+  }
+
+  const basis = {
+    costingMethod: itemCost.costingMethod,
+    unitCost: itemCost.unitCost == null ? null : Number(itemCost.unitCost),
+    standardCost:
+      itemCost.standardCost == null ? null : Number(itemCost.standardCost)
+  };
+  const valuedLayers = layers.map((layer) => ({
+    id: layer.id,
+    trackedEntityId: layer.trackedEntityId,
+    quantity: Number(layer.quantity),
+    cost: Number(layer.cost),
+    remainingQuantity: Number(layer.remainingQuantity)
+  }));
+
+  const costs: Record<string, number> = {};
+  for (const trackedEntityId of units) {
+    costs[trackedEntityId] = round(
+      serialUnitCost({
+        itemCost: basis,
+        layers: valuedLayers,
+        childrenByLayer,
+        trackedEntityId
+      })
+    );
+  }
+  return { costs, costingMethod: itemCost.costingMethod };
+}
+export const recostSerialUnitInput = z.object({
+  trackedEntityId: z.string().min(1),
+  // The unit's new carrying cost, in base currency.
+  unitCost: z.number().min(0),
+  offsetAccountId: z.string().optional().nullable(),
+  postingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a YYYY-MM-DD date")
+});
+
+export type RecostResult = {
+  previousCost: number;
+  unitCost: number;
+  journalId: string | null;
+};
+
+export const recostSerialUnitPermission = {
+  update: "accounting"
+} satisfies PermissionRule<z.output<typeof recostSerialUnitInput>>;
+
+export async function recostSerialUnit(
+  ctx: ServiceContext,
+  raw: z.input<typeof recostSerialUnitInput>
+) {
+  const input = recostSerialUnitInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const unitCost = round(input.unitCost);
+
+  return db.transaction().execute(async (trx): Promise<RecostResult> => {
+    // Lock the unit before reading where it is: a second recost, or an
+    // issue, pick, transfer or adjustment of it (they lock it too), waits,
+    // so the on-hand check below still holds when calculateCOGS relieves
+    // its layer (which locks the layers it reads).
+    const entity = await trx
+      .selectFrom("trackedEntity")
+      .select(["id", "itemId", "readableId", "status"])
+      .where("id", "=", input.trackedEntityId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!entity?.itemId) throw new NotFoundError("Tracked entity not found");
+    const itemId = entity.itemId;
+    const serial = entity.readableId ?? entity.id;
+
+    const [item, itemCost] = await inOrder([
+      () =>
+        trx
+          .selectFrom("item")
+          .select(["readableId", "itemTrackingType", "replenishmentSystem"])
+          .where("id", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst(),
+      () =>
+        trx
+          .selectFrom("itemCost")
+          .select(["costingMethod", "itemPostingGroupId"])
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+    ]);
+    if (!item || !itemCost) throw new NotFoundError("Item not found");
+    if (item.itemTrackingType !== "Serial") {
+      throw new InvalidInputError("Only a serialized unit can be recosted");
+    }
+    if (
+      itemCost.costingMethod !== "FIFO" &&
+      itemCost.costingMethod !== "LIFO"
+    ) {
+      throw new InvalidInputError(
+        `${item.readableId} uses ${itemCost.costingMethod} costing, so every unit carries the item's cost; one unit cannot have its own`
+      );
+    }
+
+    // Where the unit is: exactly one on hand, at one location.
+    const stock = await trx
+      .selectFrom("itemLedger")
+      .select([
+        "locationId",
+        (eb) => eb.fn.sum<number>("quantity").as("onHand")
+      ])
+      .where("trackedEntityId", "=", entity.id)
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .groupBy("locationId")
+      .having(sql<number>`SUM("quantity")`, ">", 0)
+      .execute();
+    const onHand = stock.reduce((sum, row) => sum + Number(row.onHand), 0);
+    if (round(onHand) !== 1 || stock.length !== 1) {
+      throw new InvalidInputError(
+        `${serial} must have exactly one unit on hand to be recosted`
+      );
+    }
+    const locationId = stock[0]?.locationId ?? null;
+
+    // Provisional before the company's accounting cutover, Posted after it.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    const accounting = await loadAccounting(
+      trx,
+      companyId,
+      input,
+      postingStatus
+    );
+
+    // Relieve what the unit carries today, exactly as a shipment would.
+    const relieved = await calculateCOGS(trx, {
+      itemId,
+      quantity: 1,
+      companyId,
+      trackedEntityIds: [entity.id]
+    });
+    const previousCost = round(relieved.totalCost);
+    const delta = round(unitCost - previousCost);
+    if (delta === 0) {
+      throw new InvalidInputError(`${serial} is already carried at that cost`);
+    }
+
+    const ledger = {
+      documentType: null,
+      documentId: entity.id,
+      itemId,
+      postingDate: input.postingDate,
+      trackedEntityId: entity.id,
+      companyId
+    };
+    await trx
+      .insertInto("costLedger")
+      .values([
+        {
+          ...buildCostLedgerRow({
+            ...ledger,
+            entryType: "Negative Adjmt.",
+            quantity: -1,
+            cost: -previousCost
+          }),
+          costLedgerType: "Revaluation"
+        },
+        {
+          // The unit's own layer: it is relieved first when it leaves.
+          ...buildCostLedgerRow({
+            ...ledger,
+            entryType: "Positive Adjmt.",
+            quantity: 1,
+            cost: unitCost
+          }),
+          costLedgerType: "Revaluation"
+        }
+      ])
+      .execute();
+
+    const inventoryAccount = resolveInventoryAccount(
+      item.replenishmentSystem,
+      accounting.accountDefaults
+    );
+    const journalId = await createAdjustmentJournal(trx, {
+      companyId,
+      accountingPeriodId: accounting.accountingPeriodId,
+      status: postingStatus,
+      description: `Recost ${item.readableId} ${serial}`,
+      postingDate: input.postingDate,
+      userId,
+      sourceType: "Inventory Adjustment"
+    });
+    const journalLineReference = nanoid();
+    const lines = await trx
+      .insertInto("journalLine")
+      .values(
+        buildOffsetLines({
+          amount: delta,
+          accountId: inventoryAccount.account,
+          description: inventoryAccount.description,
+          offsetAccountId: accounting.offsetAccount.id,
+          offsetDescription: "Inventory Recost",
+          offsetAccountType: accounting.offsetAccount.type,
+          label: "Inventory recost journal"
+        }).map((line) => ({
+          journalId,
+          accountId: line.accountId,
+          description: line.description,
+          amount: line.amount,
+          quantity: 1,
+          documentType: "Inventory Adjustment" as const,
+          documentId: entity.id,
+          journalLineReference,
+          companyId
+        }))
+      )
+      .returning(["id"])
+      .execute();
+    const dimensions = buildJournalLineDimensions({
+      journalLineIds: lines.map((line) => line.id),
+      dimensions: accounting.dimensions,
+      itemId,
+      itemPostingGroupId: itemCost.itemPostingGroupId,
+      locationId,
+      companyId
+    });
+    if (dimensions.length > 0) {
+      await trx.insertInto("journalLineDimension").values(dimensions).execute();
+    }
+
+    return { previousCost, unitCost, journalId };
+  });
+}
+
+// Everything the journal needs, read on the recost's transaction.
+async function loadAccounting(
+  db: Kysely<DB>,
+  companyId: string,
+  input: z.output<typeof recostSerialUnitInput>,
+  postingStatus: AutomaticJournalStatus
+) {
+  const [defaults, offsetAccount, company] = await inOrder([
+    () => getDefaultPostingGroup(db, companyId),
+    () => getOffsetAccount(db, companyId, input.offsetAccountId),
+    () =>
+      db
+        .selectFrom("company")
+        .select("companyGroupId")
+        .where("id", "=", companyId)
+        .executeTakeFirst()
+  ]);
+  if (defaults.error || !defaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+  if (!company) throw new Error("Failed to fetch company");
+  // Fail closed: journal lines must not silently lose dimension tags.
+  const dimensionRows = await db
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", company.companyGroupId)
+    .where("active", "=", true)
+    .where("entityType", "in", ["Item", "ItemPostingGroup", "Location"])
+    .execute();
+  const dimensions: Record<string, string> = {};
+  for (const row of dimensionRows) {
+    if (row.entityType) dimensions[row.entityType] = row.id;
+  }
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getAccountingPeriodForDate(companyId, db, input.postingDate)
+      : null;
+  return {
+    accountingPeriodId,
+    accountDefaults: {
+      rawMaterialsAccount: defaults.data.rawMaterialsAccount,
+      finishedGoodsAccount: defaults.data.finishedGoodsAccount
+    },
+    offsetAccount,
+    dimensions
   };
 }

@@ -10,6 +10,7 @@ import {
   envelope,
   paged,
   plain,
+  settle,
   stamp
 } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
@@ -6056,6 +6057,46 @@ export const updateWarehouseTransfer = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(ctx, input, ["companyId", "updatedBy"]) as never
       )
+    );
+  }
+});
+
+/**
+ * Value an item's serial units on hand.
+ *
+ * @remarks
+ * What each serial unit of the item on hand would leave stock at, valued the
+ * way a shipment or a capitalization relieves it, keyed by tracked entity id.
+ * With `locationId`, only the units at that location.
+ *
+ * @mcp
+ */
+export const getSerialUnitCosts = defineServiceFn({
+  input: service.previewSerialUnitCostsInput,
+  permission: service.previewSerialUnitCostsPermission,
+  async run(ctx, input) {
+    return settle(ctx, "preview-serial-unit-costs", () =>
+      service.previewSerialUnitCosts(ctx, input)
+    );
+  }
+});
+
+/**
+ * Recost one serial unit in stock.
+ *
+ * @remarks
+ * Re-books the unit's cost layer at `unitCost` and posts the difference
+ * against the offset account. The unit must be the only one of its serial on
+ * hand at one location, of a FIFO or LIFO item.
+ *
+ * @mcp
+ */
+export const recostSerialUnit = defineServiceFn({
+  input: service.recostSerialUnitInput,
+  permission: service.recostSerialUnitPermission,
+  async run(ctx, input) {
+    return settle(ctx, "recost-serial-unit", () =>
+      service.recostSerialUnit(ctx, input)
     );
   }
 });

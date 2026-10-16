@@ -1,5 +1,5 @@
 {
-  "totalTools": 1608,
+  "totalTools": 1610,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -221,6 +221,7 @@
     {"name":"inventory_getRentalReceiptLines","classification":"READ","schema":"85cf4fd2917f","response":"7fb4d944b992","permission":"inventory:view","paginates":false},
     {"name":"inventory_getRentalShipmentLines","classification":"READ","schema":"42e517e4587d","response":"81dce2e81f32","permission":"inventory:view","paginates":false},
     {"name":"inventory_getSerialNumbersForItem","classification":"READ","schema":"30ab89ff5be9","response":"ec54684c77fb","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getSerialUnitCosts","classification":"READ","schema":"d8cb61960dff","response":"97d1e7eb3966","permission":"accounting:view","paginates":false},
     {"name":"inventory_getShelfLifeForItems","classification":"READ","schema":"fb8f0e541b3e","response":"2c5b7c71095c","permission":"inventory:view","paginates":false},
     {"name":"inventory_getShipment","classification":"READ","schema":"42e517e4587d","response":"cf4ab10c35e3","permission":"inventory:view","paginates":false},
     {"name":"inventory_getShipmentLines","classification":"READ","schema":"42e517e4587d","response":"a8d2ad5b9993","permission":"inventory:view","paginates":false},
@@ -266,6 +267,7 @@
     {"name":"inventory_postInventoryCount","classification":"WRITE","schema":"e354150046fe","response":"c65e556842f4","permission":"inventory:update","paginates":false},
     {"name":"inventory_postReceipt","classification":"WRITE","schema":"748c476fdf2b","response":"727cf771e24b","permission":"inventory:update","paginates":false},
     {"name":"inventory_postShipment","classification":"WRITE","schema":"c5945bba6ca6","response":"d2fbdd9c8de9","permission":"inventory:update","paginates":false},
+    {"name":"inventory_recostSerialUnit","classification":"WRITE","schema":"c3f4c85c02d3","response":"1791201245a6","permission":"accounting:update","paginates":false},
     {"name":"inventory_removeReceiptReturnEntity","classification":"WRITE","schema":"727806547880","response":"5d58d420052a","permission":"inventory:create","paginates":false},
     {"name":"inventory_removeStorageUnit","classification":"DESTRUCTIVE","schema":"35393c22f425","response":"2483090811c4","permission":"inventory:delete","paginates":false},
     {"name":"inventory_removeWarehouseTransferLine","classification":"DESTRUCTIVE","schema":"e969960c72a3","response":"3797626bd17e","permission":"inventory:update","paginates":false},

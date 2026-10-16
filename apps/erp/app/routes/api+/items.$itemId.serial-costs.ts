@@ -2,20 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
-import { getSerialUnitCosts } from "~/modules/inventory/inventory.service";
-import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "item-serial-costs");
 
 // Each on-hand serial unit's inventory cost, for the item's Storage Units
 // card. Inventory value is accounting data, so it takes accounting view.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
@@ -25,13 +24,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   const locationId = new URL(request.url).searchParams.get("locationId");
 
+  const api = await carbon(request);
   const [result, accountDefaults] = await Promise.all([
-    getSerialUnitCosts(client, getDatabaseClient(), {
-      companyId,
-      userId,
-      itemId,
-      locationId
-    }),
+    api.inventory.getSerialUnitCosts({ itemId, locationId }),
     getDefaultAccounts(client, companyId)
   ]);
   // A recost's offset defaults to Retained Earnings, as on the asset side.

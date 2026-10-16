@@ -11,7 +11,7 @@ import {
   resolveCapitalizationCost,
   resolveCapitalizationStock,
   statusAfterCostAdjustment
-} from "./validators";
+} from "./accounting.service";
 
 it("capitalize accepts the inventory payload with its optional fields absent", () => {
   const parsed = postAssetTransferInput.parse({

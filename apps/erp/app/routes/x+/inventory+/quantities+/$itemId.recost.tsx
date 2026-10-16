@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,15 +12,13 @@ import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { serialUnitRecostValidator } from "~/modules/inventory/inventory.models";
-import { recostSerialUnit } from "~/modules/inventory/inventory.service";
-import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "inventory-recost");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   // Recosting puts a number of the user's own on the books.
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -35,9 +34,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { offsetAccountId, ...recost } = validation.data;
-  const result = await recostSerialUnit(client, getDatabaseClient(), {
-    companyId,
-    userId,
+  const api = await carbon(request);
+  const result = await api.inventory.recostSerialUnit({
     ...recost,
     offsetAccountId: offsetAccountId || null
   });

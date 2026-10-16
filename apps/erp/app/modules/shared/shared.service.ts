@@ -4,6 +4,7 @@
 
 import {
   type PermissionRule,
+  type Permissions,
   resolvePermissions
 } from "@carbon/api/permissions";
 import {
@@ -1704,16 +1705,20 @@ export type PostingHandles = {
  * and read it as `{ data, error }`, as `serverFns…invoke` returned it. From an
  * operation, pass its `ctx`. From an older building block, pass the handles it
  * holds: the body runs as the system, on the user's behalf, over that same
- * `db` (a transaction stays one). With `as` (the body's permission rule), the
- * caller behind `client` must hold it first, as `serverFns.as` checked it: a
- * user's claims, an API key's scopes, nothing for the service role.
+ * `db` (a transaction stays one). With `as` (the body's permission rule, or
+ * what the input requires), the caller behind `client` must hold it first, as
+ * `serverFns.as` checked it: a user's claims, an API key's scopes, nothing for
+ * the service role.
  */
 export async function invokePosting<I, R>(
   from: ServiceContext | PostingHandles,
   name: string,
   input: I,
   run: (ctx: ServiceContext, input: I) => Promise<R>,
-  options: { as?: PermissionRule<I>; defaultStatus?: number } = {}
+  options: {
+    as?: PermissionRule<I> | ((input: I) => Permissions);
+    defaultStatus?: number;
+  } = {}
 ): Promise<{ data: R; error: null } | { data: null; error: CarbonError }> {
   const ctx = "actor" in from ? from : postingContext(from);
   const out = await settle(
@@ -1727,7 +1732,9 @@ export async function invokePosting<I, R>(
             companyId: from.companyId,
             userId: from.userId
           }),
-          resolvePermissions(options.as, input)
+          typeof options.as === "function"
+            ? options.as(input)
+            : resolvePermissions(options.as, input)
         );
       }
       return run(ctx, input);

@@ -29,7 +29,6 @@ const registry = {
   issue: () => import("./issue"),
   "journal-legacy-documents": () => import("./journal-legacy-documents"),
   "kanban-replenish": () => import("./kanban-replenish"),
-  "post-asset-transfer": () => import("./post-asset-transfer"),
   "post-charge": () => import("./post-charge"),
   "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
@@ -48,15 +47,11 @@ const registry = {
   "post-sales-invoice": () => import("./post-sales-invoice"),
   "post-shipment": () => import("./post-shipment"),
   "post-stock-transfer": () => import("./post-stock-transfer"),
-  "preview-asset-capitalization": () =>
-    import("./preview-asset-capitalization"),
   "preview-revenue-recognition-run": () =>
     import("./preview-revenue-recognition-run"),
-  "preview-serial-unit-costs": () => import("./preview-serial-unit-costs"),
   "propose-revenue-recognition-run": () =>
     import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),
-  "recost-serial-unit": () => import("./recost-serial-unit"),
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),

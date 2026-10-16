@@ -49,17 +49,18 @@ Key service functions (verified):
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
   Pinned by `lib/cost-layer-order.test.ts` and the database test
   `lib/calculate-cogs.test.ts`.
-  **Serial unit cost and Recost.** `preview-serial-unit-costs` (`{ itemId,
+  **Serial unit cost and Recost.** `previewSerialUnitCosts` (`inventory.service.ts`,
+  ported from the `preview-serial-unit-costs` server function; `{ itemId,
   locationId? }`, `view: accounting`) values every on-hand serial of an item
-  with the pure `serialUnitCost` (`lib/serial-unit-cost.ts`): calculateCOGS's
+  with the pure `serialUnitCost` (`@carbon/server-functions/lib/serial-unit-cost`): calculateCOGS's
   arithmetic for a quantity of one (own layer, then unstamped, with price
   correction children; Standard / Average at the item cost), from one read of
-  the item's layers. ERP: `getSerialUnitCosts` → cached `api+/items.$itemId.serial-costs.ts`
+  the item's layers. ERP: the `inventory.getSerialUnitCosts` operation → cached `api+/items.$itemId.serial-costs.ts`
   (also returns `costingMethod` and `retainedEarningsAccountId`), read by
   `InventoryStorageUnits` only when the user can view accounting; a zero
   cost reads "No cost". **Recost** (row action, `update: accounting`, FIFO /
   LIFO only) → `x+/inventory+/quantities+/$itemId.recost.tsx` →
-  `recostSerialUnit` → `recost-serial-unit` (`{ trackedEntityId, unitCost,
+  the `inventory.recostSerialUnit` operation → `service.recostSerialUnit` (`{ trackedEntityId, unitCost,
   offsetAccountId?, postingDate }`, `update: accounting`): exactly one unit on
   hand at one location; relieves it via `calculateCOGS` (its own layer first)
   and books −1 at the old cost / +1 stamped at the new, both

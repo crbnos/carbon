@@ -188,7 +188,8 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   for Straight Line assets with a useful life, `monthlyDepreciation = round(cost
   × (1 − residual %) / usefulLifeMonths)`), `setFixedAssetOutOfService`,
   `returnFixedAssetToService`, `invokeAssetTransfer`
-  (`serverFns.as({ client, db, companyId, userId }).invoke("post-asset-transfer", …)`).
+  (`invokePosting(…, postAssetTransfer, { as })`: the caller holds the transfer's
+  permission, and `update: accounting` when a capitalization enters its own cost).
 - What a run should hold: `buildDepreciationRunLines()` (`accounting.service.ts`)
   — every Active asset no OTHER run of the period covers, depreciated from the
   last run posted before the period, Units of Production summing the usage
@@ -414,8 +415,8 @@ while Under Construction; `$fixedAssetId.attach-job` lists jobs with no
 `salesOrderLineId`, no asset target and status not in Completed / Cancelled /
 Closed; `$fixedAssetId.capitalize` offers only non-CIP classes.
 
-**post-asset-transfer** (`packages/server-functions/src/post-asset-transfer/index.ts`,
-`validators.ts` = the zod contract + pure helpers). One `fixedAssetTransfer`
+**post-asset-transfer** (`postAssetTransfer` in `accounting.service.ts`, ported
+from the server function, with its zod contract and pure helpers). One `fixedAssetTransfer`
 document per call, created and Posted in ONE transaction; the function's permissions are keyed by
 `type`: `create: accounting` for capitalize / return / attachJob /
 capitalizeCip, `update: accounting` for `adjustCost`, and a `capitalize`
@@ -459,7 +460,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   book; when it is 0 the form asks for an Acquisition Cost and an Offset
   Account defaulting to
   `accountDefault.retainedEarningsAccount`). That cost comes from the
-  `preview-asset-capitalization` server function (`{ trackedEntityId }`,
+  `previewAssetCapitalization` body (`accounting.service.ts`, `{ trackedEntityId }`,
   `view: accounting`; ERP wrapper `getCapitalizationCost`): the same
   `calculateCOGS` relief in a transaction that always rolls back, so it
   matches the posted amount for every costing method — the unit's own layer,

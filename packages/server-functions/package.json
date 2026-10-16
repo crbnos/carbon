@@ -11,8 +11,7 @@
     "./shelf-life": "./src/shelf-life.ts",
     "./tracked-entity-attributes": "./src/tracked-entity-attributes.ts",
     "./server-fn-context": "./src/server-fn-context.ts",
-    "./always-post-test-fixture": "./src/always-post-test-fixture.ts",
-    "./local-database-test-fixture": "./src/local-database-test-fixture.ts",
+    "./*-test-fixture": "./src/*-test-fixture.ts",
     "./*": "./src/*/index.ts"
   },
   "scripts": {
