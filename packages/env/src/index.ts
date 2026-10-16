@@ -189,6 +189,7 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
   "SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID"
 );
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
+export const AUTH_COOKIE_SUFFIX = getEnv("AUTH_COOKIE_SUFFIX");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
 export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY");

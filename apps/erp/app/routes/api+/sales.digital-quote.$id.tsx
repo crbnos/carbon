@@ -25,10 +25,14 @@ const response = z.discriminatedUnion("type", [
     digitalQuoteAcceptedBy: z.string(),
     digitalQuoteAcceptedByEmail: z.string(),
     selectedLines: zfd.json(selectedLinesValidator),
-    // Anything but an uploaded file is no file.
+    // Anything but an uploaded file is no file. A file input left empty still
+    // submits a part (a File with no name and no bytes), so only a non-empty
+    // File is an upload.
     file: z
       .unknown()
-      .transform((file) => (file instanceof File ? file : undefined))
+      .transform((file) =>
+        file instanceof File && file.size > 0 ? file : undefined
+      )
   }),
   z.object({
     type: z.literal("reject"),

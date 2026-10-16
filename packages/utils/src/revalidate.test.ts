@@ -37,20 +37,18 @@ describe("isSearchParamOnlyNavigation", () => {
 
   // A mutation may change shell data (saved views, company settings), so a
   // submission must always revalidate even when the URL is unchanged.
-  it.each([
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE"
-  ])("is false for a %s submission", (formMethod) => {
-    expect(
-      isSearchParamOnlyNavigation({
-        currentUrl: url("/x/items/parts"),
-        nextUrl: url("/x/items/parts"),
-        formMethod
-      })
-    ).toBe(false);
-  });
+  it.each(["POST", "PUT", "PATCH", "DELETE"])(
+    "is false for a %s submission",
+    (formMethod) => {
+      expect(
+        isSearchParamOnlyNavigation({
+          currentUrl: url("/x/items/parts"),
+          nextUrl: url("/x/items/parts"),
+          formMethod
+        })
+      ).toBe(false);
+    }
+  );
 
   it("is true for a GET submission, which cannot mutate", () => {
     expect(

@@ -449,6 +449,7 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
 });
 
 AuditLogEntryCard.displayName = "AuditLogEntryCard";
+
 export { AuditLogEntryCard };
 
 // Hide globally-skipped columns (and any nested suffix path) from the

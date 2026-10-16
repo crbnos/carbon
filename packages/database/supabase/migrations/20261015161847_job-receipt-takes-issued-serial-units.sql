@@ -1,32 +1,33 @@
--- complete_job_to_inventory: restore what 20261014171619 dropped.
--- 20261014171619_receive-consumed-serial-units forked the function from
--- 20261006221601_complete-job-to-asset, so its CREATE OR REPLACE undid the two
--- migrations between them:
---   - 20261009010412_job-costing-always-post: every company posts, and the
---     accounting cutover decides the journal status (journal_posting_status).
---     The fork brought back the accountingEnabled early return, so a company
---     with no cutover got no Job Receipt or labor journal at all, and a
---     Provisional journal took an accounting period again.
---   - 20261014135003_lock-production-events-at-job-completion: the production
---     events the labor journal posts are locked (FOR UPDATE), so a concurrent
---     post-production-event cannot post the same event twice.
--- This is the 20261014135003 body with only the serial receipt change of
--- 20261014171619 applied: a unit another document consumed before this
--- receipt is received like a finished one and stays Consumed.
+-- complete_job_to_inventory: restore what 20261014171619 dropped, and keep
+-- receiving serial units that were issued before their job was received.
+--
+-- 20261014171619_receive-consumed-serial-units.sql re-created this function
+-- from 20261006221601's body, which is older than two later changes to it.
+-- Its CREATE OR REPLACE therefore undid both:
+--   * 20261009010412_job-costing-always-post.sql: every company posts, and
+--     the accounting cutover decides Posted or Provisional. The old body
+--     returns early when companySettings."accountingEnabled" is not true,
+--     AFTER the stock moves, so such a receipt got no WIP journal, no cost
+--     layer and no item cost.
+--   * 20261014135003_lock-production-events-at-job-completion.sql: the
+--     FOR UPDATE that stops a production event from being posted twice.
+--
+-- This body is 20261014135003's (always-post + the lock), with the serial
+-- receipt branch reworked for units issued before the receipt:
+--   * a Consumed unit of the job is received when it was booked out of stock
+--     (a negative itemLedger row), ranked with Available (as 20261014171619);
+--   * it is received in the location and bin it was booked out of, so the
+--     unit nets to zero there;
+--   * it stays Consumed;
+--   * the output cost layer leaves it out of remainingQuantity, since it can
+--     no longer be consumed from that layer.
 
-CREATE OR REPLACE FUNCTION complete_job_to_inventory(
-  p_job_id TEXT,
-  p_quantity_complete NUMERIC,
-  p_storage_unit_id TEXT DEFAULT NULL,
-  p_location_id TEXT DEFAULT NULL,
-  p_company_id TEXT DEFAULT NULL,
-  p_user_id TEXT DEFAULT NULL
-)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+CREATE OR REPLACE FUNCTION public.complete_job_to_inventory(p_job_id text, p_quantity_complete numeric, p_storage_unit_id text DEFAULT NULL::text, p_location_id text DEFAULT NULL::text, p_company_id text DEFAULT NULL::text, p_user_id text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 DECLARE
   v_item_id TEXT;
   v_item_tracking_type "itemTrackingType";
@@ -81,6 +82,7 @@ DECLARE
   v_prior_value NUMERIC;
   v_new_unit_cost NUMERIC;
   v_serial_unit_ids TEXT[];
+  v_issued_units_received NUMERIC := 0;
   v_company_today DATE := company_today(p_company_id);
   v_job_asset_class_id TEXT;
   v_job_asset_id TEXT;
@@ -471,20 +473,36 @@ BEGIN
 
   ELSIF v_job_make_method."requiresSerialTracking" THEN
     -- Receive exactly the newly completed units: finished units first (Available
-    -- on the shop floor, or already Consumed by another document), then by
-    -- serial number. A unit consumed before this receipt was finished — it was
-    -- used — and its consumption already took it out of stock, so its receipt
-    -- puts on-hand back to the true figure; it keeps its Consumed status. A
+    -- on the shop floor, or already issued elsewhere), then by serial number. A
     -- unit this job already received is never received again, so re-completion
-    -- cannot double-count. Rejected (failed inspection) and Scrapped units
-    -- never enter stock. The candidates are locked so a concurrent completion
-    -- cannot take the same units.
+    -- cannot double-count. Rejected (failed inspection) and Scrapped units never
+    -- enter stock. The candidates are locked so a concurrent completion cannot
+    -- take the same units.
+    --
+    -- A finished unit can leave before its job is received: the MES issues it
+    -- into another job (or a shipment takes it), which marks it Consumed and
+    -- books it out of stock. It was still made here, so it is received too.
+    -- Skipping it left the job short of units, and its last unit could never
+    -- be completed. Only a unit that was booked out counts: receiving one that
+    -- never left stock would add a unit that is not there.
     v_serial_unit_ids := ARRAY(
       SELECT te.id
       FROM "trackedEntity" te
       WHERE te.attributes->>'Job Make Method' = v_job_make_method.id
         AND te."companyId" = p_company_id
-        AND te.status NOT IN ('Rejected', 'Scrapped')
+        AND (
+          te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
+          OR (
+            te.status = 'Consumed'
+            AND EXISTS (
+              SELECT 1
+              FROM "itemLedger" il
+              WHERE il."trackedEntityId" = te.id
+                AND il."companyId" = p_company_id
+                AND il.quantity < 0
+            )
+          )
+        )
         AND te.quantity = 1
         AND NOT EXISTS (
           SELECT 1
@@ -502,6 +520,8 @@ BEGIN
     );
 
     IF COALESCE(array_length(v_serial_unit_ids, 1), 0) >= v_quantity_received_to_inventory THEN
+      -- An issued unit is received where it was booked out, so its own
+      -- movements net to nothing in that bin.
       INSERT INTO "itemLedger" (
         "entryType", "documentType", "documentId", "companyId",
         "itemId", quantity, "locationId", "storageUnitId",
@@ -509,10 +529,30 @@ BEGIN
       )
       SELECT
         'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-        v_item_id, 1, p_location_id, p_storage_unit_id,
-        unit_id, p_user_id
-      FROM unnest(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER]) AS unit_id;
+        v_item_id, 1,
+        CASE WHEN issued.id IS NULL THEN p_location_id ELSE issued."locationId" END,
+        CASE WHEN issued.id IS NULL THEN p_storage_unit_id ELSE issued."storageUnitId" END,
+        te.id, p_user_id
+      FROM unnest(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER]) AS unit_id
+      JOIN "trackedEntity" te ON te.id = unit_id
+      LEFT JOIN LATERAL (
+        SELECT il.id, il."locationId", il."storageUnitId"
+        FROM "itemLedger" il
+        WHERE il."trackedEntityId" = te.id
+          AND il."companyId" = p_company_id
+          AND il.quantity < 0
+          AND te.status = 'Consumed'
+        ORDER BY il."createdAt" DESC
+        LIMIT 1
+      ) issued ON true;
 
+      SELECT COUNT(*)
+      INTO v_issued_units_received
+      FROM "trackedEntity"
+      WHERE id = ANY(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER])
+        AND status = 'Consumed';
+
+      -- An issued unit stays Consumed: it is in the job it went to.
       UPDATE "trackedEntity"
       SET status = 'Available'
       WHERE id = ANY(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER])
@@ -1011,7 +1051,9 @@ BEGIN
       'Output', 'Direct Cost', false,
       'Job Receipt', p_job_id, v_item_id,
       v_quantity_received_to_inventory, v_accumulated_wip_cost,
-      v_quantity_received_to_inventory, p_company_id
+      -- Units issued before the receipt are already gone: only the rest can
+      -- still be consumed from this layer.
+      v_quantity_received_to_inventory - v_issued_units_received, p_company_id
     );
   END IF;
 
@@ -1145,4 +1187,4 @@ BEGIN
     END LOOP;
   END IF;
 END;
-$$;
+$function$;

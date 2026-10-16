@@ -157,5 +157,5 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
 
 DateSelect.displayName = "DateSelect";
 
+export type { DateSelectOption, DateSelectProps };
 export { DateSelect };
-export type { DateSelectProps, DateSelectOption };

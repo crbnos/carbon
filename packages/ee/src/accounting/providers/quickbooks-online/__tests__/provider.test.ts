@@ -105,20 +105,21 @@ describe("QboProvider base URL", () => {
     });
   });
 
-  it.each([
-    404, 503
-  ])("does not treat an unreadable purchase (%s) as a successful delete", async (status) => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse(
-        { Fault: { Error: [{ code: "10000", Message: "Unavailable" }] } },
-        status
-      )
-    );
-    const { provider } = makeProvider();
-    expect(provider.deletePurchase).toBeTypeOf("function");
-    await expect(provider.deletePurchase("purchase-1")).rejects.toThrow();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
+  it.each([404, 503])(
+    "does not treat an unreadable purchase (%s) as a successful delete",
+    async (status) => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(
+          { Fault: { Error: [{ code: "10000", Message: "Unavailable" }] } },
+          status
+        )
+      );
+      const { provider } = makeProvider();
+      expect(provider.deletePurchase).toBeTypeOf("function");
+      await expect(provider.deletePurchase("purchase-1")).rejects.toThrow();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
 
   it("targets the production host by default, under /v3/company/{realmId} with the pinned minorversion", async () => {
     fetchMock.mockResolvedValueOnce(
@@ -660,28 +661,25 @@ describe("buildQboSyncConfig — payment force-enable (two-way)", () => {
 });
 
 describe("buildQboSyncConfig — Carbon-owned master + documents", () => {
-  it.each([
-    "customer",
-    "vendor",
-    "item",
-    "invoice",
-    "bill"
-  ] as const)("forces `%s` to push-only + owner carbon regardless of the stored config", (entityType) => {
-    const stored = structuredClone(DEFAULT_SYNC_CONFIG);
-    // Pretend the company had previously set this entity accounting-owned
-    // two-way (the old Source of Truth default) — the force must override it.
-    stored.entities[entityType] = {
-      enabled: true,
-      direction: "two-way",
-      owner: "accounting"
-    };
+  it.each(["customer", "vendor", "item", "invoice", "bill"] as const)(
+    "forces `%s` to push-only + owner carbon regardless of the stored config",
+    (entityType) => {
+      const stored = structuredClone(DEFAULT_SYNC_CONFIG);
+      // Pretend the company had previously set this entity accounting-owned
+      // two-way (the old Source of Truth default) — the force must override it.
+      stored.entities[entityType] = {
+        enabled: true,
+        direction: "two-way",
+        owner: "accounting"
+      };
 
-    expect(buildQboSyncConfig(stored).entities[entityType]).toEqual({
-      enabled: true,
-      direction: "push-to-accounting",
-      owner: "carbon"
-    });
-  });
+      expect(buildQboSyncConfig(stored).entities[entityType]).toEqual({
+        enabled: true,
+        direction: "push-to-accounting",
+        owner: "carbon"
+      });
+    }
+  );
 
   it("preserves the per-company `enabled` flag while forcing ownership", () => {
     const stored = structuredClone(DEFAULT_SYNC_CONFIG);

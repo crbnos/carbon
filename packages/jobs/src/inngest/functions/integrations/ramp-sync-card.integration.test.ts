@@ -322,8 +322,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         credentials: {
           type: "client_credentials",
           clientId: "integration-test",
-          clientSecret: "integration-test",
-          environment: "sandbox"
+          clientSecret: "integration-test"
         },
         sync: {
           pullTransactions: true,
@@ -446,8 +445,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         credentials: {
           type: "client_credentials",
           clientId: "integration-test",
-          clientSecret: "integration-test",
-          environment: "sandbox"
+          clientSecret: "integration-test"
         },
         sync: {
           pullTransactions: true,

@@ -1,5 +1,4 @@
 [
-  "function-redefinition-keeps-changes::20261016111306_restore-job-completion-always-post.sql::complete_job_to_inventory drops 20261014171619_receive-consumed-serial-units.sql",
   "module-shape::settings::extra-service:backups.service.ts",
   "module-shape::shared::extra-models:imports.models.ts",
   "module-shape::shared::missing:ui",

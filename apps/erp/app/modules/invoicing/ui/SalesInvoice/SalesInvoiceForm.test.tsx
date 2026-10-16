@@ -85,10 +85,10 @@ function render() {
 }
 
 describe("SalesInvoiceForm", () => {
-  it.each([
-    "invoiceCustomerContactId",
-    "invoiceCustomerLocationId"
-  ])("scopes %s to the invoice customer, not the sold-to customer", (name) => {
-    expect(render()).toContain(`name="${name}" data-customer="cust_billing"`);
-  });
+  it.each(["invoiceCustomerContactId", "invoiceCustomerLocationId"])(
+    "scopes %s to the invoice customer, not the sold-to customer",
+    (name) => {
+      expect(render()).toContain(`name="${name}" data-customer="cust_billing"`);
+    }
+  );
 });

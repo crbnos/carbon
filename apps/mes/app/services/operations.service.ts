@@ -961,7 +961,7 @@ export async function getBatchWorkInstructions(
 }> {
   const members = await client
     .from("jobOperation")
-    .select("id, jobId, job(jobId, itemId)")
+    .select("id, jobId, job(jobId, itemId), jobMakeMethod(itemId)")
     .eq("jobOperationBatchId", args.batchId)
     .eq("companyId", args.companyId);
   if (members.error || !members.data?.length) {
@@ -1042,12 +1042,21 @@ export async function getBatchWorkInstructions(
   const jobs = members.data
     .map((m) => ({
       id: m.jobId,
-      readableId: (m.job as { jobId?: string } | null)?.jobId ?? m.jobId,
-      itemId: (m.job as { itemId?: string } | null)?.itemId ?? null
+      readableId: (m.job as { jobId?: string } | null)?.jobId ?? m.jobId
     }))
     .filter((job, i, all) => all.findIndex((j) => j.id === job.id) === i);
+  // The item an operation builds is its make method's — a sub-assembly's,
+  // not the job's top-level part — as get_job_operation_by_id resolves it.
   const itemIds = [
-    ...new Set(jobs.map((job) => job.itemId).filter((id): id is string => !!id))
+    ...new Set(
+      members.data
+        .map(
+          (m) =>
+            (m.jobMakeMethod as { itemId?: string } | null)?.itemId ??
+            (m.job as { itemId?: string } | null)?.itemId
+        )
+        .filter((id): id is string => !!id)
+    )
   ];
   const [jobFiles, itemFiles] = await Promise.all([
     Promise.all(

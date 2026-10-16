@@ -120,8 +120,8 @@ A `CREATE OR REPLACE FUNCTION` replaces the whole body, so copy it from the NEWE
 migration that defines the function, never from the one you remember or the one a
 comment names. `20261014171619_receive-consumed-serial-units` forked
 `complete_job_to_inventory` from `20261006221601` and undid the two migrations between
-them (always-post job costing, the production-event lock); `20261016111306` restored
-them. The `function-redefinition-keeps-changes` check (`@carbon/checks`) fails a new
+them (always-post job costing, the production-event lock); `20261015161847_job-receipt-takes-issued-serial-units`
+restored them. The `function-redefinition-keeps-changes` check (`@carbon/checks`) fails a new
 redefinition that drops lines its predecessor added.
 
 ## Restricting a function: guard inside, never `REVOKE EXECUTE`

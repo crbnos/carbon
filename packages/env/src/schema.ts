@@ -231,6 +231,11 @@ export const schema = define({
     secret: true,
     required: "error"
   },
+  AUTH_COOKIE_SUFFIX: {
+    group: "auth",
+    description:
+      "Suffix for the auth cookie names when another deployment sets cookies on the same DOMAIN (EU: eu)"
+  },
   AUTH_PROVIDERS: {
     group: "auth",
     description: "Comma-separated sign-in methods (email,google,azure)",

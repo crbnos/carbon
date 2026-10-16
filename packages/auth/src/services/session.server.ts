@@ -25,7 +25,7 @@ import {
 } from "../config/env";
 import { isCrossSiteNavigation } from "../lib/security";
 import type { AuthSession, Result } from "../types";
-import { getCookieDomain } from "../utils/cookie";
+import { authCookieName, getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
 import { path } from "../utils/path";
 import {
@@ -72,7 +72,7 @@ const signedCookieOptions: CookieOptions = {
 };
 
 const sessionStorage = createCookieSessionStorage({
-  cookie: { name: "carbon", ...signedCookieOptions }
+  cookie: { name: authCookieName("carbon"), ...signedCookieOptions }
 });
 
 const log = getLogger("auth", "session");
@@ -81,7 +81,7 @@ const log = getLogger("auth", "session");
 // notifications. Signing out (clearAuthCookies) deletes the endpoint's
 // subscription rows, so a browser nobody is signed into stops receiving
 // pushes — whichever path signed it out.
-export const pushEndpointCookie = createCookie("carbon-push", {
+export const pushEndpointCookie = createCookie(authCookieName("carbon-push"), {
   ...signedCookieOptions,
   // Browsers cap a cookie's lifetime at 400 days.
   maxAge: 60 * 60 * 24 * 400
@@ -307,8 +307,14 @@ export async function flash(request: Request, result: Result) {
     }
   }
 
+  // The flash shares the session cookie: without maxAge this write would turn
+  // the signed-in session into one that ends when the browser closes.
   return {
-    headers: { "Set-Cookie": await sessionStorage.commitSession(session) }
+    headers: {
+      "Set-Cookie": await sessionStorage.commitSession(session, {
+        maxAge: SESSION_MAX_AGE
+      })
+    }
   };
 }
 
@@ -344,7 +350,11 @@ export async function getSessionFlash(request: Request) {
 
   if (!result.message) return null;
 
-  const headers = { "Set-Cookie": await sessionStorage.commitSession(session) };
+  const headers = {
+    "Set-Cookie": await sessionStorage.commitSession(session, {
+      maxAge: SESSION_MAX_AGE
+    })
+  };
 
   return { result, headers };
 }

@@ -127,128 +127,128 @@ describe("complete payment application history", () => {
   });
 });
 
-describe.each([
-  "sales",
-  "purchase"
-] as const)("%s invoice application history", (side) => {
-  it("aggregates all source allocations before displaying the applied total", async () => {
-    const { client } = cappedClient({
-      invoiceSettlement: rows,
-      payment: [payment()]
+describe.each(["sales", "purchase"] as const)(
+  "%s invoice application history",
+  (side) => {
+    it("aggregates all source allocations before displaying the applied total", async () => {
+      const { client } = cappedClient({
+        invoiceSettlement: rows,
+        payment: [payment()]
+      });
+      const result = await getInvoiceSettlementsForInvoice(
+        client,
+        "co",
+        side,
+        "invoice"
+      );
+      expect(result.error).toBeNull();
+      expect(result.data).toHaveLength(1);
+      expect(result.data?.[0]).toMatchObject({
+        sourceAmount: 1105,
+        appliedAmount: 1105
+      });
     });
-    const result = await getInvoiceSettlementsForInvoice(
-      client,
-      "co",
-      side,
-      "invoice"
-    );
-    expect(result.error).toBeNull();
-    expect(result.data).toHaveLength(1);
-    expect(result.data?.[0]).toMatchObject({
-      sourceAmount: 1105,
-      appliedAmount: 1105
-    });
-  });
 
-  it("retains more than 1,000 distinct sources without an oversized ID lookup", async () => {
-    const payments = Array.from({ length: 1105 }, (_, index) =>
-      payment(`cash-${index}`)
-    );
-    const distinctRows = payments.map((p, index) =>
-      settlement(index, { paymentId: p.id, payment: p })
-    );
-    const { client, requests } = cappedClient({
-      invoiceSettlement: distinctRows,
-      payment: payments
+    it("retains more than 1,000 distinct sources without an oversized ID lookup", async () => {
+      const payments = Array.from({ length: 1105 }, (_, index) =>
+        payment(`cash-${index}`)
+      );
+      const distinctRows = payments.map((p, index) =>
+        settlement(index, { paymentId: p.id, payment: p })
+      );
+      const { client, requests } = cappedClient({
+        invoiceSettlement: distinctRows,
+        payment: payments
+      });
+      const result = await getInvoiceSettlementsForInvoice(
+        client,
+        "co",
+        side,
+        "invoice"
+      );
+      expect(result.error).toBeNull();
+      expect(result.data).toHaveLength(1105);
+      expect(
+        Math.max(...requests.map((url) => url.toString().length))
+      ).toBeLessThan(8000);
     });
-    const result = await getInvoiceSettlementsForInvoice(
-      client,
-      "co",
-      side,
-      "invoice"
-    );
-    expect(result.error).toBeNull();
-    expect(result.data).toHaveLength(1105);
-    expect(
-      Math.max(...requests.map((url) => url.toString().length))
-    ).toBeLessThan(8000);
-  });
 
-  it("rejects a later page failure instead of returning the first applied total", async () => {
-    const { client } = cappedClient(
-      { invoiceSettlement: rows, payment: [payment()] },
-      1000
-    );
-    const result = await getInvoiceSettlementsForInvoice(
-      client,
-      "co",
-      side,
-      "invoice"
-    );
-    expect(result.data).toBeNull();
-    expect(result.error).toMatchObject({
-      message: "Later history page failed"
+    it("rejects a later page failure instead of returning the first applied total", async () => {
+      const { client } = cappedClient(
+        { invoiceSettlement: rows, payment: [payment()] },
+        1000
+      );
+      const result = await getInvoiceSettlementsForInvoice(
+        client,
+        "co",
+        side,
+        "invoice"
+      );
+      expect(result.data).toBeNull();
+      expect(result.error).toMatchObject({
+        message: "Later history page failed"
+      });
     });
-  });
 
-  it("includes only posted cash, posted direct memos, and memos consumed through posted payments", async () => {
-    const memo = {
-      id: "memo",
-      memoId: "MEMO-1",
-      companyId: "co",
-      status: "Posted",
-      postingDate: "2026-09-09",
-      memoDate: "2026-09-09",
-      currencyCode: "USD",
-      direction: "Credit"
-    };
-    const statuses = ["Posted", "Draft", "Voided"];
-    const applications = [
-      settlement(0),
-      ...statuses.map((status, index) =>
-        settlement(index + 1, {
-          paymentId: `via-${status}`,
-          payment: payment(`via-${status}`, status)
-        })
-      ),
-      settlement(4, { paymentId: null, payment: null, memoId: "memo", memo }),
-      ...statuses.map((status, index) =>
-        settlement(index + 5, {
+    it("includes only posted cash, posted direct memos, and memos consumed through posted payments", async () => {
+      const memo = {
+        id: "memo",
+        memoId: "MEMO-1",
+        companyId: "co",
+        status: "Posted",
+        postingDate: "2026-09-09",
+        memoDate: "2026-09-09",
+        currencyCode: "USD",
+        direction: "Credit"
+      };
+      const statuses = ["Posted", "Draft", "Voided"];
+      const applications = [
+        settlement(0),
+        ...statuses.map((status, index) =>
+          settlement(index + 1, {
+            paymentId: `via-${status}`,
+            payment: payment(`via-${status}`, status)
+          })
+        ),
+        settlement(4, { paymentId: null, payment: null, memoId: "memo", memo }),
+        ...statuses.map((status, index) =>
+          settlement(index + 5, {
+            paymentId: null,
+            payment: null,
+            memoId: "memo",
+            memo,
+            appliedViaPaymentId: `via-${status}`,
+            appliedViaPayment: { status }
+          })
+        ),
+        settlement(9, {
           paymentId: null,
           payment: null,
-          memoId: "memo",
-          memo,
-          appliedViaPaymentId: `via-${status}`,
-          appliedViaPayment: { status }
+          memoId: "draft-memo",
+          memo: { ...memo, id: "draft-memo", status: "Draft" }
         })
-      ),
-      settlement(9, {
-        paymentId: null,
-        payment: null,
-        memoId: "draft-memo",
-        memo: { ...memo, id: "draft-memo", status: "Draft" }
-      })
-    ];
-    const { client } = cappedClient({
-      invoiceSettlement: applications,
-      payment: [payment(), ...statuses.map((s) => payment(`via-${s}`, s))],
-      memo: [memo, { ...memo, id: "draft-memo", status: "Draft" }]
+      ];
+      const { client } = cappedClient({
+        invoiceSettlement: applications,
+        payment: [payment(), ...statuses.map((s) => payment(`via-${s}`, s))],
+        memo: [memo, { ...memo, id: "draft-memo", status: "Draft" }]
+      });
+      const result = await getInvoiceSettlementsForInvoice(
+        client,
+        "co",
+        side,
+        "invoice"
+      );
+      expect(result.error).toBeNull();
+      expect(
+        result.data?.reduce((sum, row) => sum + row.appliedAmount, 0)
+      ).toBe(4);
+      expect(
+        result.data?.find((row) => row.source.type === "memo")?.appliedAmount
+      ).toBe(2);
     });
-    const result = await getInvoiceSettlementsForInvoice(
-      client,
-      "co",
-      side,
-      "invoice"
-    );
-    expect(result.error).toBeNull();
-    expect(result.data?.reduce((sum, row) => sum + row.appliedAmount, 0)).toBe(
-      4
-    );
-    expect(
-      result.data?.find((row) => row.source.type === "memo")?.appliedAmount
-    ).toBe(2);
-  });
-});
+  }
+);
 
 // A memo's "Applied To" card. `memoId` reaches the reader as a bare xid from the
 // URL, so the tenant filter — not the id — is what bounds the read; RLS admits
