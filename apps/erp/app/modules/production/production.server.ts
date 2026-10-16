@@ -5971,15 +5971,13 @@ export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
   input: z.looseObject({
     jobId: z.string(),
     locationId: z.string(),
-    args: z.looseObject({
-      search: z.string().nullable().optional(),
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0)
-    })
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
   }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6134,15 +6132,13 @@ export const getJobMaterialsByMethodId = defineServiceFn({
 export const getJobOperations = defineServiceFn({
   input: z.looseObject({
     jobId: z.string(),
-    args: z.looseObject({
-      search: z.string().nullable().optional(),
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0)
-    })
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
   }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6241,15 +6237,13 @@ export const getJobOperationsByMethodId = defineServiceFn({
 export const getJobOperationStepRecords = defineServiceFn({
   input: z.looseObject({
     jobId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6389,15 +6383,13 @@ export const getProductionEvent = defineServiceFn({
 export const getProductionEvents = defineServiceFn({
   input: z.looseObject({
     jobOperationIds: z.array(z.string()),
-    args: z.looseObject({
-      search: z.string().nullable().optional(),
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0)
-    })
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
   }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6421,18 +6413,16 @@ export const getProductionPlanning = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional(),
-      asOf: z.string(),
-      actionTypes: z.array(z.string()).optional(),
-      actionAssignees: z.array(z.string()).optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    asOf: z.string(),
+    actionTypes: z.array(z.string()).optional(),
+    actionAssignees: z.array(z.string()).optional()
   }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6458,15 +6448,13 @@ export const getProductionProjections = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "production" },
   async run(ctx, input) {
@@ -6510,15 +6498,13 @@ export const getProductionQuantity = defineServiceFn({
 export const getProductionQuantities = defineServiceFn({
   input: z.looseObject({
     jobOperationIds: z.array(z.string()),
-    args: z.looseObject({
-      search: z.string().nullable().optional(),
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0)
-    })
+    search: z.string().nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
   }),
   permission: { view: "production" },
   async run(ctx, input) {

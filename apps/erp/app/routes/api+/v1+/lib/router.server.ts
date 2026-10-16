@@ -2,14 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The Carbon API oRPC router, built at module load from the operation manifest.
+// The Carbon API oRPC router, built at module load from the operation manifest:
+// one procedure per published service function.
 // A plain nested object `{ [module]: { [operationId]: procedure } }` is a valid oRPC
 // router for both OpenAPIHandler (HTTP) and server-side call() (MCP/agent).
 
 import type { ManifestEntry } from "@carbon/api";
 import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
 import { annotateRequestSpan, withSpan } from "@carbon/logger/tracing.server";
-import { base, gate, mapThrownErrors } from "./base.server";
+import { base, gate } from "./base.server";
 import {
   OPERATIONS,
   operationId,
@@ -46,9 +47,6 @@ function buildProcedure(meta: ManifestEntry) {
   return (
     base
       .use(traced(meta))
-      // Outside the gate so it also covers anything the gate itself throws
-      // through — it re-raises ORPCErrors untouched, so 403s/404s are unaffected.
-      .use(mapThrownErrors)
       .use(gate(meta))
       .route({
         method: "POST",
@@ -61,8 +59,7 @@ function buildProcedure(meta: ManifestEntry) {
       // correct response does not match the declared response schema.
       .input(jsonSchemaInput(meta.schema))
       .output(jsonSchema(outputSchema(meta)))
-      // callOperation reverses this shaping with the same static bit, so
-      // MCP/agent/workflow callers still see DispatchResult semantics.
+      // callOperation reverses this shaping for MCP, agent and workflow callers.
       .handler(async ({ input, context }) =>
         shapeHttpBody(meta, await runServiceFn(meta, context, input))
       )

@@ -1253,16 +1253,14 @@ export const updateSavedViewOrder = defineServiceFn({
 export const getEnforcementRules = defineServiceFn({
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional(),
-      targetType: z.enum(["item", "workCenter"]).nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    targetType: z.enum(["item", "workCenter"]).nullable().optional()
   }),
   permission: {},
   async run(ctx, input) {

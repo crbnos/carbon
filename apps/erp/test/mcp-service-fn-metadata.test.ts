@@ -120,6 +120,31 @@ describe("buildServiceFnTools", () => {
     expect(remove?.classification).toBe("DESTRUCTIVE");
   });
 
+  it("publishes a paged result as a list the function pages", () => {
+    const [jobs] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+/**
+ * List jobs.
+ *
+ * @mcp
+ */
+export const getJobs = defineServiceFn({
+  input: null,
+  permission: { view: "production" },
+  async run(_ctx, input: { limit?: number }) {
+    return { rows: [{ id: "j1" }], count: 1 as number | null };
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(jobs?.paginates).toBe(true);
+    expect(jobs?.responseSchema).toMatchObject({
+      type: "array",
+      items: { properties: { id: { type: "string" } } }
+    });
+  });
+
   it("refuses to publish a system-only function", () => {
     const published = PRODUCTION.replace(
       "/** Re-plan an item. Not published. */",

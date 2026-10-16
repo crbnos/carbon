@@ -66,7 +66,7 @@ export async function runServiceFn(
   meta: ManifestEntry,
   context: AuthedContext,
   input: unknown
-): Promise<{ data: unknown }> {
+): Promise<{ data: unknown; count?: number }> {
   const fn = serviceFnAt(meta.serviceFn.path);
   const result = await fn(contextFromAuthed(context), input);
   if (result.error) {
@@ -76,6 +76,14 @@ export async function runServiceFn(
       message,
       data: { category }
     });
+  }
+  if (meta.paginates) {
+    // A `paged` result: the rows go out as the list, the total beside them.
+    const { rows, count } = result.data as {
+      rows: unknown;
+      count: number | null;
+    };
+    return { data: rows, ...(count !== null ? { count } : {}) };
   }
   return { data: result.data };
 }

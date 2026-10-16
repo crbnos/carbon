@@ -341,6 +341,20 @@ function schemasOf(leaf: ServiceFnLeaf): {
   };
 }
 
+/**
+ * A `paged` result (`{ rows, count }`) is a list the function pages itself:
+ * published as its rows, with `paginates`, so HTTP sends `{ results, count }`
+ * and MCP fills `limit`/`offset`.
+ */
+function pagedRows(response: JsonSchema | undefined): JsonSchema | undefined {
+  const properties = (response as { properties?: Record<string, JsonSchema> })
+    ?.properties;
+  if (!properties) return undefined;
+  const keys = Object.keys(properties).sort();
+  if (keys.join() !== "count,rows") return undefined;
+  return properties.rows;
+}
+
 /** The published leaves as manifest entries. */
 export function buildServiceFnTools(
   project: Project,
@@ -354,7 +368,9 @@ export function buildServiceFnTools(
       throw new Error(`${where}: a published leaf needs a module namespace`);
     }
     const { permission, actions } = leafPermission(leaf);
-    const { input, response } = schemasOf(leaf);
+    const { input, response: returned } = schemasOf(leaf);
+    const rows = pagedRows(returned);
+    const response = rows ?? returned;
     const properties = (input as { properties?: Record<string, JsonSchema> })
       .properties;
     for (const [name, text] of Object.entries(docs.params)) {
@@ -372,7 +388,7 @@ export function buildServiceFnTools(
         title: docs.title,
         description: docs.description,
         permission,
-        paginates: false,
+        paginates: rows !== undefined,
         schema: input,
         ...(response ? { responseSchema: response } : {}),
         serviceFn: { path: leaf.path }

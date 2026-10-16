@@ -3770,15 +3770,13 @@ export const getBatchProperties = defineServiceFn({
 export const getInventoryItems = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "inventory" },
   async run(ctx, input) {
@@ -3871,15 +3869,13 @@ export const createInventoryReconciliationJournal = defineServiceFn({
 export const getKanbans = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "inventory" },
   async run(ctx, input) {
@@ -4317,15 +4313,13 @@ export const getEffectiveWorkCenterId = defineServiceFn({
 export const getStorageUnitRoots = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "inventory" },
   async run(ctx, input) {
@@ -4983,15 +4977,13 @@ export const getInventoryCount = defineServiceFn({
 export const getInventoryCountLines = defineServiceFn({
   input: z.looseObject({
     inventoryCountId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "inventory" },
   async run(ctx, input) {

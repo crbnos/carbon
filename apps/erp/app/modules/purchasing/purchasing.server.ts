@@ -4179,18 +4179,16 @@ export const getPurchasingPlanning = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
     periods: z.array(z.string()),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional(),
-      asOf: z.string(),
-      actionTypes: z.array(z.string()).optional(),
-      actionAssignees: z.array(z.string()).optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    asOf: z.string(),
+    actionTypes: z.array(z.string()).optional(),
+    actionAssignees: z.array(z.string()).optional()
   }),
   permission: { view: "purchasing" },
   async run(ctx, input) {
@@ -6538,14 +6536,10 @@ export const shortClosePurchaseReturnOrderLine = defineServiceFn({
 export const getReturnableLinesForSupplier = defineServiceFn({
   input: z.looseObject({
     supplierId: z.string(),
-    args: z
-      .looseObject({
-        purchaseOrderId: z.string().optional(),
-        search: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional()
-      })
-      .optional()
+    purchaseOrderId: z.string().optional(),
+    search: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional()
   }),
   permission: { view: "purchasing" },
   async run(ctx, input) {

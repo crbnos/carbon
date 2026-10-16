@@ -2292,16 +2292,14 @@ export const getMaintenanceDispatchItems = defineServiceFn({
 export const getMaintenanceDispatchesByLocation = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional(),
-      status: z.string().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    status: z.string().optional()
   }),
   permission: { view: "resources" },
   async run(ctx, input) {
@@ -2344,16 +2342,14 @@ export const getMaintenanceSchedule = defineServiceFn({
 export const getMaintenanceSchedulesByLocation = defineServiceFn({
   input: z.looseObject({
     locationId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional(),
-      active: z.boolean().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    active: z.boolean().optional()
   }),
   permission: { view: "resources" },
   async run(ctx, input) {

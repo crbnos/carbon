@@ -5727,15 +5727,13 @@ export const getCustomerTypesList = defineServiceFn({
 export const getExternalSalesOrderLines = defineServiceFn({
   input: z.looseObject({
     customerId: z.string(),
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "sales" },
   async run(ctx, input) {
@@ -9252,14 +9250,10 @@ export const shortCloseSalesReturnOrderLine = defineServiceFn({
 export const getReturnableLinesForCustomer = defineServiceFn({
   input: z.looseObject({
     customerId: z.string(),
-    args: z
-      .looseObject({
-        salesOrderId: z.string().optional(),
-        search: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional()
-      })
-      .optional()
+    salesOrderId: z.string().optional(),
+    search: z.string().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional()
   }),
   permission: { view: "sales" },
   async run(ctx, input) {

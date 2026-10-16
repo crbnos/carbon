@@ -2392,15 +2392,13 @@ export const getAccountsReceivableBillingAddress = defineServiceFn({
  */
 export const getApiKeys = defineServiceFn({
   input: z.looseObject({
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { update: "users" },
   async run(ctx, input) {
@@ -2409,7 +2407,7 @@ export const getApiKeys = defineServiceFn({
       await service.getApiKeys(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+        stamp(ctx, input, ["companyId"]) as never
       )
     );
   }
@@ -2568,15 +2566,13 @@ export const getCustomFields = defineServiceFn({
  */
 export const getCustomFieldsTables = defineServiceFn({
   input: z.looseObject({
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2585,7 +2581,7 @@ export const getCustomFieldsTables = defineServiceFn({
       await service.getCustomFieldsTables(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+        stamp(ctx, input, ["companyId"]) as never
       )
     );
   }
@@ -2690,15 +2686,13 @@ export const getSequence = defineServiceFn({
  */
 export const getSequences = defineServiceFn({
   input: z.looseObject({
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2707,7 +2701,7 @@ export const getSequences = defineServiceFn({
       await service.getSequences(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+        stamp(ctx, input, ["companyId"]) as never
       )
     );
   }
@@ -2740,15 +2734,13 @@ export const getSequencesList = defineServiceFn({
  */
 export const getItemSerialSequences = defineServiceFn({
   input: z.looseObject({
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -2757,7 +2749,7 @@ export const getItemSerialSequences = defineServiceFn({
       await service.getItemSerialSequences(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+        stamp(ctx, input, ["companyId"]) as never
       )
     );
   }
@@ -3056,15 +3048,13 @@ export const getWebhook = defineServiceFn({
  */
 export const getWebhooks = defineServiceFn({
   input: z.looseObject({
-    args: z.looseObject({
-      limit: z
-        .number()
-        .int()
-        .describe("Rows per page. Left out, the read is not paged.")
-        .optional(),
-      offset: z.number().int().default(0),
-      search: z.string().nullable().optional()
-    })
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
   }),
   permission: { view: "settings" },
   async run(ctx, input) {
@@ -3073,7 +3063,7 @@ export const getWebhooks = defineServiceFn({
       await service.getWebhooks(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.args ?? {}, ["companyId"]) as never
+        stamp(ctx, input, ["companyId"]) as never
       )
     );
   }

@@ -213,21 +213,15 @@ export async function createMcpServer<Ctx extends McpContext>(
           args && typeof args === "object" && !Array.isArray(args)
             ? (args as Record<string, unknown>)
             : null;
-        const wrapped =
-          body?.args &&
-          typeof body.args === "object" &&
-          !Array.isArray(body.args)
-            ? (body.args as Record<string, unknown>)
-            : null;
         if (meta.paginates) {
           if (!body) {
             // The argless call is the worst offender — no limit at all.
             args = { limit: MCP_DEFAULT_LIMIT, offset: 0 };
           } else {
-            fillPagination(wrapped ?? body);
+            fillPagination(body);
           }
         } else {
-          const source = wrapped ?? body ?? {};
+          const source = body ?? {};
           const limit = source.limit;
           const offset = source.offset;
           mcpPaging = {
@@ -243,8 +237,8 @@ export async function createMcpServer<Ctx extends McpContext>(
         }
       }
 
-      // Runs through the canonical oRPC dispatch (gate middleware included); the
-      // Supabase envelope arrives already unwrapped to `data`/`count`.
+      // Runs the operation's oRPC procedure (gate included); a list arrives as
+      // `data` with its `count`.
       const start = performance.now();
       const result = await callOperation(name, ctx, args);
       const responseTime = performance.now() - start;

@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * The identity every Carbon API call runs as. Built once per request (from an API
  * key on HTTP, or from the resolved MCP/agent auth) and injected as oRPC context;
- * the service dispatch reads `client`/`companyId`/`userId`/`companyGroupId` from it.
+ * `runServiceFn` builds the service context from it.
  */
 export interface AuthedContext {
   client: SupabaseClient<Database>;
@@ -21,7 +21,7 @@ export interface AuthedContext {
   companyId: string;
   companyGroupId: string;
   /** How the caller authenticated. Every kind runs the per-operation scope gate:
-   *  RLS alone does not bound a caller, because a service handed `db` writes
+   *  RLS alone does not bound a caller, because a service function may write
    *  through the direct connection, which bypasses it. `"session"` is an
    *  in-process caller acting as a user (the workflow engine acting as the
    *  workflow's owner) — not "oauth" because that names a wire protocol. */
@@ -95,40 +95,3 @@ export const gate = (meta: ManifestEntry) =>
     );
     return next();
   });
-
-const PROGRAMMING_ERRORS: ReadonlyArray<Function> = [
-  TypeError,
-  ReferenceError,
-  RangeError,
-  SyntaxError
-];
-
-/**
- * Turn a service's deliberate `throw new Error(...)` into a 422 carrying its
- * message; oRPC would otherwise rewrite it to an opaque 500 with the text only
- * in `cause`, which the encoder never serializes.
- *
- * Classification is by constructor because the ERP service layer has no domain
- * error class: a plain `Error` was written by a person; a `TypeError` and friends
- * mean a real defect, so those keep their 500 with the detail withheld.
- *
- * Must NOT attach `data.supabase` — `callOperation` keys its `Database error:`
- * envelope off that field, so adding it would silently change MCP output.
- */
-export const mapThrownErrors = base.middleware(async ({ next }) => {
-  try {
-    return await next();
-  } catch (err) {
-    if (err instanceof ORPCError) throw err;
-    if (
-      err instanceof Error &&
-      !PROGRAMMING_ERRORS.some((ctor) => err instanceof ctor)
-    ) {
-      throw new ORPCError("UNPROCESSABLE_CONTENT", {
-        message: err.message,
-        cause: err
-      });
-    }
-    throw err;
-  }
-});
