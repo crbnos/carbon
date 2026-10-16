@@ -23,7 +23,7 @@ A Carbon panel in Onshape's element right panel. Users push parts, assemblies an
 - Connect opens a popup (`beginOAuthPopup`, `packages/ee/src/oauth-popup.ts`, opened inside the click). The callback renders `oauthPopupResponse`: it posts the outcome to the opener and closes, or lands on the integrations page with no opener. The drawer's Reconnect action POSTs to the install route and follows `{ redirectUrl }`.
 - Uninstall only sets `active = false` and keeps the tokens, so `getOnshapeClient` reads the `onshape-v2` row only while it is active: after an uninstall every panel read answers "not connected". A plan already stored can still be applied until it expires (15 min); APPLY makes no Onshape call.
 - `onshapeHealthcheck` (`hooks.server.ts`) builds the client (refreshing an expired token) and reads `/companies`; a revoked grant reads unhealthy.
-- Tokens live in Vault: `SECRET_KEYS["onshape-v2"]` (`integrations/secrets.ts`) names the access and refresh token. Migration `20261014151039_onshape-v2-integration.sql` seeds the `integration` row; `20261014151040_onshape-v2-vault-secrets.sql` moves any plaintext tokens already in `onshape-v2` metadata into Vault.
+- Tokens live in Vault: `SECRET_KEYS["onshape-v2"]` (`integrations/secrets.ts`) names the access and refresh token. Migration `20261016051650_onshape-v2-integration.sql` seeds the `integration` row; `20261016051651_onshape-v2-vault-secrets.sql` moves any plaintext tokens already in `onshape-v2` metadata into Vault.
 
 ## Integration metadata
 

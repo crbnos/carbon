@@ -86,6 +86,7 @@ interface EditorProp {
    * options as the bubble menu — no new capabilities.
    */
   toolbar?: boolean;
+  toolbarClassName?: string;
   /**
    * Full-screen "document" mode. When provided, the editor's first block is a
    * locked H1 title seeded from `title.value`; the title text is streamed back
@@ -118,6 +119,7 @@ const Editor = ({
   mentions,
   highlightTokens,
   toolbar,
+  toolbarClassName,
   title
 }: EditorProp) => {
   const { t } = useLingui();
@@ -318,7 +320,9 @@ const Editor = ({
             onChange(editor.getJSON());
           }
         }}
-        slotBefore={toolbar ? <Toolbar /> : undefined}
+        slotBefore={
+          toolbar ? <Toolbar className={toolbarClassName} /> : undefined
+        }
         slotAfter={<ImageResizer />}
       >
         <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-[opacity,transform]">

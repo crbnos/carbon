@@ -197,6 +197,11 @@ export async function deactivateCustomer(
     reason: "deactivate"
   });
 
+  // Same ownership as the employee path below: invalidate here so the
+  // create*Account rollbacks, which call this directly, cannot leave revoked
+  // grants readable from cache.
+  await redis.del(getPermissionCacheKey(userId));
+
   return success("Sucessfully deactivated customer");
 }
 
@@ -252,11 +257,13 @@ export async function deactivateEmployee(
         .update({ active: false })
         .eq("id", userId)
         .eq("companyId", companyId),
-      serviceRole
-        .from("employeeJob")
-        .delete()
-        .eq("id", userId)
-        .eq("companyId", companyId),
+      // "employeeJob" is deliberately left in place. It carries org placement —
+      // title, start date, department, shift, manager, location, tags, custom
+      // fields — none of which grants access; membership ("userToCompany"),
+      // permissions, and "employee".active are what gate it, and all three are
+      // cleared here. Deleting the row made deactivation lossy: nothing in the
+      // re-invite path can reconstruct it, so a revoked employee who was later
+      // re-invited came back with their placement silently blanked.
       ...(groupIds.length > 0
         ? [
             serviceRole
@@ -294,6 +301,13 @@ export async function deactivateEmployee(
     ip,
     reason: "deactivate"
   });
+
+  // The permissions this function just revoked are cached in Redis, and
+  // `requirePermissions` reads that cache before the database. Invalidating
+  // here rather than only in `deactivateUser` covers the callers that reach
+  // this function directly — the create*Account rollback paths — which
+  // otherwise left a deactivated user's grants live until the 1h TTL.
+  await redis.del(getPermissionCacheKey(userId));
 
   return success("Sucessfully deactivated employee");
 }
@@ -512,6 +526,9 @@ export async function deactivateSupplier(
     ip,
     reason: "deactivate"
   });
+
+  // See deactivateEmployee: the direct callers own nothing, this function does.
+  await redis.del(getPermissionCacheKey(userId));
 
   return success("Sucessfully deactivated supplier");
 }

@@ -493,18 +493,17 @@ events and posts them.
     `OeeProviderUnavailableError` (network failure, timeout, 5xx) stops the
     run, because every device would fail the same way.
 
-The job never posts to the GL. Carbon has no scheduled sweep that posts
-production events. An event posts at one of 3 moments:
-
-1. At a press: the MES routes post every event that the press ended, except
-   batch events.
-2. At operation finish: `finishJobOperation` (MES) and `completeOperation`
-   (ERP) post the operation's ended, unposted events.
-3. At job completion: `complete_job_to_inventory` posts every ended, unposted
-   event of the job.
-
-A sensor event that the sync closes posts at operation finish or job
-completion. Until it posts, a supervisor can edit it on the job's Events tab.
+A Machine event posts to the GL when it ends. After each device's
+transaction commits, the job posts the Machine events that its sync ended
+(`postEndedMachineEvents`, which invokes `post-production-event`). The other
+writers that end sensor time also post what they end: an assignment of
+unattributed time, an unmap or remap, the Sense uninstall, a press and a Down
+maintenance dispatch. A posting failure is logged and does not stop the sync.
+Operation finish (`finishJobOperation`, `completeOperation`) and job
+completion (`complete_job_to_inventory`) post any ended event that is still
+unposted. Carbon has no scheduled sweep that posts production events. A
+supervisor can still edit a posted event on the job's Events tab: the edit
+reverses the posted amount and posts the new one.
 
 When a user uninstalls Sense, its `onUninstall` hook (`senseOnUninstall`) ends
 the open sensor time of every Sense device of the company. The mappings stay.
@@ -576,7 +575,7 @@ its filters.
 | How an operation is loaded | Any open `productionEvent` insert on the work center | Setup, Labor, Machine and the QR start already insert one. Shops change nothing. |
 | Unattributed time | Its own table, cleared from an ERP list | User decision (Q3). `productionEvent.jobOperationId` is NOT NULL, so unattributed time cannot be a production event. |
 | Manual Machine timer | Kept on every work center. A press ends every open Machine event on the work center. The time after a press in the same run goes to the queue. Pause keeps the operation loaded. | User decision (Q4, Q4b, Q4c). A work center has one machine time, so time is never counted twice. |
-| GL posting | Sensor events post at operation finish or job completion. Events that a press ends post at the press. There is no posting sweep. | User decision (Q5). A wrong sensor attribution stays editable until the operation is done. |
+| GL posting | A sensor event posts when it ends: at the sync that ends it, at an assignment, an unmap or uninstall, or a press. Operation finish and job completion post what a failure left. There is no posting sweep. | User decision (Q5, revised 2026-10-14). Machine cost reaches WIP in the period the machine ran, not when the operation finishes. A posted event stays editable: an edit reposts the difference. |
 | License boundary | Provider, sync, mapping and the unattributed list are commercial (`packages/ee`, `.ee.tsx`), gated by `INTEGRATIONS`. The loaded operation, the MES button rules and the display are AGPL. | User decision (Q6). Matches every other integration. |
 | Timezone | Store UTC instants. Use the work center's `location.timezone` for local time. Warn on a site/location mismatch. | User decision (Q7). |
 | Polling | Inngest cron every 2 minutes, 10-minute overlap, idempotent insert | Sense has no webhooks. A 2-minute delay keeps the work center display useful. The overlap plus the unique key makes a re-read safe. |
@@ -718,10 +717,10 @@ a company with no OEE integration does not see it.
 - [ ] Activating Sense while another `oee` integration is active succeeds. The single-active trigger still refuses a second active `accounting` integration.
 - [ ] An operator starts Setup on operation A at W1 and stops it. The open `workCenterLoad` row of W1 names A.
 - [ ] An event that starts before the newest `loadedAt` or `unloadedAt` of W1 loads nothing.
-- [ ] Sense reports Active at T1 and Idle at T2 for the mapped station. Within 2 sync runs, a Machine `productionEvent` on A exists with `startTime` = T1, `endTime` = T2, `employeeId` null and `postedToGL` false.
-- [ ] After operation A is finished, that event has `postedToGL` = true. Its cost is (T2 − T1) × W1's machine rate plus overhead.
+- [ ] Sense reports Active at T1 and Idle at T2 for the mapped station. Within 2 sync runs, a Machine `productionEvent` on A exists with `startTime` = T1, `endTime` = T2, `employeeId` null and `postedToGL` true.
+- [ ] That event has a `Production Event` journal. Its cost is (T2 − T1) × W1's machine rate plus overhead.
 - [ ] With nothing loaded on W1, an Active change creates an open `unattributedMachineTime` row. The row appears on Production → Unattributed Time.
-- [ ] Assigning a stopped row to operation B creates a Machine event on B with the row's start and end, and deletes the row.
+- [ ] Assigning a stopped row to operation B creates a Machine event on B with the row's start and end, posts it, and deletes the row.
 - [ ] Dismissing a stopped row deletes it, and no event exists. Dismissing a running row fails.
 - [ ] The machine is Active and the operator presses Pause at 10:03. The event ends at 10:03. The time after 10:03 until the machine stops goes to an unattributed row. The next Idle→Active change opens a new event on the same operation.
 - [ ] A sensor event runs on A, and the operator presses Machine Start on operation C. A's event ends at the press time. C's event starts at the press time. C is loaded.
@@ -758,12 +757,13 @@ a company with no OEE integration does not see it.
 - [x] Where is unattributed time resolved in v1? — **Answer:** An ERP supervisor list only. Assign to a job operation, or dismiss. The MES prompt is later work. (Shipped: dismiss takes no reason and deletes the row.)
 - [x] What happens to the manual MES Machine timer on a mapped work center? — **Answer:** It stays visible and in sync with the sensor. There is one Machine event at a time, so no duplicates.
 - [x] What does the Machine button do when the sensor drives the timer? — **Answer:** It overrides the sensor for the operator's time. Pause keeps the operation loaded. (Shipped as the owner rule: the time after a press in the same run goes to the queue.)
-- [x] When does sensor machine time post to the GL? — **Answer:** At operation finish or job completion. (Shipped: there is no posting sweep; section 7 lists the 3 moments an event posts.)
+- [x] When does sensor machine time post to the GL? — **Answer:** At operation finish or job completion. **Revised 2026-10-14:** when the event ends (section 7); operation finish and job completion are the catch-up.
 - [x] Which parts are commercial? — **Answer:** The provider, the sync, the mapping and the unattributed list are in `packages/ee`, gated by `INTEGRATIONS`. The loaded operation and its MES display are AGPL.
 - [x] Which timezone wins for local time? — **Answer:** The work center's location timezone. Store UTC. Warn when the Sense site timezone differs.
 
 ## Changelog
 
+- 2026-10-14: Sensor time posts when it ends (Q5 revised). The sync, assign, unmap/remap, the Sense uninstall and a Down maintenance dispatch post the Machine events they end. `post-production-event` locks the event row, and `complete_job_to_inventory` locks the unposted events it posts (migration `20261014135003`), so two callers never post one event twice.
 - 2026-10-14: Fixes from the strict self-review (`.ai/plans/2026-10-14-oee-review-fixes.md`). The open `workCenterLoad` row is the load: the migration drops `workCenter.loadedJobOperationId` and `loadedAt`. A load older than the newest boundary in the history writes nothing. An unload ends the open row at `GREATEST(NOW(), loadedAt)`. The engine applies one owner rule to every piece of a run. Open sensor time follows its owner across load, block and press edges. A late stop trims the closed queue rows. A press takes its time under the locks and records `unplannedPressAt`. A Machine start writes the press, the event and the tracked activity in one transaction. The routes check permission before any write and post every event a press ends. Uninstalling Sense ends its open sensor time. The ERP review keeps the list filters and spans the days of the row.
 - 2026-10-13: Build changes. Unattributed time became a queue with no status. Maintenance blocks became periods. The load gained its history table, `workCenterLoad`. The OEE tables became read-only through the API, with composite foreign keys to `workCenter`. The MES press rules apply on every work center.
 - 2026-10-12: Planning pass. Corrected the secret path, the interceptor timing, the view recreation and the indexes. Added the engine's inputs, applied state (`appliedThrough`) and first-sync rules. The steady-state rule now reopens time on the loaded operation when the rules allow it.

@@ -4,13 +4,18 @@
 
 import { cn, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 export default function Empty({
   className,
   children,
+  title,
+  description,
   ...props
-}: ComponentProps<"div">) {
+}: Omit<ComponentProps<"div">, "title"> & {
+  title?: ReactNode;
+  description?: ReactNode;
+}) {
   return (
     <VStack
       className={cn(
@@ -35,13 +40,15 @@ export default function Empty({
         />
       </svg>
       <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[17px] max-md:font-semibold">
-        <Trans>No data yet</Trans>
+        {title ?? <Trans>No data yet</Trans>}
       </h3>
       <p className="max-w-56 text-center text-xs text-muted-foreground text-balance">
-        <Trans>
-          Your data will appear here once you create or import your first
-          records
-        </Trans>
+        {description ?? (
+          <Trans>
+            Your data will appear here once you create or import your first
+            records
+          </Trans>
+        )}
       </p>
       {children}
     </VStack>

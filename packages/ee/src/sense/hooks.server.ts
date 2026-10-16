@@ -11,6 +11,7 @@ import {
 import { datetime } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { createOeeProvider } from "../oee/registry";
+import { postEndedMachineEvents } from "../oee/service.server";
 import type { IntegrationHealthcheckResult } from "../types";
 
 /** `metadata` arrives with the vaulted `apiKey` already resolved. */
@@ -34,8 +35,9 @@ export async function senseHealthcheck(
 /**
  * Disconnecting Sense stops its sync, so nothing would ever close the time its
  * sensors opened: each device's open sensor Machine event and running
- * unattributed time end now, under the device lock. The device mappings stay,
- * so reconnecting resumes from where each device left off.
+ * unattributed time end now, under the device lock, and the ended events
+ * post. The device mappings stay, so reconnecting resumes from where each
+ * device left off.
  */
 export async function senseOnUninstall(companyId: string) {
   const db = getPostgresClient<KyselyDatabase>(
@@ -50,14 +52,19 @@ export async function senseOnUninstall(companyId: string) {
     .execute();
   const at = datetime.timestamp();
   for (const { workCenterId } of devices) {
-    await db.transaction().execute(async (trx) => {
+    const { endedEventIds } = await db.transaction().execute(async (trx) => {
       await lockWorkCenterDevice(trx, { workCenterId, companyId });
-      await endSensorMachineTime(trx, {
+      return endSensorMachineTime(trx, {
         workCenterId,
         companyId,
         userId: "system",
         at
       });
+    });
+    await postEndedMachineEvents(db, {
+      companyId,
+      userId: "system",
+      productionEventIds: endedEventIds
     });
   }
 }

@@ -32,6 +32,18 @@ describe("toServerFnError", () => {
     expect(error.message).toBe("");
   });
 
+  it("surfaces a message raised by our own SQL", () => {
+    const message =
+      "Job J000343 has 6 serial unit(s) left to receive, fewer than the 15 being completed";
+    const error = toServerFnError(
+      "test",
+      Object.assign(new Error(message), { code: "P0001", severity: "ERROR" }),
+      400
+    );
+    expect(error.message).toBe(message);
+    expect(error.status).toBe(400);
+  });
+
   it("hides a PostgREST error's text", () => {
     const error = toError({
       code: "42501",

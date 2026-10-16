@@ -11,6 +11,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
@@ -50,6 +51,7 @@ import { path } from "./utils/path";
 export const middleware = [
   requestIdMiddleware,
   securityMiddleware,
+  maintenanceMiddleware,
   formBodyMiddleware,
   flashMiddleware
 ];

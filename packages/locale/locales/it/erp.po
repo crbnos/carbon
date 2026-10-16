@@ -728,6 +728,10 @@ msgstr "<0>Aggiungi un componente fornitore</0> per questo articolo per impostar
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Attenzione: il {0} il tuo account verrà trasferito su erp.try.carbon.ms"
+
 msgid "0 operations"
 msgstr "0 operazioni"
 
@@ -2906,6 +2910,9 @@ msgstr "Archivio"
 
 msgid "Archive all"
 msgstr "Archivia tutto"
+
+msgid "Archive Training"
+msgstr "Archivia Formazione"
 
 msgid "Archived"
 msgstr "Archiviato"
@@ -8752,6 +8759,15 @@ msgstr "dipendenti"
 msgid "Employees"
 msgstr "Dipendenti"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "I dipendenti assegnati a questa formazione possono aprirla. Il contenuto, la guida e le domande non possono più cambiare."
+
+msgid "Employees can no longer open this training."
+msgstr "I dipendenti non possono più aprire questa formazione."
+
+msgid "Employees complete a training in Carbon"
+msgstr "I dipendenti completano una formazione in Carbon"
+
 msgid "Empty"
 msgstr "Vuoto"
 
@@ -9492,6 +9508,9 @@ msgstr "Rif. Esterno"
 
 msgid "External Reference"
 msgstr "Riferimento Esterno"
+
+msgid "External training"
+msgstr "Formazione esterna"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Campi aggiuntivi per acquisire dati che Carbon non traccia per impostazione predefinita"
@@ -13037,6 +13056,10 @@ msgstr "Valori mappati"
 msgid "Mark \"{0}\" as passed?"
 msgstr "Contrassegna \"{0}\" come superato?"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "Contrassegna {0} come completato. Allega il certificato se ne hai uno."
+
 msgid "Mark absent"
 msgstr "Segna come assente"
 
@@ -14359,6 +14382,9 @@ msgstr "Nessun componente ancora"
 msgid "No condition may match"
 msgstr "Nessuna condizione può corrispondere"
 
+msgid "No content"
+msgstr "Nessun contenuto"
+
 msgid "No control account has a balance at the cutover."
 msgstr "Nessun conto di controllo ha un saldo al cambio."
 
@@ -14442,9 +14468,6 @@ msgstr "Nessun indirizzo email per questo cliente"
 
 msgid "No employees assigned this week"
 msgstr "Nessun dipendente assegnato questa settimana"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "Nessun dipendente assegnato ancora. Aggiungi gruppi per visualizzare lo stato."
 
 msgid "No employees found"
 msgstr "Nessun dipendente trovato"
@@ -14713,6 +14736,9 @@ msgstr "Nessuna riga di pagamento."
 
 msgid "No payments yet."
 msgstr "Nessun pagamento ancora."
+
+msgid "No PDF uploaded"
+msgstr "Nessun PDF caricato"
 
 msgid "No planned invoices are removed."
 msgstr "Nessuna fattura pianificata viene rimossa."
@@ -15776,14 +15802,14 @@ msgstr "Data dell'ordine"
 msgid "Order Date"
 msgstr "Data dell'ordine"
 
+msgid "Order Items"
+msgstr "Ordina Articoli"
+
 msgid "Order Multiple"
 msgstr "Multiplo d'Ordine"
 
 msgid "Order Multiple:"
 msgstr "Multiplo d'ordine:"
-
-msgid "Order Parts"
-msgstr "Ordina Componenti"
 
 msgid "Order Qty"
 msgstr "Quantità Ordine"
@@ -17183,6 +17209,9 @@ msgstr "Pubblico"
 msgid "Publish"
 msgstr "Pubblica"
 
+msgid "Publish Training"
+msgstr "Pubblica Formazione"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "Pubblicare la versione {0}?"
@@ -18269,6 +18298,9 @@ msgstr "Rimuovi app autenticatore"
 msgid "Remove clause"
 msgstr "Rimuovi clausola"
 
+msgid "Remove Completion"
+msgstr "Rimuovi Completamento"
+
 msgid "Remove condition"
 msgstr "Rimuovi condizione"
 
@@ -18316,6 +18348,9 @@ msgstr "Rimuovi parte"
 
 msgid "Remove path"
 msgstr "Rimuovi percorso"
+
+msgid "Remove PDF"
+msgstr "Rimuovi PDF"
 
 msgid "Remove row"
 msgstr "Rimuovi riga"
@@ -18423,6 +18458,9 @@ msgstr "Riapri"
 msgid "Reopen as Revision"
 msgstr "Riapri come Revisione"
 
+msgid "Reopen Training"
+msgstr "Riapri Formazione"
+
 msgid "Reorder"
 msgstr "Riordina"
 
@@ -18467,6 +18505,9 @@ msgstr "Ripeti esecuzione"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Si ripete una volta per ogni elemento in {inputLabel}"
+
+msgid "Replace"
+msgstr "Sostituisci"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "Sostituisci il piano dei conti predefinito di Carbon con il tuo, prima di configurare la Contabilità"
@@ -21713,6 +21754,9 @@ msgstr "Passa alla modalità panorama"
 msgid "Switch to select mode"
 msgstr "Passa alla modalità selezione"
 
+msgid "Switch to Written Content"
+msgstr "Passa al contenuto scritto"
+
 msgid "Switch users over and confirm access"
 msgstr "Trasferisci gli utenti e conferma l'accesso"
 
@@ -21776,6 +21820,9 @@ msgstr "Prendi la durata di conservazione rimanente più breve tra i materiali c
 
 msgid "taken"
 msgstr "preso"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Seguito all'esterno di Carbon. Contrassegni ogni dipendente come completato."
 
 msgid "Takes Effect"
 msgstr "Ha effetto"
@@ -23032,6 +23079,12 @@ msgstr "Il totale da produrre in tutti gli ordini di produzione creati in questo
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "Il riferimento tracciabile (ad es. standard NIST, numero seriale dello strumento di misura campione) su cui i valori di taratura sono stati confrontati."
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "La formazione torna a Bozza affinché tu possa modificarla. I dipendenti non possono aprirla fino a quando non la pubblichi di nuovo."
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "La formazione torna a In attesa per {employeeName}. Il dipendente mantiene qualsiasi competenza che questa formazione ha concesso. Rimuovila dalla loro pagina Competenze se necessario."
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "Il cartellino di produzione elenca ogni articolo nella distinta base con la sua quantità."
 
@@ -23429,6 +23482,9 @@ msgstr "questo ordine di acquisto"
 
 msgid "This Quarter"
 msgstr "Questo Trimestre"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "Questo rimuove il PDF. I dipendenti vedranno il contenuto scritto."
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Questo rimuove la loro app autenticatore, quindi il loro prossimo accesso ha bisogno solo di un collegamento magico. Usalo quando hanno perso l'accesso al loro autenticatore. Influisce sul loro accesso per ogni azienda a cui appartengono."
@@ -24023,8 +24079,14 @@ msgstr "Formazione"
 msgid "Training Assignments"
 msgstr "Assegnazioni di Formazione"
 
+msgid "Training not recorded"
+msgstr "Formazione non registrata"
+
 msgid "Training Plan"
 msgstr "Piano di Formazione"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Formazione seguita all'esterno di Carbon, come un corso di un fornitore. L'incarico ha solo un nome. Un amministratore contrassegna ogni dipendente come completato e può allegare il certificato."
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formazione del tuo team tramite l'Academy e le guide in-app"
@@ -24582,6 +24644,9 @@ msgstr "Caricamento non riuscito. Riprova."
 
 msgid "Upload new backup…"
 msgstr "Carica nuovo backup…"
+
+msgid "Upload PDF"
+msgstr "Carica PDF"
 
 msgid "Uploaded model"
 msgstr "Modello caricato"
@@ -25352,6 +25417,9 @@ msgstr "Il valore di ogni cespite, la sua durata e cosa accade al termine del pe
 msgid "What each period's payment is for this asset in the first year"
 msgstr "L'importo del pagamento di ogni periodo per questo cespite nel primo anno"
 
+msgid "What employees read before the questions"
+msgstr "Quello che i dipendenti leggono prima delle domande"
+
 msgid "What happens to an invoice once it is created"
 msgstr "Cosa accade a una fattura una volta creata"
 
@@ -25890,6 +25958,9 @@ msgstr "Sessioni di lavoro su configurazione e dati"
 
 msgid "Worst Performing Machines"
 msgstr "Macchine con Prestazioni Peggiori"
+
+msgid "Write"
+msgstr "Scrivi"
 
 msgid "Write a note…"
 msgstr "Scrivi una nota…"

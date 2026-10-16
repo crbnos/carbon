@@ -728,6 +728,10 @@ msgstr "<0>इस आइटम के लिए एक आपूर्तिक�
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 ध्यान दें: {0} को आपका खाता erp.try.carbon.ms पर स्थानांतरित कर दिया जाएगा"
+
 msgid "0 operations"
 msgstr "0 ऑपरेशन"
 
@@ -2906,6 +2910,9 @@ msgstr "संग्रह"
 
 msgid "Archive all"
 msgstr "सभी को संग्रहित करें"
+
+msgid "Archive Training"
+msgstr "प्रशिक्षण को आर्काइव करें"
 
 msgid "Archived"
 msgstr "संग्रहीत"
@@ -8752,6 +8759,15 @@ msgstr "कर्मचारियों"
 msgid "Employees"
 msgstr "कर्मचारी"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "इस प्रशिक्षण को सौंपे गए कर्मचारी इसे खोल सकते हैं। सामग्री, गाइड और प्रश्न अब और परिवर्तन नहीं कर सकते।"
+
+msgid "Employees can no longer open this training."
+msgstr "कर्मचारी अब इस प्रशिक्षण को खोल नहीं सकते।"
+
+msgid "Employees complete a training in Carbon"
+msgstr "कर्मचारी Carbon में प्रशिक्षण को पूर्ण करते हैं"
+
 msgid "Empty"
 msgstr "खाली"
 
@@ -9492,6 +9508,9 @@ msgstr "बाहरी संदर्भ"
 
 msgid "External Reference"
 msgstr "बाहरी संदर्भ"
+
+msgid "External training"
+msgstr "बाहरी प्रशिक्षण"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "कार्बन डिफ़ॉल्ट रूप से ट्रैक नहीं करता है ऐसा डेटा कैप्चर करने के लिए अतिरिक्त फ़ील्ड"
@@ -13037,6 +13056,10 @@ msgstr "मैप किए गए मान"
 msgid "Mark \"{0}\" as passed?"
 msgstr "क्या \"{0}\" को उत्तीर्ण के रूप में चिह्नित करें?"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "{0} को पूर्ण करें। यदि आपके पास है तो उनका प्रमाण पत्र संलग्न करें।"
+
 msgid "Mark absent"
 msgstr "अनुपस्थित चिह्नित करें"
 
@@ -14359,6 +14382,9 @@ msgstr "अभी कोई घटक नहीं"
 msgid "No condition may match"
 msgstr "कोई भी शर्त मेल नहीं खा सकती"
 
+msgid "No content"
+msgstr "कोई सामग्री नहीं"
+
 msgid "No control account has a balance at the cutover."
 msgstr "कटऑवर पर किसी नियंत्रण खाते की शेष राशि नहीं है।"
 
@@ -14442,9 +14468,6 @@ msgstr "इस ग्राहक के लिए कोई ईमेल पत
 
 msgid "No employees assigned this week"
 msgstr "इस सप्ताह कोई कर्मचारी निर्धारित नहीं"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "अभी तक कोई कर्मचारी असाइन नहीं किया गया है। स्थिति देखने के लिए समूह जोड़ें।"
 
 msgid "No employees found"
 msgstr "कोई कर्मचारी नहीं मिला"
@@ -14713,6 +14736,9 @@ msgstr "कोई भुगतान पंक्तियाँ नहीं।
 
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
+
+msgid "No PDF uploaded"
+msgstr "कोई PDF अपलोड नहीं किया गया"
 
 msgid "No planned invoices are removed."
 msgstr "कोई योजनाबद्ध चालान हटाया नहीं गया।"
@@ -15776,14 +15802,14 @@ msgstr "ऑर्डर तारीख"
 msgid "Order Date"
 msgstr "ऑर्डर तारीख"
 
+msgid "Order Items"
+msgstr "वस्तुएं ऑर्डर करें"
+
 msgid "Order Multiple"
 msgstr "ऑर्डर गुणज"
 
 msgid "Order Multiple:"
 msgstr "ऑर्डर गुणज:"
-
-msgid "Order Parts"
-msgstr "पार्ट्स ऑर्डर करें"
 
 msgid "Order Qty"
 msgstr "ऑर्डर मात्रा"
@@ -17183,6 +17209,9 @@ msgstr "सार्वजनिक"
 msgid "Publish"
 msgstr "प्रकाशित करें"
 
+msgid "Publish Training"
+msgstr "प्रशिक्षण प्रकाशित करें"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "संस्करण {0} प्रकाशित करें?"
@@ -18269,6 +18298,9 @@ msgstr "प्रमाणकर्ता ऐप्लिकेशन निक�
 msgid "Remove clause"
 msgstr "खंड निकालें"
 
+msgid "Remove Completion"
+msgstr "पूर्णता निकालें"
+
 msgid "Remove condition"
 msgstr "शर्त निकालें"
 
@@ -18316,6 +18348,9 @@ msgstr "पार्ट निकालें"
 
 msgid "Remove path"
 msgstr "पथ निकालें"
+
+msgid "Remove PDF"
+msgstr "PDF निकालें"
 
 msgid "Remove row"
 msgstr "पंक्ति निकालें"
@@ -18423,6 +18458,9 @@ msgstr "फिर से खोलें"
 msgid "Reopen as Revision"
 msgstr "रिवीजन के रूप में फिर से खोलें"
 
+msgid "Reopen Training"
+msgstr "प्रशिक्षण फिर से खोलें"
+
 msgid "Reorder"
 msgstr "पुनः क्रमित करें"
 
@@ -18467,6 +18505,9 @@ msgstr "दोहराएं रन"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel} में प्रत्येक आइटम के लिए एक बार दोहराएं"
+
+msgid "Replace"
+msgstr "बदलें"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "Carbon के डिफ़ॉल्ट चार्ट को अपने स्वयं के साथ बदलें, लेखांकन सेट अप करने से पहले"
@@ -21713,6 +21754,9 @@ msgstr "पैन मोड में स्विच करें"
 msgid "Switch to select mode"
 msgstr "चयन मोड में स्विच करें"
 
+msgid "Switch to Written Content"
+msgstr "लिखित सामग्री पर स्विच करें"
+
 msgid "Switch users over and confirm access"
 msgstr "उपयोगकर्ताओं को स्विच करें और एक्सेस की पुष्टि करें"
 
@@ -21776,6 +21820,9 @@ msgstr "इस आइटम को बनाने के लिए उपयो
 
 msgid "taken"
 msgstr "लिया गया"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Carbon के बाहर लिया गया। आप प्रत्येक कर्मचारी को पूर्ण करते हैं।"
 
 msgid "Takes Effect"
 msgstr "प्रभावी होता है"
@@ -23032,6 +23079,12 @@ msgstr "इस बल्क बैच में बनाए गए सभी �
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "पता लगाने योग्य संदर्भ (उदाहरण के लिए, NIST मानक, मास्टर गेज सीरीज़ नंबर) जिसके विरुद्ध अंशांकन मान की तुलना की गई थी।"
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "प्रशिक्षण ड्राफ्ट पर वापस जाता है ताकि आप इसे बदल सकें। कर्मचारी इसे तब तक नहीं खोल सकते जब तक आप इसे फिर से प्रकाशित न करें।"
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "प्रशिक्षण {employeeName} के लिए लंबित पर वापस जाता है। कर्मचारी इस प्रशिक्षण द्वारा प्रदान किए गए किसी भी कौशल को रखता है। यदि आवश्यक हो तो इसे उनके कौशल पृष्ठ पर निकालें।"
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "ट्रैवलर सामग्री सूची पर प्रत्येक आइटम को इसकी मात्रा के साथ सूचीबद्ध करता है।"
 
@@ -23429,6 +23482,9 @@ msgstr "यह क्रय आदेश"
 
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "यह PDF को हटाता है। कर्मचारी इसके बजाय लिखित सामग्री देखेंगे।"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
@@ -24023,8 +24079,14 @@ msgstr "प्रशिक्षण"
 msgid "Training Assignments"
 msgstr "प्रशिक्षण असाइनमेंट"
 
+msgid "Training not recorded"
+msgstr "प्रशिक्षण रिकॉर्ड नहीं किया गया"
+
 msgid "Training Plan"
 msgstr "प्रशिक्षण योजना"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Carbon के बाहर लिया गया प्रशिक्षण, जैसे विक्रेता पाठ्यक्रम। असाइनमेंट के पास केवल एक नाम है। एक प्रशासक प्रत्येक कर्मचारी को पूर्ण करता है और उनके प्रमाण पत्र को संलग्न कर सकता है।"
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Academy और इन-ऐप गाइड के माध्यम से अपनी टीम को प्रशिक्षण दें"
@@ -24582,6 +24644,9 @@ msgstr "अपलोड विफल रहा। कृपया पुनः �
 
 msgid "Upload new backup…"
 msgstr "नया बैकअप अपलोड करें…"
+
+msgid "Upload PDF"
+msgstr "PDF अपलोड करें"
 
 msgid "Uploaded model"
 msgstr "अपलोड किया गया मॉडल"
@@ -25352,6 +25417,9 @@ msgstr "प्रत्येक संपत्ति का मूल्य �
 msgid "What each period's payment is for this asset in the first year"
 msgstr "पहले वर्ष में इस संपत्ति के लिए प्रत्येक अवधि का भुगतान क्या है"
 
+msgid "What employees read before the questions"
+msgstr "कर्मचारी प्रश्नों से पहले क्या पढ़ते हैं"
+
 msgid "What happens to an invoice once it is created"
 msgstr "एक चालान बनाए जाने के बाद क्या होता है"
 
@@ -25890,6 +25958,9 @@ msgstr "कॉन्फ़िगरेशन और डेटा पर का�
 
 msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
+
+msgid "Write"
+msgstr "लिखें"
 
 msgid "Write a note…"
 msgstr "एक नोट लिखें…"

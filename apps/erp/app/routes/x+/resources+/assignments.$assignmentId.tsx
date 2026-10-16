@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -17,6 +18,13 @@ import {
   DrawerTitle,
   HStack,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   ToggleGroup,
   ToggleGroupItem,
   VStack
@@ -29,17 +37,25 @@ import {
   LuCalendar,
   LuCircleCheck,
   LuClock,
+  LuFileCheck,
   LuSearch,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuUndo2
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Empty } from "~/components";
+import { DateTime, EmployeeAvatar, Empty, FileDropzone } from "~/components";
+import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import { getTraining, getTrainingAssignmentStatus } from "~/modules/resources";
+import {
+  getTrainingAssignment,
+  getTrainingAssignmentStatus,
+  trainingCertificateAccept
+} from "~/modules/resources";
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
+import type { action as completeAction } from "~/routes/x+/resources+/assignments.complete";
 import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Detail`,
@@ -52,18 +68,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const { trainingId } = params;
-  if (!trainingId) {
+  const { assignmentId } = params;
+  if (!assignmentId) {
     throw redirect(
       path.to.trainingAssignments,
-      await flash(request, error(null, "Training ID is required"))
+      await flash(request, error(null, "Assignment ID is required"))
     );
   }
 
-  const [training, assignmentStatus] = await Promise.all([
-    getTraining(client, trainingId),
+  const [assignment, assignmentStatus] = await Promise.all([
+    getTrainingAssignment(client, assignmentId),
     getTrainingAssignmentStatus(client, companyId, {
-      trainingId,
+      trainingAssignmentId: assignmentId,
       status: undefined,
       search: undefined,
       limit: 10000,
@@ -73,10 +89,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
-  if (training.error) {
+  if (assignment.error || assignment.data.companyId !== companyId) {
     throw redirect(
       path.to.trainingAssignments,
-      await flash(request, error(training.error, "Error loading training"))
+      await flash(
+        request,
+        error(assignment.error, "Error loading training assignment")
+      )
     );
   }
 
@@ -91,7 +110,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    training: training.data,
+    name: assignment.data.training?.name ?? assignment.data.name ?? "",
+    isExternal: assignment.data.trainingId === null,
     assignments: (assignmentStatus.data ?? []) as TrainingAssignmentStatusItem[]
   };
 }
@@ -137,21 +157,114 @@ type StatusFilter =
   | "Overdue"
   | "Not Required";
 
+function CertificateCompleteModal({
+  assignment,
+  onClose
+}: {
+  assignment: TrainingAssignmentStatusItem;
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+  const fetcher = useAction<typeof completeAction>({
+    onSuccess: () => onClose()
+  });
+  const isSubmitting = fetcher.state !== "idle";
+  const [file, setFile] = useState<File | null>(null);
+
+  const onSubmit = () => {
+    const formData = new FormData();
+    formData.append("trainingAssignmentId", assignment.trainingAssignmentId);
+    formData.append("employeeId", assignment.employeeId);
+    if (file) formData.append("certificate", file);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.markTrainingComplete,
+      encType: "multipart/form-data"
+    });
+  };
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>{t`Mark Complete`}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4}>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                Mark {assignment.employeeName?.trim()} complete. Attach their
+                certificate if you have one.
+              </Trans>
+            </p>
+            <FileDropzone
+              onDrop={(files) => setFile(files[0] ?? null)}
+              accept={{
+                ...trainingCertificateAccept,
+                "image/heic": [".heic", ".heif"]
+              }}
+              multiple={false}
+              disabled={isSubmitting}
+              className="mt-0 w-full"
+            />
+            {file && (
+              <HStack spacing={2} className="text-sm">
+                <LuFileCheck className="text-emerald-500" />
+                <span className="break-all">{file.name}</span>
+              </HStack>
+            )}
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            onClick={onSubmit}
+            isDisabled={isSubmitting}
+            isLoading={isSubmitting}
+            leftIcon={<LuCircleCheck />}
+          >
+            <Trans>Mark Complete</Trans>
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
 function AssignmentListItem({
   assignment,
-  currentPeriod,
+  isExternal,
+  canRemove,
   disabled,
   isLast
 }: {
   assignment: TrainingAssignmentStatusItem;
-  currentPeriod: string | null;
+  isExternal: boolean;
+  canRemove: boolean;
   disabled: boolean;
   isLast: boolean;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state !== "idle";
+  const employeeName = assignment.employeeName?.trim() ?? "";
   const canMarkComplete =
     assignment.status !== "Completed" && assignment.status !== "Not Required";
+  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+  // Hold the completion id from when the dialog opened: the row loses its
+  // completionId as soon as the removal revalidates, and the dialog must stay
+  // mounted until its submission settles so it can close itself.
+  const [removeCompletionId, setRemoveCompletionId] = useState<number | null>(
+    null
+  );
 
   return (
     <div className={cn("p-4", !isLast && "border-b w-full")}>
@@ -181,7 +294,46 @@ function AssignmentListItem({
               <DateTime value={assignment.completedAt} variant="date" />
             </span>
           )}
-          {canMarkComplete && (
+          {assignment.certificatePath && (
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<LuFileCheck />}
+              asChild
+            >
+              <a
+                href={getPrivateUrl(assignment.certificatePath)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Trans>View Certificate</Trans>
+              </a>
+            </Button>
+          )}
+          {assignment.status === "Completed" &&
+            assignment.completionId &&
+            canRemove && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<LuUndo2 />}
+                onClick={() => setRemoveCompletionId(assignment.completionId)}
+              >
+                <Trans>Remove Completion</Trans>
+              </Button>
+            )}
+          {canMarkComplete && isExternal && (
+            <Button
+              variant="secondary"
+              size="sm"
+              isDisabled={disabled}
+              leftIcon={<LuCircleCheck />}
+              onClick={() => setIsCertificateOpen(true)}
+            >
+              <Trans>Mark Complete</Trans>
+            </Button>
+          )}
+          {canMarkComplete && !isExternal && (
             <fetcher.Form method="post" action={path.to.markTrainingComplete}>
               <input
                 type="hidden"
@@ -193,7 +345,6 @@ function AssignmentListItem({
                 name="employeeId"
                 value={assignment.employeeId}
               />
-              <input type="hidden" name="period" value={currentPeriod ?? ""} />
               <Button
                 type="submit"
                 variant="secondary"
@@ -208,13 +359,32 @@ function AssignmentListItem({
           )}
         </HStack>
       </div>
+      {isCertificateOpen && (
+        <CertificateCompleteModal
+          assignment={assignment}
+          onClose={() => setIsCertificateOpen(false)}
+        />
+      )}
+      {removeCompletionId !== null && (
+        <Confirm
+          action={path.to.markTrainingIncomplete}
+          title={t`Remove Completion`}
+          text={t`The training goes back to Pending for ${employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed.`}
+          confirmText={t`Remove`}
+          confirmVariant="destructive"
+          onCancel={() => setRemoveCompletionId(null)}
+          onSubmit={() => setRemoveCompletionId(null)}
+        >
+          <input type="hidden" name="completionId" value={removeCompletionId} />
+        </Confirm>
+      )}
     </div>
   );
 }
 
 export default function TrainingAssignmentDetailRoute() {
   const { t } = useLingui();
-  const { training, assignments } = useLoaderData<typeof loader>();
+  const { name, isExternal, assignments } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -255,7 +425,7 @@ export default function TrainingAssignmentDetailRoute() {
         <DrawerHeader>
           <HStack className="justify-between w-full pr-8">
             <HStack spacing={2}>
-              <DrawerTitle>{training?.name}</DrawerTitle>
+              <DrawerTitle>{name}</DrawerTitle>
               {currentPeriod && (
                 <Badge variant="secondary">{currentPeriod}</Badge>
               )}
@@ -336,7 +506,8 @@ export default function TrainingAssignmentDetailRoute() {
                     <AssignmentListItem
                       key={`${assignment.employeeId}-${assignment.trainingAssignmentId}`}
                       assignment={assignment}
-                      currentPeriod={currentPeriod}
+                      isExternal={isExternal}
+                      canRemove={permissions.can("delete", "resources")}
                       disabled={!permissions.can("update", "resources")}
                       isLast={index === filteredAssignments.length - 1}
                     />

@@ -22,6 +22,7 @@ import { ActionMenu } from "./ActionMenu";
 import type { ActionPresentation } from "./ActionPresentation";
 import { ActionPresentationProvider } from "./ActionPresentation";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
+import { AnnouncementBar } from "./AnnouncementBar";
 import { AutodeskProvider, AutodeskViewer } from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
 import {
@@ -433,6 +434,7 @@ export {
   Alert,
   AlertDescription,
   AlertTitle,
+  AnnouncementBar,
   AutodeskProvider,
   AutodeskViewer,
   Avatar,

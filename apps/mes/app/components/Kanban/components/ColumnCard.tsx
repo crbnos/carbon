@@ -104,8 +104,8 @@ export function ColumnCard({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined
         })} flex flex-col p-[1px] pt-0`,
         currentFilters.length > 0
-          ? `h-[calc(100dvh-var(--header-height)*2-var(--filters-height))]`
-          : `h-[calc(100dvh-var(--header-height)*2)]`,
+          ? `h-[calc(100dvh-var(--header-height)*2-var(--filters-height)-var(--announcement-height,0px))]`
+          : `h-[calc(100dvh-var(--header-height)*2-var(--announcement-height,0px))]`,
         // Phones: the column fills the board, so its header stays put while
         // its cards scroll under it, as on desktop.
         "max-md:h-full"

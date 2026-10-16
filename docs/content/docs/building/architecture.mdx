@@ -660,14 +660,15 @@ sets `enterprise`.
 
 ### 7.4 How a merge becomes production
 
-Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deployment uses four independent GitHub Actions workflows:
+Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deployment uses these GitHub Actions workflows:
 
 | Workflow       | Fires when                                                    | What it does                                                                                                                                               |
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks; an edge-functions job fails any `../` import out of a function's directory, then runs `deno check` |
-| `deploy.yml`   | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
+| `build-images.yml` | every merge to `main` | builds or re-tags every image, tagged with the commit; when the merge touched `apps/erp`, `apps/mes`, `packages` or `docs/content` and both app images succeeded, it calls `deploy.yml` |
+| `deploy.yml`   | called by `build-images.yml`, or run by hand | fans out `sst deploy` per workspace, then calls `inngest.yml` |
 | `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
-| `inngest.yml`  | after `deploy.yml` succeeds                                   | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
+| `inngest.yml`  | called by `deploy.yml` after it succeeds                      | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
 
 `check.yml` does not build application images, so a successful pull request can still fail during image build.
 Database and application deployments run without ordering, so migrations must remain compatible with the previous application version.

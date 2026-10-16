@@ -728,6 +728,10 @@ msgstr "<0>この商品の仕入先部品を追加</0>して、優先仕入先�
 msgid "≈ {0}"
 msgstr "≈ {0}"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 お知らせ：{0}にアカウントが erp.try.carbon.ms に移行されます"
+
 msgid "0 operations"
 msgstr "0 件の工程"
 
@@ -2906,6 +2910,9 @@ msgstr "アーカイブ"
 
 msgid "Archive all"
 msgstr "すべてアーカイブ"
+
+msgid "Archive Training"
+msgstr "教育訓練をアーカイブ"
 
 msgid "Archived"
 msgstr "アーカイブ済み"
@@ -8752,6 +8759,15 @@ msgstr "従業員"
 msgid "Employees"
 msgstr "従業員"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "この教育訓練に割り当てられた従業員は開くことができます。コンテンツ、ガイド、質問は変更できません。"
+
+msgid "Employees can no longer open this training."
+msgstr "従業員はこの教育訓練を開くことができなくなりました。"
+
+msgid "Employees complete a training in Carbon"
+msgstr "従業員がCarbonで教育訓練を完了する"
+
 msgid "Empty"
 msgstr "空"
 
@@ -9492,6 +9508,9 @@ msgstr "社外参照"
 
 msgid "External Reference"
 msgstr "社外参照"
+
+msgid "External training"
+msgstr "社外教育訓練"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Carbonがデフォルトで追跡しないデータをキャプチャするための追加フィールド"
@@ -13037,6 +13056,10 @@ msgstr "マップされた値"
 msgid "Mark \"{0}\" as passed?"
 msgstr "「{0}」を合格にしますか？"
 
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "{0} を完了にしてください。証明書があれば添付してください。"
+
 msgid "Mark absent"
 msgstr "欠席をマーク"
 
@@ -14359,6 +14382,9 @@ msgstr "まだコンポーネントがない"
 msgid "No condition may match"
 msgstr "条件が一致しない"
 
+msgid "No content"
+msgstr "コンテンツなし"
+
 msgid "No control account has a balance at the cutover."
 msgstr "カットオーバー時に残高がある管理勘定がありません"
 
@@ -14442,9 +14468,6 @@ msgstr "この得意先にはメールアドレスがありません。"
 
 msgid "No employees assigned this week"
 msgstr "今週割り当てられた従業員がいません"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "まだ従業員が割り当てられていません。グループを追加してステータスを確認してください。"
 
 msgid "No employees found"
 msgstr "従業員が見つかりません"
@@ -14713,6 +14736,9 @@ msgstr "支払明細なし。"
 
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
+
+msgid "No PDF uploaded"
+msgstr "PDFがアップロードされていません"
 
 msgid "No planned invoices are removed."
 msgstr "計画済請求書は削除されません。"
@@ -15776,14 +15802,14 @@ msgstr "発注日"
 msgid "Order Date"
 msgstr "注文日"
 
+msgid "Order Items"
+msgstr "アイテムを注文"
+
 msgid "Order Multiple"
 msgstr "発注倍数"
 
 msgid "Order Multiple:"
 msgstr "発注倍数:"
-
-msgid "Order Parts"
-msgstr "部品を注文"
 
 msgid "Order Qty"
 msgstr "注文数量"
@@ -17183,6 +17209,9 @@ msgstr "公開"
 msgid "Publish"
 msgstr "公開"
 
+msgid "Publish Training"
+msgstr "教育訓練を公開"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "バージョン{0}を公開しますか?"
@@ -18269,6 +18298,9 @@ msgstr "認証アプリを除去"
 msgid "Remove clause"
 msgstr "条項を除去"
 
+msgid "Remove Completion"
+msgstr "完了を除去"
+
 msgid "Remove condition"
 msgstr "条件を除去"
 
@@ -18316,6 +18348,9 @@ msgstr "部品を除去"
 
 msgid "Remove path"
 msgstr "パスを除去"
+
+msgid "Remove PDF"
+msgstr "PDFを除去"
 
 msgid "Remove row"
 msgstr "行を除去"
@@ -18423,6 +18458,9 @@ msgstr "再オープン"
 msgid "Reopen as Revision"
 msgstr "リビジョンとして再オープン"
 
+msgid "Reopen Training"
+msgstr "教育訓練を再オープン"
+
 msgid "Reorder"
 msgstr "並び替え"
 
@@ -18467,6 +18505,9 @@ msgstr "再実行"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel}内の各アイテムに対して1回繰り返します"
+
+msgid "Replace"
+msgstr "置き換え"
 
 msgid "Replace Carbon's default chart with your own, before you set up accounting"
 msgstr "会計を設定する前に、Carbon のデフォルト勘定科目表を自社のもので置き換えてください。"
@@ -21713,6 +21754,9 @@ msgstr "パンモードに切り替え"
 msgid "Switch to select mode"
 msgstr "選択モードに切り替え"
 
+msgid "Switch to Written Content"
+msgstr "記述内容に切り替える"
+
 msgid "Switch users over and confirm access"
 msgstr "ユーザーを切り替えてアクセスを確認"
 
@@ -21776,6 +21820,9 @@ msgstr "このアイテムを製造するために消費される材料全体で
 
 msgid "taken"
 msgstr "実施"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Carbon以外で実施。各従業員を完了にしてください。"
 
 msgid "Takes Effect"
 msgstr "有効開始"
@@ -23032,6 +23079,12 @@ msgstr "このバルクバッチで作成されるすべての製造指図を通
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "校正値の比較対象となる追跡可能な参照（例：NIST標準、標準器のシリアル番号）。"
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "教育訓練が下書きに戻り、変更できます。従業員は再び公開されるまで開くことができません。"
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "教育訓練は{employeeName}に対して待機中に戻ります。従業員はこの教育訓練によって付与されたスキルを保持しています。必要に応じてスキルページで除去してください。"
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "現品票は部品表上の各品目をその数量と共にリストします。"
 
@@ -23429,6 +23482,9 @@ msgstr "この発注書"
 
 msgid "This Quarter"
 msgstr "今四半期"
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "これはPDFを除去します。従業員は代わりに記述内容を表示します。"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
@@ -24023,8 +24079,14 @@ msgstr "教育訓練"
 msgid "Training Assignments"
 msgstr "教育訓練の割り当て"
 
+msgid "Training not recorded"
+msgstr "教育訓練が記録されていません"
+
 msgid "Training Plan"
 msgstr "教育訓練計画"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Carbonの外で実施された教育訓練（例：ベンダーコース）。割り当ては名前のみです。管理者が各従業員を完了にし、証明書を添付できます。"
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "アカデミーとアプリ内ガイドを使用してチームを教育訓練します。"
@@ -24582,6 +24644,9 @@ msgstr "アップロードに失敗しました。もう一度お試しくださ
 
 msgid "Upload new backup…"
 msgstr "新しいバックアップをアップロード…"
+
+msgid "Upload PDF"
+msgstr "PDFをアップロード"
 
 msgid "Uploaded model"
 msgstr "モデルをアップロードしました"
@@ -25352,6 +25417,9 @@ msgstr "各資産の価値、耐用年数、および期間終了時の処遇。
 msgid "What each period's payment is for this asset in the first year"
 msgstr "このアセットの初年度における各期の支払額"
 
+msgid "What employees read before the questions"
+msgstr "従業員が問題前に読む内容"
+
 msgid "What happens to an invoice once it is created"
 msgstr "請求書が作成されたら何が起こるか"
 
@@ -25890,6 +25958,9 @@ msgstr "設定とデータに関するワーキングセッション"
 
 msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
+
+msgid "Write"
+msgstr "書く"
 
 msgid "Write a note…"
 msgstr "メモを書く…"

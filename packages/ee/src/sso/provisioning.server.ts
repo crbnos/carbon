@@ -321,9 +321,10 @@ export function buildArchivedEmail(oldUserId: string, email: string): string {
 }
 
 /**
- * Merge invite grants into a user's existing permission set — the same
- * semantics as `setUserPermissions` in the ERP users module (arrays are
- * concatenated per key; new keys are taken as-is).
+ * Merge invite grants into a user's existing permission set, used by both
+ * `acceptInvite` in the ERP users module and SSO migration. Arrays are
+ * unioned per key, so re-accepting an invite for a company the user still
+ * holds grants for does not repeat the company id.
  */
 export function mergeInvitePermissions(
   current: Record<string, string[]>,
@@ -331,8 +332,7 @@ export function mergeInvitePermissions(
 ): Record<string, string[]> {
   const merged = { ...current };
   Object.entries(granted).forEach(([key, value]) => {
-    const existing = merged[key];
-    merged[key] = existing ? [...existing, ...value] : value;
+    merged[key] = [...new Set([...(merged[key] ?? []), ...value])];
   });
   return merged;
 }
@@ -537,6 +537,16 @@ export async function migrateUserToSso(
         .values({ userId: newUserId, companyId, role: invite.role })
         .onConflict((oc) => oc.columns(["userId", "companyId"]).doNothing())
         .execute();
+
+      // Serialize on the user row before the read-merge-write below, as
+      // acceptInvite does: the userPermission lock holds nothing while that
+      // row is absent. NO KEY UPDATE leaves foreign-key checks unblocked.
+      await trx
+        .selectFrom("user")
+        .select("id")
+        .where("id", "=", newUserId)
+        .forNoKeyUpdate()
+        .executeTakeFirstOrThrow();
 
       // Merge invite permissions into userPermission (setUserPermissions
       // semantics), under lock so concurrent grants don't lose writes.

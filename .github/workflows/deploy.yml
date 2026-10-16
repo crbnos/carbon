@@ -1,55 +1,21 @@
 name: Deploy Apps
 
+# Called by build-images.yml once this commit's carbon/erp and carbon/mes
+# images are pushed. Run by hand, it deploys the images of the commit it is
+# run on, which must already exist.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/erp/**"
-      - "apps/mes/**"
-      - "packages/**"
-      - "docs/content/**"
+  workflow_call:
   workflow_dispatch:
-jobs:
-  # The images come from build-images.yml, which runs on the same push. This
-  # waits for that run rather than building them a second time. It watches the
-  # run, not the registry: polling public.ecr.aws anonymously from a shared
-  # runner IP can be refused for the life of the runner, which looked exactly
-  # like an image that never arrived, and a build that failed or was cancelled
-  # left this waiting out its whole timeout.
-  images:
-    name: Wait for images
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      actions: read
-    steps:
-      - name: Wait for carbon/erp and carbon/mes
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          REGISTRY: ${{ vars.IMAGE_REGISTRY }}
-          SHA: ${{ github.sha }}
-        run: |
-          [ -n "$REGISTRY" ] || { echo "vars.IMAGE_REGISTRY is not set" >&2; exit 1; }
-          until run=$(gh run list --workflow build-images.yml --commit "$SHA" --limit 1 \
-              --json databaseId --jq '.[0].databaseId // empty') && [ -n "$run" ]; do
-            echo "waiting for Build images to start on $SHA"
-            sleep 15
-          done
-          echo "Build images run: $GITHUB_SERVER_URL/$GH_REPO/actions/runs/$run"
-          gh run watch "$run" --interval 15 > /dev/null
-          for app in erp mes; do
-            conclusion=$(gh run view "$run" --json jobs \
-              --jq ".jobs[] | select(.name == \"carbon/$app\") | .conclusion")
-            echo "carbon/$app: ${conclusion:-missing}"
-            [ "$conclusion" = success ] || exit 1
-          done
 
+jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: images
+    # One deploy at a time. A newer commit waiting replaces an older one that
+    # had not started yet: it deploys the newer images anyway.
+    concurrency:
+      group: deploy-apps
+      cancel-in-progress: false
 
     env:
       IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY }}
@@ -84,3 +50,10 @@ jobs:
 
       - name: Run deployment
         run: pnpm --filter ci ci:deploy
+
+  # Inngest learns the new function list once the new tasks serve it.
+  sync:
+    name: Sync Inngest
+    needs: deploy
+    uses: ./.github/workflows/inngest.yml
+    secrets: inherit

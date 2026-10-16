@@ -13,8 +13,7 @@ import {
 const credentials: RampCredentials = {
   type: "client_credentials",
   clientId: "ramp-client",
-  clientSecret: "ramp-secret",
-  environment: "sandbox"
+  clientSecret: "ramp-secret"
 };
 
 /** Minimal Response stand-in exercising only the fields RampClient reads. */
@@ -125,7 +124,7 @@ describe("RampClient OAuth (authorization code + refresh)", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const client = new RampClient(
-      { type: "oauth2", accessToken: "", environment: "production" },
+      { type: "oauth2", accessToken: "" },
       { oauthApp }
     );
     const tokens = await client.exchangeAuthorizationCode(
@@ -166,8 +165,7 @@ describe("RampClient OAuth (authorization code + refresh)", () => {
         type: "oauth2",
         accessToken: "stale-access",
         refreshToken: "the-refresh",
-        expiresAt: new Date(Date.now() - 1000).toISOString(),
-        environment: "production"
+        expiresAt: new Date(Date.now() - 1000).toISOString()
       },
       {
         oauthApp,
@@ -205,8 +203,7 @@ describe("RampClient OAuth (authorization code + refresh)", () => {
         type: "oauth2",
         accessToken: "valid-access",
         refreshToken: "the-refresh",
-        expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
-        environment: "production"
+        expiresAt: new Date(Date.now() + 3_600_000).toISOString()
       },
       { oauthApp }
     );
@@ -223,8 +220,7 @@ describe("RampClient OAuth (authorization code + refresh)", () => {
     const client = new RampClient({
       type: "oauth2",
       accessToken: "stale",
-      expiresAt: new Date(Date.now() - 1000).toISOString(),
-      environment: "production"
+      expiresAt: new Date(Date.now() - 1000).toISOString()
     });
 
     await expect(drain(client.listTransactions())).rejects.toThrow(
@@ -262,7 +258,7 @@ describe("RampClient rate limiting", () => {
 describe("RampClient pagination", () => {
   it("follows page.next twice then stops", async () => {
     const nextUrl =
-      "https://demo-api.ramp.com/developer/v1/transactions?start=cursor&page_size=100";
+      "https://api.ramp.com/developer/v1/transactions?start=cursor&page_size=100";
     let dataCalls = 0;
     const fetchMock = vi.fn(async (url: unknown) => {
       if (isTokenRequest(url)) {

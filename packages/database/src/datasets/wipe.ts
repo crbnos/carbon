@@ -103,7 +103,9 @@ const MODEL_SLIDE_TABLES = [
 // with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
 const PARENT_CHECK_TABLES = [
   // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
-  "customerContractInvoiceLine"
+  "customerContractInvoiceLine",
+  // trainingAssignment_training_or_name: a training OR an external name
+  "trainingAssignment"
 ];
 
 type ForeignKey = {
