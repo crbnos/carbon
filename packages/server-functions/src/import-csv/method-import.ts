@@ -28,6 +28,8 @@ type Summary = {
   updated: number;
   errors: Array<{ row: number; reason: string }>;
   skipped: Array<{ row: number; reason: string }>;
+  /** Rows that updated an existing record, so took no defaults. */
+  existingRows?: number[];
 };
 
 const ROW_TYPES = ["PART", "BOM", "BOP", "STEP", "TOOL", "PARAM"] as const;
@@ -388,7 +390,10 @@ export async function importMethods(
       // updated (an existing one), each method row written as inserted, and
       // each row of a version that already had content as skipped.
       if (result.partCreated === true) summary.inserted++;
-      else if (result.partCreated === false) summary.updated++;
+      else if (result.partCreated === false) {
+        summary.updated++;
+        if (g.partRow) summary.existingRows?.push(rowOf(g.partRow.index));
+      }
       summary.inserted += result.rowsInserted;
       for (const { index, version } of result.skippedRows) {
         // Create-only, never clobber. Benign: not something the user needs to

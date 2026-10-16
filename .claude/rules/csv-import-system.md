@@ -445,9 +445,17 @@ holding one are refused, as a row naming an unknown record is. The call also set
 `keepSavedValues` (below). The reply is the importer's report with its `errors` split by
 `splitRefusedRows` (`import-report.ts`) into `missing` (the reason says a required value
 is empty: "Missing required …", "… is required") and `mismatched` (everything else: no
-matching option or record, wrong form). The server instructions tell the agent to ask
-the user for missing values before importing, and to correct a mismatched value itself
-only when the right one is clear.
+matching option or record, wrong form), plus `defaults` from `defaultsForNewRows`: per
+field and value, how many rows leave the field empty and so take the default (the
+`enumMappings` Default for an enum, the field's `default` otherwise). Rows the server
+function reports in `existingRows` (updates, which keep their saved values) and skipped
+rows are not counted; refused rows are, since they take the same defaults once fixed.
+Reference revisions (`parentRevision`, `componentRevision`, `toolRevision`, and
+`revision` outside the item tables) are not defaults. In a method file a row counts only
+for its row type's fields (`methodRowTypeFields`). The server instructions tell the agent
+to settle missing values, unclear mismatches and the defaults with the user in one
+message before importing, and to correct a mismatched value itself only when the right
+one is clear.
 
 `dryRun: true` runs the import and rolls it back (below); the reply is the same
 report, with `dryRun: true`.
@@ -483,6 +491,12 @@ optional `keepSavedValues`, optional `refusedValues`).
   (compared trimmed) before the records are built, and reports it as
   `{Label} "{value}" matches no option`. The importers see only the kept rows;
   the report maps their row numbers back to file rows (`keptRows`).
+- **`existingRows`** in the report: the file rows that updated an existing record. Every
+  update site that goes through `keepSavedValues` records its row, as do the method
+  import (a PART row whose part already existed) and the supplier price import (a break
+  at a quantity the ladder had). Importers whose fields have no defaults do not report.
+- With `keepSavedValues`, a re-sent price break with a blank Lead Time keeps the break's
+  saved lead time instead of 0.
 
 - **Dry run.** The body is `importer.run(ctx, db, input)`. With `dryRun` the server
   function opens one `ControlledTransaction`, runs the import on it and always rolls

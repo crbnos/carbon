@@ -1186,7 +1186,8 @@ const importer = {
           ...issue,
           values: fileRows[issue.row] ?? {}
         })),
-        skipped: []
+        skipped: [],
+        existingRows: []
       };
     }
 
@@ -1245,14 +1246,18 @@ const importer = {
           )
         )
     );
+    // Every update payload built from a row passes through here, which is
+    // also where the report learns the row named an existing record.
     const keepSavedValues = <T extends Record<string, unknown>>(
       data: T,
       rowIndex: number,
       sources: Record<string, string> = {}
-    ): T =>
-      keepSaved
+    ): T => {
+      summary.existingRows.push(rowIndex);
+      return keepSaved
         ? withSavedValuesKept(data, heldByRow[rowIndex], sources)
         : data;
+    };
 
     const summary = {
       inserted: 0,
@@ -1260,7 +1265,10 @@ const importer = {
       // Rows the user should fix and re-import (validation / missing required data).
       errors: [] as Array<{ row: number; reason: string }>,
       // Rows intentionally not written (duplicates, already-existing) — informational.
-      skipped: [] as Array<{ row: number; reason: string }>
+      skipped: [] as Array<{ row: number; reason: string }>,
+      // Rows that updated an existing record, so took no defaults. Reported
+      // by the importers whose fields have defaults.
+      existingRows: [] as number[]
     };
 
     const acceptedRows = await rejectForeignReferences(
@@ -3283,7 +3291,8 @@ const importer = {
           rows: acceptedRows,
           companyId,
           userId,
-          summary
+          summary,
+          keepSavedValues: keepSaved
         });
         break;
       }
@@ -3350,7 +3359,10 @@ const importer = {
         })),
         ...withValues(summary.errors)
       ].sort((a, b) => a.row - b.row),
-      skipped: withValues(summary.skipped)
+      skipped: withValues(summary.skipped),
+      existingRows: [
+        ...new Set(summary.existingRows.map((row) => keptRows[row] ?? row))
+      ].sort((a, b) => a - b)
     };
   }
 };

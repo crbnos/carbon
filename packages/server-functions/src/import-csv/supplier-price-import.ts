@@ -171,9 +171,12 @@ export async function importSupplierPrices(
     companyId: string;
     userId: string;
     summary: ImportSummary;
+    /** A break the ladder already had keeps its lead time when the cell is blank. */
+    keepSavedValues?: boolean;
   }
 ): Promise<void> {
-  const { rows, companyId, userId, summary } = args;
+  const { rows, companyId, userId, summary, keepSavedValues = false } = args;
+  const recordByRow = new Map(rows);
 
   const itemIndex = await loadItemIndex(
     db,
@@ -219,15 +222,16 @@ export async function importSupplierPrices(
     existingIds.length > 0
       ? await db
           .selectFrom("supplierPartPrice")
-          .select(["supplierPartId", "quantity"])
+          .select(["supplierPartId", "quantity", "leadTime"])
           .where("companyId", "=", companyId)
           .where("supplierPartId", "in", existingIds)
           .execute()
       : [];
-  const existingBreakKeys = new Set(
-    existingBreaks.map(
-      (b) => `${b.supplierPartId}::${round(Number(b.quantity))}`
-    )
+  const savedLeadTimes = new Map(
+    existingBreaks.map((b) => [
+      `${b.supplierPartId}::${round(Number(b.quantity))}`,
+      Number(b.leadTime)
+    ])
   );
 
   await inTransaction(db, async (trx) => {
@@ -268,11 +272,20 @@ export async function importSupplierPrices(
         pairKey(ladder.itemId, ladder.supplierId)
       )!;
       return ladder.breaks.map((b) => {
-        if (existingBreakKeys.has(`${supplierPartId}::${b.quantity}`)) {
+        const breakKey = `${supplierPartId}::${b.quantity}`;
+        const savedLeadTime = savedLeadTimes.get(breakKey);
+        if (savedLeadTime !== undefined) {
           summary.updated += 1;
+          summary.existingRows?.push(b.row);
         } else {
           summary.inserted += 1;
         }
+        const leadTime =
+          keepSavedValues &&
+          savedLeadTime !== undefined &&
+          !cell(recordByRow.get(b.row)?.leadTime)
+            ? savedLeadTime
+            : b.leadTime;
         // The price is in the supplier part's currency, per purchase unit: an
         // existing part keeps its own, a new one is created in base
         // (currencyCode NULL), as the part import's supplier columns do.
@@ -280,7 +293,7 @@ export async function importSupplierPrices(
           supplierPartId,
           quantity: b.quantity,
           supplierUnitPrice: b.unitPrice,
-          leadTime: b.leadTime,
+          leadTime,
           sourceType: "Manual Entry" as const,
           companyId,
           createdBy: userId,

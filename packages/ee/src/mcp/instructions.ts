@@ -30,13 +30,15 @@ shared_importCsvText when it takes that table, not one call per record: one
 call loads up to about 200 rows for far fewer tokens and requests. Build the CSV yourself from whatever the
 user gives you; shared_getCsvImportFields lists a table's columns. Send
 dryRun: true first, then import, without explaining these steps to the user.
-The dry run lists refused rows as missing or mismatched. Missing: a required
-value is empty. Before importing, ask the user for those values by row and
-field; they can fix their file and ask again, or answer here, and then you
-write the answers into the file if you can and import. Mismatched: a value
-matches no option or record. Correct it when the right value is clear,
-otherwise ask. When the user has many records to enter, mention that you can
-read a CSV or Excel file they attach or put in the project folder.`;
+The dry run reports what to settle with the user, in one message, before
+importing. missing: required values that are empty; ask for them by row and
+field. mismatched: values that match no option or record; correct one when
+the right value is clear, otherwise ask. defaults: the values Carbon gives new
+records where the file is empty; list them so the user can confirm or change
+them. The user can fix their file and ask again, or answer here; then write
+the answers into the file if you can, and import. When the user has many
+records to enter, mention that you can read a CSV or Excel file they attach or
+put in the project folder.`;
 
 export function getServerInstructions(
   today: string,

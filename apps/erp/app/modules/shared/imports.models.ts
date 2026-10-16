@@ -850,6 +850,25 @@ const quoteLineImportFields = {
   lineStatus: { label: "Line Status", required: false, type: "string" }
 } as const;
 
+/**
+ * The fields each row type of a method file writes, to tell which of a
+ * file's defaults a row takes (a PART row takes no operation defaults).
+ */
+export const methodRowTypeFields: Record<
+  (typeof methodRowTypes)[number],
+  readonly string[]
+> = {
+  PART: [
+    ...Object.keys(partImportFields),
+    ...Object.keys(itemCostImportFields)
+  ],
+  BOM: Object.keys(methodBomFields),
+  BOP: Object.keys(methodBopFields),
+  STEP: Object.keys(methodStepFields),
+  TOOL: Object.keys(methodToolFields),
+  PARAM: Object.keys(methodParamFields)
+};
+
 export const fieldMappings = {
   customer: {
     id: {

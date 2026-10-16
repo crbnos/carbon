@@ -19,6 +19,8 @@ export type ImportSummary = {
   updated: number;
   errors: Array<{ row: number; reason: string }>;
   skipped: Array<{ row: number; reason: string }>;
+  /** Rows that updated an existing record, so took no defaults. */
+  existingRows?: number[];
 };
 
 /** A cell's text, trimmed; a missing cell is "". */

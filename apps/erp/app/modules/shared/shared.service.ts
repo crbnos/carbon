@@ -32,7 +32,7 @@ import {
   fetchedImportOption,
   withCsvIdMatches
 } from "./import-enum-mappings";
-import { splitRefusedRows } from "./import-report";
+import { defaultsForNewRows, splitRefusedRows } from "./import-report";
 import {
   columnMappingsFromHeaders,
   enumDefault,
@@ -384,10 +384,11 @@ export async function importCsv(
  * label (see `getCsvImportFields`), and a header that matches no field is
  * refused rather than dropped. The mapping is validated against the table's
  * import schema, as the app's import route does. Returns the importer's
- * report: rows inserted, updated and skipped, and the refused rows in two
- * lists, each row with its reason and cells: `missing` (a required value is
- * empty) and `mismatched` (a value that matches no option or record, or has
- * the wrong form). Rows are matched on their Unique ID, so sending a row again
+ * report: rows inserted, updated and skipped, the refused rows in two lists,
+ * each row with its reason and cells, `missing` (a required value is empty)
+ * and `mismatched` (a value that matches no option or record, or has the
+ * wrong form), and `defaults`: per field, the value new records take where
+ * the file leaves it empty, and how many rows take it. Rows are matched on their Unique ID, so sending a row again
  * updates it rather than duplicating it. On a new record an empty or missing
  * enum cell takes the field's default; on an update, an empty cell or a
  * missing column keeps the saved value, so a row needs only the columns that
@@ -523,8 +524,20 @@ export async function importCsvText(
       keepSavedValues: true,
       refusedValues
     });
+  if (!result.data) return { data: null, error: result.error };
+  // Updated and skipped rows take no defaults; refused rows take them once fixed.
+  const defaults = defaultsForNewRows({
+    table: args.table,
+    rows: parseCsv<Record<string, string>>(args.csv).rows,
+    columnMappings: validMappings,
+    enumMappings,
+    excludedRows: [
+      ...(result.data.existingRows ?? []),
+      ...result.data.skipped.map((issue) => issue.row)
+    ]
+  });
   return {
-    data: result.data ? splitRefusedRows(result.data) : null,
+    data: splitRefusedRows(result.data, defaults),
     error: result.error
   };
 }
