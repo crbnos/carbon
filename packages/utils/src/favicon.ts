@@ -7,8 +7,13 @@
  * Carbon app so the browser tab icon is uniform across erp, mes, academy,
  * starter, and docs.
  *
- * Theme-aware: light theme uses the light mark, dark theme uses the dark mark.
- * The referenced assets (`carbon-mark-light.png`, `carbon-mark-dark.png`,
+ * Theme-aware through ONE icon: `carbon-mark.svg` recolours itself with an
+ * internal `prefers-color-scheme` rule. Not two PNGs switched by `media`:
+ * Chrome does not apply `media` to icon links reliably, and showed the mark
+ * while loading, then dropped it. The PNG is the fallback for browsers without
+ * SVG favicons; its `sizes` lets Chrome still prefer the SVG (`sizes="any"`).
+ *
+ * The referenced assets (`carbon-mark.svg`, `carbon-mark-light.png`,
  * `apple-touch-icon.png`, `site.webmanifest`) must exist in each app's
  * `public/` dir — static assets are served per-origin, so they are copied into
  * every app rather than imported from here.
@@ -20,7 +25,7 @@ export type FaviconLink = {
   rel: string;
   href: string;
   type?: string;
-  media?: string;
+  sizes?: string;
 };
 
 export const faviconLinks: FaviconLink[] = [
@@ -28,13 +33,13 @@ export const faviconLinks: FaviconLink[] = [
     rel: "icon",
     type: "image/png",
     href: "/carbon-mark-light.png",
-    media: "(prefers-color-scheme: light)"
+    sizes: "480x480"
   },
   {
     rel: "icon",
-    type: "image/png",
-    href: "/carbon-mark-dark.png",
-    media: "(prefers-color-scheme: dark)"
+    type: "image/svg+xml",
+    href: "/carbon-mark.svg",
+    sizes: "any"
   },
   {
     rel: "apple-touch-icon",
