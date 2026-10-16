@@ -21609,11 +21609,20 @@ msgstr "성공"
 msgid "Success"
 msgstr "성공"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "견적이 복사되었습니다"
 
 msgid "Successfully created a new revision"
 msgstr "새 리비전이 생성되었습니다"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""

@@ -695,8 +695,6 @@
   "route-action-shape::apps/erp/app/routes/api+/passkey.authenticate.verify.ts::.from(\"passkeyCredential\").update(",
   "route-action-shape::apps/erp/app/routes/api+/passkey.register.verify.ts::.from(\"passkeyCredential\").insert(",
   "route-action-shape::apps/erp/app/routes/download.$token.tsx::.from(\"documentTransaction\").insert(",
-  "route-action-shape::apps/erp/app/routes/x+/acknowledge.tsx::.from(\"itarCertification\").insert(",
-  "route-action-shape::apps/erp/app/routes/x+/acknowledge.tsx::.from(\"user\").update(",
   "route-action-shape::apps/erp/app/routes/x+/maintenance+/$dispatchId.add-and-issue.tsx::serverFns.system(",
   "route-action-shape::apps/erp/app/routes/x+/maintenance+/$dispatchId.events.tsx::.from(\"maintenanceDispatchEvent\").insert(",
   "route-action-shape::apps/erp/app/routes/x+/maintenance+/$dispatchId.events.tsx::.from(\"maintenanceDispatchEvent\").update(",
@@ -714,6 +712,5 @@
   "route-action-shape::apps/erp/app/routes/x+/settings+/production.tsx::.from(\"companySettings\").update(",
   "route-action-shape::apps/erp/app/routes/x+/settings+/production.tsx::.from(\"location\").update(",
   "route-action-shape::apps/erp/app/routes/x+/settings+/quality.tsx::.from(\"companySettings\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/training+/update.tsx::.from(\"training\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/users+/revoke-invite.tsx::.from(\"invite\").update("
+  "route-action-shape::apps/erp/app/routes/x+/training+/update.tsx::.from(\"training\").update("
 ]

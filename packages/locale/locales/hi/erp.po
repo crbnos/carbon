@@ -21609,11 +21609,20 @@ msgstr "सफल"
 msgid "Success"
 msgstr "सफलता"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "सफलतापूर्वक उद्धरण की प्रतिलिपि बनाई गई"
 
 msgid "Successfully created a new revision"
 msgstr "नया रिवीजन सफलतापूर्वक बनाया गया"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""

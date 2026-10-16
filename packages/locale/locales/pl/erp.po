@@ -21609,11 +21609,20 @@ msgstr "Powiodło się"
 msgid "Success"
 msgstr "Sukces"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Pomyślnie skopiowano ofertę"
 
 msgid "Successfully created a new revision"
 msgstr "Pomyślnie utworzono nową rewizję"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""

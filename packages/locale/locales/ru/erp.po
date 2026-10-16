@@ -21609,11 +21609,20 @@ msgstr "Успешно"
 msgid "Success"
 msgstr "Успех"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Предложение успешно скопировано"
 
 msgid "Successfully created a new revision"
 msgstr "Ревизия успешно создана"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
