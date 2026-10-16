@@ -21,34 +21,13 @@ import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { AccountClass } from "@carbon/database/ledger";
-import { chunkArray, equals } from "@carbon/utils";
+import { chunkArray, equals, isBillableLeaseStatus } from "@carbon/utils";
 import type { PurchasePostingAmounts } from "./purchase-posting-amounts";
 
 type Enums = Database["public"]["Enums"];
 type Tables = Database["public"]["Tables"];
 
 export type LeaseStatus = Enums["leaseStatus"];
-
-/** A lease that has run its course but may still owe a payment: a
- *  termination penalty, a purchase price, or a row a voided invoice
- *  returned to Pending. */
-export const ENDED_LEASE_STATUSES = [
-  "Expired",
-  "Terminated",
-  "Purchased"
-] as const satisfies readonly LeaseStatus[];
-
-/** The statuses a lease can be invoiced in: Active, or ended. A Draft lease
- *  is not yet a lease, and a Cancelled one never was. Drafting
- *  (`create-lease-invoices`, the daily job) and posting agree on this list. */
-export const BILLABLE_LEASE_STATUSES = [
-  "Active",
-  ...ENDED_LEASE_STATUSES
-] as const satisfies readonly LeaseStatus[];
-
-export function isBillableLeaseStatus(status: LeaseStatus): boolean {
-  return (BILLABLE_LEASE_STATUSES as readonly LeaseStatus[]).includes(status);
-}
 
 export type LeaseAccount = { id: string; name: string; class: AccountClass };
 

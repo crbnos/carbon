@@ -6,9 +6,8 @@ import { postingOrThrow } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { NotificationEvent } from "@carbon/notifications";
-import { ENDED_LEASE_STATUSES } from "@carbon/server-functions/post-purchase-invoice";
 import type { InvoiceAutomation } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, ENDED_LEASE_STATUSES } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
   attachPostedInvoicePdf,
