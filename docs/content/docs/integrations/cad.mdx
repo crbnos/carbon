@@ -25,9 +25,10 @@ Onshape but the panel reports that nothing is connected, the company connected
 **Onshape** and not **Onshape V2** — connect V2 as well.
 
 <Callout type="warn">
-Each card appears only when its own OAuth client is configured server-side:
-**Onshape V2** needs `ONSHAPE_V2_CLIENT_ID`, **Onshape** needs `ONSHAPE_CLIENT_ID`.
-Connect also needs that integration's client secret and redirect URL. See
+Each card needs its own OAuth client configured server-side: **Onshape V2** reads
+`ONSHAPE_V2_CLIENT_ID`, **Onshape** reads `ONSHAPE_CLIENT_ID`. Without it the card
+reads **Not Configured** and cannot be installed. Connect also needs that
+integration's client secret and redirect URL. See
 [Environment variables](/docs/platform/self-hosting/environment-variables) and the
 setup section below.
 </Callout>
