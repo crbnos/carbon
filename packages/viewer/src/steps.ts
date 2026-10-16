@@ -23,6 +23,14 @@ import {
   validateSubAssemblies
 } from "./subassembly";
 
+export type { AssemblyGraphIndex } from "./graph";
+export type { AssemblyPlan, AssemblyStepGroup, StepPhase } from "./plan";
+export type {
+  SubAssemblyInfo,
+  SubAssemblyViolation,
+  UnusableReason
+} from "./subassembly";
+export type { AssemblyGraph } from "./types";
 export {
   assignStepPhases,
   buildAssemblyStepGroups,
@@ -38,11 +46,3 @@ export {
   usableSubAssemblies,
   validateSubAssemblies
 };
-export type { AssemblyGraphIndex } from "./graph";
-export type { AssemblyPlan, AssemblyStepGroup, StepPhase } from "./plan";
-export type {
-  SubAssemblyInfo,
-  SubAssemblyViolation,
-  UnusableReason
-} from "./subassembly";
-export type { AssemblyGraph } from "./types";

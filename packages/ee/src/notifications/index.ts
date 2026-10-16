@@ -14,5 +14,4 @@ notificationRegistry.register(new JiraNotificationService());
 export * from "./pipeline";
 export * from "./registry";
 export * from "./types";
-export { JiraNotificationService };
-export { SlackNotificationService };
+export { JiraNotificationService, SlackNotificationService };

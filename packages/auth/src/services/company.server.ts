@@ -9,11 +9,11 @@ import { oncePerRead } from "@carbon/logger/middleware.server";
 import { companyPlanCacheKey, Edition, isInternalEmail } from "@carbon/utils";
 import * as cookie from "cookie";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
-import { getCookieDomain } from "../utils/cookie";
+import { authCookieName, getCookieDomain } from "../utils/cookie";
 
 const logger = getLogger("auth", "company");
 
-const cookieName = "companyId";
+const cookieName = authCookieName("companyId");
 const isTestEdition = CarbonEdition === Edition.Test;
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 // The same SameSite/Secure rules as the session cookie.

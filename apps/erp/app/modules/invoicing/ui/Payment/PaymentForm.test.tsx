@@ -184,18 +184,21 @@ describe("PaymentForm refund directions", () => {
   it.each([
     ["customer-refund", "Disbursement", "customerId", "supplierId"],
     ["supplier-refund", "Receipt", "supplierId", "customerId"]
-  ])("offers %s and submits its cash direction with one party", (kind, direction, party, otherParty) => {
-    const html = render();
-    expect(html).toContain("Refund to Customer");
-    expect(html).toContain("Refund from Supplier");
-    harness.typeChange?.({ value: kind, label: kind });
-    const next = render();
-    expect(next).toContain(
-      `name="paymentType" readonly="" value="${direction}"`
-    );
-    expect(next).toContain(`name="${party}"`);
-    expect(next).toContain(`name="${otherParty}" readonly="" value=""`);
-  });
+  ])(
+    "offers %s and submits its cash direction with one party",
+    (kind, direction, party, otherParty) => {
+      const html = render();
+      expect(html).toContain("Refund to Customer");
+      expect(html).toContain("Refund from Supplier");
+      harness.typeChange?.({ value: kind, label: kind });
+      const next = render();
+      expect(next).toContain(
+        `name="paymentType" readonly="" value="${direction}"`
+      );
+      expect(next).toContain(`name="${party}"`);
+      expect(next).toContain(`name="${otherParty}" readonly="" value=""`);
+    }
+  );
 });
 
 describe("PaymentForm employee payee", () => {
@@ -230,42 +233,45 @@ describe("PaymentForm employee payee", () => {
 });
 
 describe("PaymentForm document currency", () => {
-  it.each([
-    undefined,
-    "payment-id"
-  ])("labels document cash in EUR for payment id %s while the company uses USD", (id) => {
-    const html = render({ ...initialValues, id, status: "Draft" });
-    expect(html).toContain(
-      'aria-label="Total Amount" readonly="" value="€120.80"'
-    );
-    expect(html).not.toContain("$120.80");
-  });
+  it.each([undefined, "payment-id"])(
+    "labels document cash in EUR for payment id %s while the company uses USD",
+    (id) => {
+      const html = render({ ...initialValues, id, status: "Draft" });
+      expect(html).toContain(
+        'aria-label="Total Amount" readonly="" value="€120.80"'
+      );
+      expect(html).not.toContain("$120.80");
+    }
+  );
 
   it.each([
     ["JPY", 123, "¥123"],
     ["BHD", 123.456, "BHD 123.456"]
-  ] as const)("uses %s document settlement precision", (currencyCode, totalAmount, formatted) => {
-    expect(render({ ...initialValues, currencyCode, totalAmount })).toContain(
-      `aria-label="Total Amount" readonly="" value="${formatted}"`
-    );
-  });
+  ] as const)(
+    "uses %s document settlement precision",
+    (currencyCode, totalAmount, formatted) => {
+      expect(render({ ...initialValues, currencyCode, totalAmount })).toContain(
+        `aria-label="Total Amount" readonly="" value="${formatted}"`
+      );
+    }
+  );
 
-  it.each([
-    undefined,
-    "payment-id"
-  ])("updates currency and decimal precision after selection for payment id %s", (id) => {
-    const values = {
-      ...initialValues,
-      id,
-      status: "Draft",
-      totalAmount: 123.456
-    };
-    render(values);
-    harness.currencyChange?.({ value: "BHD", label: "Bahraini Dinar" });
-    expect(render(values)).toContain('value="BHD 123.456"');
-    harness.currencyChange?.({ value: "JPY", label: "Japanese Yen" });
-    expect(render(values)).toContain('value="¥123"');
-    harness.currencyChange?.({ value: "EUR", label: "Euro" });
-    expect(render(values)).toContain('value="€123.46"');
-  });
+  it.each([undefined, "payment-id"])(
+    "updates currency and decimal precision after selection for payment id %s",
+    (id) => {
+      const values = {
+        ...initialValues,
+        id,
+        status: "Draft",
+        totalAmount: 123.456
+      };
+      render(values);
+      harness.currencyChange?.({ value: "BHD", label: "Bahraini Dinar" });
+      expect(render(values)).toContain('value="BHD 123.456"');
+      harness.currencyChange?.({ value: "JPY", label: "Japanese Yen" });
+      expect(render(values)).toContain('value="¥123"');
+      harness.currencyChange?.({ value: "EUR", label: "Euro" });
+      expect(render(values)).toContain('value="€123.46"');
+    }
+  );
 });

@@ -79,7 +79,9 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
 **Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
-single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
+single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`),
+`AUTH_COOKIE_SUFFIX` (optional; suffixes the auth cookie names when another deployment
+shares `DOMAIN` — EU sets `eu`, see `authentication-system.md`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
 Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for

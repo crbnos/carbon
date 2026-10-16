@@ -400,29 +400,30 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       expect(post).toHaveBeenCalledTimes(1);
     }, 30000);
 
-    it.each([
-      "Pending",
-      "Voided"
-    ] as const)("never posts or confirms a mapped %s invoice", async (status) => {
-      const { args, ctx, ramp, post } = await fixture();
-      const staged = await stageOrResumeRampBill(db, args);
-      await db
-        .updateTable("purchaseInvoice")
-        .set({ status })
-        .where("companyId", "=", scope.companyId)
-        .where("id", "=", staged.invoiceRowId)
-        .execute();
-      vi.mocked(confirmSyncs).mockClear();
-      expect(await syncRampBills(ctx, ramp, undefined)).toMatchObject({
-        created: 0,
-        reconfirmed: 0,
-        failed: 1
-      });
-      expect(vi.mocked(confirmSyncs).mock.calls.at(-1)?.[2].successful).toEqual(
-        []
-      );
-      expect(post).not.toHaveBeenCalled();
-    }, 30000);
+    it.each(["Pending", "Voided"] as const)(
+      "never posts or confirms a mapped %s invoice",
+      async (status) => {
+        const { args, ctx, ramp, post } = await fixture();
+        const staged = await stageOrResumeRampBill(db, args);
+        await db
+          .updateTable("purchaseInvoice")
+          .set({ status })
+          .where("companyId", "=", scope.companyId)
+          .where("id", "=", staged.invoiceRowId)
+          .execute();
+        vi.mocked(confirmSyncs).mockClear();
+        expect(await syncRampBills(ctx, ramp, undefined)).toMatchObject({
+          created: 0,
+          reconfirmed: 0,
+          failed: 1
+        });
+        expect(
+          vi.mocked(confirmSyncs).mock.calls.at(-1)?.[2].successful
+        ).toEqual([]);
+        expect(post).not.toHaveBeenCalled();
+      },
+      30000
+    );
 
     it("adopts one exact legacy system Draft without changing its source mapping on collision", async () => {
       const { args, ctx } = await fixture();

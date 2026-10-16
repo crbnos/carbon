@@ -73,21 +73,18 @@ describe("canCreatePurchaseOrderRevision", () => {
     { currentStatus: "To Receive", orderDate: null, expected: false }
   ];
 
-  it.each(
-    reopenMatrix
-  )("reopen from $currentStatus (orderDate: $orderDate) → eligible: $expected", ({
-    currentStatus,
-    orderDate,
-    expected
-  }) => {
-    expect(
-      canCreatePurchaseOrderRevision({
-        newStatus: "Draft",
-        currentStatus,
-        orderDate
-      })
-    ).toBe(expected);
-  });
+  it.each(reopenMatrix)(
+    "reopen from $currentStatus (orderDate: $orderDate) → eligible: $expected",
+    ({ currentStatus, orderDate, expected }) => {
+      expect(
+        canCreatePurchaseOrderRevision({
+          newStatus: "Draft",
+          currentStatus,
+          orderDate
+        })
+      ).toBe(expected);
+    }
+  );
 
   it("follows the same matrix when reopening to Planned", () => {
     for (const { currentStatus, orderDate, expected } of reopenMatrix) {

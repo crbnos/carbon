@@ -160,4 +160,5 @@ function DirectionAwareTabs({
     </motion.div>
   );
 }
+
 export { DirectionAwareTabs };

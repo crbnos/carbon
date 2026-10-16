@@ -5,4 +5,4 @@
 import ProcessesTable from "./ProcessesTable";
 import ProcessForm from "./ProcessForm";
 
-export { ProcessForm, ProcessesTable };
+export { ProcessesTable, ProcessForm };
