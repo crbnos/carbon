@@ -27,6 +27,13 @@ export type ImportSummary = {
 export const cell = (value: string | undefined): string => (value ?? "").trim();
 
 /**
+ * The largest value of a Postgres INTEGER column. A whole number above it
+ * passes the number checks but aborts the import's transaction when written,
+ * so the imports refuse it as a row error.
+ */
+export const MAX_INTEGER = 2147483647;
+
+/**
  * A numeric cell: `undefined` when blank, `NaN` when it is not a finite
  * number, else the number.
  */

@@ -121,6 +121,9 @@ describe("readPlanningUpdate", () => {
     expect(readPlanningUpdate({ reorderQuantity: "lots" })).toEqual({
       error: "Reorder Quantity must be a number"
     });
+    expect(readPlanningUpdate({ reorderQuantity: "2147483648" })).toEqual({
+      error: "Reorder Quantity must be 2147483647 or less"
+    });
   });
 
   it("refuses an unknown reordering policy", () => {

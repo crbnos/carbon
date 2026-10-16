@@ -270,8 +270,13 @@ file under `import-csv/` with its per-row decision exported and tested
   is counted once: inserted, updated, skipped or errors. A key repeated in the
   file is a row error on the later row. Every write runs in one
   `db.transaction()`; reads happen before it.
+- Updates of existing rows are one `UPDATE … FROM (VALUES …)` per chunk
+  (`updateRowsByKey`, `set-based-update.ts`), never one statement per row:
+  each row carries, per column, its value and whether to write it.
 - Numbers are rounded to the storage scale (`round`) before they are checked,
-  as the app's inputs commit them.
+  as the app's inputs commit them. A whole number above `MAX_INTEGER` (the
+  INTEGER column limit) is a row error; written, it would abort the
+  transaction.
 
 #### `supplierPartPrice` (Supplier Price Breaks)
 
@@ -316,8 +321,8 @@ quantity, order multiple, maximum inventory quantity, planning horizon. The
 responsible employee is not imported. A blank cell leaves the column as it is
 (so an import cannot clear a planning horizon back to the company default).
 The validator lives in the app, so `item-planning-import.ts` restates it:
-`PLANNING_COLUMNS` holds each field's minimum (plus a whole-number check for
-the INTEGER columns, which the database enforces anyway) and
+`PLANNING_COLUMNS` holds each field's minimum (plus a whole-number check and
+`MAX_INTEGER` for the INTEGER columns) and
 `planningRuleError` the two refinements, word for word including their
 truthiness (Maximum Quantity with a reorder point of 0 is refused). The
 refinements run on the row merged over the stored values, as the form submits

@@ -3494,11 +3494,26 @@ const importCsv = defineServerFn({
       throw new Error("A dry run cannot start inside a transaction");
     }
     const trx = await ctx.db.startTransaction().execute();
+    let failed = false;
     try {
       const result = await importer.run(ctx, trx, input);
       return { ...result, dryRun: true };
+    } catch (error) {
+      failed = true;
+      throw error;
     } finally {
-      await trx.rollback().execute();
+      try {
+        await trx.rollback().execute();
+      } catch (rollbackError) {
+        logger.error("Rolling back a dry-run import failed", {
+          companyId: ctx.companyId,
+          table: input.table,
+          error: rollbackError
+        });
+        // Keep the import's own error; a failed rollback after a clean run
+        // means the dry run cannot vouch that nothing was written.
+        if (!failed) throw rollbackError;
+      }
     }
   }
 });
