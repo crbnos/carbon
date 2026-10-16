@@ -26,18 +26,12 @@ import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import type {
-  accountsPayableBillingAddressValidator,
-  accountsReceivableBillingAddressValidator,
-  invoiceAutomations,
   itemSerialSequenceValidator,
-  kanbanOutputTypes,
-  purchasePriceUpdateTimingTypes,
   sequenceValidator,
   subsidiaryValidator
 } from "./settings.models";
@@ -67,31 +61,6 @@ export async function getAccountsReceivableBillingAddress(
     .select("*")
     .eq("id", companyId)
     .maybeSingle();
-}
-
-/** @mcp update */
-export async function updateAccountsPayableBillingAddress(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  data: z.infer<typeof accountsPayableBillingAddressValidator>,
-  updatedBy: string
-) {
-  return client
-    .from("companyAccountsPayableBillingAddress")
-    .update(sanitize({ ...data, updatedBy }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateAccountsReceivableBillingAddress(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  data: z.infer<typeof accountsReceivableBillingAddressValidator>,
-  updatedBy: string
-) {
-  return client
-    .from("companyAccountsReceivableBillingAddress")
-    .upsert(sanitize({ id: companyId, ...data, updatedBy }));
 }
 
 export async function deleteSubsidiary(
@@ -624,7 +593,7 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
-/** @mcp upsert */
+/** The template row only: `settings.documentTemplate.save` also saves the header layout onto its section. */
 export async function upsertDocumentTemplate(
   client: SupabaseClient<Database>,
   documentTemplate: {
@@ -687,10 +656,7 @@ export async function getDocumentSectionsByIds(
     .in("id", ids);
 }
 
-/**
- * @mcp upsert
- * @mcp key documentSection id
- */
+/** The section row: `settings.documentSection.save` is the operation. */
 export async function upsertDocumentSection(
   client: SupabaseClient<Database>,
   documentSection: {
@@ -753,7 +719,7 @@ export async function upsertDocumentSection(
     .select("id");
 }
 
-/** @mcp delete */
+/** The section row: `settings.documentSection.delete` is the operation. */
 export async function deleteDocumentSection(
   client: SupabaseClient<Database>,
   id: string,
@@ -860,7 +826,7 @@ export async function insertSubsidiary(
   return client.from("company").insert(data).select("id").single();
 }
 
-/** @mcp update */
+/** Only the company fields: `settings.subsidiary.update` gates it and drops the cached time zone. */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
@@ -903,24 +869,7 @@ export async function updateCompanyPlan(
   return client.from("companyPlan").update(updateData).eq("id", companyId);
 }
 
-/** @mcp update */
-export async function updateDefaultCustomerCc(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  defaultCustomerCc: string[]
-) {
-  return (
-    client
-      .from("companySettings")
-      .update({ defaultCustomerCc })
-      // `companySettings` is keyed by `id` (which IS the companyId) — it has no
-      // `companyId` column, so the old predicate made every save fail with a
-      // PostgREST error surfaced straight to the user on Settings → Sales.
-      .eq("id", companyId)
-  );
-}
-
-/** @mcp update */
+/** Only the company row: `settings.company.update` also handles a base-currency change and the cached time zone. */
 export async function updateCompany(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -936,8 +885,8 @@ export async function updateCompany(
  * denominated in the old base, so they must be cleared in the SAME transaction
  * — a committed base flip with surviving old-base pins silently mis-rates
  * every new document, and a non-atomic cleanup can race a freshly created
- * new-base override. Kysely throws on rollback; the route try/catches.
- * @mcp update destructive
+ * new-base override. Kysely throws on rollback; `settings.company.update`
+ * try/catches.
  */
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
@@ -967,120 +916,10 @@ export async function updateCompanyWithBaseCurrencyChange(
   });
 }
 
-/** @mcp update */
-export async function updateShelfLifeSettings(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  settings: {
-    /** undefined disables expiry badges company-wide. */
-    nearExpiryWarningDays: number | undefined;
-    /** Seed for the "Shelf-life (days)" input on new items. */
-    defaultShelfLifeDays: number;
-    /** MIN expiry scope for Calculated-mode finished products. */
-    calculatedInputScope: "AllInputs" | "ManagedInputsOnly";
-    /** Policy enforced when an operator consumes an expired entity. */
-    expiredEntityPolicy: "Warn" | "Block" | "BlockWithOverride";
-  }
-) {
-  return client
-    .from("companySettings")
-    .update({
-      inventoryShelfLife: {
-        nearExpiryWarningDays: settings.nearExpiryWarningDays ?? null,
-        defaultShelfLifeDays: settings.defaultShelfLifeDays,
-        calculatedInputScope: settings.calculatedInputScope,
-        expiredEntityPolicy: settings.expiredEntityPolicy
-      }
-    })
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateDigitalQuoteSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  digitalQuoteEnabled: boolean,
-  digitalQuoteNotificationGroup: string[],
-  digitalQuoteIncludesPurchaseOrders: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(
-      sanitize({
-        digitalQuoteEnabled,
-        digitalQuoteNotificationGroup,
-        digitalQuoteIncludesPurchaseOrders
-      })
-    )
-    .eq("id", companyId);
-}
-
 // NOTE: updateIntegrationMetadata lives in settings.server.ts, NOT here. It needs
 // the service-role client for the Vault RPC, and this file is re-exported by the
 // client barrel (~/modules/settings) — a `@carbon/auth/client.server` import here
 // would pull the service-role client into the browser bundle (Vite blocks it).
-
-/** @mcp update */
-export async function updateAssetTaxDepreciationSettings(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  settings: {
-    assetTaxDepreciationEnabled: boolean;
-    assetTaxRate: number | null;
-  }
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize(settings))
-    .eq("id", companyId);
-}
-
-/** The ASC 842 classification thresholds, the default lessor discount rate
- *  and the lessee incremental borrowing rate, all percentage points (75, 90,
- *  6, 6); the lessee short-term lease expedient; and how many days before a
- *  lease's notice or end date its owner is reminded. * @mcp update
- */
-export async function updateLeasePolicySettings(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  settings: {
-    leaseMajorPartThresholdPercent: number;
-    leaseSubstantiallyAllThresholdPercent: number;
-    leaseDefaultDiscountRate: number;
-    leaseIncrementalBorrowingRate: number;
-    leaseShortTermExpedient: boolean;
-    leaseReminderDays: number;
-  }
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize(settings))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateTimeCardSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  timeCardEnabled: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ timeCardEnabled }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateKanbanOutputSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  kanbanOutput: (typeof kanbanOutputTypes)[number]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ kanbanOutput }))
-    .eq("id", companyId);
-}
 
 /** @mcp update */
 export async function updateLogoDark(
@@ -1146,83 +985,6 @@ export async function updateLogoWatermark(
     .eq("id", companyId);
 }
 
-/** @mcp update */
-export async function updateMaintenanceDispatchNotificationSettings(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  settings: {
-    maintenanceDispatchNotificationGroup?: string[];
-    qualityDispatchNotificationGroup?: string[];
-    operationsDispatchNotificationGroup?: string[];
-    otherDispatchNotificationGroup?: string[];
-  }
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize(settings))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateMaterialGeneratedIdsSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  materialGeneratedIds: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ materialGeneratedIds }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateMetricSettings(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  useMetric: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ useMetric }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateAllowLowercaseItemIdsSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  allowLowercaseItemIds: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ allowLowercaseItemIds }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateBomExplorerReadableIdSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  showBomExplorerReadableId: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ showBomExplorerReadableId }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updatePlmReleaseControlSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  plmReleaseControl: (typeof plmReleaseControlOptions)[number]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ plmReleaseControl }))
-    .eq("id", companyId);
-}
-
 export async function updateProductLabelSize(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1231,196 +993,6 @@ export async function updateProductLabelSize(
   return client
     .from("companySettings")
     .update(sanitize({ productLabelSize }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updatePurchasePriceUpdateTimingSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  purchasePriceUpdateTiming: (typeof purchasePriceUpdateTimingTypes)[number]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ purchasePriceUpdateTiming }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateLeadTimesOnReceiptSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  updateLeadTimesOnReceipt: boolean
-) {
-  return (client.from("companySettings") as any)
-    .update(sanitize({ updateLeadTimesOnReceipt }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateIncludeMaterialsOnTravelerSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  includeMaterialsOnTraveler: boolean
-) {
-  // Cast: the includeMaterialsOnTraveler column is added by migration
-  // 20260728151742 but isn't in the generated types until they're regenerated
-  // against the migrated DB (mirrors updateLeadTimesOnReceiptSetting).
-  return (client.from("companySettings") as any)
-    .update(sanitize({ includeMaterialsOnTraveler }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateIncludeOperationsOnTravelerSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  includeOperationsOnTraveler: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ includeOperationsOnTraveler }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateAccountsPayableAddressSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  accountsPayableAddress: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ accountsPayableAddress }))
-    .eq("id", companyId);
-}
-
-/**
- * Require a supplier to have a contact with an email before its documents issue.
- *
- * See `party-contact.ts` for why the requirement lives on the PARTY and why the
- * bar is an email rather than merely a contact row.
- * @mcp update
- */
-export async function updateRequireSupplierContactSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  requireSupplierContactAndLocation: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ requireSupplierContactAndLocation }))
-    .eq("id", companyId);
-}
-
-/**
- * The customer-side mirror. Ships off; nothing downstream forces it today.
- * @mcp update
- */
-export async function updateRequireCustomerContactSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  requireCustomerContactAndLocation: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ requireCustomerContactAndLocation }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateAccountsReceivableAddressSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  accountsReceivableAddress: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ accountsReceivableAddress }))
-    .eq("id", companyId);
-}
-
-export async function updateAccountsPayableEmail(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  accountsPayableEmail: string | undefined
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ accountsPayableEmail: accountsPayableEmail ?? null }))
-    .eq("id", companyId);
-}
-
-export async function updateAccountsReceivableEmail(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  accountsReceivableEmail: string | undefined
-) {
-  return client
-    .from("companySettings")
-    .update(
-      sanitize({ accountsReceivableEmail: accountsReceivableEmail ?? null })
-    )
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateSalesRuleNotificationSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  salesRuleNotificationGroup: string[]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ salesRuleNotificationGroup }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateQuoteLineCategoryMarkups(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  quoteLineCategoryMarkups: Record<string, number>
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ quoteLineCategoryMarkups }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateInvoiceAutomationSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  invoiceAutomation: (typeof invoiceAutomations)[number]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ invoiceAutomation }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateInvoiceNotificationSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  invoiceNotificationGroup: string[]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ invoiceNotificationGroup }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateRfqReadySetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  rfqReadyNotificationGroup: string[]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ rfqReadyNotificationGroup }))
     .eq("id", companyId);
 }
 
@@ -1440,130 +1012,6 @@ export async function updateSequence(
     .eq("table", table);
 }
 
-/** @mcp update */
-export async function updateSuggestionNotificationSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  suggestionNotificationGroup: string[]
-) {
-  return client
-    .from("company")
-    .update(sanitize({ suggestionNotificationGroup }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateSupplierQuoteNotificationSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  supplierQuoteNotificationGroup: string[]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ supplierQuoteNotificationGroup }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateDefaultSupplierCc(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  defaultSupplierCc: string[]
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ defaultSupplierCc }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateShowCurrencyTrailingZerosSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  showCurrencyTrailingZeros: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ showCurrencyTrailingZeros }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateShowSupplierReadableIdSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  showSupplierReadableId: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ showSupplierReadableId }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateShowCustomerReadableIdSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  showCustomerReadableId: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ showCustomerReadableId }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateAutoSelectMaterialWithoutPickingListSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  autoSelectMaterialWithoutPickingList: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ autoSelectMaterialWithoutPickingList }))
-    .eq("id", companyId);
-}
-
-/**
- * The time of day scheduled MRP runs, on the company's own clock ("HH:MM:SS").
- * `null` restores the default cadence, every 3 hours.
- * @mcp update
- */
-export async function updateMrpRunTimeSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  mrpRunTime: string | null
-) {
-  return client
-    .from("companySettings")
-    .update({ mrpRunTime })
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateIncompletePickingListPolicySetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  incompletePickingListPolicy: "warn" | "error"
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ incompletePickingListPolicy }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
-export async function updateReturnPickedMaterialTimingSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  returnPickedMaterialTiming: "job" | "operation"
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ returnPickedMaterialTiming }))
-    .eq("id", companyId);
-}
-
 // ── Planning ownership + tolerance (spec §P1.3 / §P1.6) ────────────────────
 // The responsibleEmployee ladder's configurable rungs: company default →
 // per-location → per-(location, item group). The item-group tier is
@@ -1578,16 +1026,6 @@ export async function getItemPostingGroupResponsibilities(
     .from("itemPostingGroupResponsibility")
     .select("id, locationId, itemPostingGroupId, responsibleEmployee")
     .eq("companyId", companyId);
-}
-
-export async function setDefaultResponsibleEmployee(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; employeeId: string | null }
-) {
-  return client
-    .from("companySettings")
-    .update({ defaultResponsibleEmployee: args.employeeId })
-    .eq("id", args.companyId);
 }
 
 export async function setLocationResponsibleEmployee(
@@ -1656,53 +1094,4 @@ export async function upsertItemPostingGroupResponsibility(
       createdBy: args.userId
     })
     .select("id");
-}
-
-export async function setRescheduleToleranceDays(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; days: number }
-) {
-  return client
-    .from("companySettings")
-    .update({ rescheduleToleranceDays: args.days })
-    .eq("id", args.companyId);
-}
-
-/**
- * Whether a purchase order the planning pages raised skips the approval rule
- * when it is finalized (`purchaseOrder.createdFromPlanning`, cleared by any
- * manual line change). On by default.
- */
-export async function setSkipApprovalForPlanningPurchaseOrders(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; enabled: boolean }
-) {
-  return client
-    .from("companySettings")
-    .update({ skipApprovalForPlanningPurchaseOrders: args.enabled })
-    .eq("id", args.companyId);
-}
-
-/** The company-wide planning horizon; `null` = no default (no time fence). */
-export async function setDefaultPlanningHorizonDays(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; days: number | null }
-) {
-  return client
-    .from("companySettings")
-    .update({ defaultPlanningHorizonDays: args.days })
-    .eq("id", args.companyId);
-}
-
-export async function setForecastConsumptionWindow(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; backwardPeriods: number; forwardPeriods: number }
-) {
-  return client
-    .from("companySettings")
-    .update({
-      forecastConsumptionBackwardPeriods: args.backwardPeriods,
-      forecastConsumptionForwardPeriods: args.forwardPeriods
-    })
-    .eq("id", args.companyId);
 }

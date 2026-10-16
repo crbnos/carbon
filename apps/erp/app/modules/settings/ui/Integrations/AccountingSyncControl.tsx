@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, Button, Switch } from "@carbon/react";
+import { useAction } from "@carbon/query";
+import { Badge, Button, Switch, toast } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { usePermissions } from "~/hooks";
 
 type AccountingSyncControlProps = {
@@ -25,7 +26,12 @@ export function AccountingSyncControl({
 }: AccountingSyncControlProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(data.syncEnabled ? t`Turned on sync` : t`Turned off sync`);
+    }
+  });
   const [, setSearchParams] = useSearchParams();
 
   const isSubmitting = fetcher.state !== "idle";

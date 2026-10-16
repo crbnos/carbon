@@ -1707,11 +1707,29 @@ msgstr "実際原価と標準原価の差異を記録するためのアカウン
 msgid "Accounts Payable"
 msgstr "買掛金"
 
+msgid "Accounts payable billing address disabled"
+msgstr ""
+
+msgid "Accounts payable billing address enabled"
+msgstr ""
+
+msgid "Accounts payable billing address updated"
+msgstr ""
+
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "仕入先に支払う金額の買掛金。"
 
 msgid "Accounts Receivable"
 msgstr "売掛金"
+
+msgid "Accounts receivable billing address disabled"
+msgstr ""
+
+msgid "Accounts receivable billing address enabled"
+msgstr ""
+
+msgid "Accounts receivable billing address updated"
+msgstr ""
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "得意先から支払われるべき金額の売掛金"
@@ -3646,6 +3664,9 @@ msgstr "担当者"
 msgid "Assignment"
 msgstr "割り当て"
 
+msgid "Assignment updated"
+msgstr ""
+
 msgid "Assignments"
 msgstr "割り当て"
 
@@ -4206,6 +4227,9 @@ msgstr "BoM + BoP"
 
 msgid "BoM Explorer"
 msgstr "BoM Explorer"
+
+msgid "BoM explorer setting updated"
+msgstr ""
 
 msgid "BOM synced successfully"
 msgstr "BOMが正常に同期されました"
@@ -5208,6 +5232,9 @@ msgstr "会社のデフォルト"
 msgid "Company default ({companyLabel})"
 msgstr "会社のデフォルト（{companyLabel}）"
 
+msgid "Company default updated"
+msgstr ""
+
 msgid "Company group"
 msgstr "会社グループ"
 
@@ -5528,6 +5555,10 @@ msgstr "接続先"
 msgid "Console Mode"
 msgstr "コンソールモード"
 
+#. placeholder {0}: data.pinError.toLowerCase()
+msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
+msgstr ""
+
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "コンソールモードが有効になりました。このPINを使用してMES端末で自分自身を識別してください。"
 
@@ -5536,6 +5567,9 @@ msgstr "コンソールモードは無効です"
 
 msgid "Console mode is enabled"
 msgstr "コンソールモードが有効です"
+
+msgid "Console mode settings updated"
+msgstr ""
 
 msgid "Console Operator"
 msgstr "コンソールオペレーター"
@@ -6572,6 +6606,9 @@ msgstr "通貨"
 msgid "Currency code"
 msgstr "通貨コード"
 
+msgid "Currency display updated"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "通貨換算"
 
@@ -6656,6 +6693,12 @@ msgstr "得意先担当者"
 msgid "Customer Contact"
 msgstr "得意先担当者"
 
+msgid "Customer contact requirement disabled"
+msgstr ""
+
+msgid "Customer contact requirement enabled"
+msgstr ""
+
 msgid "Customer contacts"
 msgstr "得意先担当者"
 
@@ -6667,6 +6710,9 @@ msgstr "得意先デポジット"
 
 msgid "Customer Details"
 msgstr "得意先詳細"
+
+msgid "Customer email settings updated"
+msgstr ""
 
 msgid "Customer engineering contact"
 msgstr "得意先エンジニアリング担当者"
@@ -6685,6 +6731,12 @@ msgstr "得意先IDは非表示です"
 
 msgid "Customer IDs are shown"
 msgstr "得意先IDは表示されています"
+
+msgid "Customer IDs hidden"
+msgstr ""
+
+msgid "Customer IDs shown"
+msgstr ""
 
 msgid "Customer Invoice Number"
 msgstr "得意先請求書番号"
@@ -6841,6 +6893,9 @@ msgstr "ダーク"
 
 msgid "Dashboard"
 msgstr "ダッシュボード"
+
+msgid "Dashboard settings updated"
+msgstr ""
 
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "データは一度だけ流れ、ツール間で再入力および調整されることはありません。"
@@ -7084,6 +7139,9 @@ msgstr "非基本通貨での取引のデフォルト現金勘定。"
 
 msgid "Default cash account for transactions in your base currency."
 msgstr "あなたの基本通貨での取引のためのデフォルト現金勘定。"
+
+msgid "Default category markups updated"
+msgstr ""
 
 msgid "Default cc"
 msgstr "デフォルトCC"
@@ -7782,6 +7840,9 @@ msgstr "デジタル見積もりが却下されました"
 
 msgid "Digital quote rejected by email"
 msgstr "デジタル見積もりがメールで却下されました"
+
+msgid "Digital quote setting updated"
+msgstr ""
 
 msgid "Digital Quotes"
 msgstr "デジタル見積"
@@ -9964,6 +10025,9 @@ msgstr "見積明細を更新できませんでした"
 msgid "Failed to update supplier quote line"
 msgstr "仕入先見積行の更新に失敗しました"
 
+msgid "Failed to update the setting"
+msgstr ""
+
 msgid "Failed to update thumbnail path"
 msgstr "サムネイルパスの更新に失敗しました"
 
@@ -10251,6 +10315,9 @@ msgstr "資産クラス"
 msgid "Fixed Asset Class"
 msgstr "固定資産クラス"
 
+msgid "Fixed asset settings updated"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "固定資産"
 
@@ -10314,6 +10381,9 @@ msgstr "予測所要量の消費"
 msgid "Forecast Consumption"
 msgstr "予測消費"
 
+msgid "Forecast consumption updated"
+msgstr ""
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "予測方法：<0>{0}</0>。この行は稼働中の製造指図から派生していないため、親のソースは利用できません。"
@@ -10338,6 +10408,12 @@ msgstr "基礎"
 
 msgid "Foundation (everyone)"
 msgstr "基礎（全員）"
+
+msgid "Four-eyes enforcement disabled"
+msgstr ""
+
+msgid "Four-eyes enforcement enabled"
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "古いシステムをフリーズし、新しいトランザクションを禁止"
@@ -10448,6 +10524,9 @@ msgstr "測定器"
 
 msgid "Gauge"
 msgstr "測定器"
+
+msgid "Gauge calibration notification settings updated"
+msgstr ""
 
 msgid "Gauge Calibration Notifications"
 msgstr "測定器の校正通知"
@@ -11760,6 +11839,9 @@ msgstr "請求書ID"
 msgid "Invoice Location"
 msgstr "請求書の場所"
 
+msgid "Invoice notification settings updated"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "今すぐ請求する"
 
@@ -11979,6 +12061,9 @@ msgstr "アイテムグループ"
 msgid "Item Group"
 msgstr "品目グループ"
 
+msgid "Item group ownership updated"
+msgstr ""
+
 msgid "item groups"
 msgstr "アイテムグループ"
 
@@ -11990,6 +12075,9 @@ msgstr "アイテムグループ"
 
 msgid "Item ID"
 msgstr "アイテムID"
+
+msgid "Item ID casing setting updated"
+msgstr ""
 
 msgid "Item IDs"
 msgstr "アイテムID"
@@ -12096,6 +12184,9 @@ msgstr "指図材料出庫"
 msgid "Job Materials"
 msgstr "指図材料"
 
+msgid "Job notification settings updated"
+msgstr ""
+
 msgid "Job operation"
 msgstr "指図工程"
 
@@ -12174,6 +12265,9 @@ msgstr "{kanbanName}のかんばん"
 
 msgid "Kanban Output"
 msgstr "かんばん出力"
+
+msgid "Kanban output setting updated"
+msgstr ""
 
 msgid "Kanbans"
 msgstr "かんばん"
@@ -12387,6 +12481,12 @@ msgstr "リードタイム更新は無効です"
 msgid "Lead time updates are enabled"
 msgstr "リードタイム更新は有効です"
 
+msgid "Lead time updates on receipt disabled"
+msgstr ""
+
+msgid "Lead time updates on receipt enabled"
+msgstr ""
+
 msgid "Lead Time:"
 msgstr "リードタイム:"
 
@@ -12422,6 +12522,9 @@ msgstr "リース負債"
 
 msgid "Lease Liability:"
 msgstr "リース負債:"
+
+msgid "Lease policy updated"
+msgstr ""
 
 msgid "Lease Reminder Days"
 msgstr "リース通知日数"
@@ -12797,6 +12900,9 @@ msgstr "場所 / 品目"
 msgid "Location Name"
 msgstr "ロケーション名"
 
+msgid "Location ownership updated"
+msgstr ""
+
 msgid "Location shifts"
 msgstr "ロケーションシフト"
 
@@ -12974,6 +13080,9 @@ msgstr "保全"
 
 msgid "Maintenance Dispatch"
 msgstr "保全指示"
+
+msgid "Maintenance dispatch notification settings updated"
+msgstr ""
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "保全指示通知"
@@ -13302,6 +13411,9 @@ msgstr "材料ID"
 msgid "Material IDs"
 msgstr "材料ID"
 
+msgid "Material IDs setting updated"
+msgstr ""
+
 msgid "Material is pre-selected"
 msgstr "材料は事前に選択されています"
 
@@ -13317,8 +13429,17 @@ msgstr "材料計画"
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
 msgstr "材料計画は、今日からこの日数以内に期限が到来するアクションと提案注文のみを表示するため、先のニーズは重要になるまで支障が生じません。品目独自の計画期間がこのデフォルトをオーバーライドします。"
 
+msgid "Material pre-selection disabled"
+msgstr ""
+
+msgid "Material pre-selection enabled"
+msgstr ""
+
 msgid "Material Properties"
 msgstr "材料特性"
+
+msgid "Material return timing updated"
+msgstr ""
 
 msgid "Material Review Board (MRB)"
 msgstr "材料審査会(MRB)"
@@ -13349,6 +13470,9 @@ msgstr "材料タイプ"
 
 msgid "Material Types"
 msgstr "材料タイプ"
+
+msgid "Material units setting updated"
+msgstr ""
 
 msgid "Material updated"
 msgstr ""
@@ -13797,6 +13921,9 @@ msgstr "MRPは毎日{time}({timeZone})に自動的に実行されますが、こ
 
 msgid "MRP Schedule"
 msgstr "MRP スケジュール"
+
+msgid "MRP schedule updated"
+msgstr ""
 
 msgid "MRP Suggestions"
 msgstr "MRP 提案"
@@ -15793,6 +15920,12 @@ msgstr "オペレーション数量"
 msgid "Operation supplier process"
 msgstr "工程仕入先工法"
 
+msgid "Operation timer auto-start disabled"
+msgstr ""
+
+msgid "Operation timer auto-start enabled"
+msgstr ""
+
 msgid "Operation type"
 msgstr "オペレーション種類"
 
@@ -16645,6 +16778,9 @@ msgstr "ピッキングリスト"
 msgid "Picking List"
 msgstr "ピッキングリスト"
 
+msgid "Picking list completion policy updated"
+msgstr ""
+
 msgid "Picking List ID"
 msgstr "ピッキングリストID"
 
@@ -16752,6 +16888,9 @@ msgstr "計画期間"
 
 msgid "Planning Horizon (Days)"
 msgstr "計画期間（日数）"
+
+msgid "Planning horizon updated"
+msgstr ""
 
 msgid "Planning Horizon:"
 msgstr "計画期間:"
@@ -17080,6 +17219,9 @@ msgstr "{0}個のラベルを印刷"
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
 
+msgid "Print job deleted"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
 
@@ -17092,6 +17234,12 @@ msgstr "ラベルを印刷"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
+
+msgid "Printer route created"
+msgstr ""
+
+msgid "Printer route updated"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "プリンター設定"
@@ -17200,6 +17348,9 @@ msgstr "生産数量"
 
 msgid "Production Quantity"
 msgstr "生産数量"
+
+msgid "Production settings updated"
+msgstr ""
 
 msgid "Production variance"
 msgstr "生産差異"
@@ -17477,6 +17628,9 @@ msgstr "購買計画"
 msgid "Purchase Price"
 msgstr "購入価格"
 
+msgid "Purchase price update timing updated"
+msgstr ""
+
 msgid "Purchase price variance"
 msgstr "購買価格差異"
 
@@ -17735,8 +17889,14 @@ msgstr "質問"
 msgid "Queued"
 msgstr "キュー待ち"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "キュー待ち完了"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今夜のフロアは静かですね、{name}さん。"
@@ -18035,6 +18195,9 @@ msgstr "売掛金の経過"
 msgid "Receivables Email"
 msgstr "売掛金メール"
 
+msgid "Receivables email updated"
+msgstr ""
+
 msgid "Receive"
 msgstr "受け取る"
 
@@ -18193,6 +18356,9 @@ msgstr "登録"
 msgid "Recurring"
 msgstr "繰返し"
 
+msgid "Recurring invoice setting updated"
+msgstr ""
+
 msgid "Recurring Invoices"
 msgstr "定期請求書"
 
@@ -18348,6 +18514,9 @@ msgstr "リリース管理"
 
 msgid "Release Control"
 msgstr "リリース管理"
+
+msgid "Release control setting updated"
+msgstr ""
 
 msgid "Release date"
 msgstr "リリース日"
@@ -18723,6 +18892,9 @@ msgstr "本日のルールとコストで再価格設定すると <0>{0}</0> に
 msgid "Reprint"
 msgstr "再印刷"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "新しい招待をリクエストする"
 
@@ -18824,6 +18996,9 @@ msgstr "再スケジュール許容日数"
 
 msgid "Reschedule Tolerance"
 msgstr "スケジュール変更許容値"
+
+msgid "Reschedule tolerance updated"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "予備床"
@@ -19257,6 +19432,9 @@ msgstr "RFQ ロケーション"
 msgid "RFQ Number"
 msgstr "RFQ番号"
 
+msgid "RFQ setting updated"
+msgstr ""
+
 msgid "RFQs"
 msgstr "RFQ"
 
@@ -19602,6 +19780,9 @@ msgstr "販売ルール"
 msgid "Sales rule \"{0}\""
 msgstr "販売ルール「{0}」"
 
+msgid "Sales rule notification settings updated"
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "販売ルール違反"
 
@@ -19652,6 +19833,9 @@ msgstr "抜取検査 — 特性 {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "抜取検査基準"
+
+msgid "Sampling standard updated"
+msgstr ""
 
 msgid "Saturday"
 msgstr "土曜日"
@@ -19707,6 +19891,25 @@ msgstr "ビューを保存"
 
 msgid "Saved"
 msgstr "保存済み"
+
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
+msgid "Saved document layout"
+msgstr ""
 
 msgid "Saved view"
 msgstr "保存済みの表示"
@@ -19987,6 +20190,12 @@ msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
 msgstr "セクション"
+
+msgid "Section deleted"
+msgstr ""
+
+msgid "Section saved"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FAでアカウントを保護"
@@ -20606,6 +20815,9 @@ msgstr "保存期間"
 msgid "Shelf Life (Days)"
 msgstr "保存期間（日数）"
 
+msgid "Shelf life & expiry settings updated"
+msgstr ""
+
 msgid "Shelf Life Start Process"
 msgstr "保存期間開始プロセス"
 
@@ -20994,6 +21206,12 @@ msgstr "リリースされたが開始していない状態をスキップしま
 msgid "Skipped"
 msgstr "スキップ済"
 
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
+
 msgid "Slack"
 msgstr "Slack"
 
@@ -21189,6 +21407,12 @@ msgstr "人員配置は任意です"
 
 msgid "Staffing required"
 msgstr "スタッフが必要"
+
+msgid "Staffing requirement disabled"
+msgstr ""
+
+msgid "Staffing requirement enabled"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -21677,6 +21901,9 @@ msgstr "まだ発注していない推奨注文。"
 msgid "Suggestion"
 msgstr "提案"
 
+msgid "Suggestion notification settings updated"
+msgstr ""
+
 msgid "Suggestion Notifications"
 msgstr "提案通知"
 
@@ -21728,11 +21955,20 @@ msgstr "仕入先担当者"
 msgid "Supplier Contact"
 msgstr "仕入先担当者"
 
+msgid "Supplier contact requirement disabled"
+msgstr ""
+
+msgid "Supplier contact requirement enabled"
+msgstr ""
+
 msgid "Supplier Credit"
 msgstr "仕入先クレジット"
 
 msgid "Supplier Credits"
 msgstr "仕入先クレジット"
+
+msgid "Supplier email settings updated"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "仕入先ID"
@@ -21745,6 +21981,12 @@ msgstr "仕入先IDは非表示です"
 
 msgid "Supplier IDs are shown"
 msgstr "仕入先IDは表示されています"
+
+msgid "Supplier IDs hidden"
+msgstr ""
+
+msgid "Supplier IDs shown"
+msgstr ""
 
 msgid "Supplier interaction"
 msgstr "仕入先対応"
@@ -21814,6 +22056,9 @@ msgstr "仕入先見積"
 
 msgid "Supplier Quote ID"
 msgstr "仕入先見積ID"
+
+msgid "Supplier quote notification setting updated"
+msgstr ""
 
 msgid "Supplier Quote Notifications"
 msgstr "仕入先見積通知"
@@ -22246,6 +22491,9 @@ msgstr "利用規約"
 
 msgid "Test"
 msgstr "テスト"
+
+msgid "Test label sent to printer"
+msgstr ""
 
 msgid "Test run"
 msgstr "テストラン"
@@ -23934,6 +24182,9 @@ msgstr "時間利用率"
 msgid "Timecard"
 msgstr "タイムカード"
 
+msgid "Timecard settings updated"
+msgstr ""
+
 msgid "Timecards"
 msgstr "タイムカード"
 
@@ -24349,6 +24600,18 @@ msgstr "トランジット・機関番号"
 msgid "Trash"
 msgstr "ゴミ箱"
 
+msgid "Traveler materials disabled"
+msgstr ""
+
+msgid "Traveler materials enabled"
+msgstr ""
+
+msgid "Traveler operations disabled"
+msgstr ""
+
+msgid "Traveler operations enabled"
+msgstr ""
+
 msgid "Treatment"
 msgstr "会計処理"
 
@@ -24382,6 +24645,12 @@ msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにして�
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "12か月以下。貸借対照表に何も計上されません。各請求書は費用化されます。"
 
@@ -24403,8 +24672,14 @@ msgstr "二要素認証が有効になりました"
 msgid "Two-Factor Authentication Enforcement"
 msgstr "二要素認証の強制"
 
+msgid "Two-factor authentication is no longer required"
+msgstr ""
+
 msgid "Two-factor authentication is not enabled."
 msgstr "二要素認証は有効になっていません。"
+
+msgid "Two-factor authentication is now required"
+msgstr ""
 
 msgid "Two-factor authentication is optional"
 msgstr "二要素認証は任意です"
@@ -24812,10 +25087,16 @@ msgstr ""
 msgid "Updated By"
 msgstr "更新者"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated dispatch status"
 msgstr ""
 
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"
@@ -26207,6 +26488,13 @@ msgstr "検査却下およびNCR処置によってスクラップされたまた
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "資産の価値を耐用年数にわたって減額する―毎月作成し、下書きとしてレビューしてから転記するバッチです。"
+
+msgid "Wrote the missing journal of 1 document"
+msgstr ""
+
+#. placeholder {0}: data.documents
+msgid "Wrote the missing journals of {0} documents"
+msgstr ""
 
 msgid "Year"
 msgstr "年"

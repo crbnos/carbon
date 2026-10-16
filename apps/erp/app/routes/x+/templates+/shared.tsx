@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import type {
   DocumentSectionPlacement,
   HeaderOptions
 } from "@carbon/documents/template";
 import { withBuiltInSections } from "@carbon/documents/template";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -18,20 +17,22 @@ import {
   Heading,
   IconButton,
   ScrollArea,
+  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuArrowLeft, LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import { z } from "zod";
 import { SectionFormModal } from "~/components/DocumentTemplateEditor/SectionFormModal";
 import { usePermissions } from "~/hooks";
+import { carbon } from "~/modules/carbon.server";
 import {
-  deleteDocumentSection,
   documentSectionValidator,
-  getDocumentSections,
-  upsertDocumentSection
+  getDocumentSections
 } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -66,57 +67,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+const deleteSectionForm = z.object({ id: z.string().min(1) });
 
-  const formData = await request.formData();
-
-  if (formData.get("intent") === "delete") {
-    const id = String(formData.get("id") ?? "");
-    const result = await deleteDocumentSection(client, id, companyId);
-    if (result.error) {
-      return data(
-        { success: false },
-        await flash(request, error(result.error, "Failed to delete section"))
-      );
-    }
-    return data(
-      { success: true },
-      await flash(request, success("Section deleted"))
-    );
+export async function action(args: ActionFunctionArgs) {
+  const intent = (await args.request.clone().formData()).get("intent");
+  if (intent === "delete") {
+    const input = await validator(deleteSectionForm).request(args);
+    if ("invalid" in input) return input.invalid;
+    const api = await carbon(args.request);
+    return api.settings.documentSection.delete(input.data);
   }
-
-  const validation = await validator(documentSectionValidator).validate(
-    formData
-  );
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, name, placement, content, config } = validation.data;
-  const result = await upsertDocumentSection(client, {
-    id,
-    companyId,
-    name,
-    placement,
-    content: content as JSONContent,
-    config: config as Record<string, unknown> | undefined,
-    ...(id ? { updatedBy: userId } : { createdBy: userId })
-  });
-
-  if (result.error) {
-    return data(
-      { success: false },
-      await flash(request, error(result.error, "Failed to save section"))
-    );
-  }
-  return data(
-    { success: true },
-    await flash(request, success("Section saved"))
-  );
+  const input = await validator(documentSectionValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.documentSection.save(input.data);
 }
 
 export default function SharedSectionsRoute() {
@@ -126,7 +90,10 @@ export default function SharedSectionsRoute() {
 
   const [editing, setEditing] = useState<Section | null>(null);
   const disclosure = useDisclosure();
-  const deleteFetcher = useFetcher();
+  const { t } = useLingui();
+  const deleteFetcher = useAction<typeof action>({
+    onSuccess: () => toast.success(t`Section deleted`)
+  });
 
   const openNew = () => {
     setEditing(null);
