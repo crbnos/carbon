@@ -5136,6 +5136,9 @@ msgstr "एक प्राप्ति, शिपमेंट या चाल�
 msgid "Community support"
 msgstr "सामुदायिक समर्थन"
 
+msgid "Compact"
+msgstr "कॉम्पैक्ट"
+
 msgid "Companies"
 msgstr "कंपनियां"
 
@@ -7684,6 +7687,9 @@ msgstr "समस्या का विवरण"
 
 msgid "Detail"
 msgstr "विवरण"
+
+msgid "Detailed"
+msgstr "विस्तृत"
 
 msgid "Details"
 msgstr "विवरण"

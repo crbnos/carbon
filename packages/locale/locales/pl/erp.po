@@ -5136,6 +5136,9 @@ msgstr "Potwierdzenie przyjęcia, wysyłki lub faktury: ilości się przesuwają
 msgid "Community support"
 msgstr "Wsparcie społeczności"
 
+msgid "Compact"
+msgstr "Kompaktny"
+
 msgid "Companies"
 msgstr "Firmy"
 
@@ -7684,6 +7687,9 @@ msgstr "Opis problemu"
 
 msgid "Detail"
 msgstr "Szczegóły"
+
+msgid "Detailed"
+msgstr "Szczegółowy"
 
 msgid "Details"
 msgstr "Szczegóły"

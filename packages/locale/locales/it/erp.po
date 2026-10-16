@@ -5136,6 +5136,9 @@ msgstr "Registrazione di un'entrata merci, spedizione o fattura: le quantità si
 msgid "Community support"
 msgstr "Supporto della comunità"
 
+msgid "Compact"
+msgstr "Compatto"
+
 msgid "Companies"
 msgstr "Aziende"
 
@@ -7684,6 +7687,9 @@ msgstr "Descrizione del Problema"
 
 msgid "Detail"
 msgstr "Dettagli"
+
+msgid "Detailed"
+msgstr "Dettagliato"
 
 msgid "Details"
 msgstr "Dettagli"

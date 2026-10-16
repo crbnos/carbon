@@ -5136,6 +5136,9 @@ msgstr "Bestätigung eines Wareneingangs, einer Lieferung oder einer Rechnung: M
 msgid "Community support"
 msgstr "Community-Unterstützung"
 
+msgid "Compact"
+msgstr "Kompakt"
+
 msgid "Companies"
 msgstr "Unternehmen"
 
@@ -7684,6 +7687,9 @@ msgstr "Problembeschreibung"
 
 msgid "Detail"
 msgstr "Detail"
+
+msgid "Detailed"
+msgstr "Detailliert"
 
 msgid "Details"
 msgstr "Details"

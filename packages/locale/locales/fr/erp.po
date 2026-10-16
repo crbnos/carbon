@@ -5136,6 +5136,9 @@ msgstr "Comptabilisation d'une réception, d'une expédition ou d'une facture : 
 msgid "Community support"
 msgstr "Support communautaire"
 
+msgid "Compact"
+msgstr "Compact"
+
 msgid "Companies"
 msgstr "Entreprises"
 
@@ -7684,6 +7687,9 @@ msgstr "Description du problème"
 
 msgid "Detail"
 msgstr "Détail"
+
+msgid "Detailed"
+msgstr "Détaillé"
 
 msgid "Details"
 msgstr "Détails"

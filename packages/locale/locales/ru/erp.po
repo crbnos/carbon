@@ -5136,6 +5136,9 @@ msgstr "Проведение поступления, отгрузки или с�
 msgid "Community support"
 msgstr "Поддержка сообщества"
 
+msgid "Compact"
+msgstr "Компактный"
+
 msgid "Companies"
 msgstr "Компании"
 
@@ -7684,6 +7687,9 @@ msgstr "Описание проблемы"
 
 msgid "Detail"
 msgstr "Подробности"
+
+msgid "Detailed"
+msgstr "Подробный"
 
 msgid "Details"
 msgstr "Детали"

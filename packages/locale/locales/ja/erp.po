@@ -5136,6 +5136,9 @@ msgstr "領収書、出荷、または請求書のコミット: 数量が移動�
 msgid "Community support"
 msgstr "コミュニティサポート"
 
+msgid "Compact"
+msgstr "コンパクト"
+
 msgid "Companies"
 msgstr "企業"
 
@@ -7683,6 +7686,9 @@ msgid "Description of Issue"
 msgstr "問題の説明"
 
 msgid "Detail"
+msgstr "詳細"
+
+msgid "Detailed"
 msgstr "詳細"
 
 msgid "Details"

@@ -5136,6 +5136,9 @@ msgstr "Confirmar um recibo, remessa ou fatura: as quantidades se movem, os lan�
 msgid "Community support"
 msgstr "Suporte comunitário"
 
+msgid "Compact"
+msgstr "Compacto"
+
 msgid "Companies"
 msgstr "Empresas"
 
@@ -7684,6 +7687,9 @@ msgstr "Descrição do Problema"
 
 msgid "Detail"
 msgstr "Detalhe"
+
+msgid "Detailed"
+msgstr "Detalhado"
 
 msgid "Details"
 msgstr "Detalhes"

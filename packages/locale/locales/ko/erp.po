@@ -5136,6 +5136,9 @@ msgstr "입고, 출하 또는 송장을 커밋하면: 수량이 이동하고, �
 msgid "Community support"
 msgstr "커뮤니티 지원"
 
+msgid "Compact"
+msgstr "간략"
+
 msgid "Companies"
 msgstr "회사"
 
@@ -7683,6 +7686,9 @@ msgid "Description of Issue"
 msgstr "이슈 설명"
 
 msgid "Detail"
+msgstr "상세"
+
+msgid "Detailed"
 msgstr "상세"
 
 msgid "Details"

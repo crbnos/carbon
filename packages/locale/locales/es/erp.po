@@ -5136,6 +5136,9 @@ msgstr "Confirmar un recibo, envío o factura: las cantidades se mueven, los asi
 msgid "Community support"
 msgstr "Soporte comunitario"
 
+msgid "Compact"
+msgstr "Compacto"
+
 msgid "Companies"
 msgstr "Empresas"
 
@@ -7684,6 +7687,9 @@ msgstr "Descripción del Problema"
 
 msgid "Detail"
 msgstr "Detalle"
+
+msgid "Detailed"
+msgstr "Detallado"
 
 msgid "Details"
 msgstr "Detalles"

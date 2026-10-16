@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ResourceTimelineReservation } from "./resourceTimeline";
-import { buildResourceTimeline } from "./resourceTimeline";
+import { buildResourceTimeline, collapseToLanes } from "./resourceTimeline";
 
 const HOUR = 3_600_000;
 
@@ -398,5 +398,93 @@ describe("buildResourceTimeline", () => {
     expect(detail.start).toBe("2026-07-14T04:00:00.000Z");
     expect(detail.end).toBe("2026-07-14T14:00:00.000Z");
     expect(detail.durationMs).toBe(10 * HOUR);
+  });
+});
+
+describe("collapseToLanes", () => {
+  const timeline = () =>
+    buildResourceTimeline({
+      locationName: "Austin Plant",
+      reservations: [
+        reservation({
+          id: "res-machine",
+          operationId: "op-clean",
+          startAt: "2026-07-14T10:00:00.000Z",
+          endAt: "2026-07-14T12:00:00.000Z"
+        }),
+        reservation({
+          id: "res-emp",
+          resourceKind: "Employee",
+          resourceId: "emp-1",
+          resourceName: "Brad Barbin",
+          operationId: "op-clean"
+        }),
+        reservation({ id: "res-a" }),
+        reservation({
+          id: "res-drill",
+          resourceId: "wc-2",
+          resourceName: "Drill Press"
+        })
+      ],
+      workCenters: [{ id: "wc-3", name: "Saw" }],
+      maintenance: [
+        {
+          id: "maint-1",
+          workCenterId: "wc-2",
+          name: "MAIN000001",
+          startAt: "2026-07-14T12:00:00.000Z",
+          endAt: "2026-07-14T13:00:00.000Z"
+        }
+      ]
+    });
+
+  it("keeps the root and one childless row per lane", () => {
+    const lanes = collapseToLanes(timeline().events);
+
+    expect(lanes.map((e) => e.id)).toEqual([
+      "resources-root",
+      "lane:WorkCenter:wc-1",
+      "lane:WorkCenter:wc-2",
+      "lane:WorkCenter:wc-3"
+    ]);
+    for (const lane of lanes.slice(1)) {
+      expect(lane.children).toEqual([]);
+      expect(lane.hasChildren).toBe(false);
+    }
+    expect(lanes[0]?.children).toEqual([
+      "lane:WorkCenter:wc-1",
+      "lane:WorkCenter:wc-2",
+      "lane:WorkCenter:wc-3"
+    ]);
+  });
+
+  it("puts a lane's operations and maintenance on its row in start order", () => {
+    const lanes = collapseToLanes(timeline().events);
+    const cnc = lanes.find((e) => e.id === "lane:WorkCenter:wc-1")!;
+    const drill = lanes.find((e) => e.id === "lane:WorkCenter:wc-2")!;
+    const saw = lanes.find((e) => e.id === "lane:WorkCenter:wc-3")!;
+
+    expect(cnc.data.items?.map((i) => i.id)).toEqual(["res-a", "res-machine"]);
+    expect(cnc.data.items?.[1]?.data.offset).toBe(2 * HOUR);
+    expect(cnc.data.items?.[1]?.data.duration).toBe(2 * HOUR);
+    expect(drill.data.items?.map((i) => i.id)).toEqual([
+      "res-drill",
+      "maint-1"
+    ]);
+    // An idle station still gets its (empty) row.
+    expect(saw.data.items).toEqual([]);
+  });
+
+  it("drops operator segments and leaves the input untouched", () => {
+    const events = timeline().events;
+    const snapshot = JSON.stringify(events);
+    const lanes = collapseToLanes(events);
+
+    const allIds = lanes.flatMap((lane) => [
+      lane.id,
+      ...(lane.data.items ?? []).map((item) => item.id)
+    ]);
+    expect(allIds).not.toContain("res-emp");
+    expect(JSON.stringify(events)).toBe(snapshot);
   });
 });

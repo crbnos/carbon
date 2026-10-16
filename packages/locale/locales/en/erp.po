@@ -5136,6 +5136,9 @@ msgstr "Committing a receipt, shipment, or invoice: quantities move, journal ent
 msgid "Community support"
 msgstr "Community support"
 
+msgid "Compact"
+msgstr "Compact"
+
 msgid "Companies"
 msgstr "Companies"
 
@@ -7684,6 +7687,9 @@ msgstr "Description of Issue"
 
 msgid "Detail"
 msgstr "Detail"
+
+msgid "Detailed"
+msgstr "Detailed"
 
 msgid "Details"
 msgstr "Details"

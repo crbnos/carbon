@@ -5136,6 +5136,9 @@ msgstr "Mal kabul, Sevkiyat veya Fatura muhasebeleştirildiğinde: miktarlar har
 msgid "Community support"
 msgstr "Topluluk desteği"
 
+msgid "Compact"
+msgstr "Kompakt"
+
 msgid "Companies"
 msgstr "Şirketler"
 
@@ -7684,6 +7687,9 @@ msgstr "Sorun Açıklaması"
 
 msgid "Detail"
 msgstr "Detay"
+
+msgid "Detailed"
+msgstr "Ayrıntılı"
 
 msgid "Details"
 msgstr "Detaylar"

@@ -59,7 +59,9 @@ You can **pin** an operation's due date from the date picker on the bill of proc
 
 <PlanBadge plan="Business" />
 
-The **Forecast** page renders the schedule the engine actually booked: a lane per work center (idle stations included), operation bars labeled with the job and operation, and operator segments underneath showing who is reserved. Every bar is a stored <Term>capacity reservation</Term>, so what you see is exactly what the engine committed, not a redraw from dates. Amber maintenance bars show downtime in the same lanes.
+The **Forecast** page renders the schedule the engine actually booked: a lane per work center (idle stations included) with operation bars labeled with the job and part. Every bar is a stored <Term>capacity reservation</Term>, so what you see is exactly what the engine committed, not a redraw from dates. Amber maintenance bars show downtime in the same lanes.
+
+The page opens in the **Compact** layout: each work center is one row, with its operations side by side in time order. Switch to **Detailed** to give each operation its own row, with operator segments underneath showing who is reserved. Click any bar to open its explanation.
 
 Click any bar and a side panel explains its timing. A **schedule note** answers "why does this start when it does" in plain language, for example *"Waited 14h for the work center — queued behind J000001 (3 ops)"* or *"Waited 2d 3h for a qualified operator to be available"*. The panel also separates **work** from **span**: an operation stretched across shift boundaries might show 6 hours of work across a 22-hour span, which is honest rather than alarming. A popover on each lane, *"How are these hours calculated?"*, shows which rung of the availability ladder is in use and what downtime and staffing subtract from it.
 

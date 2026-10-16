@@ -5136,6 +5136,9 @@ msgstr "提交收货、发货或发票：数量变动，凭证条目进入分类
 msgid "Community support"
 msgstr "社区支持"
 
+msgid "Compact"
+msgstr "紧凑"
+
 msgid "Companies"
 msgstr "公司"
 
@@ -7684,6 +7687,9 @@ msgstr "问题描述"
 
 msgid "Detail"
 msgstr "详情"
+
+msgid "Detailed"
+msgstr "详细"
 
 msgid "Details"
 msgstr "详情"
