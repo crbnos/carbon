@@ -593,7 +593,7 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
-/** @mcp upsert */
+/** The template row only: `settings.documentTemplate.save` also saves the header layout onto its section. */
 export async function upsertDocumentTemplate(
   client: SupabaseClient<Database>,
   documentTemplate: {
@@ -656,10 +656,7 @@ export async function getDocumentSectionsByIds(
     .in("id", ids);
 }
 
-/**
- * @mcp upsert
- * @mcp key documentSection id
- */
+/** The section row: `settings.documentSection.save` is the operation. */
 export async function upsertDocumentSection(
   client: SupabaseClient<Database>,
   documentSection: {
@@ -722,7 +719,7 @@ export async function upsertDocumentSection(
     .select("id");
 }
 
-/** @mcp delete */
+/** The section row: `settings.documentSection.delete` is the operation. */
 export async function deleteDocumentSection(
   client: SupabaseClient<Database>,
   id: string,
@@ -829,7 +826,7 @@ export async function insertSubsidiary(
   return client.from("company").insert(data).select("id").single();
 }
 
-/** @mcp update */
+/** Only the company fields: `settings.subsidiary.update` gates it and drops the cached time zone. */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
@@ -872,7 +869,7 @@ export async function updateCompanyPlan(
   return client.from("companyPlan").update(updateData).eq("id", companyId);
 }
 
-/** @mcp update */
+/** Only the company row: `settings.company.update` also handles a base-currency change and the cached time zone. */
 export async function updateCompany(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -888,8 +885,8 @@ export async function updateCompany(
  * denominated in the old base, so they must be cleared in the SAME transaction
  * — a committed base flip with surviving old-base pins silently mis-rates
  * every new document, and a non-atomic cleanup can race a freshly created
- * new-base override. Kysely throws on rollback; the route try/catches.
- * @mcp update destructive
+ * new-base override. Kysely throws on rollback; `settings.company.update`
+ * try/catches.
  */
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,

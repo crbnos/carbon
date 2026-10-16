@@ -28,6 +28,9 @@ vi.mock("@carbon/ee/console.server", () => ({
 vi.mock("@carbon/ee/two-factor.server", () => ({
   updateRequireMfaSetting: requireMfaSetting
 }));
+vi.mock("@carbon/printing/printing.server", () => ({
+  invalidatePrinterCache: vi.fn()
+}));
 vi.mock("../app/services/mfa-email.server", () => ({
   sendMfaRequiredEmails: mfaEmails
 }));
@@ -36,12 +39,15 @@ import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createServiceContext } from "../app/modules/service-fn.server";
 
 const {
+  createSubsidiary,
+  removePrinterRoute,
   updateInventorySettings,
   updateInvoicingSettings,
   updatePeopleSettings,
   updatePlanningSettings,
   updateProductionSettings,
-  updateSecuritySettings
+  updateSecuritySettings,
+  updateSubsidiaryDetails
 } = await import("../app/modules/settings/settings.server");
 
 const settings = {
@@ -290,5 +296,106 @@ describe("security settings", () => {
     await updateSecuritySettings(ctx, { requireMfa: true });
 
     expect(mfaEmails).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleting a printer route", () => {
+  it("clears every assignment that named it and keeps the others", async () => {
+    const { ctx, writes } = contextWith({
+      companySettings: {
+        printing: {
+          assignments: {
+            "loc-1": {
+              defaultPrinterRouteId: "route-1",
+              shipping: { printerRouteId: "route-2", autoPrint: true },
+              receiving: { printerRouteId: "route-1", autoPrint: false },
+              workCenters: {
+                "wc-1": { printerRouteId: "route-1", autoPrint: true },
+                "wc-2": { printerRouteId: "route-2", autoPrint: true }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const result = await removePrinterRoute(ctx, { id: "route-1" });
+
+    expect(result.error).toBeNull();
+    const saved = writes.find(
+      (write) => write.table === "companySettings" && write.method === "update"
+    );
+    expect(saved?.values).toEqual({
+      printing: {
+        assignments: {
+          "loc-1": {
+            defaultPrinterRouteId: null,
+            shipping: { printerRouteId: "route-2", autoPrint: true },
+            receiving: { printerRouteId: null, autoPrint: false },
+            workCenters: {
+              "wc-1": { printerRouteId: null, autoPrint: true },
+              "wc-2": { printerRouteId: "route-2", autoPrint: true }
+            }
+          }
+        }
+      }
+    });
+  });
+
+  it("leaves the settings alone when no assignment named it", async () => {
+    const { ctx, writes } = contextWith({
+      companySettings: {
+        printing: { assignments: { "loc-1": { defaultPrinterRouteId: "x" } } }
+      }
+    });
+
+    await removePrinterRoute(ctx, { id: "route-1" });
+
+    expect(writes.map((write) => `${write.method}:${write.table}`)).toEqual([
+      "delete:printerRoute"
+    ]);
+  });
+});
+
+describe("managing the companies of a group", () => {
+  const subsidiary = {
+    id: "company-2",
+    name: "Acme East",
+    addressLine1: "1 Main St",
+    city: "Springfield",
+    postalCode: "12345",
+    countryCode: "US",
+    baseCurrencyCode: "USD",
+    timezone: "America/New_York"
+  };
+
+  it("is refused to a user outside Carbon", async () => {
+    const { ctx, writes } = contextWith({
+      user: { email: "someone@acme.com" }
+    });
+
+    const result = await updateSubsidiaryDetails(ctx, subsidiary);
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(writes).toEqual([]);
+  });
+
+  it("refuses a parent company from another company group", async () => {
+    const { ctx, writes } = contextWith({
+      user: { email: "someone@carbon.ms" },
+      company: null
+    });
+
+    const result = await createSubsidiary(ctx, {
+      ...subsidiary,
+      id: undefined,
+      parentCompanyId: "company-of-another-group"
+    });
+
+    expect(result.error).toMatchObject({
+      category: "notFound",
+      message: "Parent company not found"
+    });
+    expect(writes).toEqual([]);
   });
 });

@@ -7,6 +7,17 @@ import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
+  blockSchema,
+  type DocumentBlock,
+  type DocumentSettings,
+  type DocumentTheme,
+  documentSectionPlacementSchema,
+  documentSettingsSchema,
+  documentTemplateTypeSchema,
+  sectionConfigSchema,
+  themeSchema
+} from "@carbon/documents/template";
+import {
   getIntegrationConfigById,
   getIntegrationIdsByRole,
   type IntegrationHealthcheckResult,
@@ -15,19 +26,40 @@ import {
   splitSecrets
 } from "@carbon/ee";
 import { isAccountingSyncEnabled } from "@carbon/ee/accounting";
+import { enableAuditLog } from "@carbon/ee/audit.server";
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
+import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import {
+  createPrintJob,
+  deletePrinterRoute,
+  getPrintingSettings,
+  getPrintJob,
+  getPrintJobContent,
+  type PrintingSettings,
+  printerRouteValidator,
+  reprintValidator,
+  setContextAssignment,
+  updateAssignmentValidator,
+  updatePrintingSettings,
+  upsertPrinterRoute
+} from "@carbon/printing";
+import { invalidatePrinterCache } from "@carbon/printing/printing.server";
+import type { JSONContent } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
+import { isInternalEmail, labelSizes } from "@carbon/utils";
 import { parseTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { insertEmployeeJob } from "~/modules/people/people.service";
+import { upsertLocation } from "~/modules/resources/resources.service";
 import {
   type CarbonError,
   defineServiceFn,
@@ -36,21 +68,34 @@ import {
 } from "~/modules/service-fn.server";
 import type { Integration } from "~/modules/settings/types";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
+import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getPermissionCacheKey } from "~/modules/users/users.server";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import { sanitize } from "~/utils/supabase";
 import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import {
   calculatedShelfLifeInputScopes,
+  companyValidator,
   type customFieldValidator,
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
-  returnPickedMaterialTimings
+  returnPickedMaterialTimings,
+  subsidiaryValidator
 } from "./settings.models";
 import {
+  deleteDocumentSection,
+  insertCompany,
+  resolveSections,
+  seedCompany,
   setLocationResponsibleEmployee,
+  updateCompany,
+  updateCompanyWithBaseCurrencyChange,
+  updateSubsidiary,
+  upsertDocumentSection,
+  upsertDocumentTemplate,
   upsertItemPostingGroupResponsibility
 } from "./settings.service";
 
@@ -1734,5 +1779,750 @@ export const updatePlanningSettings = defineServiceFn({
       }
     }
     return input;
+  }
+});
+
+/** Multi-company management is open to internal (Carbon) users only, for now. */
+async function refuseUnlessInternalUser(
+  ctx: ServiceContext
+): Promise<CarbonError | null> {
+  const refused = ctx.error(
+    "forbidden",
+    "Managing companies is not available to this account"
+  );
+  if (ctx.actor.type !== "user") return refused;
+  const { data } = await ctx.asSystem.supabase
+    .from("user")
+    .select("email")
+    .eq("id", ctx.actor.userId)
+    .maybeSingle();
+  return isInternalEmail(data?.email ?? "") ? null : refused;
+}
+
+/**
+ * Update the company's details.
+ *
+ * @remarks
+ * Writes the company's name, address, time zone, base currency, tax and
+ * registration numbers and contact details. Changing the base currency also
+ * deletes every exchange-rate override, in the same transaction: an override
+ * is denominated in the old base and would rate every new document wrong.
+ * The company's cached time zone is dropped, so a new one applies at once.
+ *
+ * @mcp
+ */
+export const updateCompanyDetails = defineServiceFn({
+  input: companyValidator,
+  permission: { update: "settings" },
+  async run(ctx, company) {
+    const existing = await ctx.asCaller.supabase
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", ctx.company.id)
+      .single();
+
+    const baseCurrencyChanged =
+      !!existing.data?.baseCurrencyCode &&
+      existing.data.baseCurrencyCode !== company.baseCurrencyCode;
+
+    if (baseCurrencyChanged) {
+      try {
+        await updateCompanyWithBaseCurrencyChange(
+          ctx.asSystem.pg,
+          ctx.company.id,
+          { ...company, updatedBy: ctx.auditUserId }
+        );
+      } catch (err) {
+        return ctx.error("internal", "Failed to update company", err);
+      }
+    } else {
+      const update = await updateCompany(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        { ...company, updatedBy: ctx.auditUserId }
+      );
+      if (update.error) {
+        return ctx.error("internal", "Failed to update company", update.error);
+      }
+    }
+
+    await invalidateCompanyTimeZone(ctx.company.id);
+    return { id: ctx.company.id };
+  }
+});
+
+/** The headquarters location and the creator's job at it: what a new company starts with. */
+async function createHeadquarters(
+  ctx: ServiceContext,
+  companyId: string,
+  location: Omit<z.output<typeof companyValidator>, "baseCurrencyCode">
+): Promise<CarbonError | null> {
+  const client = ctx.asSystem.supabase;
+
+  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
+  // day one: enable it at company creation, not just when settings are opened.
+  if (CONTROLLED_ENVIRONMENT) {
+    await enableAuditLog(client, companyId).catch((err) =>
+      logger.error("Failed to enable audit log for new company", {
+        companyId,
+        error: err
+      })
+    );
+  }
+
+  const headquarters = await upsertLocation(client, {
+    ...location,
+    name: "Headquarters",
+    companyId,
+    // The timezone comes with the company's address: HQ shares it.
+    createdBy: ctx.auditUserId
+  });
+  if (headquarters.error || !headquarters.data?.id) {
+    return ctx.error(
+      "internal",
+      "Failed to create headquarters location",
+      headquarters.error
+    );
+  }
+
+  const [job] = await Promise.all([
+    insertEmployeeJob(client, {
+      id: ctx.auditUserId,
+      companyId,
+      locationId: headquarters.data.id
+    }),
+    redis.del(getPermissionCacheKey(ctx.auditUserId))
+  ]);
+  if (job.error) {
+    return ctx.error(
+      "internal",
+      "Failed to create employee job record",
+      job.error
+    );
+  }
+  return null;
+}
+
+/**
+ * Create a company in a new company group, for the caller.
+ *
+ * @remarks
+ * Inserts the company, seeds it (chart of accounts, sequences, the caller's
+ * employee record and permissions), creates its Headquarters location at the
+ * company's address and the caller's job there. In a controlled environment
+ * audit logging is on from the start. Returns the new company and its group,
+ * so the caller can switch to it.
+ */
+export const createCompany = defineServiceFn({
+  input: companyValidator,
+  permission: { update: ["settings", "users"] },
+  async run(ctx, company) {
+    const client = ctx.asSystem.supabase;
+    const inserted = await insertCompany(client, company);
+    if (inserted.error || !inserted.data?.id) {
+      return ctx.error("internal", "Failed to create company", inserted.error);
+    }
+    const companyId = inserted.data.id;
+
+    const seed = await seedCompany(
+      client,
+      ctx.asSystem.pg,
+      companyId,
+      ctx.auditUserId
+    );
+    if (seed.error) {
+      return ctx.error("internal", "Failed to seed company", seed.error);
+    }
+
+    const { baseCurrencyCode: _, ...location } = company;
+    const headquarters = await createHeadquarters(ctx, companyId, location);
+    if (headquarters) return headquarters;
+
+    const { data } = await client
+      .from("company")
+      .select("companyGroupId")
+      .eq("id", companyId)
+      .single();
+    return { companyId, companyGroupId: data?.companyGroupId ?? "" };
+  }
+});
+
+/**
+ * Create a company in the caller's company group.
+ *
+ * @remarks
+ * Open to internal users only, for now. The parent must be a company of the
+ * caller's own group: seeding joins the new company to its parent's group,
+ * so a parent from another group would place it inside another tenant. Then
+ * as for a new company: insert, seed, the Headquarters location and the
+ * caller's job there.
+ */
+export const createSubsidiary = defineServiceFn({
+  input: subsidiaryValidator,
+  permission: { create: "settings" },
+  async run(ctx, subsidiary) {
+    const refused = await refuseUnlessInternalUser(ctx);
+    if (refused) return refused;
+
+    const { id: _, parentCompanyId, ...company } = subsidiary;
+    const client = ctx.asSystem.supabase;
+
+    if (parentCompanyId) {
+      const parent = await client
+        .from("company")
+        .select("id")
+        .eq("id", parentCompanyId)
+        .eq("companyGroupId", ctx.company.groupId)
+        .maybeSingle();
+      if (parent.error || !parent.data) {
+        return ctx.error("notFound", "Parent company not found", parent.error);
+      }
+    }
+
+    const inserted = await insertCompany(client, company);
+    if (inserted.error || !inserted.data?.id) {
+      return ctx.error("internal", "Failed to create company", inserted.error);
+    }
+    const companyId = inserted.data.id;
+
+    const seed = await seedCompany(
+      client,
+      ctx.asSystem.pg,
+      companyId,
+      ctx.auditUserId,
+      { parentCompanyId }
+    );
+    if (seed.error) {
+      return ctx.error("internal", "Failed to seed company", seed.error);
+    }
+
+    const { baseCurrencyCode: __, ...location } = company;
+    const headquarters = await createHeadquarters(ctx, companyId, location);
+    return headquarters ?? { companyId };
+  }
+});
+
+/**
+ * Update a company of the caller's company group.
+ *
+ * @remarks
+ * Open to internal users only, for now. Writes the company's details and its
+ * parent, then drops its cached time zone.
+ */
+export const updateSubsidiaryDetails = defineServiceFn({
+  input: subsidiaryValidator.safeExtend({ id: z.string() }),
+  permission: { update: "settings" },
+  async run(ctx, { id, ...subsidiary }) {
+    const refused = await refuseUnlessInternalUser(ctx);
+    if (refused) return refused;
+
+    const result = await updateSubsidiary(ctx.asCaller.supabase, id, {
+      ...subsidiary,
+      updatedBy: ctx.auditUserId
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to update subsidiary", result.error);
+    }
+    await invalidateCompanyTimeZone(id);
+    return { id };
+  }
+});
+
+/** A one-label ZPL test page for the route's media size; null for a PDF route or no size. */
+function generateTestLabel(
+  format: string,
+  mediaSizeId: string | null
+): string | null {
+  if (format !== "zpl" || !mediaSizeId) return null;
+  const labelSize = labelSizes.find((s) => s.id === mediaSizeId);
+  if (!labelSize?.zpl) return null;
+  const { width, height } = labelSize.zpl;
+  const dpi = labelSize.zpl.dpi || 203;
+  const widthDots = Math.round(width * dpi);
+  const heightDots = Math.round(height * dpi);
+  const now = new Date();
+  const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+  return [
+    "^XA",
+    `^PW${widthDots}`,
+    `^LL${heightDots}`,
+    "^MNW",
+    "^FO20,20^A0N,30,30^FDTest Print^FS",
+    `^FO20,60^A0N,20,20^FD${mediaSizeId} — ${width}x${height}"^FS`,
+    `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
+    "^XZ"
+  ].join("\n");
+}
+
+/**
+ * Create or update a printer route.
+ *
+ * @remarks
+ * A printer route is a printer the company prints to: its name, format (ZPL
+ * labels or PDF documents), media size, URL and optional API key, location
+ * and template. With an `id` the company's route is updated, without one a
+ * route is created. The cached printer routing is dropped, so the change
+ * applies to the next print.
+ *
+ * @mcp
+ */
+export const savePrinterRoute = defineServiceFn({
+  input: printerRouteValidator,
+  permission: { update: "settings" },
+  async run(ctx, route) {
+    const result = await upsertPrinterRoute(ctx.asCaller.supabase, {
+      id: route.id || undefined,
+      companyId: ctx.company.id,
+      name: route.name,
+      format: route.format,
+      mediaSizeId: route.mediaSizeId || null,
+      printerUrl: route.printerUrl,
+      apiKey: route.apiKey || null,
+      locationId: route.locationId || null,
+      templateId: route.templateId || null
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save printer route",
+        result.error
+      );
+    }
+    await invalidatePrinterCache(ctx.company.id);
+    return { created: !route.id };
+  }
+});
+
+/**
+ * Send a test label to a printer route.
+ *
+ * @remarks
+ * Prints one ZPL test label, sized to the route's media, on the company's
+ * printer route. Only a ZPL route with a media size can print one. The
+ * printer must answer within 10 seconds.
+ */
+export const testPrinterRoute = defineServiceFn({
+  input: z.object({ routeId: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { routeId }) {
+    const { data: route } = await ctx.asCaller.supabase
+      .from("printerRoute")
+      .select("printerUrl, format, mediaSizeId, apiKey")
+      .eq("id", routeId)
+      .eq("companyId", ctx.company.id)
+      .single();
+    if (!route) return ctx.error("notFound", "Printer route not found");
+
+    const testLabel = generateTestLabel(route.format, route.mediaSizeId);
+    if (!testLabel) {
+      return ctx.error(
+        "rule",
+        "Test print is only supported for ZPL label printers with a media size configured."
+      );
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/octet-stream"
+    };
+    if (route.apiKey) headers["X-API-Key"] = route.apiKey;
+
+    try {
+      const response = await fetch(route.printerUrl, {
+        method: "POST",
+        headers,
+        body: testLabel,
+        signal: AbortSignal.timeout(10_000)
+      });
+      if (!response.ok) {
+        return ctx.error(
+          "unavailable",
+          `Print failed (${response.status} ${response.statusText})`
+        );
+      }
+    } catch (err) {
+      return ctx.error(
+        "unavailable",
+        `Print failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+        err
+      );
+    }
+    return { routeId };
+  }
+});
+
+/**
+ * Delete a printer route.
+ *
+ * @remarks
+ * Deletes the company's printer route, then clears it from every printer
+ * assignment that named it (a location's default, its shipping and receiving
+ * printers, and its work centers), so no assignment points at a printer that
+ * is gone. The cached printer routing is dropped.
+ *
+ * @mcp destructive
+ */
+export const removePrinterRoute = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const client = ctx.asCaller.supabase;
+    const result = await deletePrinterRoute(client, id, ctx.company.id);
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete printer route",
+        result.error
+      );
+    }
+
+    const { data: existing } = await getPrintingSettings(
+      client,
+      ctx.company.id
+    );
+    const current = existing?.printing as PrintingSettings | null;
+    if (current?.assignments) {
+      let dirty = false;
+      const assignments = { ...current.assignments };
+      for (const [locationId, location] of Object.entries(assignments)) {
+        if (!location) continue;
+        const next = { ...location };
+        if (next.defaultPrinterRouteId === id) {
+          next.defaultPrinterRouteId = null;
+          dirty = true;
+        }
+        if (next.shipping?.printerRouteId === id) {
+          next.shipping = { ...next.shipping, printerRouteId: null };
+          dirty = true;
+        }
+        if (next.receiving?.printerRouteId === id) {
+          next.receiving = { ...next.receiving, printerRouteId: null };
+          dirty = true;
+        }
+        if (next.workCenters) {
+          const workCenters = { ...next.workCenters };
+          for (const [workCenterId, workCenter] of Object.entries(
+            workCenters
+          )) {
+            if (workCenter?.printerRouteId === id) {
+              workCenters[workCenterId] = {
+                ...workCenter,
+                printerRouteId: null
+              };
+              dirty = true;
+            }
+          }
+          next.workCenters = workCenters;
+        }
+        assignments[locationId] = next;
+      }
+      if (dirty) {
+        await updatePrintingSettings(client, ctx.company.id, {
+          ...current,
+          assignments
+        });
+      }
+    }
+
+    await invalidatePrinterCache(ctx.company.id);
+    return { id };
+  }
+});
+
+/**
+ * Assign a printer to a location, one of its contexts or a work center.
+ *
+ * @remarks
+ * Sets which printer route a location prints to by default, for shipping,
+ * for receiving, or at one of its work centers (`contextId` names the work
+ * center), and whether it prints automatically. An empty route clears the
+ * assignment, so the context falls back to the location's default. The
+ * cached printer routing is dropped.
+ *
+ * @mcp
+ */
+export const assignPrinter = defineServiceFn({
+  input: updateAssignmentValidator,
+  permission: { update: "settings" },
+  async run(ctx, assignment) {
+    const client = ctx.asCaller.supabase;
+    const { data: existing } = await getPrintingSettings(
+      client,
+      ctx.company.id
+    );
+    const current = (existing?.printing as PrintingSettings | null) ?? {
+      assignments: {}
+    };
+    const updated = setContextAssignment(
+      current,
+      assignment.locationId,
+      assignment.context,
+      {
+        printerRouteId: assignment.printerRouteId || null,
+        autoPrint: assignment.autoPrint
+      },
+      assignment.contextId
+    );
+
+    const result = await updatePrintingSettings(
+      client,
+      ctx.company.id,
+      updated
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the printer assignment",
+        result.error
+      );
+    }
+    await invalidatePrinterCache(ctx.company.id);
+    return { locationId: assignment.locationId };
+  }
+});
+
+/**
+ * Print a print job again.
+ *
+ * @remarks
+ * Queues a new print job with the company's original job's content, to its
+ * printer or to `printerUrl` when given, and starts its delivery. A job still
+ * generating has no content and cannot be reprinted.
+ *
+ * @mcp
+ */
+export const reprintPrintJob = defineServiceFn({
+  input: reprintValidator,
+  permission: { update: "settings" },
+  async run(ctx, { printJobId, printerUrl }) {
+    const client = ctx.asCaller.supabase;
+    const [original, originalMeta] = await Promise.all([
+      getPrintJobContent(client, printJobId, ctx.company.id),
+      getPrintJob(client, printJobId, ctx.company.id)
+    ]);
+    if (
+      original.error ||
+      !original.data ||
+      originalMeta.error ||
+      !originalMeta.data
+    ) {
+      return ctx.error(
+        "notFound",
+        "Failed to load print job",
+        original.error ?? originalMeta.error
+      );
+    }
+    if (!original.data.content || !original.data.contentType) {
+      return ctx.error("rule", "Cannot reprint a job that is still generating");
+    }
+
+    const job = await createPrintJob(client, {
+      companyId: ctx.company.id,
+      contentType: original.data.contentType as "zpl" | "pdf",
+      content: original.data.content,
+      printerUrl: printerUrl || originalMeta.data.printerUrl,
+      sourceDocument: originalMeta.data.sourceDocument,
+      sourceDocumentId: originalMeta.data.sourceDocumentId,
+      sourceDocumentReadableId:
+        originalMeta.data.sourceDocumentReadableId ?? undefined,
+      description: originalMeta.data.description,
+      status: "queued",
+      origin: "reprint",
+      createdBy: ctx.auditUserId
+    });
+    if (job.error || !job.data) {
+      return ctx.error("internal", "Failed to create reprint", job.error);
+    }
+
+    try {
+      await trigger("print-job-deliver", {
+        printJobId: job.data.id,
+        companyId: ctx.company.id
+      });
+    } catch (err) {
+      logger.error("Failed to trigger delivery", {
+        companyId: ctx.company.id,
+        error: err
+      });
+    }
+    return { printJobId: job.data.id };
+  }
+});
+
+/**
+ * Delete a print job.
+ *
+ * @remarks
+ * Deletes the company's print job from the print queue history.
+ *
+ * @mcp destructive
+ */
+export const deletePrintJob = defineServiceFn({
+  input: z.object({ printJobId: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { printJobId }) {
+    const { error } = await ctx.asCaller.supabase
+      .from("printJob")
+      .delete()
+      .eq("id", printJobId)
+      .eq("companyId", ctx.company.id);
+    if (error) return ctx.error("internal", "Failed to delete job", error);
+    return { id: printJobId };
+  }
+});
+
+/** What a print job printed: its ZPL or PDF content. */
+export const viewPrintJobContent = defineServiceFn({
+  input: z.object({ printJobId: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { printJobId }) {
+    const content = await getPrintJobContent(
+      ctx.asCaller.supabase,
+      printJobId,
+      ctx.company.id
+    );
+    if (content.error || !content.data) {
+      return ctx.error("notFound", "Failed to load content", content.error);
+    }
+    return {
+      printJobId: content.data.id,
+      content: content.data.content,
+      contentType: content.data.contentType
+    };
+  }
+});
+
+/**
+ * Save a document's layout.
+ *
+ * @remarks
+ * Writes the company's template for one document type: its blocks, theme,
+ * settings and the header and footer sections it uses. The logo and header
+ * layout (`headerConfig`) is edited with the template but lives on the
+ * company-wide header section, so it is saved onto that section first, with
+ * the section's name and content kept, and applies wherever the header is
+ * used. A built-in header section is forked into the company's own copy.
+ *
+ * @mcp
+ */
+export const saveDocumentTemplate = defineServiceFn({
+  input: z.object({
+    documentType: documentTemplateTypeSchema,
+    blocks: z.array(blockSchema),
+    theme: themeSchema,
+    settings: documentSettingsSchema,
+    headerSectionId: z.string().optional(),
+    footerSectionId: z.string().optional(),
+    headerConfig: sectionConfigSchema.optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, template) {
+    const client = ctx.asCaller.supabase;
+    const { headerConfig, headerSectionId } = template;
+
+    if (headerConfig && headerSectionId) {
+      const resolved = await resolveSections(client, ctx.company.id, [
+        headerSectionId
+      ]);
+      const header = resolved[headerSectionId];
+      const section = await upsertDocumentSection(client, {
+        id: headerSectionId,
+        companyId: ctx.company.id,
+        name: header?.name ?? "Default Header",
+        placement: "header",
+        content: (header?.content ?? {
+          type: "doc",
+          content: []
+        }) as JSONContent,
+        config: headerConfig as Record<string, unknown>,
+        createdBy: ctx.auditUserId,
+        updatedBy: ctx.auditUserId
+      });
+      if (section.error) {
+        return ctx.error("internal", "Failed to save header", section.error);
+      }
+    }
+
+    const upsert = await upsertDocumentTemplate(client, {
+      companyId: ctx.company.id,
+      documentType: template.documentType,
+      blocks: template.blocks as DocumentBlock[],
+      theme: template.theme as DocumentTheme,
+      settings: template.settings as DocumentSettings,
+      headerSectionId: headerSectionId || null,
+      footerSectionId: template.footerSectionId || null,
+      createdBy: ctx.auditUserId,
+      updatedBy: ctx.auditUserId
+    });
+    if (upsert.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save document layout",
+        upsert.error
+      );
+    }
+    return { documentType: template.documentType };
+  }
+});
+
+/**
+ * Create or update a shared document section.
+ *
+ * @remarks
+ * A section is company-wide rich text placed in a document's header, body or
+ * footer. With an `id` the section is updated; editing a built-in section
+ * forks it into the company's own copy under the same id, which then
+ * overrides the built-in everywhere it is used. Without an `id` a section is
+ * created.
+ *
+ * @mcp
+ */
+export const saveDocumentSection = defineServiceFn({
+  input: z.object({
+    id: z.string().optional(),
+    name: z.string().min(1),
+    placement: documentSectionPlacementSchema,
+    content: z.record(z.string(), z.unknown()),
+    config: sectionConfigSchema.optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { id, name, placement, content, config }) {
+    const result = await upsertDocumentSection(ctx.asCaller.supabase, {
+      id,
+      companyId: ctx.company.id,
+      name,
+      placement,
+      content: content as JSONContent,
+      config: config as Record<string, unknown> | undefined,
+      ...(id ? { updatedBy: ctx.auditUserId } : { createdBy: ctx.auditUserId })
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to save section", result.error);
+    }
+    return { saved: true };
+  }
+});
+
+/**
+ * Delete a shared document section.
+ *
+ * @remarks
+ * Templates refer to their header and footer sections without a foreign
+ * key: a template that used the deleted section renders without it.
+ *
+ * @mcp destructive
+ */
+export const removeDocumentSection = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { update: "settings" },
+  async run(ctx, { id }) {
+    const result = await deleteDocumentSection(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error("internal", "Failed to delete section", result.error);
+    }
+    return { id };
   }
 });

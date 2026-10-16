@@ -3664,6 +3664,9 @@ msgstr "Atananlar"
 msgid "Assignment"
 msgstr "Görevlendirme"
 
+msgid "Assignment updated"
+msgstr ""
+
 msgid "Assignments"
 msgstr "Atamalar"
 
@@ -17193,6 +17196,9 @@ msgstr "{0} Etiket Yazdır"
 msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
 
+msgid "Print job deleted"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "İş emirlerini Yazdır"
 
@@ -17205,6 +17211,12 @@ msgstr "Etiket Yazdır"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Yazdırma Çıktısı ({0})"
+
+msgid "Printer route created"
+msgstr ""
+
+msgid "Printer route updated"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
@@ -18851,6 +18863,9 @@ msgstr "Bugünün kuralları ve maliyetleri ile yeniden fiyatlandırma <0>{0}</0
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "Yeni bir davet iste"
 
@@ -19848,6 +19863,9 @@ msgstr "Görünümü Kaydet"
 msgid "Saved"
 msgstr "Kaydedildi"
 
+msgid "Saved document layout"
+msgstr ""
+
 msgid "Saved view"
 msgstr "Kaydedilmiş görünüm"
 
@@ -20127,6 +20145,12 @@ msgstr "Gizli, panoya kopyalandı"
 
 msgid "Section"
 msgstr "Bölüm"
+
+msgid "Section deleted"
+msgstr ""
+
+msgid "Section saved"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Hesabınızı 2FA ile güvenli hale getirin"
@@ -22404,6 +22428,9 @@ msgstr "Hizmet Şartları"
 
 msgid "Test"
 msgstr "Test"
+
+msgid "Test label sent to printer"
+msgstr ""
 
 msgid "Test run"
 msgstr "Test çalıştırması"

@@ -3664,6 +3664,9 @@ msgstr "Osoby przypisane"
 msgid "Assignment"
 msgstr "Przypisanie"
 
+msgid "Assignment updated"
+msgstr ""
+
 msgid "Assignments"
 msgstr "Przypisania"
 
@@ -17193,6 +17196,9 @@ msgstr "Drukuj {0} etykiet"
 msgid "Print batch list"
 msgstr "Drukuj listę partii produkcyjnych"
 
+msgid "Print job deleted"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Drukuj zlecenia produkcyjne"
 
@@ -17205,6 +17211,12 @@ msgstr "Drukuj etykietę"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Wydruk ({0})"
+
+msgid "Printer route created"
+msgstr ""
+
+msgid "Printer route updated"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Ustawienia drukarki"
@@ -18851,6 +18863,9 @@ msgstr "Ponowna wycena z dzisiejszymi regułami i kosztami daje <0>{0}</0>."
 msgid "Reprint"
 msgstr "Wydruk ponownie"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "Poproś o nowe zaproszenie"
 
@@ -19848,6 +19863,9 @@ msgstr "Zapisz Widok"
 msgid "Saved"
 msgstr "Zapisano"
 
+msgid "Saved document layout"
+msgstr ""
+
 msgid "Saved view"
 msgstr "Zapisany widok"
 
@@ -20127,6 +20145,12 @@ msgstr "Sekretna wartość skopiowana do schowka"
 
 msgid "Section"
 msgstr "Sekcja"
+
+msgid "Section deleted"
+msgstr ""
+
+msgid "Section saved"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Zabezpiecz swoje konto za pomocą 2FA"
@@ -22404,6 +22428,9 @@ msgstr "Warunki korzystania"
 
 msgid "Test"
 msgstr "Testuj"
+
+msgid "Test label sent to printer"
+msgstr ""
 
 msgid "Test run"
 msgstr "Test uruchomienia"

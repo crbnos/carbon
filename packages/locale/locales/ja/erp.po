@@ -3664,6 +3664,9 @@ msgstr "担当者"
 msgid "Assignment"
 msgstr "割り当て"
 
+msgid "Assignment updated"
+msgstr ""
+
 msgid "Assignments"
 msgstr "割り当て"
 
@@ -17193,6 +17196,9 @@ msgstr "{0}個のラベルを印刷"
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
 
+msgid "Print job deleted"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "製造指図の印刷"
 
@@ -17205,6 +17211,12 @@ msgstr "ラベルを印刷"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
+
+msgid "Printer route created"
+msgstr ""
+
+msgid "Printer route updated"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "プリンター設定"
@@ -18851,6 +18863,9 @@ msgstr "本日のルールとコストで再価格設定すると <0>{0}</0> に
 msgid "Reprint"
 msgstr "再印刷"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "新しい招待をリクエストする"
 
@@ -19848,6 +19863,9 @@ msgstr "ビューを保存"
 msgid "Saved"
 msgstr "保存済み"
 
+msgid "Saved document layout"
+msgstr ""
+
 msgid "Saved view"
 msgstr "保存済みの表示"
 
@@ -20127,6 +20145,12 @@ msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
 msgstr "セクション"
+
+msgid "Section deleted"
+msgstr ""
+
+msgid "Section saved"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FAでアカウントを保護"
@@ -22404,6 +22428,9 @@ msgstr "利用規約"
 
 msgid "Test"
 msgstr "テスト"
+
+msgid "Test label sent to printer"
+msgstr ""
 
 msgid "Test run"
 msgstr "テストラン"

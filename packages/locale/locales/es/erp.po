@@ -3664,6 +3664,9 @@ msgstr "Asignados"
 msgid "Assignment"
 msgstr "Asignación"
 
+msgid "Assignment updated"
+msgstr ""
+
 msgid "Assignments"
 msgstr "Asignaciones"
 
@@ -17193,6 +17196,9 @@ msgstr "Imprimir {0} etiquetas"
 msgid "Print batch list"
 msgstr "Imprimir lista de lotes"
 
+msgid "Print job deleted"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Imprimir órdenes de trabajo"
 
@@ -17205,6 +17211,12 @@ msgstr "Imprimir Etiqueta"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Salida de Impresión ({0})"
+
+msgid "Printer route created"
+msgstr ""
+
+msgid "Printer route updated"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Configuración de impresora"
@@ -18851,6 +18863,9 @@ msgstr "Refijación de precios con las reglas y costos de hoy da <0>{0}</0>."
 msgid "Reprint"
 msgstr "Reimprimir"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "Solicitar una nueva invitación"
 
@@ -19848,6 +19863,9 @@ msgstr "Guardar Vista"
 msgid "Saved"
 msgstr "Guardado"
 
+msgid "Saved document layout"
+msgstr ""
+
 msgid "Saved view"
 msgstr "Vista guardada"
 
@@ -20127,6 +20145,12 @@ msgstr "Código secreto copiado al portapapeles"
 
 msgid "Section"
 msgstr "Sección"
+
+msgid "Section deleted"
+msgstr ""
+
+msgid "Section saved"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Asegura tu cuenta con 2FA"
@@ -22404,6 +22428,9 @@ msgstr "Términos de Servicio"
 
 msgid "Test"
 msgstr "Prueba"
+
+msgid "Test label sent to printer"
+msgstr ""
 
 msgid "Test run"
 msgstr "Ejecución de prueba"
