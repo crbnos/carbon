@@ -145,6 +145,17 @@ export async function getTimezoneNames(client: SupabaseClient<Database>) {
 
 export { getDocumentType } from "@carbon/files";
 
+// The imports whose rows are items; their supplier parts are a table of their own.
+const ITEM_IMPORT_TABLES: ReadonlySet<CsvImportTable> = new Set([
+  "part",
+  "material",
+  "tool",
+  "fixture",
+  "consumable",
+  "service",
+  "partWithMethod"
+]);
+
 // How rows of the method files refer to each other (`import-csv/method-import.ts`).
 const METHOD_IMPORT_TABLES: ReadonlySet<CsvImportTable> = new Set([
   "partWithMethod",
@@ -226,6 +237,16 @@ export async function getCsvImportFields(
             ]
           : []),
         "Headers may be field keys or labels. On a new record, a blank optional cell takes the default.",
+        ...(ITEM_IMPORT_TABLES.has(table)
+          ? [
+              "Supplier parts (supplier, supplier part number, prices) are not item columns: import them with the supplierPart table, one row per item and supplier."
+            ]
+          : []),
+        ...(table === "supplierPart"
+          ? [
+              "A row is matched to a supplier part by Part Number, Revision and Supplier: sending it again updates it, and an empty cell or a missing column keeps the saved value."
+            ]
+          : []),
         ...(METHOD_IMPORT_TABLES.has(table) ? METHOD_IMPORT_NOTES : [])
       ],
       fields: fields.map(([key, field]) => {

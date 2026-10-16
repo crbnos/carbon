@@ -732,6 +732,10 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
             label: "Parts with Methods"
           },
           {
+            table: "supplierPart" as const,
+            label: t`Supplier Parts`
+          },
+          {
             table: "supplierPartPrice" as const,
             label: t`Supplier Price Breaks`
           },

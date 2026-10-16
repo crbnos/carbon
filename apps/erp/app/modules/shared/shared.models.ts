@@ -500,6 +500,7 @@ export const csvImportTables = [
   "inventoryQuantity",
   "batchQuantity",
   "serialQuantity",
+  "supplierPart",
   "supplierPartPrice",
   "itemUnitSalePrice",
   "itemPlanning",

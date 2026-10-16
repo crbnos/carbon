@@ -2,32 +2,58 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The per-item extras an item row can carry besides the item itself: a
-// supplier part link, the purchasing lead time, the unit cost and the
-// planning order multiple. The item imports (part, material, tool, fixture,
-// consumable, service) and the PART rows of a method import fill them by the
-// same rules and write them with the same functions, inside the caller's
-// transaction.
+// The per-item extras an item row can carry besides the item itself: the
+// purchasing lead time and the unit cost. The item imports (part, material,
+// tool, fixture, consumable, service) and the PART rows of a method import
+// fill them by the same rules and write them with the same functions, inside
+// the caller's transaction. Supplier parts have their own import
+// (supplier-part-import.ts).
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { Kysely } from "kysely";
+import { numberCell } from "./existing-item";
+
+export type NumberRule = { label: string; integer: boolean; min: number };
 
 /**
- * Idempotent supplierPart writes for the part/material/tool/fixture/consumable
- * import flow. One CSV row optionally creates one supplierPart link; re-imports
- * UPDATE the existing row (matched by (itemId, supplierId) per company).
+ * The first numeric cell a row holds that its column cannot store, or
+ * undefined: not a number, a fraction in a whole-number column, or below the
+ * form's minimum.
  */
-export type SupplierPartImportLink = {
-  itemId: string;
-  supplierId: string;
-  supplierPartId?: string;
-  supplierUnitOfMeasureCode?: string;
-  minimumOrderQuantity?: string;
-  orderMultiple?: string;
-  conversionFactor?: string;
-  unitPrice?: string;
+export function numberCellsError(
+  record: Record<string, string | undefined>,
+  rules: Record<string, NumberRule>
+): string | undefined {
+  for (const [field, rule] of Object.entries(rules)) {
+    const value = numberCell(record[field]);
+    if (value === undefined) continue;
+    if (Number.isNaN(value)) return `${rule.label} must be a number`;
+    if (rule.integer && !Number.isInteger(value)) {
+      return `${rule.label} must be a whole number`;
+    }
+    if (value < rule.min) return `${rule.label} must be ${rule.min} or more`;
+  }
+  return undefined;
+}
+
+// The numeric cells of an item row's extras, bounded as the purchasing and
+// costing forms bound them; Lead Time is an INTEGER column.
+const EXTRA_NUMBERS: Record<string, NumberRule> = {
+  leadTime: { label: "Lead Time (Days)", integer: true, min: 0 },
+  unitCost: { label: "Unit Cost", integer: false, min: 0 }
 };
+
+/**
+ * The first numeric extra a row holds that its column cannot store, or
+ * undefined. Before this check a fraction was cut to a whole number and a
+ * non-number was skipped, both without a report.
+ */
+export function itemExtrasError(
+  record: Record<string, string | undefined>
+): string | undefined {
+  return numberCellsError(record, EXTRA_NUMBERS);
+}
 
 type ItemPurchasingLeadTime = {
   itemId: string;
@@ -38,87 +64,6 @@ type ItemUnitCost = {
   itemId: string;
   unitCost: string;
 };
-
-type ItemPlanningOrderMultiple = {
-  itemId: string;
-  orderMultiple: string;
-};
-
-async function writeSupplierPartLinks(
-  trx: Kysely<KyselyDatabase>,
-  links: SupplierPartImportLink[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (links.length === 0) return;
-  const itemIds = [...new Set(links.map((l) => l.itemId))];
-  const supplierIds = [...new Set(links.map((l) => l.supplierId))];
-  const existing = await trx
-    .selectFrom("supplierPart")
-    .select(["id", "itemId", "supplierId"])
-    .where("itemId", "in", itemIds)
-    .where("supplierId", "in", supplierIds)
-    .where("companyId", "=", companyId)
-    .execute();
-  const existingByPair = new Map(
-    existing.map((e) => [`${e.itemId}:${e.supplierId}`, e.id])
-  );
-
-  const now = datetime.timestamp();
-  for (const link of links) {
-    const key = `${link.itemId}:${link.supplierId}`;
-    const existingId = existingByPair.get(key);
-    const numericMOQ = link.minimumOrderQuantity
-      ? Number.parseInt(link.minimumOrderQuantity, 10)
-      : null;
-    const numericOrderMultiple = link.orderMultiple
-      ? Number.parseInt(link.orderMultiple, 10)
-      : null;
-    const numericConversion = link.conversionFactor
-      ? Number.parseFloat(link.conversionFactor)
-      : 1;
-    // The price is in the supplier part's currency: an existing part keeps
-    // its own, a new one is created in base (currencyCode NULL), which is
-    // what an imported price has always meant.
-    const numericPrice = link.unitPrice
-      ? Number.parseFloat(link.unitPrice)
-      : null;
-
-    if (existingId) {
-      await trx
-        .updateTable("supplierPart")
-        .set({
-          supplierPartId: link.supplierPartId || null,
-          supplierUnitOfMeasureCode: link.supplierUnitOfMeasureCode || null,
-          minimumOrderQuantity: numericMOQ,
-          orderMultiple: numericOrderMultiple,
-          conversionFactor: numericConversion,
-          supplierUnitPrice: numericPrice,
-          updatedAt: now,
-          updatedBy: userId
-        })
-        .where("id", "=", existingId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      await trx
-        .insertInto("supplierPart")
-        .values({
-          itemId: link.itemId,
-          supplierId: link.supplierId,
-          supplierPartId: link.supplierPartId || null,
-          supplierUnitOfMeasureCode: link.supplierUnitOfMeasureCode || null,
-          minimumOrderQuantity: numericMOQ,
-          orderMultiple: numericOrderMultiple,
-          conversionFactor: numericConversion,
-          supplierUnitPrice: numericPrice,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
-    }
-  }
-}
 
 // Set the item-level purchasing lead time (the "Purchasing" tab field).
 // The itemReplenishment row is created by the create_item_related_records
@@ -178,89 +123,29 @@ async function writeItemUnitCosts(
   }
 }
 
-// Set the item-level planning order multiple. itemPlanning has one row per
-// (item, location) pair, all created by create_item_related_records at item
-// insert time (SELECT FROM location WHERE companyId = ...). A single UPDATE
-// scoped by itemId + companyId therefore covers every location row for that
-// item — matching the "order multiple is unique across every location"
-// expectation. Mirrors the same CSV value already written to
-// supplierPart.orderMultiple in writeSupplierPartLinks; both are intentionally
-// kept in sync at import time even though they're structurally distinct
-// fields (supplier case-pack vs MRP preferred multiple).
-async function writeItemPlanningOrderMultiples(
-  trx: Kysely<KyselyDatabase>,
-  entries: ItemPlanningOrderMultiple[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  if (entries.length === 0) return;
-  const now = datetime.timestamp();
-  for (const entry of entries) {
-    const numericOrderMultiple = Number.parseInt(entry.orderMultiple, 10);
-    if (Number.isNaN(numericOrderMultiple) || numericOrderMultiple < 1)
-      continue;
-    await trx
-      .updateTable("itemPlanning")
-      .set({
-        orderMultiple: numericOrderMultiple,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .where("itemId", "=", entry.itemId)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-}
-
 export type ItemExtras = {
-  supplierPartLinks: SupplierPartImportLink[];
   purchasingLeadTimes: ItemPurchasingLeadTime[];
   unitCosts: ItemUnitCost[];
-  planningOrderMultiples: ItemPlanningOrderMultiple[];
 };
 
 export function emptyItemExtras(): ItemExtras {
-  return {
-    supplierPartLinks: [],
-    purchasingLeadTimes: [],
-    unitCosts: [],
-    planningOrderMultiples: []
-  };
+  return { purchasingLeadTimes: [], unitCosts: [] };
 }
 
 /**
- * Queue the extras one CSV row carries for an item whose id is known. A row
- * with a supplier produces a supplier part link; a row with a lead time, a
- * unit cost or an order multiple produces that entry.
+ * Queue the extras one CSV row carries for an item whose id is known: a row
+ * with a lead time or a unit cost produces that entry.
  */
 export function collectItemExtras(
   extras: ItemExtras,
   itemId: string,
   record: Record<string, string | undefined>
 ): void {
-  if (record.supplierId) {
-    extras.supplierPartLinks.push({
-      itemId,
-      supplierId: record.supplierId,
-      supplierPartId: record.supplierPartId,
-      supplierUnitOfMeasureCode: record.supplierUnitOfMeasureCode,
-      minimumOrderQuantity: record.minimumOrderQuantity,
-      orderMultiple: record.orderMultiple,
-      conversionFactor: record.conversionFactor,
-      unitPrice: record.unitPrice
-    });
-  }
   if (record.leadTime) {
     extras.purchasingLeadTimes.push({ itemId, leadTime: record.leadTime });
   }
   if (record.unitCost) {
     extras.unitCosts.push({ itemId, unitCost: record.unitCost });
-  }
-  if (record.orderMultiple) {
-    extras.planningOrderMultiples.push({
-      itemId,
-      orderMultiple: record.orderMultiple
-    });
   }
 }
 
@@ -271,21 +156,9 @@ export async function writeItemExtras(
   companyId: string,
   userId: string
 ): Promise<void> {
-  await writeSupplierPartLinks(
-    trx,
-    extras.supplierPartLinks,
-    companyId,
-    userId
-  );
   await writeItemPurchasingLeadTimes(
     trx,
     extras.purchasingLeadTimes,
-    companyId,
-    userId
-  );
-  await writeItemPlanningOrderMultiples(
-    trx,
-    extras.planningOrderMultiples,
     companyId,
     userId
   );

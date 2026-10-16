@@ -30,11 +30,12 @@ Bulk import is available only for supported entities. Import each entity from th
 <FieldTable>
   <Field name="Customers">From the customers list. Optionally rides address, payment term, and contact-style fields on the same row.</Field>
   <Field name="Suppliers">From the suppliers list. Also carries address, payment term, shipping method, and incoterm fields.</Field>
-  <Field name="Parts, Materials, Tools, Consumables, Fixtures">From each item type's list. A single row can optionally create a supplier-part link, set purchasing lead time, and seed unit cost alongside the item.</Field>
+  <Field name="Parts, Materials, Tools, Consumables, Fixtures">From each item type's list. A row can also set the purchasing lead time and seed the unit cost. Supplier parts have their own import.</Field>
+  <Field name="Supplier Parts">From the parts, materials, tools, consumables, services and suppliers lists. Adds or updates the supplier parts of items that already exist. See [Supplier parts](#supplier-parts).</Field>
   <Field name="Work Centers">From the work centers list, including labor, machine, and overhead rates and a location.</Field>
   <Field name="Processes">From the processes list.</Field>
   <Field name="Inventory, Batch, and Serial Quantities">From **Inventory → Quantities**. Adds opening stock for items that already exist, one import per <Term id="item-tracking-type">tracking type</Term>. See [Opening stock](#opening-stock).</Field>
-  <Field name="Supplier Price Breaks, Item Sale Prices, Item Planning, Customer Part Numbers">From the parts list. Set prices, planning settings and customer part numbers on items that already exist. See [Item prices, planning and customer part numbers](#item-prices-planning-and-customer-part-numbers).</Field>
+  <Field name="Supplier Price Breaks, Item Sale Prices, Item Planning, Customer Part Numbers">From the parts list, and Customer Part Numbers also from the customers list. Set prices, planning settings and customer part numbers on items that already exist. See [Item prices, planning and customer part numbers](#item-prices-planning-and-customer-part-numbers).</Field>
   <Field name="Customer Locations, Supplier Locations">From the customers and suppliers lists. Add or update the locations of existing customers and suppliers. See [Customer and supplier locations](#customer-and-supplier-locations).</Field>
 </FieldTable>
 
@@ -81,7 +82,7 @@ For standard entity imports, re-importing the same identifiers updates existing 
 Matching by Unique ID uses a shared external-mapping table keyed to the `csv` source, so the second import of a file with the same ids takes the update path instead of creating duplicates. If a record was created in the app and you later import a CSV using the same **Name**, the name fallback catches it and updates rather than duplicates.
 
 <Callout type="note" title="Custom fields aren't populated on import">
-Import writes the entity's standard fields plus its documented side-tables (address, payment, supplier-part, cost). It does **not** map into per-company custom fields. Set those in the app after importing, or via the record's own form.
+Import writes the entity's standard fields plus its documented side-tables (address, payment, cost). It does **not** map into per-company custom fields. Set those in the app after importing, or via the record's own form.
 </Callout>
 
 ## Opening stock
@@ -108,12 +109,18 @@ Rules shared by all three:
 Inventory-tracked rows have no natural key, so every valid row posts, every time. Importing the same file twice doubles the quantities. Batch and serial rows are protected: a batch or serial number that already exists on that item (in any status) is **skipped**, and a number repeated in the file is skipped after its first row. The same serial number on two different items is allowed.
 </Callout>
 
+## Supplier parts
+
+**Supplier Parts** adds the suppliers an item is bought from, as the **New Supplier Part** drawer on the item's **Purchasing** tab or the supplier's **Parts** tab does. Columns: Part Number, Revision, Supplier, Supplier Part Number, Supplier Unit of Measure, Minimum Order Quantity, Order Multiple, Conversion Factor, Currency Code, Unit Price. Each row names its item by **Part Number + Revision** (a blank Revision means `0`) and works for parts, materials, tools, consumables and services.
+
+An item bought from several suppliers takes one row per supplier. A row for an item and supplier that already have a supplier part updates it; the same item and supplier twice in one file is an error. A blank cell takes the drawer's default: Minimum Order Quantity, Order Multiple and Conversion Factor 1, and the supplier's own currency. A blank Supplier Unit of Measure means the item's own unit, and a blank Currency Code never changes the currency of an existing supplier part. Minimum Order Quantity and Order Multiple are whole numbers, Order Multiple 1 or more; Unit Price is per supplier unit, in that currency. Columns you leave out of the file are not changed on an existing supplier part.
+
 ## Item prices, planning and customer part numbers
 
 Four imports on the parts list fill in the tabs of items that already exist. Each row names its item by **Part Number + Revision** (a blank Revision means `0`); an unknown item is an error, and so is a part number that matches two items of different types.
 
 <FieldTable>
-  <Field name="Supplier Price Breaks">Columns: Part Number, Revision, Supplier, Quantity, Unit Price, Lead Time (Days). For each item and supplier in the file, the file's rows **replace** that supplier part's price breaks, as saving the supplier part drawer on the **Purchasing** tab does. If the item has no supplier part for that supplier yet, one is created with a conversion factor of 1, in your base currency. Unit Price is per purchase unit, in the supplier part's currency. Quantity and Unit Price must be greater than 0, and a quantity can appear once per item and supplier. If any row for an item and supplier is invalid, none of that pair's rows are imported and its price breaks stay as they were. Works for parts, materials, tools, consumables and services.</Field>
+  <Field name="Supplier Price Breaks">Columns: Part Number, Revision, Supplier, Quantity, Unit Price, Lead Time (Days). For each item and supplier in the file, the file's rows **replace** that supplier part's price breaks, as saving the supplier part drawer on the **Purchasing** tab does. If the item has no supplier part for that supplier yet, one is created with a conversion factor of 1, in the supplier's currency. Unit Price is per purchase unit, in the supplier part's currency. Quantity and Unit Price must be greater than 0, and a quantity can appear once per item and supplier. If any row for an item and supplier is invalid, none of that pair's rows are imported and its price breaks stay as they were. Works for parts, materials, tools, consumables and services.</Field>
   <Field name="Item Sale Prices">Columns: Part Number, Revision, Unit Sale Price (0 or more). Updates the sale price on the item's **Sales** tab. Works for parts, materials, tools, consumables and services.</Field>
   <Field name="Item Planning">Columns: Part Number, Revision, Location, and the **Planning** tab's fields (reordering policy, reorder point and quantity, accumulation period, safety stock, minimum and maximum order quantity, order multiple, maximum inventory quantity, planning horizon). Updates the item's planning at that location with the same rules as the tab; a blank cell leaves that field as it is. The import does not re-run planning: the next scheduled MRP run uses the new settings. Works for parts, materials, tools and consumables.</Field>
   <Field name="Customer Part Numbers">Columns: Part Number, Revision, Customer, Customer Part Number, Customer Part Revision. Adds the customer's part number for a part, or updates it if that customer already has one for the part.</Field>
@@ -136,7 +143,7 @@ Import handles validation failures per row. Invalid rows are reported while vali
 Because the results carry each failed row's original cells, the wizard's results view shows you exactly which rows to fix without re-parsing your file. A hard failure (the file can't be downloaded, or an unexpected database error) is the only case that fails the whole import and returns an error message instead of a per-row report.
 
 <Callout type="warn" title="Import bypasses row-level security by design">
-The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers and customer locations, purchasing for suppliers and supplier locations, parts for items, methods, prices, planning and customer part numbers, production for work centers and processes, inventory for storage units and opening stock. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment, and the supplier price break, customer part number and location imports need create permission on their module.
+The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers and customer locations, purchasing for suppliers and supplier locations, parts for items, methods, prices, planning and customer part numbers, production for work centers and processes, inventory for storage units and opening stock. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment, and the supplier part, supplier price break, customer part number and location imports need create permission on their module.
 </Callout>
 
 ## Related
@@ -176,5 +183,5 @@ The Inventory Quantities import has no natural key: every valid row posts a Posi
 Each opening-stock import accepts one tracking type (Inventory, Batch, or Serial). The error names the import to use instead; move the row to that file.
 
 ### My custom fields are blank after import
-Import writes standard fields plus documented side-tables (address, payment, supplier-part, cost) only — it does **not** map into per-company custom fields. Set those on the record's form after importing.
+Import writes standard fields plus documented side-tables (address, payment, cost) only — it does **not** map into per-company custom fields. Set those on the record's form after importing.
 </AgentContext>

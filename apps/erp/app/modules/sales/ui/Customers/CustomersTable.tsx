@@ -338,6 +338,10 @@ const CustomersTable = memo(
             {
               table: "customerLocation",
               label: t`Customer Locations`
+            },
+            {
+              table: "customerPartToItem",
+              label: t`Customer Part Numbers`
             }
           ]}
           primaryAction={
