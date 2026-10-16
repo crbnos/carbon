@@ -17,6 +17,10 @@ import {
   findUnsyncedDocumentSequences
 } from "./conformance/document-sequence-synced";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
+import {
+  FUNCTION_REDEFINITION_KEEPS_CHANGES,
+  findDroppedFunctionChanges
+} from "./conformance/function-redefinition-keeps-changes";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 import { journalStatusFilter } from "./conformance/journal-status-filter";
 import { moduleShape } from "./conformance/module-shape";
@@ -214,6 +218,12 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ),
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
+    ),
+    ...findDroppedFunctionChanges(loadSqlFiles(migrationsDir(root))).map(
+      (violation) => ({
+        checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
+        violation
+      })
     ),
     ...findStampColumnMismatches(
       loadModuleServerFiles(root),
