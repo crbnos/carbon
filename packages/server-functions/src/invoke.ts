@@ -17,7 +17,6 @@ const registry = {
   "apply-account-import": () => import("./apply-account-import"),
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
-  "close-job": () => import("./close-job"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-lease-invoices": () => import("./create-lease-invoices"),
   "create-rental-invoices": () => import("./create-rental-invoices"),

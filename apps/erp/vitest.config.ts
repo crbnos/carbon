@@ -50,7 +50,10 @@ export default defineConfig({
       SUPABASE_ANON_KEY: "test",
       SUPABASE_SERVICE_ROLE_KEY: "test",
       SUPABASE_API_URL: "http://localhost",
-      SUPABASE_DB_URL: "postgresql://localhost",
+      // A real local database URL from the environment runs the database
+      // tests (test/database); the stub is not a local host, so they skip.
+      SUPABASE_DB_URL:
+        process.env.SUPABASE_DB_URL ?? "postgresql://stub.invalid/postgres",
       SESSION_SECRET: "test",
       REDIS_URL: "redis://localhost"
     }

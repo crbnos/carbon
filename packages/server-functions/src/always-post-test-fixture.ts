@@ -7,6 +7,7 @@
 // with. `stampCutover` gives the company a cutover and the period of the
 // current month, so a test can post the same document again as Posted.
 
+import { createServiceContext } from "@carbon/api/service-fn.server";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { endOfMonth } from "@internationalized/date";
@@ -239,6 +240,16 @@ export async function alwaysPostFixture() {
   });
 
   const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  // The same caller as a service function sees it, for a body ported to the
+  // ERP modules: the system actor, on behalf of the test user.
+  const service = createServiceContext({
+    actor: { type: "system", onBehalfOf: USER },
+    company: { id: companyId, groupId },
+    caller: unavailable("caller client"),
+    system: () => unavailable("service-role client"),
+    pg: () => db,
+    kv: () => unavailable("kv")
+  });
   const today = datetime.today(TIME_ZONE);
   // The first day of the current month: on or before today, so a document
   // posted today is on or after the cutover and one dated the day before it
@@ -248,6 +259,7 @@ export async function alwaysPostFixture() {
   return {
     db,
     ctx,
+    service,
     today: today.toString(),
     cutoverDate: cutover.toString(),
     beforeCutover: cutover.subtract({ days: 1 }).toString(),
@@ -305,6 +317,15 @@ export async function alwaysPostFixture() {
 }
 
 export type Fixture = Awaited<ReturnType<typeof alwaysPostFixture>>;
+
+/** A handle a posting body never takes: any use of it fails the test. */
+function unavailable(name: string): never {
+  return new Proxy({} as never, {
+    get() {
+      throw new Error(`A posting body has no ${name}`);
+    }
+  });
+}
 
 export function unwrap<T>(result: { data: T | null; error: Error | null }): T {
   if (result.error) throw result.error;

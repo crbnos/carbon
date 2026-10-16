@@ -66,6 +66,28 @@ Server-only. It may import `.server` packages (`@carbon/auth/client.server`,
 imports it (the `no-server-code-in-client` check), so it carries no bundle cost.
 A function a component calls lives in `<module>.utils.ts` instead.
 
+## A server function ported from `@carbon/server-functions`
+
+The package is being dissolved into the modules (plan Phase 5). A ported
+function keeps its logic as is:
+
+- Its body becomes a building block in `<module>.service.ts`:
+  `export async function <name>(ctx: ServiceContext, raw)`, whose first line
+  parses the function's own input schema (exported beside it). `ctx.db` is
+  `ctx.asSystem.pg`, `ctx.companyId` is `ctx.company.id`, `ctx.userId` is
+  `ctx.auditUserId`.
+- The operation that runs it calls `settle(ctx, "<server-fn-name>", () =>
+  service.<name>(ctx, input))` (`@carbon/api/service-tools.server`). A body
+  throws with messages written for the person (673 plain `Error`s); `settle`
+  turns a throw into a refusal by `defineServerFn`'s rules, so the message and
+  status a caller sees do not change. A plain `run` would withhold them.
+- The operation keeps the function's permission exactly
+  (`src/__snapshots__/permissions-manifest.test.ts.snap`), and the function
+  leaves the package's registry (`src/invoke.ts`).
+- Its live-database tests move to `apps/erp/test/database/`, on the package's
+  fixtures (`@carbon/server-functions/always-post-test-fixture`, whose `service`
+  is a system `ServiceContext`) until those move too.
+
 ## Shared code: `@carbon/api`
 
 | Import | From |

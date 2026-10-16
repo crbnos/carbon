@@ -8,6 +8,7 @@ import {
   envelopes,
   paged,
   plain,
+  settle,
   stamp
 } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
@@ -813,18 +814,14 @@ export const closeJob = defineServiceFn({
     });
     if (closed instanceof CarbonError) return closed;
 
-    const writeOff = await serverFns
-      .system({
-        db: ctx.asSystem.pg,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId
-      })
-      .invoke("close-job", { jobId });
-    if (writeOff.error) {
+    const writeOff = await settle(ctx, "close-job", () =>
+      service.closeJob(ctx, { jobId })
+    );
+    if (writeOff instanceof CarbonError) {
       logger.error("Failed to write off WIP for closed job", {
         jobId,
         companyId: ctx.company.id,
-        error: writeOff.error
+        error: writeOff
       });
       return {
         ...closed,

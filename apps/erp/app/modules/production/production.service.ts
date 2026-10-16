@@ -11,9 +11,15 @@ import type { Database, Json } from "@carbon/database";
 import {
   fetchAllByIds,
   fetchAllFromTable,
-  fetchAllRecords
+  fetchAllRecords,
+  getCompanyTimeZone,
+  journalReference
 } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import { single } from "@carbon/database/rows";
+import { getNextSequence } from "@carbon/database/sequence";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -30,15 +36,20 @@ import {
 } from "@carbon/planning";
 import type { JSONContent } from "@carbon/react";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
+import { getDefaultPostingGroup } from "@carbon/server-functions/lib/get-posting-group";
 import {
   async,
   chunkArray,
+  credit,
   datetime,
+  debit,
   getErrorMessage,
   groupBy,
   HOUR_MS,
   isUniqueViolation,
   nameSimilarity,
+  round,
   scrapAllowance,
   tiptapToText,
   unchecked
@@ -66,7 +77,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
-import type { z } from "zod";
+import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { StorageItem } from "~/types";
@@ -12362,4 +12373,214 @@ export async function getJobToResume(
     .eq("id", jobId)
     .eq("companyId", companyId)
     .maybeSingle();
+}
+export const closeJobInput = z.object({
+  jobId: z.string()
+});
+
+/**
+ * Closing a job writes off whatever is left in WIP for it as production
+ * variance, so the job's WIP nets to zero. Nothing to do when the residual is
+ * under a cent. The journal is Provisional before the company's accounting
+ * cutover and Posted after it.
+ */
+export async function closeJob(
+  ctx: ServiceContext,
+  raw: z.input<typeof closeJobInput>
+) {
+  const { jobId } = closeJobInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  const companyRecord = await single(
+    db,
+    "company",
+    { id: companyId },
+    { columns: ["companyGroupId"] }
+  );
+
+  if (companyRecord.error) throw new Error("Failed to fetch company");
+
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults?.error || !accountDefaults?.data) {
+    throw new Error("Error getting account defaults");
+  }
+
+  await db.transaction().execute(async (trx) => {
+    // Provisional before the company's accounting cutover, Posted after it.
+    // Read inside the transaction so the FOR SHARE lock holds until commit.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+
+    const wipBalance = await trx
+      .selectFrom("journalLine")
+      .innerJoin("journal", "journal.id", "journalLine.journalId")
+      .select((eb) => eb.fn.sum("journalLine.amount").as("balance"))
+      .where(
+        "journalLine.accountId",
+        "=",
+        accountDefaults.data!.workInProgressAccount
+      )
+      .where("journalLine.documentId", "=", jobId)
+      .where("journal.companyId", "=", companyId)
+      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .executeTakeFirst();
+
+    const remainingWip = Number(wipBalance?.balance ?? 0);
+
+    if (Math.abs(remainingWip) < 0.01) return;
+
+    const job = await trx
+      .selectFrom("job")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .select(["jobId", "itemId", "locationId"])
+      .executeTakeFirstOrThrow();
+
+    // Resolve the item dimensions so the WIP variance lines are attributable
+    // to the finished good (mirrors the WIP lines posted during completion).
+    const companyGroupId = companyRecord.data.companyGroupId;
+    const dimensionMap = new Map<string, string>();
+    if (companyGroupId) {
+      const dimensions = await trx
+        .selectFrom("dimension")
+        .select(["id", "entityType"])
+        .where("companyGroupId", "=", companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "in", ["ItemPostingGroup", "Item", "Location"])
+        .execute();
+      for (const dim of dimensions) {
+        if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+      }
+    }
+
+    const finishedItemCost = job.itemId
+      ? await trx
+          .selectFrom("itemCost")
+          .select(["itemPostingGroupId"])
+          .where("itemId", "=", job.itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : null;
+
+    const journalLineReference = nanoid();
+
+    const journalLineInserts = [
+      {
+        accountId: accountDefaults.data!.materialVarianceAccount,
+        description: "Production Variance",
+        // Signed: a positive residual debits variance / credits WIP; a
+        // negative (over-credited) residual reverses — always zeroing WIP.
+        amount: round(debit("expense", remainingWip)),
+        quantity: 0,
+        documentType: "Job Close" as const,
+        documentId: jobId,
+        documentLineReference: journalReference.to.job(jobId),
+        journalLineReference,
+        companyId
+      },
+      {
+        accountId: accountDefaults.data!.workInProgressAccount,
+        description: "WIP Account",
+        amount: round(credit("asset", remainingWip)),
+        quantity: 0,
+        documentType: "Job Close" as const,
+        documentId: jobId,
+        documentLineReference: journalReference.to.job(jobId),
+        journalLineReference,
+        companyId
+      }
+    ];
+
+    // A Provisional journal has no accounting period.
+    const accountingPeriodId =
+      postingStatus === "Posted"
+        ? await getCurrentAccountingPeriod(companyId, trx, today)
+        : null;
+
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+
+    const journalResult = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        description: `Job Close Variance ${job.jobId}`,
+        postingDate: today,
+        companyId,
+        sourceType: "Job Close",
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const journalLineResults = await trx
+      .insertInto("journalLine")
+      .values(
+        journalLineInserts.map((line) => ({
+          ...line,
+          journalId: journalResult.id
+        }))
+      )
+      .returning(["id"])
+      .execute();
+
+    if (dimensionMap.size > 0) {
+      const dimensionInserts: {
+        journalLineId: string;
+        dimensionId: string;
+        valueId: string;
+        companyId: string;
+      }[] = [];
+
+      for (const jl of journalLineResults) {
+        if (job.itemId && dimensionMap.has("Item")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Item")!,
+            valueId: job.itemId,
+            companyId
+          });
+        }
+        if (
+          finishedItemCost?.itemPostingGroupId &&
+          dimensionMap.has("ItemPostingGroup")
+        ) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("ItemPostingGroup")!,
+            valueId: finishedItemCost.itemPostingGroupId,
+            companyId
+          });
+        }
+        if (job.locationId && dimensionMap.has("Location")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Location")!,
+            valueId: job.locationId,
+            companyId
+          });
+        }
+      }
+
+      if (dimensionInserts.length > 0) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensionInserts)
+          .execute();
+      }
+    }
+  });
+
+  return { success: true };
 }

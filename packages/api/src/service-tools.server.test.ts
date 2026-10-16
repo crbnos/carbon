@@ -3,14 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it, vi } from "vitest";
-import { ServerFnError } from "./errors";
+import { NotFoundError, ServerFnError } from "./errors";
 
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
 }));
 
 import { CarbonError, createServiceContext } from "./service-fn.server";
-import { serviceResult, stamp } from "./service-tools.server";
+import { serviceResult, settle, stamp } from "./service-tools.server";
 
 const ctx = createServiceContext({
   actor: { type: "user", userId: "user-1", permissions: {} },
@@ -153,5 +153,44 @@ describe("serviceResult", () => {
       error: null
     });
     expect(serviceResult(ctx, 3, "plain")).toBe(3);
+  });
+});
+
+describe("settle", () => {
+  const refusal = async (thrown: unknown) => {
+    const out = await settle(ctx, "post-thing", async () => {
+      throw thrown;
+    });
+    if (!(out instanceof CarbonError)) throw new Error("expected a refusal");
+    return { category: out.category, message: out.message };
+  };
+
+  it("returns the body's value", async () => {
+    expect(await settle(ctx, "post-thing", async () => ({ id: "x" }))).toEqual({
+      id: "x"
+    });
+  });
+
+  it("refuses with the status's category and the engine's own message", async () => {
+    expect(await refusal(new NotFoundError("Shipment not found"))).toEqual({
+      category: "notFound",
+      message: "Shipment not found"
+    });
+    expect(await refusal(new Error("The shipment has no lines"))).toEqual({
+      category: "validation",
+      message: "The shipment has no lines"
+    });
+  });
+
+  it("withholds a data-layer error's text", async () => {
+    const pgError = {
+      code: "23505",
+      severity: "ERROR",
+      message: "duplicate key value"
+    };
+    expect(await refusal(pgError)).toEqual({
+      category: "internal",
+      message: "The operation could not be completed."
+    });
   });
 });

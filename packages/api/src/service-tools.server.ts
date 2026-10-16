@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// What a single-function tool (`<module>.tools.server.ts`) does around the
-// service function it calls: stamp the caller's identity onto the payload,
-// and read the service's `{ data, error }` as a service function's result.
+// What a service function does around the building block it calls: stamp the
+// caller's identity onto the payload, read the building block's `{ data, error }`
+// as a service function's result, and settle a posting engine's throw.
 
-import { ServerFnError } from "./errors";
+import { failSpan, inSpan } from "@carbon/logger/span";
+import { ServerFnError, toServerFnError } from "./errors";
 import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
 import type {
   CarbonError,
@@ -220,4 +221,38 @@ export function envelopes<R extends unknown[]>(
 /** A `{ success | ok, message | reason }` result: refused when false. */
 export function flag<R>(ctx: ServiceContext, result: R): R | CarbonError {
   return serviceResult(ctx, result, "flag") as R | CarbonError;
+}
+
+/**
+ * Run a posting engine's body (a server function ported from
+ * `@carbon/server-functions`): its value, or what it threw as the refusal
+ * `defineServerFn` made of it. A thrown message is shown to the caller unless
+ * it came from the data layer, so the engines keep their own wording; the
+ * status decides the category (`NotFoundError` → `notFound`). One span per
+ * call, named `function <name>` as before.
+ */
+export function settle<R>(
+  ctx: ServiceContext,
+  name: string,
+  body: () => Promise<R>,
+  defaultStatus = 500
+): Promise<R | CarbonError> {
+  return inSpan(
+    `function ${name}`,
+    { "carbon.function": name, "carbon.function.actor": ctx.actor.type },
+    async (span) => {
+      try {
+        return await body();
+      } catch (err) {
+        const error = toServerFnError(name, err, defaultStatus);
+        span.setAttribute("carbon.function.status", error.status);
+        if (error.status >= 500) failSpan(span, error.message);
+        return serviceResult(
+          ctx,
+          { data: null, error },
+          "envelope"
+        ) as CarbonError;
+      }
+    }
+  );
 }
