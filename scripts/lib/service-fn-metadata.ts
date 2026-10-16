@@ -228,6 +228,31 @@ function stringsOf(node: Node | undefined): string[] | null {
  * only) and the function's own gate decides, as it does for `{}` (any member
  * of the company). `"system"` and a keyed rule are refused.
  */
+/**
+ * The permission's object literal: written in place, or a constant it names
+ * (`service.closeJobPermission`, the one a ported posting body shares with
+ * its callers), through `satisfies` / `as const`.
+ */
+function permissionLiteral(node: Node | undefined): Node | undefined {
+  let current = node;
+  for (let hops = 0; current && hops < 4; hops++) {
+    if (Node.isSatisfiesExpression(current) || Node.isAsExpression(current)) {
+      current = current.getExpression();
+      continue;
+    }
+    if (Node.isIdentifier(current) || Node.isPropertyAccessExpression(current)) {
+      const name = Node.isIdentifier(current) ? current : current.getNameNode();
+      const declaration = name.getDefinitionNodes()[0];
+      current = Node.isVariableDeclaration(declaration)
+        ? declaration.getInitializer()
+        : undefined;
+      continue;
+    }
+    return current;
+  }
+  return current;
+}
+
 export function leafPermission(leaf: ServiceFnLeaf): {
   permission: ToolPermission;
   actions: PermissionAction[];
@@ -238,10 +263,11 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     definition && Node.isObjectLiteralExpression(definition)
       ? definition.getProperty("permission")
       : undefined;
-  const value =
+  const value = permissionLiteral(
     property && Node.isPropertyAssignment(property)
       ? property.getInitializer()
-      : undefined;
+      : undefined
+  );
   if (!value) throw new Error(`${where}: no literal \`permission\``);
 
   if (!Node.isObjectLiteralExpression(value)) {

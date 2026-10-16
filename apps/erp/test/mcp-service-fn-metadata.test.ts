@@ -145,6 +145,28 @@ export const getJobs = defineServiceFn({
     });
   });
 
+  it("reads a permission named by a constant", () => {
+    const [recost] = toolsFor({
+      "/m/production.ts": `
+import { defineServiceFn } from "./helper";
+const recostPermission = { update: "accounting" } as const;
+/**
+ * Recost a unit.
+ *
+ * @mcp
+ */
+export const recost = defineServiceFn({
+  input: null,
+  permission: recostPermission,
+  async run(_ctx, input: { id: string }) {
+    return null;
+  }
+});`,
+      "/m/router.ts": ROUTER
+    });
+    expect(recost?.permission).toEqual({ module: "accounting", actions: ["update"] });
+  });
+
   it("refuses to publish a system-only function", () => {
     const published = PRODUCTION.replace(
       "/** Re-plan an item. Not published. */",
