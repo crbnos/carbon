@@ -144,6 +144,10 @@ export function defaultsForNewRows(args: {
   return [...counts.values()];
 }
 
+/**
+ * The fields a method-file row's Row Type uses, so its defaults count only
+ * those.
+ */
 function methodRowFields(
   table: CsvImportTable,
   row: Record<string, string>,

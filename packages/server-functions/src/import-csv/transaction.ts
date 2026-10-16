@@ -16,6 +16,10 @@ const logger = getLogger("server-functions", "import-csv");
 
 let savepoints = 0;
 
+/**
+ * Runs `callback` in a transaction of its own, or in a savepoint inside a dry
+ * run.
+ */
 export async function inTransaction<T>(
   db: Kysely<KyselyDatabase>,
   callback: (trx: Transaction<KyselyDatabase>) => Promise<T>

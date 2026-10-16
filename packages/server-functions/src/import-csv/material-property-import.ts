@@ -397,6 +397,11 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
   }
 };
 
+/**
+ * Imports one material property table (substances, forms, finishes, grades,
+ * types, dimensions). Create-only: a row matching a company or global entry is
+ * skipped.
+ */
 export async function importMaterialProperties(
   db: Kysely<KyselyDatabase>,
   {

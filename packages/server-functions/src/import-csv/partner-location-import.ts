@@ -70,6 +70,10 @@ export function addressValues(
   return values;
 }
 
+/**
+ * The key of a partner location: the partner and the location name, ignoring
+ * case and outer spaces.
+ */
 export const partnerLocationKey = (partnerId: string, name: string) =>
   `${partnerId}::${name.trim().toLowerCase()}`;
 
@@ -86,6 +90,10 @@ export type PartnerLocationRowDecision =
   | { action: "update"; addressId: string; address: AddressValues; key: string }
   | { action: "skip"; reason: string; category: "error" | "skipped" };
 
+/**
+ * One row of the file: a new location, an address update of a location with the
+ * same name, or a skip with its reason.
+ */
 export function classifyPartnerLocationRow(params: {
   table: PartnerLocationTable;
   record: ImportRecord;
@@ -141,6 +149,7 @@ export function classifyPartnerLocationRow(params: {
   return { action: "insert", partnerId, name, address, key };
 }
 
+/** Every location of the named partners, with its address id, by partner. */
 async function loadExistingLocations(
   db: Kysely<KyselyDatabase>,
   table: PartnerLocationTable,
@@ -173,6 +182,10 @@ async function loadExistingLocations(
   return map;
 }
 
+/**
+ * Adds locations to customers or suppliers, or updates the address of a
+ * location with the same name, in one transaction.
+ */
 export async function importPartnerLocations(
   db: Kysely<KyselyDatabase>,
   args: {

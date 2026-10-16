@@ -76,6 +76,10 @@ type Summary = {
 
 const text = (s: string | undefined): string => (s ?? "").trim();
 
+/**
+ * Posts each row's opening stock as a positive adjustment, with its ledger row,
+ * cost layer and journal lines, in one transaction.
+ */
 export async function importStockQuantities(
   db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,

@@ -68,12 +68,14 @@ type ItemUnitCost = {
   unitCost: string;
 };
 
-// Set the item-level purchasing lead time (the "Purchasing" tab field).
-// The itemReplenishment row is created by the create_item_related_records
-// AFTER INSERT trigger on item (default leadTime 7, per migration
-// 20250610000433_demand-planning.sql which renamed purchasingLeadTime →
-// leadTime), so within this transaction the row already exists for every
-// item we just upserted — we only need to UPDATE it.
+/**
+ * Set the item-level purchasing lead time (the "Purchasing" tab field).
+ * The itemReplenishment row is created by the create_item_related_records
+ * AFTER INSERT trigger on item (default leadTime 7, per migration
+ * 20250610000433_demand-planning.sql which renamed purchasingLeadTime →
+ * leadTime), so within this transaction the row already exists for every
+ * item we just upserted — we only need to UPDATE it.
+ */
 async function writeItemPurchasingLeadTimes(
   trx: Kysely<KyselyDatabase>,
   entries: ItemPurchasingLeadTime[],
@@ -98,10 +100,12 @@ async function writeItemPurchasingLeadTimes(
   }
 }
 
-// Set the item-level unit cost (the "Costing" tab field). The itemCost row is
-// created by the create_item_related_records AFTER INSERT trigger on item, so
-// within this transaction the row already exists for every item we upserted —
-// we only need to UPDATE it. Non-numeric/blank values are skipped.
+/**
+ * Set the item-level unit cost (the "Costing" tab field). The itemCost row is
+ * created by the create_item_related_records AFTER INSERT trigger on item, so
+ * within this transaction the row already exists for every item we upserted —
+ * we only need to UPDATE it. Non-numeric/blank values are skipped.
+ */
 async function writeItemUnitCosts(
   trx: Kysely<KyselyDatabase>,
   entries: ItemUnitCost[],
@@ -131,6 +135,7 @@ export type ItemExtras = {
   unitCosts: ItemUnitCost[];
 };
 
+/** No extras queued yet. */
 export function emptyItemExtras(): ItemExtras {
   return { purchasingLeadTimes: [], unitCosts: [] };
 }

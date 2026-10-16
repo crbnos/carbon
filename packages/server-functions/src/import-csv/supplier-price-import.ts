@@ -50,6 +50,7 @@ export type PriceRowDecision =
   // error also holds back the rest of that pair's ladder.
   | { action: "error"; reason: string; pairKey?: string };
 
+/** The key of a supplier part: an item and a supplier. */
 export const pairKey = (itemId: string, supplierId: string) =>
   `${itemId}::${supplierId}`;
 
@@ -160,6 +161,10 @@ export function planPriceLadders(
   return { ladders: [...ladders.values()], errors };
 }
 
+/**
+ * Replaces each item and supplier's price breaks with the file's rows, creating
+ * a missing supplier part first, in one transaction.
+ */
 export async function importSupplierPrices(
   db: Kysely<KyselyDatabase>,
   args: {

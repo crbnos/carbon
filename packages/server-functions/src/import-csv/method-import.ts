@@ -78,6 +78,7 @@ type ItemInfo = {
 const key = (readableId: string, revision: string) =>
   `${readableId} ${revision || "0"}`;
 
+/** The key of a supplier's process: a supplier and a process. */
 const supplierProcessKey = (supplierId: string, processId: string) =>
   `${supplierId} ${processId}`;
 
@@ -160,6 +161,10 @@ function normalizeRowType(
 // entry point
 // ---------------------------------------------------------------------------
 
+/**
+ * Imports a method file's parts, BOMs and operations one parent part at a time.
+ * Each part's group is written whole or not at all.
+ */
 export async function importMethods(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -493,6 +498,7 @@ type Lookups = {
   supplierProcessMap: Map<string, string>;
 };
 
+/** Every reason a part's group cannot be written; empty when it can. */
 function validateGroup(
   g: Group,
   lk: Lookups
@@ -752,6 +758,10 @@ function validateGroup(
 // write (one transaction per part group → atomic per part, ADR-0001)
 // ---------------------------------------------------------------------------
 
+/**
+ * Writes one part's group in its own transaction: the PART row's item, then its
+ * materials, operations, steps, tools and parameters.
+ */
 async function writeGroup(
   db: Kysely<KyselyDatabase>,
   g: Group,
