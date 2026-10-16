@@ -1035,6 +1035,7 @@ export async function getBatchNumbersForItem(
     .order("createdAt", { ascending: true });
 }
 
+/** @mcp read */
 export async function getStorageUnitsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1047,6 +1048,7 @@ export async function getStorageUnitsList(
   );
 }
 
+/** @mcp read */
 export async function getStorageUnitsListForLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1091,7 +1093,6 @@ export async function getStorageUnitsTreeForLocation(
   );
 }
 
-/** @mcp read */
 export async function getStorageUnits(
   client: SupabaseClient<Database>,
   locationId: string,

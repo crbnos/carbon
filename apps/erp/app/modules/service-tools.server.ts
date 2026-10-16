@@ -182,3 +182,42 @@ export function serviceResult(
   }
   return result;
 }
+
+type Envelope = { data?: unknown; error?: unknown; count?: number | null };
+type DataOf<R> = R extends { data: infer D } ? D : never;
+
+/** A `{ data, error }` service result: its data, or its refusal. */
+export function envelope<R extends Envelope>(
+  ctx: ServiceContext,
+  result: R
+): DataOf<R> | CarbonError {
+  return serviceResult(ctx, result, "envelope") as DataOf<R> | CarbonError;
+}
+
+/** A paged list's `{ data, count, error }`: its rows and total, or its refusal. */
+export function paged<R extends Envelope>(
+  ctx: ServiceContext,
+  result: R
+): { rows: DataOf<R>; count: number | null } | CarbonError {
+  return serviceResult(ctx, result, "envelope", { paginates: true }) as
+    | { rows: DataOf<R>; count: number | null }
+    | CarbonError;
+}
+
+/** A value with no envelope; a truthy `error` on it is still a refusal. */
+export function plain<R>(ctx: ServiceContext, result: R): R | CarbonError {
+  return serviceResult(ctx, result, "plain") as R | CarbonError;
+}
+
+/** The results of several writes: refused when any one failed. */
+export function envelopes<R extends unknown[]>(
+  ctx: ServiceContext,
+  result: R
+): R | CarbonError {
+  return serviceResult(ctx, result, "envelopes") as R | CarbonError;
+}
+
+/** A `{ success | ok, message | reason }` result: refused when false. */
+export function flag<R>(ctx: ServiceContext, result: R): R | CarbonError {
+  return serviceResult(ctx, result, "flag") as R | CarbonError;
+}

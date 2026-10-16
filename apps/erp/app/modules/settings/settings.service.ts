@@ -650,6 +650,7 @@ export async function upsertDocumentTemplate(
   );
 }
 
+/** @mcp read */
 export async function getDocumentSections(
   client: SupabaseClient<Database>,
   companyId: string
@@ -661,7 +662,6 @@ export async function getDocumentSections(
     .order("name");
 }
 
-/** @mcp read */
 export async function getDocumentSection(
   client: SupabaseClient<Database>,
   id: string,

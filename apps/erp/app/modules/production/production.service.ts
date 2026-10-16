@@ -1318,6 +1318,7 @@ export async function getRootMakeMethod(
     .single();
 }
 
+/** @mcp read */
 export async function getJobMaterialsWithQuantityOnHand(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1360,6 +1361,7 @@ export async function getJobMaterialsWithQuantityOnHand(
 }
 
 // Distinct item ids on a job — scopes the Materials-page Item filter.
+/** @mcp read */
 export async function getJobMaterialItemIds(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1874,7 +1876,6 @@ export type JobMethodTreeItem = {
   children: JobMethodTreeItem[];
 };
 
-/** @mcp read */
 export async function getJobMaterial(
   client: SupabaseClient<Database>,
   materialId: string

@@ -534,6 +534,7 @@ export async function updatePurchaseInvoiceExchangeRate(
   return client.from("purchaseInvoice").update(update).eq("id", update.id);
 }
 
+/** @mcp update */
 export async function updateSalesInvoiceExchangeRate(
   client: SupabaseClient<Database>,
   data: {

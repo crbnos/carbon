@@ -1644,6 +1644,7 @@ export async function getQuoteOperation(
     .single();
 }
 
+/** @mcp read */
 export async function getQuoteOperationsByLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -1654,6 +1655,7 @@ export async function getQuoteOperationsByLine(
     .eq("quoteLineId", quoteLineId);
 }
 
+/** @mcp read */
 export async function getQuoteOperationsByMethodId(
   client: SupabaseClient<Database>,
   quoteMakeMethodId: string
@@ -1667,7 +1669,6 @@ export async function getQuoteOperationsByMethodId(
     .order("order", { ascending: true });
 }
 
-/** @mcp read */
 export async function getQuoteOperations(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -3485,6 +3486,7 @@ export async function updateSalesRFQFavorite(
   }
 }
 
+/** @mcp update */
 export async function updateQuoteExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -3528,6 +3530,7 @@ export async function updateQuoteLinePrecision(
   });
 }
 
+/** @mcp update */
 export async function updateSalesOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -3892,7 +3895,6 @@ export async function insertQuote(
   return { data: { id: createdQuoteId, quoteId }, error: null };
 }
 
-/** @mcp update */
 export async function updateQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -6110,7 +6112,6 @@ export async function insertSalesOrder(
   return { data: { id: orderId, salesOrderId }, error: null };
 }
 
-/** @mcp update */
 export async function updateSalesOrder(
   client: SupabaseClient<Database>,
   input: {
