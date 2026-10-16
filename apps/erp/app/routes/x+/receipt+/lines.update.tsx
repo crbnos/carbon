@@ -53,7 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { data: lines, error: linesError } = await client
       .from("receiptLine")
       .select(
-        "id, receiptId, receivedQuantity, requiresSerialTracking, receipt(status)"
+        "id, receiptId, receivedQuantity, requiresSerialTracking, receipt(status, sourceDocument)"
       )
       .in("id", ids)
       .eq("companyId", companyId);
@@ -70,12 +70,15 @@ export async function action({ request }: ActionFunctionArgs) {
       (l) => l.requiresSerialTracking && l.receipt?.status === "Draft"
     );
     for (const receiptId of new Set(serialLines.map((l) => l.receiptId))) {
+      const receiptLines = serialLines.filter((l) => l.receiptId === receiptId);
       const reconciled = await reconcileReceiptSerialEntities(
         getCarbonServiceRole(),
         {
           receiptId,
           companyId,
-          lines: serialLines.filter((l) => l.receiptId === receiptId)
+          isSalesReturn:
+            receiptLines[0]?.receipt?.sourceDocument === "Sales Return Order",
+          lines: receiptLines
         }
       );
       if (reconciled.error) {

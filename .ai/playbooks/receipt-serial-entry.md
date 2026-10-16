@@ -1,6 +1,6 @@
 # Receipt Serial Entry (clear / edit / post refusal)
 
-Last tested: 2026-10-15
+Last tested: 2026-10-16
 Route: /x/receipt/<id>/details
 
 ## Prerequisites
@@ -37,6 +37,21 @@ Route: /x/receipt/<id>/details
   textbox just under the "Receipt Lines" heading.
 - Read-only DB check:
   `select "readableId", status, attributes->>'Receipt Line Index' from "trackedEntity" where attributes->>'Receipt' = '<receipt id>'`
+
+### 7. Refused values empty the box
+- A duplicate within the form, a serial on another receipt's box, or the serial
+  of an existing unit with stock history (e.g. one shipped to a customer) shows
+  an error AND leaves nothing saved for the box; the Post dialog then blocks.
+### 8. Enter
+- Enter moves focus to the next box (one save via blur); on the last box it blurs.
+### 9. Line split and sales returns
+- Split a serial PO line: its unposted serials are deleted, boxes show empty.
+- Split / lower the quantity on a sales-return line with picked units: the units
+  are kept (stock history) and only lose their receipt link.
+
+## Browser session
+- Other agents may drive the shared default agent-browser session. Use
+  `export AGENT_BROWSER_SESSION=<name>` in every command (and log in again in it).
 
 ## Common Failures
 - A flash from a redirect is never shown after the post dialog submits (fetcher

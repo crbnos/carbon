@@ -1265,27 +1265,17 @@ function SerialForm({
     [serialNumbers]
   );
 
-  const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; number: string }) => {
-      // An empty value is sent too: it clears the serial saved for this box.
-      if (!receipt?.id) return;
-
-      const error = validateSerialNumber(
-        serialNumber.number,
-        serialNumber.index
-      );
-      if (error) {
-        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
-        return;
-      }
+  const saveSerialNumber = useCallback(
+    async (index: number, value: string) => {
+      if (!receipt?.id) return { ok: true, error: null };
 
       const formData = new FormData();
       formData.append("itemId", line.itemId!);
       formData.append("receiptId", receipt.id);
       formData.append("receiptLineId", line.id!);
       formData.append("trackingType", "serial");
-      formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumber", serialNumber.number.trim());
+      formData.append("index", index.toString());
+      formData.append("serialNumber", value);
       if (expiryDate) {
         formData.append("expiryDate", expiryDate);
       }
@@ -1295,30 +1285,43 @@ function SerialForm({
           method: "POST",
           body: formData
         });
-
-        if (response.ok) {
-          // Clear error if submission was successful
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors[serialNumber.index];
-            return newErrors;
-          });
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number already exists"
-          }));
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("duplicate")) {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number already exists for this item"
-          }));
-        }
+        if (response.ok) return { ok: true, error: null };
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        return {
+          ok: false,
+          error: body?.error ?? "Failed to save the serial number"
+        };
+      } catch {
+        return { ok: false, error: "Failed to save the serial number" };
       }
     },
-    [line.id, line.itemId, receipt?.id, validateSerialNumber, expiryDate]
+    [line.id, line.itemId, receipt?.id, expiryDate]
+  );
+
+  // Every save is sent, an empty one included: it clears the serial saved for
+  // the box. A value refused here empties the box on the server too, so what
+  // posts is never a serial the box no longer shows.
+  const updateSerialNumber = useCallback(
+    async (serialNumber: { index: number; number: string }) => {
+      const { index } = serialNumber;
+      const localError = validateSerialNumber(serialNumber.number, index);
+      if (localError) {
+        setErrors((prev) => ({ ...prev, [index]: localError }));
+        await saveSerialNumber(index, "");
+        return;
+      }
+
+      const saved = await saveSerialNumber(index, serialNumber.number.trim());
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (saved.error) next[index] = saved.error;
+        else delete next[index];
+        return next;
+      });
+    },
+    [validateSerialNumber, saveSerialNumber]
   );
 
   const propertiesDisclosure = useDisclosure();
@@ -1363,7 +1366,10 @@ function SerialForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
+      <div
+        data-serial-boxes
+        className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3"
+      >
         {serialNumbers.map((serialNumber, index) => (
           <div
             key={`${line.id}-${index}-serial`}
@@ -1400,13 +1406,16 @@ function SerialForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  updateSerialNumber(serialNumber);
+                  // Leaving the box saves it (onBlur). Saving here as well
+                  // sent two saves of one box at once, which can store the
+                  // serial twice.
                   const nextInput = e.currentTarget
-                    .closest("div")
-                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                  if (nextInput) {
-                    (nextInput as HTMLElement).focus();
-                  }
+                    .closest("[data-serial-boxes]")
+                    ?.querySelector<HTMLInputElement>(
+                      `input[placeholder="Serial ${index + 2}"]`
+                    );
+                  if (nextInput) nextInput.focus();
+                  else e.currentTarget.blur();
                 }
               }}
               className={cn(errors[index] && "border-destructive")}

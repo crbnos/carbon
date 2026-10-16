@@ -49,7 +49,9 @@ import type {
 } from "./inventory.models";
 import {
   isPickingListLocked,
-  reconcileReceiptLineSerials
+  planReceiptSerialRelease,
+  reconcileReceiptLineSerials,
+  withoutReceiptLink
 } from "./inventory.models";
 import {
   effectiveSuccessorId,
@@ -850,8 +852,9 @@ export async function getReceiptLineTracking(
 }
 
 /**
- * Deletes stale serial tracked entities for a receipt's serial-tracked lines
- * before posting. Post-receipt flips one serial per index in
+ * Removes stale serial tracked entities from a receipt's serial-tracked lines
+ * (through `releaseReceiptSerialEntities`), before posting and when the
+ * received quantity changes. Post-receipt flips one serial per index in
  * [0, receivedQuantity) to Available; orphaned (reduced quantity) or duplicate
  * (edited serial) entities would otherwise become phantom Available serials.
  * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
@@ -866,7 +869,7 @@ export async function reconcileReceiptSerialEntities(
   args: {
     receiptId: string;
     companyId: string;
-    isSalesReturn?: boolean;
+    isSalesReturn: boolean;
     lines: {
       id: string;
       receivedQuantity: number | null;
@@ -897,7 +900,7 @@ export async function reconcileReceiptSerialEntities(
         index: (e.attributes as TrackedEntityAttributes)?.[
           "Receipt Line Index"
         ],
-        hasSerial: !!args.isSalesReturn || !!e.readableId,
+        hasSerial: args.isSalesReturn || !!e.readableId,
         createdAt: e.createdAt
       }));
     const { missingIndexes, surplusEntityIds } = reconcileReceiptLineSerials(
@@ -919,11 +922,9 @@ export async function reconcileReceiptSerialEntities(
 }
 
 /**
- * Takes serial tracked entities off a receipt. An entity the receipt created
- * has no stock history and is deleted. One with history is a real unit — a
- * sales return re-tags a shipped unit — so it keeps living and only loses its
- * receipt link: deleting it would null `itemLedger.trackedEntityId` on its
- * past movements.
+ * Takes serial tracked entities off a receipt, by `planReceiptSerialRelease`:
+ * an entity with no stock history is deleted, one with history only loses its
+ * receipt link.
  */
 export async function releaseReceiptSerialEntities(
   client: SupabaseClient<Database>,
@@ -947,28 +948,32 @@ export async function releaseReceiptSerialEntities(
   if (entities.error) return { error: entities.error };
   if (history.error) return { error: history.error };
 
-  const withHistory = new Set(history.data.map((row) => row.trackedEntityId));
+  const { deleteIds, unlink } = planReceiptSerialRelease(
+    entities.data,
+    new Set(
+      history.data.flatMap((row) =>
+        row.trackedEntityId ? [row.trackedEntityId] : []
+      )
+    )
+  );
 
-  const unposted = entities.data
-    .filter((entity) => !withHistory.has(entity.id))
-    .map((entity) => entity.id);
-  if (unposted.length > 0) {
+  if (deleteIds.length > 0) {
     const { error } = await client
       .from("trackedEntity")
       .delete()
-      .in("id", unposted)
+      .in("id", deleteIds)
       .eq("companyId", companyId);
     if (error) return { error };
   }
 
-  for (const entity of entities.data.filter((e) => withHistory.has(e.id))) {
-    const attributes = { ...(entity.attributes as Record<string, unknown>) };
-    delete attributes["Receipt"];
-    delete attributes["Receipt Line"];
-    delete attributes["Receipt Line Index"];
+  for (const entity of unlink) {
     const { error } = await client
       .from("trackedEntity")
-      .update({ attributes: attributes as Json })
+      .update({
+        attributes: withoutReceiptLink(
+          entity.attributes as Record<string, unknown>
+        ) as Json
+      })
       .eq("id", entity.id)
       .eq("companyId", companyId);
     if (error) return { error };

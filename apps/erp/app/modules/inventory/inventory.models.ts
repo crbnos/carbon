@@ -562,6 +562,108 @@ export function reconcileReceiptLineSerials(
   return { missingIndexes, surplusEntityIds };
 }
 
+/**
+ * What a receipt serial removal does to each entity. One the receipt created
+ * has no stock history and is deleted. One with history is a real unit — a
+ * sales return re-tags a shipped unit — so it keeps living and only loses its
+ * receipt link: deleting it would null `itemLedger.trackedEntityId` on its
+ * past movements.
+ */
+export function planReceiptSerialRelease<T extends { id: string }>(
+  entities: T[],
+  idsWithHistory: ReadonlySet<string>
+): { deleteIds: string[]; unlink: T[] } {
+  return {
+    deleteIds: entities
+      .filter((entity) => !idsWithHistory.has(entity.id))
+      .map((entity) => entity.id),
+    unlink: entities.filter((entity) => idsWithHistory.has(entity.id))
+  };
+}
+
+/** The entity's attributes without the receipt that holds it. */
+export function withoutReceiptLink(
+  attributes: Record<string, unknown>
+): Record<string, unknown> {
+  const {
+    Receipt: _receipt,
+    "Receipt Line": _line,
+    "Receipt Line Index": _index,
+    ...rest
+  } = attributes;
+  return rest;
+}
+
+export type SerialBoxEntity = { id: string; hasHistory: boolean };
+
+export type SerialBoxWrite =
+  /** The box is emptied. */
+  | { kind: "clear"; releaseIds: string[] }
+  /**
+   * The serial is refused and this box is emptied, so nothing hidden posts:
+   * it is in another `box`, or it belongs to a `unit` with stock history.
+   */
+  | { kind: "taken"; reason: "box" | "unit"; releaseIds: string[] }
+  /** Write the serial into `targetId` (a new entity when undefined). */
+  | { kind: "write"; targetId: string | undefined; releaseIds: string[] };
+
+/**
+ * One save of a receipt's serial box (line + index). The box, not the serial
+ * number, is the unit of edit: keyed on the serial alone, an emptied box kept
+ * its old serial and the receipt posted a serial nobody could see.
+ *
+ * - `box`: the entities filling this box now (usually one; a racing save can
+ *   leave two).
+ * - `withSerial`: the item's entities already carrying `serialNumber`.
+ *
+ * A serial that belongs to a unit with stock history is refused. Typed
+ * serials are only entered on a purchase receipt of new units; writing into
+ * such a unit wiped its attributes (a shipped unit lost the Shipment link its
+ * RMA is checked against) and posting would bring it back into stock.
+ */
+export function planSerialBoxWrite(args: {
+  receiptLineId: string;
+  index: number;
+  serialNumber: string;
+  box: SerialBoxEntity[];
+  withSerial: (SerialBoxEntity & { attributes: Record<string, unknown> })[];
+}): SerialBoxWrite {
+  const boxIds = args.box.map((entity) => entity.id);
+  if (!args.serialNumber.trim()) return { kind: "clear", releaseIds: boxIds };
+
+  const isInThisBox = (attributes: Record<string, unknown>) =>
+    attributes["Receipt Line"] === args.receiptLineId &&
+    attributes["Receipt Line Index"] === args.index;
+
+  // Only receipt serials carry a Receipt Line Index.
+  const takenElsewhere = args.withSerial.some(
+    (entity) =>
+      "Receipt Line Index" in entity.attributes &&
+      !isInThisBox(entity.attributes)
+  );
+  if (takenElsewhere)
+    return { kind: "taken", reason: "box", releaseIds: boxIds };
+
+  if (args.withSerial.some((entity) => entity.hasHistory)) {
+    return { kind: "taken", reason: "unit", releaseIds: boxIds };
+  }
+
+  // The entity already carrying this serial (preferring the one in this box),
+  // else the box's own unposted entity (an edit renames it), else a new one.
+  // An entity with stock history is never renamed: it is a real unit.
+  const targetId =
+    (
+      args.withSerial.find((entity) => isInThisBox(entity.attributes)) ??
+      args.withSerial[0]
+    )?.id ?? args.box.find((entity) => !entity.hasHistory)?.id;
+
+  return {
+    kind: "write",
+    targetId,
+    releaseIds: boxIds.filter((id) => id !== targetId)
+  };
+}
+
 export const warehouseTransferValidator = z
   .object({
     id: zfd.text(z.string().optional()),

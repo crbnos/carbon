@@ -1727,11 +1727,46 @@ const create = defineServerFn({
             trackedEntities.data?.length
           ) {
             // TODO: update the Receipt Line and Index attributes to point to the new line
-            await trx
-              .deleteFrom("trackedEntity")
-              .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
-              .where("companyId", "=", companyId)
-              .execute();
+            // A serial with stock history is a real unit (a sales return
+            // re-tags a shipped one): it only loses its receipt link, as in
+            // the ERP's `planReceiptSerialRelease`. Deleting it would null
+            // `itemLedger.trackedEntityId` on its past movements.
+            const entityIds = trackedEntities.data.map((d) => d.id);
+            const withHistory = new Set(
+              (
+                await trx
+                  .selectFrom("itemLedger")
+                  .select("trackedEntityId")
+                  .where("trackedEntityId", "in", entityIds)
+                  .where("companyId", "=", companyId)
+                  .execute()
+              ).map((row) => row.trackedEntityId)
+            );
+
+            const unposted = entityIds.filter((id) => !withHistory.has(id));
+            if (unposted.length > 0) {
+              await trx
+                .deleteFrom("trackedEntity")
+                .where("id", "in", unposted)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+
+            for (const entity of trackedEntities.data) {
+              if (!withHistory.has(entity.id)) continue;
+              const {
+                Receipt: _receipt,
+                "Receipt Line": _line,
+                "Receipt Line Index": _index,
+                ...attributes
+              } = (entity.attributes ?? {}) as Record<string, unknown>;
+              await trx
+                .updateTable("trackedEntity")
+                .set({ attributes: attributes as Json })
+                .where("id", "=", entity.id)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
           }
 
           const newReceiptLineRows = await trx
