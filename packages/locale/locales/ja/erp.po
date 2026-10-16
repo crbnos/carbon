@@ -9233,6 +9233,15 @@ msgstr "夜間、{name}さん。"
 msgid "Event"
 msgstr "イベント"
 
+msgid "Event saved"
+msgstr ""
+
+msgid "Event started"
+msgstr ""
+
+msgid "Event stopped"
+msgstr ""
+
 msgid "Event Type"
 msgstr "イベントタイプ"
 
@@ -9648,10 +9657,6 @@ msgstr "アイテムグループの作成に失敗しました: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create location: {0}"
 msgstr "ロケーションの作成に失敗しました: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create maintenance schedule: {0}"
-msgstr "保全スケジュールの作成に失敗しました: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -16199,6 +16204,9 @@ msgstr "部品"
 msgid "Part"
 msgstr "部品"
 
+msgid "Part added and issued successfully"
+msgstr ""
+
 msgid "Part Being Replaced"
 msgstr "置き換わる部品"
 
@@ -21648,6 +21656,9 @@ msgstr "提案"
 msgid "Suggestion Notifications"
 msgstr "提案通知"
 
+msgid "Suggestion submitted"
+msgstr ""
+
 msgid "Suggestions"
 msgstr "提案"
 
@@ -24248,6 +24259,9 @@ msgstr "教育訓練"
 msgid "Training Assignments"
 msgstr "教育訓練の割り当て"
 
+msgid "Training marked as complete"
+msgstr ""
+
 msgid "Training not recorded"
 msgstr "教育訓練が記録されていません"
 
@@ -24767,6 +24781,9 @@ msgstr "更新日時"
 
 msgid "Updated By"
 msgstr "更新者"
+
+msgid "Updated dispatch status"
+msgstr ""
 
 msgid "Updated job status"
 msgstr ""

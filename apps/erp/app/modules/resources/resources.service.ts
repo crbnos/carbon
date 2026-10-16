@@ -21,11 +21,9 @@ import type {
   maintenanceDispatchItemValidator,
   maintenanceDispatchPriority,
   maintenanceDispatchStatus,
-  maintenanceDispatchValidator,
   maintenanceDispatchWorkCenterValidator,
   maintenanceScheduleItemValidator,
   maintenanceScheduleValidator,
-  oeeImpact,
   partnerValidator,
   processValidator,
   trainingQuestionValidator,
@@ -33,7 +31,7 @@ import type {
   workCenterValidator
 } from "./resources.models";
 
-/** @mcp action */
+/** The bare write under `resources.workCenter.reactivate`, which also tells the scheduler. */
 export async function activateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -41,7 +39,7 @@ export async function activateWorkCenter(
   return client.from("workCenter").update({ active: true }).eq("id", id);
 }
 
-/** @mcp delete */
+/** The bare write under `resources.ability.deactivate`, which also tells the scheduler. */
 export async function deleteAbility(
   client: SupabaseClient<Database>,
   abilityId: string,
@@ -58,14 +56,6 @@ export async function deleteContractor(
   contractorId: string
 ) {
   return client.from("contractor").delete().eq("id", contractorId);
-}
-
-/** @mcp delete */
-export async function deleteEmployeeAbility(
-  client: SupabaseClient<Database>,
-  employeeAbilityId: string
-) {
-  return client.from("employeeAbility").delete().eq("id", employeeAbilityId);
 }
 
 /** @mcp delete */
@@ -97,14 +87,6 @@ export async function deleteMaintenanceDispatchComment(
   commentId: string
 ) {
   return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
-}
-
-/** @mcp delete */
-export async function deleteMaintenanceDispatchEvent(
-  client: SupabaseClient<Database>,
-  eventId: string
-) {
-  return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
 }
 
 export async function deleteMaintenanceDispatchItem(
@@ -217,7 +199,7 @@ export async function deleteTrainingQuestion(
     .eq("companyId", companyId);
 }
 
-/** @mcp delete */
+/** The bare write under `resources.workCenter.deactivate`, which also tells the scheduler. */
 export async function deleteWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -1300,7 +1282,7 @@ export async function insertTrainingCompletion(
     .single();
 }
 
-/** @mcp delete */
+/** The bare delete under `resources.trainingAssignment.uncomplete`, which also removes the certificate file. */
 export async function deleteTrainingCompletion(
   client: SupabaseClient<Database>,
   id: number,
@@ -1364,7 +1346,6 @@ export async function updateAbility(
  * Resolves the qualification expiry for an employee ability. An explicit
  * expiresAt wins; otherwise it is computed from lastTrainingDate + the
  * ability's recertifyEveryDays (null when the ability never expires).
- * @mcp action
  */
 export async function resolveEmployeeAbilityExpiresAt(
   client: SupabaseClient<Database>,
@@ -1388,7 +1369,7 @@ export async function resolveEmployeeAbilityExpiresAt(
     .slice(0, 10);
 }
 
-/** @mcp upsert */
+/** The bare write under `resources.employeeAbility.add` / `.update`, which also tell the scheduler. */
 export async function upsertEmployeeAbilityCell(
   client: SupabaseClient<Database>,
   cell: {
@@ -1409,8 +1390,8 @@ export async function upsertEmployeeAbilityCell(
 /**
  * Find-or-create the ability linked 1:1 to a process. Called when a process
  * has "Requires Ability" toggled on — the ability (named after the process)
- * is what employees get qualified against.
- * @mcp action
+ * is what employees get qualified against. `resources.ability.create` and
+ * `resources.process.create` / `.update` call it.
  */
 export async function ensureProcessAbility(
   client: SupabaseClient<Database>,
@@ -1575,7 +1556,7 @@ export async function upsertFailureMode(
     .eq("id", mode.id);
 }
 
-/** @mcp upsert */
+/** The bare write under `resources.location.create` / `.update`; the update also drops the cached timezone. */
 export async function upsertLocation(
   client: SupabaseClient<Database>,
   location:
@@ -1599,7 +1580,7 @@ export async function upsertLocation(
   return client.from("location").insert([location]).select("*").single();
 }
 
-/** @mcp create */
+/** The bare insert under `resources.maintenanceDispatch.create`, which also tells the scheduler. */
 export async function insertMaintenanceDispatch(
   client: SupabaseClient<Database>,
   input: {
@@ -1684,84 +1665,6 @@ export async function insertMaintenanceDispatch(
   };
 }
 
-/** @mcp update */
-export async function updateMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  input: {
-    id: string;
-    updatedBy: string;
-    status?: (typeof maintenanceDispatchStatus)[number];
-    priority?: (typeof maintenanceDispatchPriority)[number];
-    severity?:
-      | "Preventive"
-      | "Operator Performed"
-      | "Support Required"
-      | "OEM Required";
-    source?: "Scheduled" | "Reactive" | "Non-Conformance";
-    oeeImpact?: (typeof oeeImpact)[number];
-    workCenterId?: string | null;
-    locationId?: string;
-    assignee?: string | null;
-    suspectedFailureModeId?: string | null;
-    actualFailureModeId?: string | null;
-    procedureId?: string | null;
-    plannedStartTime?: string | null;
-    plannedEndTime?: string | null;
-    actualStartTime?: string | null;
-    actualEndTime?: string | null;
-    takesWorkCenterOffline?: boolean;
-    content?: Json;
-  }
-): Promise<{
-  data: { id: string } | null;
-  error: import("@supabase/supabase-js").PostgrestError | null;
-}> {
-  const { id, ...rest } = input;
-  const result = await client
-    .from("maintenanceDispatch")
-    .update(sanitize(rest))
-    .eq("id", id)
-    .select("id")
-    .single();
-
-  if (result.error) return { data: null, error: result.error };
-  return { data: { id: result.data.id }, error: null };
-}
-
-/** @deprecated Use insertMaintenanceDispatch for new dispatches, updateMaintenanceDispatch for existing dispatches */
-export async function upsertMaintenanceDispatch(
-  client: SupabaseClient<Database>,
-  dispatch:
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
-        maintenanceDispatchId: string;
-        companyId: string;
-        createdBy: string;
-        content?: Json;
-      })
-    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id" | "assignee"> & {
-        id: string;
-        assignee: string | null;
-        updatedBy: string;
-        content?: Json;
-      })
-) {
-  if ("createdBy" in dispatch) {
-    return (
-      client
-        .from("maintenanceDispatch")
-        // @ts-expect-error TS2769 - TODO: fix type
-        .insert([dispatch])
-        .select("id")
-        .single()
-    );
-  } else {
-    return client
-      .from("maintenanceDispatch")
-      .update(sanitize(dispatch))
-      .eq("id", dispatch.id);
-  }
-}
-
 /** @mcp upsert */
 export async function upsertMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
@@ -1789,7 +1692,7 @@ export async function upsertMaintenanceDispatchComment(
   }
 }
 
-/** @mcp upsert */
+/** The bare insert under `resources.maintenanceEvent.create`, which also posts the labor. */
 export async function upsertMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   event:
@@ -1869,7 +1772,7 @@ export async function upsertMaintenanceDispatchWorkCenter(
   }
 }
 
-/** @mcp upsert */
+/** The bare write under `resources.maintenanceSchedule.create` / `.update`, which also generate its dispatches. */
 export async function upsertMaintenanceSchedule(
   client: SupabaseClient<Database>,
   schedule:
@@ -1989,7 +1892,7 @@ function extractBatchRules<
   return { batchRules, rest };
 }
 
-/** @mcp upsert destructive */
+/** The bare write under `resources.process.create` / `.update`, which also keep its ability in step. */
 export async function upsertProcess(
   client: SupabaseClient<Database>,
   process:
@@ -2108,7 +2011,7 @@ export async function upsertTraining(
   return client.from("training").insert([training]).select("id").single();
 }
 
-/** @mcp upsert */
+/** The bare write under `resources.trainingAssignment.create` / `.update`, which also refuse a second assignment and notify. */
 export async function upsertTrainingAssignment(
   client: SupabaseClient<Database>,
   assignment: {
@@ -2177,7 +2080,7 @@ export async function upsertTrainingQuestion(
     .single();
 }
 
-/** @mcp upsert destructive */
+/** The bare write under `resources.workCenter.create` / `.update`, which also tell the scheduler. */
 export async function upsertWorkCenter(
   client: SupabaseClient<Database>,
   workCenter:

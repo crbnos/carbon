@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Select, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   ChoiceCardGroup,
@@ -21,7 +22,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Input as FormInput, Hidden, Submit, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -43,7 +43,8 @@ const TrainingAssignmentForm = ({
   onClose
 }: TrainingAssignmentFormProps) => {
   const permissions = usePermissions();
-  const fetcher = useFetcher();
+  // A refusal (a training already assigned) is toasted; a save redirects.
+  const fetcher = useAction();
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
