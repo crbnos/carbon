@@ -4,6 +4,7 @@
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import {
   contains,
   inOrder,
@@ -17,7 +18,6 @@ import {
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime, round, settleQuantity } from "@carbon/utils";
-import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -1728,37 +1728,11 @@ const create = defineServerFn({
             trackedEntities.data?.length
           ) {
             // TODO: update the Receipt Line and Index attributes to point to the new line
-            const entityIds = trackedEntities.data.map((d) => d.id);
-            const withHistory = new Set(
-              (
-                await trx
-                  .selectFrom("itemLedger")
-                  .select("trackedEntityId")
-                  .where("trackedEntityId", "in", entityIds)
-                  .where("companyId", "=", companyId)
-                  .execute()
-              ).flatMap((row) => row.trackedEntityId ?? [])
+            await releaseReceiptSerialEntities(
+              trx,
+              companyId,
+              trackedEntities.data.map((d) => d.id)
             );
-
-            const unposted = entityIds.filter((id) => !withHistory.has(id));
-            if (unposted.length > 0) {
-              await trx
-                .deleteFrom("trackedEntity")
-                .where("id", "in", unposted)
-                .where("companyId", "=", companyId)
-                .execute();
-            }
-
-            if (withHistory.size > 0) {
-              await trx
-                .updateTable("trackedEntity")
-                .set({
-                  attributes: sql`attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'`
-                })
-                .where("id", "in", [...withHistory])
-                .where("companyId", "=", companyId)
-                .execute();
-            }
           }
 
           const newReceiptLineRows = await trx

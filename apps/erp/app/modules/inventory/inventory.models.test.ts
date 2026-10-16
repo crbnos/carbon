@@ -5,7 +5,6 @@
 import { describe, expect, it } from "vitest";
 import {
   kanbanValidator,
-  planReceiptSerialRelease,
   planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials,
@@ -370,16 +369,6 @@ describe("planSerialBoxWrite", () => {
   });
 });
 
-describe("planReceiptSerialRelease", () => {
-  it("deletes entities without history and only unlinks the rest", () => {
-    const placeholder = { id: "new" };
-    const shipped = { id: "unit" };
-    expect(
-      planReceiptSerialRelease([placeholder, shipped], new Set(["unit"]))
-    ).toEqual({ deleteIds: ["new"], unlink: [shipped] });
-  });
-});
-
 describe("reconcileReceiptLineSerials", () => {
   it("reports an index with no serial as missing", () => {
     expect(
@@ -403,5 +392,17 @@ describe("reconcileReceiptLineSerials", () => {
         2
       ).surplusEntityIds
     ).toEqual(["c"]);
+  });
+
+  it("keeps the serial-bearing entity over an older blank one", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "blank", index: 0, hasSerial: false, createdAt: "1" },
+          { id: "serial", index: 0, hasSerial: true, createdAt: "2" }
+        ],
+        1
+      )
+    ).toEqual({ missingIndexes: [], surplusEntityIds: ["blank"] });
   });
 });

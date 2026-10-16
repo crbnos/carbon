@@ -5,15 +5,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
+import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import { getLogger } from "@carbon/logger";
 import { isUniqueViolation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  planSerialBoxWrite,
-  releaseReceiptSerialEntities
-} from "~/modules/inventory";
+import { planSerialBoxWrite } from "~/modules/inventory";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 

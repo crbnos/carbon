@@ -528,7 +528,8 @@ export type ReceiptSerialEntity = {
  * can never disagree on which serials count:
  *   - `missingIndexes`  — required indices with no serial yet (post validation)
  *   - `surplusEntityIds` — orphan/duplicate entities to delete before posting,
- *     keeping the earliest-created entity for each in-range index.
+ *     keeping, for each in-range index, a serial-bearing entity over a blank
+ *     one, then the earliest-created.
  */
 export function reconcileReceiptLineSerials(
   entities: ReceiptSerialEntity[],
@@ -546,8 +547,10 @@ export function reconcileReceiptLineSerials(
 
   const keptIndexes = new Set<number>();
   const surplusEntityIds: string[] = [];
-  const ordered = [...entities].sort((a, b) =>
-    (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
+  const ordered = [...entities].sort(
+    (a, b) =>
+      Number(b.hasSerial) - Number(a.hasSerial) ||
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
   );
   for (const entity of ordered) {
     const index = entity.index;
@@ -560,18 +563,6 @@ export function reconcileReceiptLineSerials(
   }
 
   return { missingIndexes, surplusEntityIds };
-}
-
-export function planReceiptSerialRelease<T extends { id: string }>(
-  entities: T[],
-  idsWithHistory: ReadonlySet<string>
-): { deleteIds: string[]; unlink: T[] } {
-  return {
-    deleteIds: entities
-      .filter((entity) => !idsWithHistory.has(entity.id))
-      .map((entity) => entity.id),
-    unlink: entities.filter((entity) => idsWithHistory.has(entity.id))
-  };
 }
 
 export type SerialBoxEntity = { id: string; hasHistory: boolean };

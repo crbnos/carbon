@@ -9,6 +9,7 @@ import {
   type LinesideClaim,
   linesideCredit
 } from "@carbon/database/picked-consumption";
+import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import { expandSerialTrackedLines } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
@@ -49,7 +50,6 @@ import type {
 } from "./inventory.models";
 import {
   isPickingListLocked,
-  planReceiptSerialRelease,
   reconcileReceiptLineSerials
 } from "./inventory.models";
 import {
@@ -910,50 +910,6 @@ export async function reconcileReceiptSerialsInTransaction(
 
   await releaseReceiptSerialEntities(trx, args.companyId, surplusIds);
   return { linesMissingSerials };
-}
-
-export async function releaseReceiptSerialEntities(
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  entityIds: string[]
-): Promise<void> {
-  if (entityIds.length === 0) return;
-
-  const history = await db
-    .selectFrom("itemLedger")
-    .select("trackedEntityId")
-    .distinct()
-    .where("trackedEntityId", "in", entityIds)
-    .where("companyId", "=", companyId)
-    .execute();
-
-  const { deleteIds, unlink } = planReceiptSerialRelease(
-    entityIds.map((id) => ({ id })),
-    new Set(history.flatMap((row) => row.trackedEntityId ?? []))
-  );
-
-  if (deleteIds.length > 0) {
-    await db
-      .deleteFrom("trackedEntity")
-      .where("id", "in", deleteIds)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-
-  if (unlink.length > 0) {
-    await db
-      .updateTable("trackedEntity")
-      .set({
-        attributes: sql`attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'`
-      })
-      .where(
-        "id",
-        "in",
-        unlink.map((entity) => entity.id)
-      )
-      .where("companyId", "=", companyId)
-      .execute();
-  }
 }
 
 /** @mcp read */
