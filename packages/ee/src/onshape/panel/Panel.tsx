@@ -501,7 +501,8 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
       {(outcome.notes ?? []).length > 0 ? (
         <Alert variant="info">
           <LuInfo />
-          <AlertDescription>
+          {/* No title above the notes, so they take the title's size. */}
+          <AlertDescription className="text-sm">
             <ul className="list-disc space-y-1 pl-4">
               {(outcome.notes ?? []).map((note) => (
                 <li key={note}>{note}</li>
@@ -2902,6 +2903,10 @@ function FieldRow({
   );
 }
 
+// The panel is narrower than `md`, where the shared selects and comboboxes
+// grow to touch size (h-11, text-base). Keep them at the rows' size.
+const PANEL_CONTROL = "h-8 text-sm max-md:h-8 max-md:text-sm";
+
 // The three text columns share the width, so a narrow panel shortens all three.
 const FIELD_ROW_GRID =
   "grid w-full grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_minmax(0,1fr)_32px] items-center gap-x-2";
@@ -2968,7 +2973,7 @@ function SourceSelect({
         placeholder={placeholder}
         disabled={disabled}
         aria-label={label}
-        className="w-full min-w-0"
+        className={`w-full min-w-0 ${PANEL_CONTROL}`}
         onChange={onChange}
       />
     </div>
@@ -2997,8 +3002,8 @@ function propertyOptions(
 
 function AlwaysTag() {
   return (
-    <span className="flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
-      <LuLock aria-hidden className="size-3" />
+    <span className="flex items-center gap-1.5 px-1 text-sm text-muted-foreground">
+      <LuLock aria-hidden className="size-3.5" />
       Always
     </span>
   );
@@ -3023,7 +3028,11 @@ function ModeSelect({
       onValueChange={(value) => onChange(value as MappingMode)}
       disabled={disabled}
     >
-      <SelectTrigger size="sm" className="w-full" aria-label={label}>
+      <SelectTrigger
+        size="sm"
+        className={`w-full ${PANEL_CONTROL}`}
+        aria-label={label}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="min-w-[300px]">
@@ -3056,7 +3065,11 @@ function DefaultValueSelect({
 }) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger size="sm" className="w-full" aria-label={label}>
+      <SelectTrigger
+        size="sm"
+        className={`w-full ${PANEL_CONTROL}`}
+        aria-label={label}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="min-w-[220px]">
@@ -3657,6 +3670,7 @@ function ValuesModal({
                     />
                     <Combobox
                       size="sm"
+                      className={`min-w-[160px] ${PANEL_CONTROL}`}
                       value={
                         row.carbon === TRANSLATION_UNSET
                           ? TRANSLATION_UNSET

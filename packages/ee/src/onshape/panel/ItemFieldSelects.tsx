@@ -104,7 +104,7 @@ function FieldSelect<T extends string>({
         hideIcon
         aria-label={`${label}: ${value}`}
         title={`${label}: ${value}`}
-        className="h-7 w-auto shrink-0 gap-0 px-1.5"
+        className="h-7 w-auto shrink-0 gap-0 px-1.5 max-md:h-7 max-md:text-xs"
       >
         {icon(value)}
       </SelectTrigger>
