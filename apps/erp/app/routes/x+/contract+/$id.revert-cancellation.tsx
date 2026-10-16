@@ -15,8 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.sales.contract.revertCancellation({
     customerContractId: id
   });
-  return respond(args.request, result).redirect(
-    path.to.contractDetails(id),
-    "Cancellation reverted"
-  );
+  return respond(args.request, result).redirect(path.to.contractDetails(id), {
+    message: "Cancellation reverted"
+  });
 }

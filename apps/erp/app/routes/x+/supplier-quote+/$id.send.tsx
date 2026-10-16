@@ -19,8 +19,7 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     supplierQuoteId: id
   });
-  return respond(args.request, result).redirect(
-    path.to.supplierQuote(id),
-    "Supplier quote sent successfully"
-  );
+  return respond(args.request, result).redirect(path.to.supplierQuote(id), {
+    message: "Supplier quote sent successfully"
+  });
 }

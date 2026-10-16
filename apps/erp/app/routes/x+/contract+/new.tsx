@@ -68,7 +68,9 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
   if (!result.data) {
-    return respond(args.request, result).redirect(path.to.contracts, "");
+    return respond(args.request, result).redirect(path.to.contracts, {
+      message: ""
+    });
   }
   throw redirect(path.to.contractSetup(result.data.id, "products"));
 }

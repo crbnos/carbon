@@ -17,10 +17,8 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     customFields: setCustomFields(input.formData ?? new FormData())
   });
-  return respond(args.request, result)
-    .onError(path.to.newJob)
-    .redirect(
-      path.to.jobs,
-      `Successfully created ${result.data?.jobIds.length} jobs`
-    );
+  return respond(args.request, result).redirect(path.to.jobs, {
+    message: `Successfully created ${result.data?.jobIds.length} jobs`,
+    onError: path.to.newJob
+  });
 }

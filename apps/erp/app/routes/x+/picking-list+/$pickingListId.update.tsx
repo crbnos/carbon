@@ -25,6 +25,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.pickingList(pickingListId),
-    "Updated picking list"
+    { message: "Updated picking list" }
   );
 }

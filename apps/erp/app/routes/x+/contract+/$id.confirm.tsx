@@ -73,6 +73,6 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.contractDetails(id)
       : (requestReferrer(args.request) ?? path.to.contractDetails(id)),
-    "Contract confirmed"
+    { message: "Contract confirmed" }
   );
 }

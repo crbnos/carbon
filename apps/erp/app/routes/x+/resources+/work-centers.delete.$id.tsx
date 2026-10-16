@@ -14,8 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.workCenter.deactivate({
     id: input.params.id
   });
-  return respond(args.request, result).redirect(
-    path.to.workCenters,
-    "Successfully deactivated work center"
-  );
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Successfully deactivated work center"
+  });
 }

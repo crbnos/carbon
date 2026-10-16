@@ -54,10 +54,9 @@ export async function action(args: ActionFunctionArgs) {
     customerContractId: id
   });
   // The memo is linked from the credit rows of the Invoices section.
-  return respond(args.request, result).redirect(
-    path.to.contractDetails(id),
-    result.data?.memoReadableId
+  return respond(args.request, result).redirect(path.to.contractDetails(id), {
+    message: result.data?.memoReadableId
       ? `Cancelled. Credit memo ${result.data.memoReadableId} drafted`
       : "Contract cancelled"
-  );
+  });
 }

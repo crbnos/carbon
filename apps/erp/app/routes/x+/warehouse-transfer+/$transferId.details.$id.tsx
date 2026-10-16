@@ -83,9 +83,12 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   return respond(args.request, result).redirect(
     path.to.warehouseTransferDetails(transferId),
-    data.type === "delete"
-      ? "Deleted warehouse transfer line"
-      : "Updated warehouse transfer line"
+    {
+      message:
+        data.type === "delete"
+          ? "Deleted warehouse transfer line"
+          : "Updated warehouse transfer line"
+    }
   );
 }
 

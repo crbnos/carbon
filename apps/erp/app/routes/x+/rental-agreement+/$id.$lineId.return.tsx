@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) {
     return respond(args.request, result).redirect(
       requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
-      ""
+      { message: "" }
     );
   }
   throw redirect(path.to.receiptDetails(result.data.receiptId));

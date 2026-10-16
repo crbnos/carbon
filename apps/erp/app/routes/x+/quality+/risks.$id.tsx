@@ -48,7 +48,7 @@ export async function action(args: ActionFunctionArgs) {
   }
   return respond(args.request, result).redirect(
     `${path.to.risks}?${getParams(args.request)}`,
-    "Risk updated successfully"
+    { message: "Risk updated successfully" }
   );
 }
 

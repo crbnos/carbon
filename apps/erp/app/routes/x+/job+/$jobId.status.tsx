@@ -36,7 +36,7 @@ export async function action(args: ActionFunctionArgs) {
       if (result.error) return result;
       return respond(args.request, result).redirect(
         path.to.jobMaterials(jobId),
-        "Job marked as planned"
+        { message: "Job marked as planned" }
       );
     }
     case "Paused":

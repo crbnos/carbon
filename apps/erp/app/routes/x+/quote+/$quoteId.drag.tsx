@@ -28,7 +28,9 @@ export async function action(args: ActionFunctionArgs) {
   });
   // Nothing reads a successful drop; a failure is shown on the quote.
   if (result.error) {
-    return respond(args.request, result).redirect(path.to.quote(quoteId), "");
+    return respond(args.request, result).redirect(path.to.quote(quoteId), {
+      message: ""
+    });
   }
   return result;
 }

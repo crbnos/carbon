@@ -14,8 +14,9 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.settings.integration.deactivate({
     id: input.params.id
   });
-  return respond(args.request, result).redirect(
-    path.to.integrations,
-    result.data ? `Disconnected ${result.data.name} integration` : undefined
-  );
+  return respond(args.request, result).redirect(path.to.integrations, {
+    message: result.data
+      ? `Disconnected ${result.data.name} integration`
+      : undefined
+  });
 }

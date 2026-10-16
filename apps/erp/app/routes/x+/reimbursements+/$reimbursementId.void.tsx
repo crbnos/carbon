@@ -19,6 +19,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.reimbursement(reimbursementId),
-    "Reimbursement voided"
+    { message: "Reimbursement voided" }
   );
 }

@@ -42,7 +42,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? `${path.to.assemblyInstruction(result.data.id)}${result.data.autogen ? "?autogen=1" : ""}`
       : `${url.pathname}${url.search}`,
-    "Assembly instruction created"
+    { message: "Assembly instruction created" }
   );
 }
 

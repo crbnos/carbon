@@ -32,15 +32,15 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.maintenanceSchedule.create(input.data);
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return respond(args.request, result)
-    .onError(
-      requestReferrer(args.request) ??
+  return respond(args.request, result).redirect(
+    `${path.to.maintenanceSchedules}?${getParams(args.request)}`,
+    {
+      message: "Maintenance schedule created",
+      onError:
+        requestReferrer(args.request) ??
         `${path.to.maintenanceSchedules}?${getParams(args.request)}`
-    )
-    .redirect(
-      `${path.to.maintenanceSchedules}?${getParams(args.request)}`,
-      "Maintenance schedule created"
-    );
+    }
+  );
 }
 
 export default function NewMaintenanceScheduleRoute() {

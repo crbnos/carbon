@@ -48,10 +48,9 @@ export async function action(args: ActionFunctionArgs) {
     employeeId: personId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.personJob(personId),
-    "Successfully updated job"
-  );
+  return respond(args.request, result).redirect(path.to.personJob(personId), {
+    message: "Successfully updated job"
+  });
 }
 
 export default function PersonJobRoute() {

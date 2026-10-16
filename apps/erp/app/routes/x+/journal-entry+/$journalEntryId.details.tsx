@@ -48,7 +48,11 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.journalEntryDetails(journalEntryId),
-    result.data?.posted ? "Journal entry posted" : "Journal entry saved"
+    {
+      message: result.data?.posted
+        ? "Journal entry posted"
+        : "Journal entry saved"
+    }
   );
 }
 

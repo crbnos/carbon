@@ -36,7 +36,9 @@ export async function action(args: ActionFunctionArgs) {
   const to = path.to.shipmentDetails(shipmentId);
   // Posted with expired batches, as the company's policy allows.
   if (result.data.warning) {
-    return respond(args.request, result).redirect(to, result.data.warning);
+    return respond(args.request, result).redirect(to, {
+      message: result.data.warning
+    });
   }
   throw redirect(to);
 }

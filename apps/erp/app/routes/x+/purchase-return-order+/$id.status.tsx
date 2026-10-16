@@ -24,10 +24,14 @@ export async function action(args: ActionFunctionArgs) {
     const result = await api.purchasing.purchaseReturnOrder.cancel({
       purchaseReturnOrderId: id
     });
-    return respond(args.request, result).redirect(to, "Cancelled return order");
+    return respond(args.request, result).redirect(to, {
+      message: "Cancelled return order"
+    });
   }
   const result = await api.purchasing.purchaseReturnOrder.reopen({
     purchaseReturnOrderId: id
   });
-  return respond(args.request, result).redirect(to, "Reopened return order");
+  return respond(args.request, result).redirect(to, {
+    message: "Reopened return order"
+  });
 }

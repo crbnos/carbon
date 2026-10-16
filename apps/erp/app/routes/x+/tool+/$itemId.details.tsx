@@ -164,9 +164,10 @@ export async function action(args: ActionFunctionArgs) {
       itemId,
       customFields: setCustomFields(formData)
     });
-    return respond(args.request, result)
-      .onError(path.to.tool(itemId))
-      .redirect(path.to.toolDetails(itemId), "Updated tool manufacturing");
+    return respond(args.request, result).redirect(path.to.toolDetails(itemId), {
+      message: "Updated tool manufacturing",
+      onError: path.to.tool(itemId)
+    });
   }
 
   const validation = await validator(toolValidator).validate(formData);
@@ -176,10 +177,9 @@ export async function action(args: ActionFunctionArgs) {
     id: itemId,
     customFields: setCustomFields(formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.tool(itemId),
-    "Updated tool"
-  );
+  return respond(args.request, result).redirect(path.to.tool(itemId), {
+    message: "Updated tool"
+  });
 }
 
 export default function ToolDetailsRoute() {

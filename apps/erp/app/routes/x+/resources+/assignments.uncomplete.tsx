@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.trainingAssignment.uncomplete(input.data);
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.trainingAssignments,
-    "Completion removed"
+    { message: "Completion removed" }
   );
 }
 

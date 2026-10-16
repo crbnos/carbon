@@ -43,10 +43,9 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.ability.deactivate({
     id: input.params.id
   });
-  return respond(args.request, result).redirect(
-    path.to.abilities,
-    "Successfully deactivated ability"
-  );
+  return respond(args.request, result).redirect(path.to.abilities, {
+    message: "Successfully deactivated ability"
+  });
 }
 
 export default function DeleteAbilityRoute() {

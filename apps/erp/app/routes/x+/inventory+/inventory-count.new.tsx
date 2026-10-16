@@ -28,7 +28,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   return respond(args.request, result).redirect(
     path.to.inventoryCount(result.data.id),
-    "Inventory count created"
+    { message: "Inventory count created" }
   );
 }
 

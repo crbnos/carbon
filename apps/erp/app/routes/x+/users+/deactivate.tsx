@@ -17,8 +17,7 @@ export async function action(args: ActionFunctionArgs) {
     userIds: users,
     ip: originOf(args.request).ip
   });
-  return respond(args.request, result).redirect(
-    redirectTo,
-    result.data?.message
-  );
+  return respond(args.request, result).redirect(redirectTo, {
+    message: result.data?.message
+  });
 }

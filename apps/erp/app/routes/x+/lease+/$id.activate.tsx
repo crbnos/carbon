@@ -15,7 +15,8 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.purchasing.lease.activate({ leaseId: id });
   // A refusal goes back where Activate was pressed (the setup Review step):
   // the lease page sends a Draft to its setup anyway.
-  return respond(args.request, result)
-    .onError(requestReferrer(args.request) ?? path.to.leaseSetup(id, "review"))
-    .redirect(path.to.leaseDetails(id), "Lease activated");
+  return respond(args.request, result).redirect(path.to.leaseDetails(id), {
+    message: "Lease activated",
+    onError: requestReferrer(args.request) ?? path.to.leaseSetup(id, "review")
+  });
 }

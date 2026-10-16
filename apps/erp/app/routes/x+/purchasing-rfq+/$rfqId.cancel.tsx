@@ -15,6 +15,6 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.purchasing.rfq.cancel({ rfqId });
   return respond(args.request, result).redirect(
     path.to.purchasingRfqDetails(rfqId),
-    "RFQ cancelled"
+    { message: "RFQ cancelled" }
   );
 }

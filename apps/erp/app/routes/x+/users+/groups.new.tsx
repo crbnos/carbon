@@ -14,9 +14,10 @@ export async function action(args: ActionFunctionArgs) {
   const { name, selections } = input.data;
   const api = await carbon(args.request);
   const result = await api.users.group.create({ name, selections });
-  return respond(args.request, result)
-    .onError(path.to.newGroup)
-    .redirect(path.to.groups, "Group created");
+  return respond(args.request, result).redirect(path.to.groups, {
+    message: "Group created",
+    onError: path.to.newGroup
+  });
 }
 
 export default function NewGroupRoute() {

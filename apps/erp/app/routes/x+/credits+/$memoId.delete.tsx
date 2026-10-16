@@ -22,6 +22,6 @@ export async function action(args: ActionFunctionArgs) {
       : result.data.party === "supplier"
         ? path.to.supplierCredits
         : path.to.creditMemos,
-    "Successfully deleted memo"
+    { message: "Successfully deleted memo" }
   );
 }

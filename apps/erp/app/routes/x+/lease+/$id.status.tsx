@@ -17,8 +17,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = input.params;
   const api = await carbon(args.request);
   const result = await api.purchasing.lease.cancel({ leaseId: id });
-  return respond(args.request, result).redirect(
-    path.to.leaseDetails(id),
-    "Lease cancelled"
-  );
+  return respond(args.request, result).redirect(path.to.leaseDetails(id), {
+    message: "Lease cancelled"
+  });
 }

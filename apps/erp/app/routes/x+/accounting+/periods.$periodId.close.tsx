@@ -150,10 +150,9 @@ export async function action(args: ActionFunctionArgs) {
     case "close": {
       const result = await api.accounting.period.close({ periodId });
       if (result.error) return result;
-      return respond(args.request, result).redirect(
-        path.to.accountingPeriods,
-        "Period closed"
-      );
+      return respond(args.request, result).redirect(path.to.accountingPeriods, {
+        message: "Period closed"
+      });
     }
     default: {
       const result = await api.accounting.period.createRun({
@@ -166,7 +165,7 @@ export async function action(args: ActionFunctionArgs) {
         isDepreciation
           ? path.to.depreciationRun(result.data.id)
           : path.to.revenueRecognitionRun(result.data.id),
-        isDepreciation ? "Depreciation run created" : "Run created"
+        { message: isDepreciation ? "Depreciation run created" : "Run created" }
       );
     }
   }

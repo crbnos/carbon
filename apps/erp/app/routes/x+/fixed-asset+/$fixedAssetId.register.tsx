@@ -56,7 +56,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.fixedAsset(fixedAssetId),
-    "Asset registered successfully"
+    { message: "Asset registered successfully" }
   );
 }
 

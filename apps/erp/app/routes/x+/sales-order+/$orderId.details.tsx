@@ -96,10 +96,9 @@ export async function action(args: ActionFunctionArgs) {
     id: orderId,
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  return respond(args.request, result).redirect(
-    path.to.salesOrder(orderId),
-    "Updated order"
-  );
+  return respond(args.request, result).redirect(path.to.salesOrder(orderId), {
+    message: "Updated order"
+  });
 }
 
 export default function SalesOrderDetailsRoute() {

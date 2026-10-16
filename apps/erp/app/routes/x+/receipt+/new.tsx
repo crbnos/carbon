@@ -48,7 +48,9 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.inventory.receipt.create(input.data);
   if (!result.data) {
-    return respond(args.request, result).redirect(sourcePath(input.data), "");
+    return respond(args.request, result).redirect(sourcePath(input.data), {
+      message: ""
+    });
   }
   throw redirect(path.to.receiptDetails(result.data.id));
 }

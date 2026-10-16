@@ -51,10 +51,9 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     id: input.params.id
   });
-  return respond(args.request, result).redirect(
-    path.to.companies,
-    "Updated subsidiary"
-  );
+  return respond(args.request, result).redirect(path.to.companies, {
+    message: "Updated subsidiary"
+  });
 }
 
 export default function EditSubsidiaryRoute() {

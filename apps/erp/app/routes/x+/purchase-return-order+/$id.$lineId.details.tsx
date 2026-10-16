@@ -183,7 +183,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.purchaseReturnOrderLine(orderId, lineId),
-    "Return order line updated"
+    { message: "Return order line updated" }
   );
 }
 

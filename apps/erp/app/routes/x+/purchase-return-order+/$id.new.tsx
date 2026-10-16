@@ -28,6 +28,6 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.purchaseReturnOrderLine(orderId, result.data.id)
       : path.to.purchaseReturnOrderDetails(orderId),
-    "Return order line added"
+    { message: "Return order line added" }
   );
 }

@@ -67,7 +67,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.fixedAsset(fixedAssetId),
-    "Asset disposed successfully"
+    { message: "Asset disposed successfully" }
   );
 }
 

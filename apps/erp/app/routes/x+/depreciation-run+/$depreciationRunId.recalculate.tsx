@@ -22,12 +22,14 @@ export async function action(args: ActionFunctionArgs) {
     run?.deleted
       ? path.to.depreciationRuns
       : path.to.depreciationRun(depreciationRunId),
-    !run
-      ? undefined
-      : run.deleted
-        ? `Nothing is left to depreciate for this period, so ${run.readableId} was deleted`
-        : run.changed
-          ? `Recalculated ${run.readableId}: ${run.lineCount} lines`
-          : `${run.readableId} is already up to date`
+    {
+      message: !run
+        ? undefined
+        : run.deleted
+          ? `Nothing is left to depreciate for this period, so ${run.readableId} was deleted`
+          : run.changed
+            ? `Recalculated ${run.readableId}: ${run.lineCount} lines`
+            : `${run.readableId} is already up to date`
+    }
   );
 }

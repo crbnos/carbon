@@ -15,6 +15,6 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.quality.issue.close({ id });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.issueDetails(id),
-    "NCR closed"
+    { message: "NCR closed" }
   );
 }

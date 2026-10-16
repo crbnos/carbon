@@ -22,8 +22,11 @@ export async function action(args: ActionFunctionArgs) {
     result.error?.category === "notFound"
       ? path.to.rentalAgreements
       : path.to.rentalAgreementDetails(id),
-    intent === "close"
-      ? "Rental agreement closed"
-      : "Rental agreement cancelled"
+    {
+      message:
+        intent === "close"
+          ? "Rental agreement closed"
+          : "Rental agreement cancelled"
+    }
   );
 }

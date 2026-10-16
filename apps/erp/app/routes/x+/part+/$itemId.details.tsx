@@ -183,9 +183,10 @@ export async function action(args: ActionFunctionArgs) {
       itemId,
       customFields: setCustomFields(formData)
     });
-    return respond(args.request, result)
-      .onError(path.to.part(itemId))
-      .redirect(path.to.partDetails(itemId), "Updated part manufacturing");
+    return respond(args.request, result).redirect(path.to.partDetails(itemId), {
+      message: "Updated part manufacturing",
+      onError: path.to.part(itemId)
+    });
   }
 
   const validation = await validator(partValidator).validate(formData);
@@ -195,10 +196,9 @@ export async function action(args: ActionFunctionArgs) {
     id: itemId,
     customFields: setCustomFields(formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.part(itemId),
-    "Updated part"
-  );
+  return respond(args.request, result).redirect(path.to.part(itemId), {
+    message: "Updated part"
+  });
 }
 
 export default function PartDetailsRoute() {

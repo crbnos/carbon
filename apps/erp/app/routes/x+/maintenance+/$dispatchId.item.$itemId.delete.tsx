@@ -20,6 +20,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.maintenanceDispatch(dispatchId),
-    "Item removed and returned to inventory"
+    { message: "Item removed and returned to inventory" }
   );
 }

@@ -52,10 +52,9 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.trainingAssignment.create(input.data);
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return respond(args.request, result).redirect(
-    path.to.trainingAssignments,
-    "Assignment created successfully"
-  );
+  return respond(args.request, result).redirect(path.to.trainingAssignments, {
+    message: "Assignment created successfully"
+  });
 }
 
 export default function NewTrainingAssignmentRoute() {

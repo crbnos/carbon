@@ -37,6 +37,6 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.salesOrder(result.data.salesOrderId)
       : path.to.quoteDetails(quoteId),
-    "Successfully converted quote to order"
+    { message: "Successfully converted quote to order" }
   );
 }

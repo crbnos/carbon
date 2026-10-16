@@ -26,8 +26,7 @@ export async function action(args: ActionFunctionArgs) {
       error: { message: result.data.warning }
     }).redirect(to);
   }
-  return respond(args.request, result).redirect(
-    to,
-    "Timecard removed successfully"
-  );
+  return respond(args.request, result).redirect(to, {
+    message: "Timecard removed successfully"
+  });
 }

@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
     customerRedirect && !result.error
       ? path.to.customerContacts(customerRedirect)
       : path.to.customerAccounts,
-    "Customer invited"
+    { message: "Customer invited" }
   );
 }
 

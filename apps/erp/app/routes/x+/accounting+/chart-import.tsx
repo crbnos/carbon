@@ -148,7 +148,9 @@ export async function action({ request }: ActionFunctionArgs) {
     const { counts } = result.data;
     return respond(request, result).redirect(
       returnPath(new URL(request.url).searchParams),
-      `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
+      {
+        message: `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
+      }
     );
   }
 

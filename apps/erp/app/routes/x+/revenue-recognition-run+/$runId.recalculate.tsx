@@ -22,12 +22,14 @@ export async function action(args: ActionFunctionArgs) {
     run?.deleted
       ? RUN_PAGES[run.type].listPath
       : path.to.revenueRecognitionRun(runId),
-    !run
-      ? undefined
-      : run.deleted
-        ? `Nothing is due by this run's period end any more, so ${run.readableId} was deleted`
-        : run.changed
-          ? `Recalculated ${run.readableId}: ${run.lineCount} lines`
-          : `${run.readableId} is already up to date`
+    {
+      message: !run
+        ? undefined
+        : run.deleted
+          ? `Nothing is due by this run's period end any more, so ${run.readableId} was deleted`
+          : run.changed
+            ? `Recalculated ${run.readableId}: ${run.lineCount} lines`
+            : `${run.readableId} is already up to date`
+    }
   );
 }

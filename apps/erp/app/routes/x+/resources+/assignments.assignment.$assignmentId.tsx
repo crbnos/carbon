@@ -77,10 +77,9 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return respond(args.request, result).redirect(
-    path.to.trainingAssignments,
-    "Assignment updated successfully"
-  );
+  return respond(args.request, result).redirect(path.to.trainingAssignments, {
+    message: "Assignment updated successfully"
+  });
 }
 
 export default function EditTrainingAssignmentRoute() {

@@ -102,12 +102,10 @@ export async function action(args: ActionFunctionArgs) {
       fieldErrors: { responsibleEmployee: result.error.message }
     });
   }
-  return respond(args.request, result)
-    .onError(path.to.tool(itemId))
-    .redirect(
-      path.to.toolPlanningLocation(itemId, input.data.locationId),
-      "Updated tool planning"
-    );
+  return respond(args.request, result).redirect(
+    path.to.toolPlanningLocation(itemId, input.data.locationId),
+    { message: "Updated tool planning", onError: path.to.tool(itemId) }
+  );
 }
 
 export default function ToolPlanningRoute() {

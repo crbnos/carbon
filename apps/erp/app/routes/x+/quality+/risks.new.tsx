@@ -25,7 +25,7 @@ export async function action(args: ActionFunctionArgs) {
   }
   return respond(args.request, result).redirect(
     `${path.to.risks}?${getParams(args.request)}`,
-    "Risk created successfully"
+    { message: "Risk created successfully" }
   );
 }
 

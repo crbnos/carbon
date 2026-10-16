@@ -32,7 +32,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) {
     return respond(args.request, result).redirect(
       requestReferrer(args.request) ?? path.to.salesReturnOrderLine(id, lineId),
-      ""
+      { message: "" }
     );
   }
   const { issueId, created, warning } = result.data;

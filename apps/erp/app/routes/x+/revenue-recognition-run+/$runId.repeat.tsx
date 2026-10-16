@@ -15,6 +15,6 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.accounting.revenueRecognitionRun.repeat({ runId });
   return respond(args.request, result).redirect(
     path.to.revenueRecognitionRun(result.data?.id ?? runId),
-    result.data ? `${result.data.readableId} created` : undefined
+    { message: result.data ? `${result.data.readableId} created` : undefined }
   );
 }

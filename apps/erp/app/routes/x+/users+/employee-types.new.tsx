@@ -54,9 +54,10 @@ export async function action(args: ActionFunctionArgs) {
     name,
     permissions: JSON.parse(permissions)
   });
-  return respond(args.request, result)
-    .onError(path.to.newEmployeeType)
-    .redirect(path.to.employeeTypes, "Employee type created");
+  return respond(args.request, result).redirect(path.to.employeeTypes, {
+    message: "Employee type created",
+    onError: path.to.newEmployeeType
+  });
 }
 
 export default function NewEmployeeTypesRoute() {

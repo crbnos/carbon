@@ -106,12 +106,12 @@ export async function action(args: ActionFunctionArgs) {
       return respond(
         args.request,
         await api.settings.auditLog.enable({})
-      ).redirect(path.to.auditLog, "Audit logging enabled");
+      ).redirect(path.to.auditLog, { message: "Audit logging enabled" });
     case "disable":
       return respond(
         args.request,
         await api.settings.auditLog.disable({})
-      ).redirect(path.to.auditLog, "Audit logging disabled");
+      ).redirect(path.to.auditLog, { message: "Audit logging disabled" });
     case "download": {
       const result = await api.settings.auditLog.archiveUrl(input.data);
       if (result.error) {

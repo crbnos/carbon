@@ -39,6 +39,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.salesOrderDetails(orderId),
-    result.data?.message
+    { message: result.data?.message }
   );
 }

@@ -83,6 +83,6 @@ export async function createPeriodRun(args: ActionFunctionArgs, type: RunType) {
     result.data
       ? path.to.revenueRecognitionRun(result.data.id)
       : RUN_PAGES[type].listPath,
-    `${runLabelSentence(type)} created`
+    { message: `${runLabelSentence(type)} created` }
   );
 }

@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     `${path.to.apiKeys}?${getParams(args.request)}`,
-    "Updated API key"
+    { message: "Updated API key" }
   );
 }
 

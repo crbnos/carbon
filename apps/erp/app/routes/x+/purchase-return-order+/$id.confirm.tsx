@@ -22,5 +22,7 @@ export async function action(args: ActionFunctionArgs) {
   return respond(
     args.request,
     warning ? { error: { message: warning } } : result
-  ).redirect(path.to.purchaseReturnOrderDetails(id), "Return order confirmed");
+  ).redirect(path.to.purchaseReturnOrderDetails(id), {
+    message: "Return order confirmed"
+  });
 }

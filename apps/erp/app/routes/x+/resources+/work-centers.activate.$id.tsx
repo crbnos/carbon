@@ -14,8 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.workCenter.reactivate({
     id: input.params.id
   });
-  return respond(args.request, result).redirect(
-    path.to.workCenters,
-    "Successfully activate work center"
-  );
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Successfully activate work center"
+  });
 }

@@ -72,10 +72,9 @@ export async function action(args: ActionFunctionArgs) {
     id: quoteId,
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  return respond(args.request, result).redirect(
-    path.to.quote(quoteId),
-    "Updated quote"
-  );
+  return respond(args.request, result).redirect(path.to.quote(quoteId), {
+    message: "Updated quote"
+  });
 }
 
 export default function QuoteDetailsRoute() {

@@ -34,10 +34,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.resources.ability.create(input.data);
-  return respond(args.request, result).redirect(
-    path.to.abilities,
-    "Created ability"
-  );
+  return respond(args.request, result).redirect(path.to.abilities, {
+    message: "Created ability"
+  });
 }
 
 export default function NewAbilityRoute() {

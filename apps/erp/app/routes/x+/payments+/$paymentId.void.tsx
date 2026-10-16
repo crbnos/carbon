@@ -13,8 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const paymentId = input.params.paymentId;
   const api = await carbon(args.request);
   const result = await api.invoicing.payment.void({ paymentId: paymentId });
-  return respond(args.request, result).redirect(
-    path.to.payment(paymentId),
-    "Payment voided"
-  );
+  return respond(args.request, result).redirect(path.to.payment(paymentId), {
+    message: "Payment voided"
+  });
 }

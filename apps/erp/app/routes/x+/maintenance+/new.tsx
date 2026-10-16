@@ -49,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.maintenanceDispatch(result.data.id)
       : path.to.maintenanceDispatches,
-    "Created maintenance dispatch"
+    { message: "Created maintenance dispatch" }
   );
 }
 

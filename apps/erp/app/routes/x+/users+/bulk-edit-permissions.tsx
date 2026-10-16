@@ -20,10 +20,8 @@ export async function action(args: ActionFunctionArgs) {
     permissions: JSON.parse(data),
     ip: originOf(args.request).ip
   });
-  return respond(args.request, result)
-    .onError(path.to.employeeAccounts)
-    .redirect(
-      `${path.to.employeeAccounts}?${getParams(args.request)}`,
-      "Updating user permissions"
-    );
+  return respond(args.request, result).redirect(
+    `${path.to.employeeAccounts}?${getParams(args.request)}`,
+    { message: "Updating user permissions", onError: path.to.employeeAccounts }
+  );
 }

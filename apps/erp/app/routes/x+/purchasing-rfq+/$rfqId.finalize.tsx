@@ -19,8 +19,10 @@ export async function action(args: ActionFunctionArgs) {
   const sent = result.data?.emailsSent ?? 0;
   return respond(args.request, result).redirect(
     path.to.purchasingRfqDetails(rfqId),
-    `Created ${result.data?.quotesCreated ?? 0} supplier quote(s)${
-      sent > 0 ? ` and sent ${sent} email(s)` : ""
-    }`
+    {
+      message: `Created ${result.data?.quotesCreated ?? 0} supplier quote(s)${
+        sent > 0 ? ` and sent ${sent} email(s)` : ""
+      }`
+    }
   );
 }

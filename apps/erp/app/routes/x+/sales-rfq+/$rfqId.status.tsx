@@ -22,6 +22,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.salesRfq(input.params.rfqId),
-    "Updated RFQ status"
+    { message: "Updated RFQ status" }
   );
 }

@@ -31,6 +31,6 @@ export async function action(args: ActionFunctionArgs) {
   if (result.data && "needsAcknowledgement" in result.data) return result;
   return respond(args.request, result).redirect(
     path.to.pickingList(pickingListId),
-    "Updated picking list status"
+    { message: "Updated picking list status" }
   );
 }

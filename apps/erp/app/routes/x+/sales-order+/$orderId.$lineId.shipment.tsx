@@ -19,7 +19,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) {
     return respond(args.request, result).redirect(
       path.to.salesOrderLine(orderId, lineId),
-      ""
+      { message: "" }
     );
   }
   throw redirect(path.to.shipmentDetails(result.data.shipmentId));

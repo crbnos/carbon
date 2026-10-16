@@ -24,6 +24,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
-    "Unit released"
+    { message: "Unit released" }
   );
 }

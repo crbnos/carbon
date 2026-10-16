@@ -20,8 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // Lines that cannot post: the page toasts the reason and marks them.
   if ("invalidLineIds" in result.data) return result.data;
-  return respond(args.request, result).redirect(
-    path.to.inventoryCount(id),
-    "Inventory count posted"
-  );
+  return respond(args.request, result).redirect(path.to.inventoryCount(id), {
+    message: "Inventory count posted"
+  });
 }

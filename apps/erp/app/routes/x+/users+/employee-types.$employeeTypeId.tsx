@@ -60,9 +60,10 @@ export async function action(args: ActionFunctionArgs) {
     name,
     permissions: JSON.parse(permissions)
   });
-  return respond(args.request, result)
-    .onError(path.to.employeeType(id))
-    .redirect(path.to.employeeTypes, "Updated employee type");
+  return respond(args.request, result).redirect(path.to.employeeTypes, {
+    message: "Updated employee type",
+    onError: path.to.employeeType(id)
+  });
 }
 
 export default function EditEmployeeTypesRoute() {

@@ -63,9 +63,13 @@ export async function action(args: ActionFunctionArgs) {
     result: { error: { message: string } | null },
     message: string
   ) =>
-    respond(args.request, result)
-      .onError(`${path.to.exchangeRate(currencyId)}?${params}`)
-      .redirect(`${path.to.exchangeRates}?${params}`, message);
+    respond(args.request, result).redirect(
+      `${path.to.exchangeRates}?${params}`,
+      {
+        message: message,
+        onError: `${path.to.exchangeRate(currencyId)}?${params}`
+      }
+    );
 
   const intent = (await args.request.clone().formData()).get("intent");
 

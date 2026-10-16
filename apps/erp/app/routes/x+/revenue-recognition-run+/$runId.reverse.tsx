@@ -17,10 +17,12 @@ export async function action(args: ActionFunctionArgs) {
   // A revenue run that held only rental rows gives them to the lease run.
   return respond(args.request, result).redirect(
     run?.deleted ? path.to.leaseRuns : path.to.revenueRecognitionRun(runId),
-    !run
-      ? undefined
-      : run.deleted
-        ? `Reversed ${run.readableId}. Its rows now belong to the next lease run.`
-        : `Reversed ${run.readableId}. It is a draft again.`
+    {
+      message: !run
+        ? undefined
+        : run.deleted
+          ? `Reversed ${run.readableId}. Its rows now belong to the next lease run.`
+          : `Reversed ${run.readableId}. It is a draft again.`
+    }
   );
 }

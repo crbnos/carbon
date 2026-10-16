@@ -44,5 +44,5 @@ export async function action(args: ActionFunctionArgs) {
   return respond(
     args.request,
     warning ? { error: { message: warning } } : result
-  ).redirect(path.to.changeNotice(id), "Change notice created");
+  ).redirect(path.to.changeNotice(id), { message: "Change notice created" });
 }

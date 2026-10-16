@@ -139,7 +139,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   const to = path.to.salesReturnOrderLine(orderId, lineId);
   if (!result.data) {
-    return respond(args.request, result).redirect(to, "");
+    return respond(args.request, result).redirect(to, { message: "" });
   }
   throw redirect(to);
 }

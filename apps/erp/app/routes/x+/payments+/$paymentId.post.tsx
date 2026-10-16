@@ -13,8 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const paymentId = input.params.paymentId;
   const api = await carbon(args.request);
   const result = await api.invoicing.payment.post({ paymentId: paymentId });
-  return respond(args.request, result).redirect(
-    path.to.payment(paymentId),
-    "Payment posted"
-  );
+  return respond(args.request, result).redirect(path.to.payment(paymentId), {
+    message: "Payment posted"
+  });
 }

@@ -72,7 +72,7 @@ export async function action(args: ActionFunctionArgs) {
     result.error
       ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
       : `${path.to.jobProductionEvents(input.params.jobId)}?${getParams(args.request)}`,
-    "Updated production event"
+    { message: "Updated production event" }
   );
 }
 

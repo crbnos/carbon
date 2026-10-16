@@ -58,7 +58,7 @@ export async function action(args: ActionFunctionArgs) {
     });
     return respond(args.request, result).redirect(
       path.to.fixedAsset(fixedAssetId),
-      "Asset returned to service"
+      { message: "Asset returned to service" }
     );
   }
 
@@ -74,7 +74,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.fixedAsset(fixedAssetId),
-    "Asset taken out of service"
+    { message: "Asset taken out of service" }
   );
 }
 

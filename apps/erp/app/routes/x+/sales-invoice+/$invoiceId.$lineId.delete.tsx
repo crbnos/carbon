@@ -63,7 +63,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.salesInvoiceDetails(invoiceId),
-    "Successfully deleted sales invoice line"
+    { message: "Successfully deleted sales invoice line" }
   );
 }
 

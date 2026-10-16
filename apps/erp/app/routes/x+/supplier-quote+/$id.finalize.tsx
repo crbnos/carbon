@@ -15,8 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.purchasing.supplierQuote.finalize({
     supplierQuoteId: id
   });
-  return respond(args.request, result).redirect(
-    path.to.supplierQuote(id),
-    "Supplier quote finalized successfully"
-  );
+  return respond(args.request, result).redirect(path.to.supplierQuote(id), {
+    message: "Supplier quote finalized successfully"
+  });
 }

@@ -27,6 +27,6 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.quoteDetails(result.data.quoteId)
       : path.to.salesRfq(input.params.rfqId),
-    "Successfully converted RFQ to quote"
+    { message: "Successfully converted RFQ to quote" }
   );
 }

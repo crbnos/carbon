@@ -21,6 +21,8 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.changeNoticeDetails(id),
-    `Approval request ${input.data.decision.toLowerCase()} successfully`
+    {
+      message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+    }
   );
 }

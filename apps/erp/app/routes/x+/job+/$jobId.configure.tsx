@@ -17,6 +17,6 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.production.job.configure({ jobId, configuration });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.job(jobId),
-    "Updated job"
+    { message: "Updated job" }
   );
 }

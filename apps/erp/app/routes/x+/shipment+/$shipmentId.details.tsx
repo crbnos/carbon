@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.shipment(input.data.id),
-    "Updated shipment"
+    { message: "Updated shipment" }
   );
 }
 

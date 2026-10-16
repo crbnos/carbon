@@ -21,6 +21,6 @@ export async function action(args: ActionFunctionArgs) {
       : referrer && (result.error || !referrer.includes("/setup/"))
         ? referrer
         : path.to.rentalAgreementDetails(id),
-    "Rental agreement activated"
+    { message: "Rental agreement activated" }
   );
 }

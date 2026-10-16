@@ -30,6 +30,6 @@ export async function action(args: ActionFunctionArgs) {
   if ("violations" in result.data) return result.data;
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.stockTransfer(id),
-    "Updated stock transfer status"
+    { message: "Updated stock transfer status" }
   );
 }

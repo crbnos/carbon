@@ -41,12 +41,13 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.production.quantity.create(input.data);
-  return respond(args.request, result)
-    .onError(`${new URL(args.request.url).pathname}?${getParams(args.request)}`)
-    .redirect(
-      `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
-      "Production quantity created"
-    );
+  return respond(args.request, result).redirect(
+    `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+    {
+      message: "Production quantity created",
+      onError: `${new URL(args.request.url).pathname}?${getParams(args.request)}`
+    }
+  );
 }
 
 export default function NewProductionQuantityRoute() {

@@ -15,6 +15,6 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.accounting.revenueRecognitionRun.post({ runId });
   return respond(args.request, result).redirect(
     path.to.revenueRecognitionRun(runId),
-    "Revenue recognition run posted"
+    { message: "Revenue recognition run posted" }
   );
 }

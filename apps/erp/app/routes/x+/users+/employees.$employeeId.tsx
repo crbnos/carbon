@@ -161,10 +161,9 @@ export async function action(args: ActionFunctionArgs) {
     permissions: JSON.parse(permissions),
     ip: originOf(args.request).ip
   });
-  return respond(args.request, result).redirect(
-    path.to.employeeAccounts,
-    "Permissions updated"
-  );
+  return respond(args.request, result).redirect(path.to.employeeAccounts, {
+    message: "Permissions updated"
+  });
 }
 
 export default function UsersEmployeeRoute() {

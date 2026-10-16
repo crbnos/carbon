@@ -57,7 +57,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.personJob(result.data.userId)
       : path.to.employeeAccounts,
-    "Successfully invited employee"
+    { message: "Successfully invited employee" }
   );
 }
 

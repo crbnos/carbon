@@ -23,6 +23,6 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.depreciationRun(result.data.id)
       : path.to.depreciationRuns,
-    "Depreciation run created"
+    { message: "Depreciation run created" }
   );
 }

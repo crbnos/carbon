@@ -28,10 +28,9 @@ export async function action(args: ActionFunctionArgs) {
     const result = await api.purchasing.purchaseOrder.close({
       purchaseOrderId: orderId
     });
-    return respond(args.request, result).redirect(
-      to,
-      "Updated purchasing order status"
-    );
+    return respond(args.request, result).redirect(to, {
+      message: "Updated purchasing order status"
+    });
   }
 
   const result = await api.purchasing.purchaseOrder.reopen({
@@ -39,10 +38,9 @@ export async function action(args: ActionFunctionArgs) {
     status,
     createRevision: createRevision === "true"
   });
-  return respond(args.request, result).redirect(
-    to,
-    result.data?.revision
+  return respond(args.request, result).redirect(to, {
+    message: result.data?.revision
       ? "Created a new purchase order revision"
       : "Updated purchasing order status"
-  );
+  });
 }

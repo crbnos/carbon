@@ -34,7 +34,9 @@ export async function action(args: ActionFunctionArgs) {
       (formData.get("extractedStoragePath") as string | null) || undefined
   });
   if (!result.data) {
-    return respond(args.request, result).redirect(path.to.salesRfqs, "");
+    return respond(args.request, result).redirect(path.to.salesRfqs, {
+      message: ""
+    });
   }
   throw redirect(path.to.salesRfq(result.data.id));
 }

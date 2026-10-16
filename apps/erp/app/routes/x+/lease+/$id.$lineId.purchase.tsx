@@ -20,7 +20,8 @@ export async function action(args: ActionFunctionArgs) {
     leaseId: id,
     leaseLineId: lineId
   });
-  return respond(args.request, result)
-    .onError(requestReferrer(args.request) ?? path.to.leaseDetails(id))
-    .redirect(path.to.leaseLine(id, lineId), "Purchase option exercised");
+  return respond(args.request, result).redirect(path.to.leaseLine(id, lineId), {
+    message: "Purchase option exercised",
+    onError: requestReferrer(args.request) ?? path.to.leaseDetails(id)
+  });
 }

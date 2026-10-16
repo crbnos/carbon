@@ -80,9 +80,11 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     `${path.to.storageUnits}?${getParams(args.request)}`,
-    cascade
-      ? "Successfully deleted storage unit and nested units"
-      : "Successfully deleted storage unit"
+    {
+      message: cascade
+        ? "Successfully deleted storage unit and nested units"
+        : "Successfully deleted storage unit"
+    }
   );
 }
 

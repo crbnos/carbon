@@ -107,7 +107,7 @@ export async function action(args: ActionFunctionArgs) {
   if (result.error) return stay(args.request, result.error.message);
   return respond(args.request, result).redirect(
     path.to.reimbursement(reimbursementId),
-    willPost ? "Reimbursement posted" : "Reimbursement updated"
+    { message: willPost ? "Reimbursement posted" : "Reimbursement updated" }
   );
 }
 

@@ -102,7 +102,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   return respond(args.request, result).redirect(
     path.to.stockTransfer(result.data.stockTransferId),
-    "Tracked entity scanned and transferred"
+    { message: "Tracked entity scanned and transferred" }
   );
 }
 

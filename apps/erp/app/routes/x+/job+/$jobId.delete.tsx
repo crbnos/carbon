@@ -16,7 +16,9 @@ export async function action(args: ActionFunctionArgs) {
     ids: [input.params.jobId]
   });
   if (result.error) {
-    return respond(args.request, result).redirect(path.to.jobs, "");
+    return respond(args.request, result).redirect(path.to.jobs, {
+      message: ""
+    });
   }
   throw redirect(path.to.jobs);
 }

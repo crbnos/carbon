@@ -56,10 +56,9 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return respond(args.request, result).redirect(
-    path.to.maintenanceSchedules,
-    "Updated maintenance schedule"
-  );
+  return respond(args.request, result).redirect(path.to.maintenanceSchedules, {
+    message: "Updated maintenance schedule"
+  });
 }
 
 export default function EditMaintenanceScheduleRoute() {

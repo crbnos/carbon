@@ -23,10 +23,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.settings.subsidiary.create(input.data);
-  return respond(args.request, result).redirect(
-    path.to.companies,
-    "Created company"
-  );
+  return respond(args.request, result).redirect(path.to.companies, {
+    message: "Created company"
+  });
 }
 
 export default function NewSubsidiaryRoute() {

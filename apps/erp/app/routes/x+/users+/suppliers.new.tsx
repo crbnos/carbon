@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
     supplierRedirect && !result.error
       ? path.to.supplierContacts(supplierRedirect)
       : path.to.supplierAccounts,
-    "Supplier invited"
+    { message: "Supplier invited" }
   );
 }
 

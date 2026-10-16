@@ -19,7 +19,8 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     leaseId: id
   });
-  return respond(args.request, result)
-    .onError(requestReferrer(args.request) ?? path.to.leaseDetails(id))
-    .redirect(path.to.leaseDetails(id), "Lease modified");
+  return respond(args.request, result).redirect(path.to.leaseDetails(id), {
+    message: "Lease modified",
+    onError: requestReferrer(args.request) ?? path.to.leaseDetails(id)
+  });
 }

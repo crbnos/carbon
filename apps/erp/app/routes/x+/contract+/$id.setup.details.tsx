@@ -37,7 +37,7 @@ export async function action(args: ActionFunctionArgs) {
       result.error?.category === "notFound"
         ? path.to.contracts
         : path.to.contractSetup(id, "details"),
-      ""
+      { message: "" }
     );
   }
   throw redirect(path.to.contractSetup(id, "products"));

@@ -118,9 +118,10 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.accounting.cutover.enable(input.data);
   const { pathname, search } = new URL(args.request.url);
-  return respond(args.request, result)
-    .onError(`${pathname}${search}`)
-    .redirect(path.to.accountingPeriods, "Accounting is enabled");
+  return respond(args.request, result).redirect(path.to.accountingPeriods, {
+    message: "Accounting is enabled",
+    onError: `${pathname}${search}`
+  });
 }
 
 /** Step 5: what the enable will do, and the one-way confirmation. */

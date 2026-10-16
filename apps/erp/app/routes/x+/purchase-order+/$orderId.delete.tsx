@@ -20,6 +20,6 @@ export async function action(args: ActionFunctionArgs) {
     result.error && result.error.category !== "notFound"
       ? path.to.purchaseOrder(orderId)
       : path.to.purchaseOrders,
-    "Purchase order deleted"
+    { message: "Purchase order deleted" }
   );
 }

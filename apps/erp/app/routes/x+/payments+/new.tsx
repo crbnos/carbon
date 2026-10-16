@@ -175,7 +175,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id, warning } = result.data;
   return respond(args.request, {
     error: warning ? { message: warning } : null
-  }).redirect(path.to.payment(id), "Payment created");
+  }).redirect(path.to.payment(id), { message: "Payment created" });
 }
 
 export default function NewPaymentRoute() {

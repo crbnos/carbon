@@ -40,10 +40,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.settings.company.update(input.data);
-  return respond(args.request, result).redirect(
-    path.to.company,
-    "Updated company"
-  );
+  return respond(args.request, result).redirect(path.to.company, {
+    message: "Updated company"
+  });
 }
 
 export default function Company() {

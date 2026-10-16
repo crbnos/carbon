@@ -14,8 +14,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.settings.printerRoute.delete({
     id: input.params.id
   });
-  return respond(args.request, result).redirect(
-    path.to.printingSettings,
-    "Printer route deleted"
-  );
+  return respond(args.request, result).redirect(path.to.printingSettings, {
+    message: "Printer route deleted"
+  });
 }

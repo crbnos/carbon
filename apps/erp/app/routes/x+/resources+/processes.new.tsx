@@ -24,10 +24,9 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return respond(args.request, result).redirect(
-    path.to.processes,
-    "Process created"
-  );
+  return respond(args.request, result).redirect(path.to.processes, {
+    message: "Process created"
+  });
 }
 
 export default function NewProcessRoute() {

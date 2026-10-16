@@ -19,8 +19,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.depreciationRun(depreciationRunId),
-    result.data
-      ? `Reversed ${result.data.readableId}. It is a draft again.`
-      : undefined
+    {
+      message: result.data
+        ? `Reversed ${result.data.readableId}. It is a draft again.`
+        : undefined
+    }
   );
 }

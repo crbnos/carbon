@@ -32,6 +32,6 @@ export async function action(args: ActionFunctionArgs) {
   }
   return respond(args.request, result).redirect(
     path.to.reimbursement(reimbursementId),
-    "Reimbursement paid"
+    { message: "Reimbursement paid" }
   );
 }

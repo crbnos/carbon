@@ -23,6 +23,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.quote(quoteId),
-    "Updated quote status"
+    { message: "Updated quote status" }
   );
 }

@@ -13,8 +13,7 @@ export async function action(args: ActionFunctionArgs) {
   const memoId = input.params.memoId;
   const api = await carbon(args.request);
   const result = await api.invoicing.memo.void({ memoId: memoId });
-  return respond(args.request, result).redirect(
-    path.to.memo(memoId),
-    "Memo voided"
-  );
+  return respond(args.request, result).redirect(path.to.memo(memoId), {
+    message: "Memo voided"
+  });
 }

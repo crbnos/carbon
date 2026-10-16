@@ -31,18 +31,16 @@ export async function action(args: ActionFunctionArgs) {
       leaseId,
       leaseLineId
     });
-    return respond(args.request, result).redirect(
-      to,
-      "Classification override removed"
-    );
+    return respond(args.request, result).redirect(to, {
+      message: "Classification override removed"
+    });
   }
   const result = await api.purchasing.leaseLine.overrideClassification({
     ...input.data,
     leaseId,
     leaseLineId
   });
-  return respond(args.request, result).redirect(
-    to,
-    `Classified as ${input.data.classification}`
-  );
+  return respond(args.request, result).redirect(to, {
+    message: `Classified as ${input.data.classification}`
+  });
 }

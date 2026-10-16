@@ -32,6 +32,6 @@ export async function action(args: ActionFunctionArgs) {
   if ("violations" in result.data) return result.data;
   return respond(args.request, result).redirect(
     path.to.warehouseTransfer(transferId),
-    "Updated warehouse transfer status"
+    { message: "Updated warehouse transfer status" }
   );
 }

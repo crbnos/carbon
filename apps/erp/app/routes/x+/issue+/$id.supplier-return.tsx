@@ -28,8 +28,10 @@ export async function action(args: ActionFunctionArgs) {
     purchaseReturnOrderId
       ? path.to.purchaseReturnOrder(purchaseReturnOrderId)
       : path.to.issue(id),
-    created
-      ? "Supplier return drafted"
-      : "Every Return to Supplier quantity is already covered by a linked return"
+    {
+      message: created
+        ? "Supplier return drafted"
+        : "Every Return to Supplier quantity is already covered by a linked return"
+    }
   );
 }

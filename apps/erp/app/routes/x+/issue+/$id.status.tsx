@@ -22,6 +22,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.issueDetails(id),
-    "Updated issue status"
+    { message: "Updated issue status" }
   );
 }

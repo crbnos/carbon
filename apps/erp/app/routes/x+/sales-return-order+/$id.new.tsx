@@ -26,7 +26,7 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) {
     return respond(args.request, result).redirect(
       path.to.salesReturnOrderDetails(orderId),
-      ""
+      { message: "" }
     );
   }
   throw redirect(

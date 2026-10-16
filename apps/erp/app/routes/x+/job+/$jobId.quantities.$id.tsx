@@ -52,12 +52,13 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     id: input.params.id
   });
-  return respond(args.request, result)
-    .onError(`${new URL(args.request.url).pathname}?${getParams(args.request)}`)
-    .redirect(
-      `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
-      "Updated production quantity"
-    );
+  return respond(args.request, result).redirect(
+    `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+    {
+      message: "Updated production quantity",
+      onError: `${new URL(args.request.url).pathname}?${getParams(args.request)}`
+    }
+  );
 }
 
 export default function EditProductionQuantityRoute() {

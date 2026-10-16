@@ -53,10 +53,9 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.locationId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.locations,
-    "Location updated"
-  );
+  return respond(args.request, result).redirect(path.to.locations, {
+    message: "Location updated"
+  });
 }
 
 export default function LocationRoute() {

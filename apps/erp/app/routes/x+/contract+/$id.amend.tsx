@@ -56,8 +56,7 @@ export async function action(args: ActionFunctionArgs) {
     ...amendment.data,
     customerContractId: id
   });
-  return respond(args.request, result).redirect(
-    path.to.contractDetails(id),
-    "Contract amended"
-  );
+  return respond(args.request, result).redirect(path.to.contractDetails(id), {
+    message: "Contract amended"
+  });
 }

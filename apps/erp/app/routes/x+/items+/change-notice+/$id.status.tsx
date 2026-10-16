@@ -21,8 +21,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.changeNoticeDetails(id),
-    result.data?.approvalRequested
-      ? "Submitted for approval"
-      : "Updated change notice status"
+    {
+      message: result.data?.approvalRequested
+        ? "Submitted for approval"
+        : "Updated change notice status"
+    }
   );
 }

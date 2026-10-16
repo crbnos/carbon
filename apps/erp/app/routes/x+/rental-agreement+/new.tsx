@@ -58,7 +58,9 @@ export async function action(args: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
   if (!result.data) {
-    return respond(args.request, result).redirect(path.to.rentalAgreements, "");
+    return respond(args.request, result).redirect(path.to.rentalAgreements, {
+      message: ""
+    });
   }
   // A unit that could not be added leaves the agreement, and says so.
   const { id, warning } = result.data;

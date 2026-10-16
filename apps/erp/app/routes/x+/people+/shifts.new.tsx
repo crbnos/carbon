@@ -19,10 +19,9 @@ export async function action(args: ActionFunctionArgs) {
     ...shift,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.shifts,
-    "Shift created"
-  );
+  return respond(args.request, result).redirect(path.to.shifts, {
+    message: "Shift created"
+  });
 }
 
 export default function NewShiftRoute() {

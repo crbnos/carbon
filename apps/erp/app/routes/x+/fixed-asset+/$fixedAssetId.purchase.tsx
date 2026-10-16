@@ -80,7 +80,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.purchaseOrder(result.data.purchaseOrderId)
       : path.to.fixedAsset(fixedAssetId),
-    "Purchase order created"
+    { message: "Purchase order created" }
   );
 }
 

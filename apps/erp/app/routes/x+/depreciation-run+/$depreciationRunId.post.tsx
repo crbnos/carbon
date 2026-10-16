@@ -19,6 +19,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.depreciationRun(depreciationRunId),
-    "Depreciation run posted"
+    { message: "Depreciation run posted" }
   );
 }

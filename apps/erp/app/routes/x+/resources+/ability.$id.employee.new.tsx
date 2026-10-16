@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
   if (result.error) return result;
   return respond(args.request, result).redirect(
     path.to.ability(input.params.id),
-    "Added employee to ability"
+    { message: "Added employee to ability" }
   );
 }
 

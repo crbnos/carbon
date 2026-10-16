@@ -33,7 +33,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.purchasingRfqDetails(result.data.id)
       : path.to.purchasingRfqs,
-    "RFQ created"
+    { message: "RFQ created" }
   );
 }
 

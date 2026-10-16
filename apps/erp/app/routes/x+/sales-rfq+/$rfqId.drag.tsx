@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   if (result.error) {
     return respond(args.request, result).redirect(
       path.to.salesRfqDetails(input.params.rfqId),
-      ""
+      { message: "" }
     );
   }
   return result;

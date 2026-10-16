@@ -12,8 +12,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.workflows.workflow.delete({ id: input.params.id });
-  return respond(args.request, result).redirect(
-    path.to.workflows,
-    "Successfully deleted workflow"
-  );
+  return respond(args.request, result).redirect(path.to.workflows, {
+    message: "Successfully deleted workflow"
+  });
 }

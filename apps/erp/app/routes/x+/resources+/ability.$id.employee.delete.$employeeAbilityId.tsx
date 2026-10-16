@@ -24,7 +24,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.ability(input.params.id),
-    "Removed employee from ability"
+    { message: "Removed employee from ability" }
   );
 }
 

@@ -22,10 +22,9 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return respond(args.request, result).redirect(
-    path.to.locations,
-    "Location created"
-  );
+  return respond(args.request, result).redirect(path.to.locations, {
+    message: "Location created"
+  });
 }
 
 export default function NewLocationRoute() {

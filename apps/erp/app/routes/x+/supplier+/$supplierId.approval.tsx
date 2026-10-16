@@ -29,21 +29,21 @@ export async function action(args: ActionFunctionArgs) {
       const result = await api.purchasing.supplier.requestApproval({
         supplierId
       });
-      return respond(args.request, result).redirect(
-        to,
-        "Approval request submitted"
-      );
+      return respond(args.request, result).redirect(to, {
+        message: "Approval request submitted"
+      });
     }
     const result = await api.purchasing.supplier.deactivate({ supplierId });
-    return respond(args.request, result).redirect(to, "Supplier deactivated");
+    return respond(args.request, result).redirect(to, {
+      message: "Supplier deactivated"
+    });
   }
 
   const result = await api.purchasing.supplier.decideApproval({
     ...input.data,
     supplierId
   });
-  return respond(args.request, result).redirect(
-    to,
-    `Approval request ${input.data.decision.toLowerCase()} successfully`
-  );
+  return respond(args.request, result).redirect(to, {
+    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+  });
 }

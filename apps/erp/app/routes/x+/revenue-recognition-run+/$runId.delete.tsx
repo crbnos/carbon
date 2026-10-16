@@ -50,7 +50,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? RUN_PAGES[result.data.type].listPath
       : path.to.revenueRecognitionRun(runId),
-    "Successfully deleted the run"
+    { message: "Successfully deleted the run" }
   );
 }
 

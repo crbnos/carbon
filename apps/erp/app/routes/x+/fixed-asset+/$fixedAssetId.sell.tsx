@@ -72,7 +72,7 @@ export async function action(args: ActionFunctionArgs) {
     result.data
       ? path.to.salesOrder(result.data.salesOrderId)
       : path.to.fixedAsset(fixedAssetId),
-    "Sales order created"
+    { message: "Sales order created" }
   );
 }
 

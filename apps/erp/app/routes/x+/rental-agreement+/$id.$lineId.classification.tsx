@@ -24,6 +24,6 @@ export async function action(args: ActionFunctionArgs) {
     result.error?.category === "notFound"
       ? (requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id))
       : path.to.rentalAgreementLine(id, lineId),
-    `Classified as ${input.data.classification}`
+    { message: `Classified as ${input.data.classification}` }
   );
 }

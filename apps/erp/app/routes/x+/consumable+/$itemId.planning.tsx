@@ -102,12 +102,13 @@ export async function action(args: ActionFunctionArgs) {
       fieldErrors: { responsibleEmployee: result.error.message }
     });
   }
-  return respond(args.request, result)
-    .onError(path.to.consumable(itemId))
-    .redirect(
-      path.to.consumablePlanningLocation(itemId, input.data.locationId),
-      "Updated consumable planning"
-    );
+  return respond(args.request, result).redirect(
+    path.to.consumablePlanningLocation(itemId, input.data.locationId),
+    {
+      message: "Updated consumable planning",
+      onError: path.to.consumable(itemId)
+    }
+  );
 }
 
 export default function ConsumablePlanningRoute() {

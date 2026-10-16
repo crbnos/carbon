@@ -122,10 +122,9 @@ export async function action(args: ActionFunctionArgs) {
   return respond(
     args.request,
     await api.settings.billing.transferOwnership(input.data)
-  ).redirect(
-    path.to.billing,
-    "Company ownership has been transferred successfully"
-  );
+  ).redirect(path.to.billing, {
+    message: "Company ownership has been transferred successfully"
+  });
 }
 
 // This route now only handles actions - UI is in the company route

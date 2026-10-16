@@ -21,12 +21,13 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale
   });
-  return respond(args.request, result)
-    .onError(path.to.purchaseOrder(orderId))
-    .redirect(
-      requestReferrer(args.request) ?? path.to.purchaseOrder(orderId),
-      result.data?.needsApproval
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.purchaseOrder(orderId),
+    {
+      message: result.data?.needsApproval
         ? "Purchase order submitted for approval"
-        : "Purchase order finalized"
-    );
+        : "Purchase order finalized",
+      onError: path.to.purchaseOrder(orderId)
+    }
+  );
 }

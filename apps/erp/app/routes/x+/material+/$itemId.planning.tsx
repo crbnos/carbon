@@ -102,12 +102,10 @@ export async function action(args: ActionFunctionArgs) {
       fieldErrors: { responsibleEmployee: result.error.message }
     });
   }
-  return respond(args.request, result)
-    .onError(path.to.material(itemId))
-    .redirect(
-      path.to.materialPlanningLocation(itemId, input.data.locationId),
-      "Updated material planning"
-    );
+  return respond(args.request, result).redirect(
+    path.to.materialPlanningLocation(itemId, input.data.locationId),
+    { message: "Updated material planning", onError: path.to.material(itemId) }
+  );
 }
 
 export default function MateriallanningRoute() {

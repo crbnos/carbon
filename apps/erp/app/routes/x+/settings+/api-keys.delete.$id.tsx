@@ -20,7 +20,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.settings.apiKey.delete({ id: input.params.id });
   return respond(args.request, result).redirect(
     `${path.to.apiKeys}?${getParams(args.request)}`,
-    "Successfully deleted API key"
+    { message: "Successfully deleted API key" }
   );
 }
 

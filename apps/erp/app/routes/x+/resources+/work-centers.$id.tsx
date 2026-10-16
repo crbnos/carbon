@@ -61,10 +61,9 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.id,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.workCenters,
-    "Updated work center"
-  );
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Updated work center"
+  });
 }
 
 export default function WorkCenterRoute() {

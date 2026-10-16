@@ -19,6 +19,6 @@ export async function action(args: ActionFunctionArgs) {
   });
   return respond(args.request, result).redirect(
     path.to.depreciationRun(result.data?.id ?? depreciationRunId),
-    "Repeat depreciation run created"
+    { message: "Repeat depreciation run created" }
   );
 }

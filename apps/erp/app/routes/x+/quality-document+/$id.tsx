@@ -50,10 +50,9 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     qualityDocumentId: id
   });
-  return respond(args.request, result).redirect(
-    path.to.qualityDocument(id),
-    `Approval request ${input.data.decision.toLowerCase()} successfully`
-  );
+  return respond(args.request, result).redirect(path.to.qualityDocument(id), {
+    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+  });
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

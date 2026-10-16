@@ -132,14 +132,12 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
     const { locationId } = validation.data;
-    return respond(args.request, result)
-      .onError(path.to.part(itemId))
-      .redirect(
-        locationId
-          ? path.to.partPlanningLocation(itemId, locationId)
-          : path.to.partPlanning(itemId),
-        "Updated supersession"
-      );
+    return respond(args.request, result).redirect(
+      locationId
+        ? path.to.partPlanningLocation(itemId, locationId)
+        : path.to.partPlanning(itemId),
+      { message: "Updated supersession", onError: path.to.part(itemId) }
+    );
   }
 
   if (input.data.intent === "supersession-predecessor") {
@@ -159,7 +157,7 @@ export async function action(args: ActionFunctionArgs) {
     }
     return respond(args.request, result).redirect(
       path.to.partPlanning(itemId),
-      "Added predecessor"
+      { message: "Added predecessor" }
     );
   }
 
@@ -176,12 +174,10 @@ export async function action(args: ActionFunctionArgs) {
       formId: validation.formId
     });
   }
-  return respond(args.request, result)
-    .onError(path.to.part(itemId))
-    .redirect(
-      path.to.partPlanningLocation(itemId, validation.data.locationId),
-      "Updated part planning"
-    );
+  return respond(args.request, result).redirect(
+    path.to.partPlanningLocation(itemId, validation.data.locationId),
+    { message: "Updated part planning", onError: path.to.part(itemId) }
+  );
 }
 
 export default function PartPlanningRoute() {
