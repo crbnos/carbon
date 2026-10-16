@@ -452,23 +452,25 @@ export const releaseCheckedJobs = defineServiceFn({
 type JobRef = { jobId: string; readableId: string };
 
 /**
- * Release jobs to the floor.
+ * Release jobs to the shop floor.
  *
  * @remarks
- * What the Release dialog, the jobs table's Release Jobs and an API caller
- * all run. Each Draft / Planned job is checked on its own: nothing to make,
- * manufacturing blocked, an assembly with no operations, an outside operation
- * with no supplier (or several and none chosen), a Make to Asset job that
- * cannot complete to its asset, and a supplier with Draft purchase orders when
- * no choice was sent. A job with a problem is named in `failed`; the rest are
- * released, then each location they are at is scheduled once.
+ * Checks each Draft or Planned job and releases the ones that pass, then
+ * schedules their locations. A job that fails a check stays as it is.
  *
- * `supplierProcessByOperationId` picks the supplier for an outside operation;
- * it is saved on the operation first. `purchaseOrdersBySupplierId` maps a
- * supplier to `new` or one of its Draft purchase orders.
+ * A job is not released when:
+ * - it has nothing to make
+ * - manufacturing is blocked for its item
+ * - an assembly has no operations
+ * - an outside operation has no supplier, or several and none chosen
+ * - it is Make to Asset and cannot complete to its asset
+ * - a supplier has Draft purchase orders and no choice was sent
  *
- * A job that is not Draft or Planned is listed in `skipped`. A job released
- * whose purchase orders then failed is in `released` and in `warnings`.
+ * @param jobIds - The jobs to release.
+ * @param supplierProcessByOperationId - The supplier process to use for each outside operation, by operation id.
+ * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
+ *
+ * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order failed) and the `scheduled` locations.
  *
  * @mcp
  */

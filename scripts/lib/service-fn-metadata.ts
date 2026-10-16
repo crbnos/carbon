@@ -125,6 +125,8 @@ export function routerLeaves(
 export interface LeafDocs {
   title: string;
   description: string;
+  /** `@param name - text`: published on the input field of that name. */
+  params: Record<string, string>;
   published: boolean;
   destructive: boolean;
 }
@@ -136,10 +138,29 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
   const summary = doc?.getDescription().trim().split(/\n\s*\n/)[0] ?? "";
   const title = summary.replace(/\s+/g, " ").replace(/\.$/, "");
   const tags = doc?.getTags() ?? [];
-  const remarks = tags
-    .find((tag) => tag.getTagName() === "remarks")
-    ?.getCommentText()
-    ?.trim();
+  const text = (name: string) =>
+    tags
+      .find((tag) => tag.getTagName() === name)
+      ?.getCommentText()
+      ?.trim();
+  const remarks = text("remarks");
+  const returns = text("returns");
+  const params: Record<string, string> = {};
+  for (const tag of tags) {
+    if (tag.getTagName() !== "param") continue;
+    // `@param name - text`; ts-morph keeps the name in the comment for a
+    // const, so it is read from the text either way.
+    const raw = (tag.getText().replace(/^@param\s+/, "").replace(/\*\/\s*$/, ""))
+      .replace(/\n\s*\*\s?/g, " ")
+      .trim();
+    const match = raw.match(/^([A-Za-z_$][\w$]*)\s*(?:-\s*)?([\s\S]*)$/);
+    if (!match?.[2]) throw new Error(`${where}: @param needs a name and a text`);
+    // A tag's text runs to the next tag, so it may end on the doc's `*`.
+    params[match[1]!] = match[2]
+      .replace(/\s+/g, " ")
+      .replace(/(\s\*)+\s*$/, "")
+      .trim();
+  }
   const mcp = tags.filter((tag) => tag.getTagName() === "mcp");
   if (mcp.length > 1) throw new Error(`${where}: more than one @mcp tag`);
   const modifier = mcp[0]?.getCommentText()?.trim() ?? "";
@@ -151,9 +172,12 @@ export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
   if (mcp.length > 0 && !title) {
     throw new Error(`${where}: a published service function needs a summary`);
   }
+  const sentence = title ? `${title}.` : "";
+  const parts = [sentence, remarks, returns ? `Returns ${returns}` : ""];
   return {
     title,
-    description: remarks ? `${title}.\n\n${remarks}` : title,
+    description: parts.filter(Boolean).join("\n\n"),
+    params,
     published: mcp.length > 0,
     destructive: modifier === "destructive"
   };
@@ -304,6 +328,15 @@ export function buildServiceFnTools(
     }
     const { permission, actions } = leafPermission(leaf);
     const { input, response } = schemasOf(leaf);
+    const properties = (input as { properties?: Record<string, JsonSchema> })
+      .properties;
+    for (const [name, text] of Object.entries(docs.params)) {
+      const property = properties?.[name];
+      if (!property) {
+        throw new Error(`${where}: @param ${name} is not a field of its input`);
+      }
+      property.description = text;
+    }
     return [
       {
         name: leaf.path.join("_"),

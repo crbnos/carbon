@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/api/breadcrumb";
 import { CodeBlock } from "@/components/api/code-block";
-import { DocPage, H2, P } from "@/components/api/doc";
+import { DocPage, H2, Prose } from "@/components/api/doc";
 import { OperationPanel } from "@/components/api/operation-panel";
 import {
   type JsonSchemaNode,
@@ -193,7 +193,11 @@ export default async function OperationPage(props: Params) {
           {t.classification}
         </span>
       </div>
-      {description && <P>{description}.</P>}
+      {description && (
+        <Prose
+          text={/[.!?:]$/.test(description) ? description : `${description}.`}
+        />
+      )}
 
       {/* The request sample runs full width: in a half column the Python and
           JavaScript samples had to wrap so hard they broke mid-token. Below it the
