@@ -8,9 +8,6 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "apply-account-import": {
     "update": "accounting",
   },
-  "assign-serial-numbers": {
-    "update": "production",
-  },
   "batch-operations": {
     "update": "production",
   },

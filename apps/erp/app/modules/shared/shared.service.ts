@@ -2,16 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type {
+import type { Permissions } from "@carbon/api/permissions";
+import {
   CarbonError,
-  ServiceContext
+  createServiceContext,
+  type ServiceContext
 } from "@carbon/api/service-fn.server";
+import { settle } from "@carbon/api/service-tools.server";
 import {
   error,
   getAppUrl,
   ITAR_RIDER_SHA256,
   ITAR_RIDER_VERSION
 } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { AnyPostgresClient, Database, Tables } from "@carbon/database";
 import {
@@ -44,6 +48,10 @@ import type { Signals } from "@carbon/onboarding";
 import { detectImplementationSignals } from "@carbon/onboarding/server";
 import type { PrinterRoute } from "@carbon/printing";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import {
+  authorize,
+  ServerFnContext
+} from "@carbon/server-functions/server-fn-context";
 import { datetime, redirect, unchecked } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { parseAbsolute, startOfWeek } from "@internationalized/date";
@@ -1676,4 +1684,64 @@ export async function invalidateLocationTimeZone(
   companyId: string
 ): Promise<void> {
   await redis.del(locationKey(companyId, locationId));
+}
+
+/** What an older building block holds instead of a `ServiceContext`. */
+export type PostingHandles = {
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  userId: string;
+  companyGroupId?: string;
+  /** The caller's client, when the call was made as the caller. */
+  client?: SupabaseClient<Database>;
+};
+
+/**
+ * Run a posting body (a server function ported from `@carbon/server-functions`)
+ * and read it as `{ data, error }`, as `serverFns…invoke` returned it. From an
+ * operation, pass its `ctx`. From an older building block, pass the handles it
+ * holds: the body runs as the system, on the user's behalf, over that same
+ * `db` (a transaction stays one). With `as`, the caller behind `client` must
+ * hold that permission first, as `serverFns.as` checked it: a user's claims,
+ * an API key's scopes, nothing for the service role.
+ */
+export async function invokePosting<R>(
+  from: ServiceContext | PostingHandles,
+  name: string,
+  run: (ctx: ServiceContext) => Promise<R>,
+  options: { as?: Permissions; defaultStatus?: number } = {}
+): Promise<{ data: R; error: null } | { data: null; error: CarbonError }> {
+  const ctx = "actor" in from ? from : postingContext(from);
+  const out = await settle(
+    ctx,
+    name,
+    async () => {
+      if (!("actor" in from) && from.client && options.as) {
+        await authorize(
+          await ServerFnContext.fromClient(from.client, {
+            db: from.db,
+            companyId: from.companyId,
+            userId: from.userId
+          }),
+          options.as
+        );
+      }
+      return run(ctx);
+    },
+    options.defaultStatus
+  );
+  return out instanceof CarbonError
+    ? { data: null, error: out }
+    : { data: out, error: null };
+}
+
+function postingContext(handles: PostingHandles): ServiceContext {
+  return createServiceContext({
+    actor: { type: "system", onBehalfOf: handles.userId },
+    company: { id: handles.companyId, groupId: handles.companyGroupId ?? "" },
+    caller: handles.client ?? getCarbonServiceRole(),
+    system: getCarbonServiceRole,
+    pg: () => handles.db,
+    kv: () => redis
+  });
 }

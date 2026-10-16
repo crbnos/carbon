@@ -15,7 +15,6 @@ import type { ServerFnContext } from "./server-fn-context";
 const registry = {
   "activate-accounting": () => import("./activate-accounting"),
   "apply-account-import": () => import("./apply-account-import"),
-  "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-lease-invoices": () => import("./create-lease-invoices"),
