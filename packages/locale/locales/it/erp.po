@@ -5040,6 +5040,9 @@ msgstr "Timbratura registrata"
 msgid "Clocked in since <0/>"
 msgstr "In servizio da <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Chiudi"
 
@@ -9100,8 +9103,17 @@ msgstr "Il tipo di entità non può essere modificato"
 msgid "Entry"
 msgstr "Registrazione"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Tipo di Voce"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

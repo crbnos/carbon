@@ -5040,6 +5040,9 @@ msgstr "已上班"
 msgid "Clocked in since <0/>"
 msgstr "自 <0/> 打卡"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "关闭"
 
@@ -9100,8 +9103,17 @@ msgstr "实体类型无法更改"
 msgid "Entry"
 msgstr "条目"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "条目类型"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

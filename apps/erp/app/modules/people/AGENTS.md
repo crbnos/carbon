@@ -66,6 +66,17 @@ pnpm --filter @carbon/erp test -- --testPathPattern=people
 - `getClockedInEmployees` / `getScheduledEmployeesToday` — real-time workforce status
 - `getAttribute` / `getAttributeCategories` / `insertAttribute` / `updateAttribute` — custom fields
 
+## Operations (`people.server.ts`)
+
+Each is a `defineServiceFn` listed in `index.server.ts`; the route, the API and MCP (`people_<entity>_<verb>`) call the same one. Routes validate the request, call one, and answer with `redirectWithResult` (a flash) or the result.
+
+- `shift` — `create`, `update` (also marks active jobs for rescheduling, `notifyScheduleInputsChanged`). Both need people create, as the routes always did. Published.
+- `job.update` — the person's job (`updateEmployeeJob`: ids checked against the company, `employeeShift` kept in step, one transaction), then reschedules. Published.
+- `timecard` — the person timecard page (`x+/person+/$personId.timecard.tsx`): `clockIn`, `clockOut`, `addEntry`, `updateEntry`, `deleteEntry`. They need only people view, as that page always did, so they stay unpublished. A helper's own refusal ("Already clocked in") is a `rule` error; a database error is `internal`.
+- `ownTimecard` — `clockIn`, `clockOut` for the caller (`api+/people.timecard.ts`, the "Forgot to clock out?" prompt). Unpublished.
+
+The building blocks they call stay in `people.service.ts`; `updateEmployeeJob`, `upsertShift`, `clockIn` and `clockOut` are no longer published. Import other modules' `*.service.ts` or `*.server.ts` here, never their barrels.
+
 ## Key Exports
 
 ```typescript

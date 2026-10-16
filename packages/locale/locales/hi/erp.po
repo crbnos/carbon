@@ -5040,6 +5040,9 @@ msgstr "समय रिकॉर्ड किया गया"
 msgid "Clocked in since <0/>"
 msgstr "<0/> से काम में आए"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "बंद करें"
 
@@ -9100,8 +9103,17 @@ msgstr "इकाई प्रकार को परिवर्तित न�
 msgid "Entry"
 msgstr "प्रविष्टि"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "प्रविष्टि प्रकार"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

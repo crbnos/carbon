@@ -5040,6 +5040,9 @@ msgstr "근무 시작"
 msgid "Clocked in since <0/>"
 msgstr "<0/> 이후로 근무 중"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "닫기"
 
@@ -9100,8 +9103,17 @@ msgstr "개체 유형은 변경할 수 없습니다"
 msgid "Entry"
 msgstr "항목"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "항목 유형"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

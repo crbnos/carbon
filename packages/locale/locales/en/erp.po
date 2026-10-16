@@ -5040,6 +5040,9 @@ msgstr "Clocked in"
 msgid "Clocked in since <0/>"
 msgstr "Clocked in since <0/>"
 
+msgid "Clocked out"
+msgstr "Clocked out"
+
 msgid "Close"
 msgstr "Close"
 
@@ -9100,8 +9103,17 @@ msgstr "Entity type cannot be changed"
 msgid "Entry"
 msgstr "Entry"
 
+msgid "Entry added"
+msgstr "Entry added"
+
+msgid "Entry deleted"
+msgstr "Entry deleted"
+
 msgid "Entry Type"
 msgstr "Entry Type"
+
+msgid "Entry updated"
+msgstr "Entry updated"
 
 msgid "EORI"
 msgstr "EORI"

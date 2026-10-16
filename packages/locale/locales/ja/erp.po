@@ -5040,6 +5040,9 @@ msgstr "打刻済み"
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "閉じる"
 
@@ -9100,8 +9103,17 @@ msgstr "エンティティタイプは変更できません"
 msgid "Entry"
 msgstr "仕訳"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "エントリータイプ"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

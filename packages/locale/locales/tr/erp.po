@@ -5040,6 +5040,9 @@ msgstr "Giriş yapıldı"
 msgid "Clocked in since <0/>"
 msgstr "<0/> tarihinden beri saatlenmiş"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Kapat"
 
@@ -9100,8 +9103,17 @@ msgstr "Varlık türü değiştirilemez"
 msgid "Entry"
 msgstr "Giriş"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Giriş Türü"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

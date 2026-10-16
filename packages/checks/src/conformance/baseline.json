@@ -702,7 +702,6 @@
   "route-action-shape::apps/erp/app/routes/x+/maintenance+/$dispatchId.events.tsx::.from(\"maintenanceDispatchEvent\").update(",
   "route-action-shape::apps/erp/app/routes/x+/maintenance+/$dispatchId.item.$itemId.delete.tsx::serverFns.system(",
   "route-action-shape::apps/erp/app/routes/x+/maintenance+/$dispatchId.status.tsx::.from(\"maintenanceDispatch\").update(",
-  "route-action-shape::apps/erp/app/routes/x+/person+/$personId.timecard.tsx::.from(\"timeCardEntry\").insert(",
   "route-action-shape::apps/erp/app/routes/x+/resources+/abilities.new.tsx::.from(\"process\").update(",
   "route-action-shape::apps/erp/app/routes/x+/resources+/processes.$processId.tsx::.from(\"process\").update(",
   "route-action-shape::apps/erp/app/routes/x+/resources+/processes.new.tsx::.from(\"process\").update(",

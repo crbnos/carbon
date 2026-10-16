@@ -5040,6 +5040,9 @@ msgstr "Pointé"
 msgid "Clocked in since <0/>"
 msgstr "Connecté depuis <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Fermer"
 
@@ -9100,8 +9103,17 @@ msgstr "Le type d'entité ne peut pas être modifié"
 msgid "Entry"
 msgstr "Écriture"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Type d'entrée"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

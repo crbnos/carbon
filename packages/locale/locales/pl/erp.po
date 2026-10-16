@@ -5040,6 +5040,9 @@ msgstr "Zalogowany"
 msgid "Clocked in since <0/>"
 msgstr "Zalogowany od <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Zamknij"
 
@@ -9100,8 +9103,17 @@ msgstr "Typ jednostki nie może być zmieniony"
 msgid "Entry"
 msgstr "Wpis"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Typ wpisu"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

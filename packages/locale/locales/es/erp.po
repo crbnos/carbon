@@ -5040,6 +5040,9 @@ msgstr "Fichado entrada"
 msgid "Clocked in since <0/>"
 msgstr "Fichado desde <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Cerrar"
 
@@ -9100,8 +9103,17 @@ msgstr "El tipo de entidad no puede ser cambiado"
 msgid "Entry"
 msgstr "Entrada"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Tipo de Entrada"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"

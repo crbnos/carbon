@@ -5040,6 +5040,9 @@ msgstr "Зарегистрирован"
 msgid "Clocked in since <0/>"
 msgstr "Работаю с <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Закрыть"
 
@@ -9100,8 +9103,17 @@ msgstr "Тип сущности не может быть изменён"
 msgid "Entry"
 msgstr "Запись"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Тип записи"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
