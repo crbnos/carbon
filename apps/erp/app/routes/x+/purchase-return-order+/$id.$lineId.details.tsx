@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLine,
@@ -181,10 +181,10 @@ export async function action(args: ActionFunctionArgs) {
     lineId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.purchaseReturnOrderLine(orderId, lineId),
-    message: "Return order line updated"
-  });
+  return respond(args.request, result).redirect(
+    path.to.purchaseReturnOrderLine(orderId, lineId),
+    "Return order line updated"
+  );
 }
 
 export default function PurchaseReturnOrderLineDetailsRoute() {

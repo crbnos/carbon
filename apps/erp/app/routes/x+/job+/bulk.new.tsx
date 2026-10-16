@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { bulkJobValidator } from "~/modules/production";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -17,8 +17,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     customFields: setCustomFields(input.formData ?? new FormData())
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error ? path.to.newJob : path.to.jobs,
-    message: `Successfully created ${result.data?.jobIds.length} jobs`
-  });
+  return respond(args.request, result)
+    .onError(path.to.newJob)
+    .redirect(
+      path.to.jobs,
+      `Successfully created ${result.data?.jobIds.length} jobs`
+    );
 }

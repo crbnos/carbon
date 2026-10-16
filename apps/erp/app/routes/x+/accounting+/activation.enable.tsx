@@ -36,7 +36,7 @@ import {
   ActivationFooter,
   activationStepPath
 } from "~/modules/accounting/ui/Activation";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -118,10 +118,9 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.accounting.cutover.enable(input.data);
   const { pathname, search } = new URL(args.request.url);
-  return redirectWithResult(args.request, result, {
-    to: result.error ? `${pathname}${search}` : path.to.accountingPeriods,
-    message: "Accounting is enabled"
-  });
+  return respond(args.request, result)
+    .onError(`${pathname}${search}`)
+    .redirect(path.to.accountingPeriods, "Accounting is enabled");
 }
 
 /** Step 5: what the enable will do, and the one-way confirmation. */

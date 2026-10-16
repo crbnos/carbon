@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -16,10 +16,7 @@ export async function action(args: ActionFunctionArgs) {
     ids: [input.params.jobId]
   });
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.jobs,
-      message: ""
-    });
+    return respond(args.request, result).redirect(path.to.jobs, "");
   }
   throw redirect(path.to.jobs);
 }

@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getJobOperations,
   productionEventValidator
@@ -43,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.production.event.create(input.data);
   const postingError = result.data?.postingError;
-  return redirectWithResult(
+  return respond(
     args.request,
     postingError
       ? {
@@ -51,14 +51,12 @@ export async function action(args: ActionFunctionArgs) {
             message: `Production event created, but no journal entry was posted: ${postingError}`
           }
         }
-      : result,
-    {
-      // A failure keeps the drawer open.
-      to: result.error
-        ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
-        : `${path.to.jobProductionEvents(input.params.jobId)}?${getParams(args.request)}`,
-      message: "Production event created"
-    }
+      : result
+  ).redirect(
+    result.error
+      ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
+      : `${path.to.jobProductionEvents(input.params.jobId)}?${getParams(args.request)}`,
+    "Production event created"
   );
 }
 

@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { salesRuleAcknowledgementValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -23,10 +23,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The violation modal reads `violations` off the response.
   if (result.data && "violations" in result.data) return result.data;
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.quoteDetails(result.data.quoteId)
       : path.to.salesRfq(input.params.rfqId),
-    message: "Successfully converted RFQ to quote"
-  });
+    "Successfully converted RFQ to quote"
+  );
 }

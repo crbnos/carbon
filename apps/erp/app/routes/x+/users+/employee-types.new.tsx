@@ -11,7 +11,7 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   EmployeeTypeForm,
   employeeTypeValidator,
@@ -54,10 +54,9 @@ export async function action(args: ActionFunctionArgs) {
     name,
     permissions: JSON.parse(permissions)
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error ? path.to.newEmployeeType : path.to.employeeTypes,
-    message: "Employee type created"
-  });
+  return respond(args.request, result)
+    .onError(path.to.newEmployeeType)
+    .redirect(path.to.employeeTypes, "Employee type created");
 }
 
 export default function NewEmployeeTypesRoute() {

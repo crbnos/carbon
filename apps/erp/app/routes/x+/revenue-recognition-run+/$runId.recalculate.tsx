@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -18,16 +18,16 @@ export async function action(args: ActionFunctionArgs) {
   });
   const run = result.data;
   // A run left with nothing due is deleted; go back to its own type's list.
-  return redirectWithResult(args.request, result, {
-    to: run?.deleted
+  return respond(args.request, result).redirect(
+    run?.deleted
       ? RUN_PAGES[run.type].listPath
       : path.to.revenueRecognitionRun(runId),
-    message: !run
+    !run
       ? undefined
       : run.deleted
         ? `Nothing is due by this run's period end any more, so ${run.readableId} was deleted`
         : run.changed
           ? `Recalculated ${run.readableId}: ${run.lineCount} lines`
           : `${run.readableId} is already up to date`
-  });
+  );
 }

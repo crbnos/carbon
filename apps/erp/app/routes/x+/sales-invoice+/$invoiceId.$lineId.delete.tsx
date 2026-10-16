@@ -11,7 +11,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getSalesInvoice,
   getSalesInvoiceLine,
@@ -61,10 +61,10 @@ export async function action(args: ActionFunctionArgs) {
     invoiceId,
     lineId
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.salesInvoiceDetails(invoiceId),
-    message: "Successfully deleted sales invoice line"
-  });
+  return respond(args.request, result).redirect(
+    path.to.salesInvoiceDetails(invoiceId),
+    "Successfully deleted sales invoice line"
+  );
 }
 
 export default function DeleteSalesInvoiceLineRoute() {

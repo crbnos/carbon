@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { pickingListStatusType } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
@@ -29,8 +29,8 @@ export async function action(args: ActionFunctionArgs) {
   });
   // Lines left unpicked under the 'warn' policy: the header asks first.
   if (result.data && "needsAcknowledgement" in result.data) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.pickingList(pickingListId),
-    message: "Updated picking list status"
-  });
+  return respond(args.request, result).redirect(
+    path.to.pickingList(pickingListId),
+    "Updated picking list status"
+  );
 }

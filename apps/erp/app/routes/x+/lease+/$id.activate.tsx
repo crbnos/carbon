@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -15,10 +15,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.purchasing.lease.activate({ leaseId: id });
   // A refusal goes back where Activate was pressed (the setup Review step):
   // the lease page sends a Draft to its setup anyway.
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? (requestReferrer(args.request) ?? path.to.leaseSetup(id, "review"))
-      : path.to.leaseDetails(id),
-    message: "Lease activated"
-  });
+  return respond(args.request, result)
+    .onError(requestReferrer(args.request) ?? path.to.leaseSetup(id, "review"))
+    .redirect(path.to.leaseDetails(id), "Lease activated");
 }

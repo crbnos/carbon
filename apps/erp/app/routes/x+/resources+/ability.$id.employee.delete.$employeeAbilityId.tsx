@@ -8,7 +8,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Ability } from "~/modules/resources";
 import { path } from "~/utils/path";
 
@@ -22,10 +22,10 @@ export async function action(args: ActionFunctionArgs) {
     abilityId: input.params.id,
     employeeAbilityId: input.params.employeeAbilityId
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.ability(input.params.id),
-    message: "Removed employee from ability"
-  });
+  return respond(args.request, result).redirect(
+    path.to.ability(input.params.id),
+    "Removed employee from ability"
+  );
 }
 
 export default function DeleteEmployeeAbilityRoute() {

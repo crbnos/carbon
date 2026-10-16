@@ -7,7 +7,7 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { salesConfirmValidator, selectedLinesValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -33,10 +33,10 @@ export async function action(args: ActionFunctionArgs) {
     locale: getPreferenceHeaders(args.request).locale
   });
   if (result.data && "violations" in result.data) return result.data;
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.salesOrder(result.data.salesOrderId)
       : path.to.quoteDetails(quoteId),
-    message: "Successfully converted quote to order"
-  });
+    "Successfully converted quote to order"
+  );
 }

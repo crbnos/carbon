@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The only status change a lease takes by hand: cancelling an Active one.
@@ -17,8 +17,8 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = input.params;
   const api = await carbon(args.request);
   const result = await api.purchasing.lease.cancel({ leaseId: id });
-  return redirectWithResult(args.request, result, {
-    to: path.to.leaseDetails(id),
-    message: "Lease cancelled"
-  });
+  return respond(args.request, result).redirect(
+    path.to.leaseDetails(id),
+    "Lease cancelled"
+  );
 }

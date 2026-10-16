@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   CreateCustomerModal,
   createCustomerAccountValidator
@@ -27,13 +27,12 @@ export async function action(args: ActionFunctionArgs) {
   const customerRedirect = new URL(args.request.url).searchParams.get(
     "customer"
   );
-  return redirectWithResult(args.request, result, {
-    to:
-      customerRedirect && !result.error
-        ? path.to.customerContacts(customerRedirect)
-        : path.to.customerAccounts,
-    message: "Customer invited"
-  });
+  return respond(args.request, result).redirect(
+    customerRedirect && !result.error
+      ? path.to.customerContacts(customerRedirect)
+      : path.to.customerAccounts,
+    "Customer invited"
+  );
 }
 
 export default function () {

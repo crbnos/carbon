@@ -7,7 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import {
   ReceiptForm,
@@ -27,10 +27,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.receipt(input.data.id),
-    message: "Updated receipt"
-  });
+  return respond(args.request, result).redirect(
+    path.to.receipt(input.data.id),
+    "Updated receipt"
+  );
 }
 
 export default function ReceiptDetailsRoute() {

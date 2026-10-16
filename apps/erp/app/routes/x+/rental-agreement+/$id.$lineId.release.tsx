@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { rentalAgreementReleaseValidator } from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -22,8 +22,8 @@ export async function action(args: ActionFunctionArgs) {
     rentalAgreementLineId: lineId,
     returnedAt: input.data.returnedAt
   });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
-    message: "Unit released"
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
+    "Unit released"
+  );
 }

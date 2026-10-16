@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getTrainingsList,
   TrainingAssignmentForm,
@@ -52,10 +52,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.trainingAssignment.create(input.data);
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.trainingAssignments,
-    message: "Assignment created successfully"
-  });
+  return respond(args.request, result).redirect(
+    path.to.trainingAssignments,
+    "Assignment created successfully"
+  );
 }
 
 export default function NewTrainingAssignmentRoute() {

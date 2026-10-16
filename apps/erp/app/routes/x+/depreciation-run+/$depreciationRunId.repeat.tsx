@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -17,8 +17,8 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.accounting.depreciationRun.repeat({
     depreciationRunId
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.depreciationRun(result.data?.id ?? depreciationRunId),
-    message: "Repeat depreciation run created"
-  });
+  return respond(args.request, result).redirect(
+    path.to.depreciationRun(result.data?.id ?? depreciationRunId),
+    "Repeat depreciation run created"
+  );
 }

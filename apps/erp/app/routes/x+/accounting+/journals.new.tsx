@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -12,9 +12,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.accounting.journalEntry.create({});
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.journalEntryDetails(result.data.id)
       : path.to.accountingJournals
-  });
+  );
 }

@@ -10,7 +10,7 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getMaintenanceSchedule,
   maintenanceScheduleValidator
@@ -56,10 +56,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.maintenanceSchedules,
-    message: "Updated maintenance schedule"
-  });
+  return respond(args.request, result).redirect(
+    path.to.maintenanceSchedules,
+    "Updated maintenance schedule"
+  );
 }
 
 export default function EditMaintenanceScheduleRoute() {

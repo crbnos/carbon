@@ -14,7 +14,7 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { SubsidiaryCompanyForm, subsidiaryValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
 
@@ -23,10 +23,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.settings.subsidiary.create(input.data);
-  return redirectWithResult(args.request, result, {
-    to: path.to.companies,
-    message: "Created company"
-  });
+  return respond(args.request, result).redirect(
+    path.to.companies,
+    "Created company"
+  );
 }
 
 export default function NewSubsidiaryRoute() {

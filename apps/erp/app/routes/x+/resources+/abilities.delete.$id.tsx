@@ -11,7 +11,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getAbility } from "~/modules/resources";
 import { path } from "~/utils/path";
 
@@ -43,10 +43,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.ability.deactivate({
     id: input.params.id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.abilities,
-    message: "Successfully deactivated ability"
-  });
+  return respond(args.request, result).redirect(
+    path.to.abilities,
+    "Successfully deactivated ability"
+  );
 }
 
 export default function DeleteAbilityRoute() {

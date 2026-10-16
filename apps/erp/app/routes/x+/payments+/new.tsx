@@ -19,7 +19,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { getDefaultAccounts } from "~/modules/accounting";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getPaymentCurrencyConfiguration,
   PaymentForm,
@@ -169,17 +169,13 @@ export async function action(args: ActionFunctionArgs) {
     });
   }
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.paymentNew
-    });
+    return respond(args.request, result).redirect(path.to.paymentNew);
   }
   // The payment exists either way; a failed seed is applied by hand there.
   const { id, warning } = result.data;
-  return redirectWithResult(
-    args.request,
-    { error: warning ? { message: warning } : null },
-    { to: path.to.payment(id), message: "Payment created" }
-  );
+  return respond(args.request, {
+    error: warning ? { message: warning } : null
+  }).redirect(path.to.payment(id), "Payment created");
 }
 
 export default function NewPaymentRoute() {

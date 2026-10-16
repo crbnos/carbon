@@ -24,7 +24,7 @@ import { z } from "zod";
 import { Submit, Supplier } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { getFixedAsset } from "~/modules/accounting";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 const purchaseAssetValidator = z.object({
@@ -76,12 +76,12 @@ export async function action(args: ActionFunctionArgs) {
     fixedAssetId,
     supplierId: input.data.supplierId
   });
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.purchaseOrder(result.data.purchaseOrderId)
       : path.to.fixedAsset(fixedAssetId),
-    message: "Purchase order created"
-  });
+    "Purchase order created"
+  );
 }
 
 export default function PurchaseFixedAssetRoute() {

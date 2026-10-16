@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { leaseClassificationValidator } from "~/modules/purchasing";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -31,18 +31,18 @@ export async function action(args: ActionFunctionArgs) {
       leaseId,
       leaseLineId
     });
-    return redirectWithResult(args.request, result, {
+    return respond(args.request, result).redirect(
       to,
-      message: "Classification override removed"
-    });
+      "Classification override removed"
+    );
   }
   const result = await api.purchasing.leaseLine.overrideClassification({
     ...input.data,
     leaseId,
     leaseLineId
   });
-  return redirectWithResult(args.request, result, {
+  return respond(args.request, result).redirect(
     to,
-    message: `Classified as ${input.data.classification}`
-  });
+    `Classified as ${input.data.classification}`
+  );
 }

@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   InventoryCountForm,
   inventoryCountValidator
@@ -26,10 +26,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.inventory.inventoryCount.create(count);
   // An error is toasted by the form's fetcher.
   if (!result.data) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.inventoryCount(result.data.id),
-    message: "Inventory count created"
-  });
+  return respond(args.request, result).redirect(
+    path.to.inventoryCount(result.data.id),
+    "Inventory count created"
+  );
 }
 
 export default function NewInventoryCountRoute() {

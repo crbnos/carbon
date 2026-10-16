@@ -9,7 +9,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   changeNoticeValidator,
   getChangeNoticeTypesList
@@ -59,16 +59,13 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData && setCustomFields(input.formData)
   });
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.changeNotices
-    });
+    return respond(args.request, result).redirect(path.to.changeNotices);
   }
   const { id, warning } = result.data;
-  return redirectWithResult(
+  return respond(
     args.request,
-    warning ? { error: { message: warning } } : result,
-    { to: path.to.changeNoticeDetails(id) }
-  );
+    warning ? { error: { message: warning } } : result
+  ).redirect(path.to.changeNoticeDetails(id));
 }
 
 export default function ChangeNoticeNewRoute() {

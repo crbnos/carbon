@@ -24,7 +24,7 @@ import { z } from "zod";
 import { Customer, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { getFixedAsset } from "~/modules/accounting";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 const sellAssetValidator = z.object({
@@ -68,12 +68,12 @@ export async function action(args: ActionFunctionArgs) {
     fixedAssetId,
     customerId: input.data.customerId
   });
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.salesOrder(result.data.salesOrderId)
       : path.to.fixedAsset(fixedAssetId),
-    message: "Sales order created"
-  });
+    "Sales order created"
+  );
 }
 
 export default function SellFixedAssetRoute() {

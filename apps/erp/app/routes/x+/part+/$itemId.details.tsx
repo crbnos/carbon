@@ -15,7 +15,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
   getConfigurationParameters,
@@ -183,10 +183,9 @@ export async function action(args: ActionFunctionArgs) {
       itemId,
       customFields: setCustomFields(formData)
     });
-    return redirectWithResult(args.request, result, {
-      to: result.error ? path.to.part(itemId) : path.to.partDetails(itemId),
-      message: "Updated part manufacturing"
-    });
+    return respond(args.request, result)
+      .onError(path.to.part(itemId))
+      .redirect(path.to.partDetails(itemId), "Updated part manufacturing");
   }
 
   const validation = await validator(partValidator).validate(formData);
@@ -196,10 +195,10 @@ export async function action(args: ActionFunctionArgs) {
     id: itemId,
     customFields: setCustomFields(formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.part(itemId),
-    message: "Updated part"
-  });
+  return respond(args.request, result).redirect(
+    path.to.part(itemId),
+    "Updated part"
+  );
 }
 
 export default function PartDetailsRoute() {

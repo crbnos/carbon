@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { purchaseOrderFinalizeValidator } from "~/modules/purchasing";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -21,12 +21,12 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? path.to.purchaseOrder(orderId)
-      : (requestReferrer(args.request) ?? path.to.purchaseOrder(orderId)),
-    message: result.data?.needsApproval
-      ? "Purchase order submitted for approval"
-      : "Purchase order finalized"
-  });
+  return respond(args.request, result)
+    .onError(path.to.purchaseOrder(orderId))
+    .redirect(
+      requestReferrer(args.request) ?? path.to.purchaseOrder(orderId),
+      result.data?.needsApproval
+        ? "Purchase order submitted for approval"
+        : "Purchase order finalized"
+    );
 }

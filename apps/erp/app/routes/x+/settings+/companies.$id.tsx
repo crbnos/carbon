@@ -9,7 +9,7 @@ import { validator } from "@carbon/form";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   CompanyForm,
   getSubsidiary,
@@ -51,10 +51,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     id: input.params.id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.companies,
-    message: "Updated subsidiary"
-  });
+  return respond(args.request, result).redirect(
+    path.to.companies,
+    "Updated subsidiary"
+  );
 }
 
 export default function EditSubsidiaryRoute() {

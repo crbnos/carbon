@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { purchasingRfqFinalizeValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
@@ -17,10 +17,10 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.purchasing.rfq.finalize({ ...input.data, rfqId });
   const sent = result.data?.emailsSent ?? 0;
-  return redirectWithResult(args.request, result, {
-    to: path.to.purchasingRfqDetails(rfqId),
-    message: `Created ${result.data?.quotesCreated ?? 0} supplier quote(s)${
+  return respond(args.request, result).redirect(
+    path.to.purchasingRfqDetails(rfqId),
+    `Created ${result.data?.quotesCreated ?? 0} supplier quote(s)${
       sent > 0 ? ` and sent ${sent} email(s)` : ""
     }`
-  });
+  );
 }

@@ -44,7 +44,7 @@ import {
   AccountImportCsvErrors,
   AccountImportReview
 } from "~/modules/accounting/ui/ChartOfAccounts";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -146,10 +146,10 @@ export async function action({ request }: ActionFunctionArgs) {
     // Refused: stay on the page, files and picks kept; the applier toasts why.
     if (result.error) return { files, review: null, ...result };
     const { counts } = result.data;
-    return redirectWithResult(request, result, {
-      to: returnPath(new URL(request.url).searchParams),
-      message: `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
-    });
+    return respond(request, result).redirect(
+      returnPath(new URL(request.url).searchParams),
+      `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
+    );
   }
 
   try {

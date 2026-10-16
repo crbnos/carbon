@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getItemPlanning, itemPlanningValidator } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
@@ -102,12 +102,12 @@ export async function action(args: ActionFunctionArgs) {
       fieldErrors: { responsibleEmployee: result.error.message }
     });
   }
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? path.to.tool(itemId)
-      : path.to.toolPlanningLocation(itemId, input.data.locationId),
-    message: "Updated tool planning"
-  });
+  return respond(args.request, result)
+    .onError(path.to.tool(itemId))
+    .redirect(
+      path.to.toolPlanningLocation(itemId, input.data.locationId),
+      "Updated tool planning"
+    );
 }
 
 export default function ToolPlanningRoute() {

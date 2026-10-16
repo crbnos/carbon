@@ -13,7 +13,7 @@ import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getItemPlanning,
   getItemQuantities,
@@ -132,14 +132,14 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
     const { locationId } = validation.data;
-    return redirectWithResult(args.request, result, {
-      to: result.error
-        ? path.to.part(itemId)
-        : locationId
+    return respond(args.request, result)
+      .onError(path.to.part(itemId))
+      .redirect(
+        locationId
           ? path.to.partPlanningLocation(itemId, locationId)
           : path.to.partPlanning(itemId),
-      message: "Updated supersession"
-    });
+        "Updated supersession"
+      );
   }
 
   if (input.data.intent === "supersession-predecessor") {
@@ -157,10 +157,10 @@ export async function action(args: ActionFunctionArgs) {
         formId: validation.formId
       });
     }
-    return redirectWithResult(args.request, result, {
-      to: path.to.partPlanning(itemId),
-      message: "Added predecessor"
-    });
+    return respond(args.request, result).redirect(
+      path.to.partPlanning(itemId),
+      "Added predecessor"
+    );
   }
 
   const validation = await validator(itemPlanningValidator).validate(formData);
@@ -176,12 +176,12 @@ export async function action(args: ActionFunctionArgs) {
       formId: validation.formId
     });
   }
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? path.to.part(itemId)
-      : path.to.partPlanningLocation(itemId, validation.data.locationId),
-    message: "Updated part planning"
-  });
+  return respond(args.request, result)
+    .onError(path.to.part(itemId))
+    .redirect(
+      path.to.partPlanningLocation(itemId, validation.data.locationId),
+      "Updated part planning"
+    );
 }
 
 export default function PartPlanningRoute() {

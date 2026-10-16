@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -13,8 +13,8 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = input.params;
   const api = await carbon(args.request);
   const result = await api.quality.issue.close({ id });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.issueDetails(id),
-    message: "NCR closed"
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.issueDetails(id),
+    "NCR closed"
+  );
 }

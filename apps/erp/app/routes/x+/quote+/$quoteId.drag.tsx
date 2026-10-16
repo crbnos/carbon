@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { attachQuoteFile } from "~/modules/sales/sales.server";
 import { path } from "~/utils/path";
 
@@ -28,10 +28,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   // Nothing reads a successful drop; a failure is shown on the quote.
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.quote(quoteId),
-      message: ""
-    });
+    return respond(args.request, result).redirect(path.to.quote(quoteId), "");
   }
   return result;
 }

@@ -15,7 +15,7 @@ import type {
   DimensionWithValues,
   JournalLineDimensionValue
 } from "~/modules/accounting/ui/JournalEntries/types";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The lines ride as one JSON field; the operation checks each of them.
@@ -46,12 +46,10 @@ export async function action(args: ActionFunctionArgs) {
     lines: lines as never,
     post: intent === "post"
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.journalEntryDetails(journalEntryId),
-    message: result.data?.posted
-      ? "Journal entry posted"
-      : "Journal entry saved"
-  });
+  return respond(args.request, result).redirect(
+    path.to.journalEntryDetails(journalEntryId),
+    result.data?.posted ? "Journal entry posted" : "Journal entry saved"
+  );
 }
 
 export default function JournalEntryDetailsRoute() {

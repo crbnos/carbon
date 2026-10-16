@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { SalesRFQStatusType } from "~/modules/sales";
 import { salesRfqValidator } from "~/modules/sales";
 import { SalesRFQForm } from "~/modules/sales/ui/SalesRFQ";
@@ -34,10 +34,7 @@ export async function action(args: ActionFunctionArgs) {
       (formData.get("extractedStoragePath") as string | null) || undefined
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.salesRfqs,
-      message: ""
-    });
+    return respond(args.request, result).redirect(path.to.salesRfqs, "");
   }
   throw redirect(path.to.salesRfq(result.data.id));
 }

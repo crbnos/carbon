@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getJobOperations,
   getProductionQuantity,
@@ -52,13 +52,12 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     id: input.params.id
   });
-  return redirectWithResult(args.request, result, {
-    // A failure keeps the drawer open.
-    to: result.error
-      ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
-      : `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
-    message: "Updated production quantity"
-  });
+  return respond(args.request, result)
+    .onError(`${new URL(args.request.url).pathname}?${getParams(args.request)}`)
+    .redirect(
+      `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+      "Updated production quantity"
+    );
 }
 
 export default function EditProductionQuantityRoute() {

@@ -32,7 +32,7 @@ import {
 } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
@@ -161,10 +161,10 @@ export async function action(args: ActionFunctionArgs) {
     id: jobId,
     customFields: setCustomFields(input.formData ?? new FormData())
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.job(jobId),
-    message: "Updated job"
-  });
+  return respond(args.request, result).redirect(
+    path.to.job(jobId),
+    "Updated job"
+  );
 }
 
 export default function JobDetailsRoute() {

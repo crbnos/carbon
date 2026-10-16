@@ -7,7 +7,7 @@ import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The post modal's form: `acknowledged` is set when the user accepts the
@@ -36,10 +36,7 @@ export async function action(args: ActionFunctionArgs) {
   const to = path.to.shipmentDetails(shipmentId);
   // Posted with expired batches, as the company's policy allows.
   if (result.data.warning) {
-    return redirectWithResult(args.request, result, {
-      to,
-      message: result.data.warning
-    });
+    return respond(args.request, result).redirect(to, result.data.warning);
   }
   throw redirect(to);
 }

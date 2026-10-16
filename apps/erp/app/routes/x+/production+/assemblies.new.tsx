@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { assemblyInstructionFromItemValidator } from "~/modules/production";
 import AssemblyInstructionForm from "~/modules/production/ui/Assemblies/AssemblyInstructionForm";
 import { path } from "~/utils/path";
@@ -38,12 +38,12 @@ export async function action(args: ActionFunctionArgs) {
   // A model-backed instruction generates its steps on open: the explorer
   // sees ?autogen=1 and submits Generate once. A refusal stays on the form.
   const url = new URL(args.request.url);
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? `${path.to.assemblyInstruction(result.data.id)}${result.data.autogen ? "?autogen=1" : ""}`
       : `${url.pathname}${url.search}`,
-    message: "Assembly instruction created"
-  });
+    "Assembly instruction created"
+  );
 }
 
 export default function NewAssemblyInstructionRoute() {

@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   CreateSupplierModal,
   createSupplierAccountValidator
@@ -27,13 +27,12 @@ export async function action(args: ActionFunctionArgs) {
   const supplierRedirect = new URL(args.request.url).searchParams.get(
     "supplier"
   );
-  return redirectWithResult(args.request, result, {
-    to:
-      supplierRedirect && !result.error
-        ? path.to.supplierContacts(supplierRedirect)
-        : path.to.supplierAccounts,
-    message: "Supplier invited"
-  });
+  return respond(args.request, result).redirect(
+    supplierRedirect && !result.error
+      ? path.to.supplierContacts(supplierRedirect)
+      : path.to.supplierAccounts,
+    "Supplier invited"
+  );
 }
 
 export default function () {

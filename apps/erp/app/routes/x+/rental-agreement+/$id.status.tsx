@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { setRentalAgreementStatus } from "~/modules/sales/sales.server";
 import { path } from "~/utils/path";
 
@@ -18,14 +18,12 @@ export async function action(args: ActionFunctionArgs) {
   const { intent } = input.data;
   const api = await carbon(args.request);
   const result = await api.sales.rentalAgreement.setStatus({ id, intent });
-  return redirectWithResult(args.request, result, {
-    to:
-      result.error?.category === "notFound"
-        ? path.to.rentalAgreements
-        : path.to.rentalAgreementDetails(id),
-    message:
-      intent === "close"
-        ? "Rental agreement closed"
-        : "Rental agreement cancelled"
-  });
+  return respond(args.request, result).redirect(
+    result.error?.category === "notFound"
+      ? path.to.rentalAgreements
+      : path.to.rentalAgreementDetails(id),
+    intent === "close"
+      ? "Rental agreement closed"
+      : "Rental agreement cancelled"
+  );
 }

@@ -14,7 +14,7 @@ import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
   getFixedAssets
 } from "~/modules/accounting";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { jobValidator } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared";
@@ -85,7 +85,7 @@ export async function action(args: ActionFunctionArgs) {
     return validationError({ fieldErrors: { itemId: result.error.message } });
   }
   if (result.error) {
-    return redirectWithResult(args.request, result, { to: path.to.jobs });
+    return respond(args.request, result).redirect(path.to.jobs);
   }
   throw redirect(path.to.job(result.data.jobId));
 }

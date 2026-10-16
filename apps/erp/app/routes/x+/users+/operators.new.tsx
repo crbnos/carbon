@@ -23,7 +23,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useNavigate } from "react-router";
 import { Input, Location, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { createOperatorValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
@@ -40,7 +40,7 @@ export async function action(args: ActionFunctionArgs) {
   // The PIN is generated on the server and stored only as a hash; the result
   // carries it so the modal can show it to the admin exactly once.
   if (result.error) {
-    return redirectWithResult(args.request, result, { to: path.to.operators });
+    return respond(args.request, result).redirect(path.to.operators);
   }
   return result;
 }

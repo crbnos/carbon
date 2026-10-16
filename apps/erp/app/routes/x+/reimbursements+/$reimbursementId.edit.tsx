@@ -12,7 +12,7 @@ import { data, useParams } from "react-router";
 import type { ClientDocumentLine } from "~/components/DocumentLineEditor";
 import { useRouteData } from "~/hooks";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   isReimbursementLocked,
   ReimbursementEditForm,
@@ -105,10 +105,10 @@ export async function action(args: ActionFunctionArgs) {
     : await api.invoicing.reimbursement.update(reimbursement);
   // A refusal keeps the editor and what was typed in it.
   if (result.error) return stay(args.request, result.error.message);
-  return redirectWithResult(args.request, result, {
-    to: path.to.reimbursement(reimbursementId),
-    message: willPost ? "Reimbursement posted" : "Reimbursement updated"
-  });
+  return respond(args.request, result).redirect(
+    path.to.reimbursement(reimbursementId),
+    willPost ? "Reimbursement posted" : "Reimbursement updated"
+  );
 }
 
 async function stay(request: Request, message: string) {

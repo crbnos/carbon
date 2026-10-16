@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { getWorkCenterCapitalCost } from "~/modules/accounting";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getWorkCenter,
   WorkCenterForm,
@@ -61,10 +61,10 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.id,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.workCenters,
-    message: "Updated work center"
-  });
+  return respond(args.request, result).redirect(
+    path.to.workCenters,
+    "Updated work center"
+  );
 }
 
 export default function WorkCenterRoute() {

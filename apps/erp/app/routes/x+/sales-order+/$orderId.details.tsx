@@ -15,7 +15,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
 import {
   getSalesOrder,
@@ -96,10 +96,10 @@ export async function action(args: ActionFunctionArgs) {
     id: orderId,
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.salesOrder(orderId),
-    message: "Updated order"
-  });
+  return respond(args.request, result).redirect(
+    path.to.salesOrder(orderId),
+    "Updated order"
+  );
 }
 
 export default function SalesOrderDetailsRoute() {

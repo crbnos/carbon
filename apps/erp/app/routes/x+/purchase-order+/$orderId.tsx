@@ -21,7 +21,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
@@ -84,10 +84,10 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.purchaseOrder(orderId),
-    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
-  });
+  return respond(args.request, result).redirect(
+    path.to.purchaseOrder(orderId),
+    `Approval request ${input.data.decision.toLowerCase()} successfully`
+  );
 }
 
 const toAttachments = (docs: FileObject[], folder: string) =>

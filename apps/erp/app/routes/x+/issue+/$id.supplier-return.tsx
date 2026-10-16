@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -21,17 +21,15 @@ export async function action(args: ActionFunctionArgs) {
     supplierId: input.data.supplierId
   });
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.issue(id)
-    });
+    return respond(args.request, result).redirect(path.to.issue(id));
   }
   const { created, purchaseReturnOrderId } = result.data;
-  return redirectWithResult(args.request, result, {
-    to: purchaseReturnOrderId
+  return respond(args.request, result).redirect(
+    purchaseReturnOrderId
       ? path.to.purchaseReturnOrder(purchaseReturnOrderId)
       : path.to.issue(id),
-    message: created
+    created
       ? "Supplier return drafted"
       : "Every Return to Supplier quantity is already covered by a linked return"
-  });
+  );
 }

@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { uncompleteTrainingAssignment } from "~/modules/resources/resources.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -18,10 +18,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.resources.trainingAssignment.uncomplete(input.data);
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.trainingAssignments,
-    message: "Completion removed"
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.trainingAssignments,
+    "Completion removed"
+  );
 }
 
 export async function loader() {

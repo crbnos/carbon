@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { maintenanceScheduleValidator } from "~/modules/resources";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -32,13 +32,15 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.resources.maintenanceSchedule.create(input.data);
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? (requestReferrer(args.request) ??
-        `${path.to.maintenanceSchedules}?${getParams(args.request)}`)
-      : `${path.to.maintenanceSchedules}?${getParams(args.request)}`,
-    message: "Maintenance schedule created"
-  });
+  return respond(args.request, result)
+    .onError(
+      requestReferrer(args.request) ??
+        `${path.to.maintenanceSchedules}?${getParams(args.request)}`
+    )
+    .redirect(
+      `${path.to.maintenanceSchedules}?${getParams(args.request)}`,
+      "Maintenance schedule created"
+    );
 }
 
 export default function NewMaintenanceScheduleRoute() {

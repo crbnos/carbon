@@ -7,7 +7,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { partValidator } from "~/modules/items";
 import { PartForm } from "~/modules/items/ui/Parts";
 import { setCustomFields } from "~/utils/form";
@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
   if (result.error) {
-    return redirectWithResult(args.request, result, { to: path.to.parts });
+    return respond(args.request, result).redirect(path.to.parts);
   }
   throw redirect(path.to.part(result.data.id));
 }

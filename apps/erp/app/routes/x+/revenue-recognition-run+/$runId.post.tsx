@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -13,8 +13,8 @@ export async function action(args: ActionFunctionArgs) {
   const { runId } = input.params;
   const api = await carbon(args.request);
   const result = await api.accounting.revenueRecognitionRun.post({ runId });
-  return redirectWithResult(args.request, result, {
-    to: path.to.revenueRecognitionRun(runId),
-    message: "Revenue recognition run posted"
-  });
+  return respond(args.request, result).redirect(
+    path.to.revenueRecognitionRun(runId),
+    "Revenue recognition run posted"
+  );
 }

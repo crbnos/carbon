@@ -7,7 +7,7 @@ import { validator } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   EmployeeAbilityForm,
   employeeAbilityCellValidator
@@ -35,10 +35,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.personAbilities(input.params.personId),
-    message: "Added ability"
-  });
+  return respond(args.request, result).redirect(
+    path.to.personAbilities(input.params.personId),
+    "Added ability"
+  );
 }
 
 export default function NewPersonAbilityRoute() {

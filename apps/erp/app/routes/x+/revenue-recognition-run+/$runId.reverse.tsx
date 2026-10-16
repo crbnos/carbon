@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -15,12 +15,12 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.accounting.revenueRecognitionRun.reverse({ runId });
   const run = result.data;
   // A revenue run that held only rental rows gives them to the lease run.
-  return redirectWithResult(args.request, result, {
-    to: run?.deleted ? path.to.leaseRuns : path.to.revenueRecognitionRun(runId),
-    message: !run
+  return respond(args.request, result).redirect(
+    run?.deleted ? path.to.leaseRuns : path.to.revenueRecognitionRun(runId),
+    !run
       ? undefined
       : run.deleted
         ? `Reversed ${run.readableId}. Its rows now belong to the next lease run.`
         : `Reversed ${run.readableId}. It is a draft again.`
-  });
+  );
 }

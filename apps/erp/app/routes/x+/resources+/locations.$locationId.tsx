@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getLocation,
   LocationForm,
@@ -53,10 +53,10 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.locationId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.locations,
-    message: "Location updated"
-  });
+  return respond(args.request, result).redirect(
+    path.to.locations,
+    "Location updated"
+  );
 }
 
 export default function LocationRoute() {

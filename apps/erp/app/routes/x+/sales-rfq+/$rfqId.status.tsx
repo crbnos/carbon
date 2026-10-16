@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { setSalesRfqStatus } from "~/modules/sales/sales.server";
 import { path } from "~/utils/path";
 
@@ -20,8 +20,8 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     id: input.params.rfqId
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.salesRfq(input.params.rfqId),
-    message: "Updated RFQ status"
-  });
+  return respond(args.request, result).redirect(
+    path.to.salesRfq(input.params.rfqId),
+    "Updated RFQ status"
+  );
 }

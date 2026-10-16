@@ -62,7 +62,7 @@ import {
   LOCK_PERIOD_TASK_NAME
 } from "~/modules/accounting";
 import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Periods";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -150,10 +150,10 @@ export async function action(args: ActionFunctionArgs) {
     case "close": {
       const result = await api.accounting.period.close({ periodId });
       if (result.error) return result;
-      return redirectWithResult(args.request, result, {
-        to: path.to.accountingPeriods,
-        message: "Period closed"
-      });
+      return respond(args.request, result).redirect(
+        path.to.accountingPeriods,
+        "Period closed"
+      );
     }
     default: {
       const result = await api.accounting.period.createRun({
@@ -162,12 +162,12 @@ export async function action(args: ActionFunctionArgs) {
       });
       if (result.error) return result;
       const isDepreciation = result.data.run === "Depreciation";
-      return redirectWithResult(args.request, result, {
-        to: isDepreciation
+      return respond(args.request, result).redirect(
+        isDepreciation
           ? path.to.depreciationRun(result.data.id)
           : path.to.revenueRecognitionRun(result.data.id),
-        message: isDepreciation ? "Depreciation run created" : "Run created"
-      });
+        isDepreciation ? "Depreciation run created" : "Run created"
+      );
     }
   }
 }

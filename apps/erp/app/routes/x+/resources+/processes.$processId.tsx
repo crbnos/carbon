@@ -11,7 +11,7 @@ import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   batchRuleInitialValues,
   getProcess,
@@ -56,7 +56,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return redirectWithResult(args.request, result, { to: path.to.processes });
+  return respond(args.request, result).redirect(path.to.processes);
 }
 
 export default function ProcessRoute() {

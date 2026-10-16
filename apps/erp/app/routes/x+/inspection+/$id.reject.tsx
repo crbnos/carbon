@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // Opening an issue is optional: the inspector may reject without one.
@@ -26,13 +26,13 @@ export async function action(args: ActionFunctionArgs) {
     createNcr: input.data.createNcr !== "false"
   });
   if (result.error || !result.data.issueId) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.inspection(id),
-      message: "Lot rejected"
-    });
+    return respond(args.request, result).redirect(
+      path.to.inspection(id),
+      "Lot rejected"
+    );
   }
-  return redirectWithResult(args.request, result, {
-    to: path.to.issue(result.data.issueId),
-    message: "Lot rejected — NCR opened"
-  });
+  return respond(args.request, result).redirect(
+    path.to.issue(result.data.issueId),
+    "Lot rejected — NCR opened"
+  );
 }

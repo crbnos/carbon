@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { leaseTerminateValidator } from "~/modules/purchasing";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -20,10 +20,7 @@ export async function action(args: ActionFunctionArgs) {
     leaseId: id,
     leaseLineId: lineId
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? (requestReferrer(args.request) ?? path.to.leaseDetails(id))
-      : path.to.leaseLine(id, lineId),
-    message: "Asset terminated"
-  });
+  return respond(args.request, result)
+    .onError(requestReferrer(args.request) ?? path.to.leaseDetails(id))
+    .redirect(path.to.leaseLine(id, lineId), "Asset terminated");
 }

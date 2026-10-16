@@ -7,7 +7,7 @@ import { redirect, round, tiptapToText } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { customerContractValidator } from "~/modules/sales";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
@@ -33,13 +33,12 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to:
-        result.error?.category === "notFound"
-          ? path.to.contracts
-          : path.to.contractSetup(id, "details"),
-      message: ""
-    });
+    return respond(args.request, result).redirect(
+      result.error?.category === "notFound"
+        ? path.to.contracts
+        : path.to.contractSetup(id, "details"),
+      ""
+    );
   }
   throw redirect(path.to.contractSetup(id, "products"));
 }

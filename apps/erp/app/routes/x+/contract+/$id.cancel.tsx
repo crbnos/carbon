@@ -6,7 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { customerContractCancelValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -54,10 +54,10 @@ export async function action(args: ActionFunctionArgs) {
     customerContractId: id
   });
   // The memo is linked from the credit rows of the Invoices section.
-  return redirectWithResult(args.request, result, {
-    to: path.to.contractDetails(id),
-    message: result.data?.memoReadableId
+  return respond(args.request, result).redirect(
+    path.to.contractDetails(id),
+    result.data?.memoReadableId
       ? `Cancelled. Credit memo ${result.data.memoReadableId} drafted`
       : "Contract cancelled"
-  });
+  );
 }

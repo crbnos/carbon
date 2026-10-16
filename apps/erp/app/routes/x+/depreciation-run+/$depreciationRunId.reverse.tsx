@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -17,10 +17,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.accounting.depreciationRun.reverse({
     depreciationRunId
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.depreciationRun(depreciationRunId),
-    message: result.data
+  return respond(args.request, result).redirect(
+    path.to.depreciationRun(depreciationRunId),
+    result.data
       ? `Reversed ${result.data.readableId}. It is a draft again.`
       : undefined
-  });
+  );
 }

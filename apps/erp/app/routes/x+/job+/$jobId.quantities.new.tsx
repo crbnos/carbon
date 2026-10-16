@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getJobOperations,
   productionQuantityValidator
@@ -41,13 +41,12 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.production.quantity.create(input.data);
-  return redirectWithResult(args.request, result, {
-    // A failure keeps the drawer open.
-    to: result.error
-      ? `${new URL(args.request.url).pathname}?${getParams(args.request)}`
-      : `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
-    message: "Production quantity created"
-  });
+  return respond(args.request, result)
+    .onError(`${new URL(args.request.url).pathname}?${getParams(args.request)}`)
+    .redirect(
+      `${path.to.jobProductionQuantities(input.params.jobId)}?${getParams(args.request)}`,
+      "Production quantity created"
+    );
 }
 
 export default function NewProductionQuantityRoute() {

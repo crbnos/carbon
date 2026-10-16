@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { reimbursementPaymentValidator } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
@@ -26,14 +26,12 @@ export async function action(args: ActionFunctionArgs) {
   // A payout that was created but not applied or posted is finished on the
   // payment itself.
   if (result.data?.warning) {
-    return redirectWithResult(
-      args.request,
-      { error: { message: result.data.warning } },
-      { to: path.to.payment(result.data.paymentId) }
-    );
+    return respond(args.request, {
+      error: { message: result.data.warning }
+    }).redirect(path.to.payment(result.data.paymentId));
   }
-  return redirectWithResult(args.request, result, {
-    to: path.to.reimbursement(reimbursementId),
-    message: "Reimbursement paid"
-  });
+  return respond(args.request, result).redirect(
+    path.to.reimbursement(reimbursementId),
+    "Reimbursement paid"
+  );
 }

@@ -6,7 +6,7 @@ import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The supplier header posts an intent, or the approval dialog's decision.
@@ -29,24 +29,21 @@ export async function action(args: ActionFunctionArgs) {
       const result = await api.purchasing.supplier.requestApproval({
         supplierId
       });
-      return redirectWithResult(args.request, result, {
+      return respond(args.request, result).redirect(
         to,
-        message: "Approval request submitted"
-      });
+        "Approval request submitted"
+      );
     }
     const result = await api.purchasing.supplier.deactivate({ supplierId });
-    return redirectWithResult(args.request, result, {
-      to,
-      message: "Supplier deactivated"
-    });
+    return respond(args.request, result).redirect(to, "Supplier deactivated");
   }
 
   const result = await api.purchasing.supplier.decideApproval({
     ...input.data,
     supplierId
   });
-  return redirectWithResult(args.request, result, {
+  return respond(args.request, result).redirect(
     to,
-    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
-  });
+    `Approval request ${input.data.decision.toLowerCase()} successfully`
+  );
 }

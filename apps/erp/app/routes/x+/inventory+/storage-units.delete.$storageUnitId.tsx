@@ -26,7 +26,7 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { ConfirmDelete } from "~/components/Modals";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getStorageUnit } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
 
@@ -78,12 +78,12 @@ export async function action(args: ActionFunctionArgs) {
     storageUnitId: input.params.storageUnitId,
     cascade
   });
-  return redirectWithResult(args.request, result, {
-    to: `${path.to.storageUnits}?${getParams(args.request)}`,
-    message: cascade
+  return respond(args.request, result).redirect(
+    `${path.to.storageUnits}?${getParams(args.request)}`,
+    cascade
       ? "Successfully deleted storage unit and nested units"
       : "Successfully deleted storage unit"
-  });
+  );
 }
 
 export default function DeleteStorageUnitRoute() {

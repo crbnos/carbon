@@ -9,7 +9,7 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   EmployeeTypeForm,
   employeeTypeValidator,
@@ -60,10 +60,9 @@ export async function action(args: ActionFunctionArgs) {
     name,
     permissions: JSON.parse(permissions)
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error ? path.to.employeeType(id) : path.to.employeeTypes,
-    message: "Updated employee type"
-  });
+  return respond(args.request, result)
+    .onError(path.to.employeeType(id))
+    .redirect(path.to.employeeTypes, "Updated employee type");
 }
 
 export default function EditEmployeeTypesRoute() {

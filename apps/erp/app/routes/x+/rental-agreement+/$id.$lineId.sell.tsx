@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -16,9 +16,8 @@ export async function action(args: ActionFunctionArgs) {
     rentalAgreementId: id,
     rentalAgreementLineId: lineId
   });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
-    message:
-      "Purchase option invoice drafted. Posting it transfers the unit to the customer."
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
+    "Purchase option invoice drafted. Posting it transfers the unit to the customer."
+  );
 }

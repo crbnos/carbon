@@ -13,7 +13,7 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getRevenueRecognitionRun } from "~/modules/accounting";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -46,12 +46,12 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.accounting.revenueRecognitionRun.delete({ runId });
   // Back to the list of the run's own type.
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? RUN_PAGES[result.data.type].listPath
       : path.to.revenueRecognitionRun(runId),
-    message: "Successfully deleted the run"
-  });
+    "Successfully deleted the run"
+  );
 }
 
 export default function DeleteRevenueRecognitionRunRoute() {

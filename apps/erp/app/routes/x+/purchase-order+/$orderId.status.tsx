@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 // Reopen to Draft (the order page) or Planned (the planning pages), optionally
@@ -28,10 +28,10 @@ export async function action(args: ActionFunctionArgs) {
     const result = await api.purchasing.purchaseOrder.close({
       purchaseOrderId: orderId
     });
-    return redirectWithResult(args.request, result, {
+    return respond(args.request, result).redirect(
       to,
-      message: "Updated purchasing order status"
-    });
+      "Updated purchasing order status"
+    );
   }
 
   const result = await api.purchasing.purchaseOrder.reopen({
@@ -39,10 +39,10 @@ export async function action(args: ActionFunctionArgs) {
     status,
     createRevision: createRevision === "true"
   });
-  return redirectWithResult(args.request, result, {
+  return respond(args.request, result).redirect(
     to,
-    message: result.data?.revision
+    result.data?.revision
       ? "Created a new purchase order revision"
       : "Updated purchasing order status"
-  });
+  );
 }

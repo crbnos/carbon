@@ -12,7 +12,7 @@ import { validator } from "@carbon/form";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 import { getCompanyTimeZone } from "../shared/timezone.server";
@@ -79,10 +79,10 @@ export async function createPeriodRun(args: ActionFunctionArgs, type: RunType) {
     type,
     periodEnd: input.data.periodEnd || undefined
   });
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.revenueRecognitionRun(result.data.id)
       : RUN_PAGES[type].listPath,
-    message: `${runLabelSentence(type)} created`
-  });
+    `${runLabelSentence(type)} created`
+  );
 }

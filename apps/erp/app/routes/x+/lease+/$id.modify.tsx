@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { leaseModifyValidator } from "~/modules/purchasing";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -19,10 +19,7 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     leaseId: id
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? (requestReferrer(args.request) ?? path.to.leaseDetails(id))
-      : path.to.leaseDetails(id),
-    message: "Lease modified"
-  });
+  return respond(args.request, result)
+    .onError(requestReferrer(args.request) ?? path.to.leaseDetails(id))
+    .redirect(path.to.leaseDetails(id), "Lease modified");
 }

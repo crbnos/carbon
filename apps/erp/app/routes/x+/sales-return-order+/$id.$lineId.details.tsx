@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getReturnReasonsList,
   getSalesReturnOrderLine,
@@ -139,7 +139,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   const to = path.to.salesReturnOrderLine(orderId, lineId);
   if (!result.data) {
-    return redirectWithResult(args.request, result, { to, message: "" });
+    return respond(args.request, result).redirect(to, "");
   }
   throw redirect(to);
 }

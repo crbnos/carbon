@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -14,7 +14,5 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.invoicing.salesInvoice.delete({
     invoiceId: input.params.invoiceId
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.invoicingSales
-  });
+  return respond(args.request, result).redirect(path.to.invoicingSales);
 }

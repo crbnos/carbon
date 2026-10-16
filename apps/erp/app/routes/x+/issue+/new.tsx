@@ -10,7 +10,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getIssueTypesList,
   getIssueWorkflowsList,
@@ -60,17 +60,13 @@ export async function action(args: ActionFunctionArgs) {
     changeOrderId
   });
   if (result.error) {
-    return redirectWithResult(args.request, result, { to: path.to.issues });
+    return respond(args.request, result).redirect(path.to.issues);
   }
   const { id, warning } = result.data;
-  return redirectWithResult(
-    args.request,
-    { error: warning ? { message: warning } : null },
-    {
-      to: changeOrderId
-        ? path.to.changeNotice(changeOrderId)
-        : path.to.issue(id)
-    }
+  return respond(args.request, {
+    error: warning ? { message: warning } : null
+  }).redirect(
+    changeOrderId ? path.to.changeNotice(changeOrderId) : path.to.issue(id)
   );
 }
 

@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { pickingListValidator } from "~/modules/inventory/inventory.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -23,8 +23,8 @@ export async function action(args: ActionFunctionArgs) {
     ...fields,
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.pickingList(pickingListId),
-    message: "Updated picking list"
-  });
+  return respond(args.request, result).redirect(
+    path.to.pickingList(pickingListId),
+    "Updated picking list"
+  );
 }

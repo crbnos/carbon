@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -18,9 +18,8 @@ export async function action(args: ActionFunctionArgs) {
     dispatchId,
     maintenanceDispatchItemId: itemId
   });
-  return redirectWithResult(args.request, result, {
-    to:
-      requestReferrer(args.request) ?? path.to.maintenanceDispatch(dispatchId),
-    message: "Item removed and returned to inventory"
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.maintenanceDispatch(dispatchId),
+    "Item removed and returned to inventory"
+  );
 }

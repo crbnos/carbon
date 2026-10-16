@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // Action-only route: the delete confirmation modal posts here.
@@ -16,12 +16,12 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.invoicing.memo.delete({ memoId });
   // Back to the memo's own list: supplier memos are Supplier Credits (AP),
   // customer memos Credit Memos (AR).
-  return redirectWithResult(args.request, result, {
-    to: !result.data
+  return respond(args.request, result).redirect(
+    !result.data
       ? path.to.memo(memoId)
       : result.data.party === "supplier"
         ? path.to.supplierCredits
         : path.to.creditMemos,
-    message: "Successfully deleted memo"
-  });
+    "Successfully deleted memo"
+  );
 }

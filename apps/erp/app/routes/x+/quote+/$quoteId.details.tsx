@@ -15,7 +15,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type {
   Opportunity,
   Quotation,
@@ -72,10 +72,10 @@ export async function action(args: ActionFunctionArgs) {
     id: quoteId,
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.quote(quoteId),
-    message: "Updated quote"
-  });
+  return respond(args.request, result).redirect(
+    path.to.quote(quoteId),
+    "Updated quote"
+  );
 }
 
 export default function QuoteDetailsRoute() {

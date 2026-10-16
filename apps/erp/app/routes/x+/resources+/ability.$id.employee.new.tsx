@@ -7,7 +7,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Ability } from "~/modules/resources";
 import {
   EmployeeAbilityForm,
@@ -27,10 +27,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The drawer posts through a fetcher, which toasts a refusal.
   if (result.error) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.ability(input.params.id),
-    message: "Added employee to ability"
-  });
+  return respond(args.request, result).redirect(
+    path.to.ability(input.params.id),
+    "Added employee to ability"
+  );
 }
 
 export default function NewEmployeeAbilityRoute() {

@@ -11,7 +11,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   customerContractValidator,
   getCustomerContractStatuses
@@ -68,10 +68,7 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.contracts,
-      message: ""
-    });
+    return respond(args.request, result).redirect(path.to.contracts, "");
   }
   throw redirect(path.to.contractSetup(result.data.id, "products"));
 }

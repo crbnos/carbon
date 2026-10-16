@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { changeNoticeStatusValidator } from "~/modules/items/items.models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -19,10 +19,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     id
   });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.changeNoticeDetails(id),
-    message: result.data?.approvalRequested
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.changeNoticeDetails(id),
+    result.data?.approvalRequested
       ? "Submitted for approval"
       : "Updated change notice status"
-  });
+  );
 }

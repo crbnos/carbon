@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -13,8 +13,8 @@ export async function action(args: ActionFunctionArgs) {
   const id = input.params.id;
   const api = await carbon(args.request);
   const result = await api.invoicing.charge.void({ chargeId: id });
-  return redirectWithResult(args.request, result, {
-    to: path.to.charge(id),
-    message: "Charge voided"
-  });
+  return respond(args.request, result).redirect(
+    path.to.charge(id),
+    "Charge voided"
+  );
 }

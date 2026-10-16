@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   CreateEmployeeModal,
   createEmployeeValidator,
@@ -53,12 +53,12 @@ export async function action(args: ActionFunctionArgs) {
   if (result.error?.category === "rule") {
     return validationError({ fieldErrors: { email: result.error.message } });
   }
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.personJob(result.data.userId)
       : path.to.employeeAccounts,
-    message: "Successfully invited employee"
-  });
+    "Successfully invited employee"
+  );
 }
 
 export default function () {

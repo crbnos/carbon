@@ -15,7 +15,7 @@ import {
   getFixedAsset
 } from "~/modules/accounting";
 import { FixedAssetDisposalForm } from "~/modules/accounting/ui/FixedAssets";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -65,10 +65,10 @@ export async function action(args: ActionFunctionArgs) {
     fixedAssetId,
     disposalDate: input.data.disposalDate
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.fixedAsset(fixedAssetId),
-    message: "Asset disposed successfully"
-  });
+  return respond(args.request, result).redirect(
+    path.to.fixedAsset(fixedAssetId),
+    "Asset disposed successfully"
+  );
 }
 
 export default function DisposeFixedAssetRoute() {

@@ -9,7 +9,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { ApiKey } from "~/modules/settings";
 import { getParams, path } from "~/utils/path";
 
@@ -18,10 +18,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.settings.apiKey.delete({ id: input.params.id });
-  return redirectWithResult(args.request, result, {
-    to: `${path.to.apiKeys}?${getParams(args.request)}`,
-    message: "Successfully deleted API key"
-  });
+  return respond(args.request, result).redirect(
+    `${path.to.apiKeys}?${getParams(args.request)}`,
+    "Successfully deleted API key"
+  );
 }
 
 export default function DeleteApiKeyRoute() {

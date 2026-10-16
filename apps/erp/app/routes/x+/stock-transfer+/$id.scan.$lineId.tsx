@@ -14,7 +14,7 @@ import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
 import {
   getAvailableTrackedEntities,
@@ -100,10 +100,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   // An error is toasted and the picker stays open.
   if (!result.data) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.stockTransfer(result.data.stockTransferId),
-    message: "Tracked entity scanned and transferred"
-  });
+  return respond(args.request, result).redirect(
+    path.to.stockTransfer(result.data.stockTransferId),
+    "Tracked entity scanned and transferred"
+  );
 }
 
 export default function StockTransferScan() {

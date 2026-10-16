@@ -23,18 +23,32 @@ export async function carbon(request: Request): Promise<Api<Router>> {
 }
 
 /**
- * For a route whose form NAVIGATES (no fetcher, so no `useAction` to toast a
- * returned result): redirect, with the result's error or `message` as the
- * flash. A form submitted through a fetcher returns the result instead.
+ * The response to a form that NAVIGATES (no fetcher, so no `useAction` to
+ * toast the result): `respond(request, result).redirect(to, message)`
+ * redirects with the result's error, or with `message`, as the flash. A form
+ * submitted through a fetcher returns the result instead.
  */
-export async function redirectWithResult(
+export function respond(
   request: Request,
-  result: { error: { message: string } | null },
-  { to, message }: { to: string; message?: string }
-): Promise<never> {
-  if (result.error) {
-    throw redirect(to, await flash(request, error(null, result.error.message)));
-  }
-  if (message) throw redirect(to, await flash(request, success(message)));
-  throw redirect(to);
+  result: { error: { message: string } | null }
+) {
+  let errorTo: string | undefined;
+  const response = {
+    /** Where a refused call goes instead of `redirect`'s destination. */
+    onError(to: string) {
+      errorTo = to;
+      return response;
+    },
+    async redirect(to: string, message?: string): Promise<never> {
+      if (result.error) {
+        throw redirect(
+          errorTo ?? to,
+          await flash(request, error(null, result.error.message))
+        );
+      }
+      if (message) throw redirect(to, await flash(request, success(message)));
+      throw redirect(to);
+    }
+  };
+  return response;
 }

@@ -32,7 +32,7 @@ import { Form, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 import { SettingsPage } from "~/components/SettingsPage";
 import { usePermissions, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -114,18 +114,17 @@ export async function action(args: ActionFunctionArgs) {
   if (input.data.intent === "billing-portal") {
     const result = await api.settings.billing.portalUrl({});
     if (result.error) {
-      return redirectWithResult(args.request, result, { to: path.to.billing });
+      return respond(args.request, result).redirect(path.to.billing);
     }
     return redirectExternal(result.data.url, 301);
   }
 
-  return redirectWithResult(
+  return respond(
     args.request,
-    await api.settings.billing.transferOwnership(input.data),
-    {
-      to: path.to.billing,
-      message: "Company ownership has been transferred successfully"
-    }
+    await api.settings.billing.transferOwnership(input.data)
+  ).redirect(
+    path.to.billing,
+    "Company ownership has been transferred successfully"
   );
 }
 

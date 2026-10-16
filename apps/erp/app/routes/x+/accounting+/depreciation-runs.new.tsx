@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The list page posts the period the user picked; a bare POST runs the month
@@ -19,10 +19,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.accounting.depreciationRun.create({
     periodEnd: input.data.periodEnd || undefined
   });
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.depreciationRun(result.data.id)
       : path.to.depreciationRuns,
-    message: "Depreciation run created"
-  });
+    "Depreciation run created"
+  );
 }

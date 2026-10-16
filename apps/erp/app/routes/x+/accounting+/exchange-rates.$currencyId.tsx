@@ -16,7 +16,7 @@ import {
   getExchangeRates
 } from "~/modules/accounting";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -63,12 +63,9 @@ export async function action(args: ActionFunctionArgs) {
     result: { error: { message: string } | null },
     message: string
   ) =>
-    redirectWithResult(args.request, result, {
-      to: result.error
-        ? `${path.to.exchangeRate(currencyId)}?${params}`
-        : `${path.to.exchangeRates}?${params}`,
-      message
-    });
+    respond(args.request, result)
+      .onError(`${path.to.exchangeRate(currencyId)}?${params}`)
+      .redirect(`${path.to.exchangeRates}?${params}`, message);
 
   const intent = (await args.request.clone().formData()).get("intent");
 

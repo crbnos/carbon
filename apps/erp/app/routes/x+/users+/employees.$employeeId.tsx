@@ -29,7 +29,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { CompanyPermission } from "~/modules/users";
 import {
   EmployeePermissionsForm,
@@ -161,10 +161,10 @@ export async function action(args: ActionFunctionArgs) {
     permissions: JSON.parse(permissions),
     ip: originOf(args.request).ip
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.employeeAccounts,
-    message: "Permissions updated"
-  });
+  return respond(args.request, result).redirect(
+    path.to.employeeAccounts,
+    "Permissions updated"
+  );
 }
 
 export default function UsersEmployeeRoute() {

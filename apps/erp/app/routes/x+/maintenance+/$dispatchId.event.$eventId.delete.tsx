@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -22,14 +22,12 @@ export async function action(args: ActionFunctionArgs) {
     requestReferrer(args.request) ?? path.to.maintenanceDispatch(dispatchId);
   // The timecard is gone either way; a failed reversal is the flash.
   if (result.data?.warning) {
-    return redirectWithResult(
-      args.request,
-      { error: { message: result.data.warning } },
-      { to }
-    );
+    return respond(args.request, {
+      error: { message: result.data.warning }
+    }).redirect(to);
   }
-  return redirectWithResult(args.request, result, {
+  return respond(args.request, result).redirect(
     to,
-    message: "Timecard removed successfully"
-  });
+    "Timecard removed successfully"
+  );
 }

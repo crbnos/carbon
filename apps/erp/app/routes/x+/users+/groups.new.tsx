@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { GroupForm, groupValidator } from "~/modules/users";
 import { path } from "~/utils/path";
 
@@ -14,10 +14,9 @@ export async function action(args: ActionFunctionArgs) {
   const { name, selections } = input.data;
   const api = await carbon(args.request);
   const result = await api.users.group.create({ name, selections });
-  return redirectWithResult(args.request, result, {
-    to: result.error ? path.to.newGroup : path.to.groups,
-    message: "Group created"
-  });
+  return respond(args.request, result)
+    .onError(path.to.newGroup)
+    .redirect(path.to.groups, "Group created");
 }
 
 export default function NewGroupRoute() {

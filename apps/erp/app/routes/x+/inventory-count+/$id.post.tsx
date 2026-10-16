@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // Post (Pending -> Posted): the variances become inventory adjustments.
@@ -20,8 +20,8 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // Lines that cannot post: the page toasts the reason and marks them.
   if ("invalidLineIds" in result.data) return result.data;
-  return redirectWithResult(args.request, result, {
-    to: path.to.inventoryCount(id),
-    message: "Inventory count posted"
-  });
+  return respond(args.request, result).redirect(
+    path.to.inventoryCount(id),
+    "Inventory count posted"
+  );
 }

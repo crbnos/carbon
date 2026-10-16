@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { rentalAgreementLineClassificationValidator } from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -20,11 +20,10 @@ export async function action(args: ActionFunctionArgs) {
     rentalAgreementId: id,
     rentalAgreementLineId: lineId
   });
-  return redirectWithResult(args.request, result, {
-    to:
-      result.error?.category === "notFound"
-        ? (requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id))
-        : path.to.rentalAgreementLine(id, lineId),
-    message: `Classified as ${input.data.classification}`
-  });
+  return respond(args.request, result).redirect(
+    result.error?.category === "notFound"
+      ? (requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id))
+      : path.to.rentalAgreementLine(id, lineId),
+    `Classified as ${input.data.classification}`
+  );
 }

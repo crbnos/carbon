@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -37,8 +37,8 @@ export async function action(args: ActionFunctionArgs) {
             .map((id) => id.trim())
             .filter(Boolean)
   });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.salesOrderDetails(orderId),
-    message: result.data?.message
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.salesOrderDetails(orderId),
+    result.data?.message
+  );
 }

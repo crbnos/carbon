@@ -15,7 +15,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
   getItemManufacturing,
@@ -164,10 +164,9 @@ export async function action(args: ActionFunctionArgs) {
       itemId,
       customFields: setCustomFields(formData)
     });
-    return redirectWithResult(args.request, result, {
-      to: result.error ? path.to.tool(itemId) : path.to.toolDetails(itemId),
-      message: "Updated tool manufacturing"
-    });
+    return respond(args.request, result)
+      .onError(path.to.tool(itemId))
+      .redirect(path.to.toolDetails(itemId), "Updated tool manufacturing");
   }
 
   const validation = await validator(toolValidator).validate(formData);
@@ -177,10 +176,10 @@ export async function action(args: ActionFunctionArgs) {
     id: itemId,
     customFields: setCustomFields(formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.tool(itemId),
-    message: "Updated tool"
-  });
+  return respond(args.request, result).redirect(
+    path.to.tool(itemId),
+    "Updated tool"
+  );
 }
 
 export default function ToolDetailsRoute() {

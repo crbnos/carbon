@@ -9,7 +9,7 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { GroupForm, getGroupMembers, groupValidator } from "~/modules/users";
 import { path } from "~/utils/path";
 
@@ -60,10 +60,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.users.group.update(input.data);
-  return redirectWithResult(args.request, result, {
-    to: path.to.groups,
-    message: "Group updated successfully"
-  });
+  return respond(args.request, result).redirect(
+    path.to.groups,
+    "Group updated successfully"
+  );
 }
 
 export default function UsersGroupRoute() {

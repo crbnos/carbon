@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { shipmentSourceDocumentType } from "~/modules/inventory";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -52,10 +52,7 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.inventory.shipment.create(input.data);
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: sourcePath(input.data),
-      message: ""
-    });
+    return respond(args.request, result).redirect(sourcePath(input.data), "");
   }
   throw redirect(path.to.shipmentDetails(result.data.id));
 }

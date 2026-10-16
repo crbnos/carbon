@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { shiftValidator } from "~/modules/people";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { setCustomFields } from "~/utils/form";
@@ -19,10 +19,10 @@ export async function action(args: ActionFunctionArgs) {
     ...shift,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.shifts,
-    message: "Shift created"
-  });
+  return respond(args.request, result).redirect(
+    path.to.shifts,
+    "Shift created"
+  );
 }
 
 export default function NewShiftRoute() {

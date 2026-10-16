@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -16,11 +16,10 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderIds: [orderId]
   });
   // A refusal stays on the order; a deleted (or missing) one goes to the list.
-  return redirectWithResult(args.request, result, {
-    to:
-      result.error && result.error.category !== "notFound"
-        ? path.to.purchaseOrder(orderId)
-        : path.to.purchaseOrders,
-    message: "Purchase order deleted"
-  });
+  return respond(args.request, result).redirect(
+    result.error && result.error.category !== "notFound"
+      ? path.to.purchaseOrder(orderId)
+      : path.to.purchaseOrders,
+    "Purchase order deleted"
+  );
 }

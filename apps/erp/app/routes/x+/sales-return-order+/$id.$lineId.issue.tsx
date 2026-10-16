@@ -7,7 +7,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { escalateReturnOrderLine } from "~/modules/sales/sales.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -30,12 +30,10 @@ export async function action(args: ActionFunctionArgs) {
     disposition: input.data.disposition
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to:
-        requestReferrer(args.request) ??
-        path.to.salesReturnOrderLine(id, lineId),
-      message: ""
-    });
+    return respond(args.request, result).redirect(
+      requestReferrer(args.request) ?? path.to.salesReturnOrderLine(id, lineId),
+      ""
+    );
   }
   const { issueId, created, warning } = result.data;
   // An Issue the line already had is opened as it is.

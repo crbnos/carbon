@@ -9,7 +9,7 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { employeeJobValidator, getEmployeeJob } from "~/modules/people";
 import { PersonJob } from "~/modules/people/ui/Person";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -48,10 +48,10 @@ export async function action(args: ActionFunctionArgs) {
     employeeId: personId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.personJob(personId),
-    message: "Successfully updated job"
-  });
+  return respond(args.request, result).redirect(
+    path.to.personJob(personId),
+    "Successfully updated job"
+  );
 }
 
 export default function PersonJobRoute() {

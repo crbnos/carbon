@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -18,10 +18,10 @@ export async function action(args: ActionFunctionArgs) {
     rentalAgreementLineId: lineId
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
-      message: ""
-    });
+    return respond(args.request, result).redirect(
+      requestReferrer(args.request) ?? path.to.rentalAgreementDetails(id),
+      ""
+    );
   }
   throw redirect(path.to.shipmentDetails(result.data.shipmentId));
 }

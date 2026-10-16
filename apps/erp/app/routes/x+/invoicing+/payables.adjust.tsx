@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 const adjustForm = z.object({ asOfDate: zfd.text(z.string().optional()) });
@@ -18,15 +18,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.invoicing.payables.adjust(input.data);
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.payables
-    });
+    return respond(args.request, result).redirect(path.to.payables);
   }
   // A warning: the Draft entry exists but its lines are missing.
   const { journalId, warning } = result.data;
-  return redirectWithResult(
-    args.request,
-    { error: warning ? { message: warning } : null },
-    { to: path.to.journalEntryDetails(journalId) }
-  );
+  return respond(args.request, {
+    error: warning ? { message: warning } : null
+  }).redirect(path.to.journalEntryDetails(journalId));
 }

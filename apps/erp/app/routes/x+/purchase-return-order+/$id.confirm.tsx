@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -19,12 +19,8 @@ export async function action(args: ActionFunctionArgs) {
   });
   // A confirmed return whose PDF failed is still flashed as a failure.
   const warning = result.data?.warning;
-  return redirectWithResult(
+  return respond(
     args.request,
-    warning ? { error: { message: warning } } : result,
-    {
-      to: path.to.purchaseReturnOrderDetails(id),
-      message: "Return order confirmed"
-    }
-  );
+    warning ? { error: { message: warning } } : result
+  ).redirect(path.to.purchaseReturnOrderDetails(id), "Return order confirmed");
 }

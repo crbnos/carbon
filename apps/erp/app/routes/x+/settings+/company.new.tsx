@@ -7,7 +7,7 @@ import { updateCompanySession } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { companyValidator } from "~/modules/settings";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -30,9 +30,9 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.settings.company.create(input.data);
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: requestReferrer(args.request) ?? path.to.authenticatedRoot
-    });
+    return respond(args.request, result).redirect(
+      requestReferrer(args.request) ?? path.to.authenticatedRoot
+    );
   }
 
   // Switch the session to the new company.

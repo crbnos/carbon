@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { configureQuoteLine } from "~/modules/sales/sales.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -21,8 +21,8 @@ export async function action(args: ActionFunctionArgs) {
     lineId,
     configuration: input.data
   });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.quoteLine(quoteId, lineId),
-    message: "Updated quote line"
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.quoteLine(quoteId, lineId),
+    "Updated quote line"
+  );
 }

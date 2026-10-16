@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { salesRfqDragValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -22,10 +22,10 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.sales.rfq.attachFile(input.data.payload);
   // Nothing reads a successful drop; a failure is shown on the RFQ.
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.salesRfqDetails(input.params.rfqId),
-      message: ""
-    });
+    return respond(args.request, result).redirect(
+      path.to.salesRfqDetails(input.params.rfqId),
+      ""
+    );
   }
   return result;
 }

@@ -8,7 +8,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { stripeCustomerChoiceValidator } from "~/modules/invoicing";
 import { getContract } from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";
@@ -69,10 +69,10 @@ export async function action(args: ActionFunctionArgs) {
   // Straight to the contract page, never back to the referrer: from the
   // setup wizard that is a second redirect, and the contract layout does not
   // reload on a redirect that no longer carries the submission.
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.contractDetails(id)
       : (requestReferrer(args.request) ?? path.to.contractDetails(id)),
-    message: "Contract confirmed"
-  });
+    "Contract confirmed"
+  );
 }

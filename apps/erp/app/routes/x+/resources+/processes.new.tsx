@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   batchRuleInitialValues,
   ProcessForm,
@@ -24,10 +24,10 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.processes,
-    message: "Process created"
-  });
+  return respond(args.request, result).redirect(
+    path.to.processes,
+    "Process created"
+  );
 }
 
 export default function NewProcessRoute() {

@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -17,10 +17,10 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.sales.order.line.ship({ salesOrderLineId: lineId });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.salesOrderLine(orderId, lineId),
-      message: ""
-    });
+    return respond(args.request, result).redirect(
+      path.to.salesOrderLine(orderId, lineId),
+      ""
+    );
   }
   throw redirect(path.to.shipmentDetails(result.data.shipmentId));
 }

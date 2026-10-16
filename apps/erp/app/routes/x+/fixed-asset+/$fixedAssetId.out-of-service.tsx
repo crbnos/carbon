@@ -13,7 +13,7 @@ import { useNavigate } from "react-router";
 import { fixedAssetOutOfServiceValidator } from "~/modules/accounting";
 import { outOfServiceRefusal } from "~/modules/accounting/accounting.server";
 import { FixedAssetOutOfServiceForm } from "~/modules/accounting/ui/FixedAssets";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -56,10 +56,10 @@ export async function action(args: ActionFunctionArgs) {
     const result = await api.accounting.fixedAsset.returnToService({
       fixedAssetId
     });
-    return redirectWithResult(args.request, result, {
-      to: path.to.fixedAsset(fixedAssetId),
-      message: "Asset returned to service"
-    });
+    return respond(args.request, result).redirect(
+      path.to.fixedAsset(fixedAssetId),
+      "Asset returned to service"
+    );
   }
 
   const input = await validator(fixedAssetOutOfServiceValidator).request(args, {
@@ -72,10 +72,10 @@ export async function action(args: ActionFunctionArgs) {
     fixedAssetId,
     reason: input.data.reason
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.fixedAsset(fixedAssetId),
-    message: "Asset taken out of service"
-  });
+  return respond(args.request, result).redirect(
+    path.to.fixedAsset(fixedAssetId),
+    "Asset taken out of service"
+  );
 }
 
 export default function FixedAssetOutOfServiceRoute() {

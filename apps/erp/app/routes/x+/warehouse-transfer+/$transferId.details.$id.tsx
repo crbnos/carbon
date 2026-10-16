@@ -12,7 +12,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getWarehouseTransferLine,
   WarehouseTransferLineForm
@@ -81,13 +81,12 @@ export async function action(args: ActionFunctionArgs) {
         });
   // An error is toasted by the form's fetcher.
   if (!result.data) return result;
-  return redirectWithResult(args.request, result, {
-    to: path.to.warehouseTransferDetails(transferId),
-    message:
-      data.type === "delete"
-        ? "Deleted warehouse transfer line"
-        : "Updated warehouse transfer line"
-  });
+  return respond(args.request, result).redirect(
+    path.to.warehouseTransferDetails(transferId),
+    data.type === "delete"
+      ? "Deleted warehouse transfer line"
+      : "Updated warehouse transfer line"
+  );
 }
 
 export default function WarehouseTransferLineDetailsRoute() {

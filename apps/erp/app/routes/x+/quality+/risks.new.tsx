@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { riskRegisterValidator } from "~/modules/quality/quality.models";
 import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm";
 import { getParams, path } from "~/utils/path";
@@ -21,12 +21,12 @@ export async function action(args: ActionFunctionArgs) {
     likelihood: Number.parseInt(likelihood ?? "1", 10)
   });
   if (result.error) {
-    return redirectWithResult(args.request, result, { to: path.to.risks });
+    return respond(args.request, result).redirect(path.to.risks);
   }
-  return redirectWithResult(args.request, result, {
-    to: `${path.to.risks}?${getParams(args.request)}`,
-    message: "Risk created successfully"
-  });
+  return respond(args.request, result).redirect(
+    `${path.to.risks}?${getParams(args.request)}`,
+    "Risk created successfully"
+  );
 }
 
 export default function NewRiskRoute() {

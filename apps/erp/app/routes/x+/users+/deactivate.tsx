@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { deactivateUsersValidator } from "~/modules/users";
 import { originOf } from "~/modules/users/users.server";
 
@@ -17,8 +17,8 @@ export async function action(args: ActionFunctionArgs) {
     userIds: users,
     ip: originOf(args.request).ip
   });
-  return redirectWithResult(args.request, result, {
-    to: redirectTo,
-    message: result.data?.message
-  });
+  return respond(args.request, result).redirect(
+    redirectTo,
+    result.data?.message
+  );
 }

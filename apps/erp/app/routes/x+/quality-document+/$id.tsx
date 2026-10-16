@@ -16,7 +16,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getQualityDocument,
   getQualityDocumentVersions
@@ -50,10 +50,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     qualityDocumentId: id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.qualityDocument(id),
-    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
-  });
+  return respond(args.request, result).redirect(
+    path.to.qualityDocument(id),
+    `Approval request ${input.data.decision.toLowerCase()} successfully`
+  );
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

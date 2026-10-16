@@ -7,7 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Shipment, ShipmentLine } from "~/modules/inventory";
 import { shipmentValidator } from "~/modules/inventory";
 import {
@@ -27,10 +27,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.shipment(input.data.id),
-    message: "Updated shipment"
-  });
+  return respond(args.request, result).redirect(
+    path.to.shipment(input.data.id),
+    "Updated shipment"
+  );
 }
 
 export default function ShipmentDetailsRoute() {

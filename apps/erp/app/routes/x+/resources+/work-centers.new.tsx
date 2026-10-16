@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { WorkCenterForm, workCenterValidator } from "~/modules/resources";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -21,7 +21,7 @@ export async function action(args: ActionFunctionArgs) {
   });
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
-  return redirectWithResult(args.request, result, { to: path.to.workCenters });
+  return respond(args.request, result).redirect(path.to.workCenters);
 }
 
 export default function NewWorkCenterRoute() {

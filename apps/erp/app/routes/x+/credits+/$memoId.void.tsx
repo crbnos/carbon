@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -13,8 +13,8 @@ export async function action(args: ActionFunctionArgs) {
   const memoId = input.params.memoId;
   const api = await carbon(args.request);
   const result = await api.invoicing.memo.void({ memoId: memoId });
-  return redirectWithResult(args.request, result, {
-    to: path.to.memo(memoId),
-    message: "Memo voided"
-  });
+  return respond(args.request, result).redirect(
+    path.to.memo(memoId),
+    "Memo voided"
+  );
 }

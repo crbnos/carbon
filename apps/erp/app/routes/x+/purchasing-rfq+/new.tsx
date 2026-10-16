@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { PurchasingRFQStatusType } from "~/modules/purchasing";
 import { purchasingRfqValidator } from "~/modules/purchasing";
 import { PurchasingRFQForm } from "~/modules/purchasing/ui/PurchasingRfq";
@@ -29,12 +29,12 @@ export async function action(args: ActionFunctionArgs) {
     ...rfq,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.purchasingRfqDetails(result.data.id)
       : path.to.purchasingRfqs,
-    message: "RFQ created"
-  });
+    "RFQ created"
+  );
 }
 
 export default function PurchasingRFQNewRoute() {

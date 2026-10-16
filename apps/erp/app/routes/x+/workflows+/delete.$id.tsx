@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -12,8 +12,8 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.workflows.workflow.delete({ id: input.params.id });
-  return redirectWithResult(args.request, result, {
-    to: path.to.workflows,
-    message: "Successfully deleted workflow"
-  });
+  return respond(args.request, result).redirect(
+    path.to.workflows,
+    "Successfully deleted workflow"
+  );
 }

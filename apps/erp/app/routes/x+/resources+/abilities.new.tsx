@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   AbilityForm,
   abilityValidator,
@@ -34,10 +34,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.resources.ability.create(input.data);
-  return redirectWithResult(args.request, result, {
-    to: path.to.abilities,
-    message: "Created ability"
-  });
+  return respond(args.request, result).redirect(
+    path.to.abilities,
+    "Created ability"
+  );
 }
 
 export default function NewAbilityRoute() {

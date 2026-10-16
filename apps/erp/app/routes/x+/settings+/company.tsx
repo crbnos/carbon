@@ -24,7 +24,7 @@ import { AppBarActions } from "~/components/Layout/Mobile";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import type { Company as CompanyType } from "~/modules/settings";
 import { CompanyForm, companyValidator } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -40,10 +40,10 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.settings.company.update(input.data);
-  return redirectWithResult(args.request, result, {
-    to: path.to.company,
-    message: "Updated company"
-  });
+  return respond(args.request, result).redirect(
+    path.to.company,
+    "Updated company"
+  );
 }
 
 export default function Company() {

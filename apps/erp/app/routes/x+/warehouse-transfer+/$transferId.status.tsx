@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { warehouseTransferStatusType } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
@@ -30,8 +30,8 @@ export async function action(args: ActionFunctionArgs) {
   if (!result.data) return result;
   // A blocking rule: the violation modal reads these.
   if ("violations" in result.data) return result.data;
-  return redirectWithResult(args.request, result, {
-    to: path.to.warehouseTransfer(transferId),
-    message: "Updated warehouse transfer status"
-  });
+  return respond(args.request, result).redirect(
+    path.to.warehouseTransfer(transferId),
+    "Updated warehouse transfer status"
+  );
 }

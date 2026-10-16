@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 // The status follows the lines (To Ship, Completed): by hand a return is only
@@ -24,16 +24,10 @@ export async function action(args: ActionFunctionArgs) {
     const result = await api.purchasing.purchaseReturnOrder.cancel({
       purchaseReturnOrderId: id
     });
-    return redirectWithResult(args.request, result, {
-      to,
-      message: "Cancelled return order"
-    });
+    return respond(args.request, result).redirect(to, "Cancelled return order");
   }
   const result = await api.purchasing.purchaseReturnOrder.reopen({
     purchaseReturnOrderId: id
   });
-  return redirectWithResult(args.request, result, {
-    to,
-    message: "Reopened return order"
-  });
+  return respond(args.request, result).redirect(to, "Reopened return order");
 }

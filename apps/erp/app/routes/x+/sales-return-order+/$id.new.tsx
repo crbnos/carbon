@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { salesReturnOrderLineValidator } from "~/modules/sales";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -24,10 +24,10 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.salesReturnOrderDetails(orderId),
-      message: ""
-    });
+    return respond(args.request, result).redirect(
+      path.to.salesReturnOrderDetails(orderId),
+      ""
+    );
   }
   throw redirect(
     path.to.salesReturnOrderLine(orderId, result.data.salesReturnOrderLineId)

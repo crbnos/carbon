@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -15,13 +15,12 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.sales.rentalAgreement.activate({ id });
   // From the setup wizard (Draft only), straight to the agreement's page.
   const referrer = requestReferrer(args.request);
-  return redirectWithResult(args.request, result, {
-    to:
-      result.error?.category === "notFound"
-        ? path.to.rentalAgreements
-        : referrer && (result.error || !referrer.includes("/setup/"))
-          ? referrer
-          : path.to.rentalAgreementDetails(id),
-    message: "Rental agreement activated"
-  });
+  return respond(args.request, result).redirect(
+    result.error?.category === "notFound"
+      ? path.to.rentalAgreements
+      : referrer && (result.error || !referrer.includes("/setup/"))
+        ? referrer
+        : path.to.rentalAgreementDetails(id),
+    "Rental agreement activated"
+  );
 }

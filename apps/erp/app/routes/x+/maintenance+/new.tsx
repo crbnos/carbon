@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   getFailureModesList,
   maintenanceDispatchValidator
@@ -45,12 +45,12 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
   const result = await api.resources.maintenanceDispatch.create(input.data);
-  return redirectWithResult(args.request, result, {
-    to: result.data
+  return respond(args.request, result).redirect(
+    result.data
       ? path.to.maintenanceDispatch(result.data.id)
       : path.to.maintenanceDispatches,
-    message: "Created maintenance dispatch"
-  });
+    "Created maintenance dispatch"
+  );
 }
 
 export default function NewMaintenanceDispatchRoute() {

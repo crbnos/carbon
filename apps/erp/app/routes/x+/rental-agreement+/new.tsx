@@ -13,7 +13,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { rentalAgreementValidator } from "~/modules/sales";
 import {
   RentalAgreementDetailsForm,
@@ -58,10 +58,7 @@ export async function action(args: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
   if (!result.data) {
-    return redirectWithResult(args.request, result, {
-      to: path.to.rentalAgreements,
-      message: ""
-    });
+    return respond(args.request, result).redirect(path.to.rentalAgreements, "");
   }
   // A unit that could not be added leaves the agreement, and says so.
   const { id, warning } = result.data;

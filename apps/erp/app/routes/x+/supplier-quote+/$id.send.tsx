@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { supplierQuoteFinalizeValidator } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
@@ -19,8 +19,8 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     supplierQuoteId: id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.supplierQuote(id),
-    message: "Supplier quote sent successfully"
-  });
+  return respond(args.request, result).redirect(
+    path.to.supplierQuote(id),
+    "Supplier quote sent successfully"
+  );
 }

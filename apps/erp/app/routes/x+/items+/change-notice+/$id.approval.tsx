@@ -5,7 +5,7 @@
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -19,8 +19,8 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     changeNoticeId: id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.changeNoticeDetails(id),
-    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
-  });
+  return respond(args.request, result).redirect(
+    path.to.changeNoticeDetails(id),
+    `Approval request ${input.data.decision.toLowerCase()} successfully`
+  );
 }

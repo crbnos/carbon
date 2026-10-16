@@ -22,7 +22,7 @@ import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -103,23 +103,19 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   switch (input.data.action) {
     case "enable":
-      return redirectWithResult(
+      return respond(
         args.request,
-        await api.settings.auditLog.enable({}),
-        { to: path.to.auditLog, message: "Audit logging enabled" }
-      );
+        await api.settings.auditLog.enable({})
+      ).redirect(path.to.auditLog, "Audit logging enabled");
     case "disable":
-      return redirectWithResult(
+      return respond(
         args.request,
-        await api.settings.auditLog.disable({}),
-        { to: path.to.auditLog, message: "Audit logging disabled" }
-      );
+        await api.settings.auditLog.disable({})
+      ).redirect(path.to.auditLog, "Audit logging disabled");
     case "download": {
       const result = await api.settings.auditLog.archiveUrl(input.data);
       if (result.error) {
-        return redirectWithResult(args.request, result, {
-          to: path.to.auditLog
-        });
+        return respond(args.request, result).redirect(path.to.auditLog);
       }
       return redirectExternal(result.data.url);
     }

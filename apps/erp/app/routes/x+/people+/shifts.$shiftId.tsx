@@ -9,7 +9,7 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { getShift, shiftValidator } from "~/modules/people";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -48,10 +48,10 @@ export async function action(args: ActionFunctionArgs) {
     id,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.shifts,
-    message: "Shift updated"
-  });
+  return respond(args.request, result).redirect(
+    path.to.shifts,
+    "Shift updated"
+  );
 }
 
 export default function ShiftRoute() {

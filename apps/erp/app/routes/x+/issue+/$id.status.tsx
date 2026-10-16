@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { nonConformanceStatus } from "~/modules/quality/quality.models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -20,8 +20,8 @@ export async function action(args: ActionFunctionArgs) {
     id,
     status: input.data.status
   });
-  return redirectWithResult(args.request, result, {
-    to: requestReferrer(args.request) ?? path.to.issueDetails(id),
-    message: "Updated issue status"
-  });
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.issueDetails(id),
+    "Updated issue status"
+  );
 }

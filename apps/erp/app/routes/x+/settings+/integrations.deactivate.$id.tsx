@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -14,10 +14,8 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.settings.integration.deactivate({
     id: input.params.id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.integrations,
-    message: result.data
-      ? `Disconnected ${result.data.name} integration`
-      : undefined
-  });
+  return respond(args.request, result).redirect(
+    path.to.integrations,
+    result.data ? `Disconnected ${result.data.name} integration` : undefined
+  );
 }

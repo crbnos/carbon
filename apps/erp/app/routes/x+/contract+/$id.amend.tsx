@@ -6,7 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { customerContractAmendmentValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
 
@@ -56,8 +56,8 @@ export async function action(args: ActionFunctionArgs) {
     ...amendment.data,
     customerContractId: id
   });
-  return redirectWithResult(args.request, result, {
-    to: path.to.contractDetails(id),
-    message: "Contract amended"
-  });
+  return respond(args.request, result).redirect(
+    path.to.contractDetails(id),
+    "Contract amended"
+  );
 }

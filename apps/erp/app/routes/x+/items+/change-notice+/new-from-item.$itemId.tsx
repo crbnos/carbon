@@ -6,7 +6,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import {
   type ChangeNoticeChangeType,
   changeNoticeChangeTypes
@@ -36,14 +36,13 @@ export async function action(args: ActionFunctionArgs) {
     revision: revision || undefined
   });
   if (result.error) {
-    return redirectWithResult(args.request, result, {
-      to: requestReferrer(args.request) ?? path.to.changeNotices
-    });
+    return respond(args.request, result).redirect(
+      requestReferrer(args.request) ?? path.to.changeNotices
+    );
   }
   const { id, warning } = result.data;
-  return redirectWithResult(
+  return respond(
     args.request,
-    warning ? { error: { message: warning } } : result,
-    { to: path.to.changeNotice(id), message: "Change notice created" }
-  );
+    warning ? { error: { message: warning } } : result
+  ).redirect(path.to.changeNotice(id), "Change notice created");
 }

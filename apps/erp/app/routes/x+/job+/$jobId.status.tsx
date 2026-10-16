@@ -5,7 +5,7 @@
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { path } from "~/utils/path";
 
 // The job header's status buttons. Release, Complete and Cancel have their own
@@ -34,10 +34,10 @@ export async function action(args: ActionFunctionArgs) {
     case "Planned": {
       const result = await api.production.job.plan({ jobId });
       if (result.error) return result;
-      return redirectWithResult(args.request, result, {
-        to: path.to.jobMaterials(jobId),
-        message: "Job marked as planned"
-      });
+      return respond(args.request, result).redirect(
+        path.to.jobMaterials(jobId),
+        "Job marked as planned"
+      );
     }
     case "Paused":
       return api.production.job.pause({ jobId });

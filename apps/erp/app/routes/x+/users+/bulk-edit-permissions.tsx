@@ -4,7 +4,7 @@
 
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { carbon, redirectWithResult } from "~/modules/carbon.server";
+import { carbon, respond } from "~/modules/carbon.server";
 import { bulkPermissionsValidator } from "~/modules/users";
 import { originOf } from "~/modules/users/users.server";
 import { getParams, path } from "~/utils/path";
@@ -20,10 +20,10 @@ export async function action(args: ActionFunctionArgs) {
     permissions: JSON.parse(data),
     ip: originOf(args.request).ip
   });
-  return redirectWithResult(args.request, result, {
-    to: result.error
-      ? path.to.employeeAccounts
-      : `${path.to.employeeAccounts}?${getParams(args.request)}`,
-    message: "Updating user permissions"
-  });
+  return respond(args.request, result)
+    .onError(path.to.employeeAccounts)
+    .redirect(
+      `${path.to.employeeAccounts}?${getParams(args.request)}`,
+      "Updating user permissions"
+    );
 }
