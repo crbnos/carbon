@@ -80,7 +80,7 @@ rentals persist `rentalBillingPeriod` rows per unit.
   Monthly + Month gives " · Month rate". Add a test to
   `rent-line-description.test.ts`. `post-rental-agreement` and `return-unit` already
   pass `cycle` through; only their types need checking.
-- [ ] **5. ERP.** In `sales.models.ts`, add `"Monthly"` to `rentalBillingCycles`.
+- [x] **5. ERP.** In `sales.models.ts`, add `"Monthly"` to `rentalBillingCycles`.
   Replace the literal `"Calendar Month" | "28 Days"` unions in `sales.utils.ts` and
   `RentalLeaseClassification.tsx` with `RentalBillingCycle`. Update
   `RentalAgreementBilling.tsx` (cards + checkbox, copied from `ContractBillTo.tsx`)

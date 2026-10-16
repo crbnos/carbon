@@ -4022,6 +4022,9 @@ msgstr "测试版"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "按原因、物料或工作中心显示最大报废原因"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "按日历月计费,首月包含部分月份。关闭时,每个周期从开始日期的该日期开始。"
+
 msgid "Bill of Material"
 msgstr "物料清单"
 
@@ -4317,9 +4320,6 @@ msgstr "计算方法"
 
 msgid "Calendar"
 msgstr "日历"
-
-msgid "Calendar Month"
-msgstr "日历 月"
 
 msgid "Calibration"
 msgstr "校准"
@@ -8277,9 +8277,6 @@ msgstr "每个付款在其期间的最后一天到期。"
 msgid "Each period is 28 days from the start date."
 msgstr "每个周期从开始日期起28天。"
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "每个周期是一个日历月，首先是部分月。"
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "每个期间在第一天开具发票，即在提供服务之前。"
 
@@ -8291,6 +8288,9 @@ msgstr "每个期间在最后一天开具发票，即在提供服务之后。"
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "每个周期在其最后一天开具发票，在单位使用之后。"
+
+msgid "Each period is one month, for the month rate."
+msgstr "每个周期为一个月,按月费率计算。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
@@ -13536,6 +13536,9 @@ msgstr "月费率"
 
 msgid "Monthly"
 msgstr "每月"
+
+msgid "Monthly (calendar)"
+msgstr "每月(日历)"
 
 msgid "Monthly Depreciation"
 msgstr "每月折旧"

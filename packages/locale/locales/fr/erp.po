@@ -4022,6 +4022,9 @@ msgstr "Bêta"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Principales causes de rebut par raison, article ou poste de travail"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Facturer par mois civils, avec un mois partiel en premier. Désactivé, chaque période commence le jour du mois de la date de début."
+
 msgid "Bill of Material"
 msgstr "Nomenclature"
 
@@ -4317,9 +4320,6 @@ msgstr "Méthode de calcul"
 
 msgid "Calendar"
 msgstr "Calendrier"
-
-msgid "Calendar Month"
-msgstr "Mois Calendaire"
 
 msgid "Calibration"
 msgstr "Étalonnage"
@@ -8277,9 +8277,6 @@ msgstr "Chaque paiement est dû le dernier jour de sa période."
 msgid "Each period is 28 days from the start date."
 msgstr "Chaque période est de 28 jours à partir de la date de début."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Chaque période est un mois calendaire, avec un mois partiel en premier."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Chaque période est facturée le premier jour, avant la prestation du service."
 
@@ -8291,6 +8288,9 @@ msgstr "Chaque période est facturée le dernier jour, après la prestation du s
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "Chaque période est facturée le dernier jour, après que les unités ont été utilisées."
+
+msgid "Each period is one month, for the month rate."
+msgstr "Chaque période dure un mois, pour le tarif mensuel."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
@@ -13536,6 +13536,9 @@ msgstr "Tarif mensuel"
 
 msgid "Monthly"
 msgstr "Mensuel"
+
+msgid "Monthly (calendar)"
+msgstr "Mensuel (calendrier)"
 
 msgid "Monthly Depreciation"
 msgstr "Amortissement mensuel"

@@ -4022,6 +4022,9 @@ msgstr "Бета"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Основные причины брака по типу, номенклатуре или рабочему центру"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Выставлять счета по календарным месяцам с неполным месяцем в начале. Отключено: каждый период начинается в число даты начала."
+
 msgid "Bill of Material"
 msgstr "Спецификация материалов"
 
@@ -4317,9 +4320,6 @@ msgstr "Метод расчета"
 
 msgid "Calendar"
 msgstr "Календарь"
-
-msgid "Calendar Month"
-msgstr "Календарный месяц"
 
 msgid "Calibration"
 msgstr "Калибровка"
@@ -8277,9 +8277,6 @@ msgstr "Каждый платеж подлежит оплате в послед�
 msgid "Each period is 28 days from the start date."
 msgstr "Каждый период составляет 28 дней от даты начала."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Каждый период — это календарный месяц с частичным месяцем вначале."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Каждый период выставляется в счёт в первый день, до оказания услуги."
 
@@ -8291,6 +8288,9 @@ msgstr "Каждый период выставляется в счёт в пос
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "На каждый период выставляется счет в его последний день, после того как единицы используются."
+
+msgid "Each period is one month, for the month rate."
+msgstr "Каждый период — один месяц, по месячной ставке."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
@@ -13536,6 +13536,9 @@ msgstr "Месячный тариф"
 
 msgid "Monthly"
 msgstr "Ежемесячно"
+
+msgid "Monthly (calendar)"
+msgstr "Ежемесячно (календарный)"
 
 msgid "Monthly Depreciation"
 msgstr "Ежемесячная амортизация"

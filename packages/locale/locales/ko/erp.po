@@ -4022,6 +4022,9 @@ msgstr "베타"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "이유, 품목 또는 작업장별 스크랩의 가장 큰 원인"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "달력 월 단위로 청구하며, 첫 달은 부분 월입니다. 비활성화된 경우 각 기간은 시작일의 월별 날짜부터 시작됩니다."
+
 msgid "Bill of Material"
 msgstr "자재명세서"
 
@@ -4317,9 +4320,6 @@ msgstr "계산 방법"
 
 msgid "Calendar"
 msgstr "달력"
-
-msgid "Calendar Month"
-msgstr "달력 월"
 
 msgid "Calibration"
 msgstr "교정"
@@ -8277,9 +8277,6 @@ msgstr "각 지불은 해당 기간의 마지막 날에 만기됩니다."
 msgid "Each period is 28 days from the start date."
 msgstr "각 기간은 시작일부터 28일입니다."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "각 기간은 달력 월이며, 부분 월이 먼저 옵니다."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "각 기간은 서비스 제공 전 첫날에 청구됩니다."
 
@@ -8291,6 +8288,9 @@ msgstr "각 기간은 서비스 제공 후 마지막 날에 청구됩니다."
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "각 기간은 마지막 날에 송장이 발행되며, 단위를 사용한 후입니다."
+
+msgid "Each period is one month, for the month rate."
+msgstr "각 기간은 1개월이며, 월별 요금으로 청구됩니다."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
@@ -13536,6 +13536,9 @@ msgstr "월간 요금"
 
 msgid "Monthly"
 msgstr "월간"
+
+msgid "Monthly (calendar)"
+msgstr "매월 (달력)"
 
 msgid "Monthly Depreciation"
 msgstr "매월 감가상각"

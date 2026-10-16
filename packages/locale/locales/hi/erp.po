@@ -4022,6 +4022,9 @@ msgstr "बीटा"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "कारण, आइटम या वर्क सेंटर के अनुसार स्क्रैप के सबसे बड़े कारण"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "कैलेंडर महीनों के अनुसार बिल करें, पहले आंशिक महीने के साथ। बंद होने पर, प्रत्येक अवधि प्रारंभ तिथि के दिन से शुरू होती है।"
+
 msgid "Bill of Material"
 msgstr "सामग्री की बिल"
 
@@ -4317,9 +4320,6 @@ msgstr "गणना विधि"
 
 msgid "Calendar"
 msgstr "कैलेंडर"
-
-msgid "Calendar Month"
-msgstr "कैलेंडर माह"
 
 msgid "Calibration"
 msgstr "अंशांकन"
@@ -8277,9 +8277,6 @@ msgstr "प्रत्येक भुगतान अपनी अवधि �
 msgid "Each period is 28 days from the start date."
 msgstr "प्रत्येक अवधि प्रारंभ तिथि से 28 दिन है।"
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "प्रत्येक अवधि एक कैलेंडर महीना है, पहले एक आंशिक महीना है।"
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "प्रत्येक अवधि का चालान उसके पहले दिन, सेवा दिए जाने से पहले बनाया जाता है।"
 
@@ -8291,6 +8288,9 @@ msgstr "प्रत्येक अवधि का चालान उसक�
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "प्रत्येक अवधि को इसके अंतिम दिन चालान दिया जाता है, इकाइयों के उपयोग के बाद।"
+
+msgid "Each period is one month, for the month rate."
+msgstr "प्रत्येक अवधि एक महीना है, मासिक दर के लिए।"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
@@ -13536,6 +13536,9 @@ msgstr "माह दर"
 
 msgid "Monthly"
 msgstr "मासिक"
+
+msgid "Monthly (calendar)"
+msgstr "मासिक (कैलेंडर)"
 
 msgid "Monthly Depreciation"
 msgstr "मासिक मूल्यह्रास"

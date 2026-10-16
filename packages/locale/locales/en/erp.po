@@ -4022,6 +4022,9 @@ msgstr "Beta"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Biggest causes of scrap by reason, item, or work center"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+
 msgid "Bill of Material"
 msgstr "Bill of Material"
 
@@ -4317,9 +4320,6 @@ msgstr "Calculation Method"
 
 msgid "Calendar"
 msgstr "Calendar"
-
-msgid "Calendar Month"
-msgstr "Calendar Month"
 
 msgid "Calibration"
 msgstr "Calibration"
@@ -8277,9 +8277,6 @@ msgstr "Each payment is due on the last day of its period."
 msgid "Each period is 28 days from the start date."
 msgstr "Each period is 28 days from the start date."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Each period is a calendar month, with a part month first."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Each period is invoiced on its first day, before the service is delivered."
 
@@ -8291,6 +8288,9 @@ msgstr "Each period is invoiced on its last day, after the service is delivered.
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "Each period is invoiced on its last day, after the units are used."
+
+msgid "Each period is one month, for the month rate."
+msgstr "Each period is one month, for the month rate."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
@@ -13536,6 +13536,9 @@ msgstr "Month Rate"
 
 msgid "Monthly"
 msgstr "Monthly"
+
+msgid "Monthly (calendar)"
+msgstr "Monthly (calendar)"
 
 msgid "Monthly Depreciation"
 msgstr "Monthly Depreciation"
