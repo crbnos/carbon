@@ -128,7 +128,6 @@ for (const problem of validateCatalogInputs(
 
 type ToolMeta = {
   name: string;
-  injectAuth?: string[];
   schema?: { required?: string[]; properties?: Record<string, unknown> };
 };
 
@@ -159,22 +158,21 @@ for (const [id, declaration] of Object.entries(WORKFLOW_ACTIONS)) {
     continue;
   }
 
-  // Only inputs the builder forces are guaranteed to arrive, plus what the dispatcher
-  // stamps. Counting optional ones would repeat the shape of the bug this exists to catch.
+  // Only inputs the builder forces are guaranteed to arrive. Counting optional
+  // ones would repeat the shape of the bug this exists to catch.
   const inputs = (declaration as { inputs: Record<string, { required: boolean }> })
     .inputs;
-  const supplied = new Set([
-    ...Object.entries(inputs)
+  const supplied = new Set(
+    Object.entries(inputs)
       .filter(([, spec]) => spec.required)
-      .map(([name]) => name),
-    ...(tool.injectAuth ?? [])
-  ]);
+      .map(([name]) => name)
+  );
   const missing = requiredParamsOf(tool).filter((p) => !supplied.has(p));
   if (missing.length > 0) {
     fail(
       `Action "${id}" calls "${call}", which requires ${missing
         .map((p) => `"${p}"`)
-        .join(", ")} — not declared as an input and not injected.`
+        .join(", ")} — not declared as an input.`
     );
   }
 }

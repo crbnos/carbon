@@ -3,24 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * Derives each operation's RESPONSE schema by reflecting the service function's
- * TypeScript return type.
- *
- * The input side comes from zod validators (`validator-to-json-schema.ts`), but
- * nothing declares a response — it is whatever the service returns. Most services
- * `return client.from(...).select(...)`, and supabase-js infers the SELECTED
- * columns from the select string, so the compiler already knows the exact row
- * shape. This reads it back out with ts-morph.
- *
- * Measured over all 1500 exported service functions: 1423 (95%) yield a non-trivial
- * schema, ~10s to walk. The manifest grows 1.3 -> 1.6 MB, and it is gitignored.
+ * A TypeScript type as a JSON Schema, read with ts-morph: a service
+ * function's input and its response. Nothing declares a response — it is
+ * whatever `run` returns — and supabase-js infers the SELECTED columns from the
+ * select string, so the compiler already knows the exact row shape.
  */
 
-import type { ResultShape } from "@carbon/api";
 import { Node, type Type } from "ts-morph";
-import { MCP_EXPOSURE_TAG } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
-import { resultShapeOf } from "./result-shape";
-import type { ServiceAst } from "./service-ast";
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -56,9 +45,10 @@ const JSON_OPAQUE_COLLECTIONS = new Set([
  * `Promise<PostgrestSingleResponse<T>>` and the hand-rolled
  * `Promise<{ data: T | null; error }>` both reduce to `T`.
  *
- * This mirrors `dispatch.server.ts`, which unwraps the Supabase result to `data`
- * plus an optional `count` before returning it — so the schema describes what lands
- * in the response's `data`, not the driver's envelope.
+ * This mirrors the result readers (`envelope`, `paged` in
+ * `@carbon/api/service-tools.server`), which unwrap the Supabase result to its
+ * `data` — so the schema describes what a caller receives, not the driver's
+ * envelope.
  */
 export function unwrapResponseType(type: Type, at: Node): Type {
   let current = type;
@@ -286,72 +276,4 @@ function dedupe(schemas: JsonSchema[]): JsonSchema[] {
     out.push(schema);
   }
   return out;
-}
-
-export interface ResponseSchemaIndex {
-  /** `{module}_{fn}` → response schema, absent when nothing useful was derived. */
-  get(module: string, functionName: string): JsonSchema | null;
-  /** How the function reports failure in its result (`resultShapeOf`). */
-  shape(module: string, functionName: string): ResultShape;
-  readonly stats: { functions: number; derived: number; empty: number };
-}
-
-function isUseful(schema: JsonSchema): boolean {
-  const keys = Object.keys(schema);
-  if (keys.length === 0) return false;
-  // `{ type: "object" }` alone says nothing a reader can use — but the same shape
-  // carrying `additionalProperties` is a typed map and does.
-  return !(keys.length === 1 && schema.type === "object");
-}
-
-/**
- * Reflect the return type of every published service function. Takes the AST
- * `buildServiceAst` already parsed, so the manifest builder and this index share
- * ONE ts-morph project — the type checker is the expensive part of generation,
- * and two projects paid for it twice.
- */
-export function buildResponseSchemaIndex(ast: ServiceAst): ResponseSchemaIndex {
-  ast.project.resolveSourceFileDependencies();
-
-  const schemas = new Map<string, JsonSchema>();
-  const shapes = new Map<string, ResultShape>();
-  const stats = { functions: 0, derived: 0, empty: 0 };
-  const checker = ast.project.getTypeChecker().compilerObject;
-
-  for (const mod of ast.modules.values()) {
-    for (const fn of mod.functions) {
-      stats.functions++;
-      // Only a tool's result is read by dispatch; an unpublished helper may
-      // return whatever it likes.
-      if (fn.tags.some((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG)) {
-        shapes.set(fn.toolName, resultShapeOf(checker, fn));
-      }
-      let schema: JsonSchema;
-      try {
-        schema = typeToJsonSchema(
-          unwrapResponseType(fn.node.getReturnType(), fn.node),
-          fn.node
-        );
-      } catch {
-        stats.empty++;
-        continue;
-      }
-      if (!isUseful(schema)) {
-        stats.empty++;
-        continue;
-      }
-      schemas.set(fn.toolName, schema);
-      stats.derived++;
-    }
-  }
-
-  return {
-    get(module, functionName) {
-      return schemas.get(`${module}_${functionName}`) ?? null;
-    },
-    shape(module, functionName) {
-      return shapes.get(`${module}_${functionName}`) ?? "plain";
-    },
-    stats
-  };
 }

@@ -9,7 +9,6 @@ import type { Permission } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { ORPCError, os } from "@orpc/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
 
 /**
  * The identity every Carbon API call runs as. Built once per request (from an API
@@ -85,13 +84,9 @@ export function scopesFromPermissions(
   return scopes;
 }
 
-/** Per-operation gate middleware — runs the scope check for every caller.
- *  The blocked-name guard is belt-and-braces: blocked tools are already excluded
- *  from the manifest at generation time, so this only fires if that exclusion
- *  ever regresses — the surface stays closed instead of silently opening. */
+/** Per-operation gate middleware — runs the scope check for every caller. */
 export const gate = (meta: ManifestEntry) =>
   base.middleware(async ({ context, next }) => {
-    if (isMcpBlockedTool(meta.name)) throw new ORPCError("NOT_FOUND");
     assertScopes(
       context.scopes,
       context.companyId,

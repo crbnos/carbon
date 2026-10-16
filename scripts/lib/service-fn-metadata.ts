@@ -22,7 +22,7 @@ import {
   type CallExpression,
   Node,
   type ObjectLiteralExpression,
-  type Project,
+  Project,
   type Symbol as TsSymbol,
   type VariableDeclaration
 } from "ts-morph";
@@ -371,11 +371,6 @@ export function buildServiceFnTools(
         classification: classify(actions, docs.destructive, docs.read),
         title: docs.title,
         description: docs.description,
-        paramCount: 1,
-        serviceParams: ["input"],
-        contextParams: {},
-        injectAuth: [],
-        resultShape: "envelope",
         permission,
         paginates: false,
         schema: input,
@@ -387,21 +382,14 @@ export function buildServiceFnTools(
 }
 
 /**
- * The service.ts tools plus the router's, as one manifest. Both
- * `generate-mcp` and `check-manifest` build it here, so the digest they
- * compare cannot differ by construction.
+ * The published manifest: every `@mcp` service function the ERP router
+ * reaches. `generate-mcp` and `check-manifest` both build it here, so the
+ * digest they compare cannot differ by construction.
  */
-export function withServiceFnTools(
-  legacy: ManifestEntry[],
-  project: Project
-): ManifestEntry[] {
-  const serviceFnTools = buildServiceFnTools(project);
-  const legacyNames = new Set(legacy.map((tool) => tool.name));
-  const clash = serviceFnTools.find((tool) => legacyNames.has(tool.name));
-  if (clash) {
-    throw new Error(
-      `The service function ${clash.name} has the name of a published service.ts function. Rename one of them.`
-    );
-  }
-  return [...legacy, ...serviceFnTools];
+export function buildManifest(): ManifestEntry[] {
+  const project = new Project({
+    tsConfigFilePath: path.resolve(__dirname, "../../apps/erp/tsconfig.json"),
+    skipAddingFilesFromTsConfig: true
+  });
+  return buildServiceFnTools(project);
 }

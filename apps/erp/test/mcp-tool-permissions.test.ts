@@ -3,14 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { MCP_VERBS } from "../app/routes/api+/mcp+/lib/mcp-exposure";
 import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
-// Pins what a tool's declared verb means for the permission it gates on, against
-// the REAL generated manifest. These permissions gate every API-key call at the
-// oRPC layer, so a change to the verb table is an authorization change — it must
-// fail here first. Nothing below looks at a function's name: a tool is what its
-// `@mcp <verb>` tag says it is.
+// Pins the permission every published operation gates on, against the REAL
+// generated manifest. These permissions gate every API-key call at the oRPC
+// layer, so a change here is an authorization change — it must fail here first.
 
 type Tool = {
   name: string;
@@ -21,9 +18,8 @@ type Tool = {
 
 const allTools = metadata.tools as Tool[];
 
-// `@mcp permission` on the function — a route-verified exception that wins over
-// the verb. Pinned exactly below and excluded from the verb-based assertions.
-// Each must match the permission the ERP route that does the same thing
+// Operations gated on another module than their own, or on more than one.
+// Pinned exactly below and excluded from the general assertions. Each must match the permission the ERP route that does the same thing
 // requires: an OAuth connector or API key gated more loosely than the screen
 // can do what the screen forbids — and a service handed `db` writes past RLS,
 // so this gate is the only one.
@@ -158,39 +154,18 @@ describe("permission module mapping", () => {
   });
 });
 
-describe("the verb table", () => {
-  it("is the authorization contract — changing it is deliberate", () => {
-    expect(
-      Object.fromEntries(
-        Object.entries(MCP_VERBS).map(([verb, rule]) => [
-          verb,
-          `${rule.classification} ${rule.actions.join("+")} [${rule.audit.join(",")}]`
-        ])
-      )
-    ).toEqual({
-      read: "READ view []",
-      create: "WRITE create [createdBy,updatedBy]",
-      update: "WRITE update [updatedBy]",
-      // Pinned so a change is deliberate: an upsert needs BOTH, since one call
-      // can insert or modify.
-      upsert: "WRITE create+update [createdBy,updatedBy]",
-      delete: "DESTRUCTIVE delete []",
-      action: "WRITE update []"
-    });
-  });
-});
-
 describe("permission actions in the manifest", () => {
-  const verbActions = Object.values(MCP_VERBS).map((rule) =>
-    rule.actions.join("+")
-  );
+  const ACTIONS = new Set(["view", "create", "update", "delete"]);
   // `{}`: any member of the company. Published as no module and no actions.
   const membershipOnly = (t: Tool) =>
     t.permission.module === null && t.permission.actions.length === 0;
 
-  it("every op gates on one verb's actions, or on membership alone", () => {
+  it("every op gates on known actions, or on membership alone", () => {
     for (const t of tools.filter((t) => !membershipOnly(t))) {
-      expect(verbActions, t.name).toContain(t.permission.actions.join("+"));
+      expect(t.permission.actions.length, t.name).toBeGreaterThan(0);
+      for (const action of t.permission.actions) {
+        expect(ACTIONS.has(action), `${t.name}: ${action}`).toBe(true);
+      }
     }
   });
 

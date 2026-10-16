@@ -36,7 +36,7 @@ import {
 const logger = getLogger("erp", "mcp");
 
 // The MCP protocol server — the commercial feature body. The app's dispatch,
-// tool manifest, blocked-tool predicate and generated catalog are INJECTED via
+// tool manifest and generated catalog are INJECTED via
 // `deps` (they derive from `apps/erp`'s `~/modules/*` and cannot move into a
 // package); the entitlement LOCK lives here so serving MCP requires executing
 // commercial code. `Ctx` is the caller's full auth context (the app's
@@ -52,7 +52,6 @@ export async function createMcpServer<Ctx extends McpContext>(
     callOperation,
     operationsByName,
     isListOperation,
-    isMcpBlockedTool,
     catalogSearch,
     toolMetadata
   } = deps;
@@ -131,20 +130,13 @@ export async function createMcpServer<Ctx extends McpContext>(
           missing.push(toolName);
           continue;
         }
-        // A deprecated alias resolves to its replacement's entry (the app's
-        // `OPERATION_ALIASES`), so the names differ — say so, once, up front.
-        const deprecation =
-          meta.name === toolName
-            ? ""
-            : `'${toolName}' is deprecated — it now runs '${meta.name}'. Call '${meta.name}' instead.\n\n`;
         sections.push(
-          deprecation +
-            formatToolDescription(meta, {
-              isList: isListOperation(meta),
-              sibling: meta.paginates
-                ? null
-                : paginatingSibling(meta.name, (n) => operationsByName.get(n))
-            })
+          formatToolDescription(meta, {
+            isList: isListOperation(meta),
+            sibling: meta.paginates
+              ? null
+              : paginatingSibling(meta.name, (n) => operationsByName.get(n))
+          })
         );
       }
 
@@ -198,18 +190,6 @@ export async function createMcpServer<Ctx extends McpContext>(
       }
 
       logger.info("call_tool invoked", { name, arguments: args });
-
-      if (isMcpBlockedTool(name)) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Tool disabled: ${name} is not available via MCP.`
-            }
-          ],
-          isError: true
-        };
-      }
 
       // List reads apply no limit unless the caller passes one (the schema's
       // `default: 100` is documentation, not enforcement — an argless call
@@ -297,10 +277,7 @@ export async function createMcpServer<Ctx extends McpContext>(
         content: [
           {
             type: "text" as const,
-            text:
-              result.errorKind === "database"
-                ? result.error
-                : `Error: ${result.error}`
+            text: `Error: ${result.error}`
           }
         ],
         isError: true

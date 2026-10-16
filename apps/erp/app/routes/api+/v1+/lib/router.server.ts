@@ -10,9 +10,7 @@ import type { ManifestEntry } from "@carbon/api";
 import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
 import { annotateRequestSpan, withSpan } from "@carbon/logger/tracing.server";
 import { base, gate, mapThrownErrors } from "./base.server";
-import { dispatchOperation } from "./dispatch.server";
 import {
-  liveOperationAliases,
   OPERATIONS,
   operationId,
   operationPath,
@@ -43,19 +41,7 @@ const traced = (meta: ManifestEntry) =>
     return withSpan(`operation ${meta.name}`, attributes, async () => next());
   });
 
-// `module`/`id` name the route; `meta` is the operation it runs. They differ only
-// for a deprecated alias, which keeps its old path but runs (and is gated as) its
-// replacement.
-function buildProcedure(
-  meta: ManifestEntry,
-  module: string,
-  id: string,
-  deprecated = false
-) {
-  // An alias keeps its old path; everything else is served at its own.
-  const path: `/${string}` = deprecated
-    ? `/${module}/${id}`
-    : operationPath(meta);
+function buildProcedure(meta: ManifestEntry) {
   const summary = meta.title ?? meta.description;
   return (
     base
@@ -66,14 +52,10 @@ function buildProcedure(
       .use(gate(meta))
       .route({
         method: "POST",
-        path,
-        tags: [module],
-        summary: deprecated
-          ? `${summary} (deprecated: use ${operationPath(meta)})`
-          : summary,
-        ...(meta.title ? { description: meta.description } : {}),
-        // Only when set — `deprecated: false` would land on every operation.
-        ...(deprecated ? { deprecated: true } : {})
+        path: operationPath(meta),
+        tags: [meta.module],
+        summary,
+        ...(meta.title ? { description: meta.description } : {})
       })
       // Input validates; output does NOT — shapeHttpBody rewrites the body, so a
       // correct response does not match the declared response schema.
@@ -82,12 +64,7 @@ function buildProcedure(
       // callOperation reverses this shaping with the same static bit, so
       // MCP/agent/workflow callers still see DispatchResult semantics.
       .handler(async ({ input, context }) =>
-        shapeHttpBody(
-          meta,
-          meta.serviceFn
-            ? await runServiceFn(meta, context, input)
-            : await dispatchOperation(meta, context, input)
-        )
+        shapeHttpBody(meta, await runServiceFn(meta, context, input))
       )
   );
 }
@@ -100,27 +77,14 @@ export const router: Record<
     string,
     Record<string, ReturnType<typeof buildProcedure>>
   > = {};
-  const add = (
-    module: string,
-    id: string,
-    meta: ManifestEntry,
-    deprecated: boolean
-  ) => {
-    if (RESERVED_KEYS.has(id) || RESERVED_KEYS.has(module)) {
+  for (const meta of OPERATIONS) {
+    const id = operationId(meta);
+    if (RESERVED_KEYS.has(id) || RESERVED_KEYS.has(meta.module)) {
       throw new Error(
-        `Carbon API operation "${module}_${id}" collides with a reserved oRPC router key.`
+        `Carbon API operation "${meta.name}" collides with a reserved oRPC router key.`
       );
     }
-    (out[module] ??= {})[id] = buildProcedure(meta, module, id, deprecated);
-  };
-  for (const meta of OPERATIONS) {
-    add(meta.module, operationId(meta), meta, false);
-  }
-  // Aliases are `<module>_<operation>` like every operation name; module names
-  // carry no underscore, so the first one splits it.
-  for (const [alias, meta] of liveOperationAliases) {
-    const split = alias.indexOf("_");
-    add(alias.slice(0, split), alias.slice(split + 1), meta, true);
+    (out[meta.module] ??= {})[id] = buildProcedure(meta);
   }
   return out;
 })();

@@ -29,7 +29,9 @@ import { today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { dispatchOperation } from "~/routes/api+/v1+/lib/dispatch.server";
+import { getUserClaims } from "@carbon/auth/users.server";
+import { scopesFromPermissions } from "~/routes/api+/v1+/lib/base.server";
+import { callOperation } from "~/routes/api+/v1+/lib/call.server";
 import { OPERATIONS } from "~/routes/api+/v1+/lib/operations.server";
 import { getDatabaseClient } from "~/services/database.server";
 import {
@@ -265,13 +267,8 @@ function rowsOf(data: unknown): number | null {
   return data === null || data === undefined ? 0 : null;
 }
 
-const errorCode = (error: unknown) =>
-  (error as { data?: { supabase?: { code?: string } } })?.data?.supabase?.code;
-
 function describeError(error: unknown): string {
-  const code = errorCode(error);
-  const message = error instanceof Error ? error.message : String(error);
-  return code ? `${code}: ${message}` : message;
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function withTimeout<T>(work: Promise<T>): Promise<T> {
@@ -326,6 +323,10 @@ describe("every read tool, against real data", () => {
       // reason that is the setup's, and a person could then baseline them.
       throw new Error(`Company ${companyId} not found, or it has no company group.`);
     }
+
+    // The sweep user calls as an OAuth connector would: gated on their own permissions.
+    const claims = await getUserClaims(userId, companyId);
+    const scopes = scopesFromPermissions(claims.permissions, companyId);
 
     const reads = OPERATIONS.filter((tool) => tool.classification === "READ");
     const ast = buildServiceAst([...new Set(reads.map((tool) => tool.module))]);
@@ -410,19 +411,27 @@ describe("every read tool, against real data", () => {
           // A fresh token per call: the sweep outlives a user token's five minutes.
           const client = await getUserScopedClient(userId);
           const result = await withTimeout(
-            dispatchOperation(
-              tool,
+            callOperation(
+              tool.name,
               {
                 client,
                 userId,
                 companyId,
                 companyGroupId,
-                authKind: "session",
-                scopes: {}
+                authKind: "oauth",
+                scopes
               },
               args
             )
           );
+          if (!result.success) {
+            // A single-row read that matched no row: try the next candidate.
+            if (result.category === "notFound" && Object.keys(args).length > 0) {
+              entry.outcome = { status: "not-found", ms: Math.round(performance.now() - started) };
+              continue;
+            }
+            throw new Error(result.error);
+          }
           entry.outcome = {
             status: "ok",
             rows: rowsOf(result.data),
@@ -431,11 +440,6 @@ describe("every read tool, against real data", () => {
           break;
         } catch (error) {
           const ms = Math.round(performance.now() - started);
-          // PGRST116: a single-row read matched no row.
-          if (errorCode(error) === "PGRST116" && Object.keys(args).length > 0) {
-            entry.outcome = { status: "not-found", ms };
-            continue;
-          }
           entry.outcome = { status: "failed", error: describeError(error), ms };
           break;
         }

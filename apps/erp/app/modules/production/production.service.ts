@@ -11547,20 +11547,9 @@ export function buildPeopleCapacityBuckets(args: {
 
   return { demandByWorkCenter, scheduledByWorkCenter };
 }
-// MCP-exposed production writes that depend on server-only modules
-// (`@carbon/auth/users.server`, `@carbon/ee/rules.server`). These CANNOT
-// live in `production.service.ts`: that file is re-exported by the
-// `~/modules/production` barrel, which client components value-import, so it is
-// part of the client bundle and React Router's dot-server plugin rejects any
-// `.server` reference reachable from it. This module is server-only (never
-// re-exported by the barrel) and is pulled into the MCP tool set by
-// `scripts/generate-mcp.ts` + the Carbon API registry
-// (`api+/v1+/lib/registry.server.ts`), which run server-side only.
-//
 // Some of these writes reach privileged paths (a SECURITY DEFINER RPC, an
-// Inngest trigger) that bypass RLS. The API gate (`gate` in
-// `api+/v1+/lib/base.server.ts`) checks each published tool's permission for
-// every caller: API keys, OAuth connectors and workflows.
+// Inngest trigger) that bypass RLS: the service functions that call them check
+// the caller's permission for every caller.
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.

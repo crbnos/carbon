@@ -30,8 +30,7 @@ export type McpCallResult =
 
 /** Everything the MCP engine needs from the APP side, injected by the route.
  *  The dispatch (`callOperation`), its manifest (`operationsByName` /
- *  `isListOperation`), the blocked-tool predicate and the generated tool
- *  metadata all derive from `apps/erp`'s `~/modules/*` and cannot move into a
+ *  `isListOperation`) and the generated tool metadata all derive from `apps/erp`'s `~/modules/*` and cannot move into a
  *  package — so they are passed in rather than imported. */
 export interface McpServerDeps<Ctx> {
   callOperation: (
@@ -43,7 +42,6 @@ export interface McpServerDeps<Ctx> {
    *  replacement's entry — so `get(name).name !== name` marks an alias. */
   operationsByName: Map<string, ManifestEntry>;
   isListOperation: (meta: ManifestEntry) => boolean;
-  isMcpBlockedTool: (name: string) => boolean;
   /** Built once at module scope by the route from `tool-metadata.json`. */
   catalogSearch: CatalogSearch;
   /** The generated catalog summary the instructions + search footer read. */

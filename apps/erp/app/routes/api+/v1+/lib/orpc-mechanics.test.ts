@@ -31,13 +31,9 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     module: "demo",
     classification: "READ",
     description: "demo ping",
-    paramCount: 1,
-    serviceParams: ["client", "args"],
-    contextParams: { client: "client" },
-    injectAuth: [],
-    resultShape: "plain",
     permission: { module: null, actions: [] },
     paginates: false,
+    serviceFn: { path: ["demo", "ping"] },
     schema: { type: "object", properties: { name: { type: "string" } } },
     ...overrides
   };

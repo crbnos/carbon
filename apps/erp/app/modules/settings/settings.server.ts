@@ -99,11 +99,6 @@ import {
 import * as service from "./settings.service";
 
 const logger = getLogger("erp", "settings");
-// Server-only (needs the service-role client for the Vault RPC). Lives here rather
-// than in settings.service.ts because that file is re-exported by the client barrel;
-// a client.server import there would leak the service-role client into the browser
-// bundle. Reached by the Carbon API registry (api+/v1+/lib/registry.server.ts),
-// which imports this module server-side.
 // ─── Operations (`defineServiceFn`) ─────────────────────────────────────────
 // What the routes, the API and MCP all run. A settings page has ONE update
 // operation: it takes the page's fields, all optional, and writes the ones

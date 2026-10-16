@@ -67,8 +67,6 @@ export async function runServiceFn(
   context: AuthedContext,
   input: unknown
 ): Promise<{ data: unknown }> {
-  if (!meta.serviceFn)
-    throw new Error(`${meta.name} is not a service function`);
   const fn = serviceFnAt(meta.serviceFn.path);
   const result = await fn(contextFromAuthed(context), input);
   if (result.error) {
