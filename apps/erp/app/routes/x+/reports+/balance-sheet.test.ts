@@ -40,7 +40,9 @@ vi.mock("@carbon/react", () => ({ VStack: () => null }));
 vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
+vi.mock("~/modules/settings/settings.service", () => ({
+  getNextSequence: vi.fn()
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,

@@ -20,15 +20,18 @@ import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createCookieSessionStorage, data } from "react-router";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
+import {
+  getCurrencyByCode,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service";
 import {
   getCustomerContact,
   getSalesOrder,
   getSalesOrderCustomerDetails,
   getSalesOrderLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import type { CarbonError, ServiceContext } from "~/modules/service-fn.server";
-import { getCompany, withLogoUrls } from "~/modules/settings";
+import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getTimezoneNames } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";

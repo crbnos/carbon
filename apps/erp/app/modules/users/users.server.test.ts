@@ -116,9 +116,13 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
-vi.mock("~/modules/purchasing", () => ({ getSupplierContact: vi.fn() }));
-vi.mock("~/modules/sales", () => ({ getCustomerContact: vi.fn() }));
-vi.mock("~/modules/users", () => ({
+vi.mock("~/modules/purchasing/purchasing.service", () => ({
+  getSupplierContact: vi.fn()
+}));
+vi.mock("~/modules/sales/sales.service", () => ({
+  getCustomerContact: vi.fn()
+}));
+vi.mock("~/modules/users/users.service", () => ({
   getPermissionsByEmployeeType: mocks.getPermissionsByEmployeeType
 }));
 vi.mock("~/services/database.server", () => ({

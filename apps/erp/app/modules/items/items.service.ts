@@ -41,14 +41,13 @@ import type {
   operationToolValidator
 } from "../shared";
 import {
-  lookupBuyPriceFromMap,
-  type MethodType,
   normalizeOperationSourceIds,
-  type SourcingType,
   type SupplierPartPricing,
   type SupplierPriceMap
-} from "../shared";
+} from "../shared/shared.models";
+import { lookupBuyPriceFromMap } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
+import type { MethodType, SourcingType } from "../shared/types";
 import {
   type ChangeNoticeChangeType,
   type ChangeNoticeError,

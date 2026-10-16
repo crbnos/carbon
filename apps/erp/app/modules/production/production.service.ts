@@ -60,8 +60,8 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getDefaultStorageUnitForJob } from "../inventory";
-import { getEmployeeJob } from "../people";
+import { getDefaultStorageUnitForJob } from "../inventory/inventory.service";
+import { getEmployeeJob } from "../people/people.service";
 import { resolveJobConfiguration } from "../sales/sales.utils";
 import type {
   MethodType,
@@ -70,7 +70,7 @@ import type {
   operationStepValidator,
   operationToolValidator
 } from "../shared";
-import { normalizeOperationSourceIds } from "../shared";
+import { normalizeOperationSourceIds } from "../shared/shared.models";
 import { updateSortOrder } from "../shared/sort-order";
 import {
   claimPlanningActions,

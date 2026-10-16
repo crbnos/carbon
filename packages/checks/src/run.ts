@@ -26,6 +26,7 @@ import {
   noAuthzDdlInMigrations
 } from "./conformance/no-authz-ddl-in-migrations";
 import { noBareOutlet } from "./conformance/no-bare-outlet";
+import { noBarrelImportInModuleFile } from "./conformance/no-barrel-import-in-module-file";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -95,6 +96,7 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
   noInlineFractionDigits,
   noDbClientInService,
+  noBarrelImportInModuleFile,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,

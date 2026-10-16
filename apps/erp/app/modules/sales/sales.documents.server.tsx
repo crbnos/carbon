@@ -20,17 +20,20 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
-import { getLocation } from "~/modules/resources";
+import {
+  getCurrencyByCode,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service";
+import { getLocation } from "~/modules/resources/resources.service";
 import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings,
   getDocumentTemplate,
   resolveSections
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import {
   getCustomer,
   getCustomerLocation,

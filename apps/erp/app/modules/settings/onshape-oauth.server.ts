@@ -18,7 +18,7 @@ import {
 import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
 import { redirectExternal } from "@carbon/utils";
-import { oAuthCallbackSchema } from "~/modules/shared";
+import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import type { IntegrationErrorCode } from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";

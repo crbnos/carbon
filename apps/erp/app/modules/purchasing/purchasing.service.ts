@@ -35,7 +35,7 @@ import {
 import { sql } from "kysely";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
-import { getEmployeeJob } from "~/modules/people";
+import { getEmployeeJob } from "~/modules/people/people.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";

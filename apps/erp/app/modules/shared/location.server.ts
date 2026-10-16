@@ -7,7 +7,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import { getUserDefaults } from "~/modules/users/users.server";
 
 /**

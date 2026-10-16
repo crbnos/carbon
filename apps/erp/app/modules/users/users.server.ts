@@ -36,10 +36,10 @@ import {
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSupplierContact } from "~/modules/purchasing";
-import { getCustomerContact } from "~/modules/sales";
+import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
+import { getCustomerContact } from "~/modules/sales/sales.service";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users";
-import { getPermissionsByEmployeeType } from "~/modules/users";
+import { getPermissionsByEmployeeType } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { insertEmployeeJob } from "../people/people.service";

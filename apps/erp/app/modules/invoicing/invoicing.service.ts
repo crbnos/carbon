@@ -45,7 +45,7 @@ import {
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";

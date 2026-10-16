@@ -91,7 +91,9 @@ export const cancelJob = defineServiceFn({
   `{module}/index.server.ts`; `router.server.ts` combines them. A
   `{module}.server.ts` imports other modules' `*.service.ts` files, never their
   barrels: a barrel re-exports UI that imports other barrels, a cycle the
-  router (which loads every module) walks into.
+  router (which loads every module) walks into. The same holds for
+  `*.models.ts` and `*.service.ts`; `no-barrel-import-in-module-file`
+  (`@carbon/checks`) enforces it.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `serverFns` write in an ERP route.
 

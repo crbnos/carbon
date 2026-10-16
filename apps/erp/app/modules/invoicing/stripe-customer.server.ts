@@ -21,7 +21,7 @@ import {
   getCustomerPayment,
   getCustomerTax,
   updateCustomerContact
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { stripeCustomerActions } from "./invoicing.models";
 import type { StripeCustomerSources } from "./stripe-customer.mapper";

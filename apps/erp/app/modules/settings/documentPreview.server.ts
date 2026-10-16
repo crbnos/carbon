@@ -6,24 +6,24 @@ import type { Database } from "@carbon/database";
 import { withRevisionSuffix } from "@carbon/documents/utils";
 import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
   getStockTransfer,
   getStockTransferLines
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import {
   getSalesInvoice,
   getSalesInvoiceCustomerDetails,
   getSalesInvoiceLines,
   getSalesInvoiceShipment
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.service";
 import {
   getPurchaseOrder,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchasingTerms
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import {
   getQuote,
   getQuoteCustomerDetails,
@@ -35,13 +35,13 @@ import {
   getSalesOrderCustomerDetails,
   getSalesOrderLines,
   getSalesTerms
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import {
   getAccountsPayableBillingAddress,
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
 
 type Client = SupabaseClient<Database>;
 

@@ -14,6 +14,7 @@ export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-author
 export { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 export { journalStatusFilter } from "./conformance/journal-status-filter";
 export { moduleShape } from "./conformance/module-shape";
+export { noBarrelImportInModuleFile } from "./conformance/no-barrel-import-in-module-file";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";

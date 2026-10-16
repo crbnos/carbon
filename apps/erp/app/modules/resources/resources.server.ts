@@ -8,7 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { notifyScheduleInputsChanged } from "~/modules/production";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 import {
   trainingCertificateKeyPrefix,

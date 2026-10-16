@@ -8,7 +8,9 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
+vi.mock("~/modules/settings/settings.service", () => ({
+  getNextSequence: vi.fn()
+}));
 vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   glossaryEntries: () => []
