@@ -181,25 +181,22 @@ export function typeToJsonSchema(
     // and the docs SchemaTable already renders it as `Record<string, …>`.
     const indexValue =
       type.getStringIndexType() ?? type.getNumberIndexType() ?? undefined;
-    if (indexValue) {
-      return {
-        type: "object",
-        additionalProperties: typeToJsonSchema(
-          indexValue,
-          at,
-          depth + 1,
-          nextSeen,
-          undefinedIsAbsent
-        )
-      };
-    }
+    const additional = indexValue
+      ? typeToJsonSchema(indexValue, at, depth + 1, nextSeen, undefinedIsAbsent)
+      : undefined;
 
     // Symbol-keyed members (`[Symbol.iterator]`, reported as `__@iterator@206`)
     // are dropped by JSON.stringify, and their names carry unstable checker ids.
     const properties = type
       .getProperties()
       .filter((property) => !property.getName().startsWith("__@"));
-    if (properties.length === 0) return { type: "object" };
+    // A map with named keys too (a zod `looseObject`: its fields plus any
+    // other key) publishes both; a bare map only its value type.
+    if (properties.length === 0) {
+      return additional
+        ? { type: "object", additionalProperties: additional }
+        : { type: "object" };
+    }
     if (properties.length > MAX_PROPERTIES) return { type: "object" };
 
     const shape: Record<string, unknown> = {};
@@ -218,6 +215,7 @@ export function typeToJsonSchema(
 
     const out: JsonSchema = { type: "object", properties: shape };
     if (required.length > 0) out.required = required;
+    if (additional) out.additionalProperties = additional;
     return out;
   }
 
