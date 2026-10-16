@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { notifyScheduleInputsChanged } from "~/modules/production";
+import { carbon, redirectWithResult } from "~/modules/carbon.server";
 import {
   getFailureModesList,
-  insertMaintenanceDispatch,
   maintenanceDispatchValidator
 } from "~/modules/resources";
 import MaintenanceDispatchForm from "~/modules/resources/ui/Maintenance/MaintenanceDispatchForm";
@@ -44,68 +40,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(maintenanceDispatchValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.maintenanceDispatch.create(input.data);
+  return redirectWithResult(args.request, result, {
+    to: result.data
+      ? path.to.maintenanceDispatch(result.data.id)
+      : path.to.maintenanceDispatches,
+    message: "Created maintenance dispatch"
   });
-
-  const formData = await request.formData();
-  const validation = await validator(maintenanceDispatchValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const content = validation.data.content
-    ? JSON.parse(validation.data.content)
-    : undefined;
-
-  const result = await insertMaintenanceDispatch(client, {
-    status: validation.data.status,
-    priority: validation.data.priority,
-    severity: validation.data.severity || undefined,
-    source: validation.data.source || undefined,
-    oeeImpact: validation.data.oeeImpact || undefined,
-    workCenterId: validation.data.workCenterId || undefined,
-    locationId: validation.data.locationId,
-    assignee: validation.data.assignee || undefined,
-    suspectedFailureModeId: validation.data.suspectedFailureModeId || undefined,
-    plannedStartTime: validation.data.plannedStartTime || undefined,
-    plannedEndTime: validation.data.plannedEndTime || undefined,
-    takesWorkCenterOffline: validation.data.takesWorkCenterOffline,
-    content,
-    companyId,
-    createdBy: userId
-  });
-
-  if (result.error || !result.data) {
-    throw redirect(
-      path.to.maintenanceDispatches,
-      await flash(
-        request,
-        error(result.error, "Failed to create maintenance dispatch")
-      )
-    );
-  }
-
-  // A dispatch that takes its work center offline removes hours from the
-  // schedule — stamp the affected work center so the wave regenerates.
-  if (validation.data.takesWorkCenterOffline && validation.data.workCenterId) {
-    await notifyScheduleInputsChanged(
-      companyId,
-      "work-center",
-      "Machine downtime changed",
-      validation.data.workCenterId
-    );
-  }
-
-  throw redirect(
-    path.to.maintenanceDispatch(result.data.id),
-    await flash(request, success("Created maintenance dispatch"))
-  );
 }
 
 export default function NewMaintenanceDispatchRoute() {

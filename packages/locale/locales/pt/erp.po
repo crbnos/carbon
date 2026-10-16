@@ -9233,6 +9233,15 @@ msgstr "Boa noite, {name}."
 msgid "Event"
 msgstr "Evento"
 
+msgid "Event saved"
+msgstr ""
+
+msgid "Event started"
+msgstr ""
+
+msgid "Event stopped"
+msgstr ""
+
 msgid "Event Type"
 msgstr "Tipo de Evento"
 
@@ -9648,10 +9657,6 @@ msgstr "Falha ao criar grupo de itens: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create location: {0}"
 msgstr "Falha ao criar localização: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create maintenance schedule: {0}"
-msgstr "Falha ao criar cronograma de manutenção: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -16199,6 +16204,9 @@ msgstr "peças"
 msgid "Part"
 msgstr "Peça"
 
+msgid "Part added and issued successfully"
+msgstr ""
+
 msgid "Part Being Replaced"
 msgstr "Peça sendo substituída"
 
@@ -21648,6 +21656,9 @@ msgstr "Sugestão"
 msgid "Suggestion Notifications"
 msgstr "Notificações de Sugestões"
 
+msgid "Suggestion submitted"
+msgstr ""
+
 msgid "Suggestions"
 msgstr "Sugestões"
 
@@ -24248,6 +24259,9 @@ msgstr "Treinamento"
 msgid "Training Assignments"
 msgstr "Atribuições de Treinamento"
 
+msgid "Training marked as complete"
+msgstr ""
+
 msgid "Training not recorded"
 msgstr "Treinamento não registrado"
 
@@ -24767,6 +24781,9 @@ msgstr "Atualizado em"
 
 msgid "Updated By"
 msgstr "Atualizado por"
+
+msgid "Updated dispatch status"
+msgstr ""
 
 msgid "Updated job status"
 msgstr ""

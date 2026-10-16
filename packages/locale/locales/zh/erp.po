@@ -9233,6 +9233,15 @@ msgstr "傍晚，{name}。"
 msgid "Event"
 msgstr "事件"
 
+msgid "Event saved"
+msgstr ""
+
+msgid "Event started"
+msgstr ""
+
+msgid "Event stopped"
+msgstr ""
+
 msgid "Event Type"
 msgstr "事件类型"
 
@@ -9648,10 +9657,6 @@ msgstr "创建项目组失败：{0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create location: {0}"
 msgstr "创建位置失败：{0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create maintenance schedule: {0}"
-msgstr "创建维护日程失败: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -16199,6 +16204,9 @@ msgstr "零件"
 msgid "Part"
 msgstr "零件"
 
+msgid "Part added and issued successfully"
+msgstr ""
+
 msgid "Part Being Replaced"
 msgstr "被替代的零件"
 
@@ -21648,6 +21656,9 @@ msgstr "建议"
 msgid "Suggestion Notifications"
 msgstr "建议通知"
 
+msgid "Suggestion submitted"
+msgstr ""
+
 msgid "Suggestions"
 msgstr "建议"
 
@@ -24248,6 +24259,9 @@ msgstr "培训"
 msgid "Training Assignments"
 msgstr "培训分配"
 
+msgid "Training marked as complete"
+msgstr ""
+
 msgid "Training not recorded"
 msgstr "培训未记录"
 
@@ -24767,6 +24781,9 @@ msgstr "更新于"
 
 msgid "Updated By"
 msgstr "更新者"
+
+msgid "Updated dispatch status"
+msgstr ""
 
 msgid "Updated job status"
 msgstr ""

@@ -9233,6 +9233,15 @@ msgstr "{name}님, 저녁이군요."
 msgid "Event"
 msgstr "이벤트"
 
+msgid "Event saved"
+msgstr ""
+
+msgid "Event started"
+msgstr ""
+
+msgid "Event stopped"
+msgstr ""
+
 msgid "Event Type"
 msgstr "이벤트 유형"
 
@@ -9648,10 +9657,6 @@ msgstr "품목 그룹 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create location: {0}"
 msgstr "위치 생성 실패: {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create maintenance schedule: {0}"
-msgstr "유지보수 일정 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -16199,6 +16204,9 @@ msgstr "품목"
 msgid "Part"
 msgstr "품목"
 
+msgid "Part added and issued successfully"
+msgstr ""
+
 msgid "Part Being Replaced"
 msgstr "대체될 부품"
 
@@ -21648,6 +21656,9 @@ msgstr "제안"
 msgid "Suggestion Notifications"
 msgstr "제안 알림"
 
+msgid "Suggestion submitted"
+msgstr ""
+
 msgid "Suggestions"
 msgstr "제안"
 
@@ -24248,6 +24259,9 @@ msgstr "교육"
 msgid "Training Assignments"
 msgstr "교육 배정"
 
+msgid "Training marked as complete"
+msgstr ""
+
 msgid "Training not recorded"
 msgstr "교육이 기록되지 않음"
 
@@ -24767,6 +24781,9 @@ msgstr "업데이트 일시"
 
 msgid "Updated By"
 msgstr "업데이트한 사람"
+
+msgid "Updated dispatch status"
+msgstr ""
 
 msgid "Updated job status"
 msgstr ""

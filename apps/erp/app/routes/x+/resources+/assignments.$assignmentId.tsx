@@ -27,6 +27,7 @@ import {
   ModalTitle,
   ToggleGroup,
   ToggleGroupItem,
+  toast,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -43,7 +44,7 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Empty, FileDropzone } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -166,7 +167,10 @@ function CertificateCompleteModal({
 }) {
   const { t } = useLingui();
   const fetcher = useAction<typeof completeAction>({
-    onSuccess: () => onClose()
+    onSuccess: () => {
+      toast.success(t`Training marked as complete`);
+      onClose();
+    }
   });
   const isSubmitting = fetcher.state !== "idle";
   const [file, setFile] = useState<File | null>(null);
@@ -253,7 +257,9 @@ function AssignmentListItem({
   isLast: boolean;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher();
+  const fetcher = useAction<typeof completeAction>({
+    onSuccess: () => toast.success(t`Training marked as complete`)
+  });
   const isSubmitting = fetcher.state !== "idle";
   const employeeName = assignment.employeeName?.trim() ?? "";
   const canMarkComplete =
