@@ -2096,7 +2096,8 @@ const importer = {
 
             // An item is described once: a later row for the same Part
             // Number and Revision is reported, not written. Before, it was
-            // dropped with no report.
+            // dropped with no report. A row claims its key only once it is
+            // queued, so a refused row does not hold it from a later one.
             if (readableIds.has(readableIdWithRevision)) {
               summary.skipped.push({
                 row: rowIndex,
@@ -2104,7 +2105,6 @@ const importer = {
               });
               continue;
             }
-            readableIds.add(readableIdWithRevision);
 
             if (externalIdMap.has(getExternalId(id))) {
               const existingEntityId = externalIdMap.get(getExternalId(id))!;
@@ -2122,6 +2122,7 @@ const importer = {
                 });
                 continue;
               }
+              readableIds.add(readableIdWithRevision);
               itemUpdates.push({
                 id: existingEntityId,
                 data: keepSavedValues(
@@ -2183,6 +2184,7 @@ const importer = {
                 });
                 continue;
               }
+              readableIds.add(readableIdWithRevision);
               const newItem = {
                 ...rest,
                 replenishmentSystem: rest.replenishmentSystem ?? "Buy",

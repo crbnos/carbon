@@ -6,7 +6,8 @@ import { expect, it } from "vitest";
 import { buildItemIndex } from "./existing-item";
 import {
   classifySupplierPartRow,
-  supplierPartKey
+  supplierPartKey,
+  supplierPartUpdate
 } from "./supplier-part-import";
 
 const itemIndex = buildItemIndex([
@@ -86,6 +87,10 @@ it("refuses numbers the drawer would refuse", () => {
     action: "error",
     reason: "Unit Price must be a number"
   });
+  expect(classify({ ...row, orderMultiple: "2147483648" })).toEqual({
+    action: "error",
+    reason: "Order Multiple must be 2147483647 or less"
+  });
 });
 
 it("refuses an unknown currency", () => {
@@ -122,4 +127,22 @@ it("refuses a missing supplier and items without a Purchasing tab", () => {
     reason:
       "Item FX-1 rev 0 is a Fixture; this import takes Part, Material, Tool, Consumable, Service items"
   });
+});
+
+it("updates only the fields written, and never with a blank currency", () => {
+  const decision = classify({
+    readableId: "BRK-10",
+    supplierId: "sup-a",
+    unitPrice: "4.6"
+  });
+  if (decision.action !== "write") throw new Error("expected a write");
+  expect(
+    supplierPartUpdate(decision.values, new Set(["supplierId", "unitPrice"]))
+  ).toEqual({ supplierUnitPrice: 4.6 });
+  expect(
+    supplierPartUpdate(
+      decision.values,
+      new Set(["supplierPartId", "minimumOrderQuantity", "currencyCode"])
+    )
+  ).toEqual({ supplierPartId: null, minimumOrderQuantity: 1 });
 });

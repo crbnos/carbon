@@ -18,12 +18,12 @@
 //
 // An update writes the fields `writtenFields` names for its row: the columns
 // the wizard maps, a blank cell as its default; with `keepSavedValues` (MCP),
-// only the cells the row holds.
+// only the cells the row holds. Updates are set-based (`updateRowsByKey`).
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, round } from "@carbon/utils";
-import { type Kysely, sql } from "kysely";
+import { round } from "@carbon/utils";
+import type { Kysely } from "kysely";
 import { inChunks } from "./chunks";
 import {
   cell,
@@ -35,6 +35,7 @@ import {
   resolveItem
 } from "./existing-item";
 import { type NumberRule, numberCellsError } from "./item-extras";
+import { type ColumnType, updateRowsByKey } from "./set-based-update";
 import { inTransaction } from "./transaction";
 
 const logger = getLogger("server-functions", "import-csv");
@@ -71,8 +72,6 @@ const COLUMN_OF_FIELD = {
   unitPrice: "supplierUnitPrice",
   currencyCode: "currencyCode"
 } as const;
-
-type SupplierPartField = keyof typeof COLUMN_OF_FIELD;
 
 export type SupplierPartValues = {
   supplierPartId: string | null;
@@ -168,63 +167,37 @@ export async function loadSupplierCurrencies(
   return new Map(suppliers.map((s) => [s.id, s.currencyCode]));
 }
 
-type SupplierPartUpdate = {
-  id: string;
-  values: SupplierPartValues;
-  written: ReadonlySet<string>;
-};
+// The supplierPart columns an update can write, typed for the set-based
+// update.
+const SUPPLIER_PART_COLUMNS: ColumnType[] = [
+  { name: "supplierPartId", type: "text" },
+  { name: "supplierUnitOfMeasureCode", type: "text" },
+  { name: "minimumOrderQuantity", type: "integer" },
+  { name: "orderMultiple", type: "integer" },
+  { name: "conversionFactor", type: "numeric" },
+  { name: "supplierUnitPrice", type: "numeric" },
+  { name: "currencyCode", type: "text" }
+];
 
-// One UPDATE … FROM (VALUES …) per chunk: each row carries its values and,
-// per column, whether to write it.
-async function updateSupplierParts(
-  trx: Kysely<KyselyDatabase>,
-  updates: SupplierPartUpdate[],
-  companyId: string,
-  userId: string
-): Promise<void> {
-  const now = datetime.timestamp();
-  const writes = (u: SupplierPartUpdate, field: SupplierPartField) =>
-    u.written.has(field) &&
-    // A blank Currency Code keeps the saved currency.
-    (field !== "currencyCode" || u.values.currencyCode !== null);
-  await inChunks(updates, async (chunk) => {
-    const values = chunk.map(
-      (u) => sql`(
-        ${u.id}::text,
-        ${writes(u, "supplierPartId")}::boolean, ${u.values.supplierPartId}::text,
-        ${writes(u, "supplierUnitOfMeasureCode")}::boolean, ${u.values.supplierUnitOfMeasureCode}::text,
-        ${writes(u, "minimumOrderQuantity")}::boolean, ${u.values.minimumOrderQuantity}::integer,
-        ${writes(u, "orderMultiple")}::boolean, ${u.values.orderMultiple}::integer,
-        ${writes(u, "conversionFactor")}::boolean, ${u.values.conversionFactor}::numeric,
-        ${writes(u, "unitPrice")}::boolean, ${u.values.supplierUnitPrice}::numeric,
-        ${writes(u, "currencyCode")}::boolean, ${u.values.currencyCode}::text
-      )`
-    );
-    await sql`
-      UPDATE "supplierPart" AS t SET
-        "supplierPartId" = CASE WHEN v."setPartId" THEN v."supplierPartId" ELSE t."supplierPartId" END,
-        "supplierUnitOfMeasureCode" = CASE WHEN v."setUnit" THEN v."supplierUnitOfMeasureCode" ELSE t."supplierUnitOfMeasureCode" END,
-        "minimumOrderQuantity" = CASE WHEN v."setMoq" THEN v."minimumOrderQuantity" ELSE t."minimumOrderQuantity" END,
-        "orderMultiple" = CASE WHEN v."setMultiple" THEN v."orderMultiple" ELSE t."orderMultiple" END,
-        "conversionFactor" = CASE WHEN v."setFactor" THEN v."conversionFactor" ELSE t."conversionFactor" END,
-        "supplierUnitPrice" = CASE WHEN v."setPrice" THEN v."supplierUnitPrice" ELSE t."supplierUnitPrice" END,
-        "currencyCode" = CASE WHEN v."setCurrency" THEN v."currencyCode" ELSE t."currencyCode" END,
-        "updatedAt" = ${now},
-        "updatedBy" = ${userId}
-      FROM (VALUES ${sql.join(values)}) AS v(
-        "id",
-        "setPartId", "supplierPartId",
-        "setUnit", "supplierUnitOfMeasureCode",
-        "setMoq", "minimumOrderQuantity",
-        "setMultiple", "orderMultiple",
-        "setFactor", "conversionFactor",
-        "setPrice", "supplierUnitPrice",
-        "setCurrency", "currencyCode"
-      )
-      WHERE t."id" = v."id" AND t."companyId" = ${companyId}
-    `.execute(trx);
-    return [];
-  });
+/**
+ * The columns an update of an existing supplier part writes: the fields
+ * `written` names, except a blank Currency Code, which keeps the saved
+ * currency.
+ */
+export function supplierPartUpdate(
+  values: SupplierPartValues,
+  written: ReadonlySet<string>
+): Record<string, unknown> {
+  const set: Record<string, unknown> = {};
+  for (const [field, column] of Object.entries(COLUMN_OF_FIELD) as Array<
+    [string, keyof SupplierPartValues]
+  >) {
+    if (!written.has(field)) continue;
+    const value = values[column];
+    if (column === "currencyCode" && value === null) continue;
+    set[column] = value;
+  }
+  return set;
 }
 
 export async function importSupplierParts(
@@ -302,9 +275,16 @@ export async function importSupplierParts(
   const inserts = writes.filter(
     (w) => !existingByPair.has(supplierPartKey(w.itemId, w.supplierId))
   );
-  const updates: SupplierPartUpdate[] = writes.flatMap((w) => {
+  const updates = writes.flatMap((w) => {
     const id = existingByPair.get(supplierPartKey(w.itemId, w.supplierId));
-    return id ? [{ id, values: w.values, written: writtenFields(w.row) }] : [];
+    return id
+      ? [
+          {
+            key: { id },
+            set: supplierPartUpdate(w.values, writtenFields(w.row))
+          }
+        ]
+      : [];
   });
 
   const supplierCurrencies = await loadSupplierCurrencies(db, companyId, [
@@ -332,9 +312,14 @@ export async function importSupplierParts(
         )
         .execute()
     );
-    if (updates.length > 0) {
-      await updateSupplierParts(trx, updates, companyId, userId);
-    }
+    await updateRowsByKey(trx, {
+      table: "supplierPart",
+      companyId,
+      userId,
+      keys: [{ name: "id", type: "text" }],
+      columns: SUPPLIER_PART_COLUMNS,
+      rows: updates
+    });
   });
 
   summary.inserted += inserts.length;

@@ -12,14 +12,14 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { Kysely } from "kysely";
-import { numberCell } from "./existing-item";
+import { MAX_INTEGER, numberCell } from "./existing-item";
 
 export type NumberRule = { label: string; integer: boolean; min: number };
 
 /**
  * The first numeric cell a row holds that its column cannot store, or
- * undefined: not a number, a fraction in a whole-number column, or below the
- * form's minimum.
+ * undefined: not a number, a fraction or a value above `MAX_INTEGER` in a
+ * whole-number (INTEGER) column, or below the form's minimum.
  */
 export function numberCellsError(
   record: Record<string, string | undefined>,
@@ -31,6 +31,9 @@ export function numberCellsError(
     if (Number.isNaN(value)) return `${rule.label} must be a number`;
     if (rule.integer && !Number.isInteger(value)) {
       return `${rule.label} must be a whole number`;
+    }
+    if (rule.integer && value > MAX_INTEGER) {
+      return `${rule.label} must be ${MAX_INTEGER} or less`;
     }
     if (value < rule.min) return `${rule.label} must be ${rule.min} or more`;
   }

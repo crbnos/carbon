@@ -17,9 +17,12 @@ describe("itemExtrasError", () => {
     expect(itemExtrasError({ leadTime: "", unitCost: "" })).toBeUndefined();
   });
 
-  it("refuses a fraction in a whole-number column", () => {
+  it("refuses a fraction or an out-of-range value in a whole-number column", () => {
     expect(itemExtrasError({ leadTime: "2.5" })).toBe(
       "Lead Time (Days) must be a whole number"
+    );
+    expect(itemExtrasError({ leadTime: "2147483648" })).toBe(
+      "Lead Time (Days) must be 2147483647 or less"
     );
   });
 

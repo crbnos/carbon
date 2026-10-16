@@ -126,8 +126,8 @@ so a PART row writes exactly what a `part` row writes for the same columns. The
 PART row's item itself is still insert-or-touch: on a conflict only
 `updatedAt` / `updatedBy` change.
 
-- `itemExtrasError` refuses a Lead Time that is not a whole number of 0 or more
-  and a Unit Cost below 0, the purchasing and costing forms' bounds. Before, a
+- `itemExtrasError` refuses a Lead Time that is not a whole number from 0 to
+  `MAX_INTEGER` and a Unit Cost below 0, the purchasing and costing forms' bounds. Before, a
   fraction was cut by `parseInt` and a non-number was skipped.
 - Item rows carry no supplier columns: supplier parts are the `supplierPart`
   import, one row per item and supplier. Until 2026-10 the item imports took
@@ -326,8 +326,8 @@ Consumable, Service.
   maps (a blank cell as its default), or with `keepSavedValues` only the cells
   the row holds. A blank Currency Code never changes an existing supplier
   part's currency, since its price and price breaks are in it.
-- Inserts are chunked; updates are one `UPDATE … FROM (VALUES …)` per chunk
-  with a per-column write flag. Updated rows are reported in `existingRows`.
+- Inserts are chunked; updates go through `updateRowsByKey`
+  (`supplierPartUpdate` decides each row's columns). Updated rows are reported in `existingRows`.
 
 #### `supplierPartPrice` (Supplier Price Breaks)
 
