@@ -24,7 +24,6 @@ import {
   createServiceContext
 } from "../app/modules/service-fn.server";
 import {
-  certifyItarEntity,
   createJiraIssue,
   importCsvFile
 } from "../app/modules/shared/shared.server";
@@ -155,30 +154,6 @@ describe("creating a Jira issue for an action task", () => {
       { ...task, entityType: "nonConformanceActionTask" }
     );
     expect(result.error).toMatchObject({ category: "forbidden" });
-  });
-});
-
-describe("accepting the ITAR Rider", () => {
-  it("refuses an API key: no person signs for the company", async () => {
-    const ctx = contextFor({
-      type: "apiKey",
-      createdBy: "user-1",
-      scopes: grants(["users", "update"])
-    });
-    const result = await certifyItarEntity(ctx, {
-      authorityToBind: true,
-      acceptRider: true,
-      fullLegalName: "Ada Lovelace",
-      title: "CEO",
-      complianceContact: "compliance@example.com",
-      ipAddress: null,
-      userAgent: null
-    });
-    expect(result.error).toMatchObject({
-      category: "forbidden",
-      message:
-        "The Rider must be accepted by a representative of the company it binds."
-    });
   });
 });
 

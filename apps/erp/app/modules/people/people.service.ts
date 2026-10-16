@@ -626,7 +626,7 @@ export async function updateAttributeSortOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp update destructive */
+/** People's job updates go through `people_job_update`, which also reschedules. */
 export async function updateEmployeeJob(
   db: Kysely<KyselyDatabase>,
   employeeId: string,
@@ -805,7 +805,7 @@ export async function upsertHoliday(
   return client.from("holiday").update(sanitize(holiday)).eq("id", holiday.id);
 }
 
-/** @mcp upsert */
+/** Shifts are saved through `people_shift_create` / `people_shift_update`. */
 export async function upsertShift(
   client: SupabaseClient<Database>,
   shift:
@@ -826,7 +826,7 @@ export async function upsertShift(
   return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
 }
 
-/** @mcp action */
+/** Clocking in goes through `people.timecard.clockIn` / `people.ownTimecard.clockIn`. */
 export async function clockIn(
   client: SupabaseClient<Database>,
   args: {
@@ -851,7 +851,7 @@ export async function clockIn(
   });
 }
 
-/** @mcp action */
+/** Clocking out goes through `people.timecard.clockOut` / `people.ownTimecard.clockOut`. */
 export async function clockOut(
   client: SupabaseClient<Database>,
   args: {

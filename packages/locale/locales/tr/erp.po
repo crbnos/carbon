@@ -5040,6 +5040,9 @@ msgstr "Giriş yapıldı"
 msgid "Clocked in since <0/>"
 msgstr "<0/> tarihinden beri saatlenmiş"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Kapat"
 
@@ -7597,6 +7600,9 @@ msgstr "İş Akışını Sil"
 msgid "Deleted"
 msgstr "Silindi"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Teslim Et"
 
@@ -9100,8 +9106,17 @@ msgstr "Varlık türü değiştirilemez"
 msgid "Entry"
 msgstr "Giriş"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Giriş Türü"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "Başarılı"
 msgid "Success"
 msgstr "Başarılı"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Başarıyla kopyalandı"
 
 msgid "Successfully created a new revision"
 msgstr "Başarıyla yeni bir revizyon oluşturuldu"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "Hesap güncellendi"
 
 msgid "Updated At"
 msgstr "Güncellendi"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Güncellendiği Kişi"

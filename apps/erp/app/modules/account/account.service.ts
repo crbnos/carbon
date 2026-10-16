@@ -132,7 +132,7 @@ export async function deletePushSubscription(
     .eq("endpoint", args.endpoint);
 }
 
-/** @mcp delete */
+/** Values are removed through `account.attributeValue.delete`, which checks who may. */
 export async function deleteUserAttributeValue(
   client: SupabaseClient<Database>,
   args: {
@@ -264,7 +264,7 @@ export async function getAttributeCategoryWithValues(
     .single();
 }
 
-/** @mcp update */
+/** Avatars are changed through `account.avatar.update`, which checks the path. */
 export async function updateAvatar(
   client: SupabaseClient<Database>,
   userId: string,
@@ -294,7 +294,7 @@ export async function updatePublicAccount(
   return client.from("user").update(sanitize(account)).eq("id", account.id);
 }
 
-/** @mcp upsert */
+/** Values are set through `account.attributeValue.upsert`, which checks who may. */
 export async function upsertUserAttributeValue(
   client: SupabaseClient<Database>,
   update: {

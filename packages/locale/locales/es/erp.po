@@ -5040,6 +5040,9 @@ msgstr "Fichado entrada"
 msgid "Clocked in since <0/>"
 msgstr "Fichado desde <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Cerrar"
 
@@ -7597,6 +7600,9 @@ msgstr "Eliminar flujo de trabajo"
 msgid "Deleted"
 msgstr "Eliminado"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Entregar"
 
@@ -9100,8 +9106,17 @@ msgstr "El tipo de entidad no puede ser cambiado"
 msgid "Entry"
 msgstr "Entrada"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Tipo de Entrada"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "Exitoso"
 msgid "Success"
 msgstr "Éxito"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Presupuesto copiado exitosamente"
 
 msgid "Successfully created a new revision"
 msgstr "Se creó exitosamente una nueva revisión"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "Cuenta actualizada"
 
 msgid "Updated At"
 msgstr "Actualizado en"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Actualizado por"

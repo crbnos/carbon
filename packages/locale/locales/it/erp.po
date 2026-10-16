@@ -5040,6 +5040,9 @@ msgstr "Timbratura registrata"
 msgid "Clocked in since <0/>"
 msgstr "In servizio da <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Chiudi"
 
@@ -7597,6 +7600,9 @@ msgstr "Elimina flusso di lavoro"
 msgid "Deleted"
 msgstr "Eliminato"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Consegna"
 
@@ -9100,8 +9106,17 @@ msgstr "Il tipo di entità non può essere modificato"
 msgid "Entry"
 msgstr "Registrazione"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Tipo di Voce"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "Completato con successo"
 msgid "Success"
 msgstr "Successo"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Preventivo copiato con successo"
 
 msgid "Successfully created a new revision"
 msgstr "Revisione creata con successo"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "Account aggiornato"
 
 msgid "Updated At"
 msgstr "Aggiornato il"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Aggiornato da"

@@ -53,13 +53,9 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { locale } = useLocale();
   const [showClockWarning, setShowClockWarning] = useState(false);
   const fetcher = useAction({
-    onSettled: (data) => {
-      if (data) {
-        if ((data as { success?: boolean }).success) {
-          toast.success(t`Updated successfully`);
-          setShowClockWarning(false);
-        }
-      }
+    onSuccess: () => {
+      toast.success(t`Updated successfully`);
+      setShowClockWarning(false);
     }
   });
 

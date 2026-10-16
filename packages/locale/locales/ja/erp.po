@@ -5040,6 +5040,9 @@ msgstr "打刻済み"
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "閉じる"
 
@@ -7597,6 +7600,9 @@ msgstr "ワークフローを削除"
 msgid "Deleted"
 msgstr "削除済み"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "配送"
 
@@ -9100,8 +9106,17 @@ msgstr "エンティティタイプは変更できません"
 msgid "Entry"
 msgstr "仕訳"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "エントリータイプ"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "成功"
 msgid "Success"
 msgstr "成功"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "見積書を正常にコピーしました"
 
 msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "アカウントを更新しました"
 
 msgid "Updated At"
 msgstr "更新日時"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "更新者"

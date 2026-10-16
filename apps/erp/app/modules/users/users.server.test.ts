@@ -17,6 +17,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // writes ran and through which client.
 const mocks = vi.hoisted(() => ({
   deactivateEmployee: vi.fn(),
+  deactivateUser: vi.fn(),
+  setEmployeePin: vi.fn(),
   deleteAuthAccount: vi.fn(),
   getDatabaseClient: vi.fn(),
   getPermissionsByEmployeeType: vi.fn(),
@@ -30,6 +32,7 @@ const mocks = vi.hoisted(() => ({
 // It is read from its source file because the package root pulls in Lingui
 // macros that only run inside the app build.
 vi.mock("@carbon/auth", async () => ({
+  CarbonEdition: "test",
   CONTROLLED_ENVIRONMENT: false,
   error: vi.fn(),
   success: vi.fn(),
@@ -90,7 +93,13 @@ vi.mock("@carbon/auth/users.server", () => ({
   deactivateCustomer: vi.fn(),
   deactivateEmployee: mocks.deactivateEmployee,
   deactivateSupplier: vi.fn(),
+  deactivateUser: mocks.deactivateUser,
   getUserClaims: mocks.getUserClaims
+}));
+
+vi.mock("@carbon/ee/console.server", () => ({
+  generateConsolePin: () => "4321",
+  setEmployeePin: mocks.setEmployeePin
 }));
 
 vi.mock("@carbon/kv", () => ({
@@ -133,7 +142,14 @@ vi.mock("../people/people.service", () => ({
   insertEmployeeJob: mocks.insertEmployeeJob
 }));
 
-const { acceptInvite, createEmployeeAccount } = await import("./users.server");
+const {
+  acceptInvite,
+  certifyItarEntity,
+  createEmployeeAccount,
+  deactivateUsers,
+  resetConsoleOperatorPin
+} = await import("./users.server");
+const { createServiceContext } = await import("../service-fn.server");
 
 const USER = "usr_1";
 const COMPANY = "cmp_1";
@@ -566,5 +582,115 @@ describe("acceptInvite", () => {
     expect(update?.sql).toMatch(
       /"companyId" = \$\d+ and "acceptedAt" is null and "revokedAt" is null/
     );
+  });
+});
+
+const unreachable = () => {
+  throw new Error("must not be reached");
+};
+
+/** An operation's context for a user holding `permissions` in COMPANY. */
+function operationContext(
+  permissions: Record<string, Record<string, string[]>>,
+  { user = null as Record<string, unknown> | null } = {}
+) {
+  const caller = {
+    from: () => {
+      const chain: Record<string, unknown> = {
+        select: () => chain,
+        eq: () => chain,
+        single: async () =>
+          user ? { data: user, error: null } : { data: null, error: {} }
+      };
+      return chain;
+    }
+  };
+  return createServiceContext({
+    actor: { type: "user", userId: "usr_admin", permissions },
+    company: { id: COMPANY, groupId: "grp_1" },
+    caller: caller as never,
+    system: unreachable as never,
+    pg: (() => ({})) as never,
+    kv: unreachable as never
+  });
+}
+
+describe("resetConsoleOperatorPin", () => {
+  beforeEach(() => mocks.setEmployeePin.mockReset());
+
+  const usersUpdate = { users: { update: [COMPANY] } };
+
+  it("resets a console operator's PIN with users update alone", async () => {
+    const result = await resetConsoleOperatorPin(
+      operationContext(usersUpdate, {
+        user: { id: USER, isConsoleOperator: true }
+      }),
+      { operatorId: USER }
+    );
+    expect(result.data).toEqual({ pin: "4321" });
+    expect(mocks.setEmployeePin).toHaveBeenCalledOnce();
+  });
+
+  // A PIN pins in as that person anywhere on the floor: for anyone who is
+  // not a console operator, it takes settings update too.
+  it("refuses another person's PIN without settings update", async () => {
+    const result = await resetConsoleOperatorPin(
+      operationContext(usersUpdate, {
+        user: { id: USER, isConsoleOperator: false }
+      }),
+      { operatorId: USER }
+    );
+    expect(result.error?.category).toBe("forbidden");
+    expect(mocks.setEmployeePin).not.toHaveBeenCalled();
+  });
+
+  it("resets another person's PIN with settings update", async () => {
+    const result = await resetConsoleOperatorPin(
+      operationContext(
+        { ...usersUpdate, settings: { update: [COMPANY] } },
+        { user: { id: USER, isConsoleOperator: false } }
+      ),
+      { operatorId: USER }
+    );
+    expect(result.data).toEqual({ pin: "4321" });
+  });
+});
+
+describe("deactivateUsers", () => {
+  it("refuses the caller's own account", async () => {
+    const result = await deactivateUsers(
+      operationContext({ users: { delete: [COMPANY] } }),
+      { userIds: [USER, "usr_admin"] }
+    );
+    expect(result.error?.category).toBe("rule");
+    expect(mocks.deactivateUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("certifyItarEntity", () => {
+  // An API key authenticates as the key, not a person: there is no signer.
+  it("refuses an API key", async () => {
+    const ctx = createServiceContext({
+      actor: {
+        type: "apiKey",
+        createdBy: "usr_admin",
+        scopes: {
+          users: { view: [], create: [], update: [COMPANY], delete: [] }
+        }
+      },
+      company: { id: COMPANY, groupId: "grp_1" },
+      caller: {} as never,
+      system: unreachable as never,
+      pg: unreachable as never,
+      kv: unreachable as never
+    });
+    const result = await certifyItarEntity(ctx, {
+      authorityToBind: true,
+      acceptRider: true,
+      fullLegalName: "Pat Doe",
+      title: "CEO",
+      complianceContact: "export@example.com"
+    });
+    expect(result.error?.category).toBe("forbidden");
   });
 });

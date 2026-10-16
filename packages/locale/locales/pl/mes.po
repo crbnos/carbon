@@ -2180,6 +2180,9 @@ msgstr "Aktualizuj"
 msgid "Updated {0}"
 msgstr "Zaktualizowano {0}"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "Zaktualizowano pomyślnie"
 

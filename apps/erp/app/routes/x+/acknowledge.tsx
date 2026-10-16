@@ -3,84 +3,74 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { validator } from "@carbon/form";
-import { getClientIp, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { carbon } from "~/modules/carbon.server";
-import {
-  itarEntityCertificationValidator,
-  itarUserCertificationValidator,
-  userFlagValidator
-} from "~/modules/users";
+import { originOf } from "~/modules/users/users.server";
 
-const acknowledgeForm = z.looseObject({
-  intent: z.string(),
-  redirectTo: z.string().optional()
-});
+const text = zfd.text(z.string().optional());
 
-// The ITAR screens and the panels read `{ success, message }`.
+const acknowledgeForm = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("itar-entity"),
+    authorityToBind: zfd.checkbox(),
+    acceptRider: zfd.checkbox(),
+    fullLegalName: text,
+    title: text,
+    complianceContact: text
+  }),
+  z.object({
+    intent: z.literal("itar-user"),
+    certifyUsPerson: zfd.checkbox(),
+    agreeNotify: zfd.checkbox(),
+    understandPenalty: zfd.checkbox(),
+    fullLegalName: text
+  }),
+  // Generic flags: training dismissals, changelog entries seen.
+  z.object({
+    intent: z.literal("flag"),
+    flag: z.string(),
+    value: text.transform((value) => value === "true"),
+    redirectTo: text
+  })
+]);
+
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(acknowledgeForm).request(args);
-  if ("invalid" in input) return { success: false, message: "Invalid request" };
-  const { intent, redirectTo, ...form } = input.data;
+  if ("invalid" in input) return input.invalid;
+  const form = input.data;
+  const { ip, userAgent } = originOf(args.request);
   const api = await carbon(args.request);
-  // Best-effort request metadata for the compliance record.
-  const meta = {
-    ipAddress: getClientIp(args.request),
-    userAgent: args.request.headers.get("user-agent") ?? null
-  };
 
-  if (intent === "itar-entity") {
-    const parsed = itarEntityCertificationValidator.safeParse({
-      authorityToBind: form.authorityToBind === "on",
-      acceptRider: form.acceptRider === "on",
-      fullLegalName: form.fullLegalName,
-      title: form.title,
-      complianceContact: form.complianceContact
-    });
-    if (!parsed.success) {
-      return { success: false, message: parsed.error.issues[0].message };
+  switch (form.intent) {
+    case "itar-entity":
+      return api.users.itarCertification.certifyEntity({
+        authorityToBind: form.authorityToBind,
+        acceptRider: form.acceptRider,
+        fullLegalName: form.fullLegalName ?? "",
+        title: form.title ?? "",
+        complianceContact: form.complianceContact ?? "",
+        ipAddress: ip,
+        userAgent
+      });
+    case "itar-user":
+      return api.users.itarCertification.certifyUser({
+        certifyUsPerson: form.certifyUsPerson,
+        agreeNotify: form.agreeNotify,
+        understandPenalty: form.understandPenalty,
+        fullLegalName: form.fullLegalName ?? "",
+        ipAddress: ip,
+        userAgent
+      });
+    case "flag": {
+      const result = await api.account.flag.set({
+        flag: form.flag,
+        value: form.value
+      });
+      if (result.error || !form.redirectTo) return result;
+      throw redirect(form.redirectTo);
     }
-    const result = await api.shared.itar.certifyEntity({
-      ...parsed.data,
-      ...meta
-    });
-    if (result.error) return { success: false, message: result.error.message };
-    return { success: true, message: "Rider accepted" };
   }
-
-  if (intent === "itar-user") {
-    const parsed = itarUserCertificationValidator.safeParse({
-      certifyUsPerson: form.certifyUsPerson === "on",
-      agreeNotify: form.agreeNotify === "on",
-      understandPenalty: form.understandPenalty === "on",
-      fullLegalName: form.fullLegalName
-    });
-    if (!parsed.success) {
-      return { success: false, message: parsed.error.issues[0].message };
-    }
-    const result = await api.shared.itar.certifyUser({
-      ...parsed.data,
-      ...meta
-    });
-    if (result.error) return { success: false, message: result.error.message };
-    return { success: true, message: "Certification recorded" };
-  }
-
-  // Generic flags: training dismissals, the changelog panel, any future flag.
-  if (intent === "flag") {
-    const parsed = userFlagValidator.safeParse({
-      flag: form.flag,
-      value: form.value === "true"
-    });
-    if (!parsed.success) {
-      return { success: false, message: parsed.error.issues[0].message };
-    }
-    const result = await api.shared.userFlag.set(parsed.data);
-    if (result.error) return { success: false, message: result.error.message };
-    if (redirectTo) throw redirect(redirectTo);
-    return { success: true, message: "Flag updated" };
-  }
-
-  return null;
 }

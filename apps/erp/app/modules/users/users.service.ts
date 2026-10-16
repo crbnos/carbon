@@ -602,7 +602,7 @@ export async function getUserEmails(
     .filter((email): email is string => !!email);
 }
 
-/** @mcp create */
+/** Groups are created through `users.group.create`, which also saves the members. */
 export async function insertGroup(
   client: SupabaseClient<Database>,
   group: { name: string; companyId: string }
@@ -610,7 +610,7 @@ export async function insertGroup(
   return client.from("group").insert(group).select("*").single();
 }
 
-/** @mcp upsert */
+/** Groups are changed through `users.group.update`. */
 export async function upsertGroup(
   client: SupabaseClient<Database>,
   {
@@ -626,7 +626,7 @@ export async function upsertGroup(
   return client.from("group").upsert([{ id, name, companyId }]);
 }
 
-/** @mcp upsert destructive */
+/** Members are saved through `users.group.create` / `users.group.update`. */
 export async function upsertGroupMembers(
   client: SupabaseClient<Database>,
   groupId: string,

@@ -5040,6 +5040,9 @@ msgstr "Eingestempelt"
 msgid "Clocked in since <0/>"
 msgstr "Angemeldet seit <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Schließen"
 
@@ -7597,6 +7600,9 @@ msgstr "Workflow löschen"
 msgid "Deleted"
 msgstr "Gelöscht"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Liefern"
 
@@ -9100,8 +9106,17 @@ msgstr "Entitätstyp kann nicht geändert werden"
 msgid "Entry"
 msgstr "Eintrag"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Eintragstyp"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "Erfolgreich"
 msgid "Success"
 msgstr "Erfolg"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Angebot erfolgreich kopiert"
 
 msgid "Successfully created a new revision"
 msgstr "Neue Revision erfolgreich erstellt"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "Konto aktualisiert"
 
 msgid "Updated At"
 msgstr "Aktualisiert am"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "Aktualisiert von"

@@ -4,8 +4,6 @@
 
 import {
   assignRecord,
-  certifyItarEntity,
-  certifyItarUser,
   createImportLookups,
   createIssueFromSlack,
   createJiraIssue,
@@ -14,7 +12,6 @@ import {
   importCsvFile,
   linkJiraIssue,
   linkLinearIssue,
-  setUserFlag,
   startStripeConnectOnboarding,
   unlinkJiraIssue,
   unlinkLinearIssue
@@ -25,8 +22,6 @@ export const shared = {
   record: { assign: assignRecord },
   csvImport: { run: importCsvFile, createLookups: createImportLookups },
   implementationHub: { enroll: enrollImplementationHub },
-  itar: { certifyEntity: certifyItarEntity, certifyUser: certifyItarUser },
-  userFlag: { set: setUserFlag },
   slack: { createIssue: createIssueFromSlack },
   stripeConnect: { startOnboarding: startStripeConnectOnboarding },
   jira: {

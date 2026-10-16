@@ -5040,6 +5040,9 @@ msgstr "समय रिकॉर्ड किया गया"
 msgid "Clocked in since <0/>"
 msgstr "<0/> से काम में आए"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "बंद करें"
 
@@ -7597,6 +7600,9 @@ msgstr "वर्कफ़्लो हटाएँ"
 msgid "Deleted"
 msgstr "हटाया गया"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "डिलीवर करें"
 
@@ -9100,8 +9106,17 @@ msgstr "इकाई प्रकार को परिवर्तित न�
 msgid "Entry"
 msgstr "प्रविष्टि"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "प्रविष्टि प्रकार"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "सफल"
 msgid "Success"
 msgstr "सफलता"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "सफलतापूर्वक उद्धरण की प्रतिलिपि बनाई गई"
 
 msgid "Successfully created a new revision"
 msgstr "नया रिवीजन सफलतापूर्वक बनाया गया"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "खाता अपडेट किया गया"
 
 msgid "Updated At"
 msgstr "अपडेट किया गया"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "अपडेट किया गया"

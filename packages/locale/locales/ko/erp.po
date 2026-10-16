@@ -5040,6 +5040,9 @@ msgstr "근무 시작"
 msgid "Clocked in since <0/>"
 msgstr "<0/> 이후로 근무 중"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "닫기"
 
@@ -7597,6 +7600,9 @@ msgstr "워크플로우 삭제"
 msgid "Deleted"
 msgstr "삭제됨"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "배송"
 
@@ -9100,8 +9106,17 @@ msgstr "개체 유형은 변경할 수 없습니다"
 msgid "Entry"
 msgstr "항목"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "항목 유형"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "성공"
 msgid "Success"
 msgstr "성공"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "견적이 복사되었습니다"
 
 msgid "Successfully created a new revision"
 msgstr "새 리비전이 생성되었습니다"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "계정이 업데이트됨"
 
 msgid "Updated At"
 msgstr "업데이트 일시"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "업데이트한 사람"

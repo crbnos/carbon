@@ -53,11 +53,7 @@ import {
   getOrCreateConnectAccount,
   isStaleConnectAccountError
 } from "@carbon/stripe/connect.server";
-import {
-  datetime,
-  requiresItarEntityCertification,
-  unchecked
-} from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { parseAbsolute, startOfWeek } from "@internationalized/date";
 import { render, renderAsync } from "@react-email/components";
@@ -91,11 +87,6 @@ import {
 } from "~/modules/service-fn.server";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getTimezoneNames, importCsv } from "~/modules/shared/shared.service";
-import {
-  itarEntityCertificationValidator,
-  itarUserCertificationValidator,
-  userFlagValidator
-} from "~/modules/users/users.models";
 import { getUser } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -1433,7 +1424,7 @@ export const startStripeConnectOnboarding = defineServiceFn({
   }
 });
 
-const itarRequestMeta = {
+const _itarRequestMeta = {
   /** Best-effort, from the request, for the compliance record. */
   ipAddress: z.string().nullable(),
   userAgent: z.string().nullable()
@@ -1443,7 +1434,7 @@ const itarRequestMeta = {
  * Record an ITAR certification with a 365-day expiry, and audit it.
  * Through the service role: a self-attesting user holds no settings_create.
  */
-async function recordItarCertification(
+async function _recordItarCertification(
   ctx: ServiceContext,
   certification: {
     type: "entity" | "user";
@@ -1514,105 +1505,6 @@ async function recordItarCertification(
   }
   return { id: inserted.data.id };
 }
-
-/**
- * Accept the ITAR Rider for the company.
- *
- * @remarks
- * Unblocks the company's controlled-environment gate, so only a
- * representative who can bind the company may accept it: it needs
- * `update` on users, and the signer must be a person of the company's own.
- * An API key (no person signs) and a Carbon staff account are refused. The
- * certification expires after 365 days and is written to the audit log,
- * with the request's IP address and user agent.
- */
-export const certifyItarEntity = defineServiceFn({
-  input: itarEntityCertificationValidator.extend(itarRequestMeta),
-  permission: { update: "users" },
-
-  async run(ctx, input) {
-    const refused = ctx.error(
-      "forbidden",
-      "The Rider must be accepted by a representative of the company it binds."
-    );
-    if (ctx.actor.type !== "user") return refused;
-    const signer = await ctx.asSystem.supabase
-      .from("user")
-      .select("email")
-      .eq("id", ctx.auditUserId)
-      .maybeSingle();
-    if (
-      !signer.data?.email ||
-      !requiresItarEntityCertification(signer.data.email)
-    ) {
-      return refused;
-    }
-
-    return recordItarCertification(ctx, {
-      type: "entity",
-      fullLegalName: input.fullLegalName,
-      title: input.title,
-      complianceContact: input.complianceContact,
-      ipAddress: input.ipAddress,
-      userAgent: input.userAgent
-    });
-  }
-});
-
-/**
- * Record the caller's ITAR U.S. Person certification.
- *
- * @remarks
- * Expires after 365 days and is written to the audit log, with the request's
- * IP address and user agent.
- */
-export const certifyItarUser = defineServiceFn({
-  input: itarUserCertificationValidator.extend(itarRequestMeta),
-  permission: {},
-
-  async run(ctx, input) {
-    return recordItarCertification(ctx, {
-      type: "user",
-      fullLegalName: input.fullLegalName,
-      ipAddress: input.ipAddress,
-      userAgent: input.userAgent
-    });
-  }
-});
-
-/**
- * Set one of the caller's own flags: a dismissed training, a read changelog.
- *
- * @remarks
- * Every other flag is kept as it is.
- */
-export const setUserFlag = defineServiceFn({
-  input: userFlagValidator,
-  permission: {},
-
-  async run(ctx, { flag, value }) {
-    const client = ctx.asCaller.supabase;
-    const userId = ctx.auditUserId;
-    const user = await client
-      .from("user")
-      .select("flags")
-      .eq("id", userId)
-      .single();
-    if (user.error) {
-      return ctx.error("internal", "Failed to read user flags", user.error);
-    }
-
-    const flags = (user.data?.flags as Record<string, boolean> | null) ?? {};
-    const updated = await client
-      .from("user")
-      .update({ flags: { ...flags, [flag]: value } })
-      .eq("id", userId);
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update flag", updated.error);
-    }
-    return { flag, value };
-  }
-});
 
 const actionTaskEntityTypes = Object.keys(actionTaskEntities) as [
   ActionTaskEntityType,

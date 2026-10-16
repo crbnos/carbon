@@ -5040,6 +5040,9 @@ msgstr "已上班"
 msgid "Clocked in since <0/>"
 msgstr "自 <0/> 打卡"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "关闭"
 
@@ -7597,6 +7600,9 @@ msgstr "删除工作流"
 msgid "Deleted"
 msgstr "已删除"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "交付"
 
@@ -9100,8 +9106,17 @@ msgstr "实体类型无法更改"
 msgid "Entry"
 msgstr "条目"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "条目类型"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "成功"
 msgid "Success"
 msgstr "成功"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "成功复制报价"
 
 msgid "Successfully created a new revision"
 msgstr "成功创建新修订版"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
 
 msgid "Successfully seeded documents"
 msgstr ""
@@ -24778,6 +24802,12 @@ msgstr "已更新账户"
 
 msgid "Updated At"
 msgstr "更新于"
+
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated By"
 msgstr "更新者"

@@ -5040,6 +5040,9 @@ msgstr "Clocked in"
 msgid "Clocked in since <0/>"
 msgstr "Clocked in since <0/>"
 
+msgid "Clocked out"
+msgstr "Clocked out"
+
 msgid "Close"
 msgstr "Close"
 
@@ -7597,6 +7600,9 @@ msgstr "Delete Workflow"
 msgid "Deleted"
 msgstr "Deleted"
 
+msgid "Deleted attribute value"
+msgstr "Deleted attribute value"
+
 msgid "Deliver"
 msgstr "Deliver"
 
@@ -9100,8 +9106,17 @@ msgstr "Entity type cannot be changed"
 msgid "Entry"
 msgstr "Entry"
 
+msgid "Entry added"
+msgstr "Entry added"
+
+msgid "Entry deleted"
+msgstr "Entry deleted"
+
 msgid "Entry Type"
 msgstr "Entry Type"
+
+msgid "Entry updated"
+msgstr "Entry updated"
 
 msgid "EORI"
 msgstr "EORI"
@@ -21602,11 +21617,20 @@ msgstr "Succeeded"
 msgid "Success"
 msgstr "Success"
 
+msgid "Successfully added invites to queue"
+msgstr "Successfully added invites to queue"
+
 msgid "Successfully copied quote"
 msgstr "Successfully copied quote"
 
 msgid "Successfully created a new revision"
 msgstr "Successfully created a new revision"
+
+msgid "Successfully resent invite"
+msgstr "Successfully resent invite"
+
+msgid "Successfully revoked invites"
+msgstr "Successfully revoked invites"
 
 msgid "Successfully seeded documents"
 msgstr "Successfully seeded documents"
@@ -24778,6 +24802,12 @@ msgstr "Updated account"
 
 msgid "Updated At"
 msgstr "Updated At"
+
+msgid "Updated attribute value"
+msgstr "Updated attribute value"
+
+msgid "Updated avatar"
+msgstr "Updated avatar"
 
 msgid "Updated By"
 msgstr "Updated By"
