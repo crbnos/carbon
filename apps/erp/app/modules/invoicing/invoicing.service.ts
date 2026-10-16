@@ -5763,11 +5763,10 @@ export async function loadReimbursement(
 }
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
+export type { StripeCustomerSources };
 // The pure Carbon → Stripe field mapping lives in its own module so it can be
 // unit tested without this file's database and Stripe imports.
 export { buildStripeCustomerInput };
-
-export type { StripeCustomerSources };
 
 /**
  * Gather every table a Stripe customer is assembled from.
