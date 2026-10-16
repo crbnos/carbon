@@ -42,7 +42,6 @@ export async function action({ request }: ActionFunctionArgs) {
         data: null
       };
     }
-    // Drop serials beyond the new quantity in the same transaction.
     try {
       await getDatabaseClient()
         .transaction()

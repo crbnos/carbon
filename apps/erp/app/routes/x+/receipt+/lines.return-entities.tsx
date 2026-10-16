@@ -65,7 +65,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] })
   ]);
 
-  // A failed read must not look like a blind return.
   const error =
     line.error ??
     ("error" in order ? order.error : null) ??

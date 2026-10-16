@@ -248,8 +248,6 @@ describe("planSerialBoxWrite", () => {
   });
 
   it("clears the box when the serial is emptied", () => {
-    // The original bug: the empty value was never applied, so the old serial
-    // stayed saved and posted while the box showed nothing.
     expect(
       planSerialBoxWrite({
         receiptLineId: "line1",
@@ -262,8 +260,6 @@ describe("planSerialBoxWrite", () => {
   });
 
   it("renames the box's own entity when the serial is edited", () => {
-    // Keyed on the serial alone, an edit inserted a second entity and the
-    // pre-post cleanup kept the old one.
     expect(
       planSerialBoxWrite({
         receiptLineId: "line1",
@@ -334,8 +330,6 @@ describe("planSerialBoxWrite", () => {
   });
 
   it("refuses the serial of a unit with stock history", () => {
-    // Writing into it wiped a shipped unit's Shipment link (its RMA check)
-    // and posting would have brought it back into stock.
     expect(
       planSerialBoxWrite({
         receiptLineId: "line1",
@@ -400,8 +394,6 @@ describe("reconcileReceiptLineSerials", () => {
   });
 
   it("marks the boxes beyond the received quantity as surplus", () => {
-    // Lowering the quantity must drop those serials, or raising it again
-    // shows an empty box while the old serial posts.
     expect(
       reconcileReceiptLineSerials(
         [

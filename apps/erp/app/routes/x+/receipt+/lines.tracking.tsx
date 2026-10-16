@@ -19,7 +19,6 @@ import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "receipt", "tracking");
 
-/** Which of these tracked entities have stock history (read past RLS). */
 async function getIdsWithHistory(
   serviceRole: SupabaseClient<Database>,
   companyId: string,
@@ -256,7 +255,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     if (plan.kind === "taken") {
-      // Empty the box so its previous serial cannot post in its place.
       await releaseBox();
       return data(
         {

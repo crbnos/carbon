@@ -850,11 +850,7 @@ export async function getReceiptLineTracking(
     .eq("companyId", companyId);
 }
 
-/**
- * Drops serials beyond the received quantity or duplicated in a box, and
- * returns the lines still missing a serial.
- * @mcp action destructive
- */
+/** @mcp action destructive */
 export async function reconcileReceiptSerialEntities(
   db: Kysely<KyselyDatabase>,
   args: ReconcileReceiptSerialsArgs
@@ -875,7 +871,6 @@ type ReconcileReceiptSerialsArgs = {
   }[];
 };
 
-/** `reconcileReceiptSerialEntities` inside the caller's transaction. */
 export async function reconcileReceiptSerialsInTransaction(
   trx: Kysely<KyselyDatabase>,
   args: ReconcileReceiptSerialsArgs
@@ -917,7 +912,6 @@ export async function reconcileReceiptSerialsInTransaction(
   return { linesMissingSerials };
 }
 
-/** Removes serials from a receipt (`planReceiptSerialRelease`). Run inside a transaction. */
 export async function releaseReceiptSerialEntities(
   db: Kysely<KyselyDatabase>,
   companyId: string,

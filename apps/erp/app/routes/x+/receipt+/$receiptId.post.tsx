@@ -202,7 +202,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  // Returned, not flashed: a fetcher redirect to this page never shows a flash.
   if (linesMissingSerials.length > 0) {
     return {
       error: { message: "Serial numbers are missing" },

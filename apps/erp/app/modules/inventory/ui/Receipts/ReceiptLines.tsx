@@ -1300,7 +1300,6 @@ function SerialForm({
     [line.id, line.itemId, receipt?.id, expiryDate]
   );
 
-  // An empty or refused value clears the serial saved for the box.
   const updateSerialNumber = useCallback(
     async (serialNumber: { index: number; number: string }) => {
       const { index } = serialNumber;
@@ -1404,7 +1403,6 @@ function SerialForm({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  // onBlur saves; saving here too would race it.
                   const nextInput = e.currentTarget
                     .closest("[data-serial-boxes]")
                     ?.querySelector<HTMLInputElement>(

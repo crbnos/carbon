@@ -562,7 +562,6 @@ export function reconcileReceiptLineSerials(
   return { missingIndexes, surplusEntityIds };
 }
 
-/** Entities with stock history (real units) are unlinked, the rest deleted. */
 export function planReceiptSerialRelease<T extends { id: string }>(
   entities: T[],
   idsWithHistory: ReadonlySet<string>
@@ -582,11 +581,6 @@ export type SerialBoxWrite =
   | { kind: "taken"; reason: "box" | "unit"; releaseIds: string[] }
   | { kind: "write"; targetId: string | undefined; releaseIds: string[] };
 
-/**
- * Plans one save of a receipt serial box (line + index): an empty serial
- * clears it, a refused one empties it, otherwise the box's entity is written.
- * A serial already used by another box or by an existing unit is refused.
- */
 export function planSerialBoxWrite(args: {
   receiptLineId: string;
   index: number;
@@ -601,7 +595,6 @@ export function planSerialBoxWrite(args: {
     attributes["Receipt Line"] === args.receiptLineId &&
     attributes["Receipt Line Index"] === args.index;
 
-  // Only receipt serials carry a Receipt Line Index.
   const takenElsewhere = args.withSerial.some(
     (entity) =>
       "Receipt Line Index" in entity.attributes &&
@@ -614,7 +607,6 @@ export function planSerialBoxWrite(args: {
     return { kind: "taken", reason: "unit", releaseIds: boxIds };
   }
 
-  // Never rename an entity with stock history.
   const targetId =
     (
       args.withSerial.find((entity) => isInThisBox(entity.attributes)) ??

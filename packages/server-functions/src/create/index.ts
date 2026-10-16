@@ -1728,7 +1728,6 @@ const create = defineServerFn({
             trackedEntities.data?.length
           ) {
             // TODO: update the Receipt Line and Index attributes to point to the new line
-            // A unit with stock history is only unlinked, never deleted.
             const entityIds = trackedEntities.data.map((d) => d.id);
             const withHistory = new Set(
               (
