@@ -45,6 +45,8 @@ import {
 } from "~/modules/settings/settings.service";
 import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { stripSpecialCharacters } from "~/utils/string";
+import * as purchasingPostings from "../purchasing/purchasing.service";
+import { invokePosting } from "../shared/shared.service";
 import {
   isMemoLocked,
   paymentValidator,
@@ -1085,14 +1087,17 @@ export const postPurchaseInvoice = defineServiceFn({
       );
       const timing = settings.data?.purchasePriceUpdateTiming;
       if (!timing || timing === "Purchase Invoice Post") {
-        const prices = await service
-          .invoker(ctx)
-          .invoke("update-purchased-prices", {
+        const prices = await invokePosting(
+          ctx,
+          "update-purchased-prices",
+          {
             invoiceId,
             source: "purchaseInvoice",
             updatePrices: true,
             updateLeadTimes: false
-          });
+          },
+          purchasingPostings.updatePurchasedPrices
+        );
         if (prices.error) {
           await backToDraft();
           return ctx.error("internal", "Failed to update prices", prices.error);

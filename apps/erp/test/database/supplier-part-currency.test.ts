@@ -7,9 +7,9 @@ import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "../local-database-test-fixture";
-import { ServerFnContext } from "../server-fn-context";
-import updatePurchasedPrices from ".";
+} from "@carbon/server-functions/local-database-test-fixture";
+import { updatePurchasedPrices } from "../../app/modules/purchasing/purchasing.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 
 // A USD company buying one part from a supplier on a EUR purchase order at
 // 0.8 EUR per USD: 8 EUR a box of 2.
@@ -68,7 +68,7 @@ async function fixture() {
     db,
     companyId,
     ids,
-    ctx: ServerFnContext.system({ db, companyId, userId: "system" }),
+    ctx: ({ db, companyId, userId: "system" }),
     supplierPart: () =>
       db
         .selectFrom("supplierPart")
@@ -98,10 +98,10 @@ databaseTest(
   async () => {
     const f = await fixture();
     try {
-      const result = await updatePurchasedPrices(f.ctx, {
+      const result = await invokePosting(f.ctx, "update-purchased-prices", {
         source: "purchaseOrder",
         purchaseOrderId: f.ids.order
-      });
+      }, updatePurchasedPrices);
       expect(result.error).toBeNull();
 
       const part = await f.supplierPart();
@@ -133,10 +133,10 @@ databaseTest(
         })
         .execute();
 
-      const result = await updatePurchasedPrices(f.ctx, {
+      const result = await invokePosting(f.ctx, "update-purchased-prices", {
         source: "purchaseOrder",
         purchaseOrderId: f.ids.order
-      });
+      }, updatePurchasedPrices);
       expect(result.error).toBeNull();
 
       const part = await f.supplierPart();

@@ -14,9 +14,9 @@
   - [x] Single-function tools: a codemod turns each route-called legacy tool into a leaf (below)
 - [ ] Phase 5 — Dissolve `packages/server-functions`
   - [x] The pattern: a function's body becomes a building block in `<module>.service.ts`; `settle` or `invokePosting` runs it with the function's own error rules (`.claude/rules/module-files.md`)
-  - [x] 18 functions ported: `close-job`, `assign-serial-numbers`, `preview-serial-unit-costs`, `recost-serial-unit`, `post-asset-transfer`, `preview-asset-capitalization`, `seed-company`, `finalize-supplier-quote`, `finalize-purchasing-rfq`, `post-inventory-count`, `post-nonconformance`, `apply-account-import`, `post-stock-transfer`, `import-csv`, `correct-stock-movement`, `sync`, `get-method`, `convert`
+  - [x] 21 functions ported: `close-job`, `assign-serial-numbers`, `preview-serial-unit-costs`, `recost-serial-unit`, `post-asset-transfer`, `preview-asset-capitalization`, `seed-company`, `finalize-supplier-quote`, `finalize-purchasing-rfq`, `post-inventory-count`, `post-nonconformance`, `apply-account-import`, `post-stock-transfer`, `import-csv`, `correct-stock-movement`, `sync`, `get-method`, `convert`, `kanban-replenish`, `update-purchased-prices`, `create-rental-invoices`
   - [x] Their live tests run from `apps/erp/test/database/`
-  - [ ] 21 functions left (the 12 postings among them). They import each other, so they move in dependency order. A ported posting replaces its `fromPackage` entry in `postings.server.ts`
+  - [ ] 18 functions left (9 of the 12 postings among them). They import each other, so they move in dependency order. A ported posting replaces its `fromPackage` entry in `postings.server.ts`
   - [x] The seam for jobs and ee (steps 2 and 3): `@carbon/api/postings.server`. The ERP registers 12 postings at start; jobs and ee call `posting(name, handles, input)`
   - [ ] The shared `lib` helpers (step 4)
   - [ ] The 10 functions of the MES closure stay until Phase 6 (step 5)

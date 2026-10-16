@@ -26,7 +26,6 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
-import { serverFns } from "@carbon/server-functions";
 import {
   datetime,
   getErrorMessage,
@@ -48,6 +47,7 @@ import {
 } from "~/modules/production/production.service";
 import {
   insertPurchaseOrder,
+  updatePurchasedPrices,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.service";
@@ -482,14 +482,17 @@ export const postReceipt = defineServiceFn({
         receipt.data.sourceDocumentId
       ) {
         // System: the poster needs no purchasing rights to refresh lead times.
-        const leadTimes = await service
-          .system(ctx)
-          .invoke("update-purchased-prices", {
+        const leadTimes = await invokePosting(
+          ctx,
+          "update-purchased-prices",
+          {
             source: "purchaseOrder",
             purchaseOrderId: receipt.data.sourceDocumentId,
             updatePrices: false,
             updateLeadTimes: true
-          });
+          },
+          updatePurchasedPrices
+        );
         if (leadTimes.error) {
           logger.error("Failed to update lead time on receipt posting", {
             error: leadTimes.error
@@ -3489,9 +3492,13 @@ export const scanKanban = defineServiceFn({
       // Released transfer with its kanbanId. It runs as the scanner: a scan
       // needs the inventory create permission the stock transfer's RLS
       // rule checks.
-      const replenish = await serverFns
-        .as({ client, db: ctx.asSystem.pg, companyId, userId })
-        .invoke("kanban-replenish", { mode: "scan", kanbanId });
+      const replenish = await invokePosting(
+        { client, db: ctx.asSystem.pg, companyId, userId },
+        "kanban-replenish",
+        { mode: "scan", kanbanId },
+        service.replenishKanban,
+        { as: service.replenishKanbanPermission }
+      );
       if (replenish.error) {
         return ctx.error(
           "internal",

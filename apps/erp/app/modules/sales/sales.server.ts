@@ -22,7 +22,6 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
-import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import type {
   ContractAmendmentPreview,
   ContractCancellationPreview,
@@ -98,7 +97,7 @@ import {
   selectedLinesValidator
 } from "./sales.models";
 import { renderQuotePdf, renderSalesReturnOrderPdf } from "./sales.pdf";
-import type { QuoteLinePriceRow } from "./sales.service";
+import type { DraftedRentalInvoice, QuoteLinePriceRow } from "./sales.service";
 import * as service from "./sales.service";
 import * as utils from "./sales.utils";
 import { reconcileQuantityBreaks } from "./sales.utils";

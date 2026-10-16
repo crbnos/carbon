@@ -14,9 +14,9 @@ import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "../local-database-test-fixture";
-import { ServerFnContext } from "../server-fn-context";
-import createRentalInvoices from "./index";
+} from "@carbon/server-functions/local-database-test-fixture";
+import { createRentalInvoices } from "../../app/modules/sales/sales.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 
 const USER = "system";
 
@@ -165,7 +165,7 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = ({ db, companyId, userId: USER });
 
   return {
     db,
@@ -199,7 +199,7 @@ databaseTest(
   async () => {
     const f = await closedAgreementFixture();
     try {
-      const result = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+      const result = await invokePosting(f.ctx, "create-rental-invoices", { asOf: "2026-10-05" }, createRentalInvoices);
       expect(result.error).toBeNull();
       expect(result.data!.failures).toEqual([]);
       expect(result.data!.invoices.length).toBeGreaterThan(0);
@@ -231,7 +231,7 @@ databaseTest(
       expect(period.status).toEqual("Invoiced");
 
       // A second run finds nothing left to bill.
-      const again = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+      const again = await invokePosting(f.ctx, "create-rental-invoices", { asOf: "2026-10-05" }, createRentalInvoices);
       expect(again.error).toBeNull();
       expect(again.data!.invoices).toHaveLength(0);
     } finally {
@@ -243,7 +243,7 @@ databaseTest(
 databaseTest("a charge lands on the rent invoice, unheld", async () => {
   const f = await closedAgreementFixture();
   try {
-    const result = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+    const result = await invokePosting(f.ctx, "create-rental-invoices", { asOf: "2026-10-05" }, createRentalInvoices);
     expect(result.error).toBeNull();
     expect(result.data!.failures).toEqual([]);
     expect(result.data!.invoices).toHaveLength(1);
@@ -262,7 +262,7 @@ databaseTest(
   async () => {
     const f = await closedAgreementFixture({ invoiceSeparately: true });
     try {
-      const result = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+      const result = await invokePosting(f.ctx, "create-rental-invoices", { asOf: "2026-10-05" }, createRentalInvoices);
       expect(result.error).toBeNull();
       expect(result.data!.failures).toEqual([]);
       expect(result.data!.invoices).toHaveLength(2);

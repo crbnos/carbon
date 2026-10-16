@@ -11,11 +11,26 @@ import type {
   PostingName,
   Postings
 } from "@carbon/api/postings.server";
-import { serverFns } from "@carbon/server-functions";
+import { type ServerFnName, serverFns } from "@carbon/server-functions";
+import {
+  replenishKanban,
+  replenishKanbanPermission
+} from "./inventory/inventory.service";
+import {
+  updatePurchasedPrices,
+  updatePurchasedPricesPermission
+} from "./purchasing/purchasing.service";
+import {
+  createRentalInvoices,
+  createRentalInvoicesPermission
+} from "./sales/sales.service";
+import { invokePosting } from "./shared/shared.service";
 
 /** A posting still in `@carbon/server-functions`, called as its callers did:
  *  as the caller behind `client`, else as the system. */
-function fromPackage<K extends PostingName>(name: K): Postings[K] {
+function fromPackage<K extends PostingName & ServerFnName>(
+  name: K
+): Postings[K] {
   return ((handles: PostingHandles, input: PostingContract[K]["input"]) => {
     const { client, ...fields } = handles;
     const invoker = client
@@ -32,9 +47,30 @@ export const postings: Postings = {
   "post-shipment": fromPackage("post-shipment"),
   "post-payment": fromPackage("post-payment"),
   "post-charge": fromPackage("post-charge"),
-  "update-purchased-prices": fromPackage("update-purchased-prices"),
-  "kanban-replenish": fromPackage("kanban-replenish"),
-  "create-rental-invoices": fromPackage("create-rental-invoices"),
+  "update-purchased-prices": (handles, input) =>
+    invokePosting(
+      handles,
+      "update-purchased-prices",
+      input,
+      updatePurchasedPrices,
+      {
+        as: updatePurchasedPricesPermission
+      }
+    ),
+  "kanban-replenish": (handles, input) =>
+    invokePosting(handles, "kanban-replenish", input, replenishKanban, {
+      as: replenishKanbanPermission
+    }),
+  "create-rental-invoices": (handles, input) =>
+    invokePosting(
+      handles,
+      "create-rental-invoices",
+      input,
+      createRentalInvoices,
+      {
+        as: createRentalInvoicesPermission
+      }
+    ),
   "create-contract-invoices": fromPackage("create-contract-invoices"),
   "create-lease-invoices": fromPackage("create-lease-invoices"),
   "propose-revenue-recognition-run": fromPackage(

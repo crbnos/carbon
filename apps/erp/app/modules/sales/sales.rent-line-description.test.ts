@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect, it } from "vitest";
-import { rentLineDescription } from "./index";
+import { rentLineDescription } from "./sales.service";
 
 const period = {
   cycle: "Calendar Month" as const,

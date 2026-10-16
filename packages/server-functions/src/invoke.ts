@@ -17,11 +17,9 @@ const registry = {
   "batch-operations": () => import("./batch-operations"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-lease-invoices": () => import("./create-lease-invoices"),
-  "create-rental-invoices": () => import("./create-rental-invoices"),
   create: () => import("./create"),
   issue: () => import("./issue"),
   "journal-legacy-documents": () => import("./journal-legacy-documents"),
-  "kanban-replenish": () => import("./kanban-replenish"),
   "post-charge": () => import("./post-charge"),
   "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
@@ -45,8 +43,7 @@ const registry = {
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
-  "trigger-rework": () => import("./trigger-rework"),
-  "update-purchased-prices": () => import("./update-purchased-prices")
+  "trigger-rework": () => import("./trigger-rework")
 } as const;
 
 export type ServerFnName = keyof typeof registry;

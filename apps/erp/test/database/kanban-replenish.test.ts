@@ -2,23 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+// Runs against the local database (SUPABASE_DB_URL); skipped without one.
+
 import { KANBAN_REPLENISHMENT_NOTE_PREFIX } from "@carbon/database/stock-transfer";
 import { expect } from "vitest";
-import { serverFns } from "../invoke";
-import { databaseTest } from "../local-database-test-fixture";
+import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { replenishKanban } from "../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 import { kanbanFixture } from "./kanban-test-fixture";
 
 type Fixture = Awaited<ReturnType<typeof kanbanFixture>>;
 
-function replenish(
+async function replenish(
   f: Fixture,
   input:
     | { mode: "scan"; kanbanId: string }
     | { mode: "level"; kanbanIds: string[] }
 ) {
-  return serverFns
-    .system({ db: f.db, companyId: f.companyId, userId: "system" })
-    .invokeOrThrow("kanban-replenish", input);
+  const result = await invokePosting(
+    { db: f.db, companyId: f.companyId, userId: "system" },
+    "kanban-replenish",
+    input,
+    replenishKanban
+  );
+  if (result.error) throw result.error;
+  return result.data;
 }
 
 function transfers(f: Fixture) {
