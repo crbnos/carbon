@@ -6,8 +6,9 @@
 // drawer on a part's Sales tab: `customerPartValidator` and
 // `upsertItemCustomerPart`. A customer has one part number per item (the
 // unique key is customerId + itemId), so a row for a pair that already has
-// one updates it. Only parts have customer part numbers. The table has no
-// audit columns.
+// one updates it; with `keepSavedValues`, the MCP import, a blank Customer
+// Part Revision keeps the saved one. Only parts have customer part numbers.
+// The table has no audit columns.
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
@@ -87,9 +88,11 @@ export async function importCustomerParts(
     rows: Array<[number, ImportRecord]>;
     companyId: string;
     summary: ImportSummary;
+    /** A blank Customer Part Revision keeps the saved one instead of clearing it. */
+    keepSavedValues?: boolean;
   }
 ): Promise<void> {
-  const { rows, companyId, summary } = args;
+  const { rows, companyId, summary, keepSavedValues = false } = args;
 
   const itemIndex = await loadItemIndex(
     db,
@@ -136,7 +139,9 @@ export async function importCustomerParts(
         .onConflict((oc) =>
           oc.columns(["customerId", "itemId"]).doUpdateSet({
             customerPartId: sql`excluded."customerPartId"`,
-            customerPartRevision: sql`excluded."customerPartRevision"`
+            customerPartRevision: keepSavedValues
+              ? sql`COALESCE(NULLIF(excluded."customerPartRevision", ''), "customerPartToItem"."customerPartRevision")`
+              : sql`excluded."customerPartRevision"`
           })
         )
         .execute()

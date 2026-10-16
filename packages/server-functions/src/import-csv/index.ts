@@ -815,6 +815,35 @@ function hasAnyAddressField(ext: PartnerExtensionData): boolean {
   return !!ext.addressLine1;
 }
 
+// The cells of a partner row that go to its location's address.
+const ADDRESS_FIELDS = [
+  "addressLine1",
+  "addressLine2",
+  "city",
+  "state",
+  "postalCode",
+  "countryCode"
+] as const;
+
+function hasAddressCells(ext: PartnerExtensionData): boolean {
+  return ADDRESS_FIELDS.some((field) => !!ext[field]?.trim());
+}
+
+/**
+ * With keepSavedValues, why a partner row's location cannot be written: a new
+ * location needs Address Line 1, which also names it when Location Name is
+ * blank. Without the check the row's other address cells were dropped.
+ */
+function partnerLocationError(
+  ext: PartnerExtensionData,
+  hasLocation: boolean
+): string | undefined {
+  if (hasLocation || ext.addressLine1?.trim()) return undefined;
+  return hasAddressCells(ext) || ext.locationName?.trim()
+    ? "Address Line 1 is required"
+    : undefined;
+}
+
 function buildAddressFields(ext: PartnerExtensionData): {
   addressLine1: string | null;
   addressLine2: string | null;
@@ -835,6 +864,29 @@ function buildAddressFields(ext: PartnerExtensionData): {
     // post-20240928155702_country-codes.
     countryCode: ext.countryCode || null
   };
+}
+
+/**
+ * Whether a partner row writes its location's address. The wizard writes it
+ * when Address Line 1 is given, replacing every address field. Keeping saved
+ * values, an existing address takes the cells the row holds, so a blank one
+ * keeps its saved value; a new one still needs Address Line 1.
+ */
+function writesAddress(
+  ext: PartnerExtensionData,
+  existingAddressId: string | undefined,
+  keepSaved: boolean
+): boolean {
+  if (!keepSaved) return hasAnyAddressField(ext);
+  return existingAddressId ? hasAddressCells(ext) : hasAnyAddressField(ext);
+}
+
+function withoutNulls<T extends Record<string, unknown>>(
+  fields: T
+): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== null)
+  ) as Partial<T>;
 }
 
 /**
@@ -883,17 +935,18 @@ async function writeSupplierExtensions(
   // Pre-fetched addressId of the supplier's existing primary location, if
   // any. Caller bulk-loads these for the whole batch to avoid an N+1
   // SELECT per supplier. undefined means "no existing location → insert".
-  existingAddressId: string | undefined
+  existingAddressId: string | undefined,
+  keepSaved: boolean
 ): Promise<void> {
   const now = datetime.timestamp();
 
-  if (hasAnyAddressField(ext)) {
+  if (writesAddress(ext, existingAddressId, keepSaved)) {
     const addressFields = buildAddressFields(ext);
 
     if (existingAddressId) {
       await trx
         .updateTable("address")
-        .set(addressFields)
+        .set(keepSaved ? withoutNulls(addressFields) : addressFields)
         .where("id", "=", existingAddressId)
         .where("companyId", "=", companyId)
         .execute();
@@ -988,17 +1041,18 @@ async function writeCustomerExtensions(
   ext: PartnerExtensionData,
   companyId: string,
   userId: string,
-  existingAddressId: string | undefined
+  existingAddressId: string | undefined,
+  keepSaved: boolean
 ): Promise<void> {
   const now = datetime.timestamp();
 
-  if (hasAnyAddressField(ext)) {
+  if (writesAddress(ext, existingAddressId, keepSaved)) {
     const addressFields = buildAddressFields(ext);
 
     if (existingAddressId) {
       await trx
         .updateTable("address")
-        .set(addressFields)
+        .set(keepSaved ? withoutNulls(addressFields) : addressFields)
         .where("id", "=", existingAddressId)
         .where("companyId", "=", companyId)
         .execute();
@@ -1294,6 +1348,22 @@ const importer = {
           )
         );
         const nameMap = await getNameMap(db, "customer", companyId, csvNames);
+        // The primary location of every customer a row may update, read before
+        // the rows are classified so a row can be checked against it.
+        const customerAddressByEntity = await preloadPrimaryLocationAddressIds(
+          db,
+          "customer",
+          [
+            ...new Set(
+              mappedRecords.flatMap(
+                (r) =>
+                  (r.id ? externalIdMap.get(r.id) : undefined) ??
+                  (r.name ? nameMap.get(r.name) : undefined) ??
+                  []
+              )
+            )
+          ]
+        );
         const customerIds = new Set<string>();
         // Tracks names queued for INSERT in this batch so a second CSV row
         // with the same name doesn't trip the (name, companyId) unique
@@ -1366,6 +1436,18 @@ const importer = {
               continue;
             }
 
+            const locationError = keepSaved
+              ? partnerLocationError(
+                  ext,
+                  decision.action === "update" &&
+                    customerAddressByEntity.has(decision.entityId)
+                )
+              : undefined;
+            if (locationError) {
+              summary.errors.push({ row: rowIndex, reason: locationError });
+              continue;
+            }
+
             if (id) customerIds.add(id);
             if (decision.action === "insert")
               namesQueuedForInsert.add(rest.name!);
@@ -1381,7 +1463,11 @@ const importer = {
                   updatedBy: userId
                 }
               });
-              customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+              // Keeping saved values, a blank or missing Tax ID keeps the
+              // saved one; the wizard writes it, clearing a saved one.
+              if (!keepSaved || taxId?.trim()) {
+                customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+              }
               extForUpdates.push({ entityId: decision.entityId, ext });
               // Only attach a CSV->entity mapping when there is a real external id.
               if (matchedByCsvId === undefined && id) {
@@ -1446,7 +1532,8 @@ const importer = {
                 extForInserts[i] ?? {},
                 companyId,
                 userId,
-                undefined
+                undefined,
+                keepSaved
               );
             }
           }
@@ -1466,12 +1553,6 @@ const importer = {
               companyId,
               userId
             );
-            const customerAddressByEntity =
-              await preloadPrimaryLocationAddressIds(
-                trx,
-                "customer",
-                extForUpdates.map((u) => u.entityId)
-              );
             for (const { entityId, ext } of extForUpdates) {
               await writeCustomerExtensions(
                 trx,
@@ -1479,7 +1560,8 @@ const importer = {
                 ext,
                 companyId,
                 userId,
-                customerAddressByEntity.get(entityId)
+                customerAddressByEntity.get(entityId),
+                keepSaved
               );
             }
           }
@@ -1509,6 +1591,22 @@ const importer = {
           )
         );
         const nameMap = await getNameMap(db, "supplier", companyId, csvNames);
+        // The primary location of every supplier a row may update, read before
+        // the rows are classified so a row can be checked against it.
+        const supplierAddressByEntity = await preloadPrimaryLocationAddressIds(
+          db,
+          "supplier",
+          [
+            ...new Set(
+              mappedRecords.flatMap(
+                (r) =>
+                  (r.id ? externalIdMap.get(r.id) : undefined) ??
+                  (r.name ? nameMap.get(r.name) : undefined) ??
+                  []
+              )
+            )
+          ]
+        );
         const supplierIds = new Set<string>();
         const namesQueuedForInsert = new Set<string>();
 
@@ -1577,6 +1675,18 @@ const importer = {
               continue;
             }
 
+            const locationError = keepSaved
+              ? partnerLocationError(
+                  ext,
+                  decision.action === "update" &&
+                    supplierAddressByEntity.has(decision.entityId)
+                )
+              : undefined;
+            if (locationError) {
+              summary.errors.push({ row: rowIndex, reason: locationError });
+              continue;
+            }
+
             if (id) supplierIds.add(id);
             if (decision.action === "insert")
               namesQueuedForInsert.add(rest.name!);
@@ -1592,7 +1702,11 @@ const importer = {
                   updatedBy: userId
                 }
               });
-              supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+              // Keeping saved values, a blank or missing Tax ID keeps the
+              // saved one; the wizard writes it, clearing a saved one.
+              if (!keepSaved || taxId?.trim()) {
+                supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+              }
               extForUpdates.push({ entityId: decision.entityId, ext });
               // Only attach a CSV->entity mapping when there is a real external id.
               if (matchedByCsvId === undefined && id) {
@@ -1657,7 +1771,8 @@ const importer = {
                 extForInserts[i] ?? {},
                 companyId,
                 userId,
-                undefined
+                undefined,
+                keepSaved
               );
             }
           }
@@ -1677,12 +1792,6 @@ const importer = {
               companyId,
               userId
             );
-            const supplierAddressByEntity =
-              await preloadPrimaryLocationAddressIds(
-                trx,
-                "supplier",
-                extForUpdates.map((u) => u.entityId)
-              );
             for (const { entityId, ext } of extForUpdates) {
               await writeSupplierExtensions(
                 trx,
@@ -1690,7 +1799,8 @@ const importer = {
                 ext,
                 companyId,
                 userId,
-                supplierAddressByEntity.get(entityId)
+                supplierAddressByEntity.get(entityId),
+                keepSaved
               );
             }
           }
@@ -3318,7 +3428,8 @@ const importer = {
         await importCustomerParts(db, {
           rows: acceptedRows,
           companyId,
-          summary
+          summary,
+          keepSavedValues: keepSaved
         });
         break;
       }

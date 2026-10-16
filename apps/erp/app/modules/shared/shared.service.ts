@@ -155,7 +155,8 @@ const METHOD_IMPORT_NOTES = [
   "One row per record, told apart by `rowType`. PART rows create or update a part (its Part Number in `readableId`).",
   "BOM rows add a component to the part named in `parentId` (a Part Number); `componentId` is the component's Part Number. A component must already exist or be a PART row in the same file.",
   "BOP rows add an operation to the part in `parentId`, numbered by `opNo` (unique per part). STEP, TOOL and PARAM rows attach to an operation by its `opNo`.",
-  "`process` and `workCenter` are matched by name and must already exist. In-house operations (anything but Outside Processing) need setup, labor and machine units."
+  "`process` and `workCenter` are matched by name and must already exist. In-house operations (anything but Outside Processing) need setup, labor and machine units.",
+  "`supplier` is for Outside Processing operations only, and must already offer the operation's `process`."
 ];
 
 type OptionFetcher = (

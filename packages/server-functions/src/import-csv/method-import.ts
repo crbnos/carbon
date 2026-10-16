@@ -77,6 +77,9 @@ type ItemInfo = {
 const key = (readableId: string, revision: string) =>
   `${readableId} ${revision || "0"}`;
 
+const supplierProcessKey = (supplierId: string, processId: string) =>
+  `${supplierId} ${processId}`;
+
 const num = (s: string | undefined): number | undefined => {
   if (s === undefined || s.trim() === "") return undefined;
   const n = Number(s);
@@ -338,6 +341,28 @@ export async function importMethods(
     }
   }
 
+  // The named suppliers' processes, by supplier and process: what an Outside
+  // Processing operation links to.
+  const supplierProcessMap = new Map<string, string>();
+  const namedSupplierIds = [
+    ...new Set(
+      [...supplierNames].flatMap((name) => supplierMap.get(name) ?? [])
+    )
+  ];
+  if (namedSupplierIds.length > 0) {
+    const rows = await db
+      .selectFrom("supplierProcess")
+      .select(["id", "supplierId", "processId"])
+      .where("companyId", "=", companyId)
+      .where("supplierId", "in", namedSupplierIds)
+      .orderBy("id")
+      .execute();
+    for (const r of rows) {
+      const k = supplierProcessKey(r.supplierId, r.processId);
+      if (!supplierProcessMap.has(k)) supplierProcessMap.set(k, r.id);
+    }
+  }
+
   // Set of parts that this file will create (so a same-file sub-assembly counts
   // as resolvable during validation even though it doesn't exist yet).
   const fileCreatedParts = new Set<string>();
@@ -369,7 +394,9 @@ export async function importMethods(
       processAmbiguous,
       workCenterMap,
       workCenterAmbiguous,
-      uomSet
+      uomSet,
+      supplierMap,
+      supplierProcessMap
     });
 
     if (errors.length > 0) {
@@ -384,7 +411,8 @@ export async function importMethods(
         itemMap,
         processMap,
         workCenterMap,
-        supplierMap
+        supplierMap,
+        supplierProcessMap
       });
       // Every row counts once: the PART row as inserted (a new item) or
       // updated (an existing one), each method row written as inserted, and
@@ -453,6 +481,8 @@ type Lookups = {
   workCenterMap: Map<string, string>;
   workCenterAmbiguous: Set<string>;
   uomSet: Set<string>;
+  supplierMap: Map<string, string>;
+  supplierProcessMap: Map<string, string>;
 };
 
 function validateGroup(
@@ -536,6 +566,35 @@ function validateGroup(
       // In-house operations need time units.
       const opType =
         normalizeOperationType(text(e.record.operationType)) || "Process";
+
+      // The supplier of an Outside Processing operation must offer its
+      // process; before, an unmatched one left the operation without a
+      // supplier and no report.
+      const supplierName = text(e.record.supplier);
+      if (supplierName) {
+        const supplierId = lk.supplierMap.get(supplierName.toLowerCase());
+        const processId = lk.processMap.get(proc);
+        if (opType !== "Outside Processing") {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Operation Supplier is only for Outside Processing operations`
+          });
+        } else if (!supplierId) {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Operation Supplier "${supplierName}" not found`
+          });
+        } else if (
+          processId &&
+          !lk.supplierProcessMap.has(supplierProcessKey(supplierId, processId))
+        ) {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Operation Supplier "${supplierName}" has no "${text(e.record.process)}" process`
+          });
+        }
+      }
+
       if (opType !== "Outside Processing") {
         if (
           !text(e.record.setupUnit) ||
@@ -687,6 +746,7 @@ async function writeGroup(
     processMap: Map<string, string>;
     workCenterMap: Map<string, string>;
     supplierMap: Map<string, string>;
+    supplierProcessMap: Map<string, string>;
   }
 ): Promise<{
   // Whether the PART row created the item (false: it already existed); null
@@ -863,15 +923,16 @@ async function writeGroup(
           ? ctx.workCenterMap.get(text(r.workCenter).toLowerCase())
           : undefined;
 
-        let operationSupplierProcessId: string | undefined;
-        if (opType === "Outside Processing" && text(r.supplier)) {
-          operationSupplierProcessId = await resolveSupplierProcess(
-            trx,
-            companyId,
-            ctx.supplierMap.get(text(r.supplier).toLowerCase()),
-            processId
-          );
-        }
+        // Validation made sure a named supplier offers the process.
+        const supplierId = text(r.supplier)
+          ? ctx.supplierMap.get(text(r.supplier).toLowerCase())
+          : undefined;
+        const operationSupplierProcessId =
+          opType === "Outside Processing" && supplierId
+            ? ctx.supplierProcessMap.get(
+                supplierProcessKey(supplierId, processId)
+              )
+            : undefined;
 
         const inserted = await trx
           .insertInto("methodOperation")
@@ -1140,23 +1201,4 @@ async function seedStorageUnitIds(
     }
   }
   return current;
-}
-
-// Optional supplier-process link for an Outside Processing operation (by supplier + process).
-async function resolveSupplierProcess(
-  trx: Transaction<KyselyDatabase>,
-  companyId: string,
-  supplierId: string | undefined,
-  processId: string
-): Promise<string | undefined> {
-  if (!supplierId) return undefined;
-  const row = await trx
-    .selectFrom("supplierProcess")
-    .select(["id"])
-    .where("companyId", "=", companyId)
-    .where("supplierId", "=", supplierId)
-    .where("processId", "=", processId)
-    .limit(1)
-    .executeTakeFirst();
-  return row?.id;
 }

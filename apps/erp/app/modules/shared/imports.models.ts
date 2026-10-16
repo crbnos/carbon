@@ -478,13 +478,10 @@ const methodBopFields = {
     required: false,
     type: "number"
   },
+  // Outside Processing only: links the supplier's process for the
+  // operation's Process, as the operation form's Supplier field does.
   supplier: {
     label: "Operation Supplier",
-    required: false,
-    type: "string"
-  },
-  supplierProcess: {
-    label: "Supplier Process",
     required: false,
     type: "string"
   }
@@ -2396,7 +2393,6 @@ const methodOpSchema = {
   operationMinimumCost: z.string().optional(),
   operationLeadTime: z.string().optional(),
   supplier: z.string().optional(),
-  supplierProcess: z.string().optional(),
   stepName: z.string().optional(),
   stepDescription: z.string().optional(),
   stepType: z.string().optional(),
