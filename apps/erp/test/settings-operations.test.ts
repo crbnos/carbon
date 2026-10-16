@@ -12,13 +12,26 @@ vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
 }));
 
-const { stripeAccount, consoleSetting, requireMfaSetting, mfaEmails } =
-  vi.hoisted(() => ({
-    stripeAccount: vi.fn(),
-    consoleSetting: vi.fn(),
-    requireMfaSetting: vi.fn(),
-    mfaEmails: vi.fn()
-  }));
+const {
+  stripeAccount,
+  consoleSetting,
+  requireMfaSetting,
+  mfaEmails,
+  unmappedRequiredAccounts
+} = vi.hoisted(() => ({
+  stripeAccount: vi.fn(),
+  consoleSetting: vi.fn(),
+  requireMfaSetting: vi.fn(),
+  mfaEmails: vi.fn(),
+  unmappedRequiredAccounts: vi.fn()
+}));
+vi.mock("@carbon/ee/accounting", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee/accounting")>()),
+  getUnmappedRequiredAccounts: unmappedRequiredAccounts
+}));
+vi.mock("@carbon/kv", () => ({
+  redis: { del: vi.fn(), keys: vi.fn(async () => []), pipeline: vi.fn() }
+}));
 vi.mock("@carbon/stripe/send-sales-invoice.server", () => ({
   getStripeConnectAccountId: stripeAccount
 }));
@@ -41,6 +54,8 @@ import { createServiceContext } from "../app/modules/service-fn.server";
 const {
   createSubsidiary,
   removePrinterRoute,
+  setIntegrationSyncEnabled,
+  updatePostingSync,
   updateInventorySettings,
   updateInvoicingSettings,
   updatePeopleSettings,
@@ -397,5 +412,76 @@ describe("managing the companies of a group", () => {
       message: "Parent company not found"
     });
     expect(writes).toEqual([]);
+  });
+});
+
+describe("an accounting integration's settings", () => {
+  const integration = (settings: Record<string, unknown>) => ({
+    companyIntegration: {
+      id: "xero",
+      active: true,
+      secretRef: null,
+      metadata: { tenantId: "t-1", settings }
+    }
+  });
+
+  it("refuses to turn sync on while a required account is unmapped", async () => {
+    unmappedRequiredAccounts.mockResolvedValue({
+      data: [{ id: "acc-1" }, { id: "acc-2" }],
+      error: null
+    });
+    const { ctx, writes } = contextWith(integration({ syncEnabled: false }));
+
+    const result = await setIntegrationSyncEnabled(ctx, {
+      integrationId: "xero",
+      syncEnabled: true
+    });
+
+    expect(result.error).toMatchObject({
+      category: "rule",
+      message: "Map the remaining 2 required accounts before turning on sync"
+    });
+    expect(writes).toEqual([]);
+  });
+
+  it("saves posting sync in the v3 shape, keeping the keys the form does not own", async () => {
+    const { ctx, writes } = contextWith(
+      integration({
+        syncEnabled: true,
+        postingSync: {
+          enabled: false,
+          includeManual: true,
+          consolidation: "daily",
+          sourceTypes: ["Sales Invoice"],
+          lastReconciliation: { at: "2026-10-01" }
+        }
+      })
+    );
+
+    const result = await updatePostingSync(ctx, {
+      integrationId: "xero",
+      sourceTypeConfigs: [],
+      familyAr: "documents",
+      familyAp: "none",
+      familyCreditMemo: "none",
+      familySupplierCredit: "none",
+      periodLockPolicy: "park"
+    });
+
+    expect(result.error).toBeNull();
+    const saved = writes.find((write) => write.method === "upsert")
+      ?.values as { metadata: Record<string, any> }[];
+    const { settings } = saved[0]!.metadata;
+    expect(settings.syncEnabled).toBe(true);
+    expect(saved[0]!.metadata.tenantId).toBe("t-1");
+    expect(settings.postingSync).toMatchObject({
+      lastReconciliation: { at: "2026-10-01" },
+      families: { ar: "documents", ap: "none" },
+      periodLockPolicy: "park"
+    });
+    for (const legacy of ["enabled", "includeManual", "consolidation"]) {
+      expect(settings.postingSync).not.toHaveProperty(legacy);
+    }
+    expect(Array.isArray(settings.postingSync.sourceTypes)).toBe(false);
   });
 });

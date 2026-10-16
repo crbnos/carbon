@@ -26,7 +26,28 @@ import {
   resolveIntegrationSecrets,
   splitSecrets
 } from "@carbon/ee";
-import { isAccountingSyncEnabled } from "@carbon/ee/accounting";
+import {
+  buildRilletFieldTarget,
+  buildXeroTrackingTarget,
+  getAccountingIntegration,
+  getProviderIntegration,
+  getUnmappedRequiredAccounts,
+  isAccountingSyncEnabled,
+  JOURNAL_ENTRY_SOURCE_TYPES,
+  POSTING_POLICY,
+  ProviderID,
+  QBO_DIMENSION_TARGET_CLASS,
+  QBO_DIMENSION_TARGET_DEPARTMENT,
+  type QboProvider,
+  type RilletProvider,
+  suggestAccountMatchesWithAI,
+  transitionOperation,
+  upsertAccountMappings,
+  upsertDimensionValueMapping,
+  validateDimensionSlots,
+  XERO_MAX_JOURNAL_DIMENSION_SLOTS,
+  type XeroProvider
+} from "@carbon/ee/accounting";
 import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
 import {
   disableAuditLog,
@@ -36,9 +57,15 @@ import {
 import { updateConsoleSetting } from "@carbon/ee/console.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import type { OeeDevice } from "@carbon/ee/oee";
+import {
+  deleteWorkCenterDevice,
+  upsertWorkCenterDevice
+} from "@carbon/ee/oee.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
+import { resolveCapabilities } from "@carbon/ee/sync";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
@@ -87,12 +114,16 @@ import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import { sanitize } from "~/utils/supabase";
+import { listOeeDevices } from "./oee-devices.server";
 import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import {
+  accountMappingEntrySchema,
   apiKeyValidator,
   calculatedShelfLifeInputScopes,
   companyValidator,
   type customFieldValidator,
+  dimensionSlotEntrySchema,
+  dimensionValueMappingEntrySchema,
   expiredEntityPolicies,
   incompletePickingListPolicies,
   invoiceAutomations,
@@ -103,6 +134,7 @@ import {
 } from "./settings.models";
 import {
   deleteDocumentSection,
+  getIntegration,
   insertCompany,
   resolveSections,
   seedCompany,
@@ -958,6 +990,151 @@ export async function getSyncOperationReadableIds(
   return Object.fromEntries(results.flat());
 }
 
+/** One provider analytics target with its selectable option values. */
+export type DimensionTargetWithValues = {
+  id: string;
+  label: string;
+  capacity: number;
+  values: { id: string; name: string }[];
+};
+
+/**
+ * Provider journal-dimension targets with their selectable values, for
+ * the Dimensions tab and the slot-save validation. Guarded on the
+ * provider actually implementing `journalDimensionTargets`; option values
+ * come from the provider's list methods (Rillet Fields carry their values
+ * inline; QBO Classes/Departments and Xero tracking options are the
+ * target's own list). A provider API failure degrades to an empty target
+ * list + `targetsError` so the settings drawer never blocks on a provider
+ * outage.
+ */
+export async function getProviderDimensionTargets(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{
+  supported: boolean;
+  targets: DimensionTargetWithValues[];
+  maxSlots: number | null;
+  targetsError: boolean;
+}> {
+  const unsupported = {
+    supported: false,
+    targets: [],
+    maxSlots: null,
+    targetsError: false
+  };
+
+  const providerId = (Object.values(ProviderID) as string[]).includes(
+    integrationId
+  )
+    ? (integrationId as ProviderID)
+    : null;
+  if (!providerId) return unsupported;
+
+  try {
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+
+    if (typeof provider.journalDimensionTargets !== "function") {
+      return unsupported;
+    }
+
+    if (providerId === ProviderID.RILLET) {
+      // One GET /fields serves both the targets and their values (calling
+      // journalDimensionTargets() separately would hit the same endpoint
+      // twice); target ids come from the engine's composite-id helper.
+      const fields = await (provider as RilletProvider).listFields();
+      return {
+        supported: true,
+        targets: fields.map((field) => ({
+          id: buildRilletFieldTarget(field.id),
+          label: field.name,
+          capacity: 1,
+          values: (field.values ?? [])
+            .filter((value) => !value.deactivated)
+            .map((value) => ({ id: value.id, name: value.name }))
+        })),
+        maxSlots:
+          resolveCapabilities(provider.capabilities).maxJournalDimensionSlots ??
+          null,
+        targetsError: false
+      };
+    }
+
+    if (providerId === ProviderID.QUICKBOOKS) {
+      // journalDimensionTargets() probes the Intuit feature gates, so an
+      // org without class/location tracking sees a reduced target list;
+      // the values then load from the matching list method.
+      const qbo = provider as QboProvider;
+      const declared = await qbo.journalDimensionTargets();
+      const targets: DimensionTargetWithValues[] = [];
+      for (const target of declared) {
+        const options =
+          target.id === QBO_DIMENSION_TARGET_CLASS
+            ? await qbo.listClasses()
+            : target.id === QBO_DIMENSION_TARGET_DEPARTMENT
+              ? await qbo.listDepartments()
+              : [];
+        targets.push({
+          id: target.id,
+          label: target.label,
+          capacity: target.capacity ?? 1,
+          values: options.map((option) => ({
+            id: option.Id,
+            name: option.Name
+          }))
+        });
+      }
+      return {
+        supported: true,
+        targets,
+        maxSlots:
+          resolveCapabilities(qbo.capabilities).maxJournalDimensionSlots ??
+          null,
+        targetsError: false
+      };
+    }
+
+    // Xero: one target per active tracking category, options inline.
+    const categories = await (
+      provider as XeroProvider
+    ).listTrackingCategories();
+    return {
+      supported: true,
+      targets: categories.map((category) => ({
+        id: buildXeroTrackingTarget(category.TrackingCategoryID),
+        label: category.Name,
+        capacity: 1,
+        values: (category.Options ?? [])
+          .filter(
+            (option) =>
+              option.Status === "ACTIVE" || option.Status === undefined
+          )
+          .map((option) => ({ id: option.TrackingOptionID, name: option.Name }))
+      })),
+      maxSlots: XERO_MAX_JOURNAL_DIMENSION_SLOTS,
+      targetsError: false
+    };
+  } catch (err) {
+    logger.error("Failed to load provider dimension targets", {
+      companyId,
+      integrationId,
+      error: err
+    });
+    return { supported: true, targets: [], maxSlots: null, targetsError: true };
+  }
+}
+
 // ─── Operations (`defineServiceFn`) ─────────────────────────────────────────
 // What the routes, the API and MCP all run. A settings page has ONE update
 // operation: it takes the page's fields, all optional, and writes the ones
@@ -1106,9 +1283,8 @@ export const updateAccountingSettings = defineServiceFn({
  * A company that enabled accounting before the enable wrote journals has
  * documents posted on or after its cutover with no journal. This runs the
  * `journal-legacy-documents` server function, which journals each of them,
- * and returns how many documents it journaled.
- *
- * @mcp
+ * and returns how many documents it journaled. Not published: it needs two
+ * modules' permissions, which the API gate cannot state yet.
  */
 export const writeMissingJournals = defineServiceFn({
   input: z.object({}),
@@ -2876,5 +3052,514 @@ export const setRecordCustomFields = defineServiceFn({
       return ctx.error("internal", "Failed to update custom fields", error);
     }
     return { ids };
+  }
+});
+
+/**
+ * Retry, re-send or skip accounting sync operations.
+ *
+ * @remarks
+ * "Pending" queues each operation for sync again (retry, re-send);
+ * "Skipped" drops it from the inbox. Each operation's transition is checked
+ * against its current status, and one that cannot move is reported.
+ *
+ * @mcp
+ */
+export const transitionSyncOperations = defineServiceFn({
+  input: z.object({
+    ids: z
+      .array(z.string().min(1))
+      .min(1, { message: "No operations selected" }),
+    to: z.enum(["Pending", "Skipped"])
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { ids, to }) {
+    const failures: string[] = [];
+    // ponytail: one guarded transition per operation, as the inbox selects a
+    // handful; a set-based transition when bulk retry grows to hundreds.
+    for (const id of ids) {
+      const result = await transitionOperation(ctx.asCaller.supabase, {
+        id,
+        companyId: ctx.company.id,
+        to,
+        userId: ctx.auditUserId
+      });
+      if (result.error) failures.push(result.error);
+    }
+    if (failures.length > 0) {
+      const succeeded = ids.length - failures.length;
+      return ctx.error(
+        "rule",
+        succeeded > 0
+          ? `Updated ${succeeded} of ${ids.length} sync operations`
+          : "Failed to update sync operation",
+        failures[0]
+      );
+    }
+    return { count: ids.length, to };
+  }
+});
+
+/** Propose provider accounts for unmapped Carbon accounts, with AI. Writes nothing. */
+export const suggestAccountMappings = defineServiceFn({
+  input: z.object({
+    accounts: z.array(
+      z.object({
+        id: z.string().min(1),
+        number: z.string().nullable(),
+        name: z.string()
+      })
+    ),
+    providerAccounts: z.array(
+      z.object({
+        id: z.string().min(1),
+        code: z.string().nullable().optional(),
+        name: z.string().nullable().optional()
+      })
+    )
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { accounts, providerAccounts }) {
+    const result = await suggestAccountMatchesWithAI({
+      accounts,
+      providerAccounts
+    });
+    if (result.error || !result.data) {
+      return ctx.error(
+        "internal",
+        "Failed to suggest account mappings",
+        result.error
+      );
+    }
+    return { proposals: result.data };
+  }
+});
+
+/** Map Carbon accounts to an accounting integration's accounts. */
+export const saveAccountMappings = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    mappings: z
+      .array(accountMappingEntrySchema)
+      .min(1, { message: "No account mappings to save" })
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { integrationId, mappings }) {
+    const result = await upsertAccountMappings(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      integration: integrationId,
+      userId: ctx.auditUserId,
+      mappings
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save account mappings",
+        result.error
+      );
+    }
+    return { count: mappings.length };
+  }
+});
+
+/** The integration's stored metadata and its `settings` object, for a merge. */
+async function integrationSettings(ctx: ServiceContext, integrationId: string) {
+  const existing = await getIntegration(
+    ctx.asCaller.supabase,
+    integrationId,
+    ctx.company.id
+  );
+  if (existing.error || !existing.data) return null;
+  const metadata = (existing.data.metadata as Record<string, unknown>) ?? {};
+  return {
+    active: existing.data.active,
+    metadata,
+    settings: (metadata.settings as Record<string, unknown> | undefined) ?? {}
+  };
+}
+
+/** Write an integration's merged metadata and drop its cached health. */
+async function saveIntegrationMetadata(
+  ctx: ServiceContext,
+  integrationId: string,
+  active: boolean,
+  metadata: Record<string, unknown>,
+  failure: string
+): Promise<CarbonError | null> {
+  const update = await upsertCompanyIntegration(ctx.asCaller.supabase, {
+    id: integrationId,
+    active,
+    metadata: metadata as Json,
+    companyId: ctx.company.id,
+    updatedBy: ctx.auditUserId
+  });
+  if (update.error) return ctx.error("internal", failure, update.error);
+  await invalidateIntegrationHealthCache(integrationId, ctx.company.id);
+  return null;
+}
+
+/**
+ * Set which Carbon dimensions ride along on the journals pushed to an accounting integration.
+ *
+ * @remarks
+ * Each slot pairs a Carbon dimension with one of the provider's analytics
+ * targets; the slots are checked against the targets the provider declares
+ * and its slot limit. No slots turns dimension sync off. Unmapped values are
+ * warned about or dropped.
+ *
+ * @mcp
+ */
+export const updateDimensionSync = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    slots: z.array(dimensionSlotEntrySchema),
+    onUnmappedDimensionValue: z.enum(["warn", "drop"])
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { integrationId, slots, onUnmappedDimensionValue }) {
+    const providerTargets = await getProviderDimensionTargets(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      integrationId
+    );
+    if (!providerTargets.supported) {
+      return ctx.error(
+        "rule",
+        "This integration does not support dimension sync"
+      );
+    }
+    // Clearing every slot is always allowed; validating a non-empty config
+    // against a failed target fetch would reject every target as unknown.
+    if (slots.length > 0 && providerTargets.targetsError) {
+      return ctx.error(
+        "unavailable",
+        "Couldn't load the provider's dimension targets — try again"
+      );
+    }
+    const slotErrors = validateDimensionSlots({
+      slots,
+      targets: providerTargets.targets,
+      maxSlots: providerTargets.maxSlots ?? undefined
+    });
+    if (slotErrors.length > 0) {
+      return ctx.error(
+        "rule",
+        "Invalid dimension slot configuration",
+        slotErrors.join(" ")
+      );
+    }
+
+    const existing = await integrationSettings(ctx, integrationId);
+    if (!existing) {
+      return ctx.error("notFound", "Failed to load integration settings");
+    }
+    const postingSync =
+      (existing.settings.postingSync as Record<string, unknown> | undefined) ??
+      {};
+
+    // The v2 shim-marker keys are deliberately left in place: this does not
+    // write the v3 sourceTypes record, so stripping them would make the
+    // schema shim lose the stored v2 enabled set on the next read.
+    const saved = await saveIntegrationMetadata(
+      ctx,
+      integrationId,
+      existing.active ?? true,
+      {
+        ...existing.metadata,
+        settings: {
+          ...existing.settings,
+          postingSync: {
+            ...postingSync,
+            dimensionSlots: slots,
+            onUnmappedDimensionValue
+          }
+        }
+      },
+      "Failed to update dimension sync settings"
+    );
+    return saved ?? { integrationId };
+  }
+});
+
+/** Map Carbon dimension values to an accounting integration's analytics values. */
+export const saveDimensionValueMappings = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    mappings: z
+      .array(dimensionValueMappingEntrySchema)
+      .min(1, { message: "No dimension value mappings to save" })
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { integrationId, mappings }) {
+    const failures: string[] = [];
+    // ponytail: one upsert per value, as the match drawer confirms a page of
+    // names; a batched upsert in the engine when it confirms thousands.
+    for (const mapping of mappings) {
+      const result = await upsertDimensionValueMapping(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        integration: integrationId,
+        ...mapping,
+        userId: ctx.auditUserId
+      });
+      if (result.error) failures.push(result.error);
+    }
+    if (failures.length > 0) {
+      const succeeded = mappings.length - failures.length;
+      return ctx.error(
+        succeeded > 0 ? "rule" : "internal",
+        succeeded > 0
+          ? `Saved ${succeeded} of ${mappings.length} dimension value mappings`
+          : mappings.length === 1
+            ? "Failed to save dimension value mapping"
+            : "Failed to save dimension value mappings",
+        failures[0]
+      );
+    }
+    return { count: mappings.length };
+  }
+});
+
+/**
+ * Turn an accounting integration's sync on or off.
+ *
+ * @remarks
+ * A new connection starts with sync off. Turning it on is refused until
+ * every required account is mapped, so the first push cannot park a wall of
+ * unmapped-account warnings.
+ *
+ * @mcp
+ */
+export const setIntegrationSyncEnabled = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    syncEnabled: z.boolean()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, { integrationId, syncEnabled }) {
+    const existing = await integrationSettings(ctx, integrationId);
+    if (!existing?.active) {
+      return ctx.error("notFound", "Failed to load integration settings");
+    }
+
+    if (syncEnabled) {
+      const unmapped = await getUnmappedRequiredAccounts(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        integration: integrationId
+      });
+      if (unmapped.error || !unmapped.data) {
+        return ctx.error(
+          "internal",
+          "Failed to check the account mapping",
+          unmapped.error
+        );
+      }
+      if (unmapped.data.length > 0) {
+        return ctx.error(
+          "rule",
+          `Map the remaining ${unmapped.data.length} required account${
+            unmapped.data.length === 1 ? "" : "s"
+          } before turning on sync`
+        );
+      }
+    }
+
+    const saved = await saveIntegrationMetadata(
+      ctx,
+      integrationId,
+      existing.active,
+      {
+        ...existing.metadata,
+        settings: { ...existing.settings, syncEnabled }
+      },
+      "Failed to update sync"
+    );
+    return saved ?? { syncEnabled };
+  }
+});
+
+/**
+ * Set how an accounting integration receives postings.
+ *
+ * @remarks
+ * Posting sync is always on. Each journal-represented source type except
+ * Manual is sent, individually or as a daily summary (`sourceTypeConfigs`:
+ * "<source type>|individual" or "|daily-summary"; an unlisted type takes its
+ * default). Receivables, payables, credit memos and supplier credits each go
+ * as documents, as journals or not at all. A posting into a locked provider
+ * period is parked or redated, and `lockDate` is the provider's lock date.
+ * Keys this form does not own (the weekly reconciliation's) are kept.
+ *
+ * @mcp
+ */
+export const updatePostingSync = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    sourceTypeConfigs: z.array(
+      z
+        .string()
+        .regex(
+          /^[^|]+\|(individual|daily-summary)$/,
+          "Malformed source-type config"
+        )
+    ),
+    familyAr: z.enum(["documents", "journals", "none"]),
+    familyAp: z.enum(["documents", "journals", "none"]),
+    familyCreditMemo: z.enum(["documents", "journals", "none"]),
+    familySupplierCredit: z.enum(["documents", "journals", "none"]),
+    periodLockPolicy: z.enum(["park", "redate"]),
+    lockDate: z.string().optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const granularityBySourceType = new Map(
+      input.sourceTypeConfigs.map((config) => {
+        const separator = config.lastIndexOf("|");
+        return [
+          config.slice(0, separator),
+          config.slice(separator + 1) as "individual" | "daily-summary"
+        ] as const;
+      })
+    );
+    const sourceTypes: Record<
+      string,
+      { enabled: boolean; granularity: "individual" | "daily-summary" }
+    > = {};
+    for (const sourceType of JOURNAL_ENTRY_SOURCE_TYPES) {
+      if (POSTING_POLICY[sourceType].representation !== "journal") continue;
+      if (sourceType === "Manual") continue;
+      sourceTypes[sourceType] = {
+        enabled: true,
+        granularity:
+          granularityBySourceType.get(sourceType) ??
+          POSTING_POLICY[sourceType].defaultGranularity
+      };
+    }
+
+    const existing = await integrationSettings(ctx, input.integrationId);
+    if (!existing) {
+      return ctx.error("notFound", "Failed to load integration settings");
+    }
+
+    // Saving writes the v3 shape: the v2 shim markers (includeManual,
+    // consolidation, the legacy sourceTypes array) and the old master
+    // `enabled` are dropped, or the schema shim would read the fragment as v2.
+    const {
+      includeManual: _includeManual,
+      consolidation: _consolidation,
+      sourceTypes: _legacySourceTypes,
+      enabled: _enabled,
+      ...postingSync
+    } = (existing.settings.postingSync as
+      | Record<string, unknown>
+      | undefined) ?? {};
+
+    const saved = await saveIntegrationMetadata(
+      ctx,
+      input.integrationId,
+      existing.active ?? true,
+      {
+        ...existing.metadata,
+        settings: {
+          ...existing.settings,
+          postingSync: {
+            ...postingSync,
+            families: {
+              ar: input.familyAr,
+              ap: input.familyAp,
+              creditMemo: input.familyCreditMemo,
+              supplierCredit: input.familySupplierCredit
+            },
+            sourceTypes,
+            periodLockPolicy: input.periodLockPolicy,
+            ...(input.lockDate ? { lockDate: input.lockDate } : {})
+          }
+        }
+      },
+      "Failed to update posting sync settings"
+    );
+    return saved ?? { integrationId: input.integrationId };
+  }
+});
+
+/**
+ * Map an OEE integration's device to a work center, or unmap it.
+ *
+ * @remarks
+ * Only a station the current connection reports can be mapped: a list read
+ * before the API key changed could name a station the provider does not
+ * have, whose mapping would never sync. The stored name, site and time zone
+ * are the provider's. No work center unmaps the device. OEE integrations are
+ * a commercial feature.
+ */
+export const saveOeeDeviceMapping = defineServiceFn({
+  input: z.object({
+    integrationId: z.string().min(1),
+    externalDeviceId: z.string().min(1),
+    deviceName: z.string().min(1),
+    workCenterId: z.string().optional()
+  }),
+  permission: { update: "settings" },
+  async run(
+    ctx,
+    { integrationId, externalDeviceId, deviceName, workCenterId }
+  ) {
+    let device: OeeDevice | undefined;
+    if (workCenterId) {
+      const provider = await listOeeDevices(ctx.company.id, integrationId);
+      device = provider.devices.find(
+        (candidate) => candidate.externalDeviceId === externalDeviceId
+      );
+      if (!device) {
+        return ctx.error(
+          "rule",
+          `Failed to save device mapping: ${
+            provider.error ?? `${deviceName} is not a station of this provider`
+          }`
+        );
+      }
+    }
+
+    let result: { error: string | null };
+    try {
+      result =
+        workCenterId && device
+          ? await upsertWorkCenterDevice(
+              ctx.asCaller.supabase,
+              ctx.asSystem.pg,
+              {
+                companyId: ctx.company.id,
+                userId: ctx.auditUserId,
+                integration: integrationId,
+                externalDeviceId,
+                externalSiteId: device.externalSiteId,
+                siteTimezone: device.siteTimezone,
+                deviceName: device.name,
+                workCenterId
+              }
+            )
+          : await deleteWorkCenterDevice(
+              ctx.asCaller.supabase,
+              ctx.asSystem.pg,
+              {
+                companyId: ctx.company.id,
+                userId: ctx.auditUserId,
+                integration: integrationId,
+                externalDeviceId
+              }
+            );
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error(
+        "entitlement",
+        `Failed to save device mapping: ${err.message}`
+      );
+    }
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        `Failed to save device mapping: ${result.error}`
+      );
+    }
+    return { externalDeviceId, workCenterId: workCenterId ?? null };
   }
 });

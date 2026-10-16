@@ -73,7 +73,7 @@ A settings page has ONE update operation, `settings.<page>.update`, for `account
 
 | Operation | Route | What it holds |
 |---|---|---|
-| `accounting.update` / `.writeMissingJournals` | `x+/settings+/accounting.tsx` | The deferred tax accounts go to `accountDefault`; the repair runs `journal-legacy-documents` and needs `update: accounting` too |
+| `accounting.update` / `.writeMissingJournals` | `x+/settings+/accounting.tsx` | The deferred tax accounts go to `accountDefault`; the repair runs `journal-legacy-documents` and needs `update: accounting` too, so it is not published (the API gate takes one module) |
 | `invoicing.update`, `purchasing.update` | `invoicing.tsx`, `purchasing.tsx` | The centralized billing address (a null field clears it); Stripe must be connected for "Post and Send via Stripe" |
 | `production.update` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only |
 | `people.update` | `people.tsx` | Console mode through `@carbon/ee/console.server` (the plan lock); returns a generated PIN once, never to a key caller. Not published |
@@ -84,6 +84,7 @@ A settings page has ONE update operation, `settings.<page>.update`, for `account
 | `documentTemplate.save`, `documentSection.save` / `.delete` | `x+/templates+/$type.tsx`, `x+/templates+/shared.tsx` | The header layout is saved onto its section first |
 | `apiKey.create` / `.update` / `.delete` | `api-keys.new.tsx`, `api-keys.$id.tsx`, `api-keys.delete.$id.tsx` | Key generation and hashing, the auth-cache busts; the plan lock stays in `@carbon/ee/api-keys.server`. Not published |
 | `integration.deactivate` | `integrations.deactivate.$id.tsx` | The plan check, the uninstall hook, the health cache |
+| `integration.setSyncEnabled`, `syncOperation.transition`, `accountMapping.suggest` / `.save`, `dimensionSync.update`, `dimensionValueMapping.save`, `postingSync.update`, `oeeDevice.map` | `integrations.$id.tsx` (the drawer's tabs, one intent each) | Sync stays off until every required account is mapped; dimension slots are checked against the provider's targets; posting sync is saved in the v3 shape and keeps the reconciliation's keys; a device maps only when the provider reports it. The mapping writes go through Kysely and are not published, nor is the AI suggestion. The settings form's own save (install, Onshape authorization) is still composed in the route |
 | `auditLog.enable` / `.disable` / `.archiveUrl` | `audit-logs.tsx` | The plan lock in `@carbon/ee/audit.server`; a controlled environment cannot disable |
 | `billing.portalUrl` / `.transferOwnership` | `billing.tsx` | The Stripe portal call is unchanged. Not published |
 | `tags.set`, `customFields.set` | `tags.tsx`, `custom-fields.tsx` | Any record's tags or custom field values, under the caller's RLS. Not published |

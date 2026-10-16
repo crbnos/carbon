@@ -17866,8 +17866,14 @@ msgstr "Questions"
 msgid "Queued"
 msgstr "Queued"
 
+msgid "Queued {count} sync operations for sync"
+msgstr "Queued {count} sync operations for sync"
+
 msgid "Queued finish"
 msgstr "Queued finish"
+
+msgid "Queued sync operation for sync"
+msgstr "Queued sync operation for sync"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Quiet on the floor tonight, {name}."
@@ -19863,6 +19869,22 @@ msgstr "Save View"
 msgid "Saved"
 msgstr "Saved"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr "Saved {0} dimension value mappings"
+
+msgid "Saved {count} account mappings"
+msgstr "Saved {count} account mappings"
+
+msgid "Saved account mapping"
+msgstr "Saved account mapping"
+
+msgid "Saved device mapping"
+msgstr "Saved device mapping"
+
+msgid "Saved dimension value mapping"
+msgstr "Saved dimension value mapping"
+
 msgid "Saved document layout"
 msgstr "Saved document layout"
 
@@ -21160,6 +21182,12 @@ msgstr "Skip the released-but-not-started state — the job starts immediately o
 
 msgid "Skipped"
 msgstr "Skipped"
+
+msgid "Skipped {count} sync operations"
+msgstr "Skipped {count} sync operations"
+
+msgid "Skipped sync operation"
+msgstr "Skipped sync operation"
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
 
+msgid "Turned off sync"
+msgstr "Turned off sync"
+
+msgid "Turned on sync"
+msgstr "Turned on sync"
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 
@@ -25009,8 +25043,14 @@ msgstr "Updated At"
 msgid "Updated By"
 msgstr "Updated By"
 
+msgid "Updated dimension sync settings"
+msgstr "Updated dimension sync settings"
+
 msgid "Updated job status"
 msgstr "Updated job status"
+
+msgid "Updated posting sync settings"
+msgstr "Updated posting sync settings"
 
 msgid "Updated successfully"
 msgstr "Updated successfully"

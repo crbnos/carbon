@@ -17866,8 +17866,14 @@ msgstr "Questions"
 msgid "Queued"
 msgstr "En file d'attente"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "Fin en file d'attente"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Calme à l'atelier ce soir, {name}."
@@ -19863,6 +19869,22 @@ msgstr "Enregistrer la vue"
 msgid "Saved"
 msgstr "Enregistré"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
 msgid "Saved document layout"
 msgstr ""
 
@@ -21160,6 +21182,12 @@ msgstr "Ignorer l'état lancé mais non démarré — l'ordre de fabrication dé
 
 msgid "Skipped"
 msgstr "Ignoré"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "Activez <0>l'option de simplification des baux à court terme dans Param
 msgid "Turn on the built-in pieces"
 msgstr "Activez les éléments intégrés"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "Douze mois ou moins. Rien n'est inscrit au bilan ; chaque facture est comptabilisée en charge."
 
@@ -25009,7 +25043,13 @@ msgstr "Mis à jour le"
 msgid "Updated By"
 msgstr "Mis à jour par"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"

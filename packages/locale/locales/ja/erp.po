@@ -17866,8 +17866,14 @@ msgstr "質問"
 msgid "Queued"
 msgstr "キュー待ち"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "キュー待ち完了"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今夜のフロアは静かですね、{name}さん。"
@@ -19863,6 +19869,22 @@ msgstr "ビューを保存"
 msgid "Saved"
 msgstr "保存済み"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
 msgid "Saved document layout"
 msgstr ""
 
@@ -21160,6 +21182,12 @@ msgstr "リリースされたが開始していない状態をスキップしま
 
 msgid "Skipped"
 msgstr "スキップ済"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにして�
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "12か月以下。貸借対照表に何も計上されません。各請求書は費用化されます。"
 
@@ -25009,7 +25043,13 @@ msgstr "更新日時"
 msgid "Updated By"
 msgstr "更新者"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"

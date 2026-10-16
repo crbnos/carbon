@@ -17866,8 +17866,14 @@ msgstr "प्रश्न"
 msgid "Queued"
 msgstr "कतार में"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "कतार में समाप्ति"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "आज रात फ्लोर पर शांत, {name}।"
@@ -19863,6 +19869,22 @@ msgstr "दृश्य सहेजें"
 msgid "Saved"
 msgstr "सहेजा गया"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
 msgid "Saved document layout"
 msgstr ""
 
@@ -21160,6 +21182,12 @@ msgstr "रिलीज़ की गई लेकिन शुरू न की
 
 msgid "Skipped"
 msgstr "छोड़ा गया"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "सेटिंग्स → लेखांकन में <0>अल�
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "बारह महीने या उससे कम। कुछ भी तुलन पत्र पर नहीं जाता; प्रत्येक चालान व्यय के रूप में दर्ज किया जाता है।"
 
@@ -25009,7 +25043,13 @@ msgstr "अपडेट किया गया"
 msgid "Updated By"
 msgstr "अपडेट किया गया"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"

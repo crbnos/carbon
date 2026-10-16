@@ -17866,8 +17866,14 @@ msgstr "问题"
 msgid "Queued"
 msgstr "排队中"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "排队完成日期"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今晚车间很安静，{name}。"
@@ -19863,6 +19869,22 @@ msgstr "保存视图"
 msgid "Saved"
 msgstr "已保存"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
 msgid "Saved document layout"
 msgstr ""
 
@@ -21160,6 +21182,12 @@ msgstr "跳过已发布但未启动状态 — 扫码时工单立即启动。"
 
 msgid "Skipped"
 msgstr "已跳过"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "启用<0>设置 → 会计中的短期租赁豁免</0>，或"
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "十二个月或以内。资产负债表上无记录；每张发票均作为费用记录。"
 
@@ -25009,7 +25043,13 @@ msgstr "更新于"
 msgid "Updated By"
 msgstr "更新者"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"

@@ -584,7 +584,7 @@ export const workCenterDeviceUpsertValidator = z.object({
  * account — the journal syncer resolves provider account codes from the
  * mapping's stored externalCode, so the code must be persisted.
  */
-const accountMappingEntrySchema = z.object({
+export const accountMappingEntrySchema = z.object({
   accountId: z.string().min(1),
   externalId: z.string().min(1),
   externalCode: z.string().optional(),
@@ -718,7 +718,7 @@ export const syncEnabledValidator = z.object({
  * (dimension sync off). The action re-validates the slots against the
  * provider's declared targets via validateDimensionSlots before writing.
  */
-const dimensionSlotEntrySchema = z.object({
+export const dimensionSlotEntrySchema = z.object({
   dimensionId: z.string().min(1),
   target: z.string().min(1),
   autoCreate: z.boolean().optional()
@@ -761,7 +761,7 @@ export const dimensionValueMappingUpsertValidator = z.object({
   externalName: zfd.text(z.string().optional())
 });
 
-const dimensionValueMappingEntrySchema = z.object({
+export const dimensionValueMappingEntrySchema = z.object({
   dimensionId: z.string().min(1),
   valueId: z.string().min(1),
   externalId: z.string().min(1),

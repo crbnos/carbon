@@ -24,7 +24,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -132,6 +133,9 @@ export function DimensionMapping({
   proposals
 }: DimensionMappingProps) {
   const { t } = useLingui();
+  const slotsFetcher = useAction({
+    onSuccess: () => toast.success(t`Updated dimension sync settings`)
+  });
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
@@ -232,6 +236,7 @@ export function DimensionMapping({
         <ValidatedForm
           validator={dimensionSlotsUpdateValidator}
           method="post"
+          fetcher={slotsFetcher}
           defaultValues={{
             intent: "update-dimension-slots",
             onUnmappedDimensionValue
@@ -613,6 +618,9 @@ function DimensionValueMappingRowForm({
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Saved dimension value mapping`)
+  });
   const [selectedName, setSelectedName] = useState<string | null>(
     currentExternalId ? currentExternalName : null
   );
@@ -647,6 +655,7 @@ function DimensionValueMappingRowForm({
     <ValidatedForm
       validator={dimensionValueMappingUpsertValidator}
       method="post"
+      fetcher={fetcher}
       defaultValues={{
         intent: "upsert-dimension-value-mapping",
         dimensionId,
@@ -714,7 +723,16 @@ function MatchByNameDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.count === 1
+          ? t`Saved dimension value mapping`
+          : t`Saved ${data.count} dimension value mappings`
+      );
+    },
     onSettled: () => {
       if (submittedRef.current) {
         onClose();

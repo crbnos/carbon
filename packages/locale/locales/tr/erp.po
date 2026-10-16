@@ -17866,8 +17866,14 @@ msgstr "Sorular"
 msgid "Queued"
 msgstr "Kuyrukta"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "Kuyrukta bitiş"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Atölyede bu gece sessiz, {name}."
@@ -19863,6 +19869,22 @@ msgstr "Görünümü Kaydet"
 msgid "Saved"
 msgstr "Kaydedildi"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
 msgid "Saved document layout"
 msgstr ""
 
@@ -21160,6 +21182,12 @@ msgstr "Yayınlanan ancak başlatılmayan durumu atlayın - iş tarama sırasın
 
 msgid "Skipped"
 msgstr "Atlanmış"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "Açın <0>Ayarlar → Muhasebe'de Kısa Vadeli Kiralama Muafiyeti</0> ve
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "On iki ay veya daha az. Bilançoya hiçbir şey gelmez; her fatura gider olarak kaydedilir."
 
@@ -25009,7 +25043,13 @@ msgstr "Güncellendi"
 msgid "Updated By"
 msgstr "Güncellendiği Kişi"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"

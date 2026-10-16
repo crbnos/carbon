@@ -17866,8 +17866,14 @@ msgstr "질문"
 msgid "Queued"
 msgstr "대기열"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "대기열 완료"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "{name}님, 오늘 밤 현장이 조용하네요."
@@ -19863,6 +19869,22 @@ msgstr "보기 저장"
 msgid "Saved"
 msgstr "저장됨"
 
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
 msgid "Saved document layout"
 msgstr ""
 
@@ -21160,6 +21182,12 @@ msgstr "릴리즈되었지만 시작되지 않은 상태를 건너뜁니다 — 
 
 msgid "Skipped"
 msgstr "건너뜀"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -24579,6 +24607,12 @@ msgstr "<0>설정 → 회계에서 단기 리스 간편법</0>을 켜세요, 또
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "12개월 이하. 재무상태표에 기록되지 않습니다. 각 송장은 비용화됩니다."
 
@@ -25009,7 +25043,13 @@ msgstr "업데이트 일시"
 msgid "Updated By"
 msgstr "업데이트한 사람"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
 msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
 msgstr ""
 
 msgid "Updated successfully"
