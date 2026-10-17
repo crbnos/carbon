@@ -141,7 +141,7 @@
     {"name":"accounting_updateProject","classification":"WRITE","schema":"c6508c06eeb9","response":"3797626bd17e","permission":"accounting:update","paginates":false},
     {"name":"accounting_updateReportView","classification":"WRITE","schema":"1a8d77edd96c","response":"47a0e7255225","permission":"accounting:update","paginates":false},
     {"name":"accounting_upsertReportPin","classification":"WRITE","schema":"5451b17c4b2c","response":"bcde375ebd4c","permission":"accounting:create+update","paginates":false},
-    {"name":"documents_createDocument","classification":"WRITE","schema":"450db6c9df43","response":"1fd372019111","permission":"documents:create","paginates":false},
+    {"name":"documents_createDocument","classification":"WRITE","schema":"6bdbd3c91adf","response":"1fd372019111","permission":"documents:create","paginates":false},
     {"name":"documents_createDocumentUploadUrl","classification":"WRITE","schema":"01e8421410da","response":"4ad76afe0777","permission":"documents:create","paginates":false},
     {"name":"documents_deleteDocument","classification":"DESTRUCTIVE","schema":"7f8214d1083f","response":"bcde375ebd4c","permission":"documents:delete","paginates":false},
     {"name":"documents_getDocument","classification":"READ","schema":"1a362ab8a372","response":"985e02706d13","permission":"documents:view","paginates":false},

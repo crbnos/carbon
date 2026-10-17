@@ -336,7 +336,8 @@ export const restoreDocument = defineServiceFn({
  * Create a document
  *
  * @remarks
- * Upsert document
+ * Records the document row for a file. To change an existing document, use
+ * `documents_updateDocument`.
  *
  * @mcp
  */
@@ -375,11 +376,7 @@ export const createDocument = defineServiceFn({
         "Service"
       ])
       .optional(),
-    sourceDocumentId: z.string().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    sourceDocumentId: z.string().optional()
   }),
   permission: { create: "documents" },
   async run(ctx, input) {
@@ -402,7 +399,7 @@ export const createDocument = defineServiceFn({
  * Update a document
  *
  * @remarks
- * Upsert document
+ * Changes the document with this `id`.
  *
  * @mcp
  */
@@ -443,10 +440,7 @@ export const updateDocument = defineServiceFn({
         ])
         .optional(),
       sourceDocumentId: z.string().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string().describe("The document to update.").optional()
     })
     .required({ id: true }),
   permission: { update: "documents" },
