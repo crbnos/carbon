@@ -453,19 +453,19 @@ export async function attachOnshapeAssetsToItem(
           priorModel.name ?? `prior-model-${priorModel.id}`
         );
         const preservedPath = `${companyId}/parts/${itemId}/${preservedName}`;
-        // Raw sources live in temp-staging since the assembler pipeline;
-        // older rows live in the company or legacy private bucket. Copy into
-        // the company bucket so the preserved file sits with the item's
-        // documents.
+        // The raw source is in the company bucket once durable, else in
+        // temp-staging. Copy it into the company bucket so the preserved file
+        // sits with the item's documents.
         const priorBucket = await resolveModelSourceBucket(
-          carbon,
           priorModel.modelPath
         );
-        const copied = await carbon.storage
-          .from(priorBucket)
-          .copy(priorModel.modelPath, preservedPath, {
-            destinationBucket: getCompanyPrivateBucket(companyId)
-          });
+        const copied = priorBucket
+          ? await carbon.storage
+              .from(priorBucket)
+              .copy(priorModel.modelPath, preservedPath, {
+                destinationBucket: getCompanyPrivateBucket(companyId)
+              })
+          : { error: { message: "the prior model file is not in storage" } };
         if (copied.error && !/already exists/i.test(copied.error.message)) {
           console.error(
             `attachOnshapeAssetsToItem: failed to copy prior model ${priorModel.id} for preservation`,

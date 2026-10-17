@@ -509,28 +509,6 @@ export async function updateModelThumbnail(
   return client.from("modelUpload").update({ thumbnailPath }).eq("id", modelId);
 }
 
-export async function upsertModelUpload(
-  client: SupabaseClient<Database>,
-  upload:
-    | {
-        id: string;
-        modelPath: string;
-        companyId: string;
-        createdBy: string;
-      }
-    | {
-        id: string;
-        name: string;
-        size: number;
-        thumbnailPath: string;
-      }
-) {
-  if ("createdBy" in upload) {
-    return client.from("modelUpload").insert(upload);
-  }
-  return client.from("modelUpload").update(upload).eq("id", upload.id);
-}
-
 export async function updateNote(
   client: SupabaseClient<Database>,
   id: string,
@@ -5831,19 +5809,9 @@ export async function importCsvTable(
 
   const client = ctx.asSystem.supabase;
 
-  // The client is service-role and the legacy bucket is shared across
-  // tenants, so the `${companyId}/` key prefix is the tenant boundary on the
-  // caller-supplied path — refuse anything outside it.
-  if (!filePath.startsWith(`${companyId}/`)) {
-    throw new Error("File path is outside the company's storage prefix");
-  }
-
-  // Try the company bucket first; fall back to the legacy shared bucket
-  // for files uploaded before the per-company bucket migration.
-  let csvFile = await client.storage.from(companyId).download(filePath);
-  if (csvFile.error || !csvFile.data) {
-    csvFile = await client.storage.from("private").download(filePath);
-  }
+  // The client is service-role, so the company bucket wrapper is what keeps
+  // the caller-supplied path inside the company's own files.
+  const csvFile = await storage(client).company(companyId).download(filePath);
   if (!csvFile.data) {
     throw new Error("Failed to download file");
   }

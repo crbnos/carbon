@@ -11,7 +11,7 @@ import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  resolveModelSourceBucket,
+  requireModelSourceBucket,
   runAssemblerJob,
   signSourceUrl
 } from "./assembler-client";
@@ -113,12 +113,10 @@ export const modelOptimizeFunction = inngest.createFunction(
           .update({ optimizeStatus: "Processing", optimizeError: null })
           .eq("id", modelUploadId);
       }
-      // Legacy (pre-assembler) raws live in `private`, current ones in
-      // `temp-staging` — signing the wrong bucket 404s.
-      const sourceBucket = await resolveModelSourceBucket(
-        client,
-        upload.data.modelPath
-      );
+      // A non-mesh format never reads the source.
+      const sourceBucket = format
+        ? await requireModelSourceBucket(upload.data.modelPath)
+        : null;
       return {
         modelPath: upload.data.modelPath,
         format,
@@ -176,7 +174,7 @@ export const modelOptimizeFunction = inngest.createFunction(
         // Optimised artifacts are written to `private` (50 MB served cap) below.
         const signedUrl = await signSourceUrl(
           client,
-          model.sourceBucket,
+          model.sourceBucket as string,
           model.modelPath,
           SIGNED_URL_EXPIRY
         );

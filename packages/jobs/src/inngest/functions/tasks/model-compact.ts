@@ -75,7 +75,6 @@ export const modelCompactFunction = inngest.createFunction(
         );
       }
       const sourceBucket = await resolveModelSourceBucket(
-        client,
         upload.data.modelPath
       );
       return {

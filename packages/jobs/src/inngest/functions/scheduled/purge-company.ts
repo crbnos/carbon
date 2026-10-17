@@ -10,7 +10,7 @@ import { type Kysely, sql } from "kysely";
 import { listBucketFilesRecursive } from "../../../backups/storage";
 import {
   type Catalog,
-  STORAGE_BUCKET,
+  LEGACY_SHARED_BUCKET,
   wipeScopedData
 } from "../tasks/company-backup";
 
@@ -190,7 +190,11 @@ export async function removeCompanyFiles(
     failures.push({ part: "company bucket", error: bucketError });
   }
 
-  const legacyError = await drainFolder(serviceRole, STORAGE_BUCKET, companyId);
+  const legacyError = await drainFolder(
+    serviceRole,
+    LEGACY_SHARED_BUCKET,
+    companyId
+  );
   if (legacyError) {
     failures.push({ part: "legacy private files", error: legacyError });
   }

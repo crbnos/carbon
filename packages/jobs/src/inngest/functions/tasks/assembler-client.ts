@@ -4,6 +4,7 @@
 
 import { createHmac } from "node:crypto";
 import type { Database, Json } from "@carbon/database";
+import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
 import {
   ASSEMBLER_JOB_CONCURRENCY,
   ASSEMBLER_SERVICE_API_KEY,
@@ -14,13 +15,10 @@ import {
   SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
-import {
-  getCompanyPrivateBucket,
-  LEGACY_PRIVATE_BUCKET,
-  TEMP_STAGING_BUCKET
-} from "@carbon/files";
+import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
+import { getJobDatabaseClient } from "../../../db";
 
 // Shared client for the assembler service's `/v1` action-RPC API. Submit
 // creates a job (202) with upload URLs + a completion-callback URL in the
@@ -141,31 +139,33 @@ export async function signSourceUrl(
 }
 
 /**
- * Resolve which bucket a model's raw source lives in. Current uploads land in
- * `temp-staging`, durable copies in the company's own bucket, and pre-migration
- * rows in the legacy `private` bucket — signing against the wrong bucket fails
- * with "Object not found", so probe in that order (same resolution as the ERP
- * model.artifacts route).
+ * Which bucket holds a model's raw source: the company's own bucket once it
+ * is durable, else `temp-staging`. Null when it is in neither, so the caller
+ * can fail the job for good instead of signing a path that does not exist.
  */
 export async function resolveModelSourceBucket(
-  client: SupabaseClient<Database>,
+  modelPath: string
+): Promise<string | null> {
+  const companySegment = modelPath.split("/")[0] ?? "";
+  if (!companySegment) return null;
+  const buckets = await findStorageObjectBuckets(getJobDatabaseClient(), {
+    names: [modelPath],
+    buckets: [getCompanyPrivateBucket(companySegment), TEMP_STAGING_BUCKET]
+  });
+  return buckets.get(modelPath) ?? null;
+}
+
+/** The source bucket, or a non-retriable failure when the file is gone. */
+export async function requireModelSourceBucket(
   modelPath: string
 ): Promise<string> {
-  const companySegment = modelPath.split("/")[0] ?? "";
-  const buckets = [
-    TEMP_STAGING_BUCKET,
-    // A key with no companyId segment can't resolve a company bucket.
-    ...(companySegment ? [getCompanyPrivateBucket(companySegment)] : []),
-    LEGACY_PRIVATE_BUCKET
-  ];
-  for (const bucket of buckets) {
-    const probe = await client.storage
-      .from(bucket)
-      .info(modelPath)
-      .catch(() => ({ data: null, error: true as const }));
-    if (!probe.error && probe.data) return bucket;
+  const bucket = await resolveModelSourceBucket(modelPath);
+  if (!bucket) {
+    throw new NonRetriableError(
+      `Source file no longer exists in storage: ${modelPath}`
+    );
   }
-  return LEGACY_PRIVATE_BUCKET;
+  return bucket;
 }
 
 /**

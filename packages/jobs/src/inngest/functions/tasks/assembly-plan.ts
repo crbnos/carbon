@@ -11,7 +11,7 @@ import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  resolveModelSourceBucket,
+  requireModelSourceBucket,
   runAssemblerJob,
   signSourceUrl
 } from "./assembler-client";
@@ -201,12 +201,7 @@ export const assemblyPlanFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        // Legacy (pre-assembler) raws live in `private`, current ones in
-        // `temp-staging`.
-        const sourceBucket = await resolveModelSourceBucket(
-          client,
-          job.modelPath
-        );
+        const sourceBucket = await requireModelSourceBucket(job.modelPath);
         const signedUrl = await signSourceUrl(
           client,
           sourceBucket,
