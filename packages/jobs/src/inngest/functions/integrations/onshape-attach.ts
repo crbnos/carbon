@@ -374,9 +374,15 @@ export async function attachOnshapeAssetsToItem(
       // prefix minted by ensureImmutableModel): those are superseded
       // auto-generated artifacts, kept as a record for existing references but
       // never re-attached as a misleading duplicate document.
-      const priorIsOnshapeGeneration = (priorModel?.id ?? "").startsWith(
-        "onshape-"
-      );
+      // One exception, for an export with no source id only: a prior model
+      // with the same file name is that export's earlier sync. Those syncs
+      // refreshed one row in place and gave it a plain id, so the prefix cannot
+      // mark them. Main overwrote such a row; here it stays in storage, just
+      // not re-listed as a document.
+      const priorIsOnshapeGeneration =
+        (priorModel?.id ?? "").startsWith("onshape-") ||
+        (input.model.sourceId === undefined &&
+          priorModel?.name === input.model.fileName);
       if (priorModel?.modelPath && !priorIsOnshapeGeneration) {
         const preservedName = stripSpecialCharacters(
           priorModel.name ?? `prior-model-${priorModel.id}`

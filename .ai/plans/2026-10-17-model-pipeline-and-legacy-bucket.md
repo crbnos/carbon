@@ -141,9 +141,11 @@ by the model id, and `copyRawToDurable` never overwrites a durable copy.
 - [x] Tests: unchanged bytes reuse the model; changed bytes get a new one. Both fail
       on the old attach.
 
-Effect on existing data: the first re-sync of an item that the in-place path synced
-before keeps that older row as a document on the item. Its id has no `onshape-`
-prefix, so the attach cannot tell it from a manual upload, and it preserves it.
+- [x] Existing data: 614 US production items have an Onshape mapping and a model with
+      a plain id. For an export with no source id, a prior model with the same file
+      name counts as that export's earlier sync, so it is not added as a document.
+      Main overwrote that row; now it stays in storage. A released part keeps the
+      strict rule: only the `onshape-` prefix marks an earlier sync.
 
 ## Deploy order
 

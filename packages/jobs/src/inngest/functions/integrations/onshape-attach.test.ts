@@ -409,6 +409,21 @@ describe("immutable released-part attachments", () => {
     expect(db.tables.document).toEqual([]);
   });
 
+  it("does not list a source-less export's earlier in-place sync as a document", async () => {
+    const db = database();
+    const { sourceId: _sourceId, ...model } = input.model;
+    // A row the in-place path wrote: a plain id, the export's own file name.
+    withManualPriorModel(db, model.fileName);
+    const result = await attachOnshapeAssetsToItem(db.client, {
+      ...input,
+      model
+    });
+    expect(result.preservedPriorModelAsDocument).toBe(false);
+    expect(db.tables.document).toEqual([]);
+    expect(db.tables.modelUpload[0]!.id).toBe("manual-model");
+    expect(db.tables.item[0]!.modelUploadId).toBe(result.modelUploadId);
+  });
+
   it("keeps every item/model read and update company-scoped", async () => {
     const db = database();
     await attachOnshapeAssetsToItem(db.client, input);
