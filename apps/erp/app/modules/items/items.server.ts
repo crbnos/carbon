@@ -6942,11 +6942,16 @@ export const createItemDocumentUploadUrl = defineServiceFn({
  */
 export const createModelUploadUrl = defineServiceFn({
   input: z.object({ name: z.string().min(1) }),
-  permission: { update: "parts" },
+  // A new model row is a parts create (its table's policy); linking it to a
+  // record is an update.
+  permission: { create: "parts", update: "parts" },
   async run(ctx, { name }) {
     return envelope(
       ctx,
-      await service.createModelUploadUrl(ctx.asCaller.supabase, {
+      // Signed as the system: the temp-staging bucket's storage policy needs a
+      // user token, which an API key has none of. The gate above has checked
+      // the caller, and the path is built here, in the caller's company.
+      await service.createModelUploadUrl(ctx.asSystem.supabase, {
         companyId: ctx.company.id,
         name
       })
@@ -6983,7 +6988,7 @@ export const insertModelUpload = defineServiceFn({
     salesOrderLineId: z.string().optional(),
     convert: z.boolean().optional()
   }),
-  permission: { update: "parts" },
+  permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
     if (!service.isModelUploadPath(ctx.company.id, input.modelId, input.path)) {
       return ctx.error("validation", "Invalid model path");
