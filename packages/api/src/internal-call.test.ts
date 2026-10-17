@@ -6,8 +6,11 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   assemblerCallbackToken,
+  INTERNAL_CALL_MAX_BYTES,
   INTERNAL_CALL_WINDOW_MS,
   isAssemblerCallbackToken,
+  readInternalCallBody,
+  readInternalCallHeaders,
   signInternalCall,
   verifyInternalCall
 } from "./internal-call";
@@ -158,6 +161,58 @@ describe("internal calls", () => {
       signInternalCall(SECRET, { ...call, mode: "caller" }, body)
     ).toThrow();
     expect(() => signInternalCall(SECRET, call, body, "Bearer t")).toThrow();
+  });
+});
+
+describe("before the body is read", () => {
+  it("reads a call's headers, and refuses incomplete or stale ones", () => {
+    expect(readInternalCallHeaders("issue", signed(), NOW)).toMatchObject(call);
+    expect(readInternalCallHeaders("issue", new Headers(), NOW)).toBeNull();
+    const unsigned = signed();
+    unsigned.delete("x-carbon-signature");
+    expect(readInternalCallHeaders("issue", unsigned, NOW)).toBeNull();
+    expect(
+      readInternalCallHeaders(
+        "issue",
+        signed(),
+        NOW + INTERNAL_CALL_WINDOW_MS + 1
+      )
+    ).toBeNull();
+  });
+
+  const post = (body: BodyInit, headers: Record<string, string> = {}) =>
+    new Request("http://erp.test/", {
+      method: "POST",
+      body,
+      headers,
+      duplex: "half"
+    } as RequestInit);
+
+  it("reads a body up to the limit", async () => {
+    expect(await readInternalCallBody(post(body))).toBe(body);
+    const full = "x".repeat(INTERNAL_CALL_MAX_BYTES);
+    expect(await readInternalCallBody(post(full))).toBe(full);
+  });
+
+  it("refuses a larger body, whether or not its length is stated", async () => {
+    expect(
+      await readInternalCallBody(
+        post("{}", { "content-length": String(INTERNAL_CALL_MAX_BYTES + 1) })
+      )
+    ).toBeNull();
+    expect(
+      await readInternalCallBody(post("{}", { "content-length": "many" }))
+    ).toBeNull();
+    const chunk = new Uint8Array(64 * 1024);
+    let sent = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += chunk.byteLength;
+        controller.enqueue(chunk);
+      }
+    });
+    expect(await readInternalCallBody(post(endless))).toBeNull();
+    expect(sent).toBeLessThan(INTERNAL_CALL_MAX_BYTES + 4 * chunk.byteLength);
   });
 });
 

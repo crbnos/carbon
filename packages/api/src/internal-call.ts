@@ -20,6 +20,9 @@ import {
 /** How long a signed call is accepted: the two servers' clocks may differ. */
 export const INTERNAL_CALL_WINDOW_MS = 5 * 60_000;
 
+/** The largest body a receiver reads. A posting's input is a few kilobytes. */
+export const INTERNAL_CALL_MAX_BYTES = 1024 * 1024;
+
 /** `caller`: the posting checks the user behind the forwarded token first. */
 export type InternalCallMode = "system" | "caller";
 
@@ -109,17 +112,15 @@ export function signInternalCall(
 }
 
 /**
- * The call a request carries, when this secret signed it within the window;
- * otherwise null. The receiver must still refuse a nonce it has seen.
+ * The call a request's headers claim, when they are complete and its timestamp
+ * is within the window; otherwise null. Nothing is verified yet: the receiver
+ * checks this before it reads the body, then calls {@link verifyInternalCall}.
  */
-export function verifyInternalCall(
-  secret: string,
+export function readInternalCallHeaders(
   name: string,
   headers: Headers,
-  body: string,
   now = Date.now()
 ): InternalCall | null {
-  if (!secret) return null;
   const get = (header: string) => headers.get(header) ?? "";
   const timestamp = get(HEADER.timestamp);
   const sentAt = Number(timestamp);
@@ -139,10 +140,64 @@ export function verifyInternalCall(
     nonce: get(HEADER.nonce)
   };
   if (!call.companyId || !call.userId || !call.nonce) return null;
-  const authorization = get("authorization");
-  if ((mode === "caller") !== !!authorization) return null;
+  if ((mode === "caller") !== !!headers.get("authorization")) return null;
+  if (!headers.get(HEADER.signature)) return null;
+  return call;
+}
 
-  const expected = signature(secret, timestamp, call, body, authorization);
+/**
+ * The request's body, or null when it is larger than
+ * {@link INTERNAL_CALL_MAX_BYTES}. Reads no more than that, whether or not the
+ * request states its length.
+ */
+export async function readInternalCallBody(
+  request: Request
+): Promise<string | null> {
+  const length = request.headers.get("content-length");
+  if (length !== null && !(Number(length) <= INTERNAL_CALL_MAX_BYTES)) {
+    return null;
+  }
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > INTERNAL_CALL_MAX_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+/**
+ * The call a request carries, when this secret signed it within the window;
+ * otherwise null. The receiver must still refuse a nonce it has seen.
+ */
+export function verifyInternalCall(
+  secret: string,
+  name: string,
+  headers: Headers,
+  body: string,
+  now = Date.now()
+): InternalCall | null {
+  if (!secret) return null;
+  const call = readInternalCallHeaders(name, headers, now);
+  if (!call) return null;
+  const get = (header: string) => headers.get(header) ?? "";
+  const authorization = get("authorization");
+
+  const expected = signature(
+    secret,
+    get(HEADER.timestamp),
+    call,
+    body,
+    authorization
+  );
   const given = Buffer.from(get(HEADER.signature), "base64url");
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
     return null;

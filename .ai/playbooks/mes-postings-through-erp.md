@@ -22,7 +22,7 @@ one or two internal calls. The ERP dev log shows each as
 - `agent-browser open <ERP_URL>/login`, fill "Email Address" with `test@carbon.ms`,
   click "Continue". Expect a redirect to `/x`.
 
-### 2. Pick and unpick a picking list line (`post-picking`, as the user)
+### 2. Pick and unpick a picking list line (`post-picking`, as the system)
 - Open `<MES_URL>/x/picking/<id>` of an In Progress list with an Inventory line.
 - Click the line's **Pick** button (find it by the item's readable id just above it).
 - Verify: `pickingListLine.quantityPicked` = `quantityToPick`; two `Transfer`
@@ -66,6 +66,10 @@ one or two internal calls. The ERP dev log shows each as
 ## Common Failures
 - MES shows "Could not reach the ERP": the ERP dev server is down, or the call
   reached something that is not the ERP (a 502 inside `erpPosting`).
+- MES shows "MES is not configured to post to the ERP": `erpPosting` could not
+  build the call. The MES log says why ("ERP posting is not configured"). Outside
+  local dev, MES posts only to `ERP_URL` and refuses when it is not set. An empty
+  `SESSION_SECRET` gives the same message.
 - A 404 "MES does not call … with this input": the posting or its `type` is not in
   `MES_POSTINGS` (`packages/api/src/postings.ts`). MES's typecheck should have
   caught it (`ErpPostingInput`).

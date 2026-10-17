@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Batch mode: one pick for the whole operation batch. The server fn splits the
+  // Batch mode: one pick for the whole operation batch. The posting splits the
   // picked lots pro-rata by each member's remaining requirement and records
   // per-member consumption, so costing and genealogy stay per job.
   const issued = await erpPosting(

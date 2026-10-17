@@ -171,7 +171,7 @@ export async function endMaintenanceEvent(
 }
 
 // Reconcile the dispatches' labor postings with their time entries (the
-// post-maintenance-event server function — idempotent, so call it after any
+// post-maintenance-event posting — idempotent, so call it after any
 // entry ends or the dispatch completes).
 export async function postMaintenanceLabor(
   client: SupabaseClient<Database>,

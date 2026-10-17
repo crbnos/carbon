@@ -13,7 +13,6 @@ import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
@@ -218,15 +217,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationId: jobOperation.data.id,
-          userId,
-          companyId
-        }
-      );
+      const finishOperation = await finishJobOperation(serviceRole, {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      });
 
       if (finishOperation.error) {
         return data(
@@ -295,15 +290,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationId: jobOperation.data.id,
-          userId,
-          companyId
-        }
-      );
+      const finishOperation = await finishJobOperation(serviceRole, {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      });
 
       if (finishOperation.error) {
         return data(
@@ -369,15 +360,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationId: jobOperation.data.id,
-          userId,
-          companyId
-        }
-      );
+      const finishOperation = await finishJobOperation(serviceRole, {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      });
 
       if (finishOperation.error) {
         return data(

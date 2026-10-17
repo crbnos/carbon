@@ -4,6 +4,8 @@
 
 import {
   INTERNAL_CALL_WINDOW_MS,
+  readInternalCallBody,
+  readInternalCallHeaders,
   verifyInternalCall
 } from "@carbon/api/internal-call";
 import { isMesPosting } from "@carbon/api/postings";
@@ -16,8 +18,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 
 // The postings MES runs (it cannot import the ERP). MES signs the company, the
-// user and the mode (`@carbon/api/internal-call.server`); the signature is the
-// only credential, so no cookie is read. In caller mode the user's token rides
+// user and the mode (`@carbon/api/internal-call`); the signature is the only
+// credential, so no cookie is read. In caller mode the user's token rides
 // along and the posting checks that user, as it checks any caller's client.
 
 const logger = getLogger("erp", "internal-postings");
@@ -28,7 +30,18 @@ const refuse = (status: number, message: string) =>
 export async function action({ request, params }: ActionFunctionArgs) {
   if (request.method !== "POST") return refuse(405, "Method not allowed");
   const name = params.name ?? "";
-  const body = await request.text();
+
+  // Checked before the body is read, so a request with no signature never
+  // has its body buffered.
+  if (!readInternalCallHeaders(name, request.headers)) {
+    logger.warn("Refused an internal call with no valid signature", { name });
+    return refuse(401, "Unauthorized");
+  }
+  const body = await readInternalCallBody(request);
+  if (body === null) {
+    logger.warn("Refused an internal call with a body too large", { name });
+    return refuse(413, "The body is too large");
+  }
 
   const call = verifyInternalCall(
     SESSION_SECRET ?? "",
@@ -39,30 +52,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!call) {
     logger.warn("Refused an internal call with no valid signature", { name });
     return refuse(401, "Unauthorized");
-  }
-  // `@carbon/kv` answers null both for a nonce already set and when Redis is
-  // down, so a null is read back. With Redis down the call is accepted: the
-  // signature and its window still bound it, and the shop floor keeps posting.
-  const nonceKey = `internal-call:${call.nonce}`;
-  const fresh = await redis.set(
-    nonceKey,
-    "1",
-    "PX",
-    INTERNAL_CALL_WINDOW_MS * 2,
-    "NX"
-  );
-  if (fresh !== "OK") {
-    if ((await redis.get(nonceKey)) !== null) {
-      logger.warn("Refused a repeated internal call", {
-        name,
-        companyId: call.companyId
-      });
-      return refuse(409, "This call was already made");
-    }
-    logger.warn("Accepted an internal call without a replay check", {
-      name,
-      companyId: call.companyId
-    });
   }
 
   let input: unknown;
@@ -77,6 +66,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId: call.companyId
     });
     return refuse(404, `MES does not call ${name} with this input`);
+  }
+
+  // `@carbon/kv` answers null both for a nonce already set and when Redis is
+  // down or slow, so a null is read back. The value is this request's own:
+  // a SET that answered null after its timeout but still landed holds it, and
+  // is this call, not a replay. With Redis down the call is accepted: the
+  // signature and its window still bound it, and the shop floor keeps posting.
+  const nonceKey = `internal-call:${call.nonce}`;
+  const claim = crypto.randomUUID();
+  const fresh = await redis.set(
+    nonceKey,
+    claim,
+    "PX",
+    INTERNAL_CALL_WINDOW_MS * 2,
+    "NX"
+  );
+  if (fresh !== "OK") {
+    const holder = await redis.get(nonceKey);
+    if (holder !== null && holder !== claim) {
+      logger.warn("Refused a repeated internal call", {
+        name,
+        companyId: call.companyId
+      });
+      return refuse(409, "This call was already made");
+    }
+    if (holder === null) {
+      logger.warn("Accepted an internal call without a replay check", {
+        name,
+        companyId: call.companyId
+      });
+    }
   }
 
   const handles: PostingHandles = {

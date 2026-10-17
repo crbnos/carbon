@@ -320,7 +320,6 @@ export async function deleteAttributeRecord(
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
@@ -349,9 +348,9 @@ export async function finishJobOperation(
   }
 
   if (!result.error) {
-    // System: every caller passes the service role. An operation's own
-    // failure is logged inside it; onError catches anything that escapes (the
-    // query, the import).
+    // As the system: every caller passes the service role. A posting that
+    // fails or is skipped is logged in postEventTime; onError catches the
+    // query.
     async.background(
       async () => {
         const unposted = await client
@@ -366,10 +365,7 @@ export async function finishJobOperation(
         const caller = { companyId: args.companyId, userId: args.userId };
         await async.map(
           unposted.data,
-          (event) =>
-            erpPosting("post-production-event", caller, {
-              productionEventId: event.id
-            }),
+          (event) => postEventTime(caller, event.id),
           { concurrency: 4 }
         );
       },
@@ -1978,7 +1974,7 @@ export function isSerialEntityIncompleteForOperation(
  * when every entity is already complete it falls back to the last entity, which
  * preserves the prior end-state behavior. This unifies both the pre-split flow
  * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` server function spawns the next entity on each completion).
+ * `issue` posting spawns the next entity on each completion).
  */
 export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
@@ -2325,7 +2321,6 @@ export async function insertBatchStepRecords(
 // operator data. Gated at the route on the Production DELETE permission.
 export async function completeAllStepsForUnit(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     operationId: string;
     index: number;
@@ -2556,17 +2551,34 @@ export async function postEndedProductionEvents(
   }
   const caller = { companyId: args.companyId, userId: args.userId };
   for (const event of events.data ?? []) {
-    try {
-      await erpPosting("post-production-event", caller, {
-        productionEventId: event.id
-      });
-    } catch (error) {
-      log.error("Failed to post an event a press ended", {
-        companyId: args.companyId,
-        productionEventId: event.id,
-        error
-      });
-    }
+    await postEventTime(caller, event.id);
+  }
+}
+
+/**
+ * Posts an ended event's time to the GL. An event the posting refused or
+ * skipped (`success: false`) stays unposted: it is logged, not thrown, and the
+ * operation-finish and job-completion catch-ups post it later.
+ */
+async function postEventTime(
+  caller: { companyId: string; userId: string },
+  productionEventId: string
+) {
+  const posted = await erpPosting("post-production-event", caller, {
+    productionEventId
+  });
+  if (posted.error) {
+    log.error("Failed to post a production event", {
+      companyId: caller.companyId,
+      productionEventId,
+      error: posted.error
+    });
+  } else if (posted.data.success === false) {
+    log.warn("A production event was not posted", {
+      companyId: caller.companyId,
+      productionEventId,
+      reason: posted.data.reason
+    });
   }
 }
 

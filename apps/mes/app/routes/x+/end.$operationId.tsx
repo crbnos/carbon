@@ -11,7 +11,6 @@ import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import {
   finishJobOperation,
@@ -211,15 +210,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
 
         if (willBeFinished) {
-          const finishOperation = await finishJobOperation(
-            serviceRole,
-            getDatabaseClient(),
-            {
-              jobOperationId: jobOperation.data.id,
-              userId,
-              companyId
-            }
-          );
+          const finishOperation = await finishJobOperation(serviceRole, {
+            jobOperationId: jobOperation.data.id,
+            userId,
+            companyId
+          });
 
           if (finishOperation.error) {
             return redirect(
@@ -331,15 +326,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (willBeFinished) {
-    const finishOperation = await finishJobOperation(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      }
-    );
+    const finishOperation = await finishJobOperation(serviceRole, {
+      jobOperationId: jobOperation.data.id,
+      userId,
+      companyId
+    });
 
     if (finishOperation.error) {
       return redirect(

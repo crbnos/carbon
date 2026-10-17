@@ -12,7 +12,7 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 
-const { erpPosting } = await import("./erp");
+const { erpPosting, erpPostingUrl } = await import("./erp");
 
 // SESSION_SECRET and SUPABASE_SERVICE_ROLE_KEY as vitest.config.ts sets them.
 const SECRET = "test";
@@ -110,6 +110,28 @@ describe("erpPosting", () => {
       message: "Already posted",
       body: { code: "x" }
     });
+  });
+
+  it("calls a set-up problem a configuration error, and sends nothing", async () => {
+    const sent = erp(Response.json({ data: { success: true }, error: null }));
+    const signedOut = createClient("http://localhost", "anon-key");
+    const { error } = await erpPosting(
+      "recalculate",
+      { companyId, userId, client: signedOut },
+      input
+    );
+    expect(error).toMatchObject({ status: 500 });
+    expect(error?.message).toMatch(/not configured/);
+    expect(sent).toHaveLength(0);
+  });
+
+  it("posts to ERP_URL, else only to a known ERP", () => {
+    expect(erpPostingUrl("https://erp.example.com", "other")).toBe(
+      "https://erp.example.com"
+    );
+    expect(erpPostingUrl(undefined, "local")).toBe("http://localhost:3000");
+    expect(erpPostingUrl(undefined, "cloud")).toBe("https://app.carbon.ms");
+    expect(() => erpPostingUrl(undefined, "other")).toThrow(/ERP_URL/);
   });
 
   it("answers 502 when the ERP is unreachable or not the ERP", async () => {

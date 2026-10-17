@@ -249,9 +249,8 @@ export const postPickingInput = z.discriminatedUnion("type", [
   // remainder. An operation whose job is Completed (it was the last one)
   // sweeps the whole job under either return policy; otherwise the operation
   // sweep no-ops unless companySettings.returnPickedMaterialTiming =
-  // 'operation'. The job sweep requires job.status Completed or Cancelled, or
-  // with `cancelling` an open job (cancelJob sweeps before it flips the
-  // status, so a failed return stops the cancel). Tracked lines
+  // 'operation'. The job sweep requires job.status Completed or Cancelled
+  // (cancelJob sweeps after it flips the status). Tracked lines
   // return via the split-lineage walk; untracked lines return
   // picked − returned − max(issued, owed) per job material, where `owed` holds
   // back what completion-time backflush still needs.
@@ -261,8 +260,7 @@ export const postPickingInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("returnJobRemainders"),
-    jobId: z.string(),
-    cancelling: z.boolean().optional()
+    jobId: z.string()
   })
 ]);
 
@@ -308,12 +306,14 @@ export const postInventoryAdjustmentInput = z
   });
 
 /**
- * `success: false` with a `reason` is a skip the caller may ignore (the event is
- * not completable yet, or was posted under the old job-tagged scheme). FIXME:
- * callers read `error === null` as success, so a real status for these needs
- * its own decision.
+ * `success: false` means nothing was posted, with `error` null: the event is
+ * not complete yet, or it was posted under the old job-tagged scheme, and
+ * `reason` says which. A caller that needs the event posted must read
+ * `success`; the operation-finish and job-completion catch-ups post it later.
  */
-export type PostProductionEventResult = { success: boolean; reason?: string };
+export type PostProductionEventResult =
+  | { success: true }
+  | { success: false; reason: string };
 
 export const postProductionEventInput = z.object({
   productionEventId: z.string(),

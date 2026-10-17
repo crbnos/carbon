@@ -8,11 +8,19 @@ import type {
   PostingContract,
   PostingOutcome
 } from "@carbon/api/postings.server";
-import { SESSION_SECRET, SUPABASE_SERVICE_ROLE_KEY } from "@carbon/auth";
+import {
+  CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
+  getEnv,
+  IS_LOCAL_DEV,
+  SESSION_SECRET,
+  SUPABASE_SERVICE_ROLE_KEY,
+  VERCEL_ENV
+} from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { Edition } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ERP_URL } from "~/utils/path";
 
 // Server-only. Client components import the services that call this, so the
 // signer (node:crypto) loads on first use; the secrets read "" in a browser.
@@ -37,12 +45,41 @@ type Caller = {
   client?: SupabaseClient<Database>;
 };
 
+/**
+ * The ERP that MES posts to: `ERP_URL`, the ERP's own address. Carbon Cloud's
+ * production MES leaves it unset and posts to Carbon Cloud's ERP, as the old
+ * `getAppUrl()` default did. Nothing else is safe to guess: a preview's
+ * `APP_URL` is MES itself, and a self-hosted MES would send its users' tokens
+ * to Carbon Cloud.
+ */
+export function erpPostingUrl(
+  erpUrl = getEnv("ERP_URL"),
+  where: "local" | "cloud" | "other" = IS_LOCAL_DEV
+    ? "local"
+    : CarbonEdition === Edition.Cloud && VERCEL_ENV !== "preview"
+      ? "cloud"
+      : "other"
+): string {
+  if (erpUrl) return erpUrl;
+  if (where === "local") return "http://localhost:3000";
+  if (where === "cloud") {
+    return CONTROLLED_ENVIRONMENT
+      ? "https://itar.carbon.ms"
+      : "https://app.carbon.ms";
+  }
+  throw new Error("ERP_URL is not set: MES does not know where the ERP is");
+}
+
 /** Runs a posting in the ERP. Never throws: `{ data, error }`. */
 export async function erpPosting<K extends MesPostingName>(
   name: K,
   caller: Caller,
   input: ErpPostingInput<K>
 ): Promise<PostingOutcome<PostingContract[K]["output"]>> {
+  // A throw here is this deployment's set-up (ERP_URL, SESSION_SECRET, a
+  // client with no signed-in user), not the network: retrying will not help.
+  let url: string;
+  let init: RequestInit;
   try {
     const { signInternalCall } = await import("@carbon/api/internal-call");
     const authorization = callerAuthorization(
@@ -50,7 +87,8 @@ export async function erpPosting<K extends MesPostingName>(
       SUPABASE_SERVICE_ROLE_KEY
     );
     const body = JSON.stringify(input);
-    const response = await fetch(`${ERP_URL}/api/internal/postings/${name}`, {
+    url = `${erpPostingUrl()}/api/internal/postings/${name}`;
+    init = {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -67,7 +105,26 @@ export async function erpPosting<K extends MesPostingName>(
         )
       },
       body
+    };
+  } catch (cause) {
+    log.error("ERP posting is not configured", {
+      name,
+      companyId: caller.companyId,
+      error: cause
     });
+    return {
+      data: null,
+      error: new ServerFnError(
+        "MES is not configured to post to the ERP. Ask an administrator to check its configuration.",
+        500,
+        {},
+        { cause }
+      )
+    };
+  }
+
+  try {
+    const response = await fetch(url, init);
     const result = (await response.json().catch(() => null)) as {
       data: PostingContract[K]["output"];
       error: {

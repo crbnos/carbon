@@ -12,8 +12,8 @@ import { redis } from "@carbon/kv";
 import { describe, expect, it } from "vitest";
 import { action } from "./internal.postings.$name";
 
-// SESSION_SECRET as vitest.config.ts sets it. The nonce check needs a real
-// Redis; without one the suite skips.
+// SESSION_SECRET as vitest.config.ts sets it. Only the replay check needs a
+// real Redis: without one the endpoint accepts a signed call unchecked.
 const SECRET = "test";
 const reachable = (await redis.ping()) === "PONG";
 
@@ -67,7 +67,7 @@ function call(
 
 const issue = { type: "jobOperation", id: "op1", quantity: 2 };
 
-describe.skipIf(!reachable)("the internal postings endpoint", () => {
+describe("the internal postings endpoint", () => {
   it("runs a signed call as the system for the signed company and user", async () => {
     received.length = 0;
     const response = await call("issue", issue).run();
@@ -99,7 +99,23 @@ describe.skipIf(!reachable)("the internal postings endpoint", () => {
     expect(response.status).toBe(401);
   });
 
-  it("refuses the same call twice", async () => {
+  it("refuses a body too large before reading it", async () => {
+    received.length = 0;
+    const { headers } = call("issue", issue);
+    const response = await action({
+      request: new Request("http://erp.test/api/internal/postings/issue", {
+        method: "POST",
+        headers: { ...headers, "content-length": String(2 * 1024 * 1024) },
+        body: "{}"
+      }),
+      params: { name: "issue" },
+      context: {}
+    } as never);
+    expect(response.status).toBe(413);
+    expect(received).toHaveLength(0);
+  });
+
+  it.skipIf(!reachable)("refuses the same call twice", async () => {
     const first = call("issue", issue);
     expect((await first.run()).status).toBe(200);
     const again = call("issue", issue, { headers: first.headers });

@@ -158,7 +158,7 @@ export async function getUnresolvedPickingListLines(
  * Set the picked quantity on a picking line (pick, short, or unpick).
  *
  * A pick TRANSFERS the material from its warehouse source shelf to the work
- * center's lineside shelf via the `post-picking` server function (consumption
+ * center's lineside shelf via the `post-picking` posting (consumption
  * happens later at production). `quantity <= 0` reverses a prior pick. "Short"
  * just records the status with no inventory movement — the kitter couldn't
  * fully pick it, and production handles the shortfall. The picking list header
@@ -234,31 +234,20 @@ export async function setPickingListLineQuantity(
       };
     }
 
-    const body =
+    const ids = {
+      pickingListId: line.pickingListId,
+      pickingListLineId: line.id,
+      locationId: pickingList.locationId
+    };
+    const input: ErpPostingInput<"post-picking"> =
       delta > 0
-        ? {
-            type: "inventory",
-            pickingListId: line.pickingListId,
-            pickingListLineId: line.id,
-            quantity: delta,
-            locationId: pickingList.locationId,
-            userId: args.userId,
-            companyId: pickingList.companyId
-          }
-        : {
-            type: "unpickInventory",
-            pickingListId: line.pickingListId,
-            pickingListLineId: line.id,
-            quantity: -delta,
-            locationId: pickingList.locationId,
-            userId: args.userId,
-            companyId: pickingList.companyId
-          };
+        ? { ...ids, type: "inventory", quantity: delta }
+        : { ...ids, type: "unpickInventory", quantity: -delta };
 
     const result = await erpPosting(
       "post-picking",
-      { client, companyId: body.companyId, userId: body.userId },
-      body as ErpPostingInput<"post-picking">
+      { client, companyId: args.companyId, userId: args.userId },
+      input
     );
 
     if (result.error) {
@@ -269,7 +258,7 @@ export async function setPickingListLineQuantity(
     }
   }
 
-  // Short overrides the status the server function derived from quantities.
+  // Short overrides the status the posting derived from quantities.
   if (args.markShort) {
     const update = await client
       .from("pickingListLine")
@@ -348,38 +337,30 @@ export async function setPickingListLineTrackedEntity(
     };
   }
 
-  const type = args.unpick
-    ? isSerial
-      ? "unpickSerial"
-      : "unpickBatch"
-    : isSerial
-      ? "serial"
-      : "batch";
-
-  const body: Record<string, unknown> = {
-    type,
+  const ids = {
     pickingListId: line.pickingListId,
     pickingListLineId: line.id,
     trackedEntityId: args.trackedEntityId,
-    locationId: pickingList.locationId,
-    userId: args.userId,
-    companyId: args.companyId
+    locationId: pickingList.locationId
   };
-  if (!args.unpick) {
-    body.fromStorageUnitId = args.fromStorageUnitId ?? null;
-    // A batch pick may be fractional (0.5 kg): send the requested quantity as
-    // is and fall back to 1 only when none was given. Flooring at 1 turned
-    // every sub-1 remainder into an over-pick post-picking refused.
-    if (isBatch) {
-      body.quantity =
-        args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
-    }
-  }
+  const fromStorageUnitId = args.fromStorageUnitId ?? null;
+  // A batch pick may be fractional (0.5 kg): send the requested quantity as
+  // is and fall back to 1 only when none was given. Flooring at 1 turned
+  // every sub-1 remainder into an over-pick post-picking refused.
+  const quantity =
+    args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
+  const input: ErpPostingInput<"post-picking"> = args.unpick
+    ? isSerial
+      ? { ...ids, type: "unpickSerial" }
+      : { ...ids, type: "unpickBatch" }
+    : isSerial
+      ? { ...ids, type: "serial", fromStorageUnitId }
+      : { ...ids, type: "batch", fromStorageUnitId, quantity };
 
   const result = await erpPosting(
     "post-picking",
     { client, companyId: args.companyId, userId: args.userId },
-    body as ErpPostingInput<"post-picking">
+    input
   );
   if (result.error) {
     return {
