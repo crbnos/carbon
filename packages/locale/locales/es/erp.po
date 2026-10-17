@@ -20232,7 +20232,7 @@ msgstr "Autogestionado"
 
 #. placeholder {0}: percentFormatter.format(effectiveRate)
 msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
-msgstr ""
+msgstr "Tasa autoevaluada hoy: <0>{0}</0>. Las líneas que utilizan este código no tienen impuesto."
 
 msgid "Self-Assessed Tax"
 msgstr "Impuesto Autoevaluado"

@@ -20232,7 +20232,7 @@ msgstr "स्व प्रबंधित"
 
 #. placeholder {0}: percentFormatter.format(effectiveRate)
 msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
-msgstr ""
+msgstr "आज की स्व-निर्धारित दर: <0>{0}</0>. इस कोड का उपयोग करने वाली पंक्तियों पर कर नहीं लगता है।"
 
 msgid "Self-Assessed Tax"
 msgstr "स्वयं-आकलित कर"

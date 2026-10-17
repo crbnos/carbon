@@ -20232,7 +20232,7 @@ msgstr "자체 관리"
 
 #. placeholder {0}: percentFormatter.format(effectiveRate)
 msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
-msgstr ""
+msgstr "오늘의 자체 평가 요율: <0>{0}</0>. 이 코드를 사용하는 라인은 세금이 부과되지 않습니다."
 
 msgid "Self-Assessed Tax"
 msgstr "자체 평가 세금"

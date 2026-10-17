@@ -20232,7 +20232,7 @@ msgstr "自我管理"
 
 #. placeholder {0}: percentFormatter.format(effectiveRate)
 msgid "Self-assessed rate today: <0>{0}</0>. Lines using this code are charged no tax."
-msgstr ""
+msgstr "自评税率（今天）：<0>{0}</0>。使用此代码的行无税。"
 
 msgid "Self-Assessed Tax"
 msgstr "自评税"
