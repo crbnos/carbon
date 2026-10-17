@@ -93,6 +93,10 @@ const customFieldsInput = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
   .optional();
 const RECEIPT_NOT_FOUND = "The receipt could not be found";
+const RECEIPT_LOCKED = "A posted receipt can no longer be changed";
+// A read by id runs under RLS, which admits every company the caller belongs
+// to: another company's row reads like a missing one.
+const NOT_FOUND = "No matching record was found.";
 
 // ---------------------------------------------------------------------------
 // Receipts
@@ -207,8 +211,9 @@ export const createReceipt = defineServiceFn({
  * @remarks
  * A changed source document or location rebuilds the receipt's lines from
  * the new source (a purchase order, a sales return order or an inbound
- * transfer). Otherwise the fields are saved as sent. A rental receipt keeps
- * its rental agreement: changing it is refused.
+ * transfer), and is refused once the receipt is not Draft. Otherwise the
+ * fields are saved as sent. A rental receipt keeps its rental agreement:
+ * changing it is refused.
  *
  * @mcp
  */
@@ -229,7 +234,7 @@ export const updateReceipt = defineServiceFn({
   async run(ctx, { id, ...receipt }) {
     const current = await ctx.asCaller.supabase
       .from("receipt")
-      .select("sourceDocument, sourceDocumentId, locationId")
+      .select("sourceDocument, sourceDocumentId, locationId, status")
       .eq("id", id)
       .eq("companyId", ctx.company.id)
       .maybeSingle();
@@ -254,6 +259,13 @@ export const updateReceipt = defineServiceFn({
     const rebuild =
       !isRental &&
       (sourceChanged || current.data.locationId !== receipt.locationId);
+    // A rebuild replaces the lines: on a posted receipt, the posted ones.
+    if (rebuild && current.data.status !== "Draft") {
+      return ctx.error(
+        "rule",
+        "Only a Draft receipt can change its source document or location"
+      );
+    }
     if (!rebuild) {
       const updated = await service.upsertReceipt(ctx.asCaller.supabase, {
         id,
@@ -311,18 +323,19 @@ export const updateReceipt = defineServiceFn({
  *
  * @remarks
  * In order:
- *   1. A Voided receipt is refused: posting it again would duplicate its
- *      ledger entries, cost layers and journal lines.
+ *   1. A Posted or Voided receipt is refused (`conflict`): posting it again
+ *      would duplicate its ledger entries, cost layers and journal lines.
  *   2. Storage rules run on the `receipt` and `place` surfaces (and
  *      `warehouseTransfer` for an inbound transfer), and a purchase order
  *      receipt is checked for over-receipt against the live order lines. A
  *      blocking rule returns its `violations` and `ruleNames` and changes
  *      nothing; send `acknowledged: true` to post past warnings.
- *   3. Stale serial entities on serial-tracked lines are deleted, so they
- *      are not made Available as phantom serials.
- *   4. The receipt is set Pending (only from Draft or Pending: `conflict`
- *      otherwise) and posted: ledger entries, cost layers, the journal and
- *      tracked entities. A failed post sets it back to Draft.
+ *   3. The receipt is set Pending (only from Draft or Pending: `conflict`
+ *      otherwise).
+ *   4. Stale serial entities on serial-tracked lines are deleted, so they
+ *      are not made Available as phantom serials, and the receipt is posted:
+ *      ledger entries, cost layers, the journal and tracked entities. A
+ *      failed post sets it back to Draft.
  *   5. Supplier lead times are refreshed when the company setting is on,
  *      labels print when the receiving printer auto-prints, and the
  *      receipt-posted workflow moment is raised.
@@ -362,11 +375,11 @@ export const postReceipt = defineServiceFn({
         .maybeSingle()
     ]);
     if (!receipt.data) return ctx.error("notFound", RECEIPT_NOT_FOUND);
+    if (receipt.data.status === "Posted") {
+      return ctx.error("conflict", "This receipt has already been posted");
+    }
     if (receipt.data.status === "Voided") {
-      return ctx.error(
-        "conflict",
-        "This receipt has already been posted or voided"
-      );
+      return ctx.error("conflict", "This receipt has been voided");
     }
 
     const isTransfer = receipt.data.sourceDocument === "Inbound Transfer";
@@ -424,14 +437,8 @@ export const postReceipt = defineServiceFn({
       return { violations, ruleNames: rules.ruleNames } satisfies Blocked;
     }
 
-    await service.reconcileReceiptSerialEntities(serviceRole, {
-      receiptId,
-      companyId,
-      lines: lines.data ?? []
-    });
-
     // Conditional on a postable status, so a concurrent void or post is not
-    // flipped back to Pending.
+    // flipped back to Pending, and nothing below touches a posted receipt.
     const pending = await ctx.asCaller.supabase
       .from("receipt")
       .update({ status: "Pending" })
@@ -443,18 +450,28 @@ export const postReceipt = defineServiceFn({
       return ctx.error("internal", "Failed to post receipt", pending.error);
     }
     if (!pending.data?.length) {
-      return ctx.error("conflict", "Cannot post a voided receipt");
+      return ctx.error(
+        "conflict",
+        "This receipt has already been posted or voided"
+      );
     }
 
+    // Only from Pending: a concurrent post that won must stay Posted.
     const backToDraft = () =>
       ctx.asCaller.supabase
         .from("receipt")
         .update({ status: "Draft" })
         .eq("id", receiptId)
-        .eq("companyId", companyId);
+        .eq("companyId", companyId)
+        .eq("status", "Pending");
 
     let failure: CarbonError | null = null;
     try {
+      await service.reconcileReceiptSerialEntities(serviceRole, {
+        receiptId,
+        companyId,
+        lines: lines.data ?? []
+      });
       const posted = await invokePosting(
         ctx,
         "post-receipt",
@@ -611,15 +628,19 @@ export const splitReceiptLine = defineServiceFn({
   async run(ctx, { receiptId, receiptLineId, locationId, quantity }) {
     const line = await ctx.asCaller.supabase
       .from("receiptLine")
-      .select("id")
+      .select("id, receipt!receiptLine_receiptId_fkey(status)")
       .eq("id", receiptLineId)
+      .eq("receiptId", receiptId)
       .eq("companyId", ctx.company.id)
       .maybeSingle();
     if (line.error) {
       return ctx.error("internal", "Failed to split line", line.error);
     }
-    if (!line.data) {
+    if (!line.data?.receipt) {
       return ctx.error("notFound", "The receipt line could not be found");
+    }
+    if (line.data.receipt.status !== "Draft") {
+      return ctx.error("rule", RECEIPT_LOCKED);
     }
 
     const split = await invokeCreate(ctx, {
@@ -655,6 +676,21 @@ export const updateReceiptLines = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { ids, field, value }) {
+    const lines = await ctx.asCaller.supabase
+      .from("receiptLine")
+      .select("id, receipt!receiptLine_receiptId_fkey(status)")
+      .in("id", ids)
+      .eq("companyId", ctx.company.id);
+    if (lines.error) {
+      return ctx.error("internal", "Failed to load receipt lines", lines.error);
+    }
+    if (lines.data.length !== new Set(ids).size) {
+      return ctx.error("notFound", "The receipt line could not be found");
+    }
+    if (lines.data.some((line) => line.receipt?.status !== "Draft")) {
+      return ctx.error("rule", RECEIPT_LOCKED);
+    }
+
     const update = await ctx.asCaller.supabase
       .from("receiptLine")
       .update({
@@ -727,9 +763,10 @@ export const updateReceiptFixedAssetLine = defineServiceFn({
  * @remarks
  * Creates or updates the line's batch (On Hold until the receipt posts) with
  * the line's quantity, its properties and an optional `expirationDate` in
- * `properties`. `trackedEntityId` names the line's existing batch; without it
- * the batch already tagged with the line is updated, so renaming a batch
- * number never orphans the old one.
+ * `properties`. `trackedEntityId` names the line's existing batch (another
+ * entity is refused); without it the batch already tagged with the line is
+ * updated, so renaming a batch number never orphans the old one. Only a
+ * Draft receipt's batches change.
  *
  * @mcp
  */
@@ -745,21 +782,45 @@ export const setReceiptLineBatch = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, input) {
-    const line = await service.receiptLineOf(ctx, input);
+    const [line, receipt] = await Promise.all([
+      service.receiptLineOf(ctx, input),
+      ctx.asSystem.supabase
+        .from("receipt")
+        .select("status")
+        .eq("id", input.receiptId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle()
+    ]);
     if (line instanceof Error) return line;
+    if (receipt.error) {
+      return ctx.error("internal", "Failed to load receipt", receipt.error);
+    }
+    if (receipt.data?.status !== "Draft") {
+      return ctx.error("rule", RECEIPT_LOCKED);
+    }
 
     let trackedEntityId = input.trackedEntityId;
     if (trackedEntityId) {
-      // The RPC upserts by this id: one from another company would overwrite
-      // that company's lot.
+      // The RPC rewrites this entity's quantity, status and attributes with
+      // no ledger entry: it must be this line's own batch.
       const entity = await ctx.asSystem.supabase
         .from("trackedEntity")
-        .select("id")
+        .select("id, attributes")
         .eq("id", trackedEntityId)
         .eq("companyId", ctx.company.id)
         .maybeSingle();
       if (entity.error || !entity.data) {
         return ctx.error("notFound", "The tracked entity could not be found");
+      }
+      const attributes = (entity.data.attributes ?? {}) as Record<
+        string,
+        unknown
+      >;
+      if (attributes["Receipt Line"] !== input.receiptLineId) {
+        return ctx.error(
+          "validation",
+          "The tracked entity is not this receipt line's batch"
+        );
       }
     } else {
       const existing = await ctx.asCaller.supabase
@@ -816,8 +877,22 @@ export const setReceiptLineSerial = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, input) {
-    const line = await service.receiptLineOf(ctx, input);
+    const [line, receipt] = await Promise.all([
+      service.receiptLineOf(ctx, input),
+      ctx.asSystem.supabase
+        .from("receipt")
+        .select("status")
+        .eq("id", input.receiptId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle()
+    ]);
     if (line instanceof Error) return line;
+    if (receipt.error) {
+      return ctx.error("internal", "Failed to load receipt", receipt.error);
+    }
+    if (receipt.data?.status !== "Draft") {
+      return ctx.error("rule", RECEIPT_LOCKED);
+    }
 
     const existing = await ctx.asCaller.supabase
       .from("trackedEntity")
@@ -902,16 +977,25 @@ export const assignReceiptReturnEntity = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
-    const [returnLine, entity] = await Promise.all([
+    const [returnLine, entity, receipt] = await Promise.all([
       service.returnReceiptLineOf(ctx, { receiptId, receiptLineId }),
       client
         .from("trackedEntity")
         .select("id, status, attributes, itemId")
         .eq("id", trackedEntityId)
         .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("receipt")
+        .select("status")
+        .eq("id", receiptId)
+        .eq("companyId", companyId)
         .maybeSingle()
     ]);
     if (returnLine instanceof Error) return returnLine;
+    if (receipt.data?.status !== "Draft") {
+      return ctx.error("rule", RECEIPT_LOCKED);
+    }
     if (!entity.data) {
       return ctx.error("validation", "Tracked entity not found");
     }
@@ -1068,16 +1152,25 @@ export const removeReceiptReturnEntity = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { receiptId, receiptLineId, trackedEntityId }) {
-    const [returnLine, entity] = await Promise.all([
+    const [returnLine, entity, receipt] = await Promise.all([
       service.returnReceiptLineOf(ctx, { receiptId, receiptLineId }),
       ctx.asCaller.supabase
         .from("trackedEntity")
         .select("id, attributes")
         .eq("id", trackedEntityId)
         .eq("companyId", ctx.company.id)
+        .maybeSingle(),
+      ctx.asCaller.supabase
+        .from("receipt")
+        .select("status")
+        .eq("id", receiptId)
+        .eq("companyId", ctx.company.id)
         .maybeSingle()
     ]);
     if (returnLine instanceof Error) return returnLine;
+    if (receipt.data?.status !== "Draft") {
+      return ctx.error("rule", RECEIPT_LOCKED);
+    }
     if (!entity.data) {
       return ctx.error("validation", "Tracked entity not found");
     }
@@ -1109,6 +1202,7 @@ export const removeReceiptReturnEntity = defineServiceFn({
 // ---------------------------------------------------------------------------
 
 const SHIPMENT_NOT_FOUND = "Shipment not found";
+const SHIPMENT_LOCKED = "A posted shipment can no longer be changed";
 const NO_DEFAULT_LOCATION =
   "Set a default location in your settings before creating a shipment";
 
@@ -1238,9 +1332,9 @@ export const createShipment = defineServiceFn({
  * @remarks
  * A changed source document or location rebuilds the shipment's lines from
  * the new source (a sales order, a sales return order, a purchase order, a
- * purchase return order or an outbound transfer). Otherwise the fields are
- * saved as sent. A rental shipment keeps its rental agreement: changing it is
- * refused.
+ * purchase return order or an outbound transfer), and is refused once the
+ * shipment is not Draft. Otherwise the fields are saved as sent. A rental
+ * shipment keeps its rental agreement: changing it is refused.
  *
  * @mcp
  */
@@ -1262,7 +1356,7 @@ export const updateShipment = defineServiceFn({
   async run(ctx, { id, ...shipment }) {
     const current = await ctx.asCaller.supabase
       .from("shipment")
-      .select("sourceDocument, sourceDocumentId, locationId")
+      .select("sourceDocument, sourceDocumentId, locationId, status")
       .eq("id", id)
       .eq("companyId", ctx.company.id)
       .maybeSingle();
@@ -1287,6 +1381,13 @@ export const updateShipment = defineServiceFn({
     const rebuild =
       !isRental &&
       (sourceChanged || current.data.locationId !== shipment.locationId);
+    // A rebuild replaces the lines: on a posted shipment, the posted ones.
+    if (rebuild && current.data.status !== "Draft") {
+      return ctx.error(
+        "rule",
+        "Only a Draft shipment can change its source document or location"
+      );
+    }
     if (!rebuild) {
       const updated = await service.upsertShipment(ctx.asCaller.supabase, {
         id,
@@ -1563,12 +1664,14 @@ export const postShipment = defineServiceFn({
       );
     }
 
+    // Only from Pending: a concurrent post that won must stay Posted.
     const backToDraft = () =>
       ctx.asCaller.supabase
         .from("shipment")
         .update({ status: "Draft" })
         .eq("id", shipmentId)
-        .eq("companyId", companyId);
+        .eq("companyId", companyId)
+        .eq("status", "Pending");
 
     let failure: CarbonError | null = null;
     let splitEntityIds: string[] = [];
@@ -1711,15 +1814,19 @@ export const splitShipmentLine = defineServiceFn({
   async run(ctx, { shipmentId, shipmentLineId, locationId, quantity }) {
     const line = await ctx.asCaller.supabase
       .from("shipmentLine")
-      .select("id")
+      .select("id, shipment!shipmentLine_shipmentId_fkey(status)")
       .eq("id", shipmentLineId)
+      .eq("shipmentId", shipmentId)
       .eq("companyId", ctx.company.id)
       .maybeSingle();
     if (line.error) {
       return ctx.error("internal", "Failed to split line", line.error);
     }
-    if (!line.data) {
+    if (!line.data?.shipment) {
       return ctx.error("notFound", "The shipment line could not be found");
+    }
+    if (line.data.shipment.status !== "Draft") {
+      return ctx.error("rule", SHIPMENT_LOCKED);
     }
 
     const split = await invokeCreate(ctx, {
@@ -1755,6 +1862,25 @@ export const updateShipmentLines = defineServiceFn({
   permission: { update: "inventory" },
 
   async run(ctx, { ids, field, value }) {
+    const lines = await ctx.asCaller.supabase
+      .from("shipmentLine")
+      .select("id, shipment!shipmentLine_shipmentId_fkey(status)")
+      .in("id", ids)
+      .eq("companyId", ctx.company.id);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load shipment lines",
+        lines.error
+      );
+    }
+    if (lines.data.length !== new Set(ids).size) {
+      return ctx.error("notFound", "The shipment line could not be found");
+    }
+    if (lines.data.some((line) => line.shipment?.status !== "Draft")) {
+      return ctx.error("rule", SHIPMENT_LOCKED);
+    }
+
     const update = await ctx.asCaller.supabase
       .from("shipmentLine")
       .update({
@@ -1870,7 +1996,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipment")
-        .select("sourceDocument, sourceDocumentId")
+        .select("sourceDocument, sourceDocumentId, status")
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .single(),
@@ -1889,6 +2015,9 @@ export const assignShipmentLineEntity = defineServiceFn({
     // legitimate On Hold return-to-customer assignment.
     if (shipment.error) {
       return ctx.error("internal", "Failed to load shipment", shipment.error);
+    }
+    if (shipment.data.status !== "Draft") {
+      return ctx.error("rule", SHIPMENT_LOCKED);
     }
     if (line.error) {
       return ctx.error("internal", "Failed to load shipment line", line.error);
@@ -2786,7 +2915,7 @@ export const adjustInventory = defineServiceFn({
       itemId: z.string().min(1),
       adjustmentType: z.enum(inventoryAdjustmentTypes),
       /** A positive magnitude; the type says which way it moves. */
-      quantity: z.number(),
+      quantity: z.number().min(0),
       locationId: z.string().optional(),
       storageUnitId: z.string().optional(),
       originalStorageUnitId: z.string().optional(),
@@ -2806,7 +2935,8 @@ export const adjustInventory = defineServiceFn({
       path: ["locationId"],
       message: "Location is required"
     }),
-  permission: { create: "inventory" },
+  // The adjustment route's gate, and the update the posting itself requires.
+  permission: { create: "inventory", update: "inventory" },
 
   async run(ctx, { acknowledged, ...adjustment }) {
     const serial = await service.serialQuantityRefusal(
@@ -2842,31 +2972,23 @@ export const adjustInventory = defineServiceFn({
       return { violations, ruleNames: rules.ruleNames } satisfies Blocked;
     }
 
-    const itemLedger = await service.insertManualInventoryAdjustment(
-      ctx.asCaller.supabase,
-      ctx.asSystem.pg,
-      {
-        ...adjustment,
-        companyId: ctx.company.id,
-        createdBy: ctx.auditUserId
-      }
+    const posted = await invokePosting(
+      ctx,
+      "post-inventory-adjustment",
+      adjustment,
+      service.postInventoryAdjustment
     );
-    if (itemLedger.error) {
-      // Only these reasons are worth showing; the rest is a failure.
-      const shown = [
-        "Insufficient quantity for negative adjustment",
-        "Serial number not found",
-        "Multiple tracked entities in this storage unit — select a specific row to adjust"
-      ];
-      return shown.includes(itemLedger.error)
-        ? ctx.error("rule", itemLedger.error)
+    if (posted.error) {
+      // Below 500 the posting refused the adjustment, in words for the person.
+      return posted.error.status < 500
+        ? service.serverFnFailure(ctx, posted.error, posted.error.message)
         : ctx.error(
             "internal",
             "Failed to create manual inventory adjustment",
-            itemLedger.error
+            posted.error
           );
     }
-    return { itemLedgerId: itemLedger.data?.id ?? null };
+    return { itemLedgerId: posted.data.itemLedger?.id ?? null };
   }
 });
 
@@ -3236,6 +3358,8 @@ export type KanbanScan =
  */
 export const scanKanban = defineServiceFn({
   input: z.object({ kanbanId: z.string() }),
+  // Safe only unpublished (an employee-only route; Make creates jobs as the
+  // system): give it a real rule before it is ever tagged @mcp.
   permission: {},
 
   async run(ctx, { kanbanId }): Promise<KanbanScan | CarbonError> {
@@ -3554,6 +3678,10 @@ export const deleteBatchProperty = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "batchProperty", {
+      id: input.id
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.deleteBatchProperty(
@@ -3573,6 +3701,10 @@ export const deleteKanban = defineServiceFn({
   input: z.looseObject({ kanbanId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "kanban", {
+      id: input.kanbanId
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.deleteKanban(ctx.asCaller.supabase, input.kanbanId as never)
@@ -3618,12 +3750,30 @@ export const deleteReceipt = defineServiceFn({
 /**
  * Delete receipt line
  *
+ * @remarks
+ * Only a Draft receipt's lines can be deleted.
+ *
  * @mcp destructive
  */
 export const deleteReceiptLine = defineServiceFn({
   input: z.looseObject({ receiptLineId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const line = await ctx.asCaller.supabase
+      .from("receiptLine")
+      .select("id, receipt!receiptLine_receiptId_fkey(status)")
+      .eq("id", input.receiptLineId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (line.error) {
+      return ctx.error("internal", "Failed to load receipt line", line.error);
+    }
+    if (!line.data?.receipt) {
+      return ctx.error("notFound", "The receipt line could not be found");
+    }
+    if (line.data.receipt.status !== "Draft") {
+      return ctx.error("rule", RECEIPT_LOCKED);
+    }
     return envelope(
       ctx,
       await service.deleteReceiptLine(
@@ -3672,12 +3822,30 @@ export const deleteShipment = defineServiceFn({
 /**
  * Delete shipment line
  *
+ * @remarks
+ * Only a Draft shipment's lines can be deleted.
+ *
  * @mcp destructive
  */
 export const deleteShipmentLine = defineServiceFn({
   input: z.looseObject({ shipmentLineId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const line = await ctx.asCaller.supabase
+      .from("shipmentLine")
+      .select("id, shipment!shipmentLine_shipmentId_fkey(status)")
+      .eq("id", input.shipmentLineId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (line.error) {
+      return ctx.error("internal", "Failed to load shipment line", line.error);
+    }
+    if (!line.data?.shipment) {
+      return ctx.error("notFound", "The shipment line could not be found");
+    }
+    if (line.data.shipment.status !== "Draft") {
+      return ctx.error("rule", SHIPMENT_LOCKED);
+    }
     return envelope(
       ctx,
       await service.deleteShipmentLine(
@@ -3697,6 +3865,10 @@ export const deleteShippingMethod = defineServiceFn({
   input: z.looseObject({ shippingMethodId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "shippingMethod", {
+      id: input.shippingMethodId
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.deleteShippingMethod(
@@ -3786,6 +3958,10 @@ export const deleteWarehouseTransfer = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "warehouseTransfer", {
+      id: input.transferId
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.deleteWarehouseTransfer(
@@ -3799,6 +3975,10 @@ export const deleteWarehouseTransfer = defineServiceFn({
 /**
  * Keyset-paginated item-ledger activity for the per-item Activity panel
  *
+ * @remarks
+ * A page of `rows`, newest first. `hasMore` says another page lies beyond
+ * it: send the last row's `entryNumber` to read it.
+ *
  * @mcp read
  */
 export const getItemLedgerActivity = defineServiceFn({
@@ -3811,18 +3991,20 @@ export const getItemLedgerActivity = defineServiceFn({
   }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await utils.getItemLedgerActivity(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
-      )
+    const page = await utils.getItemLedgerActivity(
+      ctx.asCaller.supabase,
+      stamp(ctx, input, ["companyId"]) as never
     );
+    const rows = envelope(ctx, page);
+    if (rows instanceof Error) return rows;
+    return { rows, hasMore: page.hasMore };
   }
 });
 
 /**
- * On-hand quantity of an item at a location right after ledger entry `entryNumber` (omit it for on-hand now), on the same definition as the inventory table's On…
+ * On-hand quantity of an item at a location right after ledger entry
+ * `entryNumber` (omit it for on-hand now), on the same definition as the
+ * inventory table's On Hand column.
  *
  * @mcp read
  */
@@ -3857,7 +4039,7 @@ export const getBatchProperties = defineServiceFn({
       ctx,
       await service.getBatchProperties(
         ctx.asCaller.supabase,
-        stamp(ctx, input.itemIds, ["companyId"]) as never,
+        input.itemIds,
         ctx.company.id
       )
     );
@@ -3904,7 +4086,8 @@ export const getInventoryValuation = defineServiceFn({
     asOfDate: z.string().nullable().optional(),
     locationId: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  // A valuation is the accounting report's: inventory rights alone see no cost.
+  permission: { view: "accounting" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -3924,7 +4107,7 @@ export const getInventoryValuation = defineServiceFn({
  */
 export const getInventoryValuationTieOut = defineServiceFn({
   input: z.looseObject({ asOfDate: z.string().nullable().optional() }),
-  permission: { view: "inventory" },
+  permission: { view: "accounting" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -4027,7 +4210,7 @@ export const getKanbanProjectedQuantities = defineServiceFn({
       await service.getKanbanProjectedQuantities(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.kanbanIds, ["companyId"]) as never
+        input.kanbanIds
       )
     );
   }
@@ -4042,13 +4225,14 @@ export const getStockTransfer = defineServiceFn({
   input: z.looseObject({ stockTransferId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getStockTransfer(
-        ctx.asCaller.supabase,
-        input.stockTransferId as never
-      )
+    const transfer = await service.getStockTransfer(
+      ctx.asCaller.supabase,
+      input.stockTransferId
     );
+    if (transfer.data && transfer.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, transfer);
   }
 });
 
@@ -4061,13 +4245,14 @@ export const getStockTransferLines = defineServiceFn({
   input: z.looseObject({ stockTransferId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getStockTransferLines(
-        ctx.asCaller.supabase,
-        input.stockTransferId as never
-      )
+    const lines = await service.getStockTransferLines(
+      ctx.asCaller.supabase,
+      input.stockTransferId
     );
+    return envelope(ctx, {
+      ...lines,
+      data: lines.data?.filter((line) => line.companyId === ctx.company.id)
+    });
   }
 });
 
@@ -4137,10 +4322,14 @@ export const getReceipt = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getReceipt(ctx.asCaller.supabase, input.receiptId as never)
+    const receipt = await service.getReceipt(
+      ctx.asCaller.supabase,
+      input.receiptId
     );
+    if (receipt.data && receipt.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, receipt);
   }
 });
 
@@ -4153,18 +4342,21 @@ export const getReceiptLines = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getReceiptLines(
-        ctx.asCaller.supabase,
-        input.receiptId as never
-      )
+    const lines = await service.getReceiptLines(
+      ctx.asCaller.supabase,
+      input.receiptId
     );
+    return envelope(ctx, {
+      ...lines,
+      data: lines.data?.filter((line) => line.companyId === ctx.company.id)
+    });
   }
 });
 
 /**
- * The documents around a receipt that its own row doesn't name: the purchase invoices raised against its supplier interaction (the PO's, so every receipt of that…
+ * The documents around a receipt that its own row does not name: the purchase
+ * invoices raised against its supplier interaction, and, for a customer
+ * return, the customer it came back from.
  *
  * @mcp read
  */
@@ -4210,10 +4402,15 @@ export const getReceiptTracking = defineServiceFn({
 /**
  * Get receipt files
  *
+ * @remarks
+ * The files attached to each receipt line in `lineIds`, at most 200 lines a
+ * call.
+ *
  * @mcp read
  */
 export const getReceiptFiles = defineServiceFn({
-  input: z.looseObject({ lineIds: z.array(z.string()) }),
+  // One storage listing per line.
+  input: z.looseObject({ lineIds: z.array(z.string()).max(200) }),
   permission: { view: "inventory" },
   async run(ctx, input) {
     return envelope(
@@ -4221,7 +4418,7 @@ export const getReceiptFiles = defineServiceFn({
       await service.getReceiptFiles(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.lineIds, ["companyId"]) as never
+        input.lineIds
       )
     );
   }
@@ -4378,13 +4575,14 @@ export const getStorageUnit = defineServiceFn({
   input: z.looseObject({ storageUnitId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getStorageUnit(
-        ctx.asCaller.supabase,
-        input.storageUnitId as never
-      )
+    const unit = await service.getStorageUnit(
+      ctx.asCaller.supabase,
+      input.storageUnitId
     );
+    if (unit.data && unit.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, unit);
   }
 });
 
@@ -4397,6 +4595,10 @@ export const getEffectiveWorkCenterId = defineServiceFn({
   input: z.looseObject({ storageUnitId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "storageUnit", {
+      id: input.storageUnitId
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.getEffectiveWorkCenterId(
@@ -4446,13 +4648,14 @@ export const getStorageUnitChildren = defineServiceFn({
   input: z.looseObject({ parentId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getStorageUnitChildren(
-        ctx.asCaller.supabase,
-        input.parentId as never
-      )
+    const children = await service.getStorageUnitChildren(
+      ctx.asCaller.supabase,
+      input.parentId
     );
+    return envelope(ctx, {
+      ...children,
+      data: children.data?.filter((unit) => unit.companyId === ctx.company.id)
+    });
   }
 });
 
@@ -4475,7 +4678,7 @@ export const getStorageUnitSubtrees = defineServiceFn({
         ctx.asCaller.supabase,
         ctx.company.id,
         input.locationId as never,
-        stamp(ctx, input.rootIds, ["companyId"]) as never,
+        input.rootIds,
         input.maxDepth as never
       )
     );
@@ -4588,13 +4791,14 @@ export const getShipment = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getShipment(
-        ctx.asCaller.supabase,
-        input.shipmentId as never
-      )
+    const shipment = await service.getShipment(
+      ctx.asCaller.supabase,
+      input.shipmentId
     );
+    if (shipment.data && shipment.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, shipment);
   }
 });
 
@@ -4607,13 +4811,14 @@ export const getShipmentLines = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getShipmentLines(
-        ctx.asCaller.supabase,
-        input.shipmentId as never
-      )
+    const lines = await service.getShipmentLines(
+      ctx.asCaller.supabase,
+      input.shipmentId
     );
+    return envelope(ctx, {
+      ...lines,
+      data: lines.data?.filter((line) => line.companyId === ctx.company.id)
+    });
   }
 });
 
@@ -4629,6 +4834,16 @@ export const getShipmentRelatedItems = defineServiceFn({
   }),
   permission: { view: "inventory" },
   async run(ctx, input) {
+    // The reads below run by these ids alone: both must be this company's
+    // shipment and its own source document.
+    const owned = await refuseUnlessOwned(
+      ctx,
+      "shipment",
+      input.sourceDocumentId
+        ? { id: input.shipmentId, sourceDocumentId: input.sourceDocumentId }
+        : { id: input.shipmentId }
+    );
+    if (owned) return owned;
     return plain(
       ctx,
       await service.getShipmentRelatedItems(
@@ -4709,13 +4924,14 @@ export const getShippingMethod = defineServiceFn({
   input: z.looseObject({ shippingMethodId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getShippingMethod(
-        ctx.asCaller.supabase,
-        input.shippingMethodId as never
-      )
+    const method = await service.getShippingMethod(
+      ctx.asCaller.supabase,
+      input.shippingMethodId
     );
+    if (method.data && method.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, method);
   }
 });
 
@@ -4839,35 +5055,86 @@ export const getTrackedEntity = defineServiceFn({
   input: z.looseObject({ trackedEntityId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getTrackedEntity(
-        ctx.asCaller.supabase,
-        input.trackedEntityId as never
-      )
+    const entity = await service.getTrackedEntity(
+      ctx.asCaller.supabase,
+      input.trackedEntityId
     );
+    if (entity.data && entity.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, entity);
   }
 });
 
 /**
  * Manual override of a tracked entity's expirationDate
  *
+ * @remarks
+ * An empty or missing `expirationDate` clears it. The `reason` is kept in the
+ * entity's override history.
+ *
  * @mcp
  */
 export const updateTrackedEntityExpiry = defineServiceFn({
   input: z.looseObject({
     trackedEntityId: z.string(),
-    expirationDate: z.string().nullable(),
-    reason: z.string(),
+    expirationDate: z.string().nullable().optional(),
+    reason: z
+      .string()
+      .min(3, { message: "Reason must be at least 3 characters" })
+      .max(500),
     source: z.string().optional()
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "trackedEntity", {
+      id: input.trackedEntityId
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
-      await service.updateTrackedEntityExpiry(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
+      await service.updateTrackedEntityExpiry(ctx.asCaller.supabase, {
+        trackedEntityId: input.trackedEntityId,
+        expirationDate: input.expirationDate || null,
+        reason: input.reason,
+        source: input.source,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Merge tracked entities into one lot.
+ *
+ * @remarks
+ * Combines two or more Available lots of one item into ONE new lot: their
+ * summed quantity, the earliest expiration date and the attributes every lot
+ * shares. The merged lots become Consumed, and the new lot's genealogy names
+ * each of them. It takes the first lot's number unless `readableId` names one.
+ *
+ * @mcp
+ */
+export const mergeTrackedEntities = defineServiceFn({
+  input: z.object({
+    trackedEntityIds: z.array(z.string()).min(2),
+    readableId: z.string().nullable().optional()
+  }),
+  permission: { update: "inventory" },
+  async run(ctx, { trackedEntityIds, readableId }) {
+    // As the system: the gate above is the `issue` posting's own rule for a
+    // merge, and the posting reads the lots by this company.
+    return envelope(
+      ctx,
+      await service.mergeTrackedEntities(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        {
+          trackedEntityIds,
+          readableId,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId
+        }
       )
     );
   }
@@ -4910,13 +5177,14 @@ export const getWarehouseTransfer = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getWarehouseTransfer(
-        ctx.asCaller.supabase,
-        input.transferId as never
-      )
+    const transfer = await service.getWarehouseTransfer(
+      ctx.asCaller.supabase,
+      input.transferId
     );
+    if (transfer.data && transfer.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, transfer);
   }
 });
 
@@ -4949,14 +5217,15 @@ export const getWarehouseTransferLine = defineServiceFn({
   input: z.looseObject({ transferId: z.string(), lineId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getWarehouseTransferLine(
-        ctx.asCaller.supabase,
-        input.transferId as never,
-        input.lineId as never
-      )
+    const line = await service.getWarehouseTransferLine(
+      ctx.asCaller.supabase,
+      input.transferId,
+      input.lineId
     );
+    if (line.data && line.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, line);
   }
 });
 
@@ -4969,13 +5238,14 @@ export const getWarehouseTransferLines = defineServiceFn({
   input: z.looseObject({ transferId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getWarehouseTransferLines(
-        ctx.asCaller.supabase,
-        input.transferId as never
-      )
+    const lines = await service.getWarehouseTransferLines(
+      ctx.asCaller.supabase,
+      input.transferId
     );
+    return envelope(ctx, {
+      ...lines,
+      data: lines.data?.filter((line) => line.companyId === ctx.company.id)
+    });
   }
 });
 
@@ -5002,24 +5272,21 @@ export const getStockMovementEffectiveQuantity = defineServiceFn({
 /**
  * Correct stock movement
  *
+ * @remarks
+ * Books one opposite movement so the posted movement's quantity becomes
+ * `correctedQuantity` (signed, as the ledger stores it), dated with the
+ * original and posted into its accounting period.
+ *
  * @mcp
  */
 export const correctStockMovement = defineServiceFn({
-  input: z.looseObject({
-    correctedQuantity: z.number(),
-    comment: z.string().optional(),
-    itemLedgerId: z.string()
-  }),
-  permission: { update: "inventory" },
+  input: service.correctStockMovementInput,
+  permission: service.postStockMovementCorrectionPermission,
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.correctStockMovement(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId"]) as never
-      )
+    const corrected = await settle(ctx, "correct-stock-movement", () =>
+      service.postStockMovementCorrection(ctx, input)
     );
+    return corrected instanceof Error ? corrected : corrected.itemLedger;
   }
 });
 
@@ -5150,6 +5417,25 @@ export const deleteInventoryCount = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const count = await service.getInventoryCount(
+      ctx.asCaller.supabase,
+      input.id,
+      ctx.company.id
+    );
+    if (count.error && count.error.code !== "PGRST116") {
+      return ctx.error(
+        "internal",
+        "Failed to load inventory count",
+        count.error
+      );
+    }
+    // A posted count is the record of the adjustments it booked.
+    if (count.data?.status === "Posted") {
+      return ctx.error(
+        "rule",
+        "Cannot delete a posted count. Correct its stock movements instead."
+      );
+    }
     return envelope(
       ctx,
       await service.deleteInventoryCount(
@@ -5164,23 +5450,32 @@ export const deleteInventoryCount = defineServiceFn({
 /**
  * Update inventory count line
  *
+ * @remarks
+ * Records the caller's count of one line; leaving out `countedQuantity`
+ * clears it. Only a Draft count's lines change.
+ *
  * @mcp
  */
 export const updateInventoryCountLine = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     id: z.string().min(1),
-    countedQuantity: z.number().min(0).optional(),
-    countedBy: z.string()
+    countedQuantity: z.number().min(0).optional()
   }),
   permission: { update: "inventory" },
-  async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.updateInventoryCountLine(
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
-      )
-    );
+  async run(ctx, { id, countedQuantity }) {
+    const updated = await service.updateInventoryCountLine(ctx.asSystem.pg, {
+      id,
+      countedQuantity,
+      companyId: ctx.company.id,
+      countedBy: ctx.auditUserId
+    });
+    if (!updated) {
+      return ctx.error(
+        "conflict",
+        "Counts can only be edited while the document is Draft"
+      );
+    }
+    return updated;
   }
 });
 
@@ -5252,6 +5547,11 @@ export const updateBatchPropertyOrder = defineServiceFn({
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    // The update matches by id alone: it must be this company's property.
+    const owned = await refuseUnlessOwned(ctx, "batchProperty", {
+      id: input.id
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.updateBatchPropertyOrder(
@@ -5265,44 +5565,56 @@ export const updateBatchPropertyOrder = defineServiceFn({
 /**
  * Upsert batch property
  *
+ * @remarks
+ * A `list` property needs its `listOptions`; another type keeps none.
+ *
  * @mcp
  */
 export const upsertBatchProperty = defineServiceFn({
-  input: z.looseObject({
-    id: z.string().optional(),
-    itemId: z.string().min(1),
-    label: z.string().min(1),
-    dataType: z.enum(["text", "numeric", "boolean", "list", "date"]),
-    listOptions: z.array(z.string().min(1)).optional(),
-    configurationParameterGroupId: z.string().optional()
-  }),
-  permission: { create: "inventory", update: "inventory" },
+  input: z
+    .looseObject({
+      id: z.string().optional(),
+      itemId: z.string().min(1),
+      label: z.string().min(1),
+      dataType: z.enum(["text", "numeric", "boolean", "list", "date"]),
+      listOptions: z.array(z.string().min(1)).optional(),
+      configurationParameterGroupId: z.string().optional()
+    })
+    .refine((d) => d.dataType !== "list" || !!d.listOptions, {
+      message: "List options are required",
+      path: ["listOptions"]
+    }),
+  permission: { update: "inventory" },
   async run(ctx, input) {
+    if (input.id) {
+      // The update matches by id alone: it must be this company's property.
+      const owned = await refuseUnlessOwned(ctx, "batchProperty", {
+        id: input.id
+      });
+      if (owned) return owned;
+    }
     return envelope(
       ctx,
       await service.upsertBatchProperty(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
+        stamp(
+          ctx,
+          {
+            ...input,
+            listOptions:
+              input.dataType === "list" ? input.listOptions : undefined
+          },
+          ["companyId", "createdBy", "updatedBy", "userId"],
+          input.id ? "update" : "create"
+        ) as never
       )
     );
   }
 });
 
-/**
- * Create a kanban
- *
- * @remarks
- * Upsert kanban
- *
- * @mcp
- */
-export const createKanban = defineServiceFn({
-  input: z.looseObject({
+// The kanban form's rules (`kanbanValidator`), for a caller that sends JSON.
+const kanbanInput = z
+  .looseObject({
     itemId: z.string().min(1),
     replenishmentSystem: z.enum(["Buy", "Make", "Transfer"]),
     autoRelease: z.boolean().optional(),
@@ -5317,19 +5629,57 @@ export const createKanban = defineServiceFn({
     conversionFactor: z
       .number()
       .min(0)
-      .default(1)
       .describe(
-        "Applied when creating; on update a field left out keeps its value."
-      ),
+        "1 when left out on create; on update a field left out keeps its value."
+      )
+      .optional(),
     replenishmentLevel: z.number().min(0).optional(),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
-  }),
+    customFields: z.unknown().optional()
+  })
+  .refine((d) => d.replenishmentSystem !== "Buy" || !!d.supplierId, {
+    message: "Supplier is required",
+    path: ["supplierId"]
+  })
+  .refine(
+    (d) => d.replenishmentSystem !== "Transfer" || !!d.fromStorageUnitId,
+    { message: "From storage unit is required", path: ["fromStorageUnitId"] }
+  )
+  .refine((d) => d.replenishmentSystem !== "Transfer" || !!d.storageUnitId, {
+    message: "To storage unit is required",
+    path: ["storageUnitId"]
+  })
+  .refine(
+    (d) =>
+      d.replenishmentSystem !== "Transfer" ||
+      d.fromStorageUnitId !== d.storageUnitId,
+    {
+      message: "From and to storage units must be different",
+      path: ["storageUnitId"]
+    }
+  )
+  .refine(
+    (d) =>
+      d.replenishmentSystem === "Transfer" ||
+      d.replenishmentLevel === undefined,
+    {
+      message: "Only a transfer kanban can have a replenishment level",
+      path: ["replenishmentLevel"]
+    }
+  );
+
+/**
+ * Create a kanban
+ *
+ * @remarks
+ * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
+ * storage unit, and only it can have a replenishment level.
+ *
+ * @mcp
+ */
+export const createKanban = defineServiceFn({
+  input: kanbanInput,
   permission: { create: "inventory" },
-  async run(ctx, input) {
+  async run(ctx, { id: _id, ...input }) {
     return envelope(
       ctx,
       await service.upsertKanban(
@@ -5349,39 +5699,14 @@ export const createKanban = defineServiceFn({
  * Update a kanban
  *
  * @remarks
- * Upsert kanban
+ * The same rules as `createKanban`.
  *
  * @mcp
  */
 export const updateKanban = defineServiceFn({
-  input: z
-    .looseObject({
-      itemId: z.string().min(1),
-      replenishmentSystem: z.enum(["Buy", "Make", "Transfer"]),
-      autoRelease: z.boolean().optional(),
-      autoStartJob: z.boolean().optional(),
-      completedBarcodeOverride: z.string().optional(),
-      quantity: z.number().int().min(1),
-      locationId: z.string().min(1),
-      storageUnitId: z.string().optional(),
-      fromStorageUnitId: z.string().optional(),
-      supplierId: z.string().optional(),
-      purchaseUnitOfMeasureCode: z.string().optional(),
-      conversionFactor: z
-        .number()
-        .min(0)
-        .describe(
-          "Applied when creating; on update a field left out keeps its value."
-        )
-        .optional(),
-      replenishmentLevel: z.number().min(0).optional(),
-      customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
-    })
-    .required({ id: true }),
+  input: kanbanInput.extend({
+    id: z.string().describe("The kanban to update.")
+  }),
   permission: { update: "inventory" },
   async run(ctx, input) {
     return envelope(
@@ -5415,14 +5740,10 @@ export const createStorageUnit = defineServiceFn({
     parentId: z.string().optional(),
     workCenterId: z.string().optional(),
     storageTypeIds: z.array(z.string()).optional(),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
-  async run(ctx, input) {
+  async run(ctx, { id: _id, ...input }) {
     return envelope(
       ctx,
       await service.upsertStorageUnit(
@@ -5456,14 +5777,16 @@ export const updateStorageUnit = defineServiceFn({
       workCenterId: z.string().optional(),
       storageTypeIds: z.array(z.string()).optional(),
       customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string().describe("The storage unit to update.").optional()
     })
     .required({ id: true }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    // The update matches by id alone: it must be this company's unit.
+    const owned = await refuseUnlessOwned(ctx, "storageUnit", {
+      id: input.id
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.upsertStorageUnit(
@@ -5493,14 +5816,10 @@ export const createShippingMethod = defineServiceFn({
     carrier: z.enum(["UPS", "FedEx", "USPS", "DHL", "Other"]),
     carrierAccountId: z.string().optional(),
     trackingUrl: z.string().optional(),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    customFields: z.unknown().optional()
   }),
   permission: { create: "inventory" },
-  async run(ctx, input) {
+  async run(ctx, { id: _id, ...input }) {
     return envelope(
       ctx,
       await service.upsertShippingMethod(
@@ -5532,14 +5851,16 @@ export const updateShippingMethod = defineServiceFn({
       carrierAccountId: z.string().optional(),
       trackingUrl: z.string().optional(),
       customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string().describe("The shipping method to update.").optional()
     })
     .required({ id: true }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    // The update matches by id alone: it must be this company's method.
+    const owned = await refuseUnlessOwned(ctx, "shippingMethod", {
+      id: input.id
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.upsertShippingMethod(
@@ -5572,11 +5893,7 @@ export const createStockTransferLine = defineServiceFn({
     toStorageUnitId: z.string().optional(),
     quantity: z.number().min(0),
     requiresBatchTracking: z.enum(["true", "false"]),
-    requiresSerialTracking: z.enum(["true", "false"]),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    requiresSerialTracking: z.enum(["true", "false"])
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
@@ -5619,13 +5936,10 @@ export const updateStockTransferLine = defineServiceFn({
       quantity: z.number().min(0),
       requiresBatchTracking: z.enum(["true", "false"]),
       requiresSerialTracking: z.enum(["true", "false"]),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string().describe("The line to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "inventory" },
+  permission: { create: "inventory", update: "inventory" },
   async run(ctx, input) {
     const transfer = await service.unlockedStockTransfer(
       ctx,
@@ -5675,30 +5989,33 @@ export const getStorageUnitDescendants = defineServiceFn({
   input: z.looseObject({ storageUnitId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getStorageUnitDescendants(
-        ctx.asCaller.supabase,
-        input.storageUnitId as never
-      )
+    const descendants = await service.getStorageUnitDescendants(
+      ctx.asCaller.supabase,
+      input.storageUnitId
     );
+    return envelope(ctx, {
+      ...descendants,
+      data: descendants.data?.filter(
+        (unit) => unit.companyId === ctx.company.id
+      )
+    });
   }
 });
 
 /**
  * Expand storage unit ids with descendants
  *
- * @mcp
+ * @mcp read
  */
 export const expandStorageUnitIdsWithDescendants = defineServiceFn({
   input: z.looseObject({ storageUnitIds: z.array(z.string()) }),
-  permission: { update: "inventory" },
+  permission: { view: "inventory" },
   async run(ctx, input) {
     return plain(
       ctx,
       await service.expandStorageUnitIdsWithDescendants(
         ctx.asCaller.supabase,
-        stamp(ctx, input.storageUnitIds, ["companyId"]) as never
+        input.storageUnitIds
       )
     );
   }
@@ -5711,7 +6028,7 @@ export const expandStorageUnitIdsWithDescendants = defineServiceFn({
  */
 export const getStorageTypeUsage = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "inventory" },
+  permission: { view: "parts" },
   async run(ctx, input) {
     return envelope(
       ctx,
@@ -5727,20 +6044,46 @@ export const getStorageTypeUsage = defineServiceFn({
 /**
  * Delete storage type with cascade
  *
+ * @remarks
+ * A storage type that storage units still have is deleted only with
+ * `cascade`, which takes it off those units in the same transaction.
+ *
  * @mcp destructive
  */
 export const deleteStorageTypeWithCascade = defineServiceFn({
-  input: z.looseObject({ id: z.string() }),
-  permission: { delete: "inventory" },
-  async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.deleteStorageTypeWithCascade(
-        ctx.asCaller.supabase,
-        input.id as never,
-        ctx.company.id
-      )
+  input: z.looseObject({ id: z.string(), cascade: z.boolean().optional() }),
+  permission: { delete: "parts" },
+  async run(ctx, { id, cascade }) {
+    const usage = await service.getStorageTypeUsage(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
     );
+    if (usage.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load storage type usage",
+        usage.error
+      );
+    }
+    if (usage.count) {
+      if (!cascade) {
+        return ctx.error(
+          "rule",
+          "Storage type is in use; confirm cascade to delete"
+        );
+      }
+      // The cascade edits those storage units.
+      if (!ctx.can({ update: "parts" })) {
+        return ctx.error("forbidden", "You do not have permission to do this");
+      }
+    }
+    await service.deleteStorageTypeWithCascade(
+      ctx.asSystem.pg,
+      id,
+      ctx.company.id
+    );
+    return { id };
   }
 });
 
@@ -5759,7 +6102,7 @@ export const getStorageTypes = defineServiceFn({
     offset: z.number().int().default(0),
     search: z.string().nullable().optional()
   }),
-  permission: { view: "inventory" },
+  permission: { view: "parts" },
   async run(ctx, input) {
     return paged(
       ctx,
@@ -5779,12 +6122,16 @@ export const getStorageTypes = defineServiceFn({
  */
 export const getStorageType = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
-  permission: { view: "inventory" },
+  permission: { view: "parts" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getStorageType(ctx.asCaller.supabase, input.id as never)
+    const storageType = await service.getStorageType(
+      ctx.asCaller.supabase,
+      input.id
     );
+    if (storageType.data && storageType.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, storageType);
   }
 });
 
@@ -5815,14 +6162,10 @@ export const getStorageTypesList = defineServiceFn({
 export const createStorageType = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
-    customFields: z.unknown().optional(),
-    id: z
-      .string()
-      .describe("Send to update that record; omit to create a new one.")
-      .optional()
+    customFields: z.unknown().optional()
   }),
-  permission: { create: "inventory" },
-  async run(ctx, input) {
+  permission: { create: "parts" },
+  async run(ctx, { id: _id, ...input }) {
     return envelope(
       ctx,
       await service.upsertStorageType(
@@ -5851,14 +6194,16 @@ export const updateStorageType = defineServiceFn({
     .looseObject({
       name: z.string().min(1),
       customFields: z.unknown().optional(),
-      id: z
-        .string()
-        .describe("Send to update that record; omit to create a new one.")
-        .optional()
+      id: z.string().describe("The storage type to update.").optional()
     })
     .required({ id: true }),
-  permission: { update: "inventory" },
+  permission: { update: "parts" },
   async run(ctx, input) {
+    // The update matches by id alone: it must be this company's type.
+    const owned = await refuseUnlessOwned(ctx, "storageType", {
+      id: input.id
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.upsertStorageType(
@@ -5882,13 +6227,15 @@ export const updateStorageType = defineServiceFn({
 export const getShelfLifeForItems = defineServiceFn({
   input: z.looseObject({ itemIds: z.array(z.string()) }),
   permission: { view: "inventory" },
-  async run(ctx, input) {
+  async run(ctx, { itemIds }) {
+    if (itemIds.length === 0) return [];
     return envelope(
       ctx,
-      await service.getShelfLifeForItems(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.itemIds, ["companyId"]) as never
-      )
+      await ctx.asCaller.supabase
+        .from("itemShelfLife")
+        .select("itemId, mode, days")
+        .in("itemId", itemIds)
+        .eq("companyId", ctx.company.id)
     );
   }
 });
@@ -5901,14 +6248,25 @@ export const getShelfLifeForItems = defineServiceFn({
 export const getTrackedEntityExpirations = defineServiceFn({
   input: z.looseObject({ trackedEntityIds: z.array(z.string()) }),
   permission: { view: "inventory" },
-  async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.getTrackedEntityExpirations(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.trackedEntityIds, ["companyId"]) as never
-      )
-    );
+  async run(ctx, { trackedEntityIds }) {
+    if (trackedEntityIds.length === 0) {
+      return {} as Record<string, string | null>;
+    }
+    const entities = await ctx.asCaller.supabase
+      .from("trackedEntity")
+      .select("id, expirationDate")
+      .in("id", trackedEntityIds)
+      .eq("companyId", ctx.company.id);
+    if (entities.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load expiration dates",
+        entities.error
+      );
+    }
+    return Object.fromEntries(
+      entities.data.map((entity) => [entity.id, entity.expirationDate ?? null])
+    ) as Record<string, string | null>;
   }
 });
 
@@ -5952,13 +6310,14 @@ export const getPickingList = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getPickingList(
-        ctx.asCaller.supabase,
-        input.pickingListId as never
-      )
+    const list = await service.getPickingList(
+      ctx.asCaller.supabase,
+      input.pickingListId
     );
+    if (list.data && list.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, list);
   }
 });
 
@@ -5991,13 +6350,14 @@ export const getPickingListLines = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getPickingListLines(
-        ctx.asCaller.supabase,
-        input.pickingListId as never
-      )
+    const lines = await service.getPickingListLines(
+      ctx.asCaller.supabase,
+      input.pickingListId
     );
+    return envelope(ctx, {
+      ...lines,
+      data: lines.data?.filter((line) => line.companyId === ctx.company.id)
+    });
   }
 });
 
@@ -6022,7 +6382,8 @@ export const getPickingListRelatedItems = defineServiceFn({
 });
 
 /**
- * Per-line WAREHOUSE (non-lineside, incl
+ * Warehouse on-hand for each line of a picking list: every bin but lineside,
+ * the unassigned bin included, keyed by picking list line id.
  *
  * @mcp read
  */
@@ -6030,6 +6391,10 @@ export const getPickingListAvailability = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "pickingList", {
+      id: input.pickingListId
+    });
+    if (owned) return owned;
     return plain(
       ctx,
       await service.getPickingListAvailability(
@@ -6049,6 +6414,10 @@ export const getPickingListRecommendations = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "pickingList", {
+      id: input.pickingListId
+    });
+    if (owned) return owned;
     return plain(
       ctx,
       await service.getPickingListRecommendations(
@@ -6068,13 +6437,14 @@ export const getPickingListLine = defineServiceFn({
   input: z.looseObject({ lineId: z.string() }),
   permission: { view: "inventory" },
   async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.getPickingListLine(
-        ctx.asCaller.supabase,
-        input.lineId as never
-      )
+    const line = await service.getPickingListLine(
+      ctx.asCaller.supabase,
+      input.lineId
     );
+    if (line.data && line.data.companyId !== ctx.company.id) {
+      return ctx.error("notFound", NOT_FOUND);
+    }
+    return envelope(ctx, line);
   }
 });
 
@@ -6087,6 +6457,10 @@ export const deletePickingList = defineServiceFn({
   input: z.looseObject({ pickingListId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "pickingList", {
+      id: input.pickingListId
+    });
+    if (owned) return owned;
     return envelope(
       ctx,
       await service.deletePickingList(
@@ -6218,7 +6592,7 @@ export const updateWarehouseTransfer = defineServiceFn({
  * way a shipment or a capitalization relieves it, keyed by tracked entity id.
  * With `locationId`, only the units at that location.
  *
- * @mcp
+ * @mcp read
  */
 export const getSerialUnitCosts = defineServiceFn({
   input: service.previewSerialUnitCostsInput,

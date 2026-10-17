@@ -194,3 +194,35 @@ export interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
 }
+
+export type StepRecord = {
+  id: string;
+  jobOperationStepId: string;
+  index: number;
+  type: string;
+  name: string;
+  value: string | null;
+  numericValue: number | null;
+  booleanValue: boolean | null;
+  userValue: string | null;
+  unitOfMeasureCode: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  operationId: string;
+  operationDescription: string | null;
+  itemId: string | null;
+  itemReadableId: string | null;
+  createdAt: string;
+  createdBy: string | null;
+};
+
+export type IssueContainmentStatus = "Contained" | "Uncontained";
+
+export type IssueContainment = {
+  id: string;
+  readableId: string | null;
+  containmentStatus: IssueContainmentStatus;
+  status: string;
+  priority: string | null;
+  trackedEntityId: string;
+};

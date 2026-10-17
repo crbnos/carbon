@@ -73,10 +73,15 @@ databaseTest(
       await stampCutover(f);
 
       const voids = await newJournals(f, async () => {
-        const result = await invokePosting(handlesOf(f.ctx), "post-shipment", {
-                  type: "void",
-                  shipmentId
-                }, postShipment);
+        const result = await invokePosting(
+          handlesOf(f.ctx),
+          "post-shipment",
+          {
+            type: "void",
+            shipmentId
+          },
+          postShipment
+        );
         expect(result.error?.message).toBe(INVENTORY_VOID_BEFORE_CUTOVER_ERROR);
       });
       expect(voids).toEqual([]);
@@ -114,10 +119,15 @@ databaseTest(
       expect(before).not.toBe("Voided");
 
       const voids = await newJournals(f, async () => {
-        const result = await invokePosting(handlesOf(f.ctx), "post-purchase-invoice", {
-                  type: "void",
-                  invoiceId
-                }, postPurchaseInvoice);
+        const result = await invokePosting(
+          handlesOf(f.ctx),
+          "post-purchase-invoice",
+          {
+            type: "void",
+            invoiceId
+          },
+          postPurchaseInvoice
+        );
         expect(result.error?.message).toBe(
           PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR
         );

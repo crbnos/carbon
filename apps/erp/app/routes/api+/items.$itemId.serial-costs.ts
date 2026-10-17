@@ -3,21 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
-import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 
 const logger = getLogger("erp", "item-serial-costs");
 
 // Each on-hand serial unit's inventory cost, for the item's Storage Units
-// card. Inventory value is accounting data, so it takes accounting view.
+// card. Inventory value is accounting data: both reads take accounting view.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
-
   const { itemId } = params;
   if (!itemId) {
     return { costs: {}, costingMethod: null, retainedEarningsAccountId: null };
@@ -27,14 +21,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const api = await carbon(request);
   const [result, accountDefaults] = await Promise.all([
     api.inventory.getSerialUnitCosts({ itemId, locationId }),
-    getDefaultAccounts(client, companyId)
+    api.accounting.getDefaultAccounts({})
   ]);
   // A recost's offset defaults to Retained Earnings, as on the asset side.
   const retainedEarningsAccountId =
     accountDefaults.data?.retainedEarningsAccount ?? null;
   if (result.error) {
     logger.error("Failed to value serial units", {
-      companyId,
       itemId,
       locationId,
       error: result.error

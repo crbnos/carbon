@@ -24,7 +24,10 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
-import { issueMaterial as issue, postInventoryAdjustment } from "../../app/modules/inventory/inventory.service";
+import {
+  issueMaterial as issue,
+  postInventoryAdjustment
+} from "../../app/modules/inventory/inventory.service";
 import { databaseTest } from "./fixtures/local-database";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";
@@ -123,26 +126,36 @@ databaseTest(
 
       // Inventory adjustment: remove one part.
       unwrap(
-        await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
-                    adjustmentType: "Negative Adjmt.",
-                    itemId: f.partId,
-                    locationId: f.locationId,
-                    quantity: 1
-                  }, postInventoryAdjustment)
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-inventory-adjustment",
+          {
+            adjustmentType: "Negative Adjmt.",
+            itemId: f.partId,
+            locationId: f.locationId,
+            quantity: 1
+          },
+          postInventoryAdjustment
+        )
       );
       await expectProvisional(f, { sourceType: "Inventory Adjustment" });
 
       // Job material issue: two parts to the job's operation.
       const job = await jobFixture(f);
       unwrap(
-        await invokePosting(handlesOf(f.ctx), "issue", {
-                    type: "partToOperation",
-                    id: job.operationId,
-                    itemId: f.partId,
-                    materialId: job.materialId,
-                    quantity: 2,
-                    adjustmentType: "Negative Adjmt."
-                  }, issue)
+        await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "partToOperation",
+            id: job.operationId,
+            itemId: f.partId,
+            materialId: job.materialId,
+            quantity: 2,
+            adjustmentType: "Negative Adjmt."
+          },
+          issue
+        )
       );
       await expectProvisional(f, { sourceType: "Job Consumption" });
 
@@ -223,21 +236,31 @@ databaseTest(
         .executeTakeFirstOrThrow();
 
       unwrap(
-        await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
-                    adjustmentType: "Positive Adjmt.",
-                    itemId: f.partId,
-                    locationId: f.locationId,
-                    quantity: 5
-                  }, postInventoryAdjustment)
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-inventory-adjustment",
+          {
+            adjustmentType: "Positive Adjmt.",
+            itemId: f.partId,
+            locationId: f.locationId,
+            quantity: 5
+          },
+          postInventoryAdjustment
+        )
       );
       unwrap(
-        await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
-                    adjustmentType: "Scrap",
-                    itemId: f.partId,
-                    locationId: f.locationId,
-                    quantity: 2,
-                    scrapReasonId: scrapReason.id
-                  }, postInventoryAdjustment)
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-inventory-adjustment",
+          {
+            adjustmentType: "Scrap",
+            itemId: f.partId,
+            locationId: f.locationId,
+            quantity: 2,
+            scrapReasonId: scrapReason.id
+          },
+          postInventoryAdjustment
+        )
       );
       await expectProvisional(f, { sourceType: "Inventory Adjustment" });
 

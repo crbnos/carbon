@@ -249,8 +249,9 @@ with the lot it just emptied.
 replacement) or throws a typed `PickGuardError` — `already-picked`,
 `over-pick`, or `empty-pick` (a quantity that rounds to zero). Its `status = 400`
 survives the postings' error mapping (`toServerFnError`, `@carbon/api/errors`), so the caller gets a **400**, never a
-500, and both apps show its message with `getErrorMessage(error, fallback)`
-(`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
+500. In the ERP, the pick operations turn it into a refusal with `pickRefusal`
+(`inventory.service.ts`), and the page's `useAction` fetcher toasts its message;
+the MES shows it with `getErrorMessage(error, fallback)` (`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
 the `pickingListLine` in every handler and the source lot in the batch pick,
 `post-stock-transfer` locks the line plus the entity (and, in the serial case,
 the entity BEFORE its repeat-scan guard — two concurrent scans would otherwise

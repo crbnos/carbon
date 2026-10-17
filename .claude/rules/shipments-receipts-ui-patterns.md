@@ -17,11 +17,12 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 ## Routes (per document, e.g. `shipment+/`)
 
 Every action below makes ONE call to an operation in
-`apps/erp/app/modules/inventory/inventory.server.ts` (`api.inventory.shipment.*` /
-`api.inventory.receipt.*` through `carbon(request)`); the logic described here lives in that
-operation, so the API and MCP run the same checks. The route only parses the form.
+`apps/erp/app/modules/inventory/inventory.server.ts` (`api.inventory.<name>` through
+`carbon(request)`; the names are flat, such as `createShipment`, `updateReceipt`,
+`setReceiptLineBatch`); the logic described here lives in that operation, so the API and MCP
+run the same checks. The route only parses the form, and takes the document id from the URL.
 
-- `new.tsx` — **action only** (`shipment.create` / `receipt.create`). Creates the doc by calling the **`create` posting**
+- `new.tsx` — **action only** (`createShipment` / `createReceipt`). Creates the doc by calling the **`create` posting**
   (`invokeCreate(ctx, { type, locationId, ...sourceIds })`, which runs `createDocument` in `shared.service.ts`),
   then `throw redirect(path.to.shipmentDetails(id))`. There is **no `upsert` on create** — the
   posting allocates the human ID and copies source-document lines. For the
@@ -33,25 +34,29 @@ operation, so the API and MCP run the same checks. The route only parses the for
   plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
 - `$id._index.tsx` — redirects to `…/details`.
-- `$id.details.tsx` — renders Form + Lines + Notes. **Action** (`.update`): validate, then if `sourceDocument`
-  changed re-invoke `create`, else `upsertShipment` / `upsertReceipt` (Supabase upsert, sets `updatedBy`).
+- `$id.details.tsx` — renders Form + Lines + Notes. **Action** (`updateShipment` / `updateReceipt`): if
+  `sourceDocument` or the location changed it re-invokes `create`, else the building block
+  `upsertShipment` / `upsertReceipt` (Supabase update, sets `updatedBy`).
   A rental document refuses a change of source ("A rental shipment keeps its rental agreement.
   Create it from the agreement.").
 - `$id.post.tsx` — see posting flow below.
-- `$id.void.tsx` (`.void`) — guards status, invokes post fn with `type: "void"`.
-- `$id.delete.tsx` — `deleteShipment` / `deleteReceipt` service fn; **guard: blocked once `postingDate` is set**.
-- `lines.update.tsx` — Supabase upsert on `shipmentLine`; only `storageUnitId` + `shippedQuantity`
-  (receipt: `receivedQuantity`). Item/storage rules are NOT evaluated here, only at post.
-- `lines.tracking.tsx` (`shipment.line.assignEntity`; receipt: `receipt.line.setBatch` /
-  `setSerial` / `assignReturnEntity` / `removeReturnEntity`, one per `trackingType`) — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
+- `$id.void.tsx` (`voidShipment` / `voidReceipt`) — guards status, invokes the posting with `type: "void"`.
+- `$id.delete.tsx` (`deleteShipment` / `deleteReceipt`) — **guard: blocked once `postingDate` is set**.
+- `lines.update.tsx` (`updateShipmentLines` / `updateReceiptLines`) — one field on the selected
+  lines; only `storageUnitId` + `shippedQuantity` (receipt: `receivedQuantity`). Item/storage rules
+  are NOT evaluated here, only at post.
+- `lines.tracking.tsx` (`assignShipmentLineEntity`; receipt: `setReceiptLineBatch` /
+  `setReceiptLineSerial` / `assignReceiptReturnEntity` / `removeReceiptReturnEntity`, one per
+  `trackingType`) — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
   `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
   shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
   sales-return receipts (same-serial re-entry, guarded by provenance: the entity must be the
   return line's item and shipped to that return's customer on a posted shipment).
-- `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
+- `lines.split.tsx` (`splitShipmentLine` / `splitReceiptLine`) — invokes `create` with
+  `type: "shipmentLineSplit"` / `receiptLineSplit`.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
-- `fixed-asset-lines.update.tsx` — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
+- `fixed-asset-lines.update.tsx` (`updateShipmentFixedAssetLine` / `updateReceiptFixedAssetLine`) — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
   parsed by `shipmentFixedAssetLineUpdateValidator` / `receiptFixedAssetLineUpdateValidator`
   (`inventory.models.ts`): `shipped`/`received`, `serialNumber`, `meter`; the receipt also takes
   `notes`, `outOfService` ("" clears the tick, any other text is the reason, so tick and reason save
@@ -126,7 +131,9 @@ The operation (`postShipment` / `postReceipt` in `inventory.server.ts`): evaluat
 rules (`@carbon/ee/rules.server`) over the relevant surfaces — a blocking rule returns
 `{ violations, ruleNames }`, which the route hands to `useRuleViolations` — optimistically sets
 `status: "Pending"`, then
-`invokePosting(ctx, "post-shipment" / "post-receipt", { type: "post", id, postingDate }, service.postShipment / service.postReceipt)`.
+`invokePosting(ctx, "post-shipment", { type: "post", shipmentId, postingDate }, service.postShipment)`
+(receipt: `invokePosting(ctx, "post-receipt", { receiptId, postingDate }, service.postReceipt)`,
+whose `type` defaults to `"post"`).
 On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
 save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.pdf.tsx`, the
 same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
@@ -201,5 +208,5 @@ applies.
   documents fall through with no posting effect.
 - Lines persist directly through `lines.update` on edit; the form's submit only saves the header.
 - `create`, post-shipment, and post-receipt run service-role + Kysely (RLS bypassed) — the
-  **operation's** `permission` (`update: "inventory"`, `create` for `.create`) is the auth gate, for
-  every caller.
+  **operation's** `permission` (`update: "inventory"`, `create` for `createShipment` /
+  `createReceipt`) is the auth gate, for every caller.

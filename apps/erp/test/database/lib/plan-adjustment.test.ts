@@ -11,7 +11,9 @@ import {
   buildJournalLineDimensions,
   planIncreaseUnitCosts,
   planStockRows,
-  toJournalLineDocumentType, computeCurrentUnitCost } from "~/modules/shared/shared.service";
+  toJournalLineDocumentType,
+  computeCurrentUnitCost
+} from "~/modules/shared/shared.service";
 import type { AdjustmentItemCost } from "~/modules/shared/shared.service";
 const accountDefaults = {
   rawMaterialsAccount: "raw",

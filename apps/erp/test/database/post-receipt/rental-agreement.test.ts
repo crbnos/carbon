@@ -13,7 +13,10 @@ import { databaseTest } from "../fixtures/local-database";
 import { FILLER_ACCOUNT_DEFAULTS } from "../fixtures/post-reimbursement";
 import { rentalFixture } from "../fixtures/rental";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
@@ -28,15 +31,20 @@ async function putOnRent(f: Fixture, lineIds: string[]) {
 
 async function draftReceipt(f: Fixture): Promise<string> {
   const result = await invokeCreate(handlesOf(f.ctx), {
-        type: "receiptFromRentalAgreement",
-        rentalAgreementId: f.agreementId
-      });
+    type: "receiptFromRentalAgreement",
+    rentalAgreementId: f.agreementId
+  });
   if (result.error) throw result.error;
   return result.data.id;
 }
 
 function post(f: Fixture, receiptId: string, postingDate?: string) {
-  return invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId, postingDate }, postReceipt);
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-receipt",
+    { type: "post", receiptId, postingDate },
+    postReceipt
+  );
 }
 
 async function setReceived(
@@ -202,7 +210,12 @@ databaseTest("a posted rental receipt is never voided", async () => {
     const receiptId = await draftReceipt(f);
     expect((await post(f, receiptId, "2026-09-20")).error).toBeNull();
 
-    const result = await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "void", receiptId }, postReceipt);
+    const result = await invokePosting(
+      handlesOf(f.ctx),
+      "post-receipt",
+      { type: "void", receiptId },
+      postReceipt
+    );
     expect(result.error?.message).toContain(
       "A rental return cannot be voided. Correct the unit by hand."
     );

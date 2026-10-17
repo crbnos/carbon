@@ -6,6 +6,11 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 
+/** A lineage depth the traceability graph walks: 1 to 5 hops. */
+export function clampDepth(n: number): number {
+  return Math.min(Math.max(1, n), 5);
+}
+
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,

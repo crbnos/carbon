@@ -70,13 +70,18 @@ async function nonConformance(f: Fixture, key: string): Promise<string> {
 async function scrapOnNonConformance(f: Fixture, documentId: string) {
   return newJournals(f, async () =>
     unwrap(
-      await invokePosting(f.service, "post-nonconformance", {
-        documentType: "Non-Conformance",
-        documentId,
-        movements: [
-          { itemId: f.partId, locationId: f.locationId, quantity: -2 }
-        ]
-      }, postNonconformance)
+      await invokePosting(
+        f.service,
+        "post-nonconformance",
+        {
+          documentType: "Non-Conformance",
+          documentId,
+          movements: [
+            { itemId: f.partId, locationId: f.locationId, quantity: -2 }
+          ]
+        },
+        postNonconformance
+      )
     )
   );
 }

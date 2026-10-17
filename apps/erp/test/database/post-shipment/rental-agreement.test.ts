@@ -14,7 +14,10 @@ import { databaseTest } from "../fixtures/local-database";
 import { rentalFixture } from "../fixtures/rental";
 import { synthesizeRentalAccruals } from "../../../app/modules/accounting/accounting.service";
 import { postShipment } from "../../../app/modules/inventory/inventory.service";
-import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
@@ -22,15 +25,20 @@ const TIME_ZONE = "America/New_York";
 
 async function draftShipment(f: Fixture): Promise<string> {
   const result = await invokeCreate(handlesOf(f.ctx), {
-        type: "shipmentFromRentalAgreement",
-        rentalAgreementId: f.agreementId
-      });
+    type: "shipmentFromRentalAgreement",
+    rentalAgreementId: f.agreementId
+  });
   if (result.error) throw result.error;
   return result.data.id;
 }
 
 function post(f: Fixture, shipmentId: string, postingDate?: string) {
-  return invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId, postingDate }, postShipment);
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-shipment",
+    { type: "post", shipmentId, postingDate },
+    postShipment
+  );
 }
 
 async function setShipped(
@@ -289,7 +297,12 @@ databaseTest(
 );
 
 function voidShipment(f: Fixture, shipmentId: string) {
-  return invokePosting(handlesOf(f.ctx), "post-shipment", { type: "void", shipmentId }, postShipment);
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-shipment",
+    { type: "void", shipmentId },
+    postShipment
+  );
 }
 
 databaseTest(

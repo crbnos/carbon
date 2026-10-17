@@ -21,8 +21,14 @@ import {
   unwrap
 } from "./fixtures/always-post";
 import { databaseTest } from "./fixtures/local-database";
-import { postReceipt, postShipment } from "../../app/modules/inventory/inventory.service";
-import { invokePosting, invokeCreate } from "../../app/modules/shared/shared.service";
+import {
+  postReceipt,
+  postShipment
+} from "../../app/modules/inventory/inventory.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";
 
 /** Ships two parts back to the supplier on a purchase return order. */
@@ -56,13 +62,20 @@ async function shipPurchaseReturn(f: Fixture, key: string) {
   });
   const shipment = unwrap(
     await invokeCreate(handlesOf(f.ctx), {
-                  type: "shipmentFromPurchaseReturnOrder",
-                  purchaseReturnOrderId,
-                  locationId: f.locationId
-                })
+      type: "shipmentFromPurchaseReturnOrder",
+      purchaseReturnOrderId,
+      locationId: f.locationId
+    })
   );
   return newJournals(f, async () =>
-    unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId: shipment.id }, postShipment))
+    unwrap(
+      await invokePosting(
+        handlesOf(f.ctx),
+        "post-shipment",
+        { type: "post", shipmentId: shipment.id },
+        postShipment
+      )
+    )
   );
 }
 
@@ -102,14 +115,21 @@ async function receiveSalesReturn(
   });
   const receipt = unwrap(
     await invokeCreate(handlesOf(f.ctx), {
-                  type: "receiptFromSalesReturnOrder",
-                  salesReturnOrderId,
-                  locationId: f.locationId
-                })
+      type: "receiptFromSalesReturnOrder",
+      salesReturnOrderId,
+      locationId: f.locationId
+    })
   );
   await beforePost?.();
   return newJournals(f, async () =>
-    unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt))
+    unwrap(
+      await invokePosting(
+        handlesOf(f.ctx),
+        "post-receipt",
+        { type: "post", receiptId: receipt.id },
+        postReceipt
+      )
+    )
   );
 }
 
@@ -146,12 +166,19 @@ async function receiveTransfer(f: Fixture, key: string) {
   });
   const receipt = unwrap(
     await invokeCreate(handlesOf(f.ctx), {
-                  type: "receiptFromInboundTransfer",
-                  warehouseTransferId
-                })
+      type: "receiptFromInboundTransfer",
+      warehouseTransferId
+    })
   );
   return newJournals(f, async () =>
-    unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt))
+    unwrap(
+      await invokePosting(
+        handlesOf(f.ctx),
+        "post-receipt",
+        { type: "post", receiptId: receipt.id },
+        postReceipt
+      )
+    )
   );
 }
 

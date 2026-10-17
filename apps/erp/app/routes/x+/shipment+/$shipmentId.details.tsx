@@ -20,17 +20,21 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(shipmentValidator).request(args);
+  const input = await validator(shipmentValidator).request(args, {
+    params: ["shipmentId"]
+  });
   if ("invalid" in input) return input.invalid;
+  const { shipmentId } = input.params;
   const api = await carbon(args.request);
   const result = await api.inventory.updateShipment({
     ...input.data,
+    // The document in the URL is the one updated, whatever the form's id says.
+    id: shipmentId,
     customFields: input.formData && setCustomFields(input.formData)
   });
-  return respond(args.request, result).redirect(
-    path.to.shipment(input.data.id),
-    { message: "Updated shipment" }
-  );
+  return respond(args.request, result).redirect(path.to.shipment(shipmentId), {
+    message: "Updated shipment"
+  });
 }
 
 export default function ShipmentDetailsRoute() {

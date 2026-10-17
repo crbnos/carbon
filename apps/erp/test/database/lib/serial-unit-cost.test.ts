@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { serialUnitCost, type UnitCostLayer } from "~/modules/shared/shared.service";
+import {
+  serialUnitCost,
+  type UnitCostLayer
+} from "~/modules/shared/shared.service";
 
 const fifo = { costingMethod: "FIFO" as const, unitCost: 100, standardCost: 0 };
 

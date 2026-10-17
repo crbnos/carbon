@@ -97,7 +97,7 @@ Key service functions (verified):
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `shared.service.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`postStockMovementCorrection`** (`inventory.service.ts`, ported from the `correct-stock-movement` server function): fixes any
+- `correctStockMovement` (operation) — settles **`postStockMovementCorrection`** (`inventory.service.ts`, ported from the `correct-stock-movement` server function): fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
   `postingDate` and posting its journal: after the accounting cutover into the period containing
@@ -111,8 +111,9 @@ Key service functions (verified):
   render as normal flat rows with an `isCorrection` badge — no nesting/expandable grouping.
   Inventory counts have NO count-level rectify; Posted is terminal.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
-  `getStorageUnitTree`, `getStorageUnitsTreeForLocation`, `getDefaultStorageUnitForJob`,
-  `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` (these are the picking/job defaults).
+  `getStorageUnitTree`, `getStorageUnitsTreeForLocation`,
+  `getDefaultStorageUnitOrStorageUnitWithHighestQuantity`, and `getDefaultStorageUnitForJob`
+  (`inventory.utils.ts`) — these are the picking/job defaults.
 - Tracking: `getTrackedEntities`, `getAvailableTrackedEntities` (RPC `get_available_tracked_entities`),
   `getSerialNumbersForItem`, `getBatchNumbersForItem`, `getShelfLifeForItems`, `getPickOrder` (FEFO/FIFO).
 - Picking: `generatePickingList`, `getPickingListAvailability` (RPC `get_picking_list_availability`),
@@ -199,9 +200,6 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 - **`get_inventory_quantities` has many revisions.** Always read the newest (`20261006130001`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
-- **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —
-  it still lists `getShelf`/`getDefaultShelfForJob`. The real service exports `getStorageUnit*` /
-  `getDefaultStorageUnitForJob`. Trust the service file.
 - On-hand math comes from `itemLedger` (and the `get_inventory_quantities` RPC), not from summing
   `trackedEntity` directly. The old `itemInventory` table is orphaned (trigger dropped
   `20250209170952`) — never read or write it.

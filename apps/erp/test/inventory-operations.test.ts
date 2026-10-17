@@ -11,9 +11,7 @@ vi.mock("@lingui/core/macro", () => ({
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
 }));
-const { invoke, evaluate } = vi.hoisted(() => ({
-  // The server functions.
-  invoke: vi.fn(),
+const { evaluate } = vi.hoisted(() => ({
   // Storage rules: the violations each surface reports.
   evaluate: vi.fn()
 }));
@@ -37,17 +35,18 @@ vi.mock("../app/modules/sales/sales.service", async (importOriginal) => ({
 vi.mock("../app/modules/inventory/inventory.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getInventoryCount: vi.fn(),
-  insertManualInventoryAdjustment: vi.fn(),
+  // The adjustment posting: its database test is post-inventory-adjustment.
+  postInventoryAdjustment: vi.fn(),
   postInventoryCount: vi.fn(),
   // Reads the item's tracking type; the serial cap has its own database test.
   serialQuantityRefusal: vi.fn(async () => null)
 }));
 
-import { ServerFnError } from "@carbon/api/errors";
+import { InvalidInputError, ServerFnError } from "@carbon/api/errors";
 import {
   getInventoryCount,
-  insertManualInventoryAdjustment,
   pickRefusal,
+  postInventoryAdjustment,
   postInventoryCount as postCount
 } from "../app/modules/inventory/inventory.service";
 import {
@@ -87,10 +86,10 @@ const violation = (severity: "error" | "warn") => ({
 beforeEach(() => {
   vi.clearAllMocks();
   evaluate.mockResolvedValue({ violations: [], ruleNames: {} });
-  vi.mocked(insertManualInventoryAdjustment).mockResolvedValue({
-    data: { id: "ledger-1" },
-    error: null
-  } as any);
+  vi.mocked(postInventoryAdjustment).mockResolvedValue({
+    success: true,
+    itemLedger: { id: "ledger-1" }
+  });
 });
 
 describe("adjustInventory", () => {
@@ -115,7 +114,7 @@ describe("adjustInventory", () => {
     expect(result.data).toMatchObject({
       violations: [{ ruleId: "rule-error" }]
     });
-    expect(insertManualInventoryAdjustment).not.toHaveBeenCalled();
+    expect(postInventoryAdjustment).not.toHaveBeenCalled();
   });
 
   it("ignores a rule on the bin it does not take stock from", async () => {
@@ -161,25 +160,29 @@ describe("adjustInventory", () => {
     expect(unscrap.data).toEqual({ itemLedgerId: "ledger-1" });
   });
 
-  it("names a refusal the user can act on, and hides any other failure", async () => {
-    vi.mocked(insertManualInventoryAdjustment)
-      .mockResolvedValueOnce({
-        data: null,
-        error: "Insufficient quantity for negative adjustment"
-      } as any)
-      .mockResolvedValueOnce({ data: null, error: "duplicate key" } as any);
+  it("passes the posting's own refusal through, and hides any other failure", async () => {
+    vi.mocked(postInventoryAdjustment)
+      .mockRejectedValueOnce(new InvalidInputError("Lot LOT-7 is on hold"))
+      .mockRejectedValueOnce(new Error("duplicate key"));
 
-    const short = await adjustInventory(ctx(), scrap);
+    const refused = await adjustInventory(ctx(), scrap);
     const failed = await adjustInventory(ctx(), scrap);
 
-    expect(short.error).toMatchObject({
-      category: "rule",
-      message: "Insufficient quantity for negative adjustment"
+    expect(refused.error).toMatchObject({
+      category: "validation",
+      message: "Lot LOT-7 is on hold"
     });
     expect(failed.error).toMatchObject({
       category: "internal",
       message: "Failed to create manual inventory adjustment"
     });
+  });
+
+  it("refuses a negative quantity: the type says which way stock moves", async () => {
+    const result = await adjustInventory(ctx(), { ...scrap, quantity: -2 });
+
+    expect(result.error?.category).toBe("validation");
+    expect(postInventoryAdjustment).not.toHaveBeenCalled();
   });
 });
 

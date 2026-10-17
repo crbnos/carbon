@@ -71,8 +71,6 @@ import {
   type SamplingStandard
 } from "@carbon/database/sampling";
 import * as sequence from "@carbon/database/sequence";
-import * as sequenceModule from "@carbon/database/sequence";
-import { getNextSerialNumbers } from "@carbon/database/sequence";
 import {
   expandSerialTrackedLines,
   kanbanReplenishmentNote,
@@ -131,7 +129,7 @@ import {
   unitLabel,
   unitReturnValidator
 } from "~/modules/sales/sales.service";
-import { getNextSequence } from "~/modules/settings/settings.service";
+import * as settingsService from "~/modules/settings/settings.service";
 import {
   assertCompanyRecords,
   assertPostable,
@@ -178,7 +176,7 @@ import {
   setSearchFilter
 } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 import { rescheduleJob } from "../production/production.service";
 import type {
@@ -192,7 +190,6 @@ import type {
   receiptValidator,
   shipmentValidator,
   shippingMethodValidator,
-  stockMovementCorrectionValidator,
   stockTransferLineValidator,
   stockTransferValidator,
   storageTypeValidator,
@@ -206,6 +203,7 @@ import {
   type receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials
 } from "./inventory.models";
+import { clampDepth } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
 import {
   effectiveSuccessorId,
@@ -220,14 +218,11 @@ import type {
   ActivityInput,
   ActivityOutput,
   GraphData,
-  TrackedEntity
-} from "./types";
-import { clampDepth } from "./ui/Traceability/constants";
-import type {
   IssueContainment,
   IssueContainmentStatus,
-  StepRecord
-} from "./ui/Traceability/utils";
+  StepRecord,
+  TrackedEntity
+} from "./types";
 
 const logger = getLogger("erp", "inventory");
 
@@ -552,11 +547,15 @@ export async function createInventoryReconciliationJournal(
   if (rows.length === 0) {
     return {
       data: null,
-      error: { message: "Nothing to reconcile — variance is zero" }
+      error: ruleError("Nothing to reconcile — variance is zero")
     };
   }
 
-  const nextSequence = await getNextSequence(client, "journalEntry", companyId);
+  const nextSequence = await settingsService.getNextSequence(
+    client,
+    "journalEntry",
+    companyId
+  );
   if (nextSequence.error) return nextSequence;
   const journalEntryId = nextSequence.data;
 
@@ -1618,8 +1617,9 @@ export async function getShippingTermsList(
 }
 
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
-// quantity, earliest expiry) with genealogy back to every parent. The issue
-// server fn owns the writes; see `buildBatchMergeRecords` (@carbon/utils).
+// quantity, earliest expiry) with genealogy back to every parent. The `issue`
+// posting (`issueMaterial`) owns the writes; see `buildBatchMergeRecords`
+// (@carbon/utils).
 export async function mergeTrackedEntities(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -1737,9 +1737,9 @@ export async function updateTrackedEntityExpiry(
   if (existing.data?.status === "Consumed") {
     return {
       data: null,
-      error: {
-        message: "Cannot edit expiry of a consumed tracked entity"
-      } as unknown as PostgrestError
+      error: ruleError(
+        "Cannot edit expiry of a consumed tracked entity"
+      ) as unknown as PostgrestError
     };
   }
 
@@ -2018,40 +2018,6 @@ export async function getStockMovementEffectiveQuantity(
   }
 
   return { data: { rootId: root.id, effectiveQuantity }, error: null };
-}
-
-// Books ONE opposite (delta) movement linked to the corrected movement via
-// correctionOfItemLedgerId, dated with the original's postingDate and posted
-// into the original's accounting period (the correct-stock-movement operation).
-export async function correctStockMovement(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  correction: z.infer<typeof stockMovementCorrectionValidator> & {
-    itemLedgerId: string;
-    companyId: string;
-    createdBy: string;
-  }
-) {
-  const { companyId, createdBy, ...rest } = correction;
-
-  const result = await invokePosting(
-    { client, db, companyId, userId: createdBy },
-    "correct-stock-movement",
-    {
-      ...rest
-    },
-    postStockMovementCorrection,
-    { as: postStockMovementCorrectionPermission }
-  );
-
-  if (result.error) {
-    return {
-      data: null,
-      error: getErrorMessage(result.error, "Failed to correct stock movement")
-    };
-  }
-
-  return { data: result.data.itemLedger, error: null };
 }
 
 // ===========================================================================
@@ -2906,29 +2872,27 @@ export async function getStorageTypeUsage(
     .limit(5);
 }
 
+/** Deletes a storage type and takes it off every storage unit that has it, in one transaction. */
 export async function deleteStorageTypeWithCascade(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
 ) {
-  const { data: units, error: fetchError } = await client
-    .from("storageUnit")
-    .select("id, storageTypeIds")
-    .eq("companyId", companyId)
-    .contains("storageTypeIds", [id]);
-
-  if (fetchError) return { error: fetchError };
-
-  for (const unit of units ?? []) {
-    const next = (unit.storageTypeIds ?? []).filter((x) => x !== id);
-    const { error: updateError } = await client
-      .from("storageUnit")
-      .update({ storageTypeIds: next })
-      .eq("id", unit.id);
-    if (updateError) return { error: updateError };
-  }
-
-  return client.from("storageType").delete().eq("id", id);
+  return db.transaction().execute(async (trx) => {
+    await trx
+      .updateTable("storageUnit")
+      .set({
+        storageTypeIds: sql<string[]>`array_remove("storageTypeIds", ${id})`
+      })
+      .where("companyId", "=", companyId)
+      .where(sql<boolean>`"storageTypeIds" @> ARRAY[${id}]::text[]`)
+      .execute();
+    return trx
+      .deleteFrom("storageType")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+  });
 }
 
 export async function getStorageTypes(
@@ -3824,7 +3788,7 @@ export async function generatePickingList(
   }
 ) {
   // 1. Get the next sequence number
-  const sequenceResult = await getNextSequence(
+  const sequenceResult = await settingsService.getNextSequence(
     client,
     "pickingList",
     args.companyId
@@ -4510,17 +4474,18 @@ export async function insertStockTransfer(
 
   let stockTransferId = input.stockTransferId;
   if (!stockTransferId) {
-    const sequence = await client.rpc("get_next_sequence", {
-      sequence_name: "stockTransfer",
-      company_id: companyId
-    });
-    if (sequence.error || !sequence.data) {
+    const next = await settingsService.getNextSequence(
+      client,
+      "stockTransfer",
+      companyId
+    );
+    if (next.error || !next.data) {
       return {
         data: null,
-        error: sequence.error ?? { message: "Failed to get sequence" }
+        error: next.error ?? { message: "Failed to get sequence" }
       };
     }
-    stockTransferId = sequence.data;
+    stockTransferId = next.data;
   }
 
   const createTransfer = await client
@@ -4595,17 +4560,18 @@ export async function insertWarehouseTransfer(
 
   let transferId = input.transferId;
   if (!transferId) {
-    const sequence = await client.rpc("get_next_sequence", {
-      sequence_name: "warehouseTransfer",
-      company_id: companyId
-    });
-    if (sequence.error || !sequence.data) {
+    const next = await settingsService.getNextSequence(
+      client,
+      "warehouseTransfer",
+      companyId
+    );
+    if (next.error || !next.data) {
       return {
         data: null,
-        error: sequence.error ?? { message: "Failed to get sequence" }
+        error: next.error ?? { message: "Failed to get sequence" }
       };
     }
-    transferId = sequence.data;
+    transferId = next.data;
   }
 
   const createTransfer = await client
@@ -17359,9 +17325,6 @@ async function insertShipmentJournal(
       .execute();
   }
 }
-// SPDX-License-Identifier: AGPL-3.0-only
-// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
-// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Pure cost resolver for Unscrap: given the ORIGINAL scrap movement's
 // costLedger rows (linked via costLedger.documentId = the scrap itemLedger id),
@@ -18433,31 +18396,27 @@ export async function postInventoryAdjustment(
     resultLedgerId = booked.itemLedgerId;
   });
 
+  // Set inside the transaction callback, which narrowing does not follow.
+  const ledgerId = resultLedgerId as string | null;
   return {
     success: true,
-    itemLedger: resultLedgerId ? { id: resultLedgerId } : null
+    itemLedger: ledgerId ? { id: ledgerId } : null
   };
 }
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
-
-// A pick is a TRANSFER of material from the warehouse source shelf
-// (pickingListLine.storageUnitId) to the work center's lineside shelf
-// (pickingListLine.toStorageUnitId). Consumption happens later at production,
-// which is why we also point jobMaterial.storageUnitId at the lineside shelf.
-// The statuses a job can be cancelled from: what a `cancelling` sweep accepts.
-const CANCELLABLE_JOB_STATUSES: readonly string[] = [
-  "Draft",
-  "Planned",
-  "Ready",
-  "In Progress",
-  "Paused"
-];
 
 export const postPickingPermission = {} satisfies PermissionRule<
   z.output<typeof postPickingInput>
 >;
 
-/** Picks, un-picks and returns picking-list material, per `type`. */
+/**
+ * Picks, un-picks and returns picking-list material, per `type`.
+ *
+ * A pick is a TRANSFER of material from the warehouse source shelf
+ * (pickingListLine.storageUnitId) to the work center's lineside shelf
+ * (pickingListLine.toStorageUnitId). Consumption happens later at production,
+ * which is why we also point jobMaterial.storageUnitId at the lineside shelf.
+ */
 export async function postPicking(
   ctx: ServiceContext,
   raw: z.input<typeof postPickingInput>
@@ -19513,7 +19472,7 @@ export async function postPicking(
     }
 
     case "returnJobRemainders": {
-      const { jobId, cancelling, userId, companyId } = validatedPayload;
+      const { jobId, userId, companyId } = validatedPayload;
 
       await db.transaction().execute(async (trx) => {
         const job = await trx
@@ -19527,10 +19486,7 @@ export async function postPicking(
         // is provably surplus (completion-time backflush has already run,
         // or the job is being cancelled and will never consume it).
         const sweepable =
-          job.status === "Completed" ||
-          job.status === "Cancelled" ||
-          (cancelling === true &&
-            CANCELLABLE_JOB_STATUSES.includes(job.status));
+          job.status === "Completed" || job.status === "Cancelled";
         if (!sweepable || !job.locationId) return;
 
         await runReturnSweep(trx, {
@@ -20269,9 +20225,6 @@ async function maybeRestoreJobMaterialSource(
     companyId
   );
 }
-// SPDX-License-Identifier: AGPL-3.0-only
-// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
-// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Pure resolver for a spare part returned from a maintenance dispatch: how much
 // of the return carries value, and at what unit cost.
@@ -20284,8 +20237,6 @@ async function maybeRestoreJobMaterialSource(
 // maintenance consumption carried value has no cost row, so returning it must
 // not credit an expense that was never debited. Returns null when nothing is
 // left to reverse — the caller writes the ledger row alone.
-
-const maintenanceReturnCostEPSILON = 1e-6;
 
 export function resolveMaintenanceReturnCost(
   rows: Array<{ quantity: number; cost: number }>,
@@ -20306,11 +20257,7 @@ export function resolveMaintenanceReturnCost(
 
   const outstanding = issuedQuantity - returnedQuantity;
   const quantity = Math.min(Math.abs(returnQuantity), outstanding);
-  if (
-    issuedQuantity < maintenanceReturnCostEPSILON ||
-    quantity < maintenanceReturnCostEPSILON
-  )
-    return null;
+  if (issuedQuantity < EPSILON || quantity < EPSILON) return null;
 
   return { quantity, unitCost: issuedCost / issuedQuantity };
 }
@@ -20886,7 +20833,7 @@ async function issueJobOperationMaterials(
         postingStatus === "Posted"
           ? await getCurrentAccountingPeriod(companyId, trx, today)
           : null;
-      const journalEntryId = await sequenceModule.getNextSequence(
+      const journalEntryId = await sequence.getNextSequence(
         trx,
         "journalEntry",
         companyId
@@ -21180,7 +21127,7 @@ async function createMaterialWipEntries(
     postingStatus === "Posted"
       ? await getCurrentAccountingPeriod(companyId, trx, today)
       : null;
-  const journalEntryId = await sequenceModule.getNextSequence(
+  const journalEntryId = await sequence.getNextSequence(
     trx,
     "journalEntry",
     companyId
@@ -21270,7 +21217,6 @@ function roundedChildTotal(children: { quantity: number | string }[]): number {
   );
 }
 
-const issueMaterialLogger = getLogger("server-functions", "issue");
 // The production-event and inspection links a completion/scrap payload carries
 // are written verbatim into productionQuantity, whose single-column FKs accept
 // any company's row — re-read them under companyId first (one query per table).
@@ -22080,7 +22026,7 @@ async function consumeTrackedEntitiesIntoOperation(
       .where("companyId", "=", companyId)
       .execute();
 
-    issueMaterialLogger.info("Job material quantity updated", {
+    logger.info("Job material quantity updated", {
       materialId: actualMaterialId,
       newQuantityIssued
     });
@@ -22206,7 +22152,7 @@ export async function issueMaterial(
     userId: ctx.auditUserId
   };
 
-  issueMaterialLogger.info(validatedPayload);
+  logger.info(validatedPayload);
 
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
     [];
@@ -22538,7 +22484,7 @@ export async function issueMaterial(
                 locationName = loc.data?.name ?? null;
               }
             }
-            const spawnSerials = await getNextSerialNumbers(trx, {
+            const spawnSerials = await sequence.getNextSerialNumbers(trx, {
               itemId: trackedEntity.itemId,
               companyId,
               count: 1,
@@ -22860,7 +22806,7 @@ export async function issueMaterial(
                 locationCode = loc.data?.code ?? null;
                 locationName = loc.data?.name ?? null;
               }
-              const spawnSerials = await getNextSerialNumbers(trx, {
+              const spawnSerials = await sequence.getNextSerialNumbers(trx, {
                 itemId: makeMethod.itemId,
                 companyId,
                 count: 1,
@@ -22952,7 +22898,7 @@ export async function issueMaterial(
             postingStatus === "Posted"
               ? await getCurrentAccountingPeriod(companyId, trx, todayScrapOp)
               : null;
-          const journalEntryId = await sequenceModule.getNextSequence(
+          const journalEntryId = await sequence.getNextSequence(
             trx,
             "journalEntry",
             companyId
@@ -23060,7 +23006,7 @@ export async function issueMaterial(
         rescheduleJob
       );
       if (rescheduled.error) {
-        issueMaterialLogger.error("Failed to trigger reschedule after scrap", {
+        logger.error("Failed to trigger reschedule after scrap", {
           error: rescheduled.error
         });
       }
@@ -23681,7 +23627,7 @@ export async function issueMaterial(
           // requirement so a replacement can be issued.
           const scrapCost = resolvedItemCost.unitCost * quantity;
           if (scrapCost > 0) {
-            const journalEntryId = await sequenceModule.getNextSequence(
+            const journalEntryId = await sequence.getNextSequence(
               trx,
               "journalEntry",
               companyId
@@ -23815,7 +23761,7 @@ export async function issueMaterial(
                 locationCode = loc.data?.code ?? null;
                 locationName = loc.data?.name ?? null;
               }
-              const spawnSerials = await getNextSerialNumbers(trx, {
+              const spawnSerials = await sequence.getNextSerialNumbers(trx, {
                 itemId: subMakeMethod.itemId,
                 companyId,
                 count: 1,
@@ -23880,12 +23826,9 @@ export async function issueMaterial(
           rescheduleJob
         );
         if (rescheduled.error) {
-          issueMaterialLogger.error(
-            "Failed to trigger reschedule after scrap",
-            {
-              error: rescheduled.error
-            }
-          );
+          logger.error("Failed to trigger reschedule after scrap", {
+            error: rescheduled.error
+          });
         }
       }
 
@@ -24794,7 +24737,7 @@ export async function issueMaterial(
           await trx.insertInto("itemLedger").values(ledgerEntries).execute();
         }
 
-        issueMaterialLogger.info("Entity converted", {
+        logger.info("Entity converted", {
           trackedEntityId,
           oldRevision: oldItem.revision,
           newRevision,
@@ -24954,6 +24897,17 @@ export async function issueMaterial(
 
         const locationId = dispatch.locationId;
 
+        // The company's item: the dispatch item and every entity name it.
+        const item = await trx
+          .selectFrom("item")
+          .where("id", "=", itemId)
+          .where("companyId", "=", companyId)
+          .select(["id", "readableIdWithRevision"])
+          .executeTakeFirst();
+        if (!item) {
+          throw new NotFoundError("Item not found");
+        }
+
         // Calculate total quantity from children
         const totalQuantity = children.reduce(
           (sum, child) => sum + Number(child.quantity),
@@ -24994,12 +24948,23 @@ export async function issueMaterial(
             "in",
             children.map((child) => child.trackedEntityId)
           )
+          .where("companyId", "=", companyId)
           .orderBy("createdAt", "desc")
           .selectAll()
           .execute();
 
         if (trackedEntities.length !== children.length) {
           throw new NotFoundError("Some tracked entities not found");
+        }
+
+        if (
+          trackedEntities.some(
+            (entity) => (entity.itemId ?? entity.sourceDocumentId) !== itemId
+          )
+        ) {
+          throw new InvalidInputError(
+            "Some tracked entities are not of the dispatched item"
+          );
         }
 
         if (trackedEntities.some((entity) => entity.status !== "Available")) {
@@ -25023,14 +24988,6 @@ export async function issueMaterial(
         if (expiredCheck.warning) {
           expiredWarning = expiredCheck.warning;
         }
-
-        // Get item details
-        const item = await trx
-          .selectFrom("item")
-          .where("id", "=", itemId)
-          .where("companyId", "=", companyId)
-          .select(["id", "readableIdWithRevision"])
-          .executeTakeFirstOrThrow();
 
         const maintenanceDispatchItemId = dispatchItem.id;
 

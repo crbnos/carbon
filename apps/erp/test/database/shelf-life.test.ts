@@ -4,7 +4,10 @@
 
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
-import { expiredEntities, expiryVerdict } from "~/modules/shared/shared.service";
+import {
+  expiredEntities,
+  expiryVerdict
+} from "~/modules/shared/shared.service";
 
 const today = parseDate("2026-09-30");
 

@@ -168,8 +168,8 @@ The nine v1 moments and their sites:
 | `production.jobOperationCompleted` | `finishJobOperation`, `apps/mes/app/services/operations.service.ts` |
 | `sales.quoteSent` | `finalizeQuote`, `modules/sales/sales.service.ts` |
 | `sales.quoteAccepted` | `convertQuoteToOrder`, same file |
-| `inventory.receiptPosted` | `x+/receipt+/$receiptId.post.tsx`, below the rollback catch |
-| `inventory.shipmentPosted` | `x+/shipment+/$shipmentId.post.tsx`, below the rollback catch |
+| `inventory.receiptPosted` | `postReceipt`, `modules/inventory/inventory.server.ts`, below the rollback to Draft |
+| `inventory.shipmentPosted` | `postShipment`, same file, below the rollback to Draft |
 | `invoicing.salesInvoicePosted` | `postSalesInvoice`, `modules/invoicing/invoicing.server.ts`, below the rollback to Draft |
 | `invoicing.purchaseInvoicePosted` | `postPurchaseInvoice`, same file, below the rollback to Draft |
 
