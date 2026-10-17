@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { appendFileSync } from "node:fs";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
@@ -66,7 +65,6 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -128,7 +126,6 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { chunked } from "~/modules/shared/shared.service";
-import { getDatabaseClient } from "~/services/database.server";
 import type { StorageItem } from "~/types";
 import { makeDurations } from "~/utils/duration";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -3160,6 +3157,24 @@ export async function updateJobMaterialOrder(
   return Promise.all(updatePromises);
 }
 
+/** A job's operations in their new order, as one statement scoped to the job. Throws. */
+export async function updateJobOperationOrder(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  jobId: string,
+  updates: { id: string; sortOrder: number }[]
+) {
+  return updateSortOrder(db, {
+    table: "jobOperation",
+    column: "order",
+    companyId,
+    userId,
+    parent: { column: "jobId", id: jobId },
+    updates
+  });
+}
+
 export async function updateJobOperationStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3248,19 +3263,27 @@ export async function returnPickedRemaindersForOperation(
 }
 
 /**
- * Job-scope sweep after an explicit job completion (the ERP Complete button).
- * post-picking guards on job.status = 'Completed' and is idempotent.
+ * Job-scope sweep after an explicit job completion (the ERP Complete button),
+ * or, with `cancelling`, before a cancel flips the job's status. post-picking
+ * sweeps a Completed or Cancelled job, or an open one being cancelled, and is
+ * idempotent.
  */
 export async function returnPickedRemaindersForJob(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { jobId: string; userId: string; companyId: string }
+  args: {
+    jobId: string;
+    userId: string;
+    companyId: string;
+    cancelling?: boolean;
+  }
 ) {
   return serverFns
     .as({ client, db, companyId: args.companyId, userId: args.userId })
     .invoke("post-picking", {
       type: "returnJobRemainders",
-      jobId: args.jobId
+      jobId: args.jobId,
+      cancelling: args.cancelling
     });
 }
 
@@ -3278,7 +3301,7 @@ export async function updateProcedureStepOrder(
   return Promise.all(updatePromises);
 }
 
-/** The row write only; `production.event.create` / `.update` also post the time to the GL. */
+/** The row write only; `createProductionEvent` / `updateProductionEvent` also post the time to the GL. */
 export async function upsertProductionEvent(
   client: SupabaseClient<Database>,
   productionEvent:
@@ -3315,7 +3338,7 @@ export async function upsertProductionEvent(
   }
 }
 
-/** The row write only; `production.quantity.create` also refuses a locked job. */
+/** The row write only; `createProductionQuantity` also refuses a locked job. */
 export async function upsertProductionQuantity(
   client: SupabaseClient<Database>,
   productionQuantity:
@@ -3647,7 +3670,7 @@ async function assignJobSerialNumbers(
   }
 }
 
-/** The row write only; `production.job.update` also checks the job and recalculates it. */
+/** The row write only; `updateJobDetails` also checks the job and recalculates it. */
 export async function updateJob(
   client: SupabaseClient<Database>,
   input: {
@@ -3937,7 +3960,7 @@ export async function upsertJobMaterial(
     .single();
 }
 
-/** The row write only; `production.operation.create` / `.update` are the operations. */
+/** The row write only; `createJobOperation` / `updateJobOperation` are the operations. */
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4471,7 +4494,7 @@ export async function setJobOperationToolStepLink(
     .eq("jobOperationStepId", args.jobOperationStepId);
 }
 
-/** The copy only; `production.method.copyToJob` also recalculates the job. */
+/** The copy only; `copyMethodToJob` also recalculates the job. */
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -4557,7 +4580,7 @@ export async function upsertJobMethod(
   });
 }
 
-/** Published as `production.method.copyToMaterial`. */
+/** The copy only; `copyMethodToMaterial` is the operation. */
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -6992,7 +7015,7 @@ export async function getBatchableProcesses(
     .order("name");
 }
 
-/** The batch only; `production.batch.create` also releases its jobs and tells the scheduler. */
+/** The batch only; `createBatch` also releases its jobs and tells the scheduler. */
 export async function createJobOperationBatch(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7022,8 +7045,8 @@ export async function createJobOperationBatch(
 
 /**
  * Any `batch-operations` change, release included. Not published: a release
- * here skips the member jobs; `production.batch.update` / `.release` /
- * `.unrelease` are the operations.
+ * here skips the member jobs; `updateBatch` / `releaseBatches` /
+ * `unreleaseBatch` are the operations.
  */
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
@@ -7046,7 +7069,7 @@ export async function updateJobOperationBatch(
 
 /**
  * Flip a batch to Active. Not published: it does not release the member jobs;
- * `production.batch.release` does both.
+ * `releaseBatches` does both.
  */
 export async function releaseJobOperationBatch(
   client: SupabaseClient<Database>,
@@ -7062,7 +7085,7 @@ export async function releaseJobOperationBatch(
     });
 }
 
-/** The flip only; `production.batch.unrelease` also tells the scheduler. */
+/** The flip only; `unreleaseBatch` also tells the scheduler. */
 export async function unreleaseJobOperationBatch(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -7728,7 +7751,7 @@ async function invalidateAssemblyPlanCache(
  * (e.g. after a geometry-service upgrade that changes nodeIds); routine
  * instruction deletion uses the narrower invalidateAssemblyPlanCache instead.
  *
- * Not published: `production.assembly.reconvertModel` also converts the model again.
+ * Not published: `reconvertAssemblyModel` also converts the model again.
  */
 export async function invalidateAssemblyModelCache(
   client: SupabaseClient<Database>,
@@ -7993,7 +8016,7 @@ export async function updateAssemblyStepMotion(
 // Autosave target for the Details panel's Add/remove component controls: patches
 // only the step's assigned components, leaving the title/typed fields and motion
 // untouched.
-/** Not published: `production.assembly.setStepComponents` also adds the new components' materials. */
+/** Not published: `setAssemblyStepComponents` also adds the new components' materials. */
 export async function updateAssemblyStepComponents(
   client: SupabaseClient<Database>,
   data: {
@@ -8429,7 +8452,7 @@ export async function deleteAssemblySubAssembly(
 // ends up on exactly the target. `remove` (no target) strips them from EVERY
 // step, unassigning them entirely. One transaction: a half-applied move (added
 // to target but not removed from the source, or vice versa) would be a real bug.
-/** Not published: `production.assembly.reassignComponents` also adds the target step's materials. */
+/** Not published: `reassignAssemblyComponents` also adds the target step's materials. */
 export async function reassignAssemblyStepComponents(
   db: Kysely<KyselyDatabase>,
   data: {
@@ -9180,7 +9203,7 @@ export async function getLatestAssemblyPlanJob(
  * the post-action revalidation lands in that gap — nothing polls, and the run
  * (and its finished motions) never surface without a manual reload.
  *
- * The job row only; `production.assembly.replan` and `.generateSteps` start a plan.
+ * The job row only; `replanAssembly` and `generateAssemblySteps` start a plan.
  */
 export async function createAssemblyPlanJob(
   client: SupabaseClient<Database>,
@@ -9248,7 +9271,7 @@ export async function getAssemblyComponentMappings(
     .eq("modelUploadId", modelUploadId);
 }
 
-/** Not published: `production.assembly.mapComponent` also adds the item to the steps. */
+/** Not published: `mapAssemblyComponent` also adds the item to the steps. */
 export async function upsertAssemblyComponentMapping(
   client: SupabaseClient<Database>,
   data: {
@@ -9371,7 +9394,7 @@ export type AutoMatchResult = {
  * quantity matches (a component appearing N times matched to the only BOM line
  * with quantity N) as low-confidence fallbacks. Existing mappings are kept.
  *
- * Not published: `production.assembly.matchBom` also backfills the steps' materials.
+ * Not published: `matchAssemblyBom` also backfills the steps' materials.
  */
 export async function autoMatchAssemblyComponents(
   client: SupabaseClient<Database>,
@@ -9756,7 +9779,7 @@ export function buildAssemblyToolStepLinks(
   return rows;
 }
 
-/** Not published: `production.assembly.syncToOperation` also refuses a locked job. */
+/** Not published: `syncAssemblyToOperation` also refuses a locked job. */
 export async function syncAssemblyInstructionToOperation(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -10237,7 +10260,7 @@ export async function syncAssemblyInstructionToOperation(
  * rather than animating a fabricated colliding path. The author
  * validates/edits the drafts instead of authoring motions by hand.
  *
- * Not published: `production.assembly.generateSteps` also starts a missing plan.
+ * Not published: `generateAssemblySteps` also starts a missing plan.
  */
 export async function generateAssemblyStepsFromPlan(
   client: SupabaseClient<Database>,
@@ -10567,183 +10590,6 @@ export async function getJobMaterialSupplyJobLines(
     itemId: job.itemId,
     status: job.status
   }));
-}
-
-// ---------------------------------------------------------------------------
-// MES-core write entry points exposed to MCP (gatekeeper-carbon asks #1–#4).
-//
-// Each wraps the SAME server function / RPC the MES/ERP UI uses, so an MCP caller drives
-// production as the connected user — companyId/userId come from the OAuth token (injected by the
-// MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
-// scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
-
-// `issueMaterial`, `completeJob`, and `scheduleJob` moved to `production.mcp.server.ts`: they
-// depend on server-only modules (`@carbon/ee/rules.server`, `@carbon/auth/users.server`)
-// that cannot be referenced from this file, which is client-reachable via the module barrel.
-
-/**
- * Complete a job operation by reporting produced quantity (non-tracked items). Re-orchestrates the
- * MES material-complete flow's non-tracked path against the same entry points, so an MCP caller
- * drives it as the connected user:
- *   1. record the produced quantity (productionQuantity insert),
- *   2. backflush consumed material (`issue` server fn, type "jobOperation"),
- *   3. when good + reworked quantity reaches the operation's target, mark it Done — the
- *      sync_finish_job_operation DB trigger then completes the job to inventory if this was the
- *      last operation — post any ended-but-unposted production events for GL, and return picked
- *      remainders.
- *
- * Serial/batch-tracked operations are refused: they require per-entity completion with a
- * trackedEntityId (use the MES station). Authenticated-only, matching the MES complete route.
- *
- * NOTE: mirrors apps/mes complete.tsx (non-tracked branch) + finishJobOperation; these should share
- * a service function eventually rather than duplicate the orchestration.
- */
-export async function completeOperation(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  userId: string,
-  args: {
-    operationId: string;
-    quantity: number;
-  }
-) {
-  const operation = await client
-    .from("jobOperation")
-    .select(
-      "jobId, jobMakeMethodId, quantityComplete, quantityReworked, targetQuantity, operationQuantity"
-    )
-    .eq("id", args.operationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (operation.error || !operation.data) {
-    throw new Error(`Job operation ${args.operationId} was not found.`);
-  }
-
-  // Serial/batch-tracked operations need per-entity completion (a trackedEntityId) — refuse here.
-  if (operation.data.jobMakeMethodId) {
-    const method = await client
-      .from("jobMakeMethod")
-      .select("requiresSerialTracking, requiresBatchTracking")
-      .eq("id", operation.data.jobMakeMethodId)
-      .maybeSingle();
-    if (
-      method.data?.requiresSerialTracking ||
-      method.data?.requiresBatchTracking
-    ) {
-      throw new Error(
-        "This operation's item is serial/batch tracked and must be completed per tracked entity at the MES station."
-      );
-    }
-  }
-
-  // 1. Record produced quantity.
-  const insertProduction = await client
-    .from("productionQuantity")
-    .insert(
-      sanitize({
-        jobOperationId: args.operationId,
-        quantity: args.quantity,
-        type: "Production" as const,
-        companyId,
-        createdBy: userId
-      })
-    )
-    .select("id")
-    .single();
-  if (insertProduction.error) return insertProduction;
-  if (insertProduction.data?.id) {
-    trackWorkEvent("production_quantity_reported", {
-      companyId,
-      userId,
-      productionQuantityId: insertProduction.data.id,
-      jobOperationId: args.operationId,
-      quantity: args.quantity,
-      source: "api"
-    });
-  }
-
-  // 2. Backflush consumed material.
-  const backflush = await serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("issue", {
-      id: args.operationId,
-      type: "jobOperation",
-      quantity: args.quantity
-    });
-  if (backflush.error) return { data: null, error: backflush.error };
-
-  // 3. Finish when good + reworked quantity reaches target (scrap excluded, mirroring the
-  //    sync_update_job_operation_quantities DB predicate).
-  const totalAccounted =
-    (operation.data.quantityComplete ?? 0) +
-    (operation.data.quantityReworked ?? 0) +
-    args.quantity;
-  const target =
-    operation.data.targetQuantity ?? operation.data.operationQuantity ?? 0;
-  if (totalAccounted >= target) {
-    const finished = await client
-      .from("jobOperation")
-      .update({ status: "Done", updatedBy: userId })
-      .eq("id", args.operationId)
-      .eq("companyId", companyId);
-    if (finished.error) return { data: null, error: finished.error };
-
-    // Post ended-but-unposted production events for GL absorption.
-    const unposted = await client
-      .from("productionEvent")
-      .select("id")
-      .eq("jobOperationId", args.operationId)
-      .eq("companyId", companyId)
-      .not("endTime", "is", null)
-      .eq("postedToGL", false);
-    if (unposted.data?.length) {
-      await async.map(
-        unposted.data,
-        (event) =>
-          serverFns
-            .as({ client, db, companyId, userId })
-            .invoke("post-production-event", {
-              productionEventId: event.id
-            }),
-        { concurrency: 4 }
-      );
-    }
-
-    const jobId = operation.data.jobId;
-    if (jobId) {
-      const { error: returnError } = await returnPickedRemaindersForOperation(
-        client,
-        db,
-        { jobOperationId: args.operationId, userId, companyId }
-      );
-      if (returnError) {
-        logger.error("picked-material return sweep failed", {
-          error: returnError,
-          jobId,
-          companyId
-        });
-      }
-
-      await raiseMoment("production.jobOperationCompleted", {
-        outputs: {
-          job: { id: jobId },
-          jobOperation: { id: args.operationId },
-          completedBy: { id: userId }
-        },
-        companyId,
-        actorId: userId
-      });
-      trackWorkEvent("job_operation_finished", {
-        companyId,
-        userId,
-        jobOperationId: args.operationId,
-        jobId
-      });
-    }
-  }
-
-  return backflush;
 }
 
 // ── Planning actions (spec §P1) ────────────────────────────────────────────
@@ -11330,42 +11176,6 @@ export async function createJobDocumentUploadUrl(
     name: args.name
   });
 }
-// TEMPORARY debugging instrumentation for the assembly step save/motion bug.
-// Writes one JSON line per server action hit so we can see exactly which route
-// fires (new vs update vs motion) and with what payload. Remove once resolved.
-const LOG_PATH =
-  "/Users/barbinbrad/Code/carbon-claude-confident-maxwell-dy4fvr/.ai/scratch/e2e/assembly-step-debug.jsonl";
-
-export function logAssemblyStep(
-  event: string,
-  payload: Record<string, unknown>
-) {
-  try {
-    appendFileSync(
-      LOG_PATH,
-      `${JSON.stringify({ at: new Date().toISOString(), event, ...payload })}\n`
-    );
-  } catch {
-    // best-effort; never break the request
-  }
-}
-
-/** Read a request's form data and return both the entries (for logging) and a
- * re-usable FormData clone the validator can consume. */
-export async function readAndLogFormData(request: Request, event: string) {
-  const formData = await request.formData();
-  const entries: Record<string, string> = {};
-  for (const [key, value] of formData.entries()) {
-    entries[key] =
-      typeof value === "string"
-        ? value.length > 300
-          ? `${value.slice(0, 300)}…`
-          : value
-        : "[file]";
-  }
-  logAssemblyStep(event, { url: request.url, entries });
-  return formData;
-}
 /** The `shift` rows returned by getShiftsWithTimes (weekday flags + times). */
 type ShiftRow = {
   startTime: string | null;
@@ -11645,120 +11455,6 @@ export function buildPeopleCapacityBuckets(args: {
   }
 
   return { demandByWorkCenter, scheduledByWorkCenter };
-}
-// Some of these writes reach privileged paths (a SECURITY DEFINER RPC, an
-// Inngest trigger) that bypass RLS: the service functions that call them check
-// the caller's permission for every caller.
-
-/**
- * Issue material to a job operation, enforcing work-center material-issue rules first.
- * Wraps the `issue` server function (type "partToOperation").
- *
- * The work-center rule check fails closed: a failed or empty operation lookup throws rather
- * than silently skipping the rule and letting the server function run unchecked.
- */
-export async function issueMaterial(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string,
-  args: {
-    operationId: string;
-    itemId: string;
-    quantity: number;
-    materialId?: string;
-    jobOperationStepId?: string;
-    adjustmentType?: string;
-    acknowledged?: boolean;
-  }
-) {
-  const { data: jobOp, error: jobOpError } = await client
-    .from("jobOperation")
-    .select("workCenterId")
-    .eq("id", args.operationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  // Fail closed: a failed or empty lookup must not silently skip the work-center
-  // material-issue rule and let the `issue` server function run unchecked.
-  if (jobOpError || !jobOp) {
-    throw new Error(`Job operation ${args.operationId} was not found.`);
-  }
-  const workCenterId = jobOp.workCenterId;
-  if (workCenterId) {
-    const ruleEval = await evaluateLinesForSurface({
-      client,
-      companyId,
-      userId,
-      targetType: "workCenter",
-      surface: "materialIssue",
-      lines: [
-        {
-          lineId: args.operationId,
-          itemId: args.itemId,
-          workCenterId,
-          operation: {
-            id: args.operationId,
-            itemId: args.itemId,
-            quantity: args.quantity,
-            workInstructionId: null
-          },
-          quantity: args.quantity
-        }
-      ]
-    });
-    if (
-      ruleEval.violations.length > 0 &&
-      isBlocked(ruleEval.violations, args.acknowledged ?? false)
-    ) {
-      throw new Error(
-        `Material issue blocked by a work-center rule: ${ruleEval.violations
-          .map((v) => v.message)
-          .join("; ")}`
-      );
-    }
-  }
-
-  return serverFns
-    .as({ client, db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
-      id: args.operationId,
-      type: "partToOperation",
-      itemId: args.itemId,
-      materialId: args.materialId,
-      jobOperationStepId: args.jobOperationStepId,
-      quantity: args.quantity,
-      adjustmentType: args.adjustmentType as
-        | "Negative Adjmt."
-        | "Positive Adjmt."
-        | "Set Quantity"
-    });
-}
-
-/**
- * Schedule or reschedule a job's operations. Routes through
- * `recalculateJobOperationDependencies`, which resolves the job's location and
- * regenerates the whole location IN-PROCESS via `@carbon/planning`
- * (`runLocationSchedule`) — the same in-process path the rest of the app uses.
- * Forecast-first scheduling is a single forward-ASAP pass, so there are no
- * `mode`/`direction` knobs to validate.
- *
- * The scheduling path has no gate of its own: the API gate checks the tool's
- * `production` update permission for every caller. `client` MUST stay named
- * `client` and first — the MCP executor injects it positionally by that exact
- * name; renaming breaks the tool.
- */
-export async function scheduleJob(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string,
-  args: {
-    jobId: string;
-  }
-) {
-  return recalculateJobOperationDependencies(client, getDatabaseClient(), {
-    jobId: args.jobId,
-    companyId,
-    userId
-  });
 }
 // The geometry (assembler) service backs model conversion and motion planning.
 // When it's unreachable those actions can't run, so loaders probe its health and
@@ -12433,7 +12129,10 @@ export async function startAssemblyPlan(
   modelUploadId: string,
   options: { reMotionFor?: string; reDetectUnits?: boolean } = {}
 ) {
-  const created = await createAssemblyPlanJob(ctx.asCaller.supabase, {
+  // The service role: the INSERT needs production_create, and the operations
+  // that start a plan require only update. Every caller read the model under
+  // the company, and the row is written to it.
+  const created = await createAssemblyPlanJob(ctx.asSystem.supabase, {
     modelUploadId,
     companyId: ctx.company.id,
     userId: ctx.auditUserId
@@ -12832,7 +12531,7 @@ export async function assignSerialNumbers(
     return { assigned: count };
   });
 }
-const sandboxLogger = getLogger("server-functions", "configuration-rule");
+const sandboxLogger = getLogger("erp", "configuration-rule");
 
 /**
  * A stored configuration rule is the TypeScript body of `configure(params)`. It is
@@ -12869,7 +12568,7 @@ export async function importTypeScript(code: string): Promise<{
     }
   };
 }
-const getMethodLogger = getLogger("server-functions", "get-method");
+const getMethodLogger = getLogger("erp", "get-method");
 
 /**
  * An operation-step `description` as a tiptap doc for a jsonb column. The

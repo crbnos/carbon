@@ -221,6 +221,14 @@ describe("validator(...).request", () => {
     expect(input.formData).toBeUndefined();
   });
 
+  it("refuses a JSON body that does not parse with a 400", async () => {
+    const thrown = await validator(z.object({ ids: z.array(z.string()) }))
+      .request({ request: post("{not json", "application/json"), params: {} })
+      .catch((e) => e);
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(400);
+  });
+
   it("reads no body without a schema", async () => {
     const input = await validator().request(
       {

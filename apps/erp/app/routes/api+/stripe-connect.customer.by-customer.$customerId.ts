@@ -8,6 +8,7 @@ import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
 import { resolveStripeCustomerForBilling } from "~/modules/invoicing/invoicing.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("stripe-connect");
 
@@ -62,6 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const { resolution } = await resolveStripeCustomerForBilling({
       serviceRole,
+      db: getDatabaseClient(),
       companyId,
       billingCustomerId: customerId,
       // Optional: a contract need not name an invoice contact.

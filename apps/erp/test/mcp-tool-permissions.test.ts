@@ -6,8 +6,9 @@ import { describe, expect, it } from "vitest";
 import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
 // Pins the permission every published operation gates on, against the REAL
-// generated manifest. These permissions gate every API-key call at the oRPC
-// layer, so a change here is an authorization change — it must fail here first.
+// generated manifest. They are read off each service function's own gate,
+// which every API-key call runs, so a change here is an authorization change —
+// it must fail here first.
 
 type Tool = {
   name: string;

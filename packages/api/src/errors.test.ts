@@ -68,6 +68,31 @@ describe("toServerFnError", () => {
     expect(error.status).toBe(404);
   });
 
+  it("withholds a programming error's message", () => {
+    for (const thrown of [
+      new TypeError("Cannot read properties of undefined (reading 'id')"),
+      new ReferenceError("row is not defined"),
+      new RangeError("Invalid array length"),
+      new SyntaxError("Unexpected token")
+    ]) {
+      const error = toError(thrown);
+      expect(error.message).toBe("");
+      expect(error.status).toBe(500);
+    }
+  });
+
+  it("withholds the message of a thrown 5xx, keeping its status and body", () => {
+    const thrown = new ServerFnError("Journal out of balance by 0.02", 500, {
+      journalId: "j1"
+    });
+    const error = toError(thrown);
+    expect(error).toMatchObject({ message: "", status: 500 });
+    expect(error.body).toEqual({ journalId: "j1" });
+    expect(
+      toError(Object.assign(new Error("Upstream down"), { status: 503 }))
+    ).toMatchObject({ message: "", status: 503 });
+  });
+
   it("passes a ServerFnError through with its body", () => {
     const thrown = new InvalidInputError("Some lines are invalid", {
       invalidLineIds: ["l1"]

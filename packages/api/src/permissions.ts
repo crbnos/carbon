@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError } from "./errors";
+
 type Action = "view" | "create" | "update" | "delete";
 
 /** `{ update: "inventory" }`: each action names the module(s) it needs. */
@@ -19,15 +21,27 @@ type KeyedRule<I> = {
 
 export type PermissionRule<I> = Permissions | KeyedRule<I>;
 
+/**
+ * What `rule` requires for `input`. A keyed rule throws `InvalidInputError`
+ * (400) naming its field when the value has no rule of its own: the caller
+ * sent something the operation does not accept, which is not a 403.
+ */
 export function resolvePermissions<I>(
   rule: PermissionRule<I>,
   input: I
 ): Permissions {
   if (typeof rule === "object" && "by" in rule) {
-    const value = (input as Record<string, unknown>)[rule.by];
-    const rules = rule.rules as Record<string, Permissions | undefined>;
-    // Fail closed: a value with no rule is never allowed through.
-    return (typeof value === "string" && rules[value]) || "system";
+    const value = (input as Record<string, unknown> | null | undefined)?.[
+      rule.by
+    ];
+    const rules = rule.rules as Record<string, Permissions>;
+    // Own keys only: an inherited one ("constructor") must not resolve.
+    if (typeof value === "string" && Object.hasOwn(rules, value)) {
+      return rules[value] as Permissions;
+    }
+    throw new InvalidInputError(
+      `Invalid input — ${rule.by}: expected one of ${Object.keys(rules).join(", ")}`
+    );
   }
   return rule as Permissions;
 }

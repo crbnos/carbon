@@ -16,11 +16,13 @@ import type { ServerFnError } from "./errors";
  * What the caller holds. With a `client`, the caller behind it must hold the
  * posting's permission first (as `serverFns.as` checked it); without one, the
  * posting runs as the system on `userId`'s behalf (`serverFns.system`).
+ * Without `companyGroupId`, it is read from the company.
  */
 export type PostingHandles = {
   db: Kysely<KyselyDatabase>;
   companyId: string;
   userId: string;
+  companyGroupId?: string;
   client?: SupabaseClient<Database>;
 };
 

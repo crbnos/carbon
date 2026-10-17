@@ -7,7 +7,7 @@
 // v1 accepts API keys only, sent as `Authorization: Bearer crbn_…` (the convention the
 // rest.carbon.ms proxy uses) or the raw `carbon-key` header. Client + rate limit + plan
 // gate + expiry are handled by reusing the carbon-key branch of requirePermissions; the
-// per-operation scope gate lives in oRPC middleware and reads the scopes we attach here.
+// per-operation check is the service function's gate, which reads the scopes we attach here.
 // The MCP endpoint also accepts an OAuth connector token (`authenticateOAuthToken`).
 
 import {

@@ -5492,9 +5492,6 @@ msgstr "재고 실사 확인"
 msgid "Confirm Mapping"
 msgstr "매핑 확인"
 
-msgid "Confirm Password"
-msgstr "비밀번호 확인"
-
 msgid "Confirm Skip"
 msgstr "건너뛰기 확인"
 
@@ -6623,9 +6620,6 @@ msgstr "현재"
 
 msgid "Current Net Book Value:"
 msgstr "현재 순장부가액:"
-
-msgid "Current Password"
-msgstr "현재 비밀번호"
 
 msgid "Current portion"
 msgstr "유동 부분"
@@ -14224,9 +14218,6 @@ msgstr "신규 책임자"
 
 msgid "New Part"
 msgstr "신규 부품"
-
-msgid "New Password"
-msgstr "새 비밀번호"
 
 msgid "New Payment"
 msgstr "신규 지불"
@@ -25047,9 +25038,6 @@ msgstr "Linear 이슈 업데이트"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "전기된 구매 입고를 기준으로 품목 리드타임을 업데이트합니다."
-
-msgid "Update Password"
-msgstr "비밀번호 업데이트"
 
 msgid "Update Permissions"
 msgstr "권한 업데이트"

@@ -78,6 +78,7 @@ import {
   RestoreIncludeChoice,
   RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -153,7 +154,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
     // Backup objects are service-role only; the checks above gate this route.
-    getCompanyBackups(getCarbonServiceRole(), companyId),
+    getCompanyBackups(getCarbonServiceRole(), getDatabaseClient(), companyId),
     getCompanyRestoreRuns(client, companyId),
     getCompanyExportRun(client, companyId)
   ]);
@@ -361,7 +362,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // start" call for opposite next actions, and only the second is lossy.
       let deleted: Array<{ table: string; rows: number }>;
       try {
-        ({ deleted } = await purgeCorruptedRows(companyId));
+        ({ deleted } = await purgeCorruptedRows(
+          getDatabaseClient(),
+          companyId
+        ));
       } catch (err) {
         return {
           success: false,

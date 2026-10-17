@@ -11,7 +11,6 @@ import {
 import type { PermissionRule } from "@carbon/api/permissions";
 import {
   CarbonError,
-  type ErrorCategory,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { hasPermission } from "@carbon/auth";
@@ -133,6 +132,7 @@ import {
 } from "../production/planning-action-claims";
 import * as sharedPostings from "../shared/shared.service";
 import {
+  fromServerFn,
   invokePosting,
   invokePostingOrThrow,
   upsertExternalLink
@@ -6166,28 +6166,6 @@ export async function draftLeaseSetupPath(
   return path.to.leaseSetup(id, "assets");
 }
 
-/** A server function's refusal as this function's error: its status picks
- *  the category, and an empty message (a data-layer failure) is `fallback`. */
-export function fromServerFn(
-  ctx: ServiceContext,
-  error: { status: number; message: string },
-  fallback: string
-): CarbonError {
-  const category: ErrorCategory =
-    error.status === 400
-      ? "validation"
-      : error.status === 403
-        ? "forbidden"
-        : error.status === 404
-          ? "notFound"
-          : error.status === 409
-            ? "conflict"
-            : error.status < 500
-              ? "rule"
-              : "internal";
-  return ctx.error(category, error.message || fallback, error);
-}
-
 /** Signed links to a supplier interaction's documents, for an email. A file
  *  that cannot be signed is logged and left out. */
 export async function interactionAttachments(
@@ -6461,8 +6439,7 @@ export async function writeClassificationOverride(
             old: line.data.classificationOverrideReason,
             new: override?.reason ?? null
           }
-        },
-        metadata: { origin: "web" }
+        }
       }
     ]);
   } catch (err) {

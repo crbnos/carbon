@@ -65,22 +65,24 @@ export const createShift = defineServiceFn({
  *
  * @remarks
  * Saves the shift, then marks the company's active jobs as needing a new
- * schedule, because the hours people can work have changed.
+ * schedule, because the hours people can work have changed. Refused when the
+ * shift is not the company's.
  *
  * @mcp
  */
 export const updateShift = defineServiceFn({
   input: shiftInput.extend({ id: z.string().min(1) }),
-  // The route always required create, not update, to edit a shift.
-  permission: { create: "people" },
+  permission: { update: "people" },
   async run(ctx, shift) {
     const updated = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
+      companyId: ctx.company.id,
       updatedBy: ctx.auditUserId
     });
     if (updated.error) {
-      return ctx.error("internal", "Failed to create shift", updated.error);
+      return ctx.error("internal", "Failed to update shift", updated.error);
     }
+    if (!updated.data) return ctx.error("notFound", "Shift not found");
     await notifyScheduleInputsChanged(
       ctx.company.id,
       "shift",

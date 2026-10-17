@@ -15,9 +15,10 @@ export class ServerFnError extends Error {
   constructor(
     message: string,
     status = 500,
-    body: Record<string, unknown> = {}
+    body: Record<string, unknown> = {},
+    options?: { cause?: unknown }
   ) {
-    super(message);
+    super(message, options);
     this.name = new.target.name;
     this.status = status;
     this.body = body;
@@ -98,14 +99,35 @@ export function toServerFnError(
   return error;
 }
 
+/** A defect, not a refusal: its message is about our code, never the caller's. */
+const PROGRAMMING_ERRORS = [TypeError, ReferenceError, RangeError, SyntaxError];
+
+/**
+ * A failure that is ours keeps its status and loses its message (logged by
+ * `toServerFnError`): a programming error, or a thrown status of 500 or
+ * more. A plain `Error` with no status of its own is an authored refusal
+ * and keeps its message at `defaultStatus`, as the engines rely on.
+ */
 function toError(err: unknown, defaultStatus: number): ServerFnError {
-  if (err instanceof ServerFnError) return err;
+  // The blanked error keeps the original as its `cause`: callers never see
+  // it, but an operator report (e.g. `classifyRepairFailure`) can.
+  if (err instanceof ServerFnError) {
+    return err.status >= 500 && err.message
+      ? new ServerFnError("", err.status, err.body, { cause: err })
+      : err;
+  }
   if (isZodError(err)) return new InvalidInputError(summarizeIssues(err));
+  if (PROGRAMMING_ERRORS.some((type) => err instanceof type)) {
+    return new ServerFnError("", 500, {}, { cause: err });
+  }
 
   const { status, message } = (err ?? {}) as {
     status?: unknown;
     message?: unknown;
   };
+  if (isHttpErrorStatus(status) && status >= 500) {
+    return new ServerFnError("", status, {}, { cause: err });
+  }
   const text = typeof err === "string" ? err : message;
   return new ServerFnError(
     typeof text === "string" && !isDataLayerError(err) ? text : "",

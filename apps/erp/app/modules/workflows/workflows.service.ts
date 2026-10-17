@@ -22,7 +22,6 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import { getDatabaseClient } from "~/services/database.server";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
@@ -552,9 +551,13 @@ const lockCompany: CompanyLock = (trx, companyId) =>
  * DANGER: `syncWorkflowTriggers` uses Kysely and bypasses RLS entirely, so the
  * calling route's `requirePermissions` is the only authorization gate on it.
  */
-async function syncAndWake(companyId: string, workflowId: string) {
+async function syncAndWake(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  workflowId: string
+) {
   const sync = await syncWorkflowTriggers(
-    getDatabaseClient(),
+    db,
     companyId,
     workflowId,
     lockCompany
@@ -573,6 +576,7 @@ async function syncAndWake(companyId: string, workflowId: string) {
 
 export async function publishWorkflowVersion(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     workflowId,
     versionId,
@@ -624,7 +628,7 @@ export async function publishWorkflowVersion(
     return { ok: false, issues: [], message: promoted.error.message };
   }
 
-  return syncAndWake(companyId, workflowId);
+  return syncAndWake(db, companyId, workflowId);
 }
 
 /**
@@ -635,6 +639,7 @@ export async function publishWorkflowVersion(
  */
 export async function unpublishWorkflow(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     workflowId,
     companyId,
@@ -661,7 +666,7 @@ export async function unpublishWorkflow(
 
   // Unpublishing must still sync — that is what deletes the trigger rows and clears
   // nextRunAt, which is what actually stops the workflow firing.
-  return syncAndWake(companyId, workflowId);
+  return syncAndWake(db, companyId, workflowId);
 }
 
 /**

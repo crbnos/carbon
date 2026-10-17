@@ -14,6 +14,7 @@ import {
   getLocationTimeZone,
   getOrCreatePeriods
 } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -44,6 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get current date to determine future periods
   const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     52
   );

@@ -41,13 +41,16 @@ vi.mock("../app/modules/inventory/inventory.service", async (importOriginal) => 
   ...(await importOriginal<object>()),
   getInventoryCount: vi.fn(),
   insertManualInventoryAdjustment: vi.fn(),
-  postInventoryCount: vi.fn()
+  postInventoryCount: vi.fn(),
+  // Reads the item's tracking type; the serial cap has its own database test.
+  serialQuantityRefusal: vi.fn(async () => null)
 }));
 
 import { ServerFnError } from "@carbon/api/errors";
 import {
   getInventoryCount,
   insertManualInventoryAdjustment,
+  pickRefusal,
   postInventoryCount as postCount
 } from "../app/modules/inventory/inventory.service";
 import {
@@ -227,5 +230,34 @@ describe("postInventoryCount", () => {
       category: "notFound",
       message: "Inventory count not found"
     });
+  });
+});
+
+describe("pickRefusal", () => {
+  it("shows a refusal written for the picker", () => {
+    expect(
+      pickRefusal(ctx(), "This picking list is closed. Reopen it to make changes.")
+    ).toMatchObject({
+      category: "rule",
+      message: "This picking list is closed. Reopen it to make changes."
+    });
+    expect(
+      pickRefusal(ctx(), new ServerFnError("Cannot pick more than 3", 400))
+    ).toMatchObject({ category: "validation", message: "Cannot pick more than 3" });
+  });
+
+  it("hides a database or server failure behind a generic message", () => {
+    const database = {
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "pickingListLine_pkey"'
+    };
+
+    expect(pickRefusal(ctx(), database)).toMatchObject({
+      category: "internal",
+      message: "Failed to pick line"
+    });
+    expect(
+      pickRefusal(ctx(), new ServerFnError("relation does not exist", 500))
+    ).toMatchObject({ category: "internal", message: "Failed to pick line" });
   });
 });

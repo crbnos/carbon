@@ -185,6 +185,29 @@ describe("the gate", () => {
       "forbidden"
     );
   });
+
+  it("refuses a keyed value with no rule as invalid input, not forbidden", async () => {
+    const post = defineServiceFn({
+      input: z.object({ kind: z.string() }),
+      permission: {
+        by: "kind",
+        rules: { read: { view: "production" } } as Record<
+          string,
+          { view: string }
+        >
+      },
+      async run() {
+        return "ran";
+      }
+    });
+    const { error } = await post(contextWith({}, user(productionView)), {
+      kind: "constructor"
+    });
+    expect(error).toMatchObject({
+      category: "validation",
+      message: "Invalid input — kind: expected one of read"
+    });
+  });
 });
 
 describe("ctx.can", () => {

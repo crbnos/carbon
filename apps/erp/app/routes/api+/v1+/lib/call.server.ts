@@ -4,8 +4,9 @@
 
 // The ONE server-side entry point for running a Carbon API operation outside HTTP:
 // MCP call_tool, the in-app agent, and the workflow dispatcher all call this. It
-// runs the operation through the real oRPC procedure (gate middleware included) via
-// server-side call(), and folds the outcome into a { success, … } envelope.
+// runs the operation through the real oRPC procedure (its service function's gate
+// included) via server-side call(), and folds the outcome into a { success, … }
+// envelope.
 
 import { call, ORPCError } from "@orpc/server";
 import type { AuthedContext } from "./base.server";

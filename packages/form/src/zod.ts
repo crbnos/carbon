@@ -38,6 +38,15 @@ type RequestOptions<P extends string> = {
   params?: readonly P[];
 };
 
+/** The caller sent a body that is not JSON: a 400, not a 500 from the parse. */
+async function jsonBody(request: Request): Promise<Record<string, unknown>> {
+  try {
+    return (await request.json()) as Record<string, unknown>;
+  } catch {
+    throw new Response("The request body is not valid JSON", { status: 400 });
+  }
+}
+
 export type ValidatedRequest<T, P extends string> =
   | { data: T; params: Record<P, string>; formData: FormData | undefined }
   | { invalid: ReturnType<typeof validationError> };
@@ -112,7 +121,7 @@ export function validator<Schema extends z.ZodType = z.ZodObject<{}>>(
         ?.includes("application/json");
       const formData = isJson ? undefined : await request.formData();
       const result = await validate.validate(
-        formData ?? ((await request.json()) as Record<string, unknown>)
+        formData ?? (await jsonBody(request))
       );
       if (result.error) {
         return { invalid: validationError(result.error, result.submittedData) };

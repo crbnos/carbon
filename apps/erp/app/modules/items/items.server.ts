@@ -62,133 +62,6 @@ import * as utils from "./items.utils";
 
 const logger = getLogger("erp", "change-orders");
 
-// An item page's layout and its tab loaders run in ONE request and each read the
-// item's methods and change notices. These share that read across the loaders;
-// on a mutation they are plain calls, so a revalidation never sees stale rows.
-// Release-lock helpers — gate BOM/BOP mutations on a released (Production)
-// revision. A Production revision is the controlled, released make method;
-// changes must flow through a change notice. The pending revision an ECO creates
-// is Design/Prototype (NOT Production), so it stays editable.
-// The FK chain from each lock kind up to its owning make method, expressed once.
-// The two lock inputs (the item's revisionStatus and the owning change notice's
-// status) hang off that method, so one nested select answers both — walking the
-// chain twice would double a query that runs on every BOM/BOP mutation.
-// `methodMaterial` has two FKs to `makeMethod` (makeMethodId and
-// materialMakeMethodId); the parent method is methodMaterial_methodId_fkey.
-// Every base query is scoped by companyId (defense-in-depth; the id is a global
-// UUID but tenant scoping is a golden rule). The lock is advisory — RLS +
-// requirePermissions are the real boundary — so a null/unresolvable status
-// leaves the gate open by design (see checkRevisionLock).
-// Read variant for loaders that need the raw lock state (revisionStatus +
-// releaseControl) to drive read-only UI. A revision is locked ONLY when it is
-// "Production".
-// The single guard entry point for mutation routes: resolves the entity's
-// parent item and returns the enforce/warn/off verdict. A missing/null id
-// (cannot resolve) leaves the lock unlocked, so the gate is safely skipped.
-// =============================================================================
-// Change Notices — server-only helpers (imports @carbon/jobs).
-// =============================================================================
-// Why a change notice's engineering content cannot be edited, or null. An
-// approval request can only be pending at Engineering Complete (approval gates
-// the move to Implementation), so only that stage pays for the lookup;
-// approvalRequest is service-role only.
-// One status read + predicate. Mutation routes call this before writing; the
-// UI disable is cosmetic on top of it.
-// The inverse gate: an item owned by an open change notice must not get a manual
-// revision, because the notice authors it. Fails closed — a lookup we couldn't
-// read cannot prove the item is free.
-// Child rows (affected items, action tasks) are addressed by their own id, so
-// authorizing the change notice in the URL proves nothing about the row being
-// mutated — an editable notice's URL would otherwise let a user mutate a frozen
-// notice's rows. Same failure contract as requireEditableChangeNoticeRoute;
-// null means the route may proceed.
-// The route-level guard: resolves the change notice from the URL, checks the
-// scope, and returns the flashed failure response so all eight mutation routes
-// share one failure contract. Returns null when the route may proceed.
-// Maps a notifying stage to its notification event. Only Start / Implementation
-// / Done notify; Draft / Engineering Complete are silent, so callers simply
-// don't invoke this for those stages.
-// Notifies the people involved in the CO — its assignee plus every action-task
-// assignee — on a stage entry (best-effort). Deliberately NOT a company-wide
-// broadcast; the notify function dedupes and drops the acting user itself.
-// =============================================================================
-// applyChangeNotice — the top-to-bottom "release", run on the Implementation →
-// Done transition (this function IS that transition). It materializes each
-// affected item's CO-staged end-state onto a NEW inactive revision, activates
-// it, then auto-writes the oldRev → newRev supersession (Q1/Q2/Q5).
-//
-// Atomicity (G2): createRevision + activateMethodVersion call the get-method /
-// convert operations, each of which commits its own transaction, so this CANNOT
-// be one Kysely transaction. The apply is therefore an idempotent, CAS-guarded orchestration:
-//   - PER-AFFECTED-ITEM idempotency: each changeOrderAffectedItem gets its
-//     created revision id stamped into `newItemId` at the END of its processing.
-//     A re-run skips any affected item whose `newItemId` is already set, so a
-//     partial failure re-run resumes at the first unprocessed item instead of
-//     re-creating revisions.
-//   - CO-LEVEL idempotency: the final flip to 'Done' is a compare-and-swap on
-//     status='Implementation', so a re-run can't double-transition the CO; only
-//     the closing status flip is transactional.
-// =============================================================================
-// -----------------------------------------------------------------------------
-// releaseAffectedItem (v2) — dispatch by change type. The CO-owned Draft make
-// method already holds the edited BOM/BOP, so release just:
-//   Version          → activate the Draft on the SAME item (prior Active →
-//                      Archived); no new item, no supersession.
-//   Revision         → activate the Draft + reveal the new revision item + auto
-//                      oldRev→newRev supersession.
-//   Replacement Part → activate the Draft + reveal the new part + auto
-//                      affected→new supersession.
-//   New Part         → activate the Draft + reveal the net-new part; NO
-//                      supersession (no predecessor).
-// Idempotent: once the Draft's changeOrderId is cleared it counts as released.
-// -----------------------------------------------------------------------------
-// Coerce a possibly-null DB supersession mode to a valid enum member, defaulting
-// to 'Consume First' (Q3 default) when unset/invalid.
-// -----------------------------------------------------------------------------
-// Unreleased-change-order guard.
-//
-// Release is what activates a change notice's items: `applyChangeNotice` flips
-// `active` on the revisions and parts the notice minted. Nothing stops a user
-// switching the Active toggle on by hand first, and once it is on the item is
-// selectable everywhere — carrying the notice's un-approved draft BOM, since a
-// minted revision's only make method is that Draft and `activeMakeMethods` falls
-// back to it when no Active version exists.
-//
-// So two kinds of write ask this question: one that would ACTIVATE such an item,
-// and one that would CONSUME it (a sales order line, a purchase order line, a
-// job).
-//
-// `item.changeOrderId` is NOT a draft marker on its own — release leaves it in
-// place as a provenance back-link, so the owning change order's status decides.
-// Release IS the Implementation -> Done transition, so every other status means
-// the item is still a draft.
-//
-// Pass a service-role client: reading `changeOrder` requires `parts_view`, which
-// the caller need not have.
-// -----------------------------------------------------------------------------
-// Both reads go through fetchAllByIds: an `in` filter rides in the URL and a
-// response stops at PostgREST's row cap. Truncating either one would drop an
-// item from the answer, and a missing row reads as "no change order holds it".
-
-// Two queries per batch of ids — the bulk item update can carry a whole table
-// selection.
-//
-// `error` is a message to show the user, not a thrown failure — a read that did
-// not answer says nothing about the items, so callers block on it rather than
-// wave the write through on a database blip.
-// Single-item form for the loaders that only need to know whether to lock the
-// Active toggle on this one item's page. Best-effort: a failed read leaves the
-// toggle unlocked, and the action behind it still refuses the write.
-// Single-item form for the actions that put an item into circulation. Returns
-// the reason to refuse, or null. Unlike the loader form this fails closed: a
-// read that did not answer says nothing about the item.
-//
-// Deliberately does NOT judge `active`. Plain inactive items are allowed onto
-// these documents today, and changing that is a separate decision from closing
-// the change order hole.
-// Names every offending item so a bulk edit says which row to fix.
-// Not awaited by the item layouts: only the header badge and the properties
-// sidebar read these, so they stream instead of holding the page.
 // ── Item fields (the items tables' bulk actions and the properties panels) ──
 
 /** The `custom-*` fields of a form, by field id (`setCustomFields`). */
@@ -1795,6 +1668,12 @@ export const activateMethodVersion = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      [{ kind: "makeMethod", id: input.id }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.activateMethodVersion(
@@ -2098,6 +1977,12 @@ export const deleteMethodMaterial = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "material", id: input.id }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.deleteMethodMaterial(
@@ -2136,6 +2021,13 @@ export const deleteMethodOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const refusal = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { stepId: input.id },
+      { revisionLock: true }
+    );
+    if (refusal) return ctx.error("rule", refusal);
     return envelope(
       ctx,
       await service.deleteMethodOperationStep(
@@ -2155,6 +2047,12 @@ export const deleteMethodOperationStepSlide = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const refusal = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { slideId: input.id }
+    );
+    if (refusal) return ctx.error("rule", refusal);
     return envelope(
       ctx,
       await service.deleteMethodOperationStepSlide(
@@ -2174,6 +2072,12 @@ export const deleteMethodOperationParameter = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "parameter", id: input.id }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.deleteMethodOperationParameter(
@@ -2193,6 +2097,12 @@ export const deleteMethodOperationTool = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "tool", id: input.id }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.deleteMethodOperationTool(
@@ -3858,6 +3768,13 @@ export const updateMaterialOrder = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRowMethodLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      "methodMaterial",
+      input.updates.map((update) => update.id)
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelopes(
       ctx,
       await service.updateMaterialOrder(
@@ -3879,6 +3796,13 @@ export const updateOperationOrder = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRowMethodLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      "methodOperation",
+      input.updates.map((update) => update.id)
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelopes(
       ctx,
       await service.updateOperationOrder(
@@ -4586,6 +4510,12 @@ export const createMethodMaterial = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "makeMethod", id: input.makeMethodId }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodMaterial(
@@ -4637,6 +4567,15 @@ export const updateMethodMaterial = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [
+        { kind: "material", id: input.id },
+        { kind: "makeMethod", id: input.makeMethodId }
+      ]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodMaterial(
@@ -4739,6 +4678,12 @@ export const createMethodOperation = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "makeMethod", id: input.makeMethodId }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodOperation(
@@ -4843,6 +4788,15 @@ export const updateMethodOperation = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [
+        { kind: "operation", id: input.id },
+        { kind: "makeMethod", id: input.makeMethodId }
+      ]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodOperation(
@@ -4895,6 +4849,13 @@ export const createMethodOperationStep = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const refusal = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { operationId: input.operationId },
+      { revisionLock: true }
+    );
+    if (refusal) return ctx.error("rule", refusal);
     return envelope(
       ctx,
       await service.upsertMethodOperationStep(
@@ -4949,6 +4910,18 @@ export const updateMethodOperationStep = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    for (const ref of [
+      { stepId: input.id },
+      { operationId: input.operationId }
+    ]) {
+      const refusal = await service.methodStepRefusal(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        ref,
+        { revisionLock: true }
+      );
+      if (refusal) return ctx.error("rule", refusal);
+    }
     return envelope(
       ctx,
       await service.upsertMethodOperationStep(
@@ -4973,6 +4946,12 @@ export const duplicateMethodOperationStep = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const refusal = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { stepId: input.id }
+    );
+    if (refusal) return ctx.error("rule", refusal);
     return envelope(
       ctx,
       await service.duplicateMethodOperationStep(
@@ -5020,6 +4999,12 @@ export const createMethodOperationStepSlide = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const refusal = await service.methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { stepId: input.stepId }
+    );
+    if (refusal) return ctx.error("rule", refusal);
     return envelope(
       ctx,
       await service.upsertMethodOperationStepSlide(
@@ -5074,6 +5059,14 @@ export const updateMethodOperationStepSlide = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    for (const ref of [{ slideId: input.id }, { stepId: input.stepId }]) {
+      const refusal = await service.methodStepRefusal(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        ref
+      );
+      if (refusal) return ctx.error("rule", refusal);
+    }
     return envelope(
       ctx,
       await service.upsertMethodOperationStepSlide(
@@ -5110,6 +5103,12 @@ export const createMethodOperationParameter = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "operation", id: input.operationId }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodOperationParameter(
@@ -5148,6 +5147,15 @@ export const updateMethodOperationParameter = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [
+        { kind: "parameter", id: input.id },
+        { kind: "operation", id: input.operationId }
+      ]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodOperationParameter(
@@ -5184,6 +5192,12 @@ export const createMethodOperationTool = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [{ kind: "operation", id: input.operationId }]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodOperationTool(
@@ -5222,6 +5236,15 @@ export const updateMethodOperationTool = defineServiceFn({
     .required({ id: true }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const lock = await service.checkRevisionLocks(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [
+        { kind: "tool", id: input.id },
+        { kind: "operation", id: input.operationId }
+      ]
+    );
+    if (!lock.ok) return ctx.error("rule", lock.message);
     return envelope(
       ctx,
       await service.upsertMethodOperationTool(
@@ -5251,12 +5274,53 @@ export const setMethodMaterialStepLink = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const refusal = await service.methodStepRefusal(client, ctx.company.id, {
+      stepId: input.methodOperationStepId
+    });
+    if (refusal) return ctx.error("rule", refusal);
+
+    // A step's share never exceeds the bill of materials line: the line is what
+    // the method requires. A step that uses none of a part is unlinked instead.
+    if (input.linked && input.quantity != null) {
+      if (!(input.quantity > 0)) {
+        return ctx.error("validation", "A step's quantity must be above zero");
+      }
+      const material = await client
+        .from("methodMaterial")
+        .select("quantity")
+        .eq("id", input.methodMaterialId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (material.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load method material",
+          material.error
+        );
+      }
+      if (!material.data) {
+        return ctx.error("notFound", "Method material not found");
+      }
+      if (
+        material.data.quantity !== null &&
+        input.quantity > material.data.quantity
+      ) {
+        return ctx.error(
+          "validation",
+          "A step cannot use more than the bill of materials line"
+        );
+      }
+    }
+
     return envelope(
       ctx,
-      await service.setMethodMaterialStepLink(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId"]) as never
-      )
+      await service.setMethodMaterialStepLink(client, {
+        methodMaterialId: input.methodMaterialId,
+        methodOperationStepId: input.methodOperationStepId,
+        linked: input.linked,
+        quantity: input.quantity
+      })
     );
   }
 });
@@ -5275,12 +5339,34 @@ export const setMethodOperationToolStepLink = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const step = await client
+      .from("methodOperationStep")
+      .select("operationId")
+      .eq("id", input.methodOperationStepId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (step.error) {
+      return ctx.error("internal", "Failed to load the step", step.error);
+    }
+    if (step.data?.operationId !== input.operationId) {
+      return ctx.error("notFound", "The step is not on this operation");
+    }
+    const refusal = await service.methodStepRefusal(client, ctx.company.id, {
+      operationId: input.operationId
+    });
+    if (refusal) return ctx.error("rule", refusal);
+
     return envelope(
       ctx,
-      await service.setMethodOperationToolStepLink(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
-      )
+      await service.setMethodOperationToolStepLink(client, {
+        operationId: input.operationId,
+        toolId: input.toolId,
+        methodOperationStepId: input.methodOperationStepId,
+        linked: input.linked,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
     );
   }
 });
@@ -6092,6 +6178,18 @@ export const updateChangeNotice = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeEditable(
+      ctx.asCaller.supabase,
+      {
+        changeNoticeId: input.id,
+        companyId: ctx.company.id,
+        scope:
+          input.reasonForChange !== undefined || input.description !== undefined
+            ? "engineering"
+            : "workflow"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.updateChangeNotice(
@@ -6296,6 +6394,15 @@ export const addChangeNoticeAffectedItem = defineServiceFn({
   }),
   permission: { create: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeEditable(
+      ctx.asCaller.supabase,
+      {
+        changeNoticeId: input.changeNoticeId,
+        companyId: ctx.company.id,
+        scope: "engineering"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.addChangeNoticeAffectedItem(
@@ -6324,6 +6431,16 @@ export const updateChangeNoticeAffectedItemChangeType = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeChildEditable(
+      ctx.asCaller.supabase,
+      {
+        table: "changeOrderAffectedItem",
+        id: input.id,
+        companyId: ctx.company.id,
+        scope: "engineering"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.updateChangeNoticeAffectedItemChangeType(
@@ -6354,6 +6471,16 @@ export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeChildEditable(
+      ctx.asCaller.supabase,
+      {
+        table: "changeOrderAffectedItem",
+        id: input.id,
+        companyId: ctx.company.id,
+        scope: "engineering"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.updateChangeNoticeAffectedItemCutover(
@@ -6393,6 +6520,16 @@ export const removeChangeNoticeAffectedItem = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeChildEditable(
+      ctx.asCaller.supabase,
+      {
+        table: "changeOrderAffectedItem",
+        id: input.id,
+        companyId: ctx.company.id,
+        scope: "engineering"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.removeChangeNoticeAffectedItem(
@@ -6457,6 +6594,16 @@ export const updateChangeNoticeActionStatus = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeChildEditable(
+      ctx.asCaller.supabase,
+      {
+        table: "changeOrderActionTask",
+        id: input.id,
+        companyId: ctx.company.id,
+        scope: "workflow"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.updateChangeNoticeActionStatus(
@@ -6476,6 +6623,16 @@ export const deleteChangeNoticeAction = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeChildEditable(
+      ctx.asCaller.supabase,
+      {
+        table: "changeOrderActionTask",
+        id: input.id,
+        companyId: ctx.company.id,
+        scope: "workflow"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.deleteChangeNoticeAction(
@@ -6498,6 +6655,15 @@ export const updateChangeNoticeActionOrder = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeEditable(
+      ctx.asCaller.supabase,
+      {
+        changeNoticeId: input.changeNoticeId,
+        companyId: ctx.company.id,
+        scope: "workflow"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return plain(
       ctx,
       await service.updateChangeNoticeActionOrder(
@@ -6638,6 +6804,15 @@ export const setChangeNoticeActionTasks = defineServiceFn({
   }),
   permission: { update: "parts" },
   async run(ctx, input) {
+    const locked = await service.requireChangeNoticeEditable(
+      ctx.asCaller.supabase,
+      {
+        changeNoticeId: input.changeNoticeId,
+        companyId: ctx.company.id,
+        scope: "workflow"
+      }
+    );
+    if (locked) return ctx.error("rule", locked.error.message);
     return envelope(
       ctx,
       await service.setChangeNoticeActionTasks(

@@ -47,7 +47,7 @@ import { refuseUnlessOwned } from "~/modules/shared/shared.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import * as accountingPostings from "../accounting/accounting.service";
 import * as purchasingPostings from "../purchasing/purchasing.service";
-import { invokePosting } from "../shared/shared.service";
+import { fromServerFn, invokePosting } from "../shared/shared.service";
 import {
   isMemoLocked,
   paymentValidator,
@@ -495,11 +495,7 @@ export const voidSalesInvoice = defineServiceFn({
       service.postSalesInvoice
     );
     if (voided.error) {
-      return service.fromServerFn(
-        ctx,
-        voided.error,
-        "Failed to void sales invoice"
-      );
+      return fromServerFn(ctx, voided.error, "Failed to void sales invoice");
     }
     return { invoiceId };
   }
@@ -577,7 +573,7 @@ export const postSalesInvoice = defineServiceFn({
     acknowledged: z.boolean().default(false),
     locale: z.string().default("en-US")
   }),
-  permission: { create: "invoicing" },
+  permission: { update: "invoicing" },
 
   async run(ctx, input) {
     const { invoiceId, notification, customerContact, locale } = input;
@@ -729,11 +725,7 @@ export const postSalesInvoice = defineServiceFn({
           error: released.error
         });
       }
-      return service.fromServerFn(
-        ctx,
-        posted.error,
-        "Failed to post sales invoice"
-      );
+      return fromServerFn(ctx, posted.error, "Failed to post sales invoice");
     }
 
     // Override evidence only once the post has committed.
@@ -1087,7 +1079,7 @@ export const postPurchaseInvoice = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.fromServerFn(
+        return fromServerFn(
           ctx,
           posted.error,
           "Failed to post purchase invoice"
@@ -1197,11 +1189,7 @@ export const voidPurchaseInvoice = defineServiceFn({
       service.postPurchaseInvoice
     );
     if (voided.error) {
-      return service.fromServerFn(
-        ctx,
-        voided.error,
-        "Failed to void purchase invoice"
-      );
+      return fromServerFn(ctx, voided.error, "Failed to void purchase invoice");
     }
     return { invoiceId };
   }
@@ -1545,7 +1533,7 @@ export const postPayment = defineServiceFn({
       service.postPayment
     );
     if (posted.error) {
-      return service.fromServerFn(ctx, posted.error, "Failed to post payment");
+      return fromServerFn(ctx, posted.error, "Failed to post payment");
     }
     return { paymentId };
   }
@@ -1577,7 +1565,7 @@ export const voidPayment = defineServiceFn({
       service.postPayment
     );
     if (voided.error) {
-      return service.fromServerFn(ctx, voided.error, "Failed to void payment");
+      return fromServerFn(ctx, voided.error, "Failed to void payment");
     }
     return { paymentId };
   }
@@ -1611,7 +1599,7 @@ export const postMemo = defineServiceFn({
       service.postMemo
     );
     if (posted.error) {
-      return service.fromServerFn(ctx, posted.error, "Failed to post memo");
+      return fromServerFn(ctx, posted.error, "Failed to post memo");
     }
     return { memoId };
   }
@@ -1643,7 +1631,7 @@ export const voidMemo = defineServiceFn({
       service.postMemo
     );
     if (voided.error) {
-      return service.fromServerFn(ctx, voided.error, "Failed to void memo");
+      return fromServerFn(ctx, voided.error, "Failed to void memo");
     }
     return { memoId };
   }
@@ -1727,7 +1715,7 @@ export const voidCharge = defineServiceFn({
       accountingPostings.postCharge
     );
     if (voided.error) {
-      return service.fromServerFn(ctx, voided.error, "Failed to void charge");
+      return fromServerFn(ctx, voided.error, "Failed to void charge");
     }
     return { chargeId };
   }
@@ -1908,11 +1896,7 @@ export const postReimbursement = defineServiceFn({
       accountingPostings.postReimbursement
     );
     if (posted.error) {
-      return service.fromServerFn(
-        ctx,
-        posted.error,
-        "Failed to post reimbursement"
-      );
+      return fromServerFn(ctx, posted.error, "Failed to post reimbursement");
     }
     return { reimbursementId };
   }
@@ -1946,11 +1930,7 @@ export const voidReimbursement = defineServiceFn({
       accountingPostings.postReimbursement
     );
     if (voided.error) {
-      return service.fromServerFn(
-        ctx,
-        voided.error,
-        "Failed to void reimbursement"
-      );
+      return fromServerFn(ctx, voided.error, "Failed to void reimbursement");
     }
     return { reimbursementId };
   }

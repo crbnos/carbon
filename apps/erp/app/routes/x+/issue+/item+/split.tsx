@@ -13,6 +13,7 @@ import {
   splitIssueItemValidator
 } from "~/modules/quality/quality.models";
 import { splitIssueItem } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -50,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (lockedError) return lockedError;
 
-  const result = await splitIssueItem({
+  const result = await splitIssueItem(getDatabaseClient(), {
     id,
     companyId,
     userId,

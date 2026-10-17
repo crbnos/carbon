@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // The service's imports reach the glossary, whose `msg` macro only runs compiled.
@@ -61,6 +62,7 @@ const {
   updatePeopleSettings,
   updatePlanningSettings,
   updateProductionSettings,
+  transitionSyncOperations,
   updateSecuritySettings,
   updateSubsidiaryDetails
 } = await import("../app/modules/settings/settings.server");
@@ -483,5 +485,78 @@ describe("an accounting integration's settings", () => {
       expect(settings.postingSync).not.toHaveProperty(legacy);
     }
     expect(Array.isArray(settings.postingSync.sourceTypes)).toBe(false);
+  });
+});
+
+describe("retrying or skipping sync operations", () => {
+  // The boundary is PostgREST: a real supabase-js client whose fetch answers
+  // the UPDATE with the rows it moved and the follow-up read with the rest.
+  function syncOperations(moved: string[], others: object[]) {
+    const sent: { method: string; url: URL }[] = [];
+    const fetchStub = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      sent.push({ method, url: new URL(String(input)) });
+      const rows = method === "PATCH" ? moved.map((id) => ({ id })) : others;
+      return new Response(JSON.stringify(rows), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+    const caller = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: fetchStub as typeof fetch }
+    });
+    const ctx = createServiceContext({
+      actor: { type: "user", userId: "user-1", permissions: settings },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => caller as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    return { ctx, sent };
+  }
+
+  it("moves every operation in one UPDATE that only matches a status allowed to move", async () => {
+    const { ctx, sent } = syncOperations(["op-1", "op-2"], []);
+
+    const result = await transitionSyncOperations(ctx, {
+      ids: ["op-1", "op-2"],
+      to: "Pending"
+    });
+
+    expect(result).toEqual({ data: { count: 2, to: "Pending" }, error: null });
+    expect(sent).toHaveLength(1);
+    const [update] = sent;
+    expect(update?.method).toBe("PATCH");
+    expect(update?.url.searchParams.get("companyId")).toBe("eq.company-1");
+    expect(update?.url.searchParams.get("id")).toBe("in.(op-1,op-2)");
+    // In Flight and Pending itself can never move to Pending.
+    expect(update?.url.searchParams.get("status")).toBe(
+      'in.(Completed,Failed,Warning,Skipped,Excluded)'
+    );
+  });
+
+  it("reports each operation it could not move, with why", async () => {
+    const { ctx, sent } = syncOperations(
+      ["op-1"],
+      [{ id: "op-2", status: "In Flight" }]
+    );
+
+    const result = await transitionSyncOperations(ctx, {
+      ids: ["op-1", "op-2", "op-3"],
+      to: "Pending"
+    });
+
+    expect(result.error).toMatchObject({
+      category: "rule",
+      message: "Updated 1 of 3 sync operations"
+    });
+    expect(result.error?.cause).toEqual([
+      { id: "op-2", reason: "invalid transition In Flight → Pending" },
+      { id: "op-3", reason: "Sync operation op-3 not found" }
+    ]);
+    expect(sent.map((request) => request.method)).toEqual(["PATCH", "GET"]);
+    expect(sent[1]?.url.searchParams.get("id")).toBe("in.(op-2,op-3)");
   });
 });

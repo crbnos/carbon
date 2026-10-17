@@ -200,34 +200,53 @@ export const createSalesRfq = defineServiceFn({
     }
     const id = result.data.id;
 
-    const work: Promise<unknown>[] = [];
-    let order = 10;
-    for (const line of lines) {
-      if (!line.partNumber && !line.description) continue;
-      // Map the line up front when the extracted text directly matches an
-      // existing record — only lines with no direct match are left unmapped
-      // for the review modal.
-      const itemId = await resolveItemIdFromExtractedText(
-        client,
-        companyId,
-        { type: "customer", id: rfq.customerId },
-        [line.partNumber, line.description]
-      );
-      work.push(
-        service.upsertSalesRFQLine(client, {
-          salesRfqId: id,
-          customerPartId: line.partNumber || "Unknown",
-          itemId: itemId ?? undefined,
-          description: line.description || line.partNumber || "Line Item",
-          quantity: [line.quantity || 1],
-          unitOfMeasureCode: "EA",
-          order,
+    const extracted = lines.filter(
+      (line) => line.partNumber || line.description
+    );
+    // Map the line up front when the extracted text directly matches an
+    // existing record — only lines with no direct match are left unmapped
+    // for the review modal.
+    const itemIds: (string | null)[] = [];
+    for (const line of extracted) {
+      itemIds.push(
+        await resolveItemIdFromExtractedText(
+          client,
           companyId,
-          createdBy: userId,
-          customFields: {}
-        })
+          { type: "customer", id: rfq.customerId },
+          [line.partNumber, line.description]
+        )
       );
-      order += 10;
+    }
+
+    const work: PromiseLike<unknown>[] = [];
+    if (extracted.length > 0) {
+      work.push(
+        client
+          .from("salesRfqLine")
+          .insert(
+            extracted.map((line, index) => ({
+              salesRfqId: id,
+              customerPartId: line.partNumber || "Unknown",
+              itemId: itemIds[index] ?? undefined,
+              description: line.description || line.partNumber || "Line Item",
+              quantity: [line.quantity || 1],
+              unitOfMeasureCode: "EA",
+              order: index + 1,
+              companyId,
+              createdBy: userId,
+              customFields: {}
+            }))
+          )
+          .then(({ error }) => {
+            if (error) {
+              logger.error("Failed to insert extracted RFQ lines", {
+                companyId,
+                salesRfqId: id,
+                error
+              });
+            }
+          })
+      );
     }
 
     if (documentPath) {
@@ -431,6 +450,7 @@ export const convertSalesRfq = defineServiceFn({
             case "Make to Order":
               return service.calculatePricesForQuantities(
                 serviceRole,
+                ctx.asSystem.pg,
                 quoteId,
                 line.id,
                 quantities,
@@ -552,7 +572,6 @@ export const mapSalesRfqLines = defineServiceFn({
   permission: { update: "sales" },
 
   async run(ctx, { rfqId, customerId, mappings }) {
-    const client = ctx.asCaller.supabase;
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -605,100 +624,116 @@ export const mapSalesRfqLines = defineServiceFn({
       if (refused) return refused;
     }
 
-    let failed = 0;
+    const nameOf = (map: (typeof active)[number]) =>
+      (map.createName || map.customerPartId || map.description || "").trim();
+
+    // A part is created once per name, or the item that already has that part
+    // number is reused rather than failing on the unique constraint.
+    const toCreate = new Map<string, string | undefined>();
     for (const map of active) {
-      let itemId = map.itemId;
-
-      if (map.action === "create") {
-        const name = (
-          map.createName ||
-          map.customerPartId ||
-          map.description ||
-          ""
-        ).trim();
-        if (!name) continue;
-
-        // Reuse an item with that part number rather than fail on the unique
-        // constraint or create a duplicate.
-        const existing = await serviceRole
-          .from("item")
-          .select("id")
-          .eq("companyId", companyId)
-          .eq("readableId", name)
-          .maybeSingle();
-        if (existing.data) {
-          itemId = existing.data.id;
-        } else {
-          // The service role: the sales-scoped client cannot insert items.
-          const created = await upsertPart(serviceRole, {
-            id: name,
-            name,
-            revision: "0",
-            description: map.description || undefined,
-            replenishmentSystem: "Make",
-            defaultMethodType: "Make to Order",
-            itemTrackingType: "Inventory",
-            unitOfMeasureCode: "EA",
-            shelfLifeCalculateFromBom: false,
-            companyId,
-            createdBy: userId
-          });
-          if (created.error || !created.data?.id) {
-            failed++;
-            logger.error("Failed to create part for RFQ line", {
-              companyId,
-              rfqId,
-              lineId: map.lineId,
-              readableId: name,
-              error: created.error
-            });
-          } else {
-            itemId = created.data.id;
-          }
+      const name = map.action === "create" ? nameOf(map) : "";
+      if (name && !toCreate.has(name)) {
+        toCreate.set(name, map.description || undefined);
+      }
+    }
+    const itemIdByName = new Map<string, string>();
+    if (toCreate.size > 0) {
+      const existing = await serviceRole
+        .from("item")
+        .select("id, readableId")
+        .eq("companyId", companyId)
+        .in("readableId", [...toCreate.keys()]);
+      if (existing.error) {
+        return ctx.error("internal", "Failed to load items", existing.error);
+      }
+      for (const item of existing.data) {
+        if (!itemIdByName.has(item.readableId)) {
+          itemIdByName.set(item.readableId, item.id);
         }
       }
-      if (!itemId) continue;
-
-      const mapped = await client
-        .from("salesRfqLine")
-        .update({ itemId, updatedBy: userId })
-        .eq("id", map.lineId)
-        .eq("companyId", companyId);
-      if (mapped.error) {
-        failed++;
-        logger.error("Failed to map RFQ line to item", {
+    }
+    for (const [name, description] of toCreate) {
+      if (itemIdByName.has(name)) continue;
+      // The service role: the sales-scoped client cannot insert items.
+      // upsertPart has no batch form.
+      const created = await upsertPart(serviceRole, {
+        id: name,
+        name,
+        revision: "0",
+        description,
+        replenishmentSystem: "Make",
+        defaultMethodType: "Make to Order",
+        itemTrackingType: "Inventory",
+        unitOfMeasureCode: "EA",
+        shelfLifeCalculateFromBom: false,
+        companyId,
+        createdBy: userId
+      });
+      if (created.error || !created.data?.id) {
+        logger.error("Failed to create part for RFQ line", {
           companyId,
           rfqId,
-          lineId: map.lineId,
-          itemId,
-          error: mapped.error
+          readableId: name,
+          error: created.error
         });
-        continue;
+      } else {
+        itemIdByName.set(name, created.data.id);
       }
+    }
 
-      if (customerId && map.customerPartId) {
-        // customerPartToItem has no audit columns.
-        const customerPart = await serviceRole
-          .from("customerPartToItem")
-          .upsert(
-            {
-              customerId,
-              customerPartId: map.customerPartId,
-              itemId,
-              companyId
-            },
-            { onConflict: "customerId,itemId" }
-          );
-        if (customerPart.error) {
-          failed++;
-          logger.error("Failed to map customer part to item", {
-            companyId,
-            customerId,
-            itemId,
-            customerPartId: map.customerPartId,
-            error: customerPart.error
-          });
-        }
+    let failed = 0;
+    const itemIdByLine = new Map<string, string>();
+    const customerPartByItem = new Map<string, string>();
+    for (const map of active) {
+      let itemId = map.itemId;
+      if (map.action === "create") {
+        const name = nameOf(map);
+        if (!name) continue;
+        const created = itemIdByName.get(name);
+        if (created) itemId = created;
+        else failed++;
+      }
+      if (!itemId) continue;
+      itemIdByLine.set(map.lineId, itemId);
+      if (map.customerPartId)
+        customerPartByItem.set(itemId, map.customerPartId);
+    }
+
+    try {
+      await service.setSalesRfqLineItems(
+        ctx.asSystem.pg,
+        companyId,
+        userId,
+        rfqId,
+        [...itemIdByLine].map(([lineId, itemId]) => ({ lineId, itemId }))
+      );
+    } catch (error) {
+      logger.error("Failed to map RFQ lines to items", {
+        companyId,
+        rfqId,
+        error
+      });
+      return { failed: failed + itemIdByLine.size };
+    }
+
+    if (customerId && customerPartByItem.size > 0) {
+      // customerPartToItem has no audit columns.
+      const customerParts = await serviceRole.from("customerPartToItem").upsert(
+        [...customerPartByItem].map(([itemId, customerPartId]) => ({
+          customerId,
+          customerPartId,
+          itemId,
+          companyId
+        })),
+        { onConflict: "customerId,itemId" }
+      );
+      if (customerParts.error) {
+        failed += customerPartByItem.size;
+        logger.error("Failed to map customer parts to items", {
+          companyId,
+          customerId,
+          error: customerParts.error
+        });
       }
     }
 
@@ -961,6 +996,7 @@ export const updateQuoteLine = defineServiceFn({
         line.methodType === "Make to Order"
           ? await service.buildMakeToOrderPriceRows(
               serviceRole,
+              ctx.asSystem.pg,
               quoteId,
               lineId,
               added,
@@ -999,7 +1035,7 @@ export const updateQuoteLine = defineServiceFn({
     }
 
     try {
-      await service.saveQuoteLineWithPrices({
+      await service.saveQuoteLineWithPrices(ctx.asSystem.pg, {
         companyId,
         quoteId,
         lineId,
@@ -1102,18 +1138,24 @@ export const finalizeAndSendQuote = defineServiceFn({
         .eq("companyId", companyId);
     }
 
-    const pdf = await service.attachDocumentPdf(ctx, {
-      pdf: await renderQuotePdf(ctx.asCaller.supabase, {
-        id: quoteId,
-        companyId,
-        companyGroupId: ctx.company.groupId,
-        locale
-      }),
-      identifier: getQuoteDisplayId(quote.data),
-      folder: `opportunity/${quote.data.opportunityId}`,
-      sourceDocument: "Quote",
-      sourceDocumentId: quoteId
-    });
+    const pdf = await renderQuotePdf(ctx.asCaller.supabase, {
+      id: quoteId,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      locale
+    })
+      .then((rendered) =>
+        service.attachDocumentPdf(ctx, {
+          pdf: rendered,
+          identifier: getQuoteDisplayId(quote.data),
+          folder: `opportunity/${quote.data.opportunityId}`,
+          sourceDocument: "Quote",
+          sourceDocumentId: quoteId
+        })
+      )
+      .catch((err: unknown) =>
+        ctx.error("internal", "Failed to generate PDF", err)
+      );
     if (pdf instanceof Error) return pdf;
 
     const finalized = await service.finalizeQuote(
@@ -1342,17 +1384,24 @@ export const configureQuoteLine = defineServiceFn({
     const priceMap = await getSupplierPriceBreaksForItems(serviceRole, [
       ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
     ]);
-    for (const material of buyMaterials.data ?? []) {
-      if (material.unitCostSource === "manual") continue;
+    const costs = (buyMaterials.data ?? []).flatMap((material) => {
+      if (material.unitCostSource === "manual") return [];
       const unitCost = resolveBuyUnitCost(material, 1, priceMap);
-      if (unitCost !== material.unitCost) {
-        await serviceRole
-          .from("quoteMaterial")
-          .update({ unitCost })
-          .eq("id", material.id)
-          .eq("companyId", companyId);
-      }
-    }
+      return unitCost === material.unitCost
+        ? []
+        : [{ id: material.id, unitCost }];
+    });
+    // The line is configured either way: a cost a refresh misses keeps its
+    // last value.
+    await service
+      .updateQuoteMaterialUnitCosts(ctx.asSystem.pg, companyId, lineId, costs)
+      .catch((error: unknown) =>
+        logger.error("Failed to refresh quote material costs", {
+          companyId,
+          quoteLineId: lineId,
+          error
+        })
+      );
     return { lineId };
   }
 });
@@ -1565,8 +1614,7 @@ export const acceptDigitalQuote = defineServiceFn({
       }
     }
 
-    const notified = await service.notifyDigitalQuoteResponse(ctx, quoteId);
-    if (notified) return notified;
+    await service.notifyDigitalQuoteResponse(ctx, quoteId);
 
     if (file && uploadFileName) {
       const purchaseOrderDocumentPath = `${companyId}/opportunity/${quote.opportunityId}/${uploadFileName}`;
@@ -1625,8 +1673,7 @@ export const rejectDigitalQuote = defineServiceFn({
       return ctx.error("internal", "Failed to reject quote", rejected.error);
     }
 
-    const notified = await service.notifyDigitalQuoteResponse(ctx, quoteId);
-    if (notified) return notified;
+    await service.notifyDigitalQuoteResponse(ctx, quoteId);
     return { quoteId };
   }
 });
@@ -2436,19 +2483,23 @@ export const confirmReturnOrder = defineServiceFn({
     }
 
     // The RMA is confirmed: a failed PDF does not undo it.
-    const pdf = await service
-      .attachDocumentPdf(ctx, {
-        pdf: await renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
-          id,
-          companyId,
-          companyGroupId: ctx.company.groupId,
-          locale
-        }),
-        identifier: order.data.salesReturnOrderId ?? "",
-        folder: `sales-return-order/${id}`,
-        sourceDocument: "Sales Return Order",
-        sourceDocumentId: id
-      })
+    // Render inside the chain, so a failed render is caught like a failed
+    // upload.
+    const pdf = await renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
+      id,
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      locale
+    })
+      .then((rendered) =>
+        service.attachDocumentPdf(ctx, {
+          pdf: rendered,
+          identifier: order.data.salesReturnOrderId ?? "",
+          folder: `sales-return-order/${id}`,
+          sourceDocument: "Sales Return Order",
+          sourceDocumentId: id
+        })
+      )
       .catch((err: unknown) =>
         ctx.error("internal", "Failed to generate PDF", err)
       );
@@ -3299,7 +3350,11 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
       .eq("id", id)
       .eq("companyId", companyId);
     if (deleted.error) {
-      return ctx.error("internal", deleted.error.message, deleted.error);
+      return ctx.error(
+        "internal",
+        "Failed to delete quote operation",
+        deleted.error
+      );
     }
     if (operation.data) await service.repriceQuoteLine(ctx, operation.data);
     return { id };
@@ -3841,6 +3896,7 @@ export const confirmContract = defineServiceFn({
       try {
         const linked = await linkStripeCustomerForBilling({
           serviceRole: ctx.asSystem.supabase,
+          db: ctx.asSystem.pg,
           companyId,
           userId: ctx.auditUserId,
           billingCustomerId,
@@ -3990,7 +4046,16 @@ export const previewContractCancellation = defineServiceFn({
         result.error
       );
     }
-    return result.data as ContractCancellationPreview;
+    const preview = result.data;
+    if (
+      typeof preview !== "object" ||
+      preview === null ||
+      !("creditAvailable" in preview) ||
+      !("credit" in preview)
+    ) {
+      return ctx.error("internal", "Failed to preview the cancellation");
+    }
+    return preview as ContractCancellationPreview;
   }
 });
 
@@ -4677,8 +4742,7 @@ export const classifyRentalUnit = defineServiceFn({
               old: line.data.classificationOverrideReason,
               new: reason
             }
-          },
-          metadata: { origin: "web" }
+          }
         }
       ]);
     } catch (err) {

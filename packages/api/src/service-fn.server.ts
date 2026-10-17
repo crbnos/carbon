@@ -103,13 +103,27 @@ export type ServiceContext = {
     cause?: unknown
   ): CarbonError<C>;
   /**
-   * Runs `fn` in one transaction on `asSystem.pg`. A returned `CarbonError`
-   * rolls back, as a throw does. Called inside a transaction, it joins it.
+   * Runs `fn` in one transaction on `asSystem.pg`. A returned refusal (a
+   * `CarbonError`, or a service function's `{ data, error }` with one) rolls
+   * back, as a throw does, and is returned as the error. Called inside a
+   * transaction, it joins it: the refusal is returned and the outer
+   * transaction rolls back when its own body returns it.
    */
-  transaction<R>(
-    fn: (tx: ServiceContext) => Promise<R>
-  ): Promise<Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>>;
+  transaction<R>(fn: (tx: ServiceContext) => Promise<R>): Promise<Settled<R>>;
 };
+
+/** The refusal a transaction's body can return: bare, or a service function's error. */
+type Refusal<R> =
+  | Extract<R, CarbonError>
+  | (R extends { data: unknown; error: infer E }
+      ? Extract<E, CarbonError>
+      : never);
+
+/** A transaction's result: the body's value, or the refusal that rolled it back. */
+export type Settled<R> = Result<
+  Exclude<R, CarbonError | { data: unknown; error: CarbonError }>,
+  Refusal<R>
+>;
 
 type Handles = {
   actor: Actor;
@@ -133,12 +147,20 @@ function auditUserIdOf(actor: Actor): string {
   return actor.onBehalfOf;
 }
 
-function settle<R>(out: R) {
+function refusalIn(out: unknown): CarbonError | null {
+  if (out instanceof CarbonError) return out;
+  if (out !== null && typeof out === "object" && "data" in out) {
+    const { error } = out as { error?: unknown };
+    if (error instanceof CarbonError) return error;
+  }
+  return null;
+}
+
+function settle<R>(out: R): Settled<R> {
+  const error = refusalIn(out);
   return (
-    out instanceof CarbonError
-      ? { data: null, error: out }
-      : { data: out, error: null }
-  ) as Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>;
+    error ? { data: null, error } : { data: out, error: null }
+  ) as Settled<R>;
 }
 
 // Classes, not object literals with getters: a context is built for every
@@ -228,7 +250,7 @@ class Context implements ServiceContext {
 
   async transaction<R>(
     fn: (tx: ServiceContext) => Promise<R>
-  ): Promise<Result<Exclude<R, CarbonError>, Extract<R, CarbonError>>> {
+  ): Promise<Settled<R>> {
     const pg = this.handles.pg();
     if (pg.isTransaction) {
       return settle(
@@ -249,12 +271,15 @@ class Context implements ServiceContext {
             true
           );
           const out = await fn(tx);
-          if (out instanceof CarbonError) throw new Rollback(out);
+          const refusal = refusalIn(out);
+          if (refusal) throw new Rollback(refusal);
           return out;
         })
       );
     } catch (err) {
-      if (err instanceof Rollback) return settle(err.error as R);
+      if (err instanceof Rollback) {
+        return { data: null, error: err.error } as Settled<R>;
+      }
       throw err;
     }
   }
@@ -276,6 +301,13 @@ function allows(
     companyId,
     required
   );
+}
+
+/** What a failure log says of the input: its keys. Values can be files, notes, emails. */
+function keysOf(input: unknown): string[] | string {
+  return input !== null && typeof input === "object"
+    ? Object.keys(input)
+    : typeof input;
 }
 
 function failed<R>(error: CarbonError) {
@@ -326,7 +358,18 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
 
     const nested = ctx instanceof Context && ctx.nested;
     if (!nested) {
-      const required = resolvePermissions(definition.permission, parsed.data);
+      let required: Permissions;
+      try {
+        required = resolvePermissions(definition.permission, parsed.data);
+      } catch (err) {
+        // A keyed rule with no entry for the value: bad input, not a 403.
+        return failed(
+          new CarbonError(
+            "validation",
+            err instanceof Error ? err.message : "Invalid input"
+          )
+        );
+      }
       if (!allows(ctx.actor, ctx.company.id, required)) {
         logger.warn("Service function refused: {actor}", {
           actor: ctx.actor.type,
@@ -351,7 +394,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         logger.error("Service function failed: {message}: {error}", {
           message: out.message,
           companyId: ctx.company.id,
-          input,
+          inputKeys: keysOf(input),
           error: out.cause
         });
       }
@@ -359,7 +402,7 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
     } catch (err) {
       logger.error("Service function threw: {error}", {
         companyId: ctx.company.id,
-        input,
+        inputKeys: keysOf(input),
         error: err
       });
       return failed(new CarbonError("internal", "Something went wrong", err));

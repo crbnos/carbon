@@ -146,7 +146,6 @@ import {
   getNextSequences
 } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import { assertCompanyRecords } from "@carbon/server-functions/company-records";
 import {
   buildCapitalizationLines,
@@ -165,9 +164,8 @@ import {
   refuseVoidBeforeCutover
 } from "@carbon/server-functions/lib/cutover-void";
 import { syncDraftRecognitionRuns } from "@carbon/server-functions/lib/draft-recognition-run";
-import * as getAccountingPeriod from "@carbon/server-functions/lib/get-accounting-period";
-import * as getAccountingPeriodModule from "@carbon/server-functions/lib/get-accounting-period";
 import {
+  getCurrentAccountingPeriod as ensureCurrentAccountingPeriod,
   getAccountingPeriodForDate,
   resolveAccountingPeriod
 } from "@carbon/server-functions/lib/get-accounting-period";
@@ -182,18 +180,14 @@ import {
   bookAdjustment,
   createAdjustmentJournal
 } from "@carbon/server-functions/lib/post-adjustment";
-import * as requireAccountingCutoverModule from "@carbon/server-functions/lib/require-accounting-cutover";
 import { assertAccountingCutover } from "@carbon/server-functions/lib/require-accounting-cutover";
 import { RUN_SEQUENCE } from "@carbon/server-functions/lib/run-type";
 import { insertNegatedJournal } from "@carbon/server-functions/lib/void-journal";
-import type * as utils from "@carbon/utils";
-import type * as utilsModule from "@carbon/utils";
-import type * as utilsModuleModule from "@carbon/utils";
-import type * as utilsModuleModuleModule from "@carbon/utils";
-import type * as utilsModuleModuleModuleModule from "@carbon/utils";
-import type * as utilsModuleModuleModuleModuleModule from "@carbon/utils";
-import type * as utilsModuleModuleModuleModuleModuleModule from "@carbon/utils";
-import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
+import type {
+  AccountType as LedgerAccountType,
+  PeriodPostingSource,
+  ReportPeriodBucket
+} from "@carbon/utils";
 import {
   accountTypeFromClass,
   addDays,
@@ -230,10 +224,7 @@ import {
 } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type * as kysely from "kysely";
-import type * as kyselyModule from "kysely";
-import type * as kyselyModuleModule from "kysely";
-import type { Selectable } from "kysely";
+import type { Transaction as KyselyTransaction, Selectable } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -268,7 +259,7 @@ import { getNextSequence } from "~/modules/settings/settings.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { invokePosting } from "../shared/shared.service";
+import { fromServerFn, invokePosting } from "../shared/shared.service";
 import type {
   AnalyticsAccountScope,
   AnalyticsReportDefinition,
@@ -11641,41 +11632,6 @@ export async function deleteRevenueRecognitionRun(
   });
 }
 
-// ── Operations ──────────────────────────────────────────────────────────────
-// Each is a `defineServiceFn` listed in `index.server.ts`: the route, the API
-// and MCP call the same one, and it holds every check the route made.
-
-/** The server functions, run as the system for this call's company and user. */
-export function system(ctx: ServiceContext) {
-  return serverFns.system({
-    db: ctx.asSystem.pg,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId
-  });
-}
-
-/** A server function's refusal as this function's error: its status picks
- *  the category, and an empty message (a data-layer failure) is `fallback`. */
-export function fromServerFn(
-  ctx: ServiceContext,
-  error: { status: number; message: string },
-  fallback: string
-): CarbonError {
-  const category: ErrorCategory =
-    error.status === 400
-      ? "validation"
-      : error.status === 403
-        ? "forbidden"
-        : error.status === 404
-          ? "notFound"
-          : error.status === 409
-            ? "conflict"
-            : error.status < 500
-              ? "rule"
-              : "internal";
-  return ctx.error(category, error.message || fallback, error);
-}
-
 /** A refusal a building block returned or threw ("Only open periods can be
  *  locked"): its own message, unless it came from the data layer. */
 export function refusal(
@@ -12051,7 +12007,7 @@ export function statusAfterCostAdjustment(args: {
 
 type Db = Kysely<DB>;
 
-type Trx = kysely.Transaction<DB>;
+type Trx = KyselyTransaction<DB>;
 
 type Scoped<T extends AssetTransferInput["type"]> = Extract<
   AssetTransferInput,
@@ -14168,7 +14124,7 @@ export interface BuildChargeJournalInput {
   lines: ChargeLineInput[];
   // Resolved account classes, keyed by accountId. Only the accounts this
   // transaction touches need be present.
-  accounts: Record<string, { class: utils.AccountClass }>;
+  accounts: Record<string, { class: AccountClass }>;
   // Internal charge record id — becomes `documentId` on every line.
   documentId: string;
   // Human-readable id (chargeId) — used only in error messages.
@@ -14219,14 +14175,14 @@ export function buildChargeJournal(
   assertExchangeRate(exchangeRate);
   const toBase = (value: number) => toBaseAmount(value, exchangeRate);
 
-  const classOf = (accountId: string): utils.AccountType => {
+  const classOf = (accountId: string): LedgerAccountType => {
     const account = accounts[accountId];
     if (!account) {
       throw new Error(
         `Charge ${documentReadableId}: missing account class for ${accountId}`
       );
     }
-    return account.class.toLowerCase() as utils.AccountType;
+    return account.class.toLowerCase() as LedgerAccountType;
   };
 
   const journalLines: ChargeJournalLine[] = [];
@@ -14235,7 +14191,7 @@ export function buildChargeJournal(
 
   const pushLine = (
     side: "debit" | "credit",
-    accountType: utils.AccountType,
+    accountType: LedgerAccountType,
     magnitude: number,
     fields: {
       accountId: string;
@@ -14421,7 +14377,7 @@ export function buildChargeJournal(
   return { journalLines };
 }
 export type ChargeContext = {
-  trx: kyselyModule.Transaction<KyselyDatabase>;
+  trx: KyselyTransaction<KyselyDatabase>;
   charge: Pick<
     Selectable<KyselyDatabase["charge"]>,
     | "id"
@@ -14486,7 +14442,7 @@ export async function postChargeJournal(
       "Charge accounts must be active posting accounts in this company group"
     );
   }
-  const accounts: Record<string, { class: utilsModule.AccountClass }> = {};
+  const accounts: Record<string, { class: AccountClass }> = {};
   for (const account of postingAccounts) {
     if (!isAccountClass(account.class)) {
       throw new Error("Charge account class is missing");
@@ -14896,7 +14852,7 @@ export interface BuildReimbursementJournalInput {
   };
   // Resolved account classes, keyed by accountId. Only the accounts this
   // reimbursement touches need be present.
-  accounts: Record<string, { class: utilsModuleModule.AccountClass }>;
+  accounts: Record<string, { class: AccountClass }>;
   lines: ReimbursementLineInput[];
   // Internal reimbursement record id — becomes `documentId` on every line.
   documentId: string;
@@ -14947,14 +14903,14 @@ export function buildReimbursementJournal(
   assertExchangeRate(exchangeRate);
   const toBase = (value: number) => toBaseAmount(value, exchangeRate);
 
-  const classOf = (accountId: string): utilsModuleModule.AccountType => {
+  const classOf = (accountId: string): LedgerAccountType => {
     const account = accounts[accountId];
     if (!account) {
       throw new Error(
         `Reimbursement ${documentReadableId}: missing account class for ${accountId}`
       );
     }
-    return account.class.toLowerCase() as utilsModuleModule.AccountType;
+    return account.class.toLowerCase() as LedgerAccountType;
   };
 
   const journalLines: ReimbursementJournalLine[] = [];
@@ -14963,7 +14919,7 @@ export function buildReimbursementJournal(
 
   const pushLine = (
     side: "debit" | "credit",
-    accountType: utilsModuleModule.AccountType,
+    accountType: LedgerAccountType,
     magnitude: number,
     fields: {
       accountId: string;
@@ -15052,7 +15008,7 @@ export function buildReimbursementJournal(
   return { journalLines };
 }
 export type ReimbursementContext = {
-  trx: kyselyModuleModule.Transaction<KyselyDatabase>;
+  trx: KyselyTransaction<KyselyDatabase>;
   reimbursement: Pick<
     Selectable<KyselyDatabase["reimbursement"]>,
     | "id"
@@ -15142,10 +15098,7 @@ export async function postReimbursementJournal(
       "Reimbursement accounts must be active posting accounts in this company group"
     );
   }
-  const accounts: Record<
-    string,
-    { class: utilsModuleModuleModule.AccountClass }
-  > = {};
+  const accounts: Record<string, { class: AccountClass }> = {};
   for (const account of postingAccounts) {
     if (!isAccountClass(account.class)) {
       throw new Error("Reimbursement account class is missing");
@@ -16011,10 +15964,7 @@ export async function buildLegacyChargeJournals(
         .where("id", "in", ids)
         .execute()
   );
-  const accountClasses: Record<
-    string,
-    { class: utilsModuleModuleModuleModule.AccountClass }
-  > = {};
+  const accountClasses: Record<string, { class: AccountClass }> = {};
   for (const account of accounts) {
     if (isAccountClass(account.class)) {
       accountClasses[account.id] = { class: account.class };
@@ -18003,10 +17953,7 @@ export async function buildLegacyReimbursementJournals(
         .where("id", "in", ids)
         .execute()
   );
-  const accountClasses: Record<
-    string,
-    { class: utilsModuleModuleModuleModuleModule.AccountClass }
-  > = {};
+  const accountClasses: Record<string, { class: AccountClass }> = {};
   for (const account of accounts) {
     if (isAccountClass(account.class)) {
       accountClasses[account.id] = { class: account.class };
@@ -18143,10 +18090,6 @@ function legacyJournal(
 }
 
 /** The month end of a `YYYY-MM-DD` date. */
-function legacy_runsMonthEndOf(date: string): string {
-  return endOfMonth(parseDate(date)).toString();
-}
-
 // ---------------------------------------------------------------------------
 // Depreciation
 // ---------------------------------------------------------------------------
@@ -18267,7 +18210,7 @@ export type RecognitionRow = RecognitionScheduleRow & {
 export function buildLegacyRecognitionJournals(
   rows: RecognitionRow[],
   sources: RecognitionSources,
-  classById: Map<string, utilsModuleModuleModuleModuleModuleModule.AccountClass>
+  classById: Map<string, AccountClass>
 ): Built<{
   runId: string;
   scheduleIds: string[];
@@ -18318,10 +18261,7 @@ async function loadRecognitionRows(
 ): Promise<{
   rows: RecognitionRow[];
   sources: RecognitionSources;
-  classById: Map<
-    string,
-    utilsModuleModuleModuleModuleModuleModule.AccountClass
-  >;
+  classById: Map<string, AccountClass>;
 }> {
   const scheduled = await legacyRecognitionSchedule(trx, {
     companyId,
@@ -18449,10 +18389,7 @@ async function loadRecognitionRows(
         .where("id", "in", ids)
         .execute()
   );
-  const classById = new Map<
-    string,
-    utilsModuleModuleModuleModuleModuleModule.AccountClass
-  >();
+  const classById = new Map<string, AccountClass>();
   for (const account of accounts) {
     if (isAccountClass(account.class)) classById.set(account.id, account.class);
   }
@@ -18465,7 +18402,7 @@ async function loadRecognitionRows(
       runPeriodEnd: row.runPeriodEnd,
       runType: row.runType,
       // Every journal takes its own month: there is no period yet.
-      postingDate: legacy_runsMonthEndOf(row.scheduledDate),
+      postingDate: monthEndOf(row.scheduledDate),
       type: row.type,
       amount: Number(row.amount),
       debitAccountId: row.debitAccountId,
@@ -20606,7 +20543,7 @@ export async function activateAccounting(
       // Step 10a. Make the period that holds today Active, as the first
       // posting would. The cutover is never after today, so step 10 never
       // closes it.
-      await getAccountingPeriod.getCurrentAccountingPeriod(companyId, trx);
+      await ensureCurrentAccountingPeriod(companyId, trx);
 
       // Step 11. The stamp. One-way: a trigger refuses any later change.
       await trx
@@ -20771,15 +20708,17 @@ export type LegacyRepairOutcome =
  */
 export function classifyRepairFailure(
   companyId: string,
-  error: { status: number; message: string }
+  error: { status: number; message: string; cause?: unknown }
 ): Extract<LegacyRepairOutcome, { status: "skipped" | "failed" }> {
+  // A failure of our own reaches us with its message blanked for callers; the
+  // operator running the repair still needs it, so read the cause.
+  const detail =
+    error.message ||
+    (error.cause instanceof Error ? error.cause.message : "") ||
+    "The server failed with no message.";
   return error.status < 500
     ? { companyId, status: "skipped", reason: error.message }
-    : {
-        companyId,
-        status: "failed",
-        error: error.message || "The server failed with no message."
-      };
+    : { companyId, status: "failed", error: detail };
 }
 
 /**
@@ -20891,9 +20830,7 @@ export async function repairLegacyJournals(
         journalLegacyDocumentsLogger.warn("Refused: accounting is not set up", {
           companyId
         });
-        throw new InvalidInputError(
-          requireAccountingCutoverModule.ACCOUNTING_NOT_STARTED
-        );
+        throw new InvalidInputError(ACCOUNTING_NOT_STARTED);
       }
       const defaults = await trx
         .selectFrom("accountDefault")
@@ -20914,10 +20851,7 @@ export async function repairLegacyJournals(
         await repointStandInLines(trx, companyId, scope, defaults);
         await promoteJournals(trx, companyId, userId, scope);
         // The period that holds today Active, as the enable leaves it.
-        await getAccountingPeriodModule.getCurrentAccountingPeriod(
-          companyId,
-          trx
-        );
+        await ensureCurrentAccountingPeriod(companyId, trx);
       }
 
       journalLegacyDocumentsLogger.info(

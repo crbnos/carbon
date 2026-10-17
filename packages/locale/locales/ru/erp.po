@@ -5492,9 +5492,6 @@ msgstr "Подтвердить инвентаризацию"
 msgid "Confirm Mapping"
 msgstr "Подтвердить сопоставление"
 
-msgid "Confirm Password"
-msgstr "Подтвердить пароль"
-
 msgid "Confirm Skip"
 msgstr "Подтвердить пропуск"
 
@@ -6623,9 +6620,6 @@ msgstr "Текущее"
 
 msgid "Current Net Book Value:"
 msgstr "Текущая остаточная стоимость:"
-
-msgid "Current Password"
-msgstr "Текущий пароль"
 
 msgid "Current portion"
 msgstr "Текущая часть"
@@ -14224,9 +14218,6 @@ msgstr "Новый ответственный"
 
 msgid "New Part"
 msgstr "Новая деталь"
-
-msgid "New Password"
-msgstr "Новый пароль"
 
 msgid "New Payment"
 msgstr "Новый платеж"
@@ -25047,9 +25038,6 @@ msgstr "Обновить задачу Linear"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Обновлять сроки поставки деталей из учтённых приходных накладных."
-
-msgid "Update Password"
-msgstr "Обновить пароль"
 
 msgid "Update Permissions"
 msgstr "Обновить Права доступа"

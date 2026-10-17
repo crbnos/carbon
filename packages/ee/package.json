@@ -68,6 +68,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
@@ -108,7 +109,6 @@
     "zod-form-data": "catalog:"
   },
   "devDependencies": {
-    "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
     "@carbon/content": "workspace:*",
     "@logtape/logtape": "catalog:",

@@ -5492,9 +5492,6 @@ msgstr "Conferma Conteggio Inventario"
 msgid "Confirm Mapping"
 msgstr "Conferma Mapping"
 
-msgid "Confirm Password"
-msgstr "Conferma Password"
-
 msgid "Confirm Skip"
 msgstr "Conferma Salto"
 
@@ -6623,9 +6620,6 @@ msgstr "Attuale"
 
 msgid "Current Net Book Value:"
 msgstr "Valore Netto Contabile Corrente:"
-
-msgid "Current Password"
-msgstr "Password Attuale"
 
 msgid "Current portion"
 msgstr "Quota corrente"
@@ -14224,9 +14218,6 @@ msgstr "Nuovo Responsabile"
 
 msgid "New Part"
 msgstr "Nuovo componente"
-
-msgid "New Password"
-msgstr "Nuova Password"
 
 msgid "New Payment"
 msgstr "Nuovo Pagamento"
@@ -25047,9 +25038,6 @@ msgstr "Aggiorna problema Linear"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Aggiorna i lead time dei componenti dalle entrate merci registrate."
-
-msgid "Update Password"
-msgstr "Aggiorna Password"
 
 msgid "Update Permissions"
 msgstr "Aggiorna Autorizzazioni"

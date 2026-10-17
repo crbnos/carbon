@@ -5492,9 +5492,6 @@ msgstr "确认库存盘点"
 msgid "Confirm Mapping"
 msgstr "确认映射"
 
-msgid "Confirm Password"
-msgstr "确认密码"
-
 msgid "Confirm Skip"
 msgstr "确认跳过"
 
@@ -6623,9 +6620,6 @@ msgstr "当前"
 
 msgid "Current Net Book Value:"
 msgstr "当前账面净值："
-
-msgid "Current Password"
-msgstr "当前密码"
 
 msgid "Current portion"
 msgstr "流动部分"
@@ -14224,9 +14218,6 @@ msgstr "新建负责人"
 
 msgid "New Part"
 msgstr "新零件"
-
-msgid "New Password"
-msgstr "新密码"
 
 msgid "New Payment"
 msgstr "新付款"
@@ -25047,9 +25038,6 @@ msgstr "更新 Linear 问题"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "从已过账的采购收据更新零件提前期。"
-
-msgid "Update Password"
-msgstr "更新密码"
 
 msgid "Update Permissions"
 msgstr "更新权限"

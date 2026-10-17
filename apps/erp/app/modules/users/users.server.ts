@@ -2,9 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Re-exported, not reimplemented: this module used to carry a near-identical
-// copy that (a) missed the canonical version's cache TTL and (b) bypassed its
-// per-request memoization.
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import {
   envelope,
@@ -35,27 +32,26 @@ import {
 } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { userFlagValidator } from "~/modules/users/users.models";
 import {
   createOperatorValidator,
   employeeTypePermissionsValidator,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
+  userFlagValidator,
   userPermissionsValidator
 } from "./users.models";
 import * as service from "./users.service";
 
 const logger = getLogger("erp", "users");
-// Returns false if the auth identity for this userId has been deleted, leaving only an app-side row.
-// Creates the auth user for email, or recovers the existing ID if a prior deletion left one behind.
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
 //
-// None of these are published yet. The ones that send an invite or write an
-// audit record take the request's IP, city and user agent as input, which an
-// API caller could set to anything; the permission editors write that IP into
-// the permission audit log. They wait for a context that carries the request.
+// The writes that send an invite or write an audit record are not published
+// (no `@mcp`): they take the request's IP, city and user agent as input, which
+// an API caller could set to anything, and the permission editors write that IP
+// into the permission audit log. They wait for a context that carries the
+// request.
 
 /** Where the request came from, as the route read it from its headers. */
 const requestOrigin = {
@@ -118,17 +114,21 @@ export const inviteEmployee = defineServiceFn({
     );
     if (ssoDomainError) return ctx.error("rule", ssoDomainError);
 
-    const created = await service.createEmployeeAccount(client, {
-      email: input.email.toLowerCase(),
-      firstName: input.firstName,
-      lastName: input.lastName,
-      employeeType,
-      locationId: input.locationId,
-      companyId,
-      createdBy: ctx.auditUserId,
-      attestedBy: CONTROLLED_ENVIRONMENT ? ctx.auditUserId : null,
-      attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
-    });
+    const created = await service.createEmployeeAccount(
+      client,
+      ctx.asSystem.pg,
+      {
+        email: input.email.toLowerCase(),
+        firstName: input.firstName,
+        lastName: input.lastName,
+        employeeType,
+        locationId: input.locationId,
+        companyId,
+        createdBy: ctx.auditUserId,
+        attestedBy: CONTROLLED_ENVIRONMENT ? ctx.auditUserId : null,
+        attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
+      }
+    );
     if (!created.success) {
       return ctx.error(
         "internal",
@@ -162,12 +162,16 @@ export const inviteCustomerContact = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { customerContactId, customerId, ...origin }) {
-    const created = await service.createCustomerAccount(ctx.asCaller.supabase, {
-      id: customerContactId,
-      customerId,
-      companyId: ctx.company.id,
-      createdBy: ctx.auditUserId
-    });
+    const created = await service.createCustomerAccount(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        id: customerContactId,
+        customerId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      }
+    );
     if (!created.success) {
       return ctx.error(
         "internal",
@@ -191,12 +195,16 @@ export const inviteSupplierContact = defineServiceFn({
   }),
   permission: { create: "users" },
   async run(ctx, { supplierContactId, supplierId, ...origin }) {
-    const created = await service.createSupplierAccount(ctx.asCaller.supabase, {
-      id: supplierContactId,
-      supplierId,
-      companyId: ctx.company.id,
-      createdBy: ctx.auditUserId
-    });
+    const created = await service.createSupplierAccount(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        id: supplierContactId,
+        supplierId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      }
+    );
     if (!created.success) {
       return ctx.error(
         "internal",

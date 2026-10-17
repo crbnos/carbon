@@ -4,6 +4,7 @@
 
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -1835,98 +1836,114 @@ function extractBatchRules<
   return { batchRules, rest };
 }
 
-/** The bare write under `resources.process.create` / `.update`, which also keep its ability in step. */
-export async function upsertProcess(
+/** The bare write under `resources.createProcess`, which also keeps its ability in step. */
+export async function insertProcess(
   client: SupabaseClient<Database>,
-  process:
-    | (Omit<z.infer<typeof processValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof processValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
+  process: Omit<z.infer<typeof processValidator>, "id"> & {
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
 ) {
-  if ("createdBy" in process) {
-    const { batchRules, rest: withoutRules } = extractBatchRules(process);
-    const { workCenters, ...insert } = withoutRules;
-    const processInsert = await client
-      .from("process")
-      .insert([
-        {
-          ...insert,
-          batchRules,
-          defaultStandardFactor: insert.defaultStandardFactor ?? "Minutes/Piece"
-        }
-      ])
-      .select("id")
-      .single();
-    if (processInsert.error) {
-      return processInsert;
-    }
-    const processId = processInsert.data.id;
-    const processProcesses = workCenters?.map((workCenterId) => ({
-      workCenterId,
-      processId,
-      companyId: insert.companyId,
-      createdBy: insert.createdBy
-    }));
-
-    if (processProcesses) {
-      const processProcessInsert = await client
-        .from("workCenterProcess")
-        .insert(processProcesses);
-
-      if (processProcessInsert.error) {
-        return processProcessInsert;
+  const { batchRules, rest: withoutRules } = extractBatchRules(process);
+  const { workCenters, ...insert } = withoutRules;
+  const processInsert = await client
+    .from("process")
+    .insert([
+      {
+        ...insert,
+        batchRules,
+        defaultStandardFactor: insert.defaultStandardFactor ?? "Minutes/Piece"
       }
-    }
-
+    ])
+    .select("id")
+    .single();
+  if (processInsert.error) {
     return processInsert;
   }
-  const { batchRules, rest: withoutRules } = extractBatchRules(process);
-  const { workCenters, ...update } = withoutRules;
-  const processUpdate = await client
-    .from("process")
-    // batchRules isn't in `update` — extractBatchRules destructured the six
-    // batchRule* form fields out and folded them into this value — so it must
-    // be added explicitly (null = all-default, and null must be written).
-    .update({ ...sanitize(update), batchRules })
-    .eq("id", process.id);
-  if (processUpdate.error) {
-    return processUpdate;
-  }
-
-  const deleteWorkCenters = await client
-    .from("workCenterProcess")
-    .delete()
-    .eq("processId", process.id);
-
-  if (deleteWorkCenters.error) {
-    return deleteWorkCenters;
-  }
-
+  const processId = processInsert.data.id;
   const processProcesses = workCenters?.map((workCenterId) => ({
-    processId: process.id,
     workCenterId,
-    companyId: update.companyId,
-    createdBy: update.updatedBy
+    processId,
+    companyId: insert.companyId,
+    createdBy: insert.createdBy
   }));
 
   if (processProcesses) {
-    const processProcessUpdate = await client
+    const processProcessInsert = await client
       .from("workCenterProcess")
       .insert(processProcesses);
-    if (processProcessUpdate.error) {
-      return processProcessUpdate;
+
+    if (processProcessInsert.error) {
+      return processProcessInsert;
     }
   }
 
-  return processUpdate;
+  return processInsert;
+}
+
+/**
+ * The bare write under `resources.updateProcess`: the process and the work
+ * centers it replaces, in one transaction. Kysely bypasses RLS, so every
+ * statement is scoped to the company and only its own work centers are linked.
+ */
+export async function updateProcess(
+  db: Kysely<KyselyDatabase>,
+  process: Omit<z.infer<typeof processValidator>, "id"> & {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+): Promise<{ error: string | null }> {
+  const { batchRules, rest: withoutRules } = extractBatchRules(process);
+  const { workCenters, id, companyId, ...update } = withoutRules;
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable("process")
+        // batchRules isn't in `update` — extractBatchRules destructured the six
+        // batchRule* form fields out and folded them into this value — so it must
+        // be added explicitly (null = all-default, and null must be written).
+        .set({ ...sanitize(update), batchRules })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      await trx
+        .deleteFrom("workCenterProcess")
+        .where("processId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if (!workCenters?.length) return;
+      const linked = await trx
+        .insertInto("workCenterProcess")
+        .columns(["workCenterId", "processId", "companyId", "createdBy"])
+        .expression((eb) =>
+          eb
+            .selectFrom("workCenter")
+            .select((eb) => [
+              "id as workCenterId",
+              eb.val(id).as("processId"),
+              "companyId",
+              eb.val(update.updatedBy).as("createdBy")
+            ])
+            .where("id", "in", workCenters)
+            .where("companyId", "=", companyId)
+        )
+        .returning("workCenterId")
+        .execute();
+      if (linked.length !== new Set(workCenters).size) {
+        throw new Error("Work center not found");
+      }
+    });
+    return { error: null };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to update process"
+    };
+  }
 }
 
 export async function upsertTraining(

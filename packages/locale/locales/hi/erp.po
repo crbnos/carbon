@@ -5492,9 +5492,6 @@ msgstr "इन्वेंटरी गणना की पुष्टि क�
 msgid "Confirm Mapping"
 msgstr "मैपिंग की पुष्टि करें"
 
-msgid "Confirm Password"
-msgstr "पासवर्ड की पुष्टि करें"
-
 msgid "Confirm Skip"
 msgstr "छोड़ने की पुष्टि करें"
 
@@ -6623,9 +6620,6 @@ msgstr "वर्तमान"
 
 msgid "Current Net Book Value:"
 msgstr "वर्तमान शुद्ध बही मूल्य:"
-
-msgid "Current Password"
-msgstr "वर्तमान पासवर्ड"
 
 msgid "Current portion"
 msgstr "वर्तमान भाग"
@@ -14224,9 +14218,6 @@ msgstr "नया स्वामी"
 
 msgid "New Part"
 msgstr "नया पार्ट"
-
-msgid "New Password"
-msgstr "नया पासवर्ड"
 
 msgid "New Payment"
 msgstr "नया भुगतान"
@@ -25047,9 +25038,6 @@ msgstr "Linear समस्या को अपडेट करें"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "पोस्ट किए गए क्रय प्राप्तियों से पार्ट लीड टाइम को अपडेट करें।"
-
-msgid "Update Password"
-msgstr "पासवर्ड अपडेट करें"
 
 msgid "Update Permissions"
 msgstr "अनुमतियों को अपडेट करें"

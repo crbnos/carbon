@@ -22,8 +22,9 @@ const modelUploadForm = z.object({
 });
 
 export async function action(args: ActionFunctionArgs) {
+  // Authenticate before the multipart body is read.
+  const api = await carbon(args.request);
   const input = await validator(modelUploadForm).request(args);
   if ("invalid" in input) return input.invalid;
-  const api = await carbon(args.request);
   return api.documents.uploadModel(input.data);
 }

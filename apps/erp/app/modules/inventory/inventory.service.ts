@@ -2,8 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ServerFnError } from "@carbon/api/errors";
-import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
+import {
+  InvalidInputError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import {
   type CarbonError,
@@ -54,8 +57,6 @@ import {
   type SamplingStandard
 } from "@carbon/database/sampling";
 import * as sequence from "@carbon/database/sequence";
-import * as sequenceModule from "@carbon/database/sequence";
-import * as sequenceModuleModule from "@carbon/database/sequence";
 import {
   expandSerialTrackedLines,
   kanbanReplenishmentNote,
@@ -189,6 +190,7 @@ import type {
 } from "./inventory.models";
 import {
   isPickingListLocked,
+  isStockTransferLocked,
   isWarehouseTransferLocked,
   type receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials
@@ -246,7 +248,7 @@ export async function deleteReceiptLine(
   return client.from("receiptLine").delete().eq("id", receiptLineId);
 }
 
-/** Not published: `inventory.storageUnit.delete` deletes a unit, or with `cascade` its subtree. */
+/** Not published: `removeStorageUnit` deletes a unit, or with `cascade` its subtree. */
 export async function deleteStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -266,7 +268,7 @@ export async function deleteStorageUnit(
  * We fetch the subtree via `storageUnits_recursive` (which already returns
  * self + descendants thanks to `ancestorPath @> ARRAY[id]`).
  *
- * Not published: `inventory.storageUnit.delete` with `cascade` does this.
+ * Not published: `removeStorageUnit` with `cascade` does this.
  */
 export async function deleteStorageUnitCascade(
   client: SupabaseClient<Database>,
@@ -338,7 +340,7 @@ export async function deleteWarehouseTransfer(
   return client.from("warehouseTransfer").delete().eq("id", transferId);
 }
 
-/** Not published: it skips the lock check `inventory.warehouseTransfer.line.delete` makes. */
+/** Not published: it skips the lock check `removeWarehouseTransferLine` makes. */
 export async function deleteWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferLineId: string
@@ -1904,7 +1906,7 @@ export async function getWarehouseTransferLines(
 // resolution, tracked-entity updates, cost layers, and GL posting (Provisional
 // before the accounting cutover) in one transaction.
 /**
- * Not published: it runs no storage rules; `inventory.item.adjust` runs them
+ * Not published: it runs no storage rules; `adjustInventory` runs them
  * and then this.
  */
 export async function insertManualInventoryAdjustment(
@@ -2152,7 +2154,7 @@ export async function getInventoryCountMovements(
 
 // Counts are created once and never edited as a header (only their lines and
 // status change), so this is insert-only — no upsert/update branch.
-/** Not published: a count with no lines; `inventory.inventoryCount.create` creates and snapshots it. */
+/** Not published: a count with no lines; `createInventoryCount` creates and snapshots it. */
 export async function insertInventoryCount(
   client: SupabaseClient<Database>,
   inventoryCount: {
@@ -2408,7 +2410,7 @@ export async function updateBatchPropertyOrder(
 
 /**
  * Set a stock transfer's status, and nothing else. Not published:
- * `inventory.stockTransfer.setStatus` also runs storage rules and the reopen
+ * `setStockTransferStatus` also runs storage rules and the reopen
  * permission check.
  */
 export async function updateStockTransferStatus(
@@ -2517,7 +2519,7 @@ export async function upsertKanban(
 
 /**
  * Not published: a changed source document does not rebuild the lines;
- * `inventory.receipt.create` and `inventory.receipt.update` do.
+ * `createReceipt` and `updateReceipt` do.
  */
 export async function upsertReceipt(
   client: SupabaseClient<Database>,
@@ -2615,7 +2617,7 @@ export async function upsertShippingMethod(
 
 /**
  * Not published: a changed source document does not rebuild the lines;
- * `inventory.shipment.create` and `inventory.shipment.update` do.
+ * `createShipment` and `updateShipment` do.
  */
 export async function upsertShipment(
   client: SupabaseClient<Database>,
@@ -2767,7 +2769,7 @@ export async function upsertWarehouseTransfer(
 
 /**
  * Set a warehouse transfer's status, and nothing else. Not published:
- * `inventory.warehouseTransfer.setStatus` also runs storage rules.
+ * `setWarehouseTransferStatus` also runs storage rules.
  */
 export async function updateWarehouseTransferStatus(
   client: SupabaseClient<Database>,
@@ -2786,8 +2788,8 @@ export async function updateWarehouseTransferStatus(
 }
 
 /**
- * Not published: it skips the lock check `inventory.warehouseTransfer.line.create`
- * and `.update` make.
+ * Not published: it skips the lock check `createWarehouseTransferLine` and
+ * `updateWarehouseTransferLine` make.
  */
 export async function upsertWarehouseTransferLine(
   client: SupabaseClient<Database>,
@@ -3308,7 +3310,7 @@ export async function getPickingListLineTrackedEntities(
  * MOVES the chosen lot from its warehouse bin to the line's lineside shelf via
  * the `post-picking` server function (serial/batch), records it on the line, and
  * points the job material at lineside. `unpick` reverses it. Published as
- * `inventory.pickingList.line.pickEntity`, which checks the line is on the
+ * `pickPickingListLineEntity`, which checks the line is on the
  * list first.
  */
 export async function setPickingListLineTrackedEntity(
@@ -3403,14 +3405,14 @@ export async function setPickingListLineTrackedEntity(
   if (result.error) {
     return {
       data: null,
-      error: getErrorMessage(result.error, "Failed to pick material")
+      error: result.error
     };
   }
 
   return { data: { id: args.pickingListLineId }, error: null };
 }
 
-/** Writes without the Draft lock: `inventory.pickingList.update` checks it; lists are created by `generatePickingList`. */
+/** Writes without the Draft lock: `updatePickingList` checks it; lists are created by `generatePickingList`. */
 export async function upsertPickingList(
   client: SupabaseClient<Database>,
   pickingList:
@@ -3555,7 +3557,7 @@ export async function cancelOpenPickingListsForJob(
   }
 }
 
-/** A bare status write: `inventory.pickingList.setStatus` applies the completion policy and the reopen permission. */
+/** A bare status write: `setPickingListStatus` applies the completion policy and the reopen permission. */
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -4316,7 +4318,7 @@ export async function generatePickingList(
  *   - Unpick:       quantity = 0
  *   - Short:        quantity = whatever was actually picked, markShort = true
  * Tracked items go through the scan flow and are rejected here.
- * Published as `inventory.pickingList.line.pick`, which checks the line is on
+ * Published as `pickPickingListLineChecked`, which checks the line is on
  * the list first.
  */
 export async function pickPickingListLine(
@@ -4417,7 +4419,7 @@ export async function pickPickingListLine(
     if (result.error) {
       return {
         data: null,
-        error: getErrorMessage(result.error, "Failed to pick material")
+        error: result.error
       };
     }
   }
@@ -4442,7 +4444,7 @@ export async function pickPickingListLine(
   return { data: { id: line.id }, error: null };
 }
 
-/** Not published: it runs no storage rules; `inventory.stockTransfer.create` does. */
+/** Not published: it runs no storage rules; `createStockTransfer` does. */
 export async function insertStockTransfer(
   client: SupabaseClient<Database>,
   input: {
@@ -4542,7 +4544,6 @@ export async function insertWarehouseTransfer(
     companyId: string;
     createdBy: string;
     transferId?: string;
-    status?: Database["public"]["Enums"]["warehouseTransferStatus"];
     transferDate?: string;
     expectedReceiptDate?: string;
     notes?: string;
@@ -4558,7 +4559,6 @@ export async function insertWarehouseTransfer(
     toLocationId,
     companyId,
     createdBy,
-    status = "Draft",
     transferDate,
     expectedReceiptDate,
     notes,
@@ -4587,7 +4587,9 @@ export async function insertWarehouseTransfer(
       transferId,
       fromLocationId,
       toLocationId,
-      status,
+      // The status moves only through setWarehouseTransferStatus, which runs
+      // the storage rules.
+      status: "Draft",
       transferDate: transferDate || null,
       expectedReceiptDate: expectedReceiptDate || null,
       notes: notes || null,
@@ -4638,6 +4640,7 @@ export async function updateStockTransfer(
     .single();
 }
 
+/** The header fields of a Draft transfer: never its status, which only `setWarehouseTransferStatus` moves. */
 export async function updateWarehouseTransfer(
   client: SupabaseClient<Database>,
   input: {
@@ -4645,7 +4648,6 @@ export async function updateWarehouseTransfer(
     fromLocationId?: string;
     toLocationId?: string;
     transferId?: string;
-    status?: Database["public"]["Enums"]["warehouseTransferStatus"];
     transferDate?: string;
     expectedReceiptDate?: string;
     notes?: string;
@@ -4658,11 +4660,15 @@ export async function updateWarehouseTransfer(
   error: PostgrestError | null;
 }> {
   const { id, updatedBy, customFields, ...fields } = input;
+  // A status sent anyway (the type has none) never reaches the row.
+  const { status: _status, ...header } = fields as typeof fields & {
+    status?: unknown;
+  };
   return client
     .from("warehouseTransfer")
     .update(
       sanitize({
-        ...fields,
+        ...header,
         customFields,
         updatedBy,
         updatedAt: datetime.timestamp()
@@ -4710,15 +4716,6 @@ export async function storageRuleViolations(
     Object.assign(ruleNames, result.ruleNames);
   }
   return { violations, ruleNames };
-}
-
-/** The server functions, run as the system for this call's company and user. */
-export function system(ctx: ServiceContext) {
-  return serverFns.system({
-    db: ctx.asSystem.pg,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId
-  });
 }
 
 const CATEGORY_BY_STATUS = Object.fromEntries(
@@ -5096,6 +5093,63 @@ export async function unlockedWarehouseTransfer(
   return transfer.data;
 }
 
+/**
+ * A serial number is one unit: an adjustment of a serial item moves, sets or
+ * scraps at most one. Read from the item, not from what the caller says it is.
+ */
+export async function serialQuantityRefusal(
+  ctx: ServiceContext,
+  itemId: string,
+  quantity: number
+) {
+  const item = await ctx.asCaller.supabase
+    .from("item")
+    .select("itemTrackingType")
+    .eq("id", itemId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (item.error)
+    return ctx.error("internal", "Failed to load item", item.error);
+  if (!item.data) return ctx.error("notFound", "Item not found");
+  if (item.data.itemTrackingType === "Serial" && Math.abs(quantity) > 1) {
+    return ctx.error(
+      "validation",
+      "Serial items can only have a quantity of 1"
+    );
+  }
+  return null;
+}
+
+export const STOCK_TRANSFER_LOCKED =
+  "Cannot modify a locked stock transfer. Reopen it first.";
+
+/** A Draft stock transfer of this company: any other is locked. */
+export async function unlockedStockTransfer(
+  ctx: ServiceContext,
+  stockTransferId: string
+) {
+  const transfer = await ctx.asCaller.supabase
+    .from("stockTransfer")
+    .select("id, status")
+    .eq("id", stockTransferId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (transfer.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load stock transfer",
+      transfer.error
+    );
+  }
+  if (!transfer.data) {
+    return ctx.error("notFound", "The stock transfer could not be found");
+  }
+  if (isStockTransferLocked(transfer.data.status)) {
+    return ctx.error("rule", STOCK_TRANSFER_LOCKED);
+  }
+  return transfer.data;
+}
+
 /** The line, when it is on this transfer. */
 export async function warehouseTransferLineOf(
   ctx: ServiceContext,
@@ -5124,15 +5178,22 @@ export async function warehouseTransferLineOf(
   return line.data;
 }
 
-/** A pick's refusal: its message is written for the person picking. */
-export function pickRefusal(
-  ctx: ServiceContext,
-  error: string | { message?: string }
-) {
-  return ctx.error(
-    "rule",
-    typeof error === "string" ? error : (error.message ?? "Failed to pick line")
-  );
+/**
+ * A pick's failure. A refusal written for the person picking (the building
+ * blocks' own strings, and `post-picking`'s 4xx guards such as an over-pick)
+ * keeps its message; anything else — a database error, a 5xx — is a failure
+ * whose message is not theirs to read, logged as the cause.
+ */
+export function pickRefusal(ctx: ServiceContext, error: unknown) {
+  if (typeof error === "string") return ctx.error("rule", error);
+  if (error instanceof ServerFnError && error.status < 500) {
+    return ctx.error(
+      CATEGORY_BY_STATUS[error.status] ?? "rule",
+      error.message,
+      error
+    );
+  }
+  return ctx.error("internal", "Failed to pick line", error);
 }
 export type LineageDirection = "up" | "down" | "both";
 
@@ -6136,9 +6197,6 @@ export function resolveCountedEntity<S extends string>(input: {
       "Stock moved since the count was taken; recount this line before posting"
   });
 }
-// SPDX-License-Identifier: AGPL-3.0-only
-// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
-// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Pure planning core for posting an inventory count, extracted so the delta math
 // can be unit-tested without a database.
@@ -6514,10 +6572,6 @@ export async function postInventoryCount(
 
   return { success: true };
 }
-const postStockTransferLogger = getLogger(
-  "server-functions",
-  "post-stock-transfer"
-);
 
 /**
  * A line moves stock out of the bin it names, and only that bin (`null` is the
@@ -6663,7 +6717,7 @@ export async function postStockTransfer(
   let expiredWarning: string | undefined;
   let splitEntityId: string | undefined;
 
-  postStockTransferLogger.info({
+  logger.info({
     function: "post-stock-transfer",
     ...validatedPayload
   });
@@ -8119,7 +8173,6 @@ export async function postStockMovementCorrection(
 
   return { itemLedger: resultLedgerId ? { id: resultLedgerId } : null };
 }
-const replenishKanbanLogger = getLogger("server-functions", "kanban-replenish");
 
 export const kanbanReplenishInput = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("scan"), kanbanId: z.string().min(1) }),
@@ -8455,7 +8508,7 @@ export async function replenishKanban(
 
   for (const outcome of created) {
     if (outcome.outcome !== "created") continue;
-    replenishKanbanLogger.info("Kanban replenishment created", {
+    logger.info("Kanban replenishment created", {
       companyId,
       kanbanId: outcome.kanbanId,
       stockTransferId: outcome.stockTransferId,
@@ -9032,7 +9085,6 @@ export function planReceiptVoidCostLedger(
     }))
   };
 }
-const postReceiptLogger = getLogger("server-functions", "post-receipt");
 
 export const postReceiptInput = z.object({
   type: z.enum(["post", "void"]).default("post"),
@@ -9059,7 +9111,7 @@ export async function postReceipt(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  postReceiptLogger.info({ type, receiptId, userId, companyId });
+  logger.info({ type, receiptId, userId, companyId });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "receipt", receiptId, companyId);
@@ -9121,7 +9173,7 @@ export async function postReceipt(
     const receiptHeader = receipt.data;
     if (receiptLines.error) throw new Error("Failed to fetch receipt lines");
     if (dimensions.error) {
-      postReceiptLogger.error("Failed to fetch dimensions", {
+      logger.error("Failed to fetch dimensions", {
         error: dimensions.error
       });
     }
@@ -9421,7 +9473,7 @@ export async function postReceipt(
           }
 
           if (reversingJournalLines.length > 0) {
-            const journalEntryId = await sequenceModule.getNextSequence(
+            const journalEntryId = await sequence.getNextSequence(
               trx,
               "journalEntry",
               companyId
@@ -9990,7 +10042,7 @@ export async function postReceipt(
         }
 
         if (reversingJournalLines.length > 0) {
-          const voidJournalEntryId = await sequenceModule.getNextSequence(
+          const voidJournalEntryId = await sequence.getNextSequence(
             trx,
             "journalEntry",
             companyId
@@ -10547,7 +10599,7 @@ export async function postReceipt(
             }
           );
           if (unaccrued.length > 0) {
-            postReceiptLogger.warn(
+            logger.warn(
               "Units invoiced before receipt have no GR/IR accrual; the receipt costs them at PO cost",
               {
                 companyId,
@@ -11073,7 +11125,7 @@ export async function postReceipt(
                     rowPoLineId,
                     coverage - excludedQty
                   );
-                  postReceiptLogger.info(
+                  logger.info(
                     "excluding invoice-first quantity already represented by legacy invoice-created layers",
                     {
                       itemId: insertRow.itemId,
@@ -11193,7 +11245,7 @@ export async function postReceipt(
           });
           let receiptJournalId: string | null = null;
           if (journalLines.length > 0) {
-            const journalEntryId = await sequenceModule.getNextSequence(
+            const journalEntryId = await sequence.getNextSequence(
               trx,
               "journalEntry",
               companyId
@@ -11324,7 +11376,7 @@ export async function postReceipt(
 
           if (inspectionInserts.length > 0) {
             for (const row of inspectionInserts) {
-              row.inspectionId = await sequenceModule.getNextSequence(
+              row.inspectionId = await sequence.getNextSequence(
                 trx,
                 "inspection",
                 companyId
@@ -11817,7 +11869,7 @@ export async function postReceipt(
             .execute();
 
           if (journalLines.length > 0) {
-            const journalEntryId = await sequenceModule.getNextSequence(
+            const journalEntryId = await sequence.getNextSequence(
               trx,
               "journalEntry",
               companyId
@@ -12168,7 +12220,7 @@ export async function postReceipt(
 
           // Create journal entries if there are any
           if (journalLineInserts.length > 0) {
-            const transferJournalEntryId = await sequenceModule.getNextSequence(
+            const transferJournalEntryId = await sequence.getNextSequence(
               trx,
               "journalEntry",
               companyId
@@ -12953,7 +13005,6 @@ async function lockRentalUnits(
   const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
   return { linesById, assetsById };
 }
-const postShipmentLogger = getLogger("server-functions", "post-shipment");
 
 export const postShipmentInput = z.object({
   type: z.enum(["post", "void"]),
@@ -12980,7 +13031,7 @@ export async function postShipment(
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
 
-  postShipmentLogger.info({ type, shipmentId, userId, companyId });
+  logger.info({ type, shipmentId, userId, companyId });
   const fixedAssetWrites = new FixedAssetWrites();
   if (type === "post")
     await assertPostable(db, "shipment", shipmentId, companyId);
@@ -13237,7 +13288,7 @@ export async function postShipment(
                 const currentJob = jobs.data.find((j) => j.id === jobId);
 
                 // Log job and shipment line data to debug NaN issues
-                postShipmentLogger.info("Processing job update:", {
+                logger.info("Processing job update:", {
                   jobId,
                   currentJob: currentJob
                     ? {
@@ -13264,7 +13315,7 @@ export async function postShipment(
                     ? shipmentLine.shippedQuantity
                     : 0;
 
-                postShipmentLogger.info("Calculated values:", {
+                logger.info("Calculated values:", {
                   currentQuantityShipped,
                   shippedQuantity,
                   newTotal: currentQuantityShipped + shippedQuantity,
@@ -13289,7 +13340,7 @@ export async function postShipment(
                       ? "Completed"
                       : currentJob?.status;
 
-                  postShipmentLogger.info("Updating existing job update:", {
+                  logger.info("Updating existing job update:", {
                     jobId,
                     previousUpdate: jobUpdates[jobId],
                     newUpdate: {
@@ -13320,7 +13371,7 @@ export async function postShipment(
                       ? "Completed"
                       : currentJob?.status;
 
-                  postShipmentLogger.info("Creating new job update:", {
+                  logger.info("Creating new job update:", {
                     jobId,
                     update: {
                       status: newStatus,
@@ -14001,17 +14052,11 @@ export async function postShipment(
               }
 
               if (Object.keys(jobUpdates).length > 0) {
-                postShipmentLogger.info(
-                  "Final job updates to be applied:",
-                  jobUpdates
-                );
+                logger.info("Final job updates to be applied:", jobUpdates);
                 for await (const [jobId, update] of Object.entries(
                   jobUpdates
                 )) {
-                  postShipmentLogger.info(
-                    `Updating job ${jobId} with:`,
-                    update
-                  );
+                  logger.info(`Updating job ${jobId} with:`, update);
                   await trx
                     .updateTable("job")
                     .set(update)
@@ -14473,14 +14518,14 @@ export async function postShipment(
               }
 
               if (Object.keys(jobOperationsUpdates).length > 0) {
-                postShipmentLogger.info(
+                logger.info(
                   "Final job updates to be applied:",
                   jobOperationsUpdates
                 );
                 for await (const [jobOperationId, update] of Object.entries(
                   jobOperationsUpdates
                 )) {
-                  postShipmentLogger.info(
+                  logger.info(
                     `Updating job operation ${jobOperationId} with:`,
                     update
                   );
@@ -15662,7 +15707,7 @@ export async function postShipment(
                 const jobId = shipmentLine.fulfillment.jobId;
                 const currentJob = jobs.data.find((j) => j.id === jobId);
 
-                postShipmentLogger.info("Processing job void:", {
+                logger.info("Processing job void:", {
                   jobId,
                   currentJob: currentJob
                     ? {
@@ -15689,7 +15734,7 @@ export async function postShipment(
                     ? shipmentLine.shippedQuantity
                     : 0;
 
-                postShipmentLogger.info("Calculated values for void:", {
+                logger.info("Calculated values for void:", {
                   currentQuantityShipped,
                   shippedQuantity,
                   newTotal: currentQuantityShipped - shippedQuantity,
@@ -16070,14 +16115,14 @@ export async function postShipment(
 
               // Update jobs to reverse shipped quantities
               if (Object.keys(jobUpdates).length > 0) {
-                postShipmentLogger.info(
+                logger.info(
                   "Final job void updates to be applied:",
                   jobUpdates
                 );
                 for await (const [jobId, update] of Object.entries(
                   jobUpdates
                 )) {
-                  postShipmentLogger.info(`Voiding job ${jobId} with:`, update);
+                  logger.info(`Voiding job ${jobId} with:`, update);
                   await trx
                     .updateTable("job")
                     .set(update)
@@ -16089,12 +16134,11 @@ export async function postShipment(
 
               // Create reversing journal entries
               if (reversingJournalLines.length > 0) {
-                const voidJournalEntryId =
-                  await sequenceModuleModule.getNextSequence(
-                    trx,
-                    "journalEntry",
-                    companyId
-                  );
+                const voidJournalEntryId = await sequence.getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
 
                 const voidJournalResult = await trx
                   .insertInto("journal")
@@ -16426,14 +16470,14 @@ export async function postShipment(
 
               // Update job operations to reset status
               if (Object.keys(jobOperationsUpdates).length > 0) {
-                postShipmentLogger.info(
+                logger.info(
                   "Final job operation void updates to be applied:",
                   jobOperationsUpdates
                 );
                 for await (const [jobOperationId, update] of Object.entries(
                   jobOperationsUpdates
                 )) {
-                  postShipmentLogger.info(
+                  logger.info(
                     `Voiding job operation ${jobOperationId} with:`,
                     update
                   );
@@ -16723,12 +16767,11 @@ export async function postShipment(
                   dimensionsByLine.set(dim.journalLineId, list);
                 }
 
-                const journalEntryId =
-                  await sequenceModuleModule.getNextSequence(
-                    trx,
-                    "journalEntry",
-                    companyId
-                  );
+                const journalEntryId = await sequence.getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
                 const journalResult = await trx
                   .insertInto("journal")
                   .values({
@@ -17017,12 +17060,11 @@ export async function postShipment(
                   dimensionsByLine.set(dim.journalLineId, list);
                 }
 
-                const journalEntryId =
-                  await sequenceModuleModule.getNextSequence(
-                    trx,
-                    "journalEntry",
-                    companyId
-                  );
+                const journalEntryId = await sequence.getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
                 const journalResult = await trx
                   .insertInto("journal")
                   .values({
@@ -17244,7 +17286,7 @@ async function insertShipmentJournal(
     userId: string;
   }
 ) {
-  const journalEntryId = await sequenceModuleModule.getNextSequence(
+  const journalEntryId = await sequence.getNextSequence(
     trx,
     "journalEntry",
     companyId

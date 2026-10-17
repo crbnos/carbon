@@ -29,6 +29,7 @@ import {
   getLocationTimeZone,
   getOrCreatePeriods
 } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const defaultResponse = {
   demand: [],
@@ -177,7 +178,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const today = datetime.today(
     await getLocationTimeZone(client, locationId, companyId)
   );
-  const periods = await getOrCreatePeriods(today, WEEKS_TO_FORECAST);
+  const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
+    today,
+    WEEKS_TO_FORECAST
+  );
 
   const [
     demand,

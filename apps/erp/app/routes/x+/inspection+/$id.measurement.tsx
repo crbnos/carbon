@@ -11,6 +11,7 @@ import { data } from "react-router";
 import invariant from "tiny-invariant";
 import { inspectionMeasurementValidator } from "~/modules/quality/quality.models";
 import { upsertInspectionMeasurement } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -34,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertInspectionMeasurement({
+  const result = await upsertInspectionMeasurement(getDatabaseClient(), {
     ...validation.data,
     companyId,
     userId

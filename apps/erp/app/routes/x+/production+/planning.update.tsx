@@ -5,6 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { data } from "react-router";
 import { z } from "zod";
 
 // Production planning: the grid's Make button and bulk actions, the order
@@ -57,7 +58,13 @@ const APPLY_TYPE = {
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(planningForm).request(args);
-  if ("invalid" in input) return input.invalid;
+  // The screens toast `message`; they show no field errors.
+  if ("invalid" in input) {
+    return data(
+      { success: false, message: "The planning request is not valid" },
+      { status: 400 }
+    );
+  }
   const form = input.data;
   const planning = (await carbon(args.request)).production;
 

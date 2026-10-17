@@ -5492,9 +5492,6 @@ msgstr "Confirmar Contagem de Inventário"
 msgid "Confirm Mapping"
 msgstr "Confirmar Mapeamento"
 
-msgid "Confirm Password"
-msgstr "Confirmar Senha"
-
 msgid "Confirm Skip"
 msgstr "Confirmar Salto"
 
@@ -6623,9 +6620,6 @@ msgstr "Atual"
 
 msgid "Current Net Book Value:"
 msgstr "Valor Líquido Contábil Atual:"
-
-msgid "Current Password"
-msgstr "Senha Atual"
 
 msgid "Current portion"
 msgstr "Parcela atual"
@@ -14224,9 +14218,6 @@ msgstr "Novo responsável"
 
 msgid "New Part"
 msgstr "Nova Peça"
-
-msgid "New Password"
-msgstr "Nova Senha"
 
 msgid "New Payment"
 msgstr "Novo Pagamento"
@@ -25047,9 +25038,6 @@ msgstr "Atualizar problema Linear"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Atualizar lead times de peças a partir de recebimentos de compra contabilizados."
-
-msgid "Update Password"
-msgstr "Atualizar Senha"
 
 msgid "Update Permissions"
 msgstr "Atualizar Permissões"

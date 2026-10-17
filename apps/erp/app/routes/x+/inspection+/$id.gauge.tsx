@@ -11,6 +11,7 @@ import { data } from "react-router";
 import invariant from "tiny-invariant";
 import { inspectionGaugeValidator } from "~/modules/quality/quality.models";
 import { recordInspectionGauge } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -34,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await recordInspectionGauge({
+  const result = await recordInspectionGauge(getDatabaseClient(), {
     inspectionId: id,
     inspectionFeatureId: validation.data.inspectionFeatureId,
     gaugeId: validation.data.gaugeId || null,

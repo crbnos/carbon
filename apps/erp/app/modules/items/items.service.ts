@@ -174,7 +174,7 @@ export async function activateMethodVersion(
   );
 }
 
-/** The copy only; `items.method.copy` also checks the target's revision lock. */
+/** The copy only; `copyMethod` also checks the target's revision lock. */
 export async function copyItem(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -204,7 +204,7 @@ export async function copyItem(
   );
 }
 
-/** The copy only; `items.method.copy` also checks the target's revision lock. */
+/** The copy only; `copyMethod` also checks the target's revision lock. */
 export async function copyMakeMethod(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -3206,7 +3206,7 @@ export async function upsertPickMethodWithShelfLife(
  * Without this, snapshot flags drift from the live item value and leave the
  * UI reading stale (often sticky-true) tracking flags after an item is
  * flipped back to Inventory / Non-Inventory. The cascade only:
- * `items.item.setTrackingType` also writes the item.
+ * `setItemTrackingType` also writes the item.
  */
 export async function cascadeItemTrackingType(
   db: Kysely<KyselyDatabase>,
@@ -3349,7 +3349,7 @@ export async function cascadeItemTrackingType(
  * sourcingType and defaultMethodType are item-level properties; method
  * materials are read-only mirrors. Only mirrors on Draft make methods are
  * touched — Active and Archived methods are frozen. The write only:
- * `items.item.setSourcing` derives the interlocked fields first.
+ * `setItemSourcing` derives the interlocked fields first.
  */
 export async function updateItemMethodAndSourcing(
   db: Kysely<KyselyDatabase>,
@@ -3896,7 +3896,7 @@ export async function resolveItemIdFromExtractedText(
 /**
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
- * omitted optional fields are cleared. `items.part.create` / `.update` are the
+ * omitted optional fields are cleared. `createPart` / `updatePart` are the
  * operations; create also queues the part's model optimisation.
  */
 export async function upsertPart(
@@ -4109,7 +4109,7 @@ export async function upsertPickMethod(
     .eq("locationId", pickMethod.locationId);
 }
 
-/** The row write only; `items.manufacturing.update` also re-plans the item. */
+/** The row write only; `updateItemManufacturing` also re-plans the item. */
 export async function upsertItemManufacturing(
   client: SupabaseClient<Database>,
   partManufacturing: z.infer<typeof itemManufacturingValidator> & {
@@ -4123,7 +4123,7 @@ export async function upsertItemManufacturing(
     .eq("itemId", partManufacturing.itemId);
 }
 
-/** The row write only; `items.planning.update` also checks the responsible employee and re-plans. */
+/** The row write only; `updateItemPlanning` also checks the responsible employee and re-plans. */
 export async function upsertItemPlanning(
   client: SupabaseClient<Database>,
   partPlanning:
@@ -4239,7 +4239,7 @@ async function findSupersessionCycle(
   return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
 }
 
-/** The building block of `items.supersession.set` and `.addPredecessor`. */
+/** The building block of `setItemSupersession` and `addItemPredecessor`. */
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -4373,7 +4373,7 @@ export async function upsertItemPostingGroup(
     .single();
 }
 
-/** The row write only; `items.supplierPart.create` / `.update` also save the price breaks. */
+/** The row write only; `createSupplierPart` / `updateSupplierPart` also save the price breaks. */
 export async function upsertSupplierPart(
   client: SupabaseClient<Database>,
   supplierPart:
@@ -4443,7 +4443,7 @@ export async function upsertItemUnitSalePrice(
     .eq("itemId", itemUnitSalePrice.itemId);
 }
 
-/** The header insert only; `items.method.createVersion` also copies the method. */
+/** The header insert only; `createMethodVersion` also copies the method. */
 export async function upsertMakeMethodVersion(
   client: SupabaseClient<Database>,
   makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
@@ -6531,7 +6531,7 @@ export async function getChangeNotices(
 // -----------------------------------------------------------------------------
 // Header CRUD
 // -----------------------------------------------------------------------------
-/** The header insert only; `items.changeNotice.create` also dates it and adds its parts. */
+/** The header insert only; `createChangeNotice` also dates it and adds its parts. */
 export async function insertChangeNotice(
   client: SupabaseClient<Database>,
   input: {
@@ -6682,7 +6682,7 @@ export async function deleteChangeNotice(
 // Stage transition — the single guarded writer (G8), a compare-and-swap (G2).
 // Forward-only (isAllowedChangeNoticeTransition).
 // -----------------------------------------------------------------------------
-/** The guarded write only; `items.changeNotice.setStatus` also gates approval, releases and notifies. */
+/** The guarded write only; `setChangeNoticeStatus` also gates approval, releases and notifies. */
 export async function updateChangeNoticeStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -9271,6 +9271,7 @@ export type LockKind =
   | "makeMethod"
   | "material"
   | "operation"
+  | "step"
   | "tool"
   | "parameter";
 
@@ -9325,6 +9326,10 @@ const methodLockQueries = {
     `makeMethod!methodMaterial_methodId_fkey(${METHOD_LOCK_SOURCE})`
   ],
   operation: ["methodOperation", `makeMethod(${METHOD_LOCK_SOURCE})`],
+  step: [
+    "methodOperationStep",
+    `methodOperation(makeMethod(${METHOD_LOCK_SOURCE}))`
+  ],
   tool: [
     "methodOperationTool",
     `methodOperation(makeMethod(${METHOD_LOCK_SOURCE}))`
@@ -9392,7 +9397,7 @@ function unwrapMakeMethod(
 ): MakeMethodLockRow | null {
   if (!row) return null;
   if (kind === "makeMethod") return row as MakeMethodLockRow;
-  if (kind === "tool" || kind === "parameter") {
+  if (kind === "tool" || kind === "parameter" || kind === "step") {
     return (
       (row as { methodOperation: { makeMethod: MakeMethodLockRow | null } })
         .methodOperation?.makeMethod ?? null
@@ -9462,6 +9467,108 @@ export async function checkRevisionLock(
   });
 }
 
+/**
+ * The first refusal among several locks, else the first warning. An update
+ * that can move a row checks both the method it leaves and the one it joins.
+ */
+export async function checkRevisionLocks(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  targets: { kind: LockKind; id: string | null | undefined }[]
+): Promise<LockCheck> {
+  const checks = await Promise.all(
+    targets.map((target) => checkRevisionLock(client, { ...target, companyId }))
+  );
+  return (
+    checks.find((check) => !check.ok) ??
+    checks.find((check) => check.warn) ?? { ok: true, warn: false }
+  );
+}
+
+/** The locks of every method the rows belong to: a reorder names rows, not their method. */
+export async function checkRowMethodLocks(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  table: "methodMaterial" | "methodOperation",
+  ids: string[]
+): Promise<LockCheck> {
+  if (ids.length === 0) return { ok: true, warn: false };
+  const rows = await client
+    .from(table)
+    .select("makeMethodId")
+    .in("id", ids)
+    .eq("companyId", companyId);
+  if (rows.error) {
+    logger.error("Failed to read the methods of reordered rows", {
+      companyId,
+      table,
+      error: rows.error
+    });
+    return {
+      ok: false,
+      warn: false,
+      message: "Could not check whether the method is released"
+    };
+  }
+  const methodIds = [...new Set(rows.data.map((row) => row.makeMethodId))];
+  return checkRevisionLocks(
+    client,
+    companyId,
+    methodIds.map((id) => ({ kind: "makeMethod" as const, id }))
+  );
+}
+
+/**
+ * Why a step, a slide or a step link cannot change, or null. Only a Draft
+ * method's steps change; `revisionLock` adds the release lock, for the writes
+ * whose editor checks it.
+ */
+export async function methodStepRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  ref: { operationId: string } | { stepId: string } | { slideId: string },
+  options: { revisionLock?: boolean } = {}
+): Promise<string | null> {
+  let operationId: string | null = null;
+  if ("operationId" in ref) {
+    operationId = ref.operationId;
+  } else if ("stepId" in ref) {
+    const step = await client
+      .from("methodOperationStep")
+      .select("operationId")
+      .eq("id", ref.stepId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    operationId = step.data?.operationId ?? null;
+  } else {
+    const slide = await client
+      .from("methodOperationStepSlide")
+      .select("methodOperationStep(operationId)")
+      .eq("id", ref.slideId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    operationId = slide.data?.methodOperationStep?.operationId ?? null;
+  }
+  if (!operationId) return "Failed to find method operation";
+
+  if (options.revisionLock) {
+    const lock = await checkRevisionLock(client, {
+      kind: "operation",
+      id: operationId,
+      companyId
+    });
+    if (!lock.ok) return lock.message;
+  }
+  try {
+    await assertMethodOperationIsDraft(client, operationId);
+    return null;
+  } catch (err) {
+    return err instanceof Error
+      ? err.message
+      : "Failed to find method operation";
+  }
+}
+
 // =============================================================================
 // Change Notices — server-only helpers (imports @carbon/jobs).
 // =============================================================================
@@ -9522,6 +9629,36 @@ export async function requireChangeNoticeEditable(
         : changeNoticeLockedMessage(status);
 
   return message ? { error: { message }, data: null } : null;
+}
+
+// A child row (affected item, action task) is addressed by its own id, so its
+// notice is the one the row belongs to, not one the caller names.
+export async function requireChangeNoticeChildEditable(
+  client: SupabaseClient<Database>,
+  args: {
+    table: "changeOrderAffectedItem" | "changeOrderActionTask";
+    id: string;
+    companyId: string;
+    scope: ChangeNoticeEditScope;
+  }
+): Promise<{ error: { message: string }; data: null } | null> {
+  const row = await client
+    .from(args.table)
+    .select("changeOrderId")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (row.error || !row.data) {
+    return {
+      error: { message: "Could not find the change notice record" },
+      data: null
+    };
+  }
+  return requireChangeNoticeEditable(client, {
+    changeNoticeId: row.data.changeOrderId,
+    companyId: args.companyId,
+    scope: args.scope
+  });
 }
 
 // The inverse gate: an item owned by an open change notice must not get a manual
@@ -10165,7 +10302,6 @@ export function toRichText(value: string | undefined): Json | undefined {
     content: [{ type: "paragraph", content: [{ type: "text", text: value }] }]
   } as unknown as Json;
 }
-const syncMakeMethodLogger = getLogger("server-functions", "sync");
 
 const onShapeDataValidator = z.object({
   index: z.string(),
@@ -10342,7 +10478,7 @@ export async function syncMakeMethod(
     case "onshape": {
       const { type, makeMethodId, data } = payload;
 
-      syncMakeMethodLogger.info({
+      logger.info({
         type,
         makeMethodId,
         data,
@@ -10432,7 +10568,7 @@ export async function syncMakeMethod(
           const maxVersion = Number(allVersions.data?.version ?? 0);
           const newVersion = maxVersion + 1;
 
-          syncMakeMethodLogger.info({
+          logger.info({
             action: "creating_top_level_draft",
             itemId: topLevelMakeMethod.data.itemId,
             maxVersion,
@@ -10466,7 +10602,7 @@ export async function syncMakeMethod(
         throw new Error("Failed to fetch make methods");
       }
 
-      syncMakeMethodLogger.info({
+      logger.info({
         action: "fetched_active_make_methods",
         count: existingMakeMethods.data?.length ?? 0,
         data: existingMakeMethods.data
@@ -10744,7 +10880,7 @@ export async function syncMakeMethod(
                 existingMakeMethodsByItemId.get(itemId) ||
                 newlyCreatedMakeMethodsByItemId.get(itemId);
 
-              syncMakeMethodLogger.info({
+              logger.info({
                 action: "processing_item",
                 itemId,
                 partId,
@@ -10769,7 +10905,7 @@ export async function syncMakeMethod(
                       .orderBy("version", "desc")
                       .executeTakeFirst();
 
-                    syncMakeMethodLogger.info({
+                    logger.info({
                       action: "check_existing_draft",
                       itemId,
                       companyId,
@@ -10803,7 +10939,7 @@ export async function syncMakeMethod(
                       const maxVersion = Number(maxVersionRow?.version ?? 0);
                       const newVersion = maxVersion + 1;
 
-                      syncMakeMethodLogger.info({
+                      logger.info({
                         action: "creating_child_draft",
                         itemId,
                         companyId,

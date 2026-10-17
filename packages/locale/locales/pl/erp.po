@@ -5492,9 +5492,6 @@ msgstr "Potwierdź Inwentaryzację"
 msgid "Confirm Mapping"
 msgstr "Potwierdź mapowanie"
 
-msgid "Confirm Password"
-msgstr "Potwierdź hasło"
-
 msgid "Confirm Skip"
 msgstr "Potwierdź Pominięcie"
 
@@ -6623,9 +6620,6 @@ msgstr "Bieżący"
 
 msgid "Current Net Book Value:"
 msgstr "Bieżąca Wartość księgowa netto:"
-
-msgid "Current Password"
-msgstr "Bieżące hasło"
 
 msgid "Current portion"
 msgstr "Część bieżąca"
@@ -14224,9 +14218,6 @@ msgstr "Nowy Właściciel"
 
 msgid "New Part"
 msgstr "Nowa Część"
-
-msgid "New Password"
-msgstr "Nowe Hasło"
 
 msgid "New Payment"
 msgstr "Nowa Płatność"
@@ -25047,9 +25038,6 @@ msgstr "Aktualizuj problem Linear"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Aktualizuj czasy realizacji części na podstawie zaksięgowanych paragonów zakupu."
-
-msgid "Update Password"
-msgstr "Zaktualizuj hasło"
 
 msgid "Update Permissions"
 msgstr "Aktualizuj Uprawnienia"

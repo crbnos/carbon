@@ -62,9 +62,11 @@ import {
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
+import { systemServerFns } from "../shared/shared.service";
 import {
   finishPickingList,
   inventoryAdjustmentTypes,
+  inventoryCountStatusFrom,
   inventoryItemTypes,
   isPickingListLocked,
   isStockTransferLocked,
@@ -149,7 +151,7 @@ export const createReceipt = defineServiceFn({
     const created = await (() => {
       switch (sourceDocument) {
         case "Purchase Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromPurchaseOrder",
             locationId,
             purchaseOrderId: sourceDocumentId,
@@ -158,25 +160,25 @@ export const createReceipt = defineServiceFn({
         case "Sales Return Order":
           // No default-location guard: the server function falls back to the
           // return order's own location and errors specifically otherwise.
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromSalesReturnOrder",
             locationId,
             salesReturnOrderId: sourceDocumentId,
             receiptId: undefined
           });
         case "Inbound Transfer":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromInboundTransfer",
             warehouseTransferId: sourceDocumentId,
             receiptId: undefined
           });
         case "Rental Agreement":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
           });
         default:
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptDefault",
             locationId: locationId as string
           });
@@ -267,21 +269,21 @@ export const updateReceipt = defineServiceFn({
     const created = await (() => {
       switch (receipt.sourceDocument) {
         case "Purchase Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromPurchaseOrder",
             locationId: receipt.locationId,
             purchaseOrderId: receipt.sourceDocumentId,
             receiptId: id
           });
         case "Sales Return Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromSalesReturnOrder",
             locationId: receipt.locationId,
             salesReturnOrderId: receipt.sourceDocumentId,
             receiptId: id
           });
         case "Inbound Transfer":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "receiptFromInboundTransfer",
             warehouseTransferId: receipt.sourceDocumentId,
             receiptId: id
@@ -620,7 +622,7 @@ export const splitReceiptLine = defineServiceFn({
       return ctx.error("notFound", "The receipt line could not be found");
     }
 
-    const split = await service.system(ctx).invoke("create", {
+    const split = await systemServerFns(ctx).invoke("create", {
       type: "receiptLineSplit",
       locationId,
       receiptId,
@@ -1174,46 +1176,46 @@ export const createShipment = defineServiceFn({
     const created = await (() => {
       switch (sourceDocument) {
         case "Sales Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromSalesOrder",
             locationId: locationId!,
             salesOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Sales Return Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromSalesReturnOrder",
             locationId,
             salesReturnOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Purchase Return Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromPurchaseReturnOrder",
             locationId,
             purchaseReturnOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Purchase Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromPurchaseOrder",
             locationId: locationId!,
             purchaseOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Outbound Transfer":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromWarehouseTransfer",
             warehouseTransferId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Rental Agreement":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
           });
         default:
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentDefault",
             locationId
           });
@@ -1305,35 +1307,35 @@ export const updateShipment = defineServiceFn({
     const created = await (() => {
       switch (shipment.sourceDocument) {
         case "Sales Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromSalesOrder",
             locationId: locationId as string,
             salesOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Sales Return Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromSalesReturnOrder",
             locationId,
             salesReturnOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Purchase Return Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromPurchaseReturnOrder",
             locationId,
             purchaseReturnOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Purchase Order":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromPurchaseOrder",
             locationId: locationId as string,
             purchaseOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Outbound Transfer":
-          return service.system(ctx).invoke("create", {
+          return systemServerFns(ctx).invoke("create", {
             type: "shipmentFromWarehouseTransfer",
             warehouseTransferId: sourceDocumentId,
             shipmentId: id
@@ -1720,7 +1722,7 @@ export const splitShipmentLine = defineServiceFn({
       return ctx.error("notFound", "The shipment line could not be found");
     }
 
-    const split = await service.system(ctx).invoke("create", {
+    const split = await systemServerFns(ctx).invoke("create", {
       type: "shipmentLineSplit",
       locationId,
       shipmentId,
@@ -2027,9 +2029,6 @@ export const assignShipmentLineEntity = defineServiceFn({
 // Stock transfers
 // ---------------------------------------------------------------------------
 
-const STOCK_TRANSFER_LOCKED =
-  "Cannot modify a locked stock transfer. Reopen it first.";
-
 /**
  * Create a stock transfer.
  *
@@ -2204,7 +2203,7 @@ export const setStockTransferStatus = defineServiceFn({
  * @remarks
  * Moves `quantity` of the line's item from its source to its destination
  * storage unit. A serial- or batch-tracked line needs its `trackedEntityId`;
- * `inventory.stockTransfer.line.pickEntity` picks a scanned one. A Completed
+ * `pickStockTransferLineEntity` picks a scanned one. A Completed
  * transfer is refused.
  *
  * @mcp
@@ -2375,7 +2374,7 @@ export const updateStockTransferLines = defineServiceFn({
         isStockTransferLocked(line.stockTransfer?.status)
       )
     ) {
-      return ctx.error("rule", STOCK_TRANSFER_LOCKED);
+      return ctx.error("rule", service.STOCK_TRANSFER_LOCKED);
     }
 
     const update = await ctx.asCaller.supabase
@@ -2810,6 +2809,13 @@ export const adjustInventory = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, { acknowledged, ...adjustment }) {
+    const serial = await service.serialQuantityRefusal(
+      ctx,
+      adjustment.itemId,
+      adjustment.quantity
+    );
+    if (serial) return serial;
+
     const line = [
       {
         lineId: adjustment.itemId,
@@ -3577,12 +3583,28 @@ export const deleteKanban = defineServiceFn({
 /**
  * Delete receipt
  *
+ * @remarks
+ * A posted receipt cannot be deleted; void it instead.
+ *
  * @mcp destructive
  */
 export const deleteReceipt = defineServiceFn({
   input: z.looseObject({ receiptId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const receipt = await ctx.asCaller.supabase
+      .from("receipt")
+      .select("postingDate")
+      .eq("id", input.receiptId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (receipt.error) {
+      return ctx.error("internal", "Failed to get receipt", receipt.error);
+    }
+    if (!receipt.data) return ctx.error("notFound", "Receipt not found");
+    if (receipt.data.postingDate) {
+      return ctx.error("rule", "Cannot delete a posted receipt");
+    }
     return envelope(
       ctx,
       await service.deleteReceipt(
@@ -3615,12 +3637,28 @@ export const deleteReceiptLine = defineServiceFn({
 /**
  * Delete shipment
  *
+ * @remarks
+ * A posted shipment cannot be deleted; void it instead.
+ *
  * @mcp destructive
  */
 export const deleteShipment = defineServiceFn({
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const shipment = await ctx.asCaller.supabase
+      .from("shipment")
+      .select("postingDate")
+      .eq("id", input.shipmentId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (shipment.error) {
+      return ctx.error("internal", "Failed to get shipment", shipment.error);
+    }
+    if (!shipment.data) return ctx.error("notFound", "Shipment not found");
+    if (shipment.data.postingDate) {
+      return ctx.error("rule", "Cannot delete a posted shipment");
+    }
     return envelope(
       ctx,
       await service.deleteShipment(
@@ -3672,12 +3710,20 @@ export const deleteShippingMethod = defineServiceFn({
 /**
  * Delete stock transfer
  *
+ * @remarks
+ * Only a Draft transfer can be deleted: reopen a locked one first.
+ *
  * @mcp destructive
  */
 export const deleteStockTransfer = defineServiceFn({
   input: z.looseObject({ stockTransferId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const transfer = await service.unlockedStockTransfer(
+      ctx,
+      input.stockTransferId
+    );
+    if (transfer instanceof Error) return transfer;
     return envelope(
       ctx,
       await service.deleteStockTransfer(
@@ -3691,12 +3737,36 @@ export const deleteStockTransfer = defineServiceFn({
 /**
  * Delete stock transfer line
  *
+ * @remarks
+ * Only a line of a Draft transfer can be deleted: reopen a locked one first.
+ *
  * @mcp destructive
  */
 export const deleteStockTransferLine = defineServiceFn({
   input: z.looseObject({ stockTransferLineId: z.string() }),
   permission: { delete: "inventory" },
   async run(ctx, input) {
+    const line = await ctx.asCaller.supabase
+      .from("stockTransferLine")
+      .select("stockTransferId")
+      .eq("id", input.stockTransferLineId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (line.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load stock transfer line",
+        line.error
+      );
+    }
+    if (!line.data) {
+      return ctx.error("notFound", "Stock transfer line not found");
+    }
+    const transfer = await service.unlockedStockTransfer(
+      ctx,
+      line.data.stockTransferId
+    );
+    if (transfer instanceof Error) return transfer;
     return envelope(
       ctx,
       await service.deleteStockTransferLine(
@@ -5115,25 +5185,57 @@ export const updateInventoryCountLine = defineServiceFn({
 });
 
 /**
- * Update inventory count status
+ * Confirm or reopen an inventory count
+ *
+ * @remarks
+ * `Pending` confirms a Draft count for review; `Draft` reopens a Pending one
+ * for entry. A count is posted only by `postInventoryCount`, which books its
+ * variances; a Posted count stays Posted.
  *
  * @mcp
  */
 export const updateInventoryCountStatus = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     id: z.string(),
-    status: z.enum(["Draft", "Pending", "Posted"]),
-    expectedStatus: z.enum(["Draft", "Pending", "Posted"]).optional()
+    status: z.enum(["Draft", "Pending"])
   }),
   permission: { update: "inventory" },
-  async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.updateInventoryCountStatus(
-        ctx.asCaller.supabase,
-        stamp(ctx, input, ["companyId", "updatedBy"]) as never
-      )
+  async run(ctx, { id, status }) {
+    const from = inventoryCountStatusFrom(status);
+    const count = await service.getInventoryCount(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
     );
+    if (count.error && count.error.code !== "PGRST116") {
+      return ctx.error(
+        "internal",
+        "Failed to load inventory count",
+        count.error
+      );
+    }
+    if (!count.data) return ctx.error("notFound", "Inventory count not found");
+    if (count.data.status !== from.status) {
+      return ctx.error("rule", from.refusal);
+    }
+    const update = await service.updateInventoryCountStatus(
+      ctx.asCaller.supabase,
+      {
+        id,
+        companyId: ctx.company.id,
+        status,
+        expectedStatus: from.status,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update inventory count status",
+        update.error
+      );
+    }
+    return { id, status };
   }
 });
 
@@ -5457,18 +5559,18 @@ export const updateShippingMethod = defineServiceFn({
  * Create a stock transfer line
  *
  * @remarks
- * Upsert stock transfer line
+ * Adds a line to a Draft stock transfer: reopen a locked one first. The line
+ * starts unpicked; picking moves stock through `pickStockTransferLine`.
  *
  * @mcp
  */
 export const createStockTransferLine = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     stockTransferId: z.string().min(1),
     itemId: z.string().min(1),
     fromStorageUnitId: z.string().optional(),
     toStorageUnitId: z.string().optional(),
     quantity: z.number().min(0),
-    pickedQuantity: z.number().min(0).optional(),
     requiresBatchTracking: z.enum(["true", "false"]),
     requiresSerialTracking: z.enum(["true", "false"]),
     id: z
@@ -5478,6 +5580,11 @@ export const createStockTransferLine = defineServiceFn({
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
+    const transfer = await service.unlockedStockTransfer(
+      ctx,
+      input.stockTransferId
+    );
+    if (transfer instanceof Error) return transfer;
     return envelope(
       ctx,
       await service.upsertStockTransferLine(
@@ -5497,19 +5604,19 @@ export const createStockTransferLine = defineServiceFn({
  * Update a stock transfer line
  *
  * @remarks
- * Upsert stock transfer line
+ * Changes a line of a Draft stock transfer: reopen a locked one first. Its
+ * picked quantity moves only by picking (`pickStockTransferLine`).
  *
  * @mcp
  */
 export const updateStockTransferLine = defineServiceFn({
   input: z
-    .looseObject({
+    .object({
       stockTransferId: z.string().min(1),
       itemId: z.string().min(1),
       fromStorageUnitId: z.string().optional(),
       toStorageUnitId: z.string().optional(),
       quantity: z.number().min(0),
-      pickedQuantity: z.number().min(0).optional(),
       requiresBatchTracking: z.enum(["true", "false"]),
       requiresSerialTracking: z.enum(["true", "false"]),
       id: z
@@ -5520,6 +5627,30 @@ export const updateStockTransferLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    const transfer = await service.unlockedStockTransfer(
+      ctx,
+      input.stockTransferId
+    );
+    if (transfer instanceof Error) return transfer;
+    // The line must already be on this transfer: an update cannot move it
+    // off a locked one.
+    const line = await ctx.asCaller.supabase
+      .from("stockTransferLine")
+      .select("id")
+      .eq("id", input.id)
+      .eq("stockTransferId", input.stockTransferId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (line.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load stock transfer line",
+        line.error
+      );
+    }
+    if (!line.data) {
+      return ctx.error("notFound", "Stock transfer line not found");
+    }
     return envelope(
       ctx,
       await service.upsertStockTransferLine(
@@ -6016,25 +6147,16 @@ export const generatePickingList = defineServiceFn({
  * Create a warehouse transfer between locations
  *
  * @remarks
- * Create a warehouse transfer between locations. Generates sequence ID automatically.
+ * Create a Draft warehouse transfer between locations. Generates sequence ID
+ * automatically. Its status moves only through `setWarehouseTransferStatus`.
  *
  * @mcp
  */
 export const insertWarehouseTransfer = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     fromLocationId: z.string(),
     toLocationId: z.string(),
     transferId: z.string().optional(),
-    status: z
-      .enum([
-        "Draft",
-        "To Ship and Receive",
-        "To Ship",
-        "To Receive",
-        "Completed",
-        "Cancelled"
-      ])
-      .optional(),
     transferDate: z.string().optional(),
     expectedReceiptDate: z.string().optional(),
     notes: z.string().optional(),
@@ -6056,24 +6178,18 @@ export const insertWarehouseTransfer = defineServiceFn({
 /**
  * Update an existing warehouse transfer
  *
+ * @remarks
+ * Only a Draft transfer's header changes: reopen it first. Its status moves
+ * only through `setWarehouseTransferStatus`.
+ *
  * @mcp
  */
 export const updateWarehouseTransfer = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     id: z.string(),
     fromLocationId: z.string().optional(),
     toLocationId: z.string().optional(),
     transferId: z.string().optional(),
-    status: z
-      .enum([
-        "Draft",
-        "To Ship and Receive",
-        "To Ship",
-        "To Receive",
-        "Completed",
-        "Cancelled"
-      ])
-      .optional(),
     transferDate: z.string().optional(),
     expectedReceiptDate: z.string().optional(),
     notes: z.string().optional(),
@@ -6082,6 +6198,8 @@ export const updateWarehouseTransfer = defineServiceFn({
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
+    const transfer = await service.unlockedWarehouseTransfer(ctx, input.id);
+    if (transfer instanceof Error) return transfer;
     return envelope(
       ctx,
       await service.updateWarehouseTransfer(

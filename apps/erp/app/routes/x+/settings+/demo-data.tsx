@@ -27,6 +27,7 @@ import {
   TemplateCards,
   TemplateReviewRow
 } from "~/modules/settings/ui/DemoData";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export const handle = {
@@ -166,7 +167,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // not one transaction, so the messages say WHICH half happened.
       let deleted: Array<{ table: string; rows: number }>;
       try {
-        ({ deleted } = await purgeCorruptedRows(companyId));
+        ({ deleted } = await purgeCorruptedRows(
+          getDatabaseClient(),
+          companyId
+        ));
       } catch (err) {
         return {
           success: false,

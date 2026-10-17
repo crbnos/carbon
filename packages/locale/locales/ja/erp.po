@@ -5492,9 +5492,6 @@ msgstr "在庫数確認"
 msgid "Confirm Mapping"
 msgstr "マッピングを確認"
 
-msgid "Confirm Password"
-msgstr "パスワードを確認"
-
 msgid "Confirm Skip"
 msgstr "スキップを確認"
 
@@ -6623,9 +6620,6 @@ msgstr "現在"
 
 msgid "Current Net Book Value:"
 msgstr "現在の未償却残高:"
-
-msgid "Current Password"
-msgstr "現在のパスワード"
 
 msgid "Current portion"
 msgstr "流動負債部分"
@@ -14224,9 +14218,6 @@ msgstr "新規責任者"
 
 msgid "New Part"
 msgstr "新規部品"
-
-msgid "New Password"
-msgstr "新しいパスワード"
 
 msgid "New Payment"
 msgstr "新しい支払い"
@@ -25047,9 +25038,6 @@ msgstr "Linear イシューを更新"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "投稿された購買領収書から部品のリードタイムを更新します。"
-
-msgid "Update Password"
-msgstr "パスワードを更新"
 
 msgid "Update Permissions"
 msgstr "権限を更新"

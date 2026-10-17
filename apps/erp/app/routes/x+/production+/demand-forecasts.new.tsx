@@ -18,6 +18,7 @@ import {
   getCompanyTimeZone,
   getOrCreatePeriods
 } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;
@@ -30,6 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // No location yet — it is picked in the form — so the week grid anchors on
   // the company calendar.
   const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
     datetime.today(await getCompanyTimeZone(client, companyId)),
     WEEKS_TO_PROJECT
   );

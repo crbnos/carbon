@@ -3,11 +3,57 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { InvalidInputError } from "./errors";
 import {
   hasPermissions,
   type ModulePermissions,
-  permissionsFromClaims
+  type PermissionRule,
+  permissionsFromClaims,
+  resolvePermissions
 } from "./permissions";
+
+describe("resolvePermissions", () => {
+  const rule: PermissionRule<{ type: "post" | "void" }> = {
+    by: "type",
+    rules: { post: { update: "invoicing" }, void: { delete: "invoicing" } }
+  };
+  const refusal = (input: unknown) => {
+    try {
+      resolvePermissions(rule, input as { type: "post" });
+    } catch (err) {
+      return err;
+    }
+    throw new Error("expected a refusal");
+  };
+
+  it("resolves the rule of the value sent", () => {
+    expect(resolvePermissions(rule, { type: "void" })).toEqual({
+      delete: "invoicing"
+    });
+  });
+
+  it("refuses an inherited key as invalid input naming the field", () => {
+    const err = refusal({ type: "constructor" });
+    expect(err).toBeInstanceOf(InvalidInputError);
+    expect(err).toMatchObject({
+      status: 400,
+      message: "Invalid input — type: expected one of post, void"
+    });
+  });
+
+  it("refuses an unknown or missing value the same way", () => {
+    expect(refusal({ type: "bogus" })).toMatchObject({ status: 400 });
+    expect(refusal({})).toMatchObject({ status: 400 });
+    expect(refusal(undefined)).toMatchObject({ status: 400 });
+  });
+
+  it("returns a plain rule as it is", () => {
+    expect(resolvePermissions("system", {})).toBe("system");
+    expect(resolvePermissions({ view: "sales" }, {})).toEqual({
+      view: "sales"
+    });
+  });
+});
 
 const none = { view: [], create: [], update: [], delete: [] };
 const claims: ModulePermissions = {

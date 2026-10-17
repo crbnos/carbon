@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
@@ -39,7 +40,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
     "@types/pg": "8.15.6",
     "@types/react": "catalog:",

@@ -15,6 +15,26 @@ import * as purchasing from "./purchasing/purchasing.service";
 import * as sales from "./sales/sales.service";
 import { invokePosting } from "./shared/shared.service";
 
+/**
+ * The permission each posting checks a caller's client against. Pinned by
+ * `apps/erp/test/posting-permissions.test.ts`.
+ */
+export const postingPermissions = {
+  "post-sales-invoice": invoicing.postSalesInvoicePermission,
+  "post-purchase-invoice": invoicing.postPurchaseInvoicePermission,
+  "post-receipt": inventory.postReceiptPermission,
+  "post-shipment": inventory.postShipmentPermission,
+  "post-payment": invoicing.postPaymentPermission,
+  "post-charge": accounting.postChargePermission,
+  "update-purchased-prices": purchasing.updatePurchasedPricesPermission,
+  "kanban-replenish": inventory.replenishKanbanPermission,
+  "create-rental-invoices": sales.createRentalInvoicesPermission,
+  "create-contract-invoices": sales.createContractInvoicesPermission,
+  "create-lease-invoices": purchasing.createLeaseInvoicesPermission,
+  "propose-revenue-recognition-run":
+    accounting.proposeRevenueRecognitionRunPermission
+};
+
 export const postings: Postings = {
   "post-sales-invoice": (handles, input) =>
     invokePosting(
@@ -23,7 +43,7 @@ export const postings: Postings = {
       input,
       invoicing.postSalesInvoice,
       {
-        as: invoicing.postSalesInvoicePermission
+        as: postingPermissions["post-sales-invoice"]
       }
     ),
   "post-purchase-invoice": (handles, input) =>
@@ -33,24 +53,24 @@ export const postings: Postings = {
       input,
       invoicing.postPurchaseInvoice,
       {
-        as: invoicing.postPurchaseInvoicePermission
+        as: postingPermissions["post-purchase-invoice"]
       }
     ),
   "post-receipt": (handles, input) =>
     invokePosting(handles, "post-receipt", input, inventory.postReceipt, {
-      as: inventory.postReceiptPermission
+      as: postingPermissions["post-receipt"]
     }),
   "post-shipment": (handles, input) =>
     invokePosting(handles, "post-shipment", input, inventory.postShipment, {
-      as: inventory.postShipmentPermission
+      as: postingPermissions["post-shipment"]
     }),
   "post-payment": (handles, input) =>
     invokePosting(handles, "post-payment", input, invoicing.postPayment, {
-      as: invoicing.postPaymentPermission
+      as: postingPermissions["post-payment"]
     }),
   "post-charge": (handles, input) =>
     invokePosting(handles, "post-charge", input, accounting.postCharge, {
-      as: accounting.postChargePermission
+      as: postingPermissions["post-charge"]
     }),
   "update-purchased-prices": (handles, input) =>
     invokePosting(
@@ -59,7 +79,7 @@ export const postings: Postings = {
       input,
       purchasing.updatePurchasedPrices,
       {
-        as: purchasing.updatePurchasedPricesPermission
+        as: postingPermissions["update-purchased-prices"]
       }
     ),
   "kanban-replenish": (handles, input) =>
@@ -69,7 +89,7 @@ export const postings: Postings = {
       input,
       inventory.replenishKanban,
       {
-        as: inventory.replenishKanbanPermission
+        as: postingPermissions["kanban-replenish"]
       }
     ),
   "create-rental-invoices": (handles, input) =>
@@ -79,7 +99,7 @@ export const postings: Postings = {
       input,
       sales.createRentalInvoices,
       {
-        as: sales.createRentalInvoicesPermission
+        as: postingPermissions["create-rental-invoices"]
       }
     ),
   "create-contract-invoices": (handles, input) =>
@@ -89,7 +109,7 @@ export const postings: Postings = {
       input,
       sales.createContractInvoices,
       {
-        as: sales.createContractInvoicesPermission
+        as: postingPermissions["create-contract-invoices"]
       }
     ),
   "create-lease-invoices": (handles, input) =>
@@ -99,7 +119,7 @@ export const postings: Postings = {
       input,
       purchasing.createLeaseInvoices,
       {
-        as: purchasing.createLeaseInvoicesPermission
+        as: postingPermissions["create-lease-invoices"]
       }
     ),
   "propose-revenue-recognition-run": (handles, input) =>
@@ -109,7 +129,7 @@ export const postings: Postings = {
       input,
       accounting.proposeRevenueRecognitionRun,
       {
-        as: accounting.proposeRevenueRecognitionRunPermission
+        as: postingPermissions["propose-revenue-recognition-run"]
       }
     )
 };

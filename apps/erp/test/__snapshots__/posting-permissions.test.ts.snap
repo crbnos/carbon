@@ -1,0 +1,316 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`posting permissions > match the reviewed manifest 1`] = `
+{
+  "accounting.activateAccountingPermission": {
+    "update": "accounting",
+  },
+  "accounting.applyAccountImportPermission": {
+    "update": "accounting",
+  },
+  "accounting.journalLegacyDocumentsPermission": {
+    "update": "accounting",
+  },
+  "accounting.postAssetTransferPermission": {
+    "by": "type",
+    "rules": {
+      "adjustCost": {
+        "update": "accounting",
+      },
+      "attachJob": {
+        "create": "accounting",
+      },
+      "capitalize": {
+        "create": "accounting",
+      },
+      "capitalizeCip": {
+        "create": "accounting",
+      },
+      "return": {
+        "create": "accounting",
+      },
+    },
+  },
+  "accounting.postChargePermission": {
+    "update": "invoicing",
+  },
+  "accounting.postReimbursementPermission": {
+    "update": "invoicing",
+  },
+  "accounting.previewAssetCapitalizationPermission": {
+    "view": "accounting",
+  },
+  "accounting.previewRevenueRecognitionRunPermission": {
+    "view": "accounting",
+  },
+  "accounting.proposeRevenueRecognitionRunPermission": {
+    "create": "accounting",
+  },
+  "accounting.recalculateRevenueRecognitionRunPermission": {
+    "update": "accounting",
+  },
+  "inventory.postInventoryCountPermission": {
+    "update": "inventory",
+  },
+  "inventory.postReceiptPermission": {
+    "update": "inventory",
+  },
+  "inventory.postShipmentPermission": {
+    "update": "inventory",
+  },
+  "inventory.postStockMovementCorrectionPermission": {
+    "update": "inventory",
+  },
+  "inventory.postStockTransferPermission": {},
+  "inventory.previewSerialUnitCostsPermission": {
+    "view": "accounting",
+  },
+  "inventory.recostSerialUnitPermission": {
+    "update": "accounting",
+  },
+  "inventory.replenishKanbanPermission": {
+    "by": "mode",
+    "rules": {
+      "level": "system",
+      "scan": {
+        "create": "inventory",
+      },
+    },
+  },
+  "invoicing.postMemoPermission": {
+    "update": "invoicing",
+  },
+  "invoicing.postPaymentPermission": {
+    "update": "invoicing",
+  },
+  "invoicing.postPurchaseInvoicePermission": {
+    "update": "invoicing",
+  },
+  "invoicing.postSalesInvoicePermission": {
+    "update": "invoicing",
+  },
+  "items.syncMakeMethodPermission": {
+    "update": "resources",
+  },
+  "production.assignSerialNumbersPermission": {
+    "update": "production",
+  },
+  "production.getMethodPermission": {
+    "update": "production",
+  },
+  "purchasing.createLeaseInvoicesPermission": {
+    "create": "invoicing",
+    "update": "purchasing",
+  },
+  "purchasing.finalizePurchasingRfqPermission": {
+    "create": "purchasing",
+  },
+  "purchasing.finalizeSupplierQuotePermission": {
+    "create": "purchasing",
+  },
+  "purchasing.postLeaseActionPermission": {
+    "update": "purchasing",
+  },
+  "purchasing.updatePurchasedPricesPermission": {
+    "update": "purchasing",
+  },
+  "quality.postNonconformancePermission": {
+    "update": "quality",
+  },
+  "sales.createContractInvoicesPermission": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "sales.createRentalInvoicesPermission": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "sales.postCustomerContractPermission": {
+    "update": "sales",
+  },
+  "sales.postRentalAgreementPermission": {
+    "update": "sales",
+  },
+  "settings.seedCompanyPermission": "system",
+  "shared.convertDocumentPermission": {
+    "by": "type",
+    "rules": {
+      "methodVersionToActive": {
+        "update": "resources",
+      },
+      "purchaseOrderToPurchaseInvoice": {
+        "update": "invoicing",
+      },
+      "quoteToSalesOrder": {
+        "update": "sales",
+      },
+      "salesOrderToSalesInvoice": {
+        "update": "invoicing",
+      },
+      "salesRfqToQuote": {
+        "update": "sales",
+      },
+      "shipmentToSalesInvoice": {
+        "update": "invoicing",
+      },
+      "supplierQuoteToPurchaseOrder": {
+        "update": "purchasing",
+      },
+      "warehouseTransferToReceipt": {
+        "update": "inventory",
+      },
+      "warehouseTransferToShipment": {
+        "update": "inventory",
+      },
+    },
+  },
+  "shared.importCsvTablePermission": {
+    "by": "table",
+    "rules": {
+      "batchQuantity": {
+        "create": "inventory",
+        "update": "inventory",
+      },
+      "bom": {
+        "update": "parts",
+      },
+      "consumable": {
+        "update": "parts",
+      },
+      "customer": {
+        "update": "sales",
+      },
+      "customerContact": {
+        "update": "sales",
+      },
+      "department": {
+        "update": "people",
+      },
+      "fixture": {
+        "update": "parts",
+      },
+      "inventoryQuantity": {
+        "create": "inventory",
+        "update": "inventory",
+      },
+      "itemPostingGroup": {
+        "update": "accounting",
+      },
+      "material": {
+        "update": "parts",
+      },
+      "materialDimension": {
+        "update": "parts",
+      },
+      "materialFinish": {
+        "update": "parts",
+      },
+      "materialForm": {
+        "update": "parts",
+      },
+      "materialGrade": {
+        "update": "parts",
+      },
+      "materialSubstance": {
+        "update": "parts",
+      },
+      "materialType": {
+        "update": "parts",
+      },
+      "operations": {
+        "update": "parts",
+      },
+      "part": {
+        "update": "parts",
+      },
+      "partWithMethod": {
+        "update": "parts",
+      },
+      "process": {
+        "update": "production",
+      },
+      "scrapReason": {
+        "update": "production",
+      },
+      "serialQuantity": {
+        "create": "inventory",
+        "update": "inventory",
+      },
+      "service": {
+        "update": "parts",
+      },
+      "storageType": {
+        "update": "parts",
+      },
+      "storageUnit": {
+        "update": "inventory",
+      },
+      "supplier": {
+        "update": "purchasing",
+      },
+      "supplierContact": {
+        "update": "purchasing",
+      },
+      "tool": {
+        "update": "parts",
+      },
+      "unitOfMeasure": {
+        "update": "parts",
+      },
+      "workCenter": {
+        "update": "production",
+      },
+    },
+  },
+}
+`;
+
+exports[`posting permissions > match the reviewed manifest 2`] = `
+{
+  "create-contract-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "create-lease-invoices": {
+    "create": "invoicing",
+    "update": "purchasing",
+  },
+  "create-rental-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "kanban-replenish": {
+    "by": "mode",
+    "rules": {
+      "level": "system",
+      "scan": {
+        "create": "inventory",
+      },
+    },
+  },
+  "post-charge": {
+    "update": "invoicing",
+  },
+  "post-payment": {
+    "update": "invoicing",
+  },
+  "post-purchase-invoice": {
+    "update": "invoicing",
+  },
+  "post-receipt": {
+    "update": "inventory",
+  },
+  "post-sales-invoice": {
+    "update": "invoicing",
+  },
+  "post-shipment": {
+    "update": "inventory",
+  },
+  "propose-revenue-recognition-run": {
+    "create": "accounting",
+  },
+  "update-purchased-prices": {
+    "update": "purchasing",
+  },
+}
+`;

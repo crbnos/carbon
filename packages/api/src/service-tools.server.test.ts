@@ -182,6 +182,19 @@ describe("settle", () => {
     });
   });
 
+  it("keeps a programming error or a thrown 5xx internal, its text withheld", async () => {
+    const internal = {
+      category: "internal",
+      message: "The operation could not be completed."
+    };
+    expect(
+      await refusal(new TypeError("Cannot read properties of undefined"))
+    ).toEqual(internal);
+    expect(
+      await refusal(new ServerFnError("Journal out of balance", 500))
+    ).toEqual(internal);
+  });
+
   it("withholds a data-layer error's text", async () => {
     const pgError = {
       code: "23505",

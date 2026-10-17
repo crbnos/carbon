@@ -5492,9 +5492,6 @@ msgstr "Envanter Sayımını Onayla"
 msgid "Confirm Mapping"
 msgstr "Eşleştirmeyi Onayla"
 
-msgid "Confirm Password"
-msgstr "Şifreyi Onayla"
-
 msgid "Confirm Skip"
 msgstr "Atlamayı Onayla"
 
@@ -6623,9 +6620,6 @@ msgstr "Mevcut"
 
 msgid "Current Net Book Value:"
 msgstr "Cari Net Defter Değeri:"
-
-msgid "Current Password"
-msgstr "Mevcut Şifre"
 
 msgid "Current portion"
 msgstr "Cari kısım"
@@ -14224,9 +14218,6 @@ msgstr "Yeni Sahip"
 
 msgid "New Part"
 msgstr "Yeni parça"
-
-msgid "New Password"
-msgstr "Yeni Şifre"
 
 msgid "New Payment"
 msgstr "Yeni Ödeme"
@@ -25047,9 +25038,6 @@ msgstr "Linear sorununu güncelle"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Muhasebeleştirilen mal kabullerinden parça tedarik sürelerini güncelleştir."
-
-msgid "Update Password"
-msgstr "Şifreyi Güncelle"
 
 msgid "Update Permissions"
 msgstr "İzinleri Güncelle"

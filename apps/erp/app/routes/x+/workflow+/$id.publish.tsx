@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { workflowPublishValidator } from "~/modules/workflows/workflows.models";
 import { publishWorkflowVersion } from "~/modules/workflows/workflows.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -38,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const published = await publishWorkflowVersion(client, {
+  const published = await publishWorkflowVersion(client, getDatabaseClient(), {
     workflowId: id,
     versionId: validation.data.versionId,
     companyId,

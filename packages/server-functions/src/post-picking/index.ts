@@ -96,7 +96,9 @@ export const postPickingInput = z.discriminatedUnion("type", [
   // remainder. An operation whose job is Completed (it was the last one)
   // sweeps the whole job under either return policy; otherwise the operation
   // sweep no-ops unless companySettings.returnPickedMaterialTiming =
-  // 'operation'. The job sweep requires job.status Completed or Cancelled. Tracked lines
+  // 'operation'. The job sweep requires job.status Completed or Cancelled, or
+  // with `cancelling` an open job (cancelJob sweeps before it flips the
+  // status, so a failed return stops the cancel). Tracked lines
   // return via the split-lineage walk; untracked lines return
   // picked − returned − max(issued, owed) per job material, where `owed` holds
   // back what completion-time backflush still needs.
@@ -106,9 +108,19 @@ export const postPickingInput = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("returnJobRemainders"),
-    jobId: z.string()
+    jobId: z.string(),
+    cancelling: z.boolean().optional()
   })
 ]);
+
+// The statuses a job can be cancelled from: what a `cancelling` sweep accepts.
+const CANCELLABLE_JOB_STATUSES: readonly string[] = [
+  "Draft",
+  "Planned",
+  "Ready",
+  "In Progress",
+  "Paused"
+];
 
 /** Picks, un-picks and returns picking-list material, per `type`. */
 const postPicking = defineServerFn({
@@ -1170,7 +1182,7 @@ const postPicking = defineServerFn({
       }
 
       case "returnJobRemainders": {
-        const { jobId, userId, companyId } = validatedPayload;
+        const { jobId, cancelling, userId, companyId } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
           const job = await trx
@@ -1178,15 +1190,17 @@ const postPicking = defineServerFn({
             .where("id", "=", jobId)
             .where("companyId", "=", companyId)
             .select(["id", "quantity", "locationId", "status"])
-            .executeTakeFirstOrThrow();
-          // Job scope is the final catch-all: only a completed job's remainder
-          // is provably surplus (completion-time backflush has already run).
-          if (
-            (job.status !== "Completed" && job.status !== "Cancelled") ||
-            !job.locationId
-          ) {
-            return;
-          }
+            .executeTakeFirst();
+          if (!job) throw new NotFoundError("Job not found");
+          // Job scope is the final catch-all: only a finished job's remainder
+          // is provably surplus (completion-time backflush has already run,
+          // or the job is being cancelled and will never consume it).
+          const sweepable =
+            job.status === "Completed" ||
+            job.status === "Cancelled" ||
+            (cancelling === true &&
+              CANCELLABLE_JOB_STATUSES.includes(job.status));
+          if (!sweepable || !job.locationId) return;
 
           await runReturnSweep(trx, {
             scope: "job",

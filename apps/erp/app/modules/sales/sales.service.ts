@@ -149,7 +149,6 @@ import {
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
@@ -665,6 +664,27 @@ export async function deleteQuoteMaterial(
   quoteMaterialId: string
 ) {
   return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
+}
+
+/** Sets the unit cost of each of a quote line's materials in one statement. */
+export async function updateQuoteMaterialUnitCosts(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  quoteLineId: string,
+  costs: { id: string; unitCost: number }[]
+) {
+  if (costs.length === 0) return;
+  const values = costs.map(
+    (cost) => sql`(${cost.id}::text, ${cost.unitCost}::numeric)`
+  );
+  await sql`
+    UPDATE "quoteMaterial" AS m
+    SET "unitCost" = v."unitCost"
+    FROM (VALUES ${sql.join(values)}) AS v("id", "unitCost")
+    WHERE m."id" = v."id"
+      AND m."companyId" = ${companyId}
+      AND m."quoteLineId" = ${quoteLineId}
+  `.execute(db);
 }
 
 export async function deleteQuoteOperation(
@@ -4407,7 +4427,8 @@ async function rewriteQuoteLinePrices(
 async function buildCostEffects(
   client: SupabaseClient<Database>,
   quoteLineId: string,
-  { refreshBuyCosts = true }: { refreshBuyCosts?: boolean } = {}
+  /** Set to rewrite the Buy materials' costs; a read-only caller leaves it out. */
+  refresh?: { db: Kysely<KyselyDatabase>; companyId: string }
 ) {
   const operationsResult = await client
     .from("quoteOperation")
@@ -4430,15 +4451,18 @@ async function buildCostEffects(
   ];
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
-  for (const mat of refreshBuyCosts ? (buyMaterials.data ?? []) : []) {
-    if (mat.unitCostSource === "manual") continue;
-    const price = resolveBuyUnitCost(mat, 1, priceMap);
-    if (price !== mat.unitCost) {
-      await client
-        .from("quoteMaterial")
-        .update({ unitCost: price })
-        .eq("id", mat.id);
-    }
+  if (refresh) {
+    const changed = (buyMaterials.data ?? []).flatMap((mat) => {
+      if (mat.unitCostSource === "manual") return [];
+      const price = resolveBuyUnitCost(mat, 1, priceMap);
+      return price !== mat.unitCost ? [{ id: mat.id, unitCost: price }] : [];
+    });
+    await updateQuoteMaterialUnitCosts(
+      refresh.db,
+      refresh.companyId,
+      quoteLineId,
+      changed
+    );
   }
 
   // Build method tree
@@ -4744,6 +4768,7 @@ async function getConfiguredSalePrice(
 
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
@@ -4804,7 +4829,10 @@ export async function buildMakeToOrderPriceRows(
   const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
 
   // 2. Build cost effects
-  const result = await buildCostEffects(client, quoteLineId);
+  const result = await buildCostEffects(client, quoteLineId, {
+    db,
+    companyId
+  });
   // buildCostEffects returns null when the line has no costed method yet —
   // treat as a no-op so partial drafts don't block the save.
   if (!result) return { rows: [], error: null };
@@ -4878,6 +4906,7 @@ export async function buildMakeToOrderPriceRows(
 
 export async function calculatePricesForQuantities(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   quoteId: string,
   quoteLineId: string,
   quantities: number[],
@@ -4885,6 +4914,7 @@ export async function calculatePricesForQuantities(
 ) {
   const { rows, error } = await buildMakeToOrderPriceRows(
     client,
+    db,
     quoteId,
     quoteLineId,
     quantities,
@@ -5108,6 +5138,7 @@ export async function resolvePurchaseToOrderPrices(
 
 export async function recalculateQuoteLinePrices(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   quoteId: string,
   quoteLineId: string,
@@ -5179,7 +5210,10 @@ export async function recalculateQuoteLinePrices(
   }
 
   // 3. Build cost effects
-  const result = await buildCostEffects(client, quoteLineId);
+  const result = await buildCostEffects(client, quoteLineId, {
+    db,
+    companyId
+  });
   if (!result) return { error: null };
 
   const { effects } = result;
@@ -5372,7 +5406,7 @@ export async function getQuoteLinePriceTraces(
         .eq("id", companyId)
         .single(),
       getConfiguredSalePrice(client, companyId, itemId, configuration),
-      buildCostEffects(client, quoteLineId, { refreshBuyCosts: false })
+      buildCostEffects(client, quoteLineId)
     ]);
     if (settingsResult.error)
       return { data: null, error: settingsResult.error };
@@ -6981,6 +7015,30 @@ export async function upsertSalesRFQLine(
     .eq("id", salesRfqLine.id)
     .select("id")
     .single();
+}
+
+/** Points each RFQ line at its item in one statement, scoped to the RFQ. */
+export async function setSalesRfqLineItems(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  salesRfqId: string,
+  lines: { lineId: string; itemId: string }[]
+) {
+  if (lines.length === 0) return;
+  const values = lines.map(
+    (line) => sql`(${line.lineId}::text, ${line.itemId}::text)`
+  );
+  await sql`
+    UPDATE "salesRfqLine" AS l
+    SET "itemId" = v."itemId",
+        "updatedBy" = ${userId},
+        "updatedAt" = now()
+    FROM (VALUES ${sql.join(values)}) AS v("lineId", "itemId")
+    WHERE l."id" = v."lineId"
+      AND l."companyId" = ${companyId}
+      AND l."salesRfqId" = ${salesRfqId}
+  `.execute(db);
 }
 
 export async function updateSalesRFQLineOrder(
@@ -10927,6 +10985,7 @@ type BreakRow = { quantity: number; overridePrice: number; active: boolean };
 
 export async function duplicatePriceOverrides(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   source: { customerId?: string; customerTypeId?: string },
@@ -10990,8 +11049,6 @@ export async function duplicatePriceOverrides(
   const existingByItemId = new Map(
     (existingOverrides ?? []).map((e) => [e.itemId, e.id])
   );
-
-  const db = getDatabaseClient();
 
   try {
     const result = await db.transaction().execute(async (trx) => {
@@ -11107,17 +11164,19 @@ export async function duplicatePriceOverrides(
  * are outside the transaction, which is fine: none of them touch the rows being
  * written here.
  */
-export async function saveQuoteLineWithPrices(args: {
-  companyId: string;
-  quoteId: string;
-  lineId: string;
-  line: Record<string, unknown>;
-  removedQuantities: number[];
-  priceRows: Record<string, unknown>[];
-}): Promise<void> {
+export async function saveQuoteLineWithPrices(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    quoteId: string;
+    lineId: string;
+    line: Record<string, unknown>;
+    removedQuantities: number[];
+    priceRows: Record<string, unknown>[];
+  }
+): Promise<void> {
   const { companyId, quoteId, lineId, line, removedQuantities, priceRows } =
     args;
-  const db = getDatabaseClient();
 
   await db.transaction().execute(async (trx) => {
     // Kysely bypasses RLS and lineId/quoteId come from the URL: the line must
@@ -12541,8 +12600,13 @@ export function parseConfiguration(
 export async function unlockedQuote(ctx: ServiceContext, quoteId: string) {
   const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
   if (refused) return refused;
-  const quote = await getQuote(ctx.asCaller.supabase, quoteId);
-  if (isQuoteLocked(quote.data?.status)) return ctx.error("rule", quoteLocked);
+  // The caller may hold the write permission without sales_view, which RLS
+  // needs to read the quote; an unread status would pass as unlocked.
+  const quote = await getQuote(ctx.asSystem.supabase, quoteId);
+  if (quote.error || !quote.data) {
+    return ctx.error("internal", "Failed to load quote", quote.error);
+  }
+  if (isQuoteLocked(quote.data.status)) return ctx.error("rule", quoteLocked);
   return quote.data;
 }
 
@@ -12599,6 +12663,7 @@ export async function priceNewQuoteLine(
     if (method.error) return "Failed to create quote line method.";
     const priced = await recalculateQuoteLinePrices(
       serviceRole,
+      ctx.asSystem.pg,
       companyId,
       quoteId,
       quoteLineId,
@@ -12725,18 +12790,15 @@ export async function createQuoteLineForFile(
   }
 
   // A revision that exists already gets a suffix.
-  let suffix = 1;
-  while (true) {
-    const existing = await serviceRole
-      .from("item")
-      .select("id")
-      .eq("readableId", readableId)
-      .eq("revision", revision)
-      .eq("companyId", companyId)
-      .single();
-    if (existing.error || !existing.data) break;
-    revision = `${revision} (${suffix})`;
-    suffix++;
+  const existing = await serviceRole
+    .from("item")
+    .select("revision")
+    .eq("readableId", readableId)
+    .eq("companyId", companyId);
+  const taken = new Set((existing.data ?? []).map((item) => item.revision));
+  const base = revision;
+  for (let suffix = 1; taken.has(revision); suffix++) {
+    revision = `${base} (${suffix})`;
   }
 
   const part = await upsertPart(serviceRole, {
@@ -12813,20 +12875,29 @@ export async function sentQuote(ctx: ServiceContext, quoteId: string) {
   return quote.data;
 }
 
-/** Tell the company's digital-quote group that a customer answered. */
+/**
+ * Tell the company's digital quote group that the customer answered. Best
+ * effort: the customer's accept or reject is already saved, so a failure here
+ * is logged and never returned to them.
+ */
 export async function notifyDigitalQuoteResponse(
   ctx: ServiceContext,
   quoteId: string
-): Promise<CarbonError | null> {
+): Promise<void> {
   const settings = await getCompanySettings(
     ctx.asSystem.supabase,
     ctx.company.id
   );
   if (settings.error) {
-    return ctx.error("internal", "Failed to send notification", settings.error);
+    logger.error("Failed to read the digital quote notification group", {
+      companyId: ctx.company.id,
+      quoteId,
+      error: settings.error
+    });
+    return;
   }
   const groupIds = settings.data?.digitalQuoteNotificationGroup ?? [];
-  if (groupIds.length === 0) return null;
+  if (groupIds.length === 0) return;
   try {
     await trigger("notify", {
       companyId: ctx.company.id,
@@ -12834,9 +12905,12 @@ export async function notifyDigitalQuoteResponse(
       event: NotificationEvent.DigitalQuoteResponse,
       recipient: { type: "group", groupIds }
     });
-    return null;
-  } catch (err) {
-    return ctx.error("internal", "Failed to send notification", err);
+  } catch (error) {
+    logger.error("Failed to notify the digital quote group", {
+      companyId: ctx.company.id,
+      quoteId,
+      error
+    });
   }
 }
 
@@ -12891,8 +12965,12 @@ export async function unlockedSalesOrder(
     id: salesOrderId
   });
   if (refused) return refused;
-  const order = await getSalesOrder(ctx.asCaller.supabase, salesOrderId);
-  if (isSalesOrderLocked(order.data?.status)) return ctx.error("rule", message);
+  // Read as the system: an unread status would pass as unlocked.
+  const order = await getSalesOrder(ctx.asSystem.supabase, salesOrderId);
+  if (order.error || !order.data) {
+    return ctx.error("internal", "Failed to load sales order", order.error);
+  }
+  if (isSalesOrderLocked(order.data.status)) return ctx.error("rule", message);
   return null;
 }
 
@@ -13102,6 +13180,7 @@ export async function repriceQuoteLine(
 ) {
   const priced = await recalculateQuoteLinePrices(
     ctx.asSystem.supabase,
+    ctx.asSystem.pg,
     ctx.company.id,
     quoteId,
     quoteLineId,

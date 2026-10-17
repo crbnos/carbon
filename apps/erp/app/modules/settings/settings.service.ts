@@ -8,7 +8,6 @@ import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
   CarbonError,
-  ErrorCategory,
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
@@ -77,12 +76,15 @@ import {
   buildXeroTrackingTarget,
   getAccountingIntegration,
   getProviderIntegration,
+  getSyncOperationTransitionError,
   isAccountingSyncEnabled,
   ProviderID,
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
   type QboProvider,
   type RilletProvider,
+  SYNC_OPERATION_ALLOWED_TRANSITIONS,
+  SyncOperationStatusSchema,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
@@ -122,7 +124,7 @@ import {
   labelSizes,
   redirectExternal
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { extract as tarExtract } from "tar-stream";
@@ -164,7 +166,6 @@ import {
 import type { Integration } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -1293,6 +1294,7 @@ export async function canManageBackups(
  */
 export async function getCompanyBackups(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string
 ): Promise<{ data: CompanyBackupSummary[] | null; error: Error | null }> {
   const { data, error } = await listCompanyBackupFolders(client, companyId);
@@ -1305,7 +1307,7 @@ export async function getCompanyBackups(
   let catalog: Awaited<ReturnType<typeof getCompanyTableCatalog>> | null = null;
   if (data.some((b) => b.manifest)) {
     try {
-      catalog = await getCompanyTableCatalog(getDatabaseClient());
+      catalog = await getCompanyTableCatalog(db);
     } catch (err) {
       log.warn("Backups: live compatibility unavailable — listing without it", {
         companyId,
@@ -1391,9 +1393,9 @@ export async function dismissCompanyExportFailure(
  * action. One transaction; children first (see `purgeScopeViolations`).
  */
 export async function purgeCorruptedRows(
+  db: Kysely<KyselyDatabase>,
   companyId: string
 ): Promise<{ deleted: Array<{ table: string; rows: number }> }> {
-  const db = getDatabaseClient();
   const serviceRole = getCarbonServiceRole();
   const company = await serviceRole
     .from("company")
@@ -2214,6 +2216,67 @@ export async function clearAllIntegrationCaches(): Promise<void> {
   } catch (error) {
     logger.error("Error clearing all integration caches", { error });
   }
+}
+
+/**
+ * Move accounting sync operations to `to` in one UPDATE. The statement itself
+ * holds the transition rule: it matches only operations whose CURRENT status
+ * may move to `to`, so one changed since it was read is left alone. Each
+ * operation it did not move is reported with its reason.
+ */
+export async function transitionSyncOperations(
+  client: SupabaseClient<Database>,
+  args: {
+    ids: string[];
+    companyId: string;
+    to: "Pending" | "Skipped";
+    userId: string;
+  }
+): Promise<
+  | { moved: number; failures: { id: string; reason: string }[]; error: null }
+  | { moved: 0; failures: []; error: PostgrestError }
+> {
+  const { ids, companyId, to, userId } = args;
+  const from = SyncOperationStatusSchema.options.filter((status) =>
+    SYNC_OPERATION_ALLOWED_TRANSITIONS[status].includes(to)
+  );
+
+  const updated = await client
+    .from("accountingSyncOperation")
+    .update({ status: to, updatedBy: userId, updatedAt: datetime.timestamp() })
+    .eq("companyId", companyId)
+    .in("id", ids)
+    .in("status", from)
+    .select("id");
+  if (updated.error) return { moved: 0, failures: [], error: updated.error };
+
+  const moved = new Set(updated.data.map((row) => row.id));
+  const missed = [...new Set(ids)].filter((id) => !moved.has(id));
+  if (missed.length === 0) {
+    return { moved: moved.size, failures: [], error: null };
+  }
+
+  const current = await client
+    .from("accountingSyncOperation")
+    .select("id, status")
+    .eq("companyId", companyId)
+    .in("id", missed);
+  const statusById = new Map(
+    (current.data ?? []).map((row) => [row.id, row.status])
+  );
+  const failures = missed.map((id) => {
+    const status = statusById.get(id);
+    return {
+      id,
+      reason: current.error
+        ? current.error.message
+        : !status
+          ? `Sync operation ${id} not found`
+          : (getSyncOperationTransitionError(status, to) ??
+            `Sync operation ${id} changed while it was being updated`)
+    };
+  });
+  return { moved: moved.size, failures, error: null };
 }
 
 export async function deactivateIntegration(
@@ -3148,28 +3211,6 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
-/** A server function's refusal as this function's error: its status picks
- *  the category, and an empty message (a data-layer failure) is `fallback`. */
-export function fromServerFn(
-  ctx: ServiceContext,
-  error: { status: number; message: string },
-  fallback: string
-): CarbonError {
-  const category: ErrorCategory =
-    error.status === 400
-      ? "validation"
-      : error.status === 403
-        ? "forbidden"
-        : error.status === 404
-          ? "notFound"
-          : error.status === 409
-            ? "conflict"
-            : error.status < 500
-              ? "rule"
-              : "internal";
-  return ctx.error(category, error.message || fallback, error);
-}
-
 /** Multi-company management is open to internal (Carbon) users only, for now. */
 export async function refuseUnlessInternalUser(
   ctx: ServiceContext
@@ -3364,7 +3405,7 @@ export function resolveShippingDefault({
   }
   return candidates[0]!.id;
 }
-const seedCompanyLogger = getLogger("server-functions", "seed-company");
+const seedCompanyLogger = getLogger("erp", "seed-company");
 
 export const seedCompanyInput = z.object({
   parentCompanyId: z.string().optional(),

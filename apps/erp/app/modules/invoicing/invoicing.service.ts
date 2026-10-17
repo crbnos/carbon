@@ -8,11 +8,7 @@ import {
   ServerFnError
 } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
-import type {
-  CarbonError,
-  ErrorCategory,
-  ServiceContext
-} from "@carbon/api/service-fn.server";
+import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
@@ -64,7 +60,6 @@ import {
   type PaymentJournalLine
 } from "@carbon/database/posting";
 import type * as rows from "@carbon/database/rows";
-import type * as rowsModule from "@carbon/database/rows";
 import {
   inOrder,
   isNull,
@@ -94,7 +89,6 @@ import {
   renderSalesInvoicePdf
 } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import { calculateCOGS } from "@carbon/server-functions/lib/calculate-cogs";
 import {
   loadContractPositions,
@@ -223,7 +217,6 @@ import {
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
-import { getDatabaseClient } from "~/services/database.server";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -236,7 +229,7 @@ import {
   getCustomerShipping
 } from "../sales/sales.service";
 import * as sharedPostings from "../shared/shared.service";
-import { invokePosting } from "../shared/shared.service";
+import { invokePosting, systemServerFns } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
   ChargeStatusType,
@@ -4843,36 +4836,6 @@ export async function checkDepositDocument(
     : `The rental agreement is ${status} and cannot take a new deposit`;
 }
 
-/** A server function's refusal as this operation's, with its own message. */
-export function fromServerFn(
-  ctx: ServiceContext,
-  error: { status: number; message: string },
-  fallback: string
-): CarbonError {
-  const category: ErrorCategory =
-    error.status === 400
-      ? "validation"
-      : error.status === 403
-        ? "forbidden"
-        : error.status === 404
-          ? "notFound"
-          : error.status === 409
-            ? "conflict"
-            : error.status < 500
-              ? "rule"
-              : "internal";
-  return ctx.error(category, error.message || fallback, error);
-}
-
-/** The server functions, run as the system for this operation's caller. */
-export function invoker(ctx: ServiceContext) {
-  return serverFns.system({
-    db: ctx.asSystem.pg,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId
-  });
-}
-
 /**
  * One field set on several invoices, as a Properties panel posts it: `ids`
  * repeats in a form, and an empty `value` clears the field.
@@ -5183,6 +5146,7 @@ export async function preflightStripeSend(
 
   const linked = await linkStripeCustomerForBilling({
     serviceRole,
+    db: ctx.asSystem.pg,
     companyId: ctx.company.id,
     userId: ctx.auditUserId,
     billingCustomerId,
@@ -5679,7 +5643,7 @@ export async function adjustTieOut(
     return ctx.error("rule", `No ${side} variance to adjust`);
   }
 
-  const journalEntry = await invoker(ctx).invoke("create", {
+  const journalEntry = await systemServerFns(ctx).invoke("create", {
     type: "journalEntry"
   });
   if (journalEntry.error || !journalEntry.data) {
@@ -5904,12 +5868,14 @@ export async function getBillingCustomerId(
  */
 export async function resolveStripeCustomer({
   serviceRole,
+  db,
   companyId,
   invoiceId,
   customerContactId,
   emailOverride
 }: {
   serviceRole: ServiceRole;
+  db: Kysely<KyselyDatabase>;
   companyId: string;
   invoiceId: string;
   customerContactId: string;
@@ -5938,6 +5904,7 @@ export async function resolveStripeCustomer({
 
   return resolveForAccount({
     serviceRole,
+    db,
     companyId,
     stripeAccountId,
     billingCustomerId,
@@ -5979,12 +5946,14 @@ function notConnected(): StripeCustomerResolutionResult {
  */
 export async function resolveStripeCustomerForBilling({
   serviceRole,
+  db,
   companyId,
   billingCustomerId,
   customerContactId,
   emailOverride
 }: {
   serviceRole: ServiceRole;
+  db: Kysely<KyselyDatabase>;
   companyId: string;
   billingCustomerId: string;
   customerContactId?: string | null;
@@ -5998,6 +5967,7 @@ export async function resolveStripeCustomerForBilling({
 
   return resolveForAccount({
     serviceRole,
+    db,
     companyId,
     stripeAccountId,
     billingCustomerId,
@@ -6008,6 +5978,7 @@ export async function resolveStripeCustomerForBilling({
 
 async function resolveForAccount({
   serviceRole,
+  db,
   companyId,
   stripeAccountId,
   billingCustomerId,
@@ -6015,6 +5986,7 @@ async function resolveForAccount({
   emailOverride
 }: {
   serviceRole: ServiceRole;
+  db: Kysely<KyselyDatabase>;
   companyId: string;
   stripeAccountId: string;
   billingCustomerId: string;
@@ -6053,7 +6025,7 @@ async function resolveForAccount({
     };
   }
 
-  const mappingService = createMappingService(getDatabaseClient(), companyId);
+  const mappingService = createMappingService(db, companyId);
   const mapping = await mappingService.getByEntity(
     "customer",
     billingCustomerId,
@@ -6133,6 +6105,7 @@ async function resolveForAccount({
  */
 export async function linkStripeCustomerForBilling({
   serviceRole,
+  db,
   companyId,
   userId,
   billingCustomerId,
@@ -6142,6 +6115,7 @@ export async function linkStripeCustomerForBilling({
   contactEmail
 }: {
   serviceRole: ServiceRole;
+  db: Kysely<KyselyDatabase>;
   companyId: string;
   userId: string;
   billingCustomerId: string;
@@ -6183,6 +6157,7 @@ export async function linkStripeCustomerForBilling({
 
   const resolveNow = () =>
     resolveStripeCustomerForBilling({
+      db,
       serviceRole,
       companyId,
       billingCustomerId,
@@ -6293,7 +6268,7 @@ export async function linkStripeCustomerForBilling({
     }
   }
 
-  await createMappingService(getDatabaseClient(), companyId).link(
+  await createMappingService(db, companyId).link(
     "customer",
     billingCustomerId,
     STRIPE_CONNECT_INTEGRATION,
@@ -13751,12 +13726,9 @@ export type PurchaseInvoicePosting = {
   receivedVariances: Map<string, ReceivedVariance>;
 };
 
-const postingLinesITEM_LINE_TYPES: ReadonlySet<Enums["payableLineType"]> =
-  new Set(["Part", "Service", "Consumable", "Fixture", "Material", "Tool"]);
-
 /** A line of an item: `direct` with no PO, else `ordered`. */
 export function isItemLineType(type: Enums["payableLineType"]): boolean {
-  return postingLinesITEM_LINE_TYPES.has(type);
+  return ITEM_LINE_TYPES.has(type);
 }
 
 /** Does the variance of the line's received units write up receipt layers?
@@ -14568,11 +14540,11 @@ export async function postPurchaseInvoice(
             many<
               "fixedAsset",
               Pick<
-                rowsModule.Tables["fixedAsset"]["Row"],
+                rows.Tables["fixedAsset"]["Row"],
                 "id" | "status" | "acquisitionCost"
               > & {
                 fixedAssetClass: Pick<
-                  rowsModule.Tables["fixedAssetClass"]["Row"],
+                  rows.Tables["fixedAssetClass"]["Row"],
                   "isConstructionInProgress"
                 > | null;
               }
@@ -15529,7 +15501,7 @@ export async function postPurchaseInvoice(
         : [];
 
     type FixedAssetRow = Pick<
-      rowsModule.Tables["fixedAsset"]["Row"],
+      rows.Tables["fixedAsset"]["Row"],
       | "id"
       | "status"
       | "acquisitionDate"
@@ -15539,7 +15511,7 @@ export async function postPurchaseInvoice(
       | "fixedAssetClassId"
     > & {
       fixedAssetClass: Pick<
-        rowsModule.Tables["fixedAssetClass"]["Row"],
+        rows.Tables["fixedAssetClass"]["Row"],
         "assetAccountId" | "isConstructionInProgress"
       > | null;
     };

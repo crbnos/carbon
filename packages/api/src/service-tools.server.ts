@@ -156,8 +156,9 @@ export function serviceResult(
 
   if (result.error instanceof ServerFnError) {
     const { status, message } = result.error;
-    // A server function's own refusal is the caller's to fix, whatever its
-    // status; an empty message is a data-layer failure.
+    // A message at 500 is a body's authored refusal (a plain throw, which
+    // `toServerFnError` keeps): the caller's to fix. Our own failures (a
+    // programming error, a thrown 5xx, the data layer) arrive with none.
     const category =
       STATUS_CATEGORIES[status] ?? (message ? "validation" : "internal");
     return ctx.error(
@@ -246,11 +247,14 @@ export async function settle<R>(
 /**
  * {@link settle}, but the refusal is the `ServerFnError` itself, as
  * `serverFns.invoke` returned it: for a caller that reads its status or body.
+ * `body` gets the span, to name the actor when only it knows who the caller is.
  */
 export function attempt<R>(
-  ctx: ServiceContext,
+  ctx: Pick<ServiceContext, "actor">,
   name: string,
-  body: () => Promise<R>,
+  body: (span: {
+    setAttribute(key: string, value: string): unknown;
+  }) => Promise<R>,
   defaultStatus = 500
 ): Promise<{ data: R; error: null } | { data: null; error: ServerFnError }> {
   return inSpan(
@@ -258,11 +262,17 @@ export function attempt<R>(
     { "carbon.function": name, "carbon.function.actor": ctx.actor.type },
     async (span) => {
       try {
-        return { data: await body(), error: null };
+        return { data: await body(span), error: null };
       } catch (err) {
         const error = toServerFnError(name, err, defaultStatus);
         span.setAttribute("carbon.function.status", error.status);
-        if (error.status >= 500) failSpan(span, error.message);
+        // The span keeps the detail a 5xx withholds from the caller.
+        if (error.status >= 500) {
+          failSpan(
+            span,
+            error.message || (err instanceof Error ? err.message : String(err))
+          );
+        }
         return { data: null, error };
       }
     }

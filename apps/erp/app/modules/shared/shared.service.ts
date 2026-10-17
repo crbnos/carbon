@@ -2,17 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ServerFnError } from "@carbon/api/errors";
-import { NotFoundError } from "@carbon/api/errors";
-import type { RequiredPermissions } from "@carbon/api/permissions";
+import { NotFoundError, ServerFnError } from "@carbon/api/errors";
 import {
   type PermissionRule,
   type Permissions,
+  type RequiredPermissions,
   resolvePermissions
 } from "@carbon/api/permissions";
+import type { PostingHandles } from "@carbon/api/postings.server";
 import {
+  type Actor,
   type CarbonError,
   createServiceContext,
+  type ErrorCategory,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { attempt } from "@carbon/api/service-tools.server";
@@ -24,11 +26,13 @@ import {
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import type { AnyPostgresClient, Database, Tables } from "@carbon/database";
 import {
+  type AnyPostgresClient,
+  type Database,
   getLocationOwnTimeZone,
   type Json,
-  getCompanyTimeZone as resolveCompanyTimeZone
+  getCompanyTimeZone as resolveCompanyTimeZone,
+  type Tables
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
@@ -51,8 +55,8 @@ import {
   ImplementationHubEmail,
   SalesOrderEmail
 } from "@carbon/documents/email";
-import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
 import {
+  type ActionTaskEntityType,
   actionTaskEntities,
   actionTaskParentId
 } from "@carbon/ee/action-task-entity";
@@ -72,6 +76,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { Signals } from "@carbon/onboarding";
 import { detectImplementationSignals } from "@carbon/onboarding/server";
 import type { PrinterRoute } from "@carbon/printing";
+import { serverFns } from "@carbon/server-functions";
 import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
 import { getDefaultPostingGroup } from "@carbon/server-functions/lib/get-posting-group";
 import {
@@ -101,16 +106,19 @@ import {
   round,
   unchecked
 } from "@carbon/utils";
-import type { CalendarDate } from "@internationalized/date";
-import { parseAbsolute, parseDate, startOfWeek } from "@internationalized/date";
+import {
+  type CalendarDate,
+  parseAbsolute,
+  parseDate,
+  startOfWeek
+} from "@internationalized/date";
 import { render, renderAsync } from "@react-email/components";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
-import type { Transaction } from "kysely";
-import { sql } from "kysely";
+import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { createCookieSessionStorage, data } from "react-router";
 import { z } from "zod";
@@ -132,10 +140,12 @@ import {
 } from "~/modules/sales/sales.service";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  type GenericQueryFilters,
+  LIST_COUNT,
+  setGenericQueryFilters
+} from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
 import type { ItemModelUpload } from "./types";
 
@@ -990,6 +1000,7 @@ export async function sendSalesOrderEmail(args: {
 }
 
 export async function getOrCreatePeriods(
+  db: Kysely<KyselyDatabase>,
   today: CalendarDate,
   weeksToProject: number
 ) {
@@ -1006,8 +1017,6 @@ export async function getOrCreatePeriods(
     });
     currentStart = periodEnd.add({ days: 1 });
   }
-
-  const db = getDatabaseClient();
 
   // Check which periods already exist
   const existingPeriods = await db
@@ -1743,81 +1752,149 @@ export async function invalidateLocationTimeZone(
   await redis.del(locationKey(companyId, locationId));
 }
 
-/** What an older building block holds instead of a `ServiceContext`. */
-export type PostingHandles = {
-  db: Kysely<KyselyDatabase>;
-  companyId: string;
-  userId: string;
-  companyGroupId?: string;
-  /** The caller's client, when the call was made as the caller. */
-  client?: SupabaseClient<Database>;
-};
+export type { PostingHandles };
+
+type PostingRule<I> = PermissionRule<I> | ((input: I) => Permissions);
+type PostingBody<I, R> = (ctx: ServiceContext, input: I) => Promise<R>;
+type PostingResult<R> =
+  | { data: R; error: null }
+  | { data: null; error: ServerFnError };
+type PostingOptions<I> = { as?: PostingRule<I>; defaultStatus?: number };
+/** Handles that carry the caller's client must name the permission to check. */
+type PostingOptionsFor<H, I> = H extends { client: SupabaseClient<Database> }
+  ? [options: { as: PostingRule<I>; defaultStatus?: number }]
+  : [options?: PostingOptions<I>];
 
 /**
  * Run a posting body (a server function ported from `@carbon/server-functions`)
- * and read it as `{ data, error }`, as `serverFns…invoke` returned it. From an
- * operation, pass its `ctx`. From an older building block, pass the handles it
- * holds: the body runs as the system, on the user's behalf, over that same
- * `db` (a transaction stays one). With `as` (the body's permission rule, or
- * what the input requires), the caller behind `client` must hold it first, as
- * `serverFns.as` checked it: a user's claims, an API key's scopes, nothing for
- * the service role.
+ * and read it as `{ data, error }`, as `serverFns…invoke` returned it.
+ *
+ * - From an operation, pass its `ctx` and no `as`: its own gate already
+ *   checked the caller.
+ * - From handles that carry the caller's `client`, `as` is required (the
+ *   body's permission rule, or what the input requires): the caller must hold
+ *   it first, as `serverFns.as` checked it — a user's claims, an API key's
+ *   scopes, nothing for the service role. The body then runs as the system
+ *   on the user's behalf, over that same `db` (a transaction stays one).
+ * - From handles without a client, the body runs as the system.
  */
-export async function invokePosting<I, R>(
+export function invokePosting<I, R>(
+  from: ServiceContext,
+  name: string,
+  input: I,
+  run: PostingBody<I, R>,
+  options?: { defaultStatus?: number }
+): Promise<PostingResult<R>>;
+export function invokePosting<I, R, H extends PostingHandles>(
+  from: H,
+  name: string,
+  input: I,
+  run: PostingBody<I, R>,
+  ...options: PostingOptionsFor<H, I>
+): Promise<PostingResult<R>>;
+export function invokePosting<I, R>(
   from: ServiceContext | PostingHandles,
   name: string,
   input: I,
-  run: (ctx: ServiceContext, input: I) => Promise<R>,
-  options: {
-    as?: PermissionRule<I> | ((input: I) => Permissions);
-    defaultStatus?: number;
-  } = {}
-): Promise<{ data: R; error: null } | { data: null; error: ServerFnError }> {
-  const ctx = "actor" in from ? from : postingContext(from);
-  return attempt(
-    ctx,
-    name,
-    async () => {
-      if (!("actor" in from) && from.client && options.as) {
-        await authorize(
-          await ServerFnContext.fromClient(from.client, {
-            db: from.db,
-            companyId: from.companyId,
-            userId: from.userId
-          }),
-          typeof options.as === "function"
-            ? options.as(input)
-            : resolvePermissions(options.as, input)
-        );
-      }
-      return run(ctx, input);
-    },
-    options.defaultStatus
-  );
+  run: PostingBody<I, R>,
+  options: PostingOptions<I> = {}
+): Promise<PostingResult<R>> {
+  return runPosting(from, name, input, run, options);
 }
 
 /** {@link invokePosting}, throwing its refusal, as `invokeOrThrow` did. */
+export function invokePostingOrThrow<I, R>(
+  from: ServiceContext,
+  name: string,
+  input: I,
+  run: PostingBody<I, R>,
+  options?: { defaultStatus?: number }
+): Promise<R>;
+export function invokePostingOrThrow<I, R, H extends PostingHandles>(
+  from: H,
+  name: string,
+  input: I,
+  run: PostingBody<I, R>,
+  ...options: PostingOptionsFor<H, I>
+): Promise<R>;
 export async function invokePostingOrThrow<I, R>(
-  ...args: Parameters<typeof invokePosting<I, R>>
+  from: ServiceContext | PostingHandles,
+  name: string,
+  input: I,
+  run: PostingBody<I, R>,
+  options: PostingOptions<I> = {}
 ): Promise<R> {
-  const result = await invokePosting(...args);
+  const result = await runPosting(from, name, input, run, options);
   if (result.error) throw result.error;
   return result.data;
 }
 
-function postingContext(handles: PostingHandles): ServiceContext {
-  return createServiceContext({
-    actor: { type: "system", onBehalfOf: handles.userId },
-    company: { id: handles.companyId, groupId: handles.companyGroupId ?? "" },
-    caller: handles.client ?? getCarbonServiceRole(),
-    system: getCarbonServiceRole,
-    pg: () => handles.db,
-    kv: () => redis
-  });
+async function runPosting<I, R>(
+  from: ServiceContext | PostingHandles,
+  name: string,
+  input: I,
+  run: PostingBody<I, R>,
+  { as, defaultStatus }: PostingOptions<I>
+): Promise<PostingResult<R>> {
+  if ("actor" in from) {
+    return attempt(from, name, () => run(from, input), defaultStatus);
+  }
+  const handles = from;
+  if (handles.client && !as) {
+    throw new Error(
+      `invokePosting("${name}"): handles with a caller's client need \`as\`, the permission to check the caller against`
+    );
+  }
+  const actor: Actor = { type: "system", onBehalfOf: handles.userId };
+  return attempt(
+    { actor },
+    name,
+    async (span) => {
+      if (handles.client && as) {
+        const caller = await ServerFnContext.fromClient(handles.client, {
+          db: handles.db,
+          companyId: handles.companyId,
+          userId: handles.userId
+        });
+        span.setAttribute("carbon.function.actor", caller.actor);
+        await authorize(
+          caller,
+          typeof as === "function" ? as(input) : resolvePermissions(as, input)
+        );
+      }
+      const ctx = createServiceContext({
+        actor,
+        company: {
+          id: handles.companyId,
+          groupId: handles.companyGroupId ?? (await companyGroupIdOf(handles))
+        },
+        caller: handles.client ?? getCarbonServiceRole(),
+        system: getCarbonServiceRole,
+        pg: () => handles.db,
+        kv: () => redis
+      });
+      return run(ctx, input);
+    },
+    defaultStatus
+  );
 }
-// SPDX-License-Identifier: AGPL-3.0-only
-// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
-// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+async function companyGroupIdOf({
+  db,
+  companyId
+}: PostingHandles): Promise<string> {
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  // An unknown company is the caller's mistake; a company with no group is ours.
+  if (!company) throw new NotFoundError(`Company ${companyId} not found`);
+  if (!company.companyGroupId) {
+    throw new ServerFnError(`Company ${companyId} has no company group`, 500);
+  }
+  return company.companyGroupId;
+}
 
 // Rows per INSERT. Every multi-row insert is bound by Postgres' 65535 bind
 // parameters: the widest table written (itemLedger, 14 columns) is ~7k
@@ -1846,10 +1923,6 @@ export async function inChunks<T, R>(
   }
   return results;
 }
-// SPDX-License-Identifier: AGPL-3.0-only
-// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
-// including ports, remain AGPLv3; serving them over a network requires releasing their source.
-
 // Pure per-row decision for supplier/customer CSV import. No DB, no I/O — so it
 // is unit-testable. The driver loop owns the running `seenIds`
 // / `seenNames` sets and applies the returned action.
@@ -9938,4 +10011,35 @@ export async function convertDocument(
   }
 
   return { convertedId };
+}
+
+/** A server function's refusal as this function's error: its status picks
+ *  the category, and an empty message (a data-layer failure) is `fallback`. */
+export function fromServerFn(
+  ctx: ServiceContext,
+  error: { status: number; message: string },
+  fallback: string
+): CarbonError {
+  const category: ErrorCategory =
+    error.status === 400
+      ? "validation"
+      : error.status === 403
+        ? "forbidden"
+        : error.status === 404
+          ? "notFound"
+          : error.status === 409
+            ? "conflict"
+            : error.status < 500
+              ? "rule"
+              : "internal";
+  return ctx.error(category, error.message || fallback, error);
+}
+
+/** The server functions, run as the system for this call's company and user. */
+export function systemServerFns(ctx: ServiceContext) {
+  return serverFns.system({
+    db: ctx.asSystem.pg,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  });
 }

@@ -570,7 +570,6 @@ export const warehouseTransferValidator = z
     transferId: zfd.text(z.string().optional()),
     fromLocationId: z.string().min(1, { message: "From Location is required" }),
     toLocationId: z.string().min(1, { message: "To Location is required" }),
-    status: z.enum(warehouseTransferStatusType).optional(),
     transferDate: zfd.text(z.string().optional()),
     expectedReceiptDate: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional()),
@@ -607,6 +606,20 @@ export const stockTransferStatusType = [
   "In Progress",
   "Completed"
 ] as const;
+
+/**
+ * The status a count must be in to move to `to`, and the refusal when it is
+ * not. Confirm takes a Draft to Pending, reopen a Pending back to Draft; only
+ * posting reaches Posted.
+ */
+export function inventoryCountStatusFrom(to: "Draft" | "Pending"): {
+  status: "Draft" | "Pending";
+  refusal: string;
+} {
+  return to === "Pending"
+    ? { status: "Draft", refusal: "Only a draft count can be confirmed" }
+    : { status: "Pending", refusal: "Only a pending count can be reopened" };
+}
 
 export function isStockTransferLocked(
   status: string | null | undefined
@@ -656,7 +669,6 @@ export const stockTransferLineValidator = z
         .number()
         .min(0, { message: "Quantity must be greater than or equal to 0" })
     ),
-    pickedQuantity: zfd.numeric(z.number().min(0).optional()),
     requiresBatchTracking: zfd.text(
       z.string().transform((val) => val === "true")
     ),

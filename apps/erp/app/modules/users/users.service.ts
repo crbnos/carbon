@@ -48,7 +48,6 @@ import { getAttribute } from "~/modules/people/people.service";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
 import { getCustomerContact } from "~/modules/sales/sales.service";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
-import { getDatabaseClient } from "~/services/database.server";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -726,6 +725,7 @@ export async function getSsoInviteDomainError(
 
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   code: string,
   email?: string
 ) {
@@ -783,8 +783,6 @@ export async function acceptInvite(
   // instead of trying to repair them: nothing is visible unless all of it
   // commits. Mirrors migrateUserToSso, the SSO path that has to finish the
   // same work.
-  const db = getDatabaseClient();
-
   try {
     const acceptedInvite = await db.transaction().execute(async (trx) => {
       switch (role) {
@@ -979,6 +977,7 @@ export async function addUserToCompany(
  */
 async function seedSsoIdentityForNewUser(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   { userId, email }: { userId: string; email: string }
 ): Promise<void> {
   if (!isSsoEnabled()) return;
@@ -988,7 +987,7 @@ async function seedSsoIdentityForNewUser(
   const connection = await getSsoConnectionByDomain(serviceRole, domain);
   if (connection.error || !connection.data) return;
 
-  const seed = await seedSsoIdentityForUser(getDatabaseClient(), {
+  const seed = await seedSsoIdentityForUser(db, {
     userId,
     email,
     providerId: connection.data.providerId
@@ -1004,6 +1003,7 @@ async function seedSsoIdentityForNewUser(
 
 export async function createCustomerAccount(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     id,
     customerId,
@@ -1077,7 +1077,7 @@ export async function createCustomerAccount(
       return { success: false, message: createCarbonUser.error.message };
     }
 
-    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
+    await seedSsoIdentityForNewUser(serviceRole, db, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -1131,6 +1131,7 @@ export async function createCustomerAccount(
 
 export async function createEmployeeAccount(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     email,
     firstName,
@@ -1271,7 +1272,7 @@ export async function createEmployeeAccount(
       return { success: false, message: createCarbonUser.error.message };
     }
 
-    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
+    await seedSsoIdentityForNewUser(serviceRole, db, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -1324,7 +1325,7 @@ export async function createEmployeeAccount(
     }
 
     try {
-      await reinviteDeactivatedEmployee(getDatabaseClient(), {
+      await reinviteDeactivatedEmployee(db, {
         userId,
         companyId,
         employeeTypeId: employeeType,
@@ -1392,6 +1393,7 @@ export async function createEmployeeAccount(
 
 export async function createSupplierAccount(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     id,
     supplierId,
@@ -1465,7 +1467,7 @@ export async function createSupplierAccount(
       return { success: false, message: createCarbonUser.error.message };
     }
 
-    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
+    await seedSsoIdentityForNewUser(serviceRole, db, { userId, email });
   }
 
   const code = crypto.randomUUID();

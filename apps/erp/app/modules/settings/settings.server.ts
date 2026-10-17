@@ -28,7 +28,6 @@ import {
   JOURNAL_ENTRY_SOURCE_TYPES,
   POSTING_POLICY,
   suggestAccountMatchesWithAI,
-  transitionOperation,
   upsertAccountMappings,
   upsertDimensionValueMapping,
   validateDimensionSlots
@@ -82,6 +81,7 @@ import {
 } from "~/modules/shared/shared.service";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
+import { fromServerFn } from "../shared/shared.service";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -213,7 +213,7 @@ export const writeMissingJournals = defineServiceFn({
       { as: accountingPostings.journalLegacyDocumentsPermission }
     );
     if (result.error) {
-      return service.fromServerFn(
+      return fromServerFn(
         ctx,
         result.error,
         "Failed to write the missing journals"
@@ -1654,7 +1654,7 @@ export const revokeApiKey = defineServiceFn({
  * health. Integrations outside the always-available set need the plan's
  * integrations feature.
  *
- * @mcp
+ * @mcp destructive
  */
 export const deactivateCompanyIntegration = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
@@ -1728,7 +1728,7 @@ export const enableCompanyAuditLog = defineServiceFn({
  * Stops recording changes; the log written so far is kept. A controlled
  * environment cannot turn audit logging off.
  *
- * @mcp
+ * @mcp destructive
  */
 export const disableCompanyAuditLog = defineServiceFn({
   input: z.object({}),
@@ -1888,34 +1888,38 @@ export const transitionSyncOperations = defineServiceFn({
   input: z.object({
     ids: z
       .array(z.string().min(1))
-      .min(1, { message: "No operations selected" }),
+      .min(1, { message: "No operations selected" })
+      .max(500, { message: "Select at most 500 operations at once" }),
     to: z.enum(["Pending", "Skipped"])
   }),
   permission: { update: "settings" },
   async run(ctx, { ids, to }) {
-    const failures: string[] = [];
-    // ponytail: one guarded transition per operation, as the inbox selects a
-    // handful; a set-based transition when bulk retry grows to hundreds.
-    for (const id of ids) {
-      const result = await transitionOperation(ctx.asCaller.supabase, {
-        id,
-        companyId: ctx.company.id,
-        to,
-        userId: ctx.auditUserId
-      });
-      if (result.error) failures.push(result.error);
-    }
-    if (failures.length > 0) {
-      const succeeded = ids.length - failures.length;
+    const result = await service.transitionSyncOperations(
+      ctx.asCaller.supabase,
+      { ids, companyId: ctx.company.id, to, userId: ctx.auditUserId }
+    );
+    if (result.error) {
       return ctx.error(
-        "rule",
-        succeeded > 0
-          ? `Updated ${succeeded} of ${ids.length} sync operations`
-          : "Failed to update sync operation",
-        failures[0]
+        "internal",
+        "Failed to update sync operations",
+        result.error
       );
     }
-    return { count: ids.length, to };
+    if (result.failures.length > 0) {
+      logger.warn("Sync operations were not transitioned", {
+        companyId: ctx.company.id,
+        to,
+        failures: result.failures
+      });
+      return ctx.error(
+        "rule",
+        result.moved > 0
+          ? `Updated ${result.moved} of ${result.moved + result.failures.length} sync operations`
+          : "Failed to update sync operation",
+        result.failures
+      );
+    }
+    return { count: result.moved, to };
   }
 });
 

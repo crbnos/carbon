@@ -8,6 +8,7 @@ import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
 import { resolveStripeCustomer } from "~/modules/invoicing/invoicing.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("stripe-connect");
 
@@ -45,6 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const { resolution } = await resolveStripeCustomer({
       serviceRole: getCarbonServiceRole(),
+      db: getDatabaseClient(),
       companyId,
       invoiceId,
       customerContactId,

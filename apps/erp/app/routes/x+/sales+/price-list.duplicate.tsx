@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { duplicatePriceListValidator } from "~/modules/sales/sales.models";
 import { duplicatePriceOverrides } from "~/modules/sales/sales.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -52,6 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await duplicatePriceOverrides(
     client,
+    getDatabaseClient(),
     companyId,
     userId,
     {

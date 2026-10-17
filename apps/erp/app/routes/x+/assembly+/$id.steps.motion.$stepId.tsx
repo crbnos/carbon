@@ -9,11 +9,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { assemblyInstructionStepMotionValidator } from "~/modules/production/production.models";
-import {
-  logAssemblyStep,
-  readAndLogFormData,
-  updateAssemblyStepMotion
-} from "~/modules/production/production.service";
+import { updateAssemblyStepMotion } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 // Autosave target for the 3D editor: patches only a step's motion, camera and
@@ -27,16 +23,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { stepId } = params;
   if (!stepId) throw notFound("step id is not found");
 
-  const formData = await readAndLogFormData(request, "motion.action");
+  const formData = await request.formData();
   const validation = await validator(
     assemblyInstructionStepMotionValidator
   ).validate(formData);
 
   if (validation.error) {
-    logAssemblyStep("motion.validationError", {
-      stepId,
-      error: validation.error
-    });
     return data(
       { success: false },
       await flash(request, error(validation.error, "Failed to update motion"))
@@ -51,14 +43,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     reset: validation.data.reset,
     companyId,
     updatedBy: userId
-  });
-  logAssemblyStep("motion.updateResult", {
-    stepId,
-    motion: validation.data.motion,
-    hasCamera: validation.data.camera !== undefined,
-    hasOrientation: validation.data.orientation !== undefined,
-    error: update.error?.message ?? null,
-    updatedId: update.data?.id ?? null
   });
   if (update.error) {
     return data(

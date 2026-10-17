@@ -105,6 +105,18 @@ describe("runServiceFn", () => {
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
   });
+
+  // RLS does not bound an OAuth connector or a workflow: a service function
+  // can write through the direct connection, so its gate is the check.
+  it("refuses an OAuth or workflow caller whose user lacks the permission", async () => {
+    for (const kind of ["oauth", "session"] as const) {
+      await expect(
+        runServiceFn(meta, caller(kind, { production_update: ["c2"] }), {
+          jobId: "j1"
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN", status: 403 });
+    }
+  });
 });
 
 describe("an API caller's client", () => {

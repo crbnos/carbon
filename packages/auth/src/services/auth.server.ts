@@ -128,9 +128,9 @@ export {
   hashApiKey
 } from "./api-key.server";
 
-// Exported so the Carbon API v1 surface can read a key's scopes for its per-operation
-// scope gate (the gate lives in oRPC middleware, not in requirePermissions). The
-// carbon-key branch of requirePermissions already covers client/rate-limit/plan/expiry.
+// Exported so the Carbon API v1 surface can read a key's scopes: each service
+// function's own permission gate checks them per operation. The carbon-key
+// branch of requirePermissions already covers client/rate-limit/plan/expiry.
 // Kept as `{ data, error }` for its existing callers; the row now comes through the
 // ~30s Redis cache (with per-request memoization) in api-key.server.ts.
 export async function getCompanyIdFromAPIKey(apiKey: string) {

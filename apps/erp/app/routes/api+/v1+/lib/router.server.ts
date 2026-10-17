@@ -10,7 +10,7 @@
 import type { ManifestEntry } from "@carbon/api";
 import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
 import { annotateRequestSpan, withSpan } from "@carbon/logger/tracing.server";
-import { base, gate } from "./base.server";
+import { base } from "./base.server";
 import {
   OPERATIONS,
   operationId,
@@ -45,9 +45,10 @@ const traced = (meta: ManifestEntry) =>
 function buildProcedure(meta: ManifestEntry) {
   const summary = meta.title ?? meta.description;
   return (
+    // No scope check here: the service function's gate checks the caller
+    // against the same permission the manifest publishes (`runServiceFn`).
     base
       .use(traced(meta))
-      .use(gate(meta))
       .route({
         method: "POST",
         path: operationPath(meta),

@@ -48,9 +48,13 @@ vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
-const { cancelContract, convertQuote, convertSalesRfq, setQuoteStatus } = await import(
-  "../app/modules/sales/sales.server"
-);
+const {
+  acceptDigitalQuote,
+  cancelContract,
+  convertSalesRfq,
+  setQuoteStatus,
+  setSalesOrderStatus
+} = await import("../app/modules/sales/sales.server");
 
 type Permissions = Record<
   string,
@@ -69,8 +73,9 @@ const grant = (...modules: string[]): Permissions =>
     ])
   );
 
-// Every write the service role makes resolves; the acknowledgment rows are kept.
-function serviceRole() {
+// Every read answers `rows[table]` (none by default) and every write resolves;
+// the acknowledgment rows are kept.
+function serviceRole(rows: Record<string, unknown> = {}) {
   const from = (table: string) => {
     const chain: Record<string, any> = {};
     for (const method of ["select", "eq", "in", "limit", "order", "not", "update"]) {
@@ -84,7 +89,7 @@ function serviceRole() {
     };
     chain.single = chain.maybeSingle = () => chain;
     chain.then = (resolve: (value: unknown) => unknown) =>
-      Promise.resolve({ data: [], error: null }).then(resolve);
+      Promise.resolve({ data: rows[table] ?? [], error: null }).then(resolve);
     return chain;
   };
   return { from } as any;
@@ -95,7 +100,18 @@ const contextFor = (permissions: Permissions) =>
     actor: { type: "user", userId: "user-1", permissions },
     company: { id: "company-1", groupId: "group-1" },
     caller: serviceRole(),
-    system: serviceRole,
+    system: () => serviceRole(),
+    pg: () => ({}) as any,
+    kv: () => ({}) as any
+  });
+
+// The public share link: the system, reading the quote it answers.
+const shareLinkFor = (quote: { status: string }) =>
+  createServiceContext({
+    actor: { type: "system", onBehalfOf: "user-1" },
+    company: { id: "company-1", groupId: "group-1" },
+    caller: serviceRole(),
+    system: () => serviceRole({ quote: { id: "quote-1", ...quote } }),
     pg: () => ({}) as any,
     kv: () => ({}) as any
   });
@@ -142,8 +158,65 @@ describe("the document sales-rule gate", () => {
 });
 
 describe("setting a document status", () => {
-  const set = (status: "Sent" | "Lost") =>
+  const setQuote = (status: "Sent" | "Lost") =>
     setQuoteStatus(contextFor(grant("sales")), { quoteId: "quote-1", status });
+
+  it("refuses an advancing status the document breaks a rule for", async () => {
+    evaluate.mockResolvedValue({ violations: [error()], ruleNames: {} });
+    const result = await setQuote("Sent");
+    expect(result.error?.category).toBe("rule");
+    expect(result.error?.message).toBe("Not to this country");
+    expect(recorded.map((row) => row.outcome)).toEqual(["blocked"]);
+
+    const order = await setSalesOrderStatus(contextFor(grant("sales")), {
+      salesOrderId: "order-1",
+      status: "To Ship and Invoice"
+    });
+    expect(order.error?.message).toBe("Not to this country");
+  });
+
+  it("lets a warning through, since a status change has nothing to acknowledge", async () => {
+    evaluate.mockResolvedValue({ violations: [warning], ruleNames: {} });
+    expect((await setQuote("Sent")).data).toEqual({
+      quoteId: "quote-1",
+      status: "Sent"
+    });
+  });
+
+  it("does not check a status that does not advance the document", async () => {
+    evaluate.mockResolvedValue({ violations: [error()], ruleNames: {} });
+    expect((await setQuote("Lost")).data).toEqual({
+      quoteId: "quote-1",
+      status: "Lost"
+    });
+  });
+});
+
+describe("answering a digital quote", () => {
+  it("refuses a quote that is no longer Sent", async () => {
+    const result = await acceptDigitalQuote(shareLinkFor({ status: "Ordered" }), {
+      quoteId: "quote-1",
+      selectedLines: {},
+      acceptedBy: "Ada",
+      acceptedByEmail: "ada@example.com"
+    });
+    expect(result.error?.category).toBe("rule");
+    expect(result.error?.message).toBe(
+      "This quote is no longer available for a response."
+    );
+  });
+
+  it("goes past that check for a Sent quote", async () => {
+    const result = await acceptDigitalQuote(shareLinkFor({ status: "Sent" }), {
+      quoteId: "quote-1",
+      selectedLines: {},
+      acceptedBy: "Ada",
+      acceptedByEmail: "ada@example.com"
+    });
+    expect(result.error?.message).toBe(
+      "Select at least one item to accept the quote."
+    );
+  });
 });
 
 describe("cancelling a contract", () => {

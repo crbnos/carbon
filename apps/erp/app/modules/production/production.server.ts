@@ -85,16 +85,6 @@ import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
 
 const logger = getLogger("erp", "production");
 
-// The geometry (assembler) service backs model conversion and motion planning.
-// When it's unreachable those actions can't run, so loaders probe its health and
-// the UI soft-gates the assembler-dependent controls. Result cached so a
-// navigation burst doesn't fan out one probe per route.
-//
-// The default deployment is a scale-to-zero Lambda: a cold /health takes ~2-5s
-// to init, so the probe timeout must outlast a cold start (the old 2s abort
-// read every cold service as down). Healthy sticks longer than unhealthy —
-// a failed probe usually WARMED the service (the request went through; we just
-// stopped waiting), so re-probe quickly instead of pinning "down" for 15s.
 /**
  * Re-plan after an item's planning inputs change.
  *
@@ -558,8 +548,9 @@ export const releaseJobs = defineServiceFn({
  * It stops at the first failure, before the status changes, so a retry starts
  * from the same place.
  *
- * Returns `conflict`, with nothing changed, when `fromStatuses` is sent and
- * the job has left them.
+ * Returns `notFound` for a job that is not this company's, and `conflict`
+ * when `fromStatuses` is sent and the job has left them, both with nothing
+ * changed.
  *
  * @mcp
  */
@@ -582,25 +573,22 @@ export const cancelJob = defineServiceFn({
     const statusChanged = () =>
       ctx.error("conflict", "The job's status changed; cancel it on the job");
 
-    if (fromStatuses) {
-      const current = await ctx.asCaller.supabase
-        .from("job")
-        .select("status")
-        .eq("id", jobId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      if (current.error) {
-        return ctx.error("internal", "Failed to read the job", current.error);
-      }
-      if (!current.data || !fromStatuses.includes(current.data.status)) {
-        return statusChanged();
-      }
+    // The steps below write past RLS: the job must be this company's first.
+    const job = await ctx.asSystem.pg
+      .selectFrom("job")
+      .select("status")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!job) return ctx.error("notFound", "Job not found");
+    if (fromStatuses && !fromStatuses.includes(job.status)) {
+      return statusChanged();
     }
 
     const sweep = await service.returnPickedRemaindersForJob(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
-      { jobId, userId, companyId }
+      { jobId, userId, companyId, cancelling: true }
     );
     if (sweep.error) {
       return ctx.error(
@@ -2000,6 +1988,7 @@ export const createJobs = defineServiceFn({
     );
 
     const jobIds: string[] = [];
+    let failed: unknown = null;
     for (let i = 0; i < jobs; i++) {
       const created = await service.insertJob(
         ctx.asSystem.supabase,
@@ -2016,17 +2005,22 @@ export const createJobs = defineServiceFn({
         { skipRecalculate: true, source: "bulk" }
       );
       if (created.error || !created.data) {
-        return ctx.error("internal", "Failed to insert job", created.error);
+        failed = created.error ?? new Error("No job was returned");
+        break;
       }
       jobIds.push(created.data.id);
     }
 
-    await batchTrigger(
-      "recalculate",
-      jobIds.map((id) => ({
-        payload: { type: "jobRequirements", id, companyId, userId }
-      }))
-    );
+    // The jobs created before a failure stay, so they are recalculated too.
+    if (jobIds.length > 0) {
+      await batchTrigger(
+        "recalculate",
+        jobIds.map((id) => ({
+          payload: { type: "jobRequirements", id, companyId, userId }
+        }))
+      );
+    }
+    if (failed) return ctx.error("internal", "Failed to insert job", failed);
     return { jobIds };
   }
 });
@@ -2579,8 +2573,9 @@ export const deleteJobOperation = defineServiceFn({
  * Reorder a job's operations.
  *
  * @remarks
- * `orders` maps an operation id to its new order. Then the job's operation
- * dependencies are recalculated.
+ * `orders` maps an operation id to its new order. All or nothing: an id that
+ * is not one of the job's operations refuses the whole reorder. Then the
+ * job's operation dependencies are recalculated.
  *
  * @mcp
  */
@@ -2592,19 +2587,16 @@ export const reorderJobOperations = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { jobId, orders }) {
-    const written = await Promise.all(
-      Object.entries(orders).map(([id, order]) =>
-        ctx.asCaller.supabase
-          .from("jobOperation")
-          .update({ order, updatedBy: ctx.auditUserId })
-          .eq("id", id)
-          .eq("jobId", jobId)
-          .eq("companyId", ctx.company.id)
-      )
-    );
-    const failed = written.find((write) => write.error)?.error;
-    if (failed) {
-      return ctx.error("internal", "Failed to update sort order", failed);
+    try {
+      await service.updateJobOperationOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        jobId,
+        Object.entries(orders).map(([id, sortOrder]) => ({ id, sortOrder }))
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to update sort order", err);
     }
     const recalculated = await service.recalculateJob(ctx, jobId, {
       requirements: false
@@ -2703,10 +2695,13 @@ export const setJobOperationDueDate = defineServiceFn({
         updatedAt: datetime.timestamp()
       })
       .eq("id", id)
-      .eq("companyId", ctx.company.id);
+      .eq("companyId", ctx.company.id)
+      .select("id")
+      .maybeSingle();
     if (update.error) {
       return ctx.error("internal", "Failed to update due date", update.error);
     }
+    if (!update.data) return ctx.error("notFound", "Operation not found");
     await service.notifyScheduleInputsChanged(
       ctx.company.id,
       "reorder",
@@ -3590,7 +3585,7 @@ export const markPersonAbsentRange = defineServiceFn({
  * `items` are the parts being ordered, each with its orders (quantity, start
  * and due date, the planning week). Only new jobs: an order naming an
  * existing job is refused, since an existing job is changed through
- * `production.planning.updateJob` or Apply. The location and every item must
+ * `updatePlannedJob` or Apply. The location and every item must
  * be this company's. Per item: one whose manufacturing is blocked or needs
  * configuration is skipped and named in `errors`; each order becomes a
  * Planned job (ASAP or Soft Deadline) at the location with the item's method.
@@ -3958,7 +3953,7 @@ export const updatePlannedJob = defineServiceFn({
  *
  * @remarks
  * Only this location's make-to-stock Draft jobs: a job a sales order owns is
- * that order's, not planning's. Then `production.job.plan`: the requirements
+ * that order's, not planning's. Then `planDraftJob`: the requirements
  * recalculation, Draft → Planned, and MRP, so the job counts as supply and
  * the Make suggestion shrinks by it. `warning` is set when MRP did not run.
  *
@@ -4014,7 +4009,7 @@ const CHANGE_ACTION_TYPES = [
  * `requiresManualAction`. Expedite / Defer move the jobs' due dates in one
  * transaction, then the scheduler is told once. Increase / Decrease set the
  * job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
- * it; Cancel runs `production.job.cancel` from Draft / Planned. Each of those
+ * it; Cancel runs `cancelJob` from Draft / Planned. Each of those
  * is claimed right before its change, three jobs at a time, and a failed one
  * gives its claim back. Returns what was `applied`, what needs review,
  * `warnings` (applied, with a follow-up step that failed) and `errors`.
@@ -4540,18 +4535,33 @@ export const setProcedureFields = defineServiceFn({
   }),
   permission: { update: "production" },
 
-  async run(ctx, { ids, ...fields }) {
-    const update = await ctx.asCaller.supabase
+  async run(ctx, { ids, content, ...fields }) {
+    let parsedContent: Json | undefined;
+    if (content !== undefined) {
+      try {
+        parsedContent = JSON.parse(content);
+      } catch {
+        return ctx.error("validation", "Invalid procedure content");
+      }
+    }
+    let update = ctx.asCaller.supabase
       .from("procedure")
       .update({
         ...fields,
+        ...(parsedContent !== undefined ? { content: parsedContent } : {}),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
       .in("id", ids)
       .eq("companyId", ctx.company.id);
-    if (update.error) {
-      return ctx.error("internal", update.error.message, update.error);
+    // Only a Draft procedure's content is editable, as in the editor.
+    if (parsedContent !== undefined) update = update.eq("status", "Draft");
+    const updated = await update.select("id");
+    if (updated.error) {
+      return ctx.error("internal", "Failed to update procedure", updated.error);
+    }
+    if (parsedContent !== undefined && updated.data.length !== ids.length) {
+      return ctx.error("rule", "Only a Draft procedure's content can change");
     }
     return { ids };
   }
@@ -6082,7 +6092,7 @@ export const getJobOrderStatusMap = defineServiceFn({
         input.jobId as never,
         ctx.company.id,
         input.locationId as never,
-        stamp(ctx, input.jobStatus, ["companyId"]) as never,
+        input.jobStatus as never,
         stamp(ctx, input.materials, ["companyId"]) as never,
         input.asOfDate as never
       )
@@ -6839,7 +6849,7 @@ export const recalculateJobRequirements = defineServiceFn({
 });
 
 /**
- * Run m r p
+ * Run MRP
  *
  * @mcp
  */
@@ -7113,7 +7123,7 @@ export const insertJob = defineServiceFn({
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
         stamp(ctx, job, ["companyId", "createdBy", "updatedBy"]) as never,
-        stamp(ctx, options, ["companyId", "createdBy", "updatedBy"]) as never
+        options as never
       )
     );
   }

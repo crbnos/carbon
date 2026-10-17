@@ -785,6 +785,7 @@ export async function upsertShift(
       })
     | (Omit<z.infer<typeof shiftValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -792,7 +793,16 @@ export async function upsertShift(
   if ("createdBy" in shift) {
     return client.from("shift").insert([shift]).select("*").single();
   }
-  return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
+  const { companyId, ...update } = shift;
+  // No row back means the shift is not this company's or the caller may not
+  // update it: RLS filters an UPDATE silently.
+  return client
+    .from("shift")
+    .update(sanitize(update))
+    .eq("id", shift.id)
+    .eq("companyId", companyId)
+    .select("id")
+    .maybeSingle();
 }
 
 /** Clocking in goes through `people.timecard.clockIn` / `people.ownTimecard.clockIn`. */

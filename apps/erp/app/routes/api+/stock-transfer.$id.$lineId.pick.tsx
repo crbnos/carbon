@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
@@ -27,10 +28,6 @@ export async function loader({ request, params }: ActionFunctionArgs) {
   if (type && ["serial", "batch"].includes(type)) {
     throw redirect(path.to.stockTransferScan(id, lineId));
   }
-
-  const updateQuantityUrl = new URL(
-    `${url.origin}${path.to.stockTransferLineQuantity(lineId)}`
-  );
 
   const [stockTransferLine, stockTransfer] = await Promise.all([
     client.from("stockTransferLine").select("*").eq("id", lineId).single(),
@@ -70,37 +67,13 @@ export async function loader({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const formData = new FormData();
-  formData.append("id", lineId);
-  formData.append(
-    "quantity",
-    stockTransferLine.data?.quantity?.toString() ?? "1"
-  );
-  formData.append("locationId", stockTransfer.data?.locationId ?? "");
-
-  const result = await fetch(updateQuantityUrl.toString(), {
-    method: "POST",
-    headers: {
-      Authorization: request.headers.get("Authorization") || "",
-      Cookie: request.headers.get("Cookie") || ""
-    },
-    body: formData
+  const api = await carbon(request);
+  const result = await api.inventory.pickStockTransferLine({
+    lineId,
+    quantity: Number(stockTransferLine.data?.quantity ?? 1),
+    locationId: stockTransfer.data?.locationId ?? ""
   });
-
-  const { data } = await result.json();
-
-  if (data?.success) {
-    throw redirect(
-      path.to.stockTransfer(id),
-      await flash(request, success(data?.message))
-    );
-  }
-
-  throw redirect(
-    path.to.stockTransfer(id),
-    await flash(
-      request,
-      error(data?.message, data?.message ?? "Failed to pick line")
-    )
-  );
+  return respond(request, result).redirect(path.to.stockTransfer(id), {
+    message: "Line picked"
+  });
 }

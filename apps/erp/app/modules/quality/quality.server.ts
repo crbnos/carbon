@@ -437,11 +437,15 @@ export const completeIssue = defineServiceFn({
   async run(ctx, { id }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const result = await service.closeIssue(ctx.asSystem.supabase, {
-      nonConformanceId: id,
-      companyId,
-      userId
-    });
+    const result = await service.closeIssue(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        nonConformanceId: id,
+        companyId,
+        userId
+      }
+    );
     if (result.error) {
       return ctx.error(
         "rule",
@@ -660,7 +664,7 @@ export const updateIssueItemField = defineServiceFn({
     }
 
     if (input.field === "quantity") {
-      const result = await service.updateIssueItemQuantity({
+      const result = await service.updateIssueItemQuantity(ctx.asSystem.pg, {
         id: input.id,
         companyId,
         userId: ctx.auditUserId,

@@ -80,7 +80,6 @@ export default function WarehouseTransferNewRoute() {
     transferId: "",
     fromLocationId: defaults?.locationId ?? "",
     toLocationId: "",
-    status: "Draft" as const,
     transferDate: "",
     expectedReceiptDate: "",
     notes: "",

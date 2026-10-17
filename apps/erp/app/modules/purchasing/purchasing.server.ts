@@ -74,6 +74,7 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
@@ -346,7 +347,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
       service.finalizePurchasingRfq
     );
     if (finalize.error) {
-      return service.fromServerFn(
+      return fromServerFn(
         ctx,
         finalize.error,
         "Failed to create supplier quotes"
@@ -586,7 +587,7 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
       service.finalizeSupplierQuote
     );
     if (finalize.error) {
-      return service.fromServerFn(
+      return fromServerFn(
         ctx,
         finalize.error,
         "Failed to finalize supplier quote"

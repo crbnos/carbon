@@ -11,5 +11,10 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateTrainingField.input).request(args);
   if ("invalid" in input) return input.invalid;
   const api = await carbon(args.request);
-  return api.resources.updateTrainingField(input.data);
+  const result = await api.resources.updateTrainingField(input.data);
+  // `Confirm` (the header's status changes, removing the guide) toasts only
+  // `{ success: false, message }`.
+  return result.error
+    ? { ...result, success: false as const, message: result.error.message }
+    : result;
 }

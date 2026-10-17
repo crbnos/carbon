@@ -5492,9 +5492,6 @@ msgstr "Confirmer le décompte d'inventaire"
 msgid "Confirm Mapping"
 msgstr "Confirmer le mappage"
 
-msgid "Confirm Password"
-msgstr "Confirmer le mot de passe"
-
 msgid "Confirm Skip"
 msgstr "Confirmer le saut"
 
@@ -6623,9 +6620,6 @@ msgstr "Actuel"
 
 msgid "Current Net Book Value:"
 msgstr "Valeur Nette Comptable Actuelle:"
-
-msgid "Current Password"
-msgstr "Mot de passe actuel"
 
 msgid "Current portion"
 msgstr "Portion courante"
@@ -14224,9 +14218,6 @@ msgstr "Nouveau propriétaire"
 
 msgid "New Part"
 msgstr "Nouvelle Pièce"
-
-msgid "New Password"
-msgstr "Nouveau mot de passe"
 
 msgid "New Payment"
 msgstr "Nouveau Paiement"
@@ -25047,9 +25038,6 @@ msgstr "Mettre à jour le problème Linear"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Mettre à jour les délais d'approvisionnement des pièces à partir des réceptions comptabilisées."
-
-msgid "Update Password"
-msgstr "Mettre à jour le mot de passe"
 
 msgid "Update Permissions"
 msgstr "Mettre à jour les autorisations"

@@ -5492,9 +5492,6 @@ msgstr "Bestandszählung bestätigen"
 msgid "Confirm Mapping"
 msgstr "Zuordnung bestätigen"
 
-msgid "Confirm Password"
-msgstr "Passwort bestätigen"
-
 msgid "Confirm Skip"
 msgstr "Überspringen bestätigen"
 
@@ -6623,9 +6620,6 @@ msgstr "Aktuell"
 
 msgid "Current Net Book Value:"
 msgstr "Aktueller Restbuchwert:"
-
-msgid "Current Password"
-msgstr "Aktuelles Passwort"
 
 msgid "Current portion"
 msgstr "Kurzfristige Verbindlichkeit"
@@ -14224,9 +14218,6 @@ msgstr "Neuer Verantwortlicher"
 
 msgid "New Part"
 msgstr "Neues Neuteil"
-
-msgid "New Password"
-msgstr "Neues Passwort"
 
 msgid "New Payment"
 msgstr "Neue Zahlung"
@@ -25047,9 +25038,6 @@ msgstr "Linear-Problem aktualisieren"
 
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Aktualisieren Sie die Beschaffungszeiten von Teilen aus gebuchten Wareneingängen."
-
-msgid "Update Password"
-msgstr "Passwort aktualisieren"
 
 msgid "Update Permissions"
 msgstr "Berechtigungen aktualisieren"

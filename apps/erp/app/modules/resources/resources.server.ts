@@ -317,7 +317,7 @@ export const createProcess = defineServiceFn({
   async run(ctx, { id: _id, ...process }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const insert = await service.upsertProcess(client, {
+    const insert = await service.insertProcess(client, {
       ...process,
       companyId,
       createdBy: ctx.auditUserId
@@ -363,7 +363,7 @@ export const createProcess = defineServiceFn({
  */
 export const updateProcess = defineServiceFn({
   input: processInput.safeExtend({ id: z.string() }),
-  permission: { create: "resources" },
+  permission: { update: "resources" },
 
   async run(ctx, { id, ...process }) {
     const client = ctx.asCaller.supabase;
@@ -381,7 +381,7 @@ export const updateProcess = defineServiceFn({
     if (!existing.data) return ctx.error("notFound", "Process not found");
     const previouslyRequiredAbility = existing.data.requiresAbility ?? false;
 
-    const update = await service.upsertProcess(client, {
+    const update = await service.updateProcess(ctx.asSystem.pg, {
       id,
       ...process,
       companyId,
@@ -463,7 +463,7 @@ const workCenterInput = workCenterValidator.safeExtend({
  */
 export const createWorkCenter = defineServiceFn({
   input: workCenterInput,
-  permission: { update: "resources" },
+  permission: { create: "resources" },
 
   async run(ctx, { id: _id, ...workCenter }) {
     const insert = await service.upsertWorkCenter(ctx.asCaller.supabase, {
@@ -1373,10 +1373,10 @@ const trainingFields = [
  * Set one field on one or more trainings.
  *
  * @remarks
- * An empty `grantsAbilityId` clears it. `guidePath` is the PDF that replaces
- * the written content: it takes one training, must be a key under that
- * training's folder (empty clears it), and changes only while the training is
- * Draft.
+ * `content` is the editor's document, as JSON. An empty `grantsAbilityId`
+ * clears it. `guidePath` is the PDF that replaces the written content: it
+ * takes one training, must be a key under that training's folder (empty
+ * clears it), and changes only while the training is Draft.
  *
  * @mcp
  */
@@ -1434,14 +1434,19 @@ export const updateTrainingField = defineServiceFn({
       return { ids };
     }
 
+    let fieldValue: unknown = value;
+    if (field === "grantsAbilityId") fieldValue = value || null;
+    if (field === "content") {
+      try {
+        fieldValue = JSON.parse(value);
+      } catch {
+        return ctx.error("validation", "Invalid training content");
+      }
+    }
+
     const updated = await client
       .from("training")
-      .update(
-        unchecked({
-          [field]: field === "grantsAbilityId" ? value || null : value,
-          ...audit
-        })
-      )
+      .update(unchecked({ [field]: fieldValue, ...audit }))
       .in("id", ids)
       .eq("companyId", companyId);
     if (updated.error) {

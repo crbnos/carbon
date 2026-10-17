@@ -20,7 +20,6 @@ const mocks = vi.hoisted(() => ({
   deactivateUser: vi.fn(),
   setEmployeePin: vi.fn(),
   deleteAuthAccount: vi.fn(),
-  getDatabaseClient: vi.fn(),
   getUserClaims: vi.fn(),
   insertEmployeeJob: vi.fn(),
   mergeInvitePermissions: vi.fn(() => ({})),
@@ -132,9 +131,6 @@ vi.mock("~/modules/purchasing/purchasing.service", async (importOriginal) => ({
 vi.mock("~/modules/sales/sales.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getCustomerContact: vi.fn()
-}));
-vi.mock("~/services/database.server", () => ({
-  getDatabaseClient: mocks.getDatabaseClient
 }));
 vi.mock("~/utils/path", () => ({ path: { to: {} } }));
 vi.mock("../people/people.service", async (importOriginal) => ({
@@ -284,10 +280,9 @@ beforeEach(() => {
 describe("createEmployeeAccount — re-adding a deactivated employee", () => {
   it("writes the employee type, placement and invite in one committed transaction", async () => {
     const { db, statements, transactions } = makeDb(answer(deactivated));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes, permissionReads } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toMatchObject({ success: true, userId: USER });
     if (!result.success) throw new Error(result.message);
@@ -332,10 +327,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
       }
       return answer(deactivated)(statement);
     });
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({
       success: false,
@@ -362,10 +356,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
       }
       return answer(deactivated)(statement);
     });
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({ success: false, message: "invite write failed" });
     expect(statements).toHaveLength(4);
@@ -376,10 +369,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
 
   it("refuses under the lock when the employee was activated since the pre-read", async () => {
     const { db, statements, transactions } = makeDb(answer({ active: true }));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({
       success: false,
@@ -391,10 +383,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
 
   it("refuses rather than inserting when the row disappeared since the pre-read", async () => {
     const { db, statements, transactions } = makeDb(answer(null));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result.success).toBe(false);
     // Only the lock ran: a first-time employee insert never happens outside
@@ -407,10 +398,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
 describe("createEmployeeAccount — re-add guards", () => {
   it("restarts the reused invite's createdAt, which the controlled-environment expiry counts from", async () => {
     const { db, statements } = makeDb(answer(deactivated));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result.success).toBe(true);
     const invite = statements.find((s) =>
@@ -433,10 +423,9 @@ describe("createEmployeeAccount — re-add guards", () => {
       }
     });
     const { db, transactions } = makeDb(answer(deactivated));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({
       success: false,
@@ -456,10 +445,9 @@ describe("createEmployeeAccount — re-add guards", () => {
 describe("createEmployeeAccount — the existing-employee read fails", () => {
   it("returns the error before any write path starts", async () => {
     const { db, transactions } = makeDb(() => []);
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes } = makeClient(null, { message: "read failed" });
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({ success: false, message: "read failed" });
     // Neither the re-invite transaction nor the first-time writes ran, so no
@@ -474,10 +462,9 @@ describe("createEmployeeAccount — the existing-employee read fails", () => {
 describe("createEmployeeAccount — first time in the company", () => {
   it("keeps writing through the caller's RLS client, outside any transaction", async () => {
     const { db, transactions } = makeDb(() => []);
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes } = makeClient(null);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toMatchObject({ success: true, userId: USER });
     expect(transactions.begin).toBe(0);
@@ -546,9 +533,13 @@ describe("acceptInvite", () => {
 
   it("locks the user row before reading the permissions it merges into", async () => {
     const { db, statements, transactions } = makeDb(answerAccept(INVITE));
-    mocks.getDatabaseClient.mockReturnValue(db);
 
-    const result = await acceptInvite(makeInviteLookup(), INVITE.code, EMAIL);
+    const result = await acceptInvite(
+      makeInviteLookup(),
+      db as never,
+      INVITE.code,
+      EMAIL
+    );
 
     expect(result.error).toBeNull();
     expect(transactions).toEqual({ begin: 1, commit: 1, rollback: 0 });
@@ -565,9 +556,13 @@ describe("acceptInvite", () => {
 
   it("does not accept an invite revoked after it was looked up", async () => {
     const { db, statements, transactions } = makeDb(answerAccept(null));
-    mocks.getDatabaseClient.mockReturnValue(db);
 
-    const result = await acceptInvite(makeInviteLookup(), INVITE.code, EMAIL);
+    const result = await acceptInvite(
+      makeInviteLookup(),
+      db as never,
+      INVITE.code,
+      EMAIL
+    );
 
     expect(result).toEqual({
       data: null,

@@ -4,10 +4,9 @@
 
 // oRPC context + middleware shared by the HTTP transport and the MCP/agent bridges.
 
-import type { ManifestEntry, ToolPermission } from "@carbon/api";
 import type { Permission } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { ORPCError, os } from "@orpc/server";
+import { os } from "@orpc/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -20,11 +19,12 @@ export interface AuthedContext {
   userId: string;
   companyId: string;
   companyGroupId: string;
-  /** How the caller authenticated. Every kind runs the per-operation scope gate:
-   *  RLS alone does not bound a caller, because a service function may write
-   *  through the direct connection, which bypasses it. `"session"` is an
-   *  in-process caller acting as a user (the workflow engine acting as the
-   *  workflow's owner) — not "oauth" because that names a wire protocol. */
+  /** How the caller authenticated. Every kind is checked by the service
+   *  function's own gate (`runServiceFn` builds an entry context): RLS alone
+   *  does not bound a caller, because a service function may write through the
+   *  direct connection, which bypasses it. `"session"` is an in-process caller
+   *  acting as a user (the workflow engine acting as the workflow's owner) —
+   *  not "oauth" because that names a wire protocol. */
   authKind: "api-key" | "oauth" | "session";
   /** `{ "<module>_<action>": [companyId, …] }` — the API key's scopes, or for a
    *  user (OAuth, a workflow's owner) the user's own permissions in the company
@@ -33,35 +33,6 @@ export interface AuthedContext {
 }
 
 export const base = os.$context<AuthedContext>();
-
-/**
- * Enforce that the caller holds the operation's permission. `module: null` gates
- * only on an authenticated caller of the company (today's MCP behavior for
- * account/shared); otherwise every action in the permission must be scoped to the
- * active company. The exact-companyId check (no `"0"` wildcard) matches
- * requirePermissions' key path.
- */
-export function assertScopes(
-  scopes: Record<string, string[]>,
-  companyId: string,
-  permission: ToolPermission,
-  authKind: AuthedContext["authKind"]
-): void {
-  if (permission.module === null) return;
-  for (const action of permission.actions) {
-    const key = `${permission.module}_${action}`;
-    if (!scopes[key]?.includes(companyId)) {
-      throw new ORPCError("FORBIDDEN", {
-        message:
-          authKind === "api-key"
-            ? `API key lacks the required scope: ${key}`
-            : authKind === "session"
-              ? `The workflow's owner does not have the required permission: ${key}`
-              : `You do not have the required permission: ${key}`
-      });
-    }
-  }
-}
 
 /**
  * A user's permissions (`getUserClaims().permissions`: module → action → company
@@ -83,15 +54,3 @@ export function scopesFromPermissions(
   }
   return scopes;
 }
-
-/** Per-operation gate middleware — runs the scope check for every caller. */
-export const gate = (meta: ManifestEntry) =>
-  base.middleware(async ({ context, next }) => {
-    assertScopes(
-      context.scopes,
-      context.companyId,
-      meta.permission,
-      context.authKind
-    );
-    return next();
-  });

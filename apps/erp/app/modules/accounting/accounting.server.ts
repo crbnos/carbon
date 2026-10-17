@@ -21,34 +21,16 @@ import {
 import { insertSalesOrder } from "~/modules/sales/sales.service";
 import { invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
+import { fromServerFn, systemServerFns } from "../shared/shared.service";
 import * as service from "./accounting.service";
 import {
+  accountMoveRefusal,
   depreciationRunLinesMatch,
   getNextPeriodEnd,
   getNextRevenueRecognitionPeriodEnd,
   monthEndOf
 } from "./accounting.utils";
 
-// Report loaders consolidate a group the user is authorized for, but the
-// synthetic elimination entities are read via service role (no user is a member
-// of them — see the consolidation service). These thin wrappers own that
-// privileged-client decision in ONE server-only place so the loaders never
-// thread a `getCarbonServiceRole()` argument through their call sites. The RLS
-// `client` still reads every operating company; only elimination entities are
-// read privileged.
-// Consolidated account drill-down ("All Companies"). Reads via service role so
-// the synthetic elimination entities' journal lines (invisible to the user's
-// RLS session — no user is a member of them) appear in the ledger and the
-// summary ties to the consolidated report. Scoped to the group's own companies
-// so a service-role read cannot cross tenants.
-// ── Revenue recognition runs ─────────────────────────────────────────────────
-// Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I §1. Proposals are
-// built by the `propose-revenue-recognition-run` server function (shared with the Inngest job);
-// posting and deletion are human actions and live here, beside the
-// depreciation-run posters they mirror.
-// ── Operations ──────────────────────────────────────────────────────────────
-// Each is a `defineServiceFn` listed in `index.server.ts`: the route, the API
-// and MCP call the same one, and it holds every check the route made.
 const runTypes = ["Revenue Recognition", "Lease"] as const satisfies RunType[];
 
 // ── Depreciation runs ───────────────────────────────────────────────────────
@@ -864,7 +846,7 @@ export const recalculateRevenueRecognitionRun = defineServiceFn({
       service.recalculateRevenueRecognitionRun
     );
     if (result.error) {
-      return service.fromServerFn(
+      return fromServerFn(
         ctx,
         result.error,
         "Failed to recalculate revenue recognition run"
@@ -1133,7 +1115,7 @@ export const createJournalEntry = defineServiceFn({
   input: z.object({}),
   permission: { create: "accounting" },
   async run(ctx) {
-    const created = await service.system(ctx).invoke("create", {
+    const created = await systemServerFns(ctx).invoke("create", {
       type: "journalEntry"
     });
     if (created.error || !created.data) {
@@ -1882,28 +1864,13 @@ export const moveAccount = defineServiceFn({
           accounts.error
         );
       }
-      const parentOf = new Map(accounts.data.map((a) => [a.id, a.parentId]));
+      const refused = accountMoveRefusal(accounts.data, accountId, parentId);
+      if (refused) return ctx.error("rule", refused);
       const parent = accounts.data.find((a) => a.id === parentId);
-      if (!parent?.isGroup) {
-        return ctx.error("rule", "Choose a group account to move it under");
-      }
-      // Walk up from the new parent: meeting the account means a cycle.
-      for (
-        let id: string | null = parentId;
-        id;
-        id = parentOf.get(id) ?? null
-      ) {
-        if (id === accountId) {
-          return ctx.error(
-            "rule",
-            "An account cannot move under itself or one of its own accounts"
-          );
-        }
-      }
       update = {
         ...update,
-        class: parent.class ?? undefined,
-        incomeBalance: parent.incomeBalance ?? undefined
+        class: parent?.class ?? undefined,
+        incomeBalance: parent?.incomeBalance ?? undefined
       };
     }
 
@@ -1947,7 +1914,7 @@ export const importChartOfAccounts = defineServiceFn({
       service.applyAccountImport
     );
     if (result.error) {
-      return service.fromServerFn(
+      return fromServerFn(
         ctx,
         result.error,
         "Failed to import the chart of accounts"
@@ -1982,11 +1949,7 @@ export const enableAccountingCutover = defineServiceFn({
       service.activateAccounting
     );
     if (result.error) {
-      return service.fromServerFn(
-        ctx,
-        result.error,
-        "Failed to enable accounting"
-      );
+      return fromServerFn(ctx, result.error, "Failed to enable accounting");
     }
     return { cutoverDate: input.cutoverDate };
   }

@@ -22,7 +22,7 @@ import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { KyselyTx } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -62,7 +62,6 @@ import {
   getExternalLink,
   invokePosting
 } from "~/modules/shared/shared.service";
-import { getDatabaseClient } from "~/services/database.server";
 import type { inspectionStatus } from "../shared/shared.models";
 import type {
   gaugeCalibrationRecordValidator,
@@ -3166,13 +3165,16 @@ type TrackedEntityRow = Database["public"]["Tables"]["trackedEntity"]["Row"];
 //   - nonConformanceItemTrackedEntity (delete moved links, re-insert against target)
 //   - nonConformanceItem (decrement source qty, increment target qty)
 
-export async function assignEntitiesToIssueItem(args: {
-  nonConformanceItemId: string;
-  targetItemId: string;
-  assignments: { trackedEntityId: string; quantity: number }[];
-  companyId: string;
-  userId: string;
-}): Promise<Result<{ moved: number }>> {
+export async function assignEntitiesToIssueItem(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    nonConformanceItemId: string;
+    targetItemId: string;
+    assignments: { trackedEntityId: string; quantity: number }[];
+    companyId: string;
+    userId: string;
+  }
+): Promise<Result<{ moved: number }>> {
   const { nonConformanceItemId, targetItemId, assignments, companyId, userId } =
     args;
 
@@ -3186,7 +3188,6 @@ export async function assignEntitiesToIssueItem(args: {
     return errResult("Cannot move entities onto the same row");
   }
 
-  const db = getDatabaseClient();
   const nowIso = new Date().toISOString();
   const entityIds = assignments.map((a) => a.trackedEntityId);
 
@@ -3322,15 +3323,17 @@ export async function assignEntitiesToIssueItem(args: {
 // which every link and inspection writer also takes, so a link cannot land
 // between the check and the write.
 
-export async function updateIssueItemQuantity(args: {
-  id: string;
-  companyId: string;
-  userId: string;
-  quantity: number;
-  expectedQuantity: number;
-}): Promise<Result<{ id: string }>> {
+export async function updateIssueItemQuantity(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    quantity: number;
+    expectedQuantity: number;
+  }
+): Promise<Result<{ id: string }>> {
   const { id, companyId, userId, quantity, expectedQuantity } = args;
-  const db = getDatabaseClient();
 
   try {
     return await db.transaction().execute(async (trx) => {
@@ -3696,15 +3699,17 @@ async function subdivideBatchEntity(
     .execute();
 }
 
-export async function splitIssueItem(args: {
-  id: string;
-  companyId: string;
-  userId: string;
-  splitQuantity?: number;
-  entityAssignments?: { trackedEntityId: string; quantity: number }[];
-}): Promise<Result<{ id: string }>> {
+export async function splitIssueItem(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    splitQuantity?: number;
+    entityAssignments?: { trackedEntityId: string; quantity: number }[];
+  }
+): Promise<Result<{ id: string }>> {
   const { id, companyId, userId, splitQuantity, entityAssignments } = args;
-  const db = getDatabaseClient();
   const nowIso = new Date().toISOString();
 
   try {
@@ -3979,10 +3984,10 @@ type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
 export async function closeIssue(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { nonConformanceId: string; companyId: string; userId: string }
 ): Promise<Result<{ id: string }>> {
   const { nonConformanceId, companyId, userId } = args;
-  const db = getDatabaseClient();
 
   // Preflight reads via Supabase (uses nested selects / RLS-aware service role)
   const planResult = await (client as any)
@@ -4527,62 +4532,67 @@ export async function closeIssue(
 export type { Result } from "@carbon/database/quality";
 
 export async function upsertInspectionSample(
+  db: Kysely<KyselyDatabase>,
   sample: z.infer<typeof inspectionSampleValidator> & {
     companyId: string;
     inspectedBy: string;
   }
 ) {
-  return engine.upsertInspectionSample(getDatabaseClient(), sample);
+  return engine.upsertInspectionSample(db, sample);
 }
 
 export async function dispositionInspection(
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inspectionDispositionValidator> & {
     companyId: string;
     dispositionedBy: string;
   } & Pick<engine.InspectionDispositionInput, "requireOpen" | "requireSource">
 ) {
-  return engine.dispositionInspection(getDatabaseClient(), args);
+  return engine.dispositionInspection(db, args);
 }
 
 export async function upsertInspectionMeasurement(
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inspectionMeasurementValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return engine.upsertInspectionMeasurement(getDatabaseClient(), args);
+  return engine.upsertInspectionMeasurement(db, args);
 }
 
 export async function reconcileInspectionSamplingPlans(
+  db: Kysely<KyselyDatabase>,
   inspectionId: string,
   companyId: string
 ) {
-  return engine.reconcileInspectionSamplingPlans(
-    getDatabaseClient(),
-    inspectionId,
-    companyId
-  );
+  return engine.reconcileInspectionSamplingPlans(db, inspectionId, companyId);
 }
 
-export async function changeInspectionDocument(args: {
-  inspectionId: string;
-  inspectionDocumentId: string | null;
-  companyId: string;
-  userId: string;
-}) {
-  return engine.changeInspectionDocument(getDatabaseClient(), args);
+export async function changeInspectionDocument(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inspectionId: string;
+    inspectionDocumentId: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return engine.changeInspectionDocument(db, args);
 }
 
 export async function recordInspectionGauge(
+  db: Kysely<KyselyDatabase>,
   args: Parameters<typeof engine.recordInspectionGauge>[1]
 ) {
-  return engine.recordInspectionGauge(getDatabaseClient(), args);
+  return engine.recordInspectionGauge(db, args);
 }
 
 export async function getRecentInspectionGauges(
+  db: Kysely<KyselyDatabase>,
   args: Parameters<typeof engine.getRecentInspectionGauges>[1]
 ) {
-  return engine.getRecentInspectionGauges(getDatabaseClient(), args);
+  return engine.getRecentInspectionGauges(db, args);
 }
 
 // ─── Inspection plan save ────────────────────────────────────────────────────

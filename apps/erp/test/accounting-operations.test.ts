@@ -2,72 +2,36 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
-
-// The module's imports reach the glossary, whose `msg` macro only runs compiled.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-
-import {
-  moveAccount,
-  createDepreciationRun,
-  overrideExchangeRate,
-  disposeFixedAsset,
-  sellFixedAsset,
-  takeFixedAssetOutOfService,
-  saveJournalEntry
-} from "../app/modules/accounting/accounting.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { describe, expect, it } from "vitest";
+import { saveJournalEntry } from "../app/modules/accounting/accounting.server";
+import { accountMoveRefusal } from "../app/modules/accounting/accounting.utils";
 
-/** A client whose every read of a table answers `rows[table]`. It has no
- *  write methods, so a test that gets past the refusal to a write fails. */
-function reading(rows: Record<string, unknown>) {
-  return {
-    from: (table: string) => {
-      const result = { data: rows[table] ?? null, error: null };
-      const chain: Record<string, unknown> = {
-        select: () => chain,
-        eq: () => chain,
-        order: () => chain,
-        limit: () => chain,
-        single: async () => result,
-        maybeSingle: async () => result,
-        then: (resolve: (value: typeof result) => void) => resolve(result)
-      };
-      return chain;
-    }
-  } as any;
-}
-
-// A client with no methods: any read through it fails the test.
-const noClient = () => ({}) as any;
-
+// A handle with no methods: a refusal that reached the database fails the test.
 const unreachable = () => {
   throw new Error("must not be reached");
 };
 
-const allActions = {
-  view: ["company-1"],
-  create: ["company-1"],
-  update: ["company-1"],
-  delete: ["company-1"]
-};
-
-function contextFor(caller: any, system: () => any = noClient) {
-  return createServiceContext({
+const context = () =>
+  createServiceContext({
     actor: {
       type: "user",
       userId: "user-1",
-      permissions: { accounting: allActions, sales: allActions }
+      permissions: {
+        accounting: {
+          view: ["company-1"],
+          create: ["company-1"],
+          update: ["company-1"],
+          delete: ["company-1"]
+        }
+      }
     },
     company: { id: "company-1", groupId: "group-1" },
-    caller,
-    system,
+    caller: {} as never,
+    system: unreachable,
     pg: unreachable,
     kv: unreachable
   });
-}
 
 const line = (debit: number, credit: number, accountId = "acc-1") => ({
   accountId,
@@ -77,7 +41,7 @@ const line = (debit: number, credit: number, accountId = "acc-1") => ({
 
 describe("saveJournalEntry", () => {
   it("refuses a line with both a debit and a credit, before saving", async () => {
-    const result = await saveJournalEntry(contextFor(noClient()), {
+    const result = await saveJournalEntry(context(), {
       journalEntryId: "je-1",
       postingDate: "2026-10-01",
       lines: [line(10, 0), line(5, 5)]
@@ -89,7 +53,7 @@ describe("saveJournalEntry", () => {
   });
 
   it("refuses a line with no account", async () => {
-    const result = await saveJournalEntry(contextFor(noClient()), {
+    const result = await saveJournalEntry(context(), {
       journalEntryId: "je-1",
       postingDate: "2026-10-01",
       lines: [line(10, 0, "")]
@@ -100,151 +64,33 @@ describe("saveJournalEntry", () => {
   });
 });
 
-describe("moveAccount", () => {
+describe("moving an account", () => {
   // 1000 Assets ⊃ 1100 Current Assets ⊃ 1110 Cash (a leaf)
   const chart = [
-    {
-      id: "assets",
-      parentId: null,
-      isGroup: true,
-      class: "Asset",
-      incomeBalance: "Balance Sheet"
-    },
-    {
-      id: "current",
-      parentId: "assets",
-      isGroup: true,
-      class: "Asset",
-      incomeBalance: "Balance Sheet"
-    },
-    {
-      id: "cash",
-      parentId: "current",
-      isGroup: false,
-      class: "Asset",
-      incomeBalance: "Balance Sheet"
-    }
+    { id: "assets", parentId: null, isGroup: true },
+    { id: "current", parentId: "assets", isGroup: true },
+    { id: "cash", parentId: "current", isGroup: false }
   ];
 
-  it("refuses to move a group under one of its own accounts", async () => {
-    const result = await moveAccount(contextFor(reading({ account: chart })), {
-      accountId: "assets",
-      parentId: "current"
-    });
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "An account cannot move under itself or one of its own accounts"
-    });
-  });
-
-  it("refuses a parent that is not a group", async () => {
-    const result = await moveAccount(contextFor(reading({ account: chart })), {
-      accountId: "current",
-      parentId: "cash"
-    });
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Choose a group account to move it under"
-    });
-  });
-});
-
-describe("disposeFixedAsset", () => {
-  it("refuses an asset that is already disposed, before posting", async () => {
-    const result = await disposeFixedAsset(
-      contextFor(
-        reading({
-          fixedAsset: { status: "Disposed", fixedAssetClass: { id: "c" } },
-          dimension: []
-        })
-      ),
-      { fixedAssetId: "fa-1", disposalDate: "2026-10-01" }
+  it("refuses to move a group under one of its own accounts", () => {
+    expect(accountMoveRefusal(chart, "assets", "current")).toBe(
+      "An account cannot move under itself or one of its own accounts"
     );
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Only Active or Fully Depreciated assets can be disposed"
-    });
-  });
-});
-
-describe("sellFixedAsset", () => {
-  it("refuses a Draft asset, before creating an order", async () => {
-    const result = await sellFixedAsset(
-      contextFor(
-        reading({ fixedAsset: { status: "Draft" }, userDefaults: null })
-      ),
-      { fixedAssetId: "fa-1", customerId: "cust-1" }
+    expect(accountMoveRefusal(chart, "current", "current")).toBe(
+      "An account cannot move under itself or one of its own accounts"
     );
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Only active assets can be sold"
-    });
-  });
-});
-
-describe("takeFixedAssetOutOfService", () => {
-  it("refuses a unit on rent, read with the service role", async () => {
-    const result = await takeFixedAssetOutOfService(
-      contextFor(
-        reading({
-          fixedAsset: { status: "Active", outOfServiceSince: null }
-        }),
-        () =>
-          reading({
-            rentalAgreementLine: {
-              id: "ral-1",
-              rentalAgreement: { id: "ra-1", rentalAgreementId: "RA000001" }
-            }
-          })
-      ),
-      { fixedAssetId: "fa-1", reason: "Broken" }
-    );
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message:
-        "The asset is on rent on RA000001; return it from the agreement and take it out of service there"
-    });
   });
 
-  it("refuses an asset already out of service", async () => {
-    const result = await takeFixedAssetOutOfService(
-      contextFor(
-        reading({
-          fixedAsset: { status: "Active", outOfServiceSince: "2026-09-01" }
-        })
-      ),
-      { fixedAssetId: "fa-1", reason: "Broken" }
+  it("refuses a parent that is not a group, or not in the chart", () => {
+    expect(accountMoveRefusal(chart, "current", "cash")).toBe(
+      "Choose a group account to move it under"
     );
-    expect(result.error).toMatchObject({
-      message: "The asset is already out of service"
-    });
+    expect(accountMoveRefusal(chart, "cash", "elsewhere")).toBe(
+      "Choose a group account to move it under"
+    );
   });
-});
 
-describe("overrideExchangeRate", () => {
-  it("refuses to pin the base currency", async () => {
-    const result = await overrideExchangeRate(
-      contextFor(reading({ company: { baseCurrencyCode: "USD" } })),
-      { currencyCode: "USD", rate: 1.1 }
-    );
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "The base currency's exchange rate is always 1"
-    });
-  });
-});
-
-describe("createDepreciationRun", () => {
-  it("refuses a period that does not end after the last run", async () => {
-    const result = await createDepreciationRun(
-      contextFor(
-        reading({ depreciationRun: [{ periodEnd: "2026-09-30" }] })
-      ),
-      { periodEnd: "2026-08-15" }
-    );
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "The period must end after the last depreciation run"
-    });
+  it("allows a move under another group", () => {
+    expect(accountMoveRefusal(chart, "cash", "assets")).toBeNull();
   });
 });

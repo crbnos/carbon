@@ -19,6 +19,7 @@ import {
   getLocationTimeZone,
   getOrCreatePeriods
 } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;
@@ -35,6 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_PROJECT
   );

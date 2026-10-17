@@ -9,11 +9,6 @@ import { z } from "zod";
 import { chatRequest } from "./agent.models";
 import * as service from "./agent.service";
 
-// Every step re-sends the whole context. A docs answer is search → read → answer, with a
-// read or two more at most, so a few steps cover it and bound the worst-case cost.
-// The assistant message id is minted here and becomes the row's id, so the browser's
-// copy of an answer and its database row share one id (feedback targets it).
-// What the browser sees when a turn fails; the real error is logged, never streamed.
 const agentRatelimit = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, "5 m")
