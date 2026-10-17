@@ -16570,6 +16570,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreements.invoiceAutomation"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreements.taxCodeId"
+          },
+          {
             $ref: "#/parameters/rowFilter.rentalAgreements.customerName"
           },
           {
@@ -126820,6 +126823,10 @@ export default {
           format: 'public."invoiceAutomation"',
           type: "string"
         },
+        taxCodeId: {
+          format: "text",
+          type: "string"
+        },
         customerName: {
           format: "text",
           type: "string"
@@ -178070,6 +178077,12 @@ export default {
     },
     "rowFilter.rentalAgreements.invoiceAutomation": {
       name: "invoiceAutomation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreements.taxCodeId": {
+      name: "taxCodeId",
       required: false,
       in: "query",
       type: "string"

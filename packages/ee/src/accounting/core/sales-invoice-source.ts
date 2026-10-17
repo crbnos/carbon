@@ -81,6 +81,11 @@ export async function loadSalesInvoices(
         .onRef("item.id", "=", "salesInvoiceLine.itemId")
         .onRef("item.companyId", "=", "salesInvoiceLine.companyId")
     )
+    .leftJoin("taxCode", (join) =>
+      join
+        .onRef("taxCode.id", "=", "salesInvoiceLine.taxCodeId")
+        .onRef("taxCode.companyId", "=", "salesInvoiceLine.companyId")
+    )
     .select([
       "salesInvoiceLine.id",
       "salesInvoiceLine.invoiceId",
@@ -95,6 +100,8 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.addOnCost",
       "salesInvoiceLine.nonTaxableAddOnCost",
       "salesInvoiceLine.taxPercent",
+      "salesInvoiceLine.taxCodeId",
+      "taxCode.taxesShipping",
       "item.readableIdWithRevision as itemReadableIdWithRevision"
     ])
     .where("salesInvoiceLine.companyId", "=", companyId)
@@ -285,6 +292,8 @@ export async function loadSalesInvoices(
           convertedUnitPrice,
           discountPercent,
           taxPercent,
+          taxCodeId: line.taxCodeId,
+          taxesShipping: line.taxesShipping ?? false,
           lineAmount: quantity * unitPrice * (1 - discountPercent)
         };
       }),

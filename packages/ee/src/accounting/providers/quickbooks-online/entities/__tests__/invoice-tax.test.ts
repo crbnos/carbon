@@ -35,7 +35,8 @@ function document(): SalesDocumentComponents {
         unitAmount: 80,
         netAmount: 80,
         taxPercent: 0.1,
-        taxAmount: 8
+        taxAmount: 8,
+        taxCodeId: null
       },
       {
         id: "addon",
@@ -49,7 +50,8 @@ function document(): SalesDocumentComponents {
         unitAmount: 16,
         netAmount: 16,
         taxPercent: 0.1,
-        taxAmount: 1.6
+        taxAmount: 1.6,
+        taxCodeId: null
       },
       {
         id: "shipping",
@@ -63,7 +65,8 @@ function document(): SalesDocumentComponents {
         unitAmount: 8,
         netAmount: 8,
         taxPercent: 0.1,
-        taxAmount: 0.8
+        taxAmount: 0.8,
+        taxCodeId: null
       },
       {
         id: "nontax",
@@ -77,7 +80,8 @@ function document(): SalesDocumentComponents {
         unitAmount: 2.4,
         netAmount: 2.4,
         taxPercent: 0,
-        taxAmount: 0
+        taxAmount: 0,
+        taxCodeId: null
       },
       {
         id: "header",
@@ -91,7 +95,8 @@ function document(): SalesDocumentComponents {
         unitAmount: 4,
         netAmount: 4,
         taxPercent: 0,
-        taxAmount: 0
+        taxAmount: 0,
+        taxCodeId: null
       }
     ]
   };

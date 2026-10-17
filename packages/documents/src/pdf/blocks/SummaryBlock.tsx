@@ -10,7 +10,7 @@ import {
 import {
   getLineDiscount,
   getLineGrossMerchandise,
-  getLineTaxableSubtotal,
+  getTaxTotal,
   getTotal
 } from "../../utils/sales-invoice";
 import { useTw } from "./tw";
@@ -147,10 +147,7 @@ export function SummaryBlock({
             </Text>
             <Text style={tw("w-1/6 text-center text-gray-800")}>
               {numberFormatter.format(
-                salesInvoiceLines.reduce((sum, line) => {
-                  const taxPercent = line.taxPercent ?? 0;
-                  return sum + getLineTaxableSubtotal(line) * taxPercent;
-                }, 0)
+                getTaxTotal(salesInvoiceLines, salesInvoice)
               )}
             </Text>
           </View>

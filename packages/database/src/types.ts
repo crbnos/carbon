@@ -87673,6 +87673,7 @@ export type Database = {
           specializedAsset: boolean | null
           startDate: string | null
           status: Database["public"]["Enums"]["rentalAgreementStatus"] | null
+          taxCodeId: string | null
           taxPercent: number | null
           unbilledAmount: number | null
           updatedAt: string | null
@@ -87825,6 +87826,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "rentalAgreement_taxCodeId_fkey"
+            columns: ["taxCodeId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "taxCode"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "rentalAgreement_updatedBy_fkey"
