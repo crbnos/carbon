@@ -377,6 +377,37 @@ export namespace Xero {
 
   export type TrackingCategory = z.infer<typeof TrackingCategorySchema>;
 
+  /**
+   * A tax rate of the organisation (GET /TaxRates). `TaxType` is what a line
+   * sends; `ReportTaxType` places the line on the VAT/GST return. The
+   * `CanApplyTo*` flags say which account classes accept the rate — Xero
+   * refuses a revenue rate on an expense account.
+   */
+  export const TaxRateSchema = z
+    .object({
+      Name: z.string(),
+      TaxType: z.string(),
+      ReportTaxType: z.string().optional(),
+      Status: z.enum(["ACTIVE", "DELETED", "ARCHIVED", "PENDING"]).optional(),
+      EffectiveRate: z.number().optional(),
+      DisplayTaxRate: z.number().optional(),
+      CanApplyToRevenue: z.boolean().optional(),
+      CanApplyToExpenses: z.boolean().optional(),
+      TaxComponents: z
+        .array(
+          z.object({
+            Name: z.string(),
+            Rate: z.number(),
+            IsCompound: z.boolean().optional(),
+            IsNonRecoverable: z.boolean().optional()
+          })
+        )
+        .optional()
+    })
+    .passthrough();
+
+  export type TaxRate = z.infer<typeof TaxRateSchema>;
+
   /** Tracking assignment on a manual-journal line (ids, never names). */
   export const ManualJournalTrackingSchema = z.object({
     TrackingCategoryID: z.string(),

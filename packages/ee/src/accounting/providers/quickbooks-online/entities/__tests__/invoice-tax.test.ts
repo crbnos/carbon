@@ -9,6 +9,7 @@ import type { QboProvider } from "../../provider";
 import {
   loadQboInvoiceTaxCatalog,
   type QboInvoiceTaxCatalog,
+  qboTaxOptions,
   resolveQboInvoiceTax
 } from "../invoice-tax";
 
@@ -373,4 +374,17 @@ it("uses documented US markers without requiring marker rows in the tax catalog"
       catalog: { country: "US", taxCodes: [], taxRates: [] }
     })
   ).toMatchObject({ txnTaxDetail: undefined });
+});
+
+describe("qboTaxOptions", () => {
+  it("offers single-rate codes of the direction with a 0..1 rate", () => {
+    expect(qboTaxOptions(catalog("GB"), "sales")).toEqual([
+      { id: "ten", name: "Ten percent", rate: 0.1, direction: "sales" },
+      { id: "zero", name: "Zero", rate: 0, direction: "sales" }
+    ]);
+  });
+
+  it("offers nothing for a direction the codes have no rate list for", () => {
+    expect(qboTaxOptions(catalog("GB"), "purchase")).toEqual([]);
+  });
 });

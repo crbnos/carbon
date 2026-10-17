@@ -5,6 +5,7 @@
 import { EPSILON, round, SCALE } from "@carbon/utils";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { SalesDocumentComponents } from "../../../core/sales-document-components";
+import type { TaxDirection, TaxRateOption } from "../../../core/tax-mapping";
 import type { Qbo } from "../models";
 import type { QboProvider } from "../provider";
 
@@ -33,6 +34,35 @@ export async function loadQboInvoiceTaxCatalog(
     taxCodes: codes.filter((code) => code.Active !== false),
     taxRates: rates.filter((rate) => rate.Active !== false)
   };
+}
+
+/**
+ * The mapping tab's options from the QuickBooks catalog: a code with exactly
+ * one rate in the direction's list (SalesTaxRateList for sales,
+ * PurchaseTaxRateList for purchases). `RateValue` is in percent points; the
+ * option rate is a 0..1 fraction. Tax groups are not offered.
+ */
+export function qboTaxOptions(
+  catalog: Pick<QboInvoiceTaxCatalog, "taxCodes" | "taxRates">,
+  direction: TaxDirection
+): TaxRateOption[] {
+  const rates = new Map(catalog.taxRates.map((rate) => [rate.Id, rate]));
+  return catalog.taxCodes.flatMap((code) => {
+    const list =
+      direction === "sales" ? code.SalesTaxRateList : code.PurchaseTaxRateList;
+    const details = list?.TaxRateDetail ?? [];
+    if (code.TaxGroup || details.length !== 1) return [];
+    const rate = rates.get(details[0]!.TaxRateRef.value);
+    if (!rate) return [];
+    return [
+      {
+        id: code.Id,
+        name: code.Name ?? code.Id,
+        rate: (rate.RateValue ?? 0) / 100,
+        direction
+      }
+    ];
+  });
 }
 
 /** Translate existing Carbon tax facts; never create tax codes or determine new tax. */
