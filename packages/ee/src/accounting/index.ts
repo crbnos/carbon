@@ -18,6 +18,7 @@ export * from "./core/payment-application";
 export * from "./core/payment-syncer";
 export * from "./core/payment-tombstone";
 export * from "./core/posting";
+export * from "./core/provider-tax";
 export * from "./core/reimbursement-source";
 export * from "./core/remote-journal";
 export * from "./core/remote-trial-balance";

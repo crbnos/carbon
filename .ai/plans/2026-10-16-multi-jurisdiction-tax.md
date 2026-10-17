@@ -52,7 +52,7 @@ Slice C — Provider mapping
 - [x] Task 26: Write `core/tax-mapping.ts` with tests
 - [x] Task 27: Read provider tax catalogs (Xero `/TaxRates`, QuickBooks Online tax codes)
 - [ ] Task 28: Add the Tax Rates tab and the sync gate to the integration drawer
-- [ ] Task 29: Write the shared provider tax-rate resolver with tests
+- [x] Task 29: Write the shared provider tax-rate resolver with tests
 - [ ] Task 30: Send mapped tax on Xero invoices, sales orders and purchase orders
 - [ ] Task 31: Carry per-line tax through bill costing
 - [ ] Task 32: Send tax on Xero bills, credit notes and vendor credits
