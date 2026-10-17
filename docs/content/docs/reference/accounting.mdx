@@ -28,9 +28,9 @@ Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with b
 | Source type | Posted by |
 | --- | --- |
 | Sales Shipment | Posting a shipment: relieves inventory to COGS. |
-| Sales Invoice | Posting a sales invoice: receivable against sales revenue, shipping revenue, and sales tax payable, on separate lines. |
+| Sales Invoice | Posting a sales invoice: receivable against sales revenue, shipping revenue, and Tax Received, on separate lines. |
 | Purchase Receipt | Posting a receipt: inventory or WIP against GR/IR. |
-| Purchase Invoice | Posting a supplier bill: payables, clearing GR/IR. |
+| Purchase Invoice | Posting a supplier bill: payables, clearing GR/IR. The recoverable share of the tax goes to Tax Paid. |
 | Inventory Adjustment | Manual adjustments and inventory count variances: stock gains and losses against the inventory adjustment account. |
 | Job Consumption / Production Event / Job Receipt | A job consuming material, logging time, and finishing into inventory. |
 | Job Close | Sweeping a job's residual work-in-process to variance. |
@@ -52,9 +52,51 @@ Carbon resolves posting accounts from one set of company defaults. It does not u
 | Sales | Revenue from goods and services sold. |
 | Shipping revenue | Shipping charged to the customer — its own revenue leaf, never the sales account. |
 | Goods received, not invoiced | The accrual between receiving goods and being billed for them. |
+| Tax Received | Tax collected from customers. A liability. |
+| Tax Paid | The recoverable share of tax paid on purchases. An asset. |
 | Variance | Differences swept at job close or from purchase price. |
 
-A sales invoice line separates shipping, tax, and merchandise. Line shipping and its share of header-level shipping credit **shipping revenue**; tax credits **sales tax payable**; merchandise and add-ons credit **sales**. The sales and shipping-revenue defaults must reference different accounts. Posting fails if both resolve to the sales account. New companies receive account **4040 "Shipping Revenue"** under Revenue; companies joining an existing group inherit the group's shipping default.
+A sales invoice line separates shipping, tax, and merchandise. Line shipping and its share of header-level shipping credit **shipping revenue**; tax credits **Tax Received**; merchandise and add-ons credit **sales**. The sales and shipping-revenue defaults must reference different accounts. Posting fails if both resolve to the sales account. New companies receive account **4040 "Shipping Revenue"** under Revenue; companies joining an existing group inherit the group's shipping default.
+
+## Tax codes
+
+A <Term>tax code</Term> is a named tax treatment, such as "TX – Houston". It holds one or more <Term id="tax-component">tax components</Term>, one for each rate that applies: a state rate and a city rate, for example. Each component has its own **"Authority"**, **"Rate"**, **"Recoverable"** percent and **"Effective"** / **"Expires"** dates. A **"Compound"** component also taxes the tax of the components before it.
+
+You set them up under **Accounting → Tax**:
+
+- **Tax Codes**: the codes and their components. A code also has a **"Calculation Type"** (*Normal* or *Reverse Charge*), a **"Reporting Category"**, an **"Invoice Message"** that prints on sales invoices, and **"Taxes Shipping"**. Deleting a code retires it, so posted documents keep it.
+- **Tax Authorities**: who you pay the tax to, with an optional **"Supplier"**.
+- **Tax Registrations**: your own registration numbers, by country and state. The page warns about an active code's country with no registration, and about a registration whose country has no active code.
+
+To change a rate, give the old component an **"Expires"** date and add a new component. A document takes the components in force on its date. A posted document never changes.
+
+### Which code a line takes
+
+When you add a line, Carbon picks its tax in this order:
+
+1. A customer marked tax exempt: no tax.
+2. An item that is not **"Taxable"**: no tax.
+3. On a sales document, the **"Tax Code"** of the customer's ship-to location.
+4. The **"Tax Code"** of the customer or supplier.
+5. The party's bare **"Tax Percent"**, as before tax codes existed.
+
+The code's combined rate fills the line's **"Tax Percent"**. You can change the line's code. A conversion, such as a quote to a sales order, copies the code and does not pick again.
+
+### Recoverable purchase tax
+
+On a purchase invoice, each component's <Term>recoverable percent</Term> splits its tax. The recoverable share posts to **Tax Paid**. The rest stays in the cost of what you bought, and a receipt leaves the recoverable share out of the unit cost. A code at 0% recoverable posts exactly as a purchase did before tax codes: all the tax goes into cost.
+
+A *Reverse Charge* code taxes a bill on which the supplier charged no tax, such as use tax. Carbon calculates the tax itself and credits the **Reverse Charge Sales Tax** account. Its recoverable share goes to Tax Paid and the rest into cost. The payable stays at the supplier's amount.
+
+<Callout type="note" title="Existing companies keep their tax accounts">
+New companies get **1170 Tax Paid** (an asset) and **2210 Tax Received** (a liability). A company created before tax codes keeps its own accounts under the new names, so Tax Paid can be a liability account. Postings sign each tax line by the class of the account it lands on.
+</Callout>
+
+### The tax ledger
+
+Every posted sales invoice, purchase invoice and memo writes the <Term>tax ledger</Term> in the same step as its journal. It has one row per line and component, with the taxable base, the tax and the recoverable tax, in base and document currency. An exempt customer or a non-taxable item writes a row with an exempt base. A void writes the negated rows.
+
+The [Tax Liability](/docs/reference/financial-reports#tax-liability) report reads the tax ledger of Posted journals only.
 
 ## Dimensions
 

@@ -57,13 +57,13 @@ Slice C — Provider mapping
 - [x] Task 31: Carry per-line tax through bill costing
 - [x] Task 32: Send tax on Xero bills, credit notes and vendor credits
 - [x] Task 33: Send mapped tax on QuickBooks Online documents
-- [ ] Task 34: Update the accounting sync rule
+- [x] Task 34: Update the accounting sync rule
 
 Slice D — Reporting and documents
 - [x] Task 35: Build the Tax Liability report
 - [x] Task 36: Print the tax summary, VAT clause and registration on sales PDFs
 - [x] Task 37: Move customers and suppliers from a bare percent to tax codes
-- [ ] Task 38: Update docs, glossary, rules and AGENTS.md
+- [x] Task 38: Update docs, glossary, rules and AGENTS.md
 - [ ] Task 39: Verify Phase 1 in the browser
 
 ## Dependencies

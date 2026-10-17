@@ -331,6 +331,34 @@ employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (1
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
 
+## Tax codes follow the plant's state
+
+Tier 01 inserts `FoundationData.taxAuthorities`, then `taxCodes` with their
+components, BEFORE the customers. Then it writes `customerTax.taxCodeId` for each
+customer that names a `taxCode`. Each dataset seeds the codes of its own plant's state:
+
+| Dataset | Local code (components) |
+|---|---|
+| satellite | TX – Houston (6.25 + 2) |
+| robotics | PA – Allegheny (6 + 1) |
+| precision | IL – Rockford (6.25 + 2.5) |
+| motor | IN – State (7). Indiana has no local rate, so motor has one authority. |
+
+Every dataset also seeds "Out of State – Exempt" and a Use Tax code
+(`calculationType` Reverse Charge, 0% recoverable). Four customers per dataset
+get a code: the local code, except satellite's government customer (ORBSEC
+Defense), which gets the exempt code. Suppliers get no code, so purchase postings
+fold tax into cost as before.
+
+- State percents the way people write them (6.25; an optional
+  `recoverablePercent` of 100 means fully recoverable). The tier divides by 100.
+- `validate.ts` resolves the `taxCode` and `taxAuthority` ref kinds.
+- The floors in `coverage.ts` are the measured minimum: `taxAuthority: 1`,
+  `taxCode: 3`, `taxCodeComponent: 3`.
+- Seeded document lines still carry only `taxPercent`, and the hand-authored posted
+  invoices write no `taxLedger` rows. The Tax Liability report of a demo company
+  therefore shows only what the user posts after the apply.
+
 ## The company has an accounting cutover
 
 Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded

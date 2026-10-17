@@ -438,6 +438,26 @@ export const terms = {
     definition: msg`The record that applies a payment or memo to an invoice, carrying the applied, discount, and write-off amounts.`,
     href: "/docs/reference/invoices#settling-an-invoice"
   },
+  "tax-code": {
+    term: msg`Tax code`,
+    definition: msg`A named tax treatment, such as "TX – Houston", made of one or more tax components; a document line takes the combined rate of the components in force on its date.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "tax-component": {
+    term: msg`Tax component`,
+    definition: msg`One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates.`,
+    href: "/docs/reference/accounting#tax-codes"
+  },
+  "recoverable-percent": {
+    term: msg`Recoverable percent`,
+    definition: msg`The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought.`,
+    href: "/docs/reference/accounting#recoverable-purchase-tax"
+  },
+  "tax-ledger": {
+    term: msg`Tax ledger`,
+    definition: msg`The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax.`,
+    href: "/docs/reference/accounting#the-tax-ledger"
+  },
   "finished-goods": {
     term: msg`Finished goods`,
     definition: msg`A completed job's output, received into inventory at the job's actual accumulated WIP cost.`,
@@ -1782,7 +1802,7 @@ export const terms = {
   },
   "customer-default-tax-percent": {
     term: msg`Tax Percent`,
-    definition: msg`The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top.`
+    definition: msg`The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead.`
   },
   "invoice-customer": {
     term: msg`Invoice Customer`,

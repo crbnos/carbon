@@ -27,7 +27,8 @@ type Db = Kysely<KyselyDatabase> | KyselyTx;
  *
  * Every AP bill Carbon pushes to a provider reproduces the accounts its
  * posted "Purchase Invoice" journal computed (GR/IR clearing, price
- * variance, tax folded into cost) — NOT the item's account. The item is a
+ * variance, non-recoverable tax folded into cost, recoverable tax on Tax
+ * Paid legs) — NOT the item's account. The item is a
  * description label only. This module extracts the journal read + AP-control
  * filter that Rillet pioneered so QBO and Xero can share it.
  *
