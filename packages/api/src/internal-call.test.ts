@@ -145,6 +145,11 @@ describe("internal calls", () => {
     ).toBeNull();
   });
 
+  it("refuses to sign or verify with an empty secret", () => {
+    expect(() => signInternalCall("", call, body)).toThrow();
+    expect(verifyInternalCall("", "issue", signed(), body, NOW)).toBeNull();
+  });
+
   it("will not sign a caller call without a token, or a system call with one", () => {
     expect(() =>
       signInternalCall(SECRET, { ...call, mode: "caller" }, body)

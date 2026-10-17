@@ -42,6 +42,8 @@ const HEADER = {
 } as const;
 
 function signingKey(secret: string): Buffer {
+  // An empty secret would give every deployment the same key.
+  if (!secret) throw new Error("Internal calls need SESSION_SECRET");
   return Buffer.from(
     hkdfSync("sha256", secret, "carbon", "internal-call/1", 32)
   );
@@ -117,6 +119,7 @@ export function verifyInternalCall(
   body: string,
   now = Date.now()
 ): InternalCall | null {
+  if (!secret) return null;
   const get = (header: string) => headers.get(header) ?? "";
   const timestamp = get(HEADER.timestamp);
   const sentAt = Number(timestamp);
