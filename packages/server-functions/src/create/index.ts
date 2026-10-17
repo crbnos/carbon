@@ -16,7 +16,16 @@ import {
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { datetime, round, settleQuantity } from "@carbon/utils";
+import {
+  datetime,
+  effectiveTaxPercent,
+  receiptUnitCost,
+  recoverableTax,
+  round,
+  SCALE,
+  settleQuantity,
+  splitLineTax
+} from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -26,6 +35,7 @@ import {
   type ServerFnResult
 } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { loadTaxCodes } from "../lib/tax-codes";
 import type { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "create");
@@ -1017,6 +1027,46 @@ const create = defineServerFn({
           return acc;
         }, {});
 
+        // The tax the company cannot reclaim is cost; the recoverable share
+        // goes to Tax Paid when the invoice posts, so it never enters the
+        // received cost. A Reverse Charge code's non-recoverable share is
+        // self-assessed cost the supplier did not charge. With no code this
+        // is the receipt's historical cost.
+        const receiptTaxCodes = await loadTaxCodes(
+          db,
+          companyId,
+          purchaseOrderLines.data.map((line) => line.taxCodeId),
+          datetime.today(await getCompanyTimeZone(db, companyId)).toString()
+        );
+        const reclaimedTax = (
+          line: (typeof purchaseOrderLines.data)[number]
+        ) => {
+          const code = line.taxCodeId
+            ? receiptTaxCodes.get(line.taxCodeId)
+            : undefined;
+          if (!code || code.components.length === 0) return 0;
+          const base =
+            (line.purchaseQuantity ?? 0) * (line.unitPrice ?? 0) +
+            (line.shippingCost ?? 0);
+          if (code.calculationType === "Reverse Charge") {
+            const parts = splitLineTax({
+              base,
+              lineTax: round(base * effectiveTaxPercent(code.components)),
+              components: code.components,
+              scale: SCALE
+            });
+            return -parts.reduce((t, p) => t + p.nonRecoverableAmount, 0);
+          }
+          return recoverableTax(
+            splitLineTax({
+              base,
+              lineTax: line.taxAmount ?? 0,
+              components: code.components,
+              scale: SCALE
+            })
+          );
+        };
+
         const receiptLineItems = purchaseOrderLines.data.reduce<
           ReceiptLineItem[]
         >((acc, d) => {
@@ -1035,10 +1085,6 @@ const create = defineServerFn({
             d.purchaseQuantity -
             (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
 
-          const shippingAndTaxUnitCost =
-            ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
-            (d.purchaseQuantity * (d.conversionFactor ?? 1));
-
           acc.push({
             lineId: d.id,
             companyId: companyId,
@@ -1052,8 +1098,14 @@ const create = defineServerFn({
               serializedItems.has(d.itemId) && !isOutsideOperation,
             requiresBatchTracking:
               batchItems.has(d.itemId) && !isOutsideOperation,
-            unitPrice:
-              unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
+            unitPrice: receiptUnitCost({
+              unitPrice,
+              conversionFactor: d.conversionFactor ?? 1,
+              purchaseQuantity: d.purchaseQuantity,
+              taxAmount: d.taxAmount ?? 0,
+              recoverableTaxAmount: reclaimedTax(d),
+              shippingCost: d.shippingCost ?? 0
+            }),
             unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
             locationId: d.locationId ?? null,
             storageUnitId:
