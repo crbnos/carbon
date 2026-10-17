@@ -56,10 +56,10 @@ decisions the user made on 2026-10-17. Built in commit `d956b0be11`.
 - [x] 7. Delete `packages/server-functions`, the `server-fn-authorizes-caller` check and `loadServerFunctions`.
 - [x] 8. Docs: rules, AGENTS.md files and product docs (`ff9f6d8edb`).
 - [ ] 9. Verify against the local stack:
-  1. Run the database tests.
-  2. Run an MES issue and a complete in the browser.
-  3. Run the MCP smoke test.
-  4. Measure the issue round trip.
+  - [x] Run the database tests (results below).
+  - [ ] Run an MES issue and a complete in the browser. The browser pane blocked every script of `erp.service-functions.dev` (`ERR_BLOCKED_BY_CLIENT`), so the page did not hydrate.
+  - [x] Run the MCP smoke test (results below).
+  - [x] Measure the round trip (results below).
 - [ ] 10. Decide `scripts/one-off/journal-legacy-documents.ts` (see Open items).
 
 ## Verified (2026-10-17, without the database stack)
@@ -70,6 +70,17 @@ decisions the user made on 2026-10-17. Built in commit `d956b0be11`.
 | Tests: erp (2556), mes (69), jobs (970), ee (2048), database (504), api (63), checks (334) | pass; database tests skip |
 | Production build: MES and ERP | pass. The ERP server bundle calls `registerPostings` with the 9 new postings. |
 | MCP manifest | 1610 tools, digest current, workflow catalog ok |
+
+## Verified against the local stack (2026-10-17)
+
+| Check | Result |
+|---|---|
+| ERP database tests | 640 pass. `post-charge-transaction` once deadlocked in its own `DROP TRIGGER` cleanup while other files ran in parallel. Alone it passed twice. |
+| `@carbon/database` and `@carbon/jobs` tests with the database | 544 and 984 pass |
+| Signed calls to the live ERP dev server, signed as `erpPosting` signs them | `recalculate` 200. A real `issue` of one unit on an operation wrote 3 ledger rows. A bad input is 400, an unsigned call 401, a posting off the list 404, a repeated call 409. |
+| Round trip, `recalculate`, local dev over portless HTTPS | 36 to 45 ms |
+| MES `erpPosting` (`apps/mes/app/services/erp.test.ts`, `fetch` stubbed) | The ERP verifies what MES signs. A service-role client runs as the system. A user's client forwards its token in caller mode. A refusal keeps its status and body. An unreachable ERP is a 502. |
+| MCP, with two local API keys deleted afterwards | `initialize`: 1610 tools across 14 modules. `tools/list`, `search_tools`, `describe_tool` answer. `call_tool production_getJobs` returns jobs in 46 ms. A key with no scopes, and a write with view-only scopes, are refused. A missing argument is a validation error. An unknown key is a 401. |
 
 ## Open items
 
