@@ -13,7 +13,8 @@ vi.mock("@carbon/auth", async (importOriginal) => ({
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee")>()),
   integrations: [],
   quickInstallConnectors: [],
   // The loader derives which role slots are taken so the cards can disable a

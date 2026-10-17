@@ -46,6 +46,7 @@ import {
   deleteWorkCenterDevice,
   upsertWorkCenterDevice
 } from "@carbon/ee/oee.server";
+import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
@@ -3119,4 +3120,92 @@ export const updateSequence = defineServiceFn({
       )
     );
   }
+});
+
+/**
+ * Detach an item from the Onshape panel
+ *
+ * @remarks
+ * Removes the item's `onshape-v2` link. The item keeps its model, documents
+ * and fields. A sync connection's `onshape` row is bill-of-materials import
+ * bookkeeping that the BoM Explorer reads, so it is never removed here.
+ */
+export const detachOnshapeItem = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1) }),
+  permission: { update: "parts" },
+  async run(ctx, { itemId }) {
+    const removed = await ctx.asSystem.supabase
+      .from("externalIntegrationMapping")
+      .delete()
+      .eq("companyId", ctx.company.id)
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+      .eq("entityType", "item")
+      .eq("entityId", itemId)
+      .select("id");
+    if (removed.error) {
+      return ctx.error(
+        "internal",
+        "Failed to detach from Onshape",
+        removed.error
+      );
+    }
+    if (removed.data.length === 0) {
+      return ctx.error("notFound", "This item is not linked to Onshape");
+    }
+    return { itemId };
+  }
+});
+
+/**
+ * Save the Onshape panel's property map
+ *
+ * @remarks
+ * Replaces the property map, the description modes and the push defaults.
+ * Answers in the panel's own reply shape.
+ */
+export const saveOnshapePropertyMap = defineServiceFn({
+  input: service.onshapePropertyMapInput,
+  permission: { update: "settings" },
+  run: (ctx, input) => service.saveOnshapePropertyMap(ctx, input)
+});
+
+/**
+ * Push reviewed Onshape parts
+ *
+ * @remarks
+ * Applies a part review from the Onshape panel: creates or adopts items,
+ * links them, and queues their model exports. Answers in the panel's own
+ * reply shape.
+ */
+export const pushOnshapePart = defineServiceFn({
+  input: service.onshapePartPushInput,
+  permission: { create: "parts", update: "parts" },
+  run: (ctx, input) => service.pushOnshapePart(ctx, input)
+});
+
+/**
+ * Push a reviewed Onshape assembly
+ *
+ * @remarks
+ * Applies an assembly review from the Onshape panel: items, bill of material
+ * lines per method, links and the model export. Re-pushing replaces the lines
+ * an earlier push wrote. Answers in the panel's own reply shape.
+ */
+export const pushOnshapeAssembly = defineServiceFn({
+  input: service.onshapeAssemblyPushInput,
+  permission: { create: "parts", update: "parts", delete: "parts" },
+  run: (ctx, input) => service.pushOnshapeAssembly(ctx, input)
+});
+
+/**
+ * Push a reviewed Onshape release
+ *
+ * @remarks
+ * Applies a release review from the Onshape panel. Carbon's state when it
+ * applies outranks the review. Answers in the panel's own reply shape.
+ */
+export const pushOnshapeRelease = defineServiceFn({
+  input: service.onshapeReleasePushInput,
+  permission: { create: "parts", update: "parts", delete: "parts" },
+  run: (ctx, input) => service.pushOnshapeRelease(ctx, input)
 });

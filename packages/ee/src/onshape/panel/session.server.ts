@@ -163,6 +163,8 @@ export async function requireOnshapePanelPermissions(
   userId: string;
   sessionUserId: string;
   consoleMode: boolean;
+  caller: "session";
+  permissions: Awaited<ReturnType<typeof getUserClaims>>["permissions"];
 }> {
   const token = panelSessionTokenFromRequest(request);
   if (!token) {
@@ -231,6 +233,8 @@ export async function requireOnshapePanelPermissions(
     email,
     userId,
     sessionUserId: userId,
-    consoleMode: false
+    consoleMode: false,
+    caller: "session",
+    permissions: myClaims.permissions
   };
 }

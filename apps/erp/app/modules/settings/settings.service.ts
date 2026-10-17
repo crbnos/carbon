@@ -64,20 +64,62 @@ import {
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
 import type {
+  DescriptionModes,
   ItemEdit,
   ItemFieldSnapshot,
+  MappedRowPlan,
+  OnshapeBomNode,
+  OnshapePushDefaults,
   OwnedFieldChange,
+  PartPlan,
+  PartPlanRow,
+  PlanCustomField,
+  PlanCustomFieldDefinition,
+  PlanItemRow,
+  PropertyMapEntry,
+  ProposedItem,
+  ReleasePlanItem,
   StandardFieldWriter
 } from "@carbon/ee";
 import {
+  bomLineItemType,
+  CUSTOM_FIELD_TYPE_LABELS,
+  changeNoticeDescriptionJson,
+  createdItemExtras,
+  defaultUnitOfMeasureCode,
+  externalIdForAssembly,
+  externalIdForBomLine,
+  externalIdForPart,
+  flattenNodes,
   getIntegrationConfigById,
   getIntegrationIdsByRole,
   type IntegrationHealthcheckResult,
   type IntegrationID,
+  ITEM_METHOD_TYPES,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_TRACKING_TYPES,
+  isModelReleaseItem,
+  MAPPABLE_VALUE_TYPES,
+  MAPPING_MODES,
+  mappedFieldValues,
+  mergeChangeNoticeEdit,
+  mergeCustomFieldValues,
+  mergeEditsForCreates,
   mergeExistingItemEdits,
+  normalizeConfiguration,
+  pickAdoptTarget,
+  pickBomChildRow,
+  pickReuseRow,
+  pickRevisionBase,
+  proposeItem,
+  reconcilePushDefaults,
+  releaseBomKey,
   resolveIntegrationSecrets,
+  STANDARD_FIELD_IDS,
   splitSecrets,
-  standardField
+  standardField,
+  targetKey,
+  translationErrors
 } from "@carbon/ee";
 import {
   buildRilletFieldTarget,
@@ -105,17 +147,31 @@ import {
 } from "@carbon/ee/hooks.server";
 import type { OeeDevice } from "@carbon/ee/oee";
 import { getOeeProvider } from "@carbon/ee/oee.server";
-import type { DraftCandidate } from "@carbon/ee/onshape";
+import type {
+  DraftCandidate,
+  ManualLineRow,
+  MappedLineRow,
+  ReleaseExportSelection,
+  StoredReleasePlan
+} from "@carbon/ee/onshape";
 import {
+  chunkFilterValues,
   DRAFT_MARKER_ENTITY_TYPE,
   exchangeOnshapeAuthorizationCode,
   getConflictingOnshapeIntegration,
   isOnshapeIntegrationId,
+  loadActiveMakeMethods,
+  loadMethodLineOwnership,
+  loadPartCustomFieldDefinitions,
+  loadPlanOptions,
   loadReusableDrafts,
   ONSHAPE_OAUTH_SCOPES,
   type OnshapeOAuthIntegrationId,
   pairOwnedCopiedLines,
-  selectInBatches
+  peekPanelPlan,
+  releaseExportSelection,
+  selectInBatches,
+  takePanelPlan
 } from "@carbon/ee/onshape";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import {
@@ -143,6 +199,7 @@ import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
+import { data } from "react-router";
 import { extract as tarExtract } from "tar-stream";
 import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
@@ -161,10 +218,18 @@ import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
   cascadeItemTrackingType,
   copyMakeMethod,
+  createRevision,
+  deleteChangeNotice,
+  deleteItem,
+  type getItem,
   getLockVerdict,
+  insertChangeNotice,
   type ReleaseControl,
+  requireChangeNoticeEditable,
+  updateDefaultRevision,
   updateItemMethodAndSourcing,
-  upsertMakeMethodVersion
+  upsertMakeMethodVersion,
+  upsertPart
 } from "~/modules/items/items.service";
 import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
@@ -190,6 +255,7 @@ import {
 } from "~/modules/sales/sales.utils";
 import type { Integration } from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
+import * as sharedService from "~/modules/shared/shared.service";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
@@ -5084,4 +5150,3239 @@ export async function completeOnshapeAuthorization({
 function withCookie(response: Response, cookie: string) {
   response.headers.append("Set-Cookie", cookie);
   return response;
+}
+
+/**
+ * What an Onshape panel operation answers. The panel reads the HTTP status
+ * and the JSON body (`error`, `fieldErrors`, `code`), so its route sends both
+ * as given (`panelResponse`).
+ */
+export type PanelReply = { status: number; body: unknown };
+
+export function panelReply(
+  body: unknown,
+  init?: { status?: number; headers?: HeadersInit }
+): PanelReply {
+  return { status: init?.status ?? 200, body };
+}
+const itemEditSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().nullable().optional(),
+  replenishmentSystem: z.string().optional(),
+  defaultMethodType: z.string().optional(),
+  itemTrackingType: z.string().optional(),
+  unitOfMeasureCode: z.string().optional()
+});
+
+export const onshapePartPushInput = z.object({
+  planId: z.string().min(1),
+  selected: z.array(z.string().min(1)).min(1).max(50),
+  edits: z.record(z.string(), itemEditSchema).default({})
+});
+
+type ApplyResult = {
+  partId: string;
+  action: "created" | "adopted" | "updated" | "unchanged" | "skipped" | "error";
+  itemId?: string;
+  readableId?: string;
+  message?: string;
+};
+
+/** Apply a reviewed part plan: create or adopt items, link them, queue model exports. */
+export async function pushOnshapePart(
+  ctx: ServiceContext,
+  input: z.infer<typeof onshapePartPushInput>
+): Promise<PanelReply> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { planId } = input;
+  const selected = [...new Set(input.selected)];
+  const edits = input.edits as Record<string, ItemEdit>;
+
+  const stored = await peekPanelPlan(planId, { companyId, userId });
+  if (!stored) {
+    return panelReply(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+  if (stored.plan.kind !== "part") {
+    return panelReply(
+      { error: "This review is not a part push" },
+      { status: 400 }
+    );
+  }
+  const plan: PartPlan = stored.plan;
+  const { documentId, wv, wvId, elementId, options } = plan;
+  const configuration = plan.configuration ?? null;
+
+  const rowByPartId = new Map(plan.rows.map((row) => [row.partId, row]));
+  const selectedRows = selected
+    .map((partId) => rowByPartId.get(partId))
+    .filter((row): row is PartPlanRow => !!row);
+
+  const merged = mergeEditsForCreates(
+    selectedRows
+      .filter((row) => row.action === "create" && row.partNumber)
+      .map((row) => ({ key: row.partId, proposed: proposedFor(row, plan) })),
+    edits,
+    options
+  );
+  const fieldErrors = merged.errors;
+  if (fieldErrors.length > 0) {
+    return panelReply(
+      { error: "Some edits are not valid", fieldErrors },
+      { status: 422 }
+    );
+  }
+
+  if (!(await takePanelPlan(planId, { companyId, userId }))) {
+    return panelReply(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+
+  // A create whose number now exists adopts it: `upsertPart` reads its new id
+  // back by readableId and could get another revision.
+  const partNumbers = [
+    ...new Set(
+      selectedRows
+        .map((row) => row.partNumber)
+        .filter((number): number is string => !!number)
+    )
+  ];
+  const targetItemIds = [
+    ...new Set(
+      selectedRows
+        .filter((row) => row.action === "adopt" || row.action === "update")
+        .map((row) => row.itemId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const [byNumber, byId] = await Promise.all([
+    selectInBatches(partNumbers, (batch) =>
+      client
+        .from("item")
+        .select("id, readableId, revision, active, name, type")
+        .eq("companyId", companyId)
+        .in("readableId", batch)
+        .order("revision")
+    ),
+    selectInBatches(targetItemIds, (batch) =>
+      client
+        .from("item")
+        .select("id, readableId, revision, active, name, type")
+        .eq("companyId", companyId)
+        .in("id", batch)
+    )
+  ]);
+  if (byNumber.error || byId.error) {
+    return panelReply(
+      { error: "Failed to read Carbon items" },
+      { status: 500 }
+    );
+  }
+  const rowsByReadableId = new Map<string, PlanItemRow[]>();
+  for (const item of (byNumber.data ?? []) as PlanItemRow[]) {
+    const list = rowsByReadableId.get(item.readableId) ?? [];
+    list.push(item);
+    rowsByReadableId.set(item.readableId, list);
+  }
+  const itemById = new Map(
+    ((byId.data ?? []) as PlanItemRow[]).map((item) => [item.id, item])
+  );
+
+  const serviceRole = getCarbonServiceRole();
+  const db = ctx.asSystem.pg;
+
+  const resolveTarget = (row: PartPlanRow): PlanItemRow | undefined => {
+    let target: PlanItemRow | undefined;
+    if (row.action === "adopt" || row.action === "update") {
+      target = row.itemId ? itemById.get(row.itemId) : undefined;
+    }
+    if (!target && row.partNumber) {
+      target = pickAdoptTarget(
+        rowsByReadableId.get(row.partNumber) ?? [],
+        row.revision
+      );
+    }
+    return target;
+  };
+
+  // `part.id` is the readableId, shared across revisions. Kept current as the
+  // loop writes, so a later row cannot clobber a create.
+  const partCustomFieldsByReadableId = new Map<string, unknown>();
+  const ownedReadableIds = [
+    ...new Set(
+      selectedRows.flatMap((row) => {
+        if (existingCustomFieldValues(row) === null) return [];
+        const ids: string[] = [];
+        if (row.partNumber) ids.push(row.partNumber);
+        const target = row.itemId ? itemById.get(row.itemId) : undefined;
+        if (target) ids.push(target.readableId);
+        return ids;
+      })
+    )
+  ];
+  const partRows = await selectInBatches(ownedReadableIds, (batch) =>
+    client
+      .from("part")
+      .select("id, customFields")
+      .eq("companyId", companyId)
+      .in("id", batch)
+  );
+  if (partRows.error) {
+    return panelReply(
+      { error: "Failed to read Carbon parts" },
+      { status: 500 }
+    );
+  }
+  for (const partRow of partRows.data) {
+    partCustomFieldsByReadableId.set(partRow.id, partRow.customFields);
+  }
+
+  const results: ApplyResult[] = [];
+
+  for (const partId of selected) {
+    const row = rowByPartId.get(partId);
+    if (!row) {
+      results.push({
+        partId,
+        action: "error",
+        message: "Part is not in this review"
+      });
+      continue;
+    }
+
+    if (row.action === "skip-no-part-number") {
+      results.push({
+        partId,
+        action: "skipped",
+        message: "Set a part number in Onshape first"
+      });
+      continue;
+    }
+
+    if (row.action === "released") {
+      results.push({
+        partId,
+        action: "skipped",
+        message: `Released in Onshape as Rev ${row.item?.revision ?? "?"}: changes come through a release`
+      });
+      continue;
+    }
+
+    if (row.action === "unchanged") {
+      // A reviewer edit is still written; no link re-stamp, no export.
+      if (row.itemId && edits[partId]) {
+        const applied = await applyExistingItemFields(client, db, {
+          itemId: row.itemId,
+          companyId,
+          userId,
+          current: row.current,
+          edit: edits[partId]
+        });
+        if (applied.error) {
+          results.push({ partId, action: "error", message: applied.error });
+          continue;
+        }
+        results.push({
+          partId,
+          action: "updated",
+          itemId: row.itemId,
+          readableId: row.item?.readableId
+        });
+        continue;
+      }
+      results.push({
+        partId,
+        action: "unchanged",
+        itemId: row.itemId ?? undefined,
+        readableId: row.item?.readableId
+      });
+      continue;
+    }
+
+    const target = resolveTarget(row);
+    const resolved: "create" | "adopt" | "update" = target
+      ? row.action === "update" && target.id === row.itemId
+        ? "update"
+        : "adopt"
+      : "create";
+
+    let itemId: string;
+    let readableId: string;
+    if (resolved === "create") {
+      const item = merged.items.get(row.partId) ?? proposedFor(row, plan);
+      const fieldValues = planCustomFieldValues(row);
+      const created = await upsertPart(client, {
+        id: item.readableId,
+        name: item.name,
+        description: item.description ?? undefined,
+        revision: item.revision,
+        replenishmentSystem: item.replenishmentSystem,
+        defaultMethodType: item.defaultMethodType,
+        itemTrackingType: item.itemTrackingType,
+        unitOfMeasureCode: item.unitOfMeasureCode,
+        companyId,
+        createdBy: userId,
+        ...(Object.keys(fieldValues).length > 0 && {
+          customFields: fieldValues
+        })
+        // partValidator carries many optional form-only fields the panel never sets
+      } as any);
+      if (created.error || !created.data) {
+        results.push({
+          partId,
+          action: "error",
+          message: created.error?.message ?? "Failed to create the item"
+        });
+        continue;
+      }
+      itemId = created.data.id as string;
+      readableId = item.readableId;
+      const extras = createdItemExtras(item);
+      if (Object.keys(extras).length > 0) {
+        const error = await applyItemFieldWrites(client, db, {
+          itemId,
+          companyId,
+          userId,
+          changed: extras
+        });
+        if (error) {
+          results.push({
+            partId,
+            action: "error",
+            itemId,
+            readableId,
+            message: `Item created, but its mapped fields were not written (${error})`
+          });
+          continue;
+        }
+      }
+      // A later row with the same number adopts this item, not a second create.
+      rowsByReadableId.set(readableId, [
+        ...(rowsByReadableId.get(readableId) ?? []),
+        {
+          id: itemId,
+          readableId,
+          revision: item.revision,
+          name: item.name,
+          type: "Part"
+        }
+      ]);
+      if (Object.keys(fieldValues).length > 0) {
+        partCustomFieldsByReadableId.set(readableId, fieldValues);
+      }
+    } else {
+      itemId = (target as PlanItemRow).id;
+      readableId = (target as PlanItemRow).readableId;
+      const applied = await applyExistingItemFields(client, db, {
+        itemId,
+        companyId,
+        userId,
+        current: row.current,
+        target: row.target,
+        edit: edits[partId],
+        descriptions: row.changes
+      });
+      if (applied.error) {
+        results.push({ partId, action: "error", message: applied.error });
+        continue;
+      }
+      const owned = existingCustomFieldValues(row);
+      if (owned) {
+        const mergedFields = mergeCustomFieldValues(
+          partCustomFieldsByReadableId.get(readableId),
+          owned.values,
+          owned.fieldIds
+        );
+        const partUpdate = await client
+          .from("part")
+          .update({
+            customFields: mergedFields as Json,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .eq("id", readableId)
+          .eq("companyId", companyId);
+        if (partUpdate.error) {
+          results.push({
+            partId,
+            action: "error",
+            message: partUpdate.error.message
+          });
+          continue;
+        }
+        partCustomFieldsByReadableId.set(readableId, mergedFields);
+      }
+    }
+
+    const externalId = externalIdForPart(
+      documentId,
+      elementId,
+      partId,
+      configuration
+    );
+    const now = datetime.timestamp();
+    const linked = await swapItemMapping(db, {
+      companyId,
+      userId,
+      itemId,
+      externalId,
+      metadata: {
+        documentId,
+        elementId,
+        partId,
+        configuration,
+        wv,
+        wvId,
+        // A later plan's only "unchanged" signal.
+        microversionId: row.microversionId,
+        partNumber: row.partNumber,
+        name: row.name,
+        revision: row.revision,
+        pushedBy: userId,
+        pushedAt: now,
+        planId
+      }
+    });
+    if (linked.error !== null) {
+      results.push({
+        partId,
+        action: "error",
+        message: "Item saved but the Onshape link failed; push again"
+      });
+      continue;
+    }
+
+    if (row.cadUnchanged && resolved === "update") {
+      results.push({ partId, action: "updated", itemId, readableId });
+      continue;
+    }
+
+    try {
+      await trigger(
+        "onshape-panel-sync",
+        {
+          companyId,
+          userId,
+          itemId,
+          documentId,
+          wvm: wv,
+          wvmId: wvId,
+          elementId,
+          elementKind: "partstudio",
+          partId,
+          ...(configuration ? { configuration } : {}),
+          ...(wv === "w" && row.microversionId
+            ? { microversionId: row.microversionId }
+            : {}),
+          assetBaseName: row.partNumber ?? row.name
+        },
+        { id: `${planId}:${itemId}:${elementId}` }
+      );
+    } catch (error) {
+      // Unlink so the next plan does not read "unchanged" and skip the export.
+      // By id, not externalId: a concurrent push may have replaced the row.
+      const rolledBack = await serviceRole
+        .from("externalIntegrationMapping")
+        .delete()
+        .eq("companyId", companyId)
+        .eq("id", linked.id);
+      results.push({
+        partId,
+        action: "error",
+        itemId,
+        readableId,
+        message: rolledBack.error
+          ? `Item saved but the model export could not be queued, and the Onshape link could not be rolled back (${rolledBack.error.message}); detach this item before pushing again`
+          : `Item saved but the model export could not be queued; push again (${
+              error instanceof Error ? error.message : "event send failed"
+            })`
+      });
+      continue;
+    }
+
+    results.push({
+      partId,
+      action:
+        resolved === "create"
+          ? "created"
+          : resolved === "adopt"
+            ? "adopted"
+            : "updated",
+      itemId,
+      readableId
+    });
+  }
+
+  return panelReply(
+    { results },
+    {
+      headers: { "Cache-Control": "no-store" }
+    }
+  );
+}
+
+/** The plan's proposal, or one built from the row when the target vanished. */
+function proposedFor(row: PartPlanRow, plan: PartPlan): ProposedItem {
+  if (row.proposed) return row.proposed;
+  return proposeItem(
+    {
+      partNumber: row.partNumber as string,
+      name: row.name,
+      description: row.description,
+      revision: row.revision
+    },
+    plan.options
+  );
+}
+
+function planCustomFieldValues(
+  row: PartPlanRow
+): Record<string, string | number | boolean | null> {
+  return mappedFieldValues(row.customFields ?? [], true).values;
+}
+
+/** The "everyPush" values an adopt or update writes; a null value deletes the key. */
+function existingCustomFieldValues(row: PartPlanRow): {
+  values: Record<string, string | number | boolean | null>;
+  fieldIds: Set<string>;
+} | null {
+  if (row.action === "create") return null;
+  const mapped = mappedFieldValues(row.customFields ?? [], false);
+  return mapped.fieldIds.size > 0 ? mapped : null;
+}
+// Shape only: `mergeItemEdits` validates values, so a bad one is a 422 naming the row.
+
+export const onshapeAssemblyPushInput = z.object({
+  planId: z.string().min(1),
+  edits: z.record(z.string(), itemEditSchema).default({}),
+  excluded: z.array(z.string().min(1)).default([])
+});
+
+type AssemblyPushSummary = {
+  assemblyItemId: string | null;
+  itemsCreated: number;
+  itemsReused: number;
+  linesWritten: number;
+  linesUnchanged: number;
+  /** Manual lines now following Onshape; also counted in `linesWritten`. */
+  linesTakenOver: number;
+  descriptionsUpdated: number;
+  /** Reused items whose mapped fields this push wrote. */
+  fieldsUpdated: number;
+  methodsTouched: number;
+  /** Parent part numbers whose BOM went into a new Draft. */
+  draftVersionsCreated: string[];
+  skipped: string[];
+  errors: string[];
+};
+
+type AssemblyPushItemRow = {
+  id: string;
+  readableId: string;
+  revision: string | null;
+  /** Absent on an item this push created (Design). */
+  revisionStatus?: Database["public"]["Enums"]["itemRevisionStatus"] | null;
+  active?: boolean | null;
+  type: string | null;
+  defaultMethodType: string | null;
+  sourcingType: string | null;
+  unitOfMeasureCode: string | null;
+};
+
+/** Apply a reviewed assembly plan: items, BOM lines per method, links, model export. */
+export async function pushOnshapeAssembly(
+  ctx: ServiceContext,
+  input: z.infer<typeof onshapeAssemblyPushInput>
+): Promise<PanelReply> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { planId } = input;
+  const edits = input.edits as Record<string, ItemEdit>;
+  const excluded = new Set(input.excluded);
+
+  // Peek, not take: a 422 on the edits leaves the plan for a retry.
+  const stored = await peekPanelPlan(planId, { companyId, userId });
+  if (!stored) {
+    return panelReply(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+  if (stored.plan.kind !== "assembly") {
+    return panelReply(
+      { error: "This review is not an assembly push" },
+      { status: 400 }
+    );
+  }
+  const plan = stored.plan;
+  const { documentId, wv, wvId, elementId, root, options } = plan;
+  const configuration = plan.configuration ?? null;
+
+  if (excluded.has(root.partNumber)) {
+    return panelReply(
+      { error: "The assembly itself cannot be excluded" },
+      { status: 400 }
+    );
+  }
+
+  const creates: Array<{ key: string; proposed: ProposedItem }> = [];
+  if (root.action === "create" && root.proposed) {
+    creates.push({ key: root.partNumber, proposed: root.proposed });
+  }
+  for (const item of plan.items) {
+    if (
+      item.action === "create" &&
+      item.proposed &&
+      !excluded.has(item.partNumber)
+    ) {
+      creates.push({ key: item.partNumber, proposed: item.proposed });
+    }
+  }
+  const merged = mergeEditsForCreates(creates, edits, options);
+  if (merged.errors.length > 0) {
+    return panelReply(
+      { error: "Some edits are not valid", fieldErrors: merged.errors },
+      { status: 422 }
+    );
+  }
+
+  if (!(await takePanelPlan(planId, { companyId, userId }))) {
+    return panelReply(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+
+  const summary: AssemblyPushSummary = {
+    assemblyItemId: null,
+    itemsCreated: 0,
+    itemsReused: 0,
+    linesWritten: 0,
+    linesUnchanged: 0,
+    linesTakenOver: 0,
+    descriptionsUpdated: 0,
+    fieldsUpdated: 0,
+    methodsTouched: 0,
+    draftVersionsCreated: [],
+    skipped: [...plan.skipped],
+    errors: []
+  };
+  for (const item of plan.items) {
+    if (excluded.has(item.partNumber)) {
+      summary.skipped.push(`${item.partNumber}: excluded`);
+    }
+  }
+
+  const includedItems = plan.items.filter(
+    (item) => !excluded.has(item.partNumber)
+  );
+  const partNumbers = [
+    ...new Set([root.partNumber, ...includedItems.map((i) => i.partNumber)])
+  ];
+  const existing = await selectInBatches(partNumbers, (batch) =>
+    client
+      .from("item")
+      .select(
+        "id, readableId, revision, revisionStatus, active, type, defaultMethodType, sourcingType, unitOfMeasureCode"
+      )
+      .eq("companyId", companyId)
+      .in("readableId", batch)
+      .order("revision")
+  );
+  if (existing.error) {
+    return panelReply(
+      { error: "Failed to read Carbon items" },
+      { status: 500 }
+    );
+  }
+  const rowsByReadableId = new Map<string, AssemblyPushItemRow[]>();
+  for (const row of (existing.data ?? []) as AssemblyPushItemRow[]) {
+    const list = rowsByReadableId.get(row.readableId) ?? [];
+    list.push(row);
+    rowsByReadableId.set(row.readableId, list);
+  }
+
+  // A reuse whose row vanished becomes a create, described from the BOM row.
+  const allNodes = flattenNodes(plan.nodes);
+  const nodeByPartNumber = new Map<string, OnshapeBomNode>();
+  for (const node of allNodes) {
+    if (node.partNumber && !nodeByPartNumber.has(node.partNumber)) {
+      nodeByPartNumber.set(node.partNumber, node);
+    }
+  }
+
+  const itemByReadableId = new Map<string, AssemblyPushItemRow>();
+  const fallbackUnit = defaultUnitOfMeasureCode(options);
+
+  const serviceRole = getCarbonServiceRole();
+  const db = ctx.asSystem.pg;
+
+  type PlannedItem = MappedRowPlan & {
+    itemId: string | null;
+    current?: ItemFieldSnapshot | null;
+    changes?: OwnedFieldChange[];
+  };
+
+  const customFieldReadIds = [root, ...includedItems]
+    .filter(
+      (row) =>
+        row.action === "reuse" &&
+        mappedFieldValues(row.customFields ?? [], false).fieldIds.size > 0
+    )
+    .map((row) => row.partNumber);
+  const heldParts = await selectInBatches(customFieldReadIds, (batch) =>
+    client
+      .from("part")
+      .select("id, customFields")
+      .eq("companyId", companyId)
+      .in("id", batch)
+  );
+  if (heldParts.error) {
+    return panelReply(
+      { error: "Failed to read Carbon parts" },
+      { status: 500 }
+    );
+  }
+  const heldCustomFields = new Map<string, unknown>(
+    (heldParts.data ?? []).map((part) => [part.id, part.customFields])
+  );
+
+  const ensureItem = async (
+    partNumber: string,
+    planned: PlannedItem,
+    propose: () => ProposedItem
+  ): Promise<AssemblyPushItemRow | null> => {
+    const rows = rowsByReadableId.get(partNumber) ?? [];
+    const found =
+      rows.find((row) => row.id === planned.itemId) ??
+      pickReuseRow(rows) ??
+      null;
+    if (found) {
+      summary.itemsReused += 1;
+      if (planned.itemId === null) {
+        summary.skipped.push(
+          `${partNumber}: added to Carbon since the review; reused as is`
+        );
+      }
+      // Only the row the review was about takes its values and edits.
+      if (planned.itemId !== found.id) {
+        itemByReadableId.set(partNumber, found);
+        return found;
+      }
+      const applied = await applyExistingItemFields(client, db, {
+        itemId: found.id,
+        companyId,
+        userId,
+        current: planned.current,
+        target: planned.target,
+        edit: edits[partNumber],
+        descriptions: planned.changes
+      });
+      let fieldsWritten = false;
+      if (applied.error) {
+        summary.errors.push(`${partNumber}: ${applied.error}`);
+      } else {
+        if (planned.changes?.length) summary.descriptionsUpdated += 1;
+        fieldsWritten = (planned.itemFieldChanges?.length ?? 0) > 0;
+      }
+      const values = mappedFieldValues(planned.customFields ?? [], false);
+      if (values.fieldIds.size > 0) {
+        const updatedPart = await client
+          .from("part")
+          .update({
+            customFields: mergeCustomFieldValues(
+              heldCustomFields.get(partNumber),
+              values.values,
+              values.fieldIds
+            ) as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", partNumber)
+          .eq("companyId", companyId);
+        if (updatedPart.error) {
+          summary.errors.push(
+            `${partNumber}: failed to write custom fields (${updatedPart.error.message})`
+          );
+        } else {
+          fieldsWritten = true;
+        }
+      }
+      if (fieldsWritten) summary.fieldsUpdated += 1;
+      const row: AssemblyPushItemRow = applied.values
+        ? {
+            ...found,
+            defaultMethodType: applied.values.defaultMethodType,
+            sourcingType: applied.values.sourcingType ?? found.sourcingType,
+            unitOfMeasureCode:
+              applied.values.unitOfMeasureCode ?? found.unitOfMeasureCode
+          }
+        : found;
+      itemByReadableId.set(partNumber, row);
+      return row;
+    }
+
+    const item = merged.items.get(partNumber) ?? propose();
+    const customFields = mappedFieldValues(
+      planned.customFields ?? [],
+      true
+    ).values;
+    const created = await upsertPart(client, {
+      id: item.readableId,
+      name: item.name,
+      description: item.description ?? undefined,
+      revision: item.revision,
+      replenishmentSystem: item.replenishmentSystem,
+      defaultMethodType: item.defaultMethodType,
+      itemTrackingType: item.itemTrackingType,
+      unitOfMeasureCode: item.unitOfMeasureCode,
+      ...(Object.keys(customFields).length > 0
+        ? { customFields: customFields as Json }
+        : {}),
+      companyId,
+      createdBy: userId
+    } as any);
+    if (created.error || !created.data) {
+      summary.errors.push(
+        `${partNumber}: ${created.error?.message ?? "failed to create"}`
+      );
+      return null;
+    }
+    const row: AssemblyPushItemRow = {
+      id: created.data.id as string,
+      readableId: partNumber,
+      revision: item.revision,
+      type: "Part",
+      defaultMethodType: item.defaultMethodType,
+      sourcingType: item.sourcingType ?? null,
+      unitOfMeasureCode: item.unitOfMeasureCode
+    };
+    const extras = createdItemExtras(item);
+    if (Object.keys(extras).length > 0) {
+      const error = await applyItemFieldWrites(client, db, {
+        itemId: row.id,
+        companyId,
+        userId,
+        changed: extras
+      });
+      if (error) {
+        summary.errors.push(
+          `${partNumber}: created, but its mapped fields were not written (${error})`
+        );
+      }
+    }
+    itemByReadableId.set(partNumber, row);
+    summary.itemsCreated += 1;
+    return row;
+  };
+
+  const rootItem = await ensureItem(root.partNumber, root, () =>
+    proposeItem(
+      {
+        partNumber: root.partNumber,
+        name: root.name,
+        description: root.description,
+        revision: root.revision
+      },
+      options
+    )
+  );
+  if (!rootItem) {
+    return panelReply(
+      { error: summary.errors.join("; ") || "Failed to create the assembly" },
+      { status: 500 }
+    );
+  }
+  summary.assemblyItemId = rootItem.id;
+
+  for (const item of includedItems) {
+    await ensureItem(item.partNumber, item, () =>
+      proposeItem(
+        {
+          partNumber: item.partNumber,
+          name: item.name,
+          description: nodeByPartNumber.get(item.partNumber)?.description,
+          revision: item.revision,
+          hasChildren: item.isAssembly
+        },
+        options
+      )
+    );
+  }
+
+  const isAssemblyByPartNumber = new Map(
+    plan.items.map((item) => [item.partNumber, item.isAssembly])
+  );
+
+  // Every sub-assembly, even one this push writes no lines into: its parent's line
+  // points at its method, and a null pointer flattens a `top` push's tree.
+  const parentItemIds = [
+    ...new Set(
+      [
+        ...plan.methods.map(
+          (method) => itemByReadableId.get(method.parentPartNumber)?.id
+        ),
+        ...plan.items
+          .filter((item) => item.isAssembly)
+          .map((item) => itemByReadableId.get(item.partNumber)?.id)
+      ].filter((id): id is string => !!id)
+    )
+  ];
+  // A failed read must stop the writes, or a `top` push writes null child pointers.
+  let methodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
+  try {
+    methodByItemId = await loadActiveMakeMethods(
+      client,
+      companyId,
+      parentItemIds
+    );
+  } catch (error) {
+    return panelReply(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the make methods"
+      },
+      { status: 500 }
+    );
+  }
+  // A Make to Order line points at its component's make method, as the BOM
+  // editor does; this reads it for made parts that are not sub-assemblies.
+  const madePartIds = [
+    ...new Set(
+      plan.items
+        .filter((item) => !item.isAssembly && !excluded.has(item.partNumber))
+        .map((item) => itemByReadableId.get(item.partNumber))
+        .filter(
+          (row): row is AssemblyPushItemRow =>
+            !!row &&
+            row.defaultMethodType === "Make to Order" &&
+            !methodByItemId.has(row.id)
+        )
+        .map((row) => row.id)
+    )
+  ];
+  let madePartMethodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
+  try {
+    madePartMethodByItemId = await loadActiveMakeMethods(
+      client,
+      companyId,
+      madePartIds
+    );
+  } catch (error) {
+    return panelReply(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the make methods"
+      },
+      { status: 500 }
+    );
+  }
+  const childMethodFor = (
+    childItem: AssemblyPushItemRow,
+    childMade: boolean
+  ) =>
+    childMade
+      ? methodByItemId.get(childItem.id)
+      : childItem.defaultMethodType === "Make to Order"
+        ? (madePartMethodByItemId.get(childItem.id) ??
+          methodByItemId.get(childItem.id))
+        : null;
+
+  // Not written: a change notice's Draft, or a released revision under
+  // `enforce`. Rechecked here; the plan only listed them.
+  const refusalByItemId = await loadMethodWriteRefusals(
+    client,
+    companyId,
+    plan.methods.flatMap((planned) => {
+      const parentItem = itemByReadableId.get(planned.parentPartNumber);
+      const method = parentItem ? methodByItemId.get(parentItem.id) : undefined;
+      return parentItem && method
+        ? [
+            {
+              itemId: parentItem.id,
+              method,
+              revisionStatus: parentItem.revisionStatus
+            }
+          ]
+        : [];
+    })
+  );
+
+  // An Active method is written through a Draft, made before ownership is read:
+  // ownership is keyed by method id, so a later Draft's lines would read as manual.
+  const targetMethodByItemId = new Map<string, string>();
+  const methodErrorByItemId = new Map<string, string>();
+  const activeMethodIdByItemId = new Map<string, string>();
+  for (const planned of plan.methods) {
+    const parentItem = itemByReadableId.get(planned.parentPartNumber);
+    const method = parentItem ? methodByItemId.get(parentItem.id) : undefined;
+    if (parentItem && method?.status === "Active") {
+      activeMethodIdByItemId.set(parentItem.id, method.id);
+    }
+  }
+  let reusableDraftByItemId: Awaited<ReturnType<typeof loadReusableDrafts>>;
+  try {
+    reusableDraftByItemId = await loadReusableDrafts(
+      client,
+      serviceRole,
+      companyId,
+      activeMethodIdByItemId
+    );
+  } catch (error) {
+    return panelReply(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to read the Drafts"
+      },
+      { status: 500 }
+    );
+  }
+  // An Active method whose Onshape lines already match gets no Draft. The
+  // check pairs lines as the write loop does.
+  let activeOwnership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
+  try {
+    activeOwnership = await loadMethodLineOwnership(
+      client,
+      serviceRole,
+      companyId,
+      [...activeMethodIdByItemId.entries()]
+        .filter(([itemId]) => !reusableDraftByItemId.has(itemId))
+        .map(([, methodId]) => methodId)
+    );
+  } catch (error) {
+    return panelReply(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the existing BOM lines"
+      },
+      { status: 500 }
+    );
+  }
+  const linesWouldChange = (
+    planned: (typeof plan.methods)[number],
+    methodId: string
+  ) => {
+    const reusable = new Map<string, MappedLineRow[]>();
+    for (const row of activeOwnership.mappedRows.get(methodId) ?? []) {
+      const queue = reusable.get(row.itemId) ?? [];
+      queue.push(row);
+      reusable.set(row.itemId, queue);
+    }
+    let order = 0;
+    for (const write of planned.writes) {
+      if (excluded.has(write.partNumber)) continue;
+      const childItem = itemByReadableId.get(write.partNumber);
+      if (!childItem || !bomLineItemType(childItem)) continue;
+      const childMethod = childMethodFor(
+        childItem,
+        isAssemblyByPartNumber.get(write.partNumber) === true
+      );
+      const reuse = reusable.get(childItem.id)?.shift();
+      if (!reuse) return true;
+      if (
+        reuse.quantity !== write.quantity ||
+        reuse.order !== order ||
+        reuse.materialMakeMethodId !== (childMethod?.id ?? null)
+      ) {
+        return true;
+      }
+      order += 1;
+    }
+    // A leftover line would be removed.
+    return [...reusable.values()].some((queue) => queue.length > 0);
+  };
+  const unchangedItemIds = new Set<string>();
+
+  for (const planned of plan.methods) {
+    const parentItem = itemByReadableId.get(planned.parentPartNumber);
+    if (!parentItem) continue;
+    if (
+      targetMethodByItemId.has(parentItem.id) ||
+      unchangedItemIds.has(parentItem.id)
+    ) {
+      continue;
+    }
+    const method = methodByItemId.get(parentItem.id);
+    if (!method) continue; // reported in the write loop
+    if (method.status !== "Active") {
+      if (!refusalByItemId.has(parentItem.id)) {
+        targetMethodByItemId.set(parentItem.id, method.id);
+      }
+      continue;
+    }
+    if (
+      !reusableDraftByItemId.has(parentItem.id) &&
+      !linesWouldChange(planned, method.id)
+    ) {
+      unchangedItemIds.add(parentItem.id);
+      continue;
+    }
+    // Checked before a Draft is made, so a refusal leaves no Draft behind.
+    if (refusalByItemId.has(parentItem.id)) continue;
+    const draft = await ensureDraftMakeMethod(client, ctx.asSystem.pg, {
+      itemId: parentItem.id,
+      activeMethodId: method.id,
+      companyId,
+      userId,
+      reusableDraft: reusableDraftByItemId.get(parentItem.id) ?? null
+    });
+    if (!draft.ok) {
+      methodErrorByItemId.set(parentItem.id, draft.error);
+      continue;
+    }
+    targetMethodByItemId.set(parentItem.id, draft.id);
+    if (draft.created) {
+      summary.draftVersionsCreated.push(
+        draft.version === null
+          ? planned.parentPartNumber
+          : `${planned.parentPartNumber} (version ${draft.version})`
+      );
+    }
+  }
+
+  // A failed read must stop the writes, or every Onshape line is duplicated.
+  let ownership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
+  try {
+    ownership = await loadMethodLineOwnership(client, serviceRole, companyId, [
+      ...new Set([
+        ...[...methodByItemId.values()].map((method) => method.id),
+        ...targetMethodByItemId.values()
+      ])
+    ]);
+  } catch (error) {
+    return panelReply(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the existing BOM lines"
+      },
+      { status: 500 }
+    );
+  }
+
+  for (const planned of plan.methods) {
+    const parentLabel = planned.parentPartNumber;
+    const parentItem = itemByReadableId.get(planned.parentPartNumber);
+    if (!parentItem) continue;
+
+    const method = methodByItemId.get(parentItem.id);
+    if (!method) {
+      summary.errors.push(`${parentLabel}: no make method found`);
+      continue;
+    }
+    if (unchangedItemIds.has(parentItem.id)) {
+      summary.linesUnchanged += planned.writes.filter(
+        (write) => !excluded.has(write.partNumber)
+      ).length;
+      continue;
+    }
+    const refusal = refusalByItemId.get(parentItem.id);
+    if (refusal) {
+      summary.skipped.push(`${parentLabel}: ${refusal}`);
+      continue;
+    }
+    const methodId = targetMethodByItemId.get(parentItem.id);
+    if (!methodId) {
+      summary.errors.push(
+        `${parentLabel}: ${methodErrorByItemId.get(parentItem.id) ?? "no make method to write to"}`
+      );
+      continue;
+    }
+
+    // Owned lines are updated in place so Carbon's columns (operation, scrap,
+    // tags, kit, customFields) survive; FIFO per item keeps a repeated component's lines.
+    const reusableByItemId = new Map<string, MappedLineRow[]>();
+    for (const row of ownership.mappedRows.get(methodId) ?? []) {
+      const queue = reusableByItemId.get(row.itemId) ?? [];
+      queue.push(row);
+      reusableByItemId.set(row.itemId, queue);
+    }
+    // Manual lines pair by part number in line order, as `pairManualLines` does at plan.
+    const manualByReadableId = new Map<string, ManualLineRow[]>();
+    for (const row of ownership.manualRows.get(methodId) ?? []) {
+      const queue = manualByReadableId.get(row.readableId) ?? [];
+      queue.push(row);
+      manualByReadableId.set(row.readableId, queue);
+    }
+    // Mapping rows this method still owns; any other is cleared as an orphan.
+    const liveMappingIds: string[] = [];
+    const pendingInserts: Array<{
+      row: OwnedMethodLine["row"];
+      metadata: Record<string, unknown>;
+    }> = [];
+
+    summary.methodsTouched += 1;
+
+    let order = 0;
+    for (const write of planned.writes) {
+      if (excluded.has(write.partNumber)) continue;
+      const childItem = itemByReadableId.get(write.partNumber);
+      if (!childItem) continue;
+
+      const itemType = bomLineItemType(childItem);
+      if (!itemType) {
+        summary.errors.push(
+          `${parentLabel} → ${write.partNumber}: a ${childItem.type ?? "Part"} cannot be a BOM line`
+        );
+        continue;
+      }
+
+      const childMade = isAssemblyByPartNumber.get(write.partNumber) === true;
+      const childMethod = childMethodFor(childItem, childMade);
+      const lineSyncedAt = datetime.timestamp();
+      const lineMetadata = {
+        makeMethodId: methodId,
+        documentId,
+        elementId,
+        partNumber: write.partNumber,
+        index: write.index
+      };
+
+      // Onshape owns quantity, order and the child-method pointer; method type,
+      // sourcing and unit come from the item, at insert only.
+      const reuse = reusableByItemId.get(childItem.id)?.shift();
+      if (reuse) {
+        // Unchanged lines are not written, so the audit log shows no edit.
+        const unchanged =
+          reuse.quantity === write.quantity &&
+          reuse.order === order &&
+          reuse.materialMakeMethodId === (childMethod?.id ?? null);
+        if (unchanged) {
+          liveMappingIds.push(reuse.mappingId);
+          order += 1;
+          summary.linesUnchanged += 1;
+          continue;
+        }
+        const updated = await client
+          .from("methodMaterial")
+          .update({
+            quantity: write.quantity,
+            materialMakeMethodId: childMethod?.id ?? null,
+            order,
+            updatedBy: userId,
+            updatedAt: lineSyncedAt
+          })
+          .eq("id", reuse.lineId)
+          .eq("companyId", companyId);
+        if (updated.error) {
+          summary.errors.push(
+            `${parentLabel} → ${write.partNumber}: ${updated.error.message}`
+          );
+          // Keep its ownership row, or the next push reads it as manual.
+          liveMappingIds.push(reuse.mappingId);
+          order += 1;
+          continue;
+        }
+        const remapped = await serviceRole
+          .from("externalIntegrationMapping")
+          .update({
+            metadata: lineMetadata,
+            lastSyncedAt: lineSyncedAt,
+            updatedBy: userId,
+            updatedAt: lineSyncedAt
+          })
+          .eq("id", reuse.mappingId)
+          .eq("companyId", companyId);
+        if (remapped.error) {
+          summary.errors.push(
+            `${parentLabel} → ${write.partNumber}: line updated but its Onshape link was not refreshed (${remapped.error.message})`
+          );
+        }
+        liveMappingIds.push(reuse.mappingId);
+        order += 1;
+        summary.linesWritten += 1;
+        continue;
+      }
+
+      // Same item type only: a Material sharing a Part's number is a different item.
+      const queue = manualByReadableId.get(write.partNumber);
+      const claimIndex =
+        queue?.findIndex((row) => !row.itemType || row.itemType === itemType) ??
+        -1;
+      const claim =
+        queue && claimIndex >= 0 ? queue.splice(claimIndex, 1)[0] : undefined;
+      if (claim) {
+        const claimed = await claimManualMethodLine(db, {
+          companyId,
+          userId,
+          lineId: claim.lineId,
+          update: {
+            itemId: childItem.id,
+            quantity: write.quantity,
+            order,
+            materialMakeMethodId: childMethod?.id ?? null
+          },
+          metadata: lineMetadata
+        });
+        if (claimed.error !== null) {
+          summary.errors.push(
+            `${parentLabel} → ${write.partNumber}: the line added by hand was not taken over (${claimed.error})`
+          );
+          continue;
+        }
+        liveMappingIds.push(claimed.mappingId);
+        order += 1;
+        summary.linesWritten += 1;
+        summary.linesTakenOver += 1;
+        continue;
+      }
+
+      pendingInserts.push({
+        row: {
+          itemId: childItem.id,
+          quantity: write.quantity,
+          makeMethodId: methodId,
+          materialMakeMethodId: childMethod?.id ?? null,
+          methodType:
+            (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
+            (childMade ? "Make to Order" : "Pull from Inventory"),
+          sourcingType:
+            (childItem.sourcingType as OwnedMethodLine["row"]["sourcingType"]) ??
+            "Specified",
+          order,
+          itemType,
+          unitOfMeasureCode: childItem.unitOfMeasureCode ?? fallbackUnit
+        },
+        metadata: lineMetadata
+      });
+      order += 1;
+    }
+
+    if (pendingInserts.length > 0) {
+      const written = await insertOwnedMethodLines(db, {
+        companyId,
+        userId,
+        lines: pendingInserts.map((pending) => ({
+          row: pending.row,
+          metadata: pending.metadata
+        }))
+      });
+      if (written.error !== null) {
+        summary.errors.push(
+          `${parentLabel}: ${pendingInserts.length} new lines were not written (${written.error})`
+        );
+      } else {
+        summary.linesWritten += pendingInserts.length;
+        liveMappingIds.push(...written.mappingIds);
+      }
+    }
+
+    // Anything still queued is a component the Onshape BOM no longer has.
+    const removed = [...reusableByItemId.values()].flat();
+    if (removed.length > 0) {
+      for (const batch of chunkFilterValues(removed.map((row) => row.lineId))) {
+        const removedLines = await client
+          .from("methodMaterial")
+          .delete()
+          .eq("companyId", companyId)
+          .in("id", batch);
+        if (removedLines.error) {
+          summary.errors.push(
+            `${parentLabel}: could not remove the lines Onshape no longer lists (${removedLines.error.message})`
+          );
+          const failed = new Set(batch);
+          for (const row of removed) {
+            if (failed.has(row.lineId)) liveMappingIds.push(row.mappingId);
+          }
+        }
+      }
+    }
+
+    // Orphans are filtered here: a `not in` filter puts every live id in the URL.
+    const methodMappings = await serviceRole
+      .from("externalIntegrationMapping")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+      .eq("entityType", "methodMaterial")
+      .eq("metadata->>makeMethodId", methodId);
+    if (methodMappings.error) {
+      summary.errors.push(
+        `${parentLabel}: could not read the existing line ownership records (${methodMappings.error.message})`
+      );
+    } else {
+      const live = new Set(liveMappingIds);
+      const orphaned = (methodMappings.data ?? [])
+        .map((row) => row.id)
+        .filter((id) => !live.has(id));
+      for (const batch of chunkFilterValues(orphaned)) {
+        const clearedMappings = await serviceRole
+          .from("externalIntegrationMapping")
+          .delete()
+          .eq("companyId", companyId)
+          .in("id", batch);
+        if (clearedMappings.error) {
+          summary.errors.push(
+            `${parentLabel}: could not clear orphaned line ownership records (${clearedMappings.error.message})`
+          );
+        }
+      }
+    }
+  }
+
+  // A root released in Carbon keeps the link and model its release gave it.
+  if (root.released) {
+    summary.skipped.push(
+      `${root.partNumber}: released in Carbon as Rev ${root.released.revision}; its fields, link and model stay as its release left them`
+    );
+    const childLinkProblems = await linkChildParts(client, serviceRole, {
+      companyId,
+      userId,
+      nodes: allNodes,
+      itemByReadableId
+    });
+    summary.errors.push(...childLinkProblems);
+    return panelReply(
+      { summary },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  const pushedAt = datetime.timestamp();
+  const assemblyExternalId = externalIdForAssembly(
+    documentId,
+    elementId,
+    configuration
+  );
+  const assemblyMapping = await swapItemMapping(db, {
+    companyId,
+    userId,
+    itemId: rootItem.id,
+    externalId: assemblyExternalId,
+    metadata: {
+      documentId,
+      elementId,
+      configuration,
+      wv,
+      wvId,
+      kind: "assembly",
+      partNumber: root.partNumber,
+      name: root.name,
+      pushedBy: userId,
+      pushedAt,
+      planId
+    }
+  });
+  if (assemblyMapping.error !== null) {
+    summary.errors.push(
+      `${root.partNumber}: pushed, but not linked to Onshape (${assemblyMapping.error}); the next push will not recognise it`
+    );
+  }
+
+  const childLinkProblems = await linkChildParts(client, serviceRole, {
+    companyId,
+    userId,
+    nodes: allNodes,
+    itemByReadableId
+  });
+  summary.errors.push(...childLinkProblems);
+
+  try {
+    await trigger(
+      "onshape-panel-sync",
+      {
+        companyId,
+        userId,
+        itemId: rootItem.id,
+        documentId,
+        wvm: wv,
+        wvmId: wvId,
+        elementId,
+        elementKind: "assembly",
+        ...(configuration ? { configuration } : {}),
+        assetBaseName: root.partNumber
+      },
+      { id: `${planId}:${rootItem.id}:${elementId}` }
+    );
+  } catch {
+    summary.errors.push(
+      `${root.partNumber}: pushed, but the model export couldn't be queued. Push again to retry the export.`
+    );
+  }
+
+  return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
+}
+
+async function linkChildParts(
+  client: SupabaseClient<Database>,
+  serviceRole: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    userId: string;
+    nodes: OnshapeBomNode[];
+    itemByReadableId: Map<string, { id: string; readableId: string }>;
+  }
+) {
+  // Links only where neither the item nor the source is linked: a part push owns that link.
+  const candidates: Array<{
+    itemId: string;
+    externalId: string;
+    partNumber: string;
+    source: NonNullable<OnshapeBomNode["itemSource"]>;
+  }> = [];
+  const seen = new Set<string>();
+  for (const node of input.nodes) {
+    const source = node.itemSource;
+    if (!node.partNumber) continue;
+    const externalId = externalIdForBomLine(source);
+    if (!source || !externalId) continue;
+    const item = input.itemByReadableId.get(node.partNumber);
+    if (!item || seen.has(item.id)) continue;
+    seen.add(item.id);
+    candidates.push({
+      itemId: item.id,
+      externalId,
+      partNumber: node.partNumber,
+      source
+    });
+  }
+  if (candidates.length === 0) return [];
+
+  // One Onshape source claimed by two items is reported, not guessed at.
+  const itemsByExternalId = new Map<string, Set<string>>();
+  for (const candidate of candidates) {
+    const items = itemsByExternalId.get(candidate.externalId) ?? new Set();
+    items.add(candidate.itemId);
+    itemsByExternalId.set(candidate.externalId, items);
+  }
+  const problems: string[] = [];
+  const ambiguous = new Set(
+    [...itemsByExternalId.entries()]
+      .filter(([, items]) => items.size > 1)
+      .map(([externalId]) => externalId)
+  );
+  for (const externalId of ambiguous) {
+    const numbers = candidates
+      .filter((candidate) => candidate.externalId === externalId)
+      .map((candidate) => candidate.partNumber);
+    problems.push(
+      `${numbers.join(" and ")} come from the same Onshape part, so neither was linked to it`
+    );
+  }
+  const unambiguous = candidates.filter(
+    (candidate) => !ambiguous.has(candidate.externalId)
+  );
+  if (unambiguous.length === 0) return problems;
+
+  const [byEntity, byExternal] = await Promise.all([
+    selectInBatches(
+      unambiguous.map((candidate) => candidate.itemId),
+      (batch) =>
+        serviceRole
+          .from("externalIntegrationMapping")
+          .select("entityId")
+          .eq("companyId", input.companyId)
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+          .eq("entityType", "item")
+          .in("entityId", batch)
+    ),
+    selectInBatches(
+      unambiguous.map((candidate) => candidate.externalId),
+      (batch) =>
+        serviceRole
+          .from("externalIntegrationMapping")
+          .select("externalId")
+          .eq("companyId", input.companyId)
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+          .eq("entityType", "item")
+          .in("externalId", batch)
+    )
+  ]);
+  // A failed read is not "no links": that would claim links a part push owns.
+  if (byEntity.error || byExternal.error) {
+    return [
+      ...problems,
+      `child parts were not linked to Onshape: ${
+        (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+      }`
+    ];
+  }
+  const linkedItemIds = new Set(
+    (byEntity.data ?? []).map((row) => row.entityId)
+  );
+  const usedExternalIds = new Set(
+    (byExternal.data ?? []).map((row) => row.externalId)
+  );
+
+  const linkedAt = datetime.timestamp();
+  const rows = unambiguous
+    .filter(
+      (candidate) =>
+        !linkedItemIds.has(candidate.itemId) &&
+        !usedExternalIds.has(candidate.externalId)
+    )
+    .map((candidate) => ({
+      entityType: "item" as const,
+      entityId: candidate.itemId,
+      integration: ONSHAPE_V2_INTEGRATION_ID,
+      externalId: candidate.externalId,
+      metadata: {
+        documentId: candidate.source.documentId,
+        elementId: candidate.source.elementId,
+        partId: candidate.source.partId ?? null,
+        configuration: normalizeConfiguration(candidate.source.configuration),
+        kind: candidate.source.partId ? "part" : "assembly",
+        partNumber: candidate.partNumber,
+        viaAssemblyPush: true,
+        pushedBy: input.userId,
+        pushedAt: linkedAt
+      },
+      lastSyncedAt: linkedAt,
+      companyId: input.companyId,
+      createdBy: input.userId
+    }));
+  if (rows.length === 0) return problems;
+
+  // The bulk insert is all-or-nothing; on refusal retry row by row, so one
+  // conflicting row (a concurrent push's link) does not block the rest.
+  const linked = await client.from("externalIntegrationMapping").insert(rows);
+  if (!linked.error) return problems;
+
+  const failed: string[] = [];
+  for (const row of rows) {
+    const single = await client.from("externalIntegrationMapping").insert(row);
+    if (single.error) failed.push(row.metadata.partNumber);
+  }
+  if (failed.length > 0) {
+    problems.push(
+      `${failed.length} part${failed.length === 1 ? "" : "s"} could not be linked to Onshape (${failed
+        .slice(0, 5)
+        .join(", ")}${failed.length > 5 ? ", …" : ""}); push again to retry`
+    );
+  }
+  return problems;
+}
+
+export const onshapeReleasePushInput = z.object({
+  planId: z.string().min(1),
+  edits: z.record(z.string(), itemEditSchema).default({}),
+  changeNotice: z
+    .object({
+      name: z.string().optional(),
+      description: z.string().nullable().optional()
+    })
+    .nullable()
+    .optional(),
+  makeDefault: z.boolean().optional(),
+  createChangeNotice: z.boolean().optional()
+});
+
+type ReleasePushSummary = {
+  releaseName: string | null;
+  revisionsCreated: number;
+  itemsCreated: number;
+  /** BOM children the push created; not on the change notice. */
+  childrenCreated: number;
+  drawingsQueued: number;
+  drawingsOnly: boolean;
+  reused: number;
+  linesWritten: number;
+  methodsTouched: number;
+  defaultsUpdated: number;
+  changeNotice: string | null;
+  alreadyPushed: boolean;
+  skipped: string[];
+  errors: string[];
+};
+
+type ReleasePushItemRow = {
+  id: string;
+  readableId: string;
+  revision: string;
+  active?: boolean | null;
+  name: string;
+  type: string | null;
+  defaultMethodType: string | null;
+  sourcingType: string | null;
+  unitOfMeasureCode: string | null;
+};
+
+type CreatedEntry = {
+  partNumber: string;
+  revision: string;
+  itemId: string;
+  baseItemId: string | null;
+};
+
+function partInsert(
+  proposed: ProposedItem,
+  companyId: string,
+  userId: string,
+  customFields: PlanCustomField[] | undefined
+) {
+  const values = mappedFieldValues(customFields ?? [], true).values;
+  return {
+    id: proposed.readableId,
+    name: proposed.name,
+    description: proposed.description ?? undefined,
+    revision: proposed.revision,
+    replenishmentSystem: proposed.replenishmentSystem,
+    defaultMethodType: proposed.defaultMethodType,
+    itemTrackingType: proposed.itemTrackingType,
+    unitOfMeasureCode: proposed.unitOfMeasureCode,
+    ...(Object.keys(values).length > 0 ? { customFields: values as Json } : {}),
+    companyId,
+    createdBy: userId
+  } as any;
+}
+
+/** Apply a reviewed release plan; Carbon's state at apply time outranks the plan. */
+export async function pushOnshapeRelease(
+  ctx: ServiceContext,
+  input: z.infer<typeof onshapeReleasePushInput>
+): Promise<PanelReply> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { planId, changeNotice: changeNoticeEdit } = input;
+  const edits = input.edits as Record<string, ItemEdit>;
+
+  const stored = await peekPanelPlan(planId, { companyId, userId });
+  if (!stored) {
+    return panelReply(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+  if (stored.plan.kind !== "release") {
+    return panelReply(
+      { error: "This review is not a release push" },
+      { status: 400 }
+    );
+  }
+  const plan = stored.plan as StoredReleasePlan;
+  const makeDefault = input.makeDefault ?? plan.makeDefault;
+  // Unset: a notice whenever this push creates something.
+  const createChangeNoticeChoice = input.createChangeNotice;
+
+  const merged = mergeEditsForCreates(
+    [
+      ...plan.items
+        .filter((item) => item.action === "create" && item.proposed)
+        .map((item) => ({
+          key: item.partNumber,
+          proposed: item.proposed as ProposedItem
+        })),
+      ...plan.children
+        .filter((child) => child.action === "create" && child.proposed)
+        .map((child) => ({
+          key: child.partNumber,
+          proposed: child.proposed as ProposedItem
+        }))
+    ],
+    edits,
+    plan.options
+  );
+  // A row that vanished since review becomes a create, so even a re-push needs notice values.
+  const changeNoticeMerge = mergeChangeNoticeEdit(
+    plan.changeNotice ?? {
+      name: plan.releaseName ?? `Onshape release ${plan.releaseId}`,
+      description: null
+    },
+    changeNoticeEdit
+  );
+  if (!changeNoticeMerge.ok) {
+    return panelReply(
+      {
+        error: "Some edits are not valid",
+        fieldErrors: [
+          ...merged.errors,
+          { key: "changeNotice", errors: changeNoticeMerge.errors }
+        ]
+      },
+      { status: 422 }
+    );
+  }
+  if (merged.errors.length > 0) {
+    return panelReply(
+      { error: "Some edits are not valid", fieldErrors: merged.errors },
+      { status: 422 }
+    );
+  }
+  const changeNoticeValues = changeNoticeMerge.changeNotice;
+
+  const modelItems = plan.items.filter(isModelReleaseItem);
+  const drawingItems = plan.items.filter((item) => !isModelReleaseItem(item));
+
+  const summary: ReleasePushSummary = {
+    releaseName: plan.releaseName,
+    revisionsCreated: 0,
+    itemsCreated: 0,
+    childrenCreated: 0,
+    drawingsQueued: 0,
+    drawingsOnly: modelItems.length === 0,
+    reused: 0,
+    linesWritten: 0,
+    methodsTouched: 0,
+    defaultsUpdated: 0,
+    changeNotice: null,
+    alreadyPushed: false,
+    skipped: [],
+    errors: []
+  };
+
+  // A part number that is both a release item and a BOM child uses the release item's plan.
+  type PlannedRow = MappedRowPlan & {
+    current?: ItemFieldSnapshot | null;
+    changes?: OwnedFieldChange[];
+  };
+  const plannedByPartNumber = new Map<string, PlannedRow>();
+  for (const child of plan.children) {
+    if (child.current) plannedByPartNumber.set(child.partNumber, child);
+  }
+  for (const item of plan.items) {
+    if (item.current) plannedByPartNumber.set(item.partNumber, item);
+  }
+  // Written at insert. A revision shares its base's `part` row: no create-time values.
+  const createdFieldsByPartNumber = new Map<string, PlanCustomField[]>();
+  for (const row of [...plan.children, ...plan.items]) {
+    if (row.action === "create" && row.customFields) {
+      createdFieldsByPartNumber.set(row.partNumber, row.customFields);
+    }
+  }
+  const fieldEditsApplied = new Set<string>();
+  /** Writes the plan's values to an item the push did not create; updates `row` in place. */
+  const applyItemFieldEdit = async (
+    partNumber: string,
+    row: ReleasePushItemRow
+  ) => {
+    if (fieldEditsApplied.has(partNumber)) return;
+    const planned = plannedByPartNumber.get(partNumber);
+    if (!planned?.current) return;
+    fieldEditsApplied.add(partNumber);
+    const applied = await applyExistingItemFields(client, db, {
+      itemId: row.id,
+      companyId,
+      userId,
+      current: planned.current,
+      target: planned.target,
+      edit: edits[partNumber],
+      descriptions: planned.changes
+    });
+    if (applied.error) {
+      summary.errors.push(`${partNumber}: ${applied.error}`);
+      return;
+    }
+    if (applied.values) {
+      row.defaultMethodType = applied.values.defaultMethodType;
+      row.sourcingType = applied.values.sourcingType ?? row.sourcingType;
+      row.unitOfMeasureCode =
+        applied.values.unitOfMeasureCode ?? row.unitOfMeasureCode;
+    }
+    const values = mappedFieldValues(planned.customFields ?? [], false);
+    if (values.fieldIds.size === 0) return;
+    const held = await client
+      .from("part")
+      .select("customFields")
+      .eq("id", partNumber)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (held.error) {
+      summary.errors.push(
+        `${partNumber}: failed to read custom fields (${held.error.message})`
+      );
+      return;
+    }
+    const updated = await client
+      .from("part")
+      .update({
+        customFields: mergeCustomFieldValues(
+          held.data?.customFields,
+          values.values,
+          values.fieldIds
+        ) as Json,
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", partNumber)
+      .eq("companyId", companyId);
+    if (updated.error) {
+      summary.errors.push(
+        `${partNumber}: failed to write custom fields (${updated.error.message})`
+      );
+    }
+  };
+  /** The values `upsertPart` does not take: MPN and Sourcing. */
+  const writeCreatedExtras = async (
+    label: string,
+    itemId: string,
+    proposed: ProposedItem
+  ) => {
+    const extras = createdItemExtras(proposed);
+    if (Object.keys(extras).length === 0) return;
+    const error = await applyItemFieldWrites(client, db, {
+      itemId,
+      companyId,
+      userId,
+      changed: extras
+    });
+    if (error) {
+      summary.errors.push(
+        `${label}: created, but its mapped fields were not written (${error})`
+      );
+    }
+  };
+
+  // Every revision of every part number, re-read: the plan may be minutes old.
+  const partNumbers = [
+    ...new Set([
+      ...modelItems.map((item) => item.partNumber),
+      ...Object.values(plan.bomLinesByElementId)
+        .flatMap((lines) => (lines ?? []).map((line) => line.partNumber))
+        .filter((partNumber): partNumber is string => !!partNumber)
+    ])
+  ];
+  const existing = await selectInBatches(partNumbers, (batch) =>
+    client
+      .from("item")
+      .select(
+        "id, readableId, revision, active, name, type, defaultMethodType, sourcingType, unitOfMeasureCode"
+      )
+      .eq("companyId", companyId)
+      .in("readableId", batch)
+      .order("revision")
+  );
+  if (existing.error) {
+    return panelReply(
+      { error: "Failed to read Carbon items" },
+      { status: 500 }
+    );
+  }
+  const byReadable = new Map<string, ReleasePushItemRow[]>();
+  const rememberRow = (row: ReleasePushItemRow) => {
+    const list = byReadable.get(row.readableId) ?? [];
+    list.push(row);
+    byReadable.set(row.readableId, list);
+  };
+  for (const row of (existing.data ?? []) as ReleasePushItemRow[])
+    rememberRow(row);
+  const letterRowFor = (partNumber: string, revision: string) =>
+    (byReadable.get(partNumber) ?? []).find((row) => row.revision === revision);
+
+  const created: CreatedEntry[] = [];
+  const revisionItemByPartNumber = new Map<string, ReleasePushItemRow>();
+
+  // The base the plan pinned is honoured while its row exists.
+  type Decision =
+    | { item: ReleasePlanItem; kind: "reuse"; row: ReleasePushItemRow }
+    | { item: ReleasePlanItem; kind: "revision"; base: ReleasePushItemRow }
+    | { item: ReleasePlanItem; kind: "create"; proposed: ProposedItem };
+  const decisions: Decision[] = modelItems.map((item): Decision => {
+    const existingLetter = letterRowFor(item.partNumber, item.revision);
+    if (existingLetter) return { item, kind: "reuse", row: existingLetter };
+    const bases = byReadable.get(item.partNumber) ?? [];
+    const base =
+      bases.find((row) => row.id === item.baseItemId) ??
+      pickRevisionBase(bases, item.revision);
+    if (base) return { item, kind: "revision", base };
+    return {
+      item,
+      kind: "create",
+      proposed:
+        merged.items.get(item.partNumber) ??
+        proposeItem(
+          { partNumber: item.partNumber, name: null, revision: item.revision },
+          plan.options
+        )
+    };
+  });
+
+  // An assembly whose BOM was not read at review is not minted: a revision would
+  // carry the base's Onshape lines unmapped, and a new item would have no BOM.
+  for (const decision of decisions) {
+    if (
+      decision.kind !== "reuse" &&
+      decision.item.elementType === 1 &&
+      plan.bomLinesByElementId[releaseBomKey(decision.item)] === null
+    ) {
+      summary.errors.push(
+        `${decision.item.partNumber} Rev ${decision.item.revision}: the BOM was not read at review — review and push again`
+      );
+    }
+  }
+  const applicable = decisions.filter(
+    (decision) =>
+      decision.kind === "reuse" ||
+      decision.item.elementType !== 1 ||
+      plan.bomLinesByElementId[releaseBomKey(decision.item)] !== null
+  );
+  decisions.length = 0;
+  decisions.push(...applicable);
+
+  const baseIds = [
+    ...new Set(
+      decisions.flatMap((decision) =>
+        decision.kind === "revision" ? [decision.base.id] : []
+      )
+    )
+  ];
+  type FullItem = NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+  const fullBaseById = new Map<string, FullItem>();
+  const bases = await selectInBatches(baseIds, (batch) =>
+    client.from("item").select("*").eq("companyId", companyId).in("id", batch)
+  );
+  // A failed read would look like "no base" and skip revisions: a partial push.
+  if (bases.error) {
+    return panelReply(
+      { error: "Failed to read the base revisions" },
+      { status: 500 }
+    );
+  }
+  for (const row of bases.data as FullItem[]) {
+    fullBaseById.set(row.id, row);
+  }
+
+  // `createRevision` copies the base's lines without mapping rows. Key the base's
+  // Onshape lines now: after the revision exists, a failed read leaves manual-looking copies.
+  const assemblyBaseIds = [
+    ...new Set(
+      decisions.flatMap((decision) =>
+        decision.kind === "revision" && decision.item.elementType === 1
+          ? [decision.base.id]
+          : []
+      )
+    )
+  ];
+  const lineKey = (line: { itemId: string; order: number; quantity: number }) =>
+    `${line.itemId}:${line.order}:${line.quantity}`;
+  let baseMethodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
+  try {
+    baseMethodByItemId = await loadActiveMakeMethods(
+      client,
+      companyId,
+      assemblyBaseIds
+    );
+  } catch (error) {
+    return panelReply(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the base revisions' make methods"
+      },
+      { status: 500 }
+    );
+  }
+  const serviceRole = getCarbonServiceRole();
+  const db = ctx.asSystem.pg;
+  const copiedKeysByBaseMethodId = new Map<string, Set<string>>();
+  const baseMethodIds = [
+    ...new Set([...baseMethodByItemId.values()].map((method) => method.id))
+  ];
+  if (baseMethodIds.length > 0) {
+    const baseMapped = await selectInBatches(baseMethodIds, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("entityId")
+        .eq("companyId", companyId)
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("entityType", "methodMaterial")
+        .in("metadata->>makeMethodId", batch)
+    );
+    const baseLines = baseMapped.error
+      ? null
+      : await selectInBatches(
+          baseMapped.data.map((mapping) => mapping.entityId),
+          (batch) =>
+            client
+              .from("methodMaterial")
+              .select("makeMethodId, itemId, order, quantity")
+              .eq("companyId", companyId)
+              .in("id", batch)
+        );
+    const baseReadError = baseMapped.error ?? baseLines?.error;
+    if (baseReadError || !baseLines) {
+      return panelReply(
+        {
+          error: `Couldn't identify the Onshape lines on the base revisions (${
+            baseReadError?.message ?? "read failed"
+          }); nothing was written. Try again.`
+        },
+        { status: 500 }
+      );
+    }
+    for (const line of baseLines.data) {
+      const keys =
+        copiedKeysByBaseMethodId.get(line.makeMethodId) ?? new Set<string>();
+      keys.add(lineKey(line));
+      copiedKeysByBaseMethodId.set(line.makeMethodId, keys);
+    }
+  }
+
+  // A reused revision held by a change notice whose engineering content is
+  // locked (Implementation onward, or awaiting approval) takes no writes: not
+  // its fields, not its BOM. A method's changeOrderId is cleared at release, so
+  // a set one means a notice holds the item now.
+  const lockedByItemId = new Map<string, string>();
+  const reusedItemIds = decisions.flatMap((decision) =>
+    decision.kind === "reuse" ? [decision.row.id] : []
+  );
+  if (reusedItemIds.length > 0) {
+    const held = await selectInBatches(reusedItemIds, (batch) =>
+      client
+        .from("makeMethod")
+        .select("itemId, changeOrderId, changeOrder(changeOrderId)")
+        .eq("companyId", companyId)
+        .in("itemId", batch)
+        .not("changeOrderId", "is", null)
+    );
+    if (held.error) {
+      return panelReply(
+        {
+          error: `Couldn't check the change notices that hold the existing revisions (${held.error.message}); nothing was written. Try again.`
+        },
+        { status: 500 }
+      );
+    }
+    const noticeIds = [
+      ...new Set(
+        held.data.flatMap((method) =>
+          method.changeOrderId ? [method.changeOrderId] : []
+        )
+      )
+    ];
+    // One check per notice; a release's revisions share one or two.
+    const lockByNoticeId = new Map(
+      await Promise.all(
+        noticeIds.map(
+          async (changeNoticeId) =>
+            [
+              changeNoticeId,
+              (
+                await requireChangeNoticeEditable(client, {
+                  changeNoticeId,
+                  companyId,
+                  scope: "engineering"
+                })
+              )?.error.message ?? null
+            ] as const
+        )
+      )
+    );
+    for (const method of held.data) {
+      const lock = method.changeOrderId
+        ? lockByNoticeId.get(method.changeOrderId)
+        : null;
+      if (!lock || lockedByItemId.has(method.itemId)) continue;
+      const notice = method.changeOrder?.changeOrderId;
+      lockedByItemId.set(
+        method.itemId,
+        notice ? `change notice ${notice}: ${lock}` : lock
+      );
+    }
+  }
+
+  // The notice exists before the first item write, so each item is staged as it
+  // is written. A second document of the same release reuses the open notice.
+  // Read before the take: a failed read must not open a second notice.
+  const needsNotice =
+    (createChangeNoticeChoice ?? true) &&
+    decisions.some((decision) => decision.kind !== "reuse");
+  const openNotice = needsNotice
+    ? await findOpenReleaseNotice(client, companyId, plan.releaseId)
+    : { data: null, error: null };
+  if (openNotice.error !== null) {
+    return panelReply(
+      {
+        error: `${openNotice.error}, so it can't tell which change notice to add to; nothing was written. Try again.`
+      },
+      { status: 500 }
+    );
+  }
+
+  // Taken after the reads the writes depend on, so a failed read keeps the review;
+  // one-shot, so a concurrent apply of the same review finds nothing.
+  if (!(await takePanelPlan(planId, { companyId, userId }))) {
+    return panelReply(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
+  }
+
+  let changeNotice: { id: string; changeNoticeId: string } | null = null;
+  let noticeReused = false;
+  let noticeSortOrder = 0;
+  if (openNotice.data) {
+    changeNotice = {
+      id: openNotice.data.id,
+      changeNoticeId: openNotice.data.changeNoticeId
+    };
+    noticeReused = true;
+    noticeSortOrder = openNotice.data.affectedCount;
+    summary.changeNotice = openNotice.data.changeNoticeId;
+  } else if (needsNotice) {
+    const description = changeNoticeDescriptionJson(
+      changeNoticeValues.description
+    );
+    const inserted = await insertChangeNotice(client, {
+      companyId,
+      createdBy: userId,
+      name: changeNoticeValues.name,
+      // Tiptap JSON; omitted, not nulled, when empty.
+      ...(description ? { description: description as Json } : {}),
+      openDate: datetime
+        .today(await sharedService.getCompanyTimeZone(client, companyId))
+        .toString()
+    });
+    if (inserted.error || !inserted.data) {
+      return panelReply(
+        {
+          error: `Couldn't create the change notice (${
+            inserted.error?.message ?? "no row returned"
+          }); nothing was written. Review and push again.`
+        },
+        { status: 500 }
+      );
+    }
+    changeNotice = inserted.data;
+    summary.changeNotice = inserted.data.changeNoticeId;
+  }
+  // An item the notice could not take is removed: left in place it is outside
+  // change control, and a re-push would reuse it instead of staging it. The
+  // service role removes it because the pusher may lack parts_delete.
+  const stageInNotice = async (
+    label: string,
+    itemId: string,
+    baseItemId: string | null
+  ): Promise<boolean> => {
+    if (!changeNotice) return true;
+    const staged = await stageChangeNoticeItem(db, {
+      changeOrderId: changeNotice.id,
+      companyId,
+      userId,
+      itemId,
+      baseItemId,
+      sortOrder: noticeSortOrder
+    });
+    if (!staged.error) {
+      noticeSortOrder += 1;
+      return true;
+    }
+    const notice = changeNotice.changeNoticeId;
+    const removed = await deleteItem(serviceRole, db, itemId, companyId);
+    summary.errors.push(
+      removed.error
+        ? `${label}: created but not added to change notice ${notice} (${staged.error}), and could not be removed (${removed.error.message}). Delete it in Carbon, then push again.`
+        : `${label}: not created, because it could not be added to change notice ${notice} (${staged.error}). Push again.`
+    );
+    return false;
+  };
+
+  for (const decision of decisions) {
+    const { item } = decision;
+    if (decision.kind === "reuse") {
+      summary.reused += 1;
+      revisionItemByPartNumber.set(item.partNumber, decision.row);
+      const lock = lockedByItemId.get(decision.row.id);
+      if (lock) {
+        // Also keeps the BOM-child pass from writing its fields.
+        fieldEditsApplied.add(item.partNumber);
+        summary.skipped.push(
+          `${item.partNumber} Rev ${item.revision}: ${lock} Its fields and BOM were left as they are.`
+        );
+        continue;
+      }
+      await applyItemFieldEdit(item.partNumber, decision.row);
+      continue;
+    }
+
+    let row: ReleasePushItemRow | null = null;
+    if (decision.kind === "revision") {
+      const full = fullBaseById.get(decision.base.id);
+      if (!full) {
+        summary.errors.push(`${item.partNumber}: failed to read the base item`);
+        continue;
+      }
+      const inserted = await createRevision(client, db, {
+        item: full,
+        revision: item.revision,
+        createdBy: userId,
+        active: !changeNotice
+      });
+      if (inserted.error || !inserted.data) {
+        summary.errors.push(
+          `${item.partNumber}: ${
+            inserted.error?.message ?? "failed to create the revision"
+          }`
+        );
+        continue;
+      }
+      if (
+        !(await stageInNotice(
+          `${item.partNumber} Rev ${item.revision}`,
+          inserted.data.id,
+          decision.base.id
+        ))
+      ) {
+        continue;
+      }
+      row = {
+        id: inserted.data.id,
+        readableId: item.partNumber,
+        revision: item.revision,
+        name: full.name,
+        type: full.type,
+        defaultMethodType: full.defaultMethodType ?? "Make to Order",
+        sourcingType: full.sourcingType ?? null,
+        unitOfMeasureCode: full.unitOfMeasureCode ?? "EA"
+      };
+      created.push({
+        partNumber: item.partNumber,
+        revision: item.revision,
+        itemId: row.id,
+        baseItemId: decision.base.id
+      });
+      summary.revisionsCreated += 1;
+    } else {
+      // Safe with `upsertPart`'s readback by readableId: no other revision exists.
+      const { proposed } = decision;
+      const insertedItem = await upsertPart(
+        client,
+        partInsert(
+          proposed,
+          companyId,
+          userId,
+          createdFieldsByPartNumber.get(item.partNumber)
+        )
+      );
+      if (insertedItem.error || !insertedItem.data) {
+        summary.errors.push(
+          `${item.partNumber}: ${
+            insertedItem.error?.message ?? "failed to create the item"
+          }`
+        );
+        continue;
+      }
+      row = {
+        id: insertedItem.data.id as string,
+        readableId: item.partNumber,
+        revision: item.revision,
+        name: proposed.name,
+        type: "Part",
+        defaultMethodType: proposed.defaultMethodType,
+        sourcingType: proposed.sourcingType ?? null,
+        unitOfMeasureCode: proposed.unitOfMeasureCode
+      };
+      await writeCreatedExtras(item.partNumber, row.id, proposed);
+      if (
+        !(await stageInNotice(
+          `${item.partNumber} Rev ${item.revision}`,
+          row.id,
+          null
+        ))
+      ) {
+        continue;
+      }
+      created.push({
+        partNumber: item.partNumber,
+        revision: item.revision,
+        itemId: row.id,
+        baseItemId: null
+      });
+      summary.itemsCreated += 1;
+    }
+
+    revisionItemByPartNumber.set(item.partNumber, row);
+    rememberRow(row);
+    await applyItemFieldEdit(item.partNumber, row);
+  }
+
+  summary.alreadyPushed = created.length === 0;
+  if (changeNotice && !noticeReused && created.length === 0) {
+    const dropped = await deleteChangeNotice(
+      client,
+      db,
+      changeNotice.id,
+      companyId
+    );
+    if (dropped.error) {
+      summary.errors.push(
+        `Change notice ${changeNotice.changeNoticeId} is empty and could not be removed (${dropped.error.message})`
+      );
+    } else {
+      summary.changeNotice = null;
+    }
+    changeNotice = null;
+  }
+
+  // Any BOM read failure skips every BOM write: writing on a partial read
+  // duplicates or orphans lines.
+  let bomReadFailure: string | null = null;
+
+  const methodByItemId = new Map(baseMethodByItemId);
+  try {
+    for (const [itemId, method] of await loadActiveMakeMethods(
+      client,
+      companyId,
+      [
+        ...[...revisionItemByPartNumber.values()].map((row) => row.id),
+        ...created.flatMap((entry) =>
+          entry.baseItemId ? [entry.baseItemId] : []
+        )
+      ]
+    )) {
+      methodByItemId.set(itemId, method);
+    }
+  } catch (error) {
+    bomReadFailure =
+      error instanceof Error ? error.message : "failed to read make methods";
+  }
+
+  type BomTarget = {
+    item: ReleasePlanItem;
+    label: string;
+    methodId: string;
+    lines: OnshapeBomNode[];
+    /** The base method whose Onshape-origin lines the revision copy carries. */
+    baseMethodId: string | null;
+  };
+  const bomTargets: BomTarget[] = [];
+  for (const item of bomReadFailure
+    ? []
+    : modelItems.filter((candidate) => candidate.elementType === 1)) {
+    const target = revisionItemByPartNumber.get(item.partNumber);
+    if (!target) continue; // creation failed above; error already recorded
+    const label = `${item.partNumber} Rev ${item.revision}`;
+
+    const method = methodByItemId.get(target.id);
+    if (!method) {
+      summary.errors.push(`${label}: no make method found`);
+      continue;
+    }
+    if (method.status === "Active") {
+      summary.skipped.push(
+        `${label}: make method is released in Carbon, so its BOM was left as it is`
+      );
+      continue;
+    }
+    // Reported with its fields above.
+    if (lockedByItemId.has(target.id)) continue;
+
+    // null: the review could not read the BOM, so the method is left alone. An
+    // empty BOM is [] and is applied.
+    const lines = plan.bomLinesByElementId[releaseBomKey(item)];
+    if (!lines) {
+      summary.skipped.push(
+        `${label}: the BOM was not read at review — review and push again`
+      );
+      continue;
+    }
+
+    const createdEntry = created.find(
+      (candidate) =>
+        candidate.partNumber === item.partNumber &&
+        candidate.revision === item.revision
+    );
+    bomTargets.push({
+      item,
+      label,
+      methodId: method.id,
+      lines,
+      baseMethodId: createdEntry?.baseItemId
+        ? (methodByItemId.get(createdEntry.baseItemId)?.id ?? null)
+        : null
+    });
+  }
+
+  const childItemByPartNumber = new Map<string, ReleasePushItemRow>();
+  const childFailed = new Set<string>();
+  const releaseItemByPartNumber = new Map(
+    modelItems.map((item) => [item.partNumber, item])
+  );
+  for (const target of bomTargets) {
+    for (const child of target.lines) {
+      if (!child.partNumber) continue;
+      if (
+        childItemByPartNumber.has(child.partNumber) ||
+        childFailed.has(child.partNumber)
+      ) {
+        continue;
+      }
+      // A release item that was held back or failed (its error is reported
+      // above) is neither created off the notice nor swapped for another revision.
+      const releaseItem = releaseItemByPartNumber.get(child.partNumber);
+      if (releaseItem && !revisionItemByPartNumber.has(child.partNumber)) {
+        summary.errors.push(
+          `${target.label} → ${child.partNumber}: line not written, because ${child.partNumber} Rev ${releaseItem.revision} was not pushed`
+        );
+        childFailed.add(child.partNumber);
+        continue;
+      }
+      const existingChild =
+        revisionItemByPartNumber.get(child.partNumber) ??
+        pickBomChildRow(byReadable.get(child.partNumber) ?? [], child.revision)
+          .row;
+      if (existingChild) {
+        childItemByPartNumber.set(child.partNumber, existingChild);
+        await applyItemFieldEdit(child.partNumber, existingChild);
+        continue;
+      }
+      const proposed =
+        merged.items.get(child.partNumber) ??
+        proposeItem(
+          {
+            partNumber: child.partNumber,
+            name: child.name,
+            description: child.description,
+            revision: child.revision,
+            hasChildren: child.children.length > 0,
+            standardContent: child.standardContent === true
+          },
+          plan.options
+        );
+      const createdChild = await upsertPart(
+        client,
+        partInsert(
+          proposed,
+          companyId,
+          userId,
+          createdFieldsByPartNumber.get(child.partNumber)
+        )
+      );
+      if (createdChild.error || !createdChild.data) {
+        summary.errors.push(
+          `${target.label} → ${child.partNumber}: ${
+            createdChild.error?.message ?? "failed to create the item"
+          }`
+        );
+        childFailed.add(child.partNumber);
+        continue;
+      }
+      const childRow: ReleasePushItemRow = {
+        id: createdChild.data.id as string,
+        readableId: child.partNumber,
+        revision: proposed.revision,
+        name: proposed.name,
+        type: "Part",
+        defaultMethodType: proposed.defaultMethodType,
+        sourcingType: proposed.sourcingType ?? null,
+        unitOfMeasureCode: proposed.unitOfMeasureCode
+      };
+      await writeCreatedExtras(child.partNumber, childRow.id, proposed);
+      childItemByPartNumber.set(child.partNumber, childRow);
+      rememberRow(childRow);
+      summary.childrenCreated += 1;
+    }
+  }
+
+  const madeChildItemIds = [
+    ...new Set(
+      bomTargets.flatMap((target) =>
+        target.lines.flatMap((child) => {
+          if (!child.partNumber) return [];
+          const row = childItemByPartNumber.get(child.partNumber);
+          if (
+            child.children.length === 0 &&
+            row?.defaultMethodType !== "Make to Order"
+          ) {
+            return [];
+          }
+          return row && !methodByItemId.has(row.id) ? [row.id] : [];
+        })
+      )
+    )
+  ];
+  if (!bomReadFailure) {
+    try {
+      for (const [itemId, method] of await loadActiveMakeMethods(
+        client,
+        companyId,
+        madeChildItemIds
+      )) {
+        methodByItemId.set(itemId, method);
+      }
+    } catch (error) {
+      // Without them every sub-assembly line gets a null method and flattens the tree.
+      bomReadFailure =
+        error instanceof Error
+          ? error.message
+          : "failed to read the sub-assemblies' make methods";
+    }
+  }
+
+  // Delete the revision's copies of the base's Onshape lines (manual lines stay),
+  // then the lines a previous push of this release wrote.
+  const baseMethodIdByTargetMethodId = new Map<string, string>(
+    bomTargets.flatMap(
+      (target): Array<[string, string]> =>
+        target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
+    )
+  );
+  const copyTargetMethodIds = [...baseMethodIdByTargetMethodId.entries()]
+    .filter(([, baseMethodId]) => copiedKeysByBaseMethodId.has(baseMethodId))
+    .map(([targetMethodId]) => targetMethodId);
+  const targetMethodIds = bomTargets.map((target) => target.methodId);
+  const [copies, mapped] = bomReadFailure
+    ? [null, null]
+    : await Promise.all([
+        selectInBatches(copyTargetMethodIds, (batch) =>
+          client
+            .from("methodMaterial")
+            .select("id, makeMethodId, itemId, order, quantity")
+            .eq("companyId", companyId)
+            .in("makeMethodId", batch)
+        ),
+        selectInBatches(targetMethodIds, (batch) =>
+          serviceRole
+            .from("externalIntegrationMapping")
+            .select("id, entityId")
+            .eq("companyId", companyId)
+            .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+            .eq("entityType", "methodMaterial")
+            .in("metadata->>makeMethodId", batch)
+        )
+      ]);
+  if (!bomReadFailure && (copies?.error || mapped?.error)) {
+    bomReadFailure =
+      (copies?.error ?? mapped?.error)?.message ?? "failed to read BOM lines";
+  }
+
+  if (bomReadFailure) {
+    const carriesCopies = created.some((entry) => {
+      const baseMethod = entry.baseItemId
+        ? baseMethodByItemId.get(entry.baseItemId)
+        : undefined;
+      return !!baseMethod && copiedKeysByBaseMethodId.has(baseMethod.id);
+    });
+    summary.errors.push(
+      `The released BOMs were not written: Carbon couldn't read what they replace (${bomReadFailure}). Push the release again.${
+        carriesCopies
+          ? " A revision this push created still carries its base revision's lines — check its bill of materials before pushing again."
+          : ""
+      }`
+    );
+    bomTargets.length = 0;
+  }
+
+  const toDelete = (copies?.data ?? [])
+    .filter((line) => {
+      const baseMethodId = baseMethodIdByTargetMethodId.get(line.makeMethodId);
+      return (
+        !!baseMethodId &&
+        copiedKeysByBaseMethodId.get(baseMethodId)?.has(lineKey(line))
+      );
+    })
+    .map((line) => line.id);
+  for (const batch of bomReadFailure ? [] : chunkFilterValues(toDelete)) {
+    const deduped = await client
+      .from("methodMaterial")
+      .delete()
+      .eq("companyId", companyId)
+      .in("id", batch);
+    if (deduped.error) {
+      summary.errors.push(
+        `Could not remove the lines copied from the base revisions (${deduped.error.message}); released BOMs may contain duplicates`
+      );
+    }
+  }
+
+  if (mapped && !bomReadFailure) {
+    const failedLineIds = new Set<string>();
+    for (const batch of chunkFilterValues(
+      mapped.data.map((mapping) => mapping.entityId)
+    )) {
+      const removedLines = await client
+        .from("methodMaterial")
+        .delete()
+        .eq("companyId", companyId)
+        .in("id", batch);
+      if (removedLines.error) {
+        for (const id of batch) failedLineIds.add(id);
+        summary.errors.push(
+          `Could not replace the lines a previous release push wrote (${removedLines.error.message}); this push may add a second copy of them`
+        );
+      }
+    }
+    for (const batch of chunkFilterValues(
+      mapped.data
+        .filter((mapping) => !failedLineIds.has(mapping.entityId))
+        .map((mapping) => mapping.id)
+    )) {
+      const removedMappings = await serviceRole
+        .from("externalIntegrationMapping")
+        .delete()
+        .eq("companyId", companyId)
+        .in("id", batch);
+      if (removedMappings.error) {
+        summary.errors.push(
+          `Could not clear the ownership records for the replaced released lines (${removedMappings.error.message})`
+        );
+      }
+    }
+  }
+  summary.methodsTouched += bomTargets.length;
+
+  // One level only: a sub-assembly gets its lines from its own release item.
+  for (const target of bomTargets) {
+    const { item, label, methodId } = target;
+    const lines: OwnedMethodLine[] = [];
+    for (const child of target.lines) {
+      if (!child.partNumber) {
+        summary.skipped.push(
+          `${label} → ${child.name ?? child.index}: no part number in Onshape`
+        );
+        continue;
+      }
+      const childItem = childItemByPartNumber.get(child.partNumber);
+      if (!childItem) continue; // creation failed above; error already recorded
+
+      // A reused Material or Consumable keeps its type; a Tool or Service cannot be a line.
+      const itemType = bomLineItemType(childItem);
+      if (!itemType) {
+        summary.errors.push(
+          `${label} → ${child.partNumber}: a ${
+            childItem.type ?? "Part"
+          } item cannot be a BOM line`
+        );
+        continue;
+      }
+
+      const childMethod =
+        child.children.length > 0 ||
+        childItem.defaultMethodType === "Make to Order"
+          ? methodByItemId.get(childItem.id)
+          : null;
+      lines.push({
+        row: {
+          itemId: childItem.id,
+          quantity: child.quantity,
+          makeMethodId: methodId,
+          materialMakeMethodId: childMethod?.id ?? null,
+          methodType:
+            (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
+            (child.children.length > 0
+              ? "Make to Order"
+              : "Pull from Inventory"),
+          sourcingType:
+            (childItem.sourcingType as OwnedMethodLine["row"]["sourcingType"]) ??
+            "Specified",
+          order: lines.length,
+          itemType,
+          unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA"
+        },
+        metadata: {
+          makeMethodId: methodId,
+          documentId: plan.documentId,
+          elementId: item.elementId,
+          partNumber: child.partNumber,
+          index: child.index,
+          releaseId: plan.releaseId
+        }
+      });
+    }
+    const written = await insertOwnedMethodLines(db, {
+      companyId,
+      userId,
+      lines
+    });
+    if (written.error !== null) {
+      summary.errors.push(
+        `${label}: the released BOM lines were not written (${written.error}); push the release again`
+      );
+    } else {
+      summary.linesWritten += lines.length;
+    }
+  }
+
+  // An item holds one Onshape link: a reused revision linked to its part or
+  // assembly keeps that link, which status and change detection read.
+  const reusedIds = decisions
+    .filter((decision) => decision.kind === "reuse")
+    .map((decision) => decision.row.id);
+  const keepsLink = new Set<string>();
+  if (reusedIds.length > 0) {
+    const links = await selectInBatches(reusedIds, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("entityId, externalId")
+        .eq("companyId", companyId)
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("entityType", "item")
+        .in("entityId", batch)
+    );
+    if (links.error) {
+      for (const id of reusedIds) keepsLink.add(id);
+      summary.errors.push(
+        `Could not read the Onshape links of existing revisions (${links.error.message}); they keep their current links`
+      );
+    } else {
+      for (const link of links.data) {
+        if (!link.externalId?.startsWith("release:")) {
+          keepsLink.add(link.entityId);
+        }
+      }
+    }
+  }
+  for (const item of modelItems) {
+    const row = revisionItemByPartNumber.get(item.partNumber);
+    if (!row || keepsLink.has(row.id)) continue;
+    const externalId = `release:${plan.releaseId}:${item.partNumber}`;
+    const pushedAt = datetime.timestamp();
+    const releaseMapping = await swapItemMapping(db, {
+      companyId,
+      userId,
+      itemId: row.id,
+      externalId,
+      metadata: {
+        kind: "release",
+        releaseId: plan.releaseId,
+        releaseName: plan.releaseName,
+        documentId: plan.documentId,
+        elementId: item.elementId,
+        wv: "v",
+        wvId: item.versionId,
+        partNumber: item.partNumber,
+        revision: item.revision,
+        pushedBy: userId,
+        pushedAt,
+        planId
+      }
+    });
+    if (releaseMapping.error !== null) {
+      summary.errors.push(
+        `${item.partNumber} Rev ${item.revision}: revision written but not linked to Onshape (${releaseMapping.error}); it is invisible to change detection and to Detach`
+      );
+    }
+  }
+
+  // Make Default repoints every BOM line using a sibling revision to the new one.
+  // Not for a staged revision: releasing its notice supersedes the old one instead.
+  if (makeDefault && !changeNotice) {
+    for (const entry of created) {
+      if (!entry.baseItemId) continue; // brand-new item: it is the only revision
+      const updated = await updateDefaultRevision(client, {
+        id: entry.itemId,
+        updatedBy: userId
+      });
+      if (updated.error) {
+        summary.errors.push(
+          `${entry.partNumber}: failed to make Rev ${entry.revision} the default`
+        );
+      } else {
+        summary.defaultsUpdated += 1;
+      }
+    }
+  }
+
+  const assetTargets: Array<{
+    item: ReleasePlanItem;
+    itemId: string;
+    kind: "partstudio" | "assembly" | "drawing";
+  }> = [];
+  for (const item of modelItems) {
+    const row = revisionItemByPartNumber.get(item.partNumber);
+    if (!row) continue;
+    assetTargets.push({
+      item,
+      itemId: row.id,
+      kind: item.elementType === 1 ? "assembly" : "partstudio"
+    });
+  }
+  for (const drawing of drawingItems) {
+    // The drawing's model: in this release, or in Carbon at the revision the plan named.
+    const model = drawing.drawingOf;
+    const targetId = model
+      ? (revisionItemByPartNumber.get(model.partNumber)?.id ??
+        model.itemId ??
+        null)
+      : null;
+    if (!targetId) {
+      summary.skipped.push(
+        model
+          ? `${drawing.partNumber}: drawing waits for ${model.partNumber}${
+              model.revision ? ` Rev ${model.revision}` : ""
+            }, which isn't in Carbon; push its release first`
+          : `${drawing.partNumber}: drawing has no matching model item in this release`
+      );
+      continue;
+    }
+    assetTargets.push({ item: drawing, itemId: targetId, kind: "drawing" });
+  }
+  for (const target of assetTargets) {
+    const selection: ReleaseExportSelection =
+      target.kind === "drawing"
+        ? { ok: true }
+        : releaseExportSelection(target.item);
+    if (!selection.ok) {
+      summary.skipped.push(
+        `${target.item.partNumber} Rev ${target.item.revision}: ${selection.reason}`
+      );
+      continue;
+    }
+    // The event id dedupes a retried apply (each run spends Onshape quota). The
+    // writes have landed, so a queue failure is reported, not thrown.
+    try {
+      await trigger(
+        "onshape-panel-sync",
+        {
+          companyId,
+          userId,
+          itemId: target.itemId,
+          documentId: plan.documentId,
+          wvm: "v",
+          wvmId: target.item.versionId,
+          elementId: target.item.elementId,
+          elementKind: target.kind,
+          ...(selection.partId ? { partId: selection.partId } : {}),
+          ...(selection.configuration
+            ? { configuration: selection.configuration }
+            : {}),
+          assetBaseName: `${target.item.partNumber}-${target.item.revision}`
+        },
+        { id: `${planId}:${target.itemId}:${target.item.elementId}` }
+      );
+      if (target.kind === "drawing") summary.drawingsQueued += 1;
+    } catch {
+      summary.errors.push(
+        `${target.item.partNumber} Rev ${target.item.revision}: pushed, but the ${
+          target.kind === "drawing" ? "drawing" : "model"
+        } export couldn't be queued. Push again to retry the export.`
+      );
+    }
+  }
+
+  return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
+}
+export const onshapePanelFieldsLogger = getLogger(
+  "erp",
+  "onshape",
+  "panel-fields"
+);
+
+const modeSchema = z.enum(MAPPING_MODES);
+
+const entrySchema = z.object({
+  onshapePropertyId: z.string().min(1),
+  onshapeName: z.string(),
+  valueType: z.string().min(1),
+  target: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("customField"), fieldId: z.string().min(1) }),
+    z.object({ kind: z.literal("item"), field: z.enum(STANDARD_FIELD_IDS) })
+  ]),
+  mode: modeSchema,
+  translations: z
+    .array(
+      z.object({
+        onshape: z.string().max(255),
+        carbon: z.string().nullable()
+      })
+    )
+    .max(100)
+    .optional()
+});
+
+export const onshapePropertyMapInput = z.object({
+  entries: z
+    .array(entrySchema)
+    .max(100)
+    // A duplicate propertyId would make one entry silently win.
+    .refine(
+      (entries) =>
+        new Set(entries.map((e) => e.onshapePropertyId)).size === entries.length
+    ),
+  descriptionModes: z.object({ name: modeSchema, description: modeSchema }),
+  pushDefaults: z.object({
+    replenishmentSystem: z.enum(ITEM_REPLENISHMENT_SYSTEMS),
+    methodTypeForMake: z.enum(ITEM_METHOD_TYPES),
+    methodTypeForBuy: z.enum(ITEM_METHOD_TYPES),
+    itemTrackingType: z.enum(ITEM_TRACKING_TYPES),
+    unitOfMeasureCode: z.string().min(1).nullable()
+  })
+});
+
+// The metadata keys `parsePushDefaults` reads. No unit key when the unit is
+// left to the company's list.
+function pushDefaultsMetadata(defaults: OnshapePushDefaults) {
+  return {
+    defaultReplenishmentSystem: defaults.replenishmentSystem,
+    defaultMethodTypeForMake: defaults.methodTypeForMake,
+    defaultMethodTypeForBuy: defaults.methodTypeForBuy,
+    defaultItemTrackingType: defaults.itemTrackingType,
+    ...(defaults.unitOfMeasureCode
+      ? { defaultUnitOfMeasureCode: defaults.unitOfMeasureCode }
+      : {})
+  };
+}
+
+type PropertyMapFieldError = { key: string; errors: string[] };
+
+/** "A, B or C". */
+function orList(values: readonly string[]): string {
+  return values.length > 1
+    ? `${values.slice(0, -1).join(", ")} or ${values[values.length - 1]}`
+    : (values[0] ?? "");
+}
+
+/** Replace the property map, the description modes and the push defaults. */
+export async function saveOnshapePropertyMap(
+  ctx: ServiceContext,
+  input: z.infer<typeof onshapePropertyMapInput>
+): Promise<PanelReply> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const { entries } = input;
+  const descriptionModes: DescriptionModes = input.descriptionModes;
+  const pushDefaults: OnshapePushDefaults = input.pushDefaults;
+
+  // The same pairs the Part form allows; refused here so the saved value is
+  // the value pushes use, not one the plan quietly corrects.
+  const reconciled = reconcilePushDefaults(pushDefaults);
+  if (reconciled.methodTypeForMake !== pushDefaults.methodTypeForMake) {
+    return panelReply(
+      {
+        error: `${pushDefaults.methodTypeForMake} isn't allowed with ${pushDefaults.replenishmentSystem}`
+      },
+      { status: 422 }
+    );
+  }
+  if (reconciled.methodTypeForBuy !== pushDefaults.methodTypeForBuy) {
+    return panelReply(
+      {
+        error: `${pushDefaults.methodTypeForBuy} isn't allowed for Buy items`
+      },
+      { status: 422 }
+    );
+  }
+
+  const fieldErrors: PropertyMapFieldError[] = [];
+
+  // The editor hides unmappable rows; this guards a hand-made payload.
+  for (const entry of entries) {
+    if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)) {
+      fieldErrors.push({
+        key: entry.onshapePropertyId,
+        errors: [`${entry.valueType} properties cannot be mapped`]
+      });
+    }
+  }
+
+  // A target takes one property; each clashing entry names the others.
+  const namesByTarget = new Map<string, string[]>();
+  for (const entry of entries) {
+    const key = targetKey(entry.target);
+    namesByTarget.set(key, [
+      ...(namesByTarget.get(key) ?? []),
+      entry.onshapeName || entry.onshapePropertyId
+    ]);
+  }
+  for (const entry of entries) {
+    const own = entry.onshapeName || entry.onshapePropertyId;
+    const others = (namesByTarget.get(targetKey(entry.target)) ?? []).filter(
+      (name) => name !== own
+    );
+    if (others.length > 0) {
+      fieldErrors.push({
+        key: entry.onshapePropertyId,
+        errors: [
+          `${others.join(", ")} already maps to this Carbon field. A Carbon field takes one property.`
+        ]
+      });
+    }
+  }
+
+  const itemEntries = entries.filter((entry) => entry.target.kind === "item");
+  let units: Awaited<ReturnType<typeof loadPlanOptions>>["unitsOfMeasure"] = [];
+  if (itemEntries.length > 0 || pushDefaults.unitOfMeasureCode) {
+    units = (await loadPlanOptions(client, companyId)).unitsOfMeasure;
+  }
+  if (
+    pushDefaults.unitOfMeasureCode &&
+    !units.some((unit) => unit.code === pushDefaults.unitOfMeasureCode)
+  ) {
+    return panelReply(
+      {
+        error: `${pushDefaults.unitOfMeasureCode} is not a unit of measure in Carbon`
+      },
+      { status: 422 }
+    );
+  }
+  for (const entry of itemEntries) {
+    if (entry.target.kind !== "item") continue;
+    const field = standardField(entry.target.field);
+    if (!field) continue;
+    const errors: string[] = [];
+    if (!field.valueTypes.includes(entry.valueType)) {
+      errors.push(
+        `An Onshape ${entry.valueType} property can't set ${field.label}. It takes ${orList(field.valueTypes)} properties.`
+      );
+    }
+    errors.push(...translationErrors(field, entry.translations ?? [], units));
+    if (errors.length > 0) {
+      fieldErrors.push({ key: entry.onshapePropertyId, errors });
+    }
+  }
+
+  const customFieldIds = entries.flatMap((entry) =>
+    entry.target.kind === "customField" ? [entry.target.fieldId] : []
+  );
+  const existingIds = [...new Set(customFieldIds)];
+  if (existingIds.length > 0) {
+    const existing = await client
+      .from("customField")
+      .select("id, name, dataTypeId")
+      .eq("companyId", companyId)
+      .eq("table", "part")
+      .in("id", existingIds);
+    if (existing.error) {
+      onshapePanelFieldsLogger.error("Failed to read custom fields", {
+        companyId,
+        error: existing.error
+      });
+      return panelReply(
+        { error: "Failed to read custom fields" },
+        { status: 500 }
+      );
+    }
+    const fields = new Map((existing.data ?? []).map((row) => [row.id, row]));
+    for (const entry of entries) {
+      if (entry.target.kind !== "customField") continue;
+      const field = fields.get(entry.target.fieldId);
+      const dataTypeId = field?.dataTypeId;
+      if (field === undefined || dataTypeId === undefined) {
+        fieldErrors.push({
+          key: entry.onshapePropertyId,
+          errors: ["The mapped Carbon field no longer exists"]
+        });
+      } else if (
+        Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType) &&
+        !MAPPABLE_VALUE_TYPES[entry.valueType]?.includes(dataTypeId)
+      ) {
+        const needed = orList(
+          (MAPPABLE_VALUE_TYPES[entry.valueType] ?? []).map(
+            (id) => CUSTOM_FIELD_TYPE_LABELS[id] ?? String(id)
+          )
+        );
+        fieldErrors.push({
+          key: entry.onshapePropertyId,
+          errors: [
+            `${field.name} is a ${CUSTOM_FIELD_TYPE_LABELS[dataTypeId] ?? "different"} field. An Onshape ${entry.valueType} property needs a ${needed} field.`
+          ]
+        });
+      }
+    }
+  }
+  if (fieldErrors.length > 0) {
+    return panelReply(
+      { error: "Some field mappings are not valid", fieldErrors },
+      { status: 422 }
+    );
+  }
+
+  // Translations are kept for list item fields only.
+  const mapEntries: PropertyMapEntry[] = entries.map((entry) => {
+    const field =
+      entry.target.kind === "item" ? standardField(entry.target.field) : null;
+    return {
+      onshapePropertyId: entry.onshapePropertyId,
+      onshapeName: entry.onshapeName,
+      valueType: entry.valueType,
+      target: entry.target,
+      mode: entry.mode,
+      ...(field?.kind === "list"
+        ? {
+            translations: (entry.translations ?? []).map((row) => ({
+              onshape: row.onshape.trim(),
+              carbon: row.carbon
+            }))
+          }
+        : {})
+    };
+  });
+
+  // Writes only this page's keys (map, modes, push defaults); other writers own
+  // the sibling keys. The column is json, hence the casts.
+  const db = ctx.asSystem.pg;
+  let updatedRows: bigint;
+  try {
+    const updated = await db
+      .updateTable("companyIntegration")
+      .set({
+        metadata: sql<Json>`((jsonb_set(jsonb_set(metadata::jsonb, '{propertyMap}', ${JSON.stringify(
+          mapEntries
+        )}::jsonb, true), '{descriptionModes}', ${JSON.stringify(
+          descriptionModes
+        )}::jsonb, true) || ${JSON.stringify(
+          pushDefaultsMetadata(pushDefaults)
+        )}::jsonb)${
+          pushDefaults.unitOfMeasureCode
+            ? sql``
+            : sql` - 'defaultUnitOfMeasureCode'`
+        })::json`
+      })
+      .where("id", "=", ONSHAPE_V2_INTEGRATION_ID)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    updatedRows = updated.numUpdatedRows;
+  } catch (error) {
+    onshapePanelFieldsLogger.error("Failed to save the property map", {
+      companyId,
+      error
+    });
+    return panelReply(
+      { error: "Failed to save the property map" },
+      { status: 500 }
+    );
+  }
+  if (Number(updatedRows) === 0) {
+    return panelReply(
+      { error: "Onshape is not connected for this company" },
+      { status: 422 }
+    );
+  }
+
+  // The map is saved; a failed re-read is a warning, not a failed save.
+  let definitions: PlanCustomFieldDefinition[] | null = null;
+  let warning: string | undefined;
+  try {
+    definitions = await loadPartCustomFieldDefinitions(client, companyId);
+  } catch (error) {
+    onshapePanelFieldsLogger.error(
+      "Failed to re-read custom fields after saving the map",
+      {
+        companyId,
+        error
+      }
+    );
+    warning =
+      "Saved. The custom field list couldn't be refreshed — press Refresh to see the latest fields.";
+  }
+
+  return panelReply(
+    {
+      map: mapEntries,
+      descriptionModes,
+      pushDefaults,
+      definitions,
+      ...(warning ? { warning } : {})
+    },
+    { headers: { "Cache-Control": "no-store" } }
+  );
+}
+
+/** A panel operation's result, as its route sends it to the panel. */
+export function panelResponse(
+  result:
+    | { data: PanelReply; error: null }
+    | { data: null; error: { message: string; status: number } }
+) {
+  const headers = { "Cache-Control": "no-store" };
+  return result.error
+    ? data(
+        { error: result.error.message },
+        { status: result.error.status, headers }
+      )
+    : data(result.data.body, { status: result.data.status, headers });
 }

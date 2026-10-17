@@ -17,7 +17,8 @@ const getCarbonServiceRole = vi.hoisted(() => vi.fn());
 // none of that is under test here.
 vi.mock("@carbon/auth/auth.server", () => ({ bustApiKeyCache }));
 vi.mock("@carbon/auth/client.server", () => ({ getCarbonServiceRole }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee")>()),
   getIntegrationConfigById: vi.fn(),
   resolveIntegrationSecrets: vi.fn(),
   splitSecrets: vi.fn()

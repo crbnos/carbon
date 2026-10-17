@@ -15,7 +15,8 @@ const patchRampSettings = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth/auth.server", () => ({ bustApiKeyCache: vi.fn() }));
 vi.mock("@carbon/auth/client.server", () => ({ getCarbonServiceRole }));
-vi.mock("@carbon/ee", () => ({
+vi.mock("@carbon/ee", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/ee")>()),
   getIntegrationConfigById: vi.fn(),
   resolveIntegrationSecrets: vi.fn(),
   splitSecrets: vi.fn(() => ({ config: {}, secrets: {} }))

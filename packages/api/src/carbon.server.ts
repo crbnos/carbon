@@ -28,7 +28,16 @@ export interface Register {}
 
 type RegisteredRouter = Register extends { router: infer R } ? R : object;
 
-type Auth = Awaited<ReturnType<typeof requirePermissions>>;
+/** An authenticated caller, as `requirePermissions` (or another gate) states it. */
+export type CallerAuth = Pick<
+  Awaited<ReturnType<typeof requirePermissions>>,
+  | "client"
+  | "companyId"
+  | "companyGroupId"
+  | "userId"
+  | "caller"
+  | "permissions"
+>;
 
 /** A tree of service functions, each bound to one caller. */
 export type Api<T> = {
@@ -39,13 +48,13 @@ export type Api<T> = {
 
 let registered: {
   router: object;
-  context: (auth: Auth) => ServiceContext;
+  context: (auth: CallerAuth) => ServiceContext;
 } | null = null;
 
 /** Called once at server start: the app's router, and its context for a caller. */
 export function registerCarbon(setup: {
   router: RegisteredRouter;
-  context: (auth: Auth) => ServiceContext;
+  context: (auth: CallerAuth) => ServiceContext;
 }) {
   registered = setup;
 }
@@ -77,12 +86,20 @@ export function bindServiceFns<T extends object>(
  * the route sends it.
  */
 export async function carbon(request: Request): Promise<Api<RegisteredRouter>> {
+  return carbonFor(await requirePermissions(request, {}));
+}
+
+/**
+ * `carbon()` for a caller a route authenticated another way, such as the
+ * Onshape panel's bearer token (`requireOnshapePanelPermissions`).
+ */
+export function carbonFor(auth: CallerAuth): Api<RegisteredRouter> {
   if (!registered) {
     throw new Error("carbon(): the app has not called registerCarbon");
   }
   return bindServiceFns(
     registered.router as RegisteredRouter & object,
-    registered.context(await requirePermissions(request, {}))
+    registered.context(auth)
   );
 }
 
