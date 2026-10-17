@@ -45,6 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!taxCode.data) {
         return { error: { message: "Tax code not found" }, data: null };
       }
+      const taxCodeId = taxCode.data.id;
       if (suppliers.error) return { error: suppliers.error, data: null };
 
       const supplierIds = suppliers.data.map((supplier) => supplier.id);
@@ -63,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
           supplierIds.map((supplierId) => ({
             supplierId,
             companyId,
-            taxCodeId: taxCode.data.id,
+            taxCodeId,
             updatedBy: userId,
             updatedAt: datetime.timestamp()
           })),
