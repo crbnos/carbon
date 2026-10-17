@@ -30,11 +30,13 @@ one or two internal calls. The ERP dev log shows each as
 - Click **Unpick**: `quantityPicked` back to 0, a reversing Transfer pair.
 
 ### 3. Issue material to an operation (`issue` partToOperation, as the system)
-- Open `<MES_URL>/x/operation/<id>` of an In Progress operation.
+- Open `<MES_URL>/x/operation/<id>` of an In Progress operation. Pick one whose job item
+  is not serial-tracked (MES first asks for a serial number) and that is not in a batch
+  (MES shows the batch view).
 - In the materials table, click the row's **Issue Material**. The dialog defaults
   the quantity to the remainder.
-- Fill the Quantity textbox, then click **Increase** or another control so the hidden
-  `quantity` input commits.
+- Fill the Quantity textbox, then press Tab so the hidden `quantity` input commits.
+  **Increase** steps by 0.00001 here, so it changes the value.
 - Submit with `requestSubmit` on the dialog's **Issue** button.
 - Verify: `jobMaterial.quantityIssued` up by the quantity; a `Consumption` ledger row.
 
