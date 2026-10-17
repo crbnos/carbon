@@ -1119,6 +1119,9 @@ msgstr "Uno strumento di misura (calibro, micrometro, calibro di spessore, CMM) 
 msgid "A name is required to save a view"
 msgstr "Un nome è obbligatorio per salvare una vista"
 
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr ""
+
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Un prezzo negoziato fissato per un articolo specifico — per cliente, tipo di cliente o tutti i clienti — che sostituisce completamente il prezzo base, facoltativamente con scaglioni di quantità."
 
@@ -15488,6 +15491,9 @@ msgstr "Un pagamento per ogni anno del termine."
 msgid "One payment for every three months."
 msgstr "Un pagamento ogni tre mesi."
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr ""
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Una riga per fattura, una colonna per riga. Cambia una data o un importo, aggiungi una fattura o eliminane una."
 
@@ -18158,6 +18164,9 @@ msgid "Recost {0}"
 msgstr "Ricalcola il costo {0}"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable percent"
 msgstr ""
 
 msgid "Recoverable Tax"
@@ -22087,6 +22096,9 @@ msgstr ""
 msgid "Tax collected and recoverable by authority, and the net due"
 msgstr ""
 
+msgid "Tax component"
+msgstr ""
+
 msgid "Tax Depreciation"
 msgstr "Ammortamento fiscale"
 
@@ -22104,6 +22116,9 @@ msgstr "Codice fiscale"
 
 msgid "Tax Information"
 msgstr "Informazioni fiscali"
+
+msgid "Tax ledger"
+msgstr ""
 
 msgid "Tax Liability"
 msgstr ""
@@ -22563,9 +22578,6 @@ msgstr "L'ordine di prelievo predefinito utilizza per offrire entità monitorate
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "La quantità di esecuzione predefinita quando questa parte viene realizzata; i cicli di pianificazione integrano il rifornimento fino a multipli di questo."
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "L'aliquota fiscale predefinita applicata alle righe di offerta e ordine di vendita di questo cliente, prima delle forzature per riga; il calcolo fiscale specifico della giurisdizione viene applicato sopra."
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Il reparto sotto il quale questo si aggrega per la reportistica e le gerarchie organizzative; lasciare vuoto per un reparto di primo livello."
@@ -23077,6 +23089,9 @@ msgstr "Il tasso alla data effettiva"
 msgid "The rate every asset's payments are discounted at."
 msgstr "Il tasso con cui vengono scontati i pagamenti di ogni cespite"
 
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Le materie prime e il master materiale che acquisti e consumi"
 
@@ -23164,6 +23179,9 @@ msgstr "la classe selezionata"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "I servizi che questo contratto fattura: tariffe una tantum e addebiti ricorrenti. Fai clic su una cella per modificarla."
+
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr ""
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Gli scaffali e i contenitori dove il magazzino si trova fisicamente"
@@ -23278,6 +23296,9 @@ msgstr "Il sistema che un'azienda utilizza per gestire gli accessi dei suoi dipe
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Il sistema supera ogni test di accettazione in ambito nel tuo sistema configurato, con i tuoi dati; i dati sono convalidati; e tu firmi. Quindi vai in diretta."
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr ""
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Il thread che collega una RFQ di vendita, il suo preventivo e l'ordine di vendita risultante - un join, non un documento con il proprio stato."

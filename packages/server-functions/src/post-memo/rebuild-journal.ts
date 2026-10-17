@@ -152,7 +152,15 @@ export async function rebuildMemoJournals(
   const reasonAccounts = await trx
     .selectFrom("account")
     .select(["id", "class"])
-    .where("id", "in", [...new Set(plans.map((plan) => plan.reasonAccountId))])
+    .where("id", "in", [
+      ...new Set(
+        [
+          ...plans.map((plan) => plan.reasonAccountId),
+          defaults.taxReceivedAccount,
+          defaults.taxPaidAccount
+        ].filter((id): id is string => !!id)
+      )
+    ])
     .where("companyGroupId", "=", companyGroupId)
     .execute();
   const classByAccount = new Map(
@@ -222,7 +230,12 @@ export async function rebuildMemoJournals(
         ? "Goods Received Not Invoiced"
         : undefined,
       taxAmount: taxToAccount,
-      taxAccountId: isAR ? defaults.taxReceivedAccount : defaults.taxPaidAccount
+      taxAccountId: isAR
+        ? defaults.taxReceivedAccount
+        : defaults.taxPaidAccount,
+      taxAccountClass: classByAccount.get(
+        (isAR ? defaults.taxReceivedAccount : defaults.taxPaidAccount) ?? ""
+      )
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
     return {

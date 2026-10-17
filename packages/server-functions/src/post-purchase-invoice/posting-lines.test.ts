@@ -36,7 +36,10 @@ const part: PurchaseInvoiceItem = {
   costingMethod: "FIFO"
 };
 
-function build(lines: PurchaseInvoicePostingLine[]) {
+function build(
+  lines: PurchaseInvoicePostingLine[],
+  taxAccountClasses?: ReadonlyMap<string, string>
+) {
   return buildPurchaseInvoicePostingLines({
     invoice: {
       id: "inv-1",
@@ -46,7 +49,8 @@ function build(lines: PurchaseInvoicePostingLine[]) {
     supplierTypeId: "supplier-type-1",
     accounts,
     payables: { accountId: "ap", accountDefaultRole: null },
-    lines
+    lines,
+    taxAccountClasses
   });
 }
 
@@ -651,5 +655,19 @@ describe("recoverable purchase tax", () => {
         quantity: 1
       }
     ]);
+  });
+
+  it("debits a liability-class Tax Paid account as a liability: one VAT control account", () => {
+    const { lines } = build(
+      [directLine([vat(1)])],
+      new Map([["tax-paid", "Liability"]])
+    );
+    expect(
+      summary(lines).find((line) => line.accountId === "tax-paid")
+    ).toEqual({
+      accountId: "tax-paid",
+      amount: debit("liability", 200),
+      quantity: 1
+    });
   });
 });

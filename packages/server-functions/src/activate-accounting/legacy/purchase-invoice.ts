@@ -37,6 +37,7 @@ import { EPSILON } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError } from "../../errors";
 import {
+  loadTaxAccountClasses,
   purchaseTaxLedgerLines,
   withPurchaseTax
 } from "../../lib/purchase-tax";
@@ -290,6 +291,11 @@ export async function buildLegacyPurchaseInvoiceJournals(
     lines.map((line) => line.taxCodeId),
     null
   );
+  const taxAccountClasses = await loadTaxAccountClasses(trx, {
+    companyId,
+    defaults,
+    taxCodes
+  });
   const { baseCurrencyCode } = await trx
     .selectFrom("company")
     .select("baseCurrencyCode")
@@ -556,7 +562,8 @@ export async function buildLegacyPurchaseInvoiceJournals(
       supplierTypeId: supplier?.supplierTypeId ?? null,
       accounts: defaults,
       payables,
-      lines: postingLines
+      lines: postingLines,
+      taxAccountClasses
     });
     return {
       description: `Purchase Invoice ${invoice.invoiceId}`,

@@ -1119,6 +1119,9 @@ msgstr "계측기(캘리퍼, 마이크로미터, 핀 게이지, CMM)로 기록�
 msgid "A name is required to save a view"
 msgstr "보기를 저장하려면 이름이 필요합니다"
 
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr ""
+
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "특정 품목에 대해 협상으로 고정된 가격으로 고객, 고객 유형 또는 모든 고객 기준으로 기본 가격을 완전히 대체하며 선택적으로 수량 구간을 포함합니다."
 
@@ -15488,6 +15491,9 @@ msgstr "기간의 매년마다 1회 지불입니다."
 msgid "One payment for every three months."
 msgstr "3개월마다 1회 지불입니다."
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr ""
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "송장당 한 행, 라인당 한 열. 날짜 또는 금액을 변경하거나 송장을 추가 또는 삭제하세요."
 
@@ -18158,6 +18164,9 @@ msgid "Recost {0}"
 msgstr "원가 재계산 {0}"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable percent"
 msgstr ""
 
 msgid "Recoverable Tax"
@@ -22087,6 +22096,9 @@ msgstr ""
 msgid "Tax collected and recoverable by authority, and the net due"
 msgstr ""
 
+msgid "Tax component"
+msgstr ""
+
 msgid "Tax Depreciation"
 msgstr "세무 감가상각"
 
@@ -22104,6 +22116,9 @@ msgstr "세금 ID"
 
 msgid "Tax Information"
 msgstr "세금 정보"
+
+msgid "Tax ledger"
+msgstr ""
 
 msgid "Tax Liability"
 msgstr ""
@@ -22563,9 +22578,6 @@ msgstr "피킹이 추적된 항목을 제공할 때 사용하는 기본 순서�
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "이 품목을 생산할 때의 기본 생산 수량으로, 계획 시 보충량을 이 배수로 올림 처리합니다."
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세율로, 라인별 재정의 전에 적용됩니다. 관할구역별 세금 계산은 이 위에 추가로 적용됩니다."
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
@@ -23077,6 +23089,9 @@ msgstr "유효 일자의 이율"
 msgid "The rate every asset's payments are discounted at."
 msgstr "모든 자산의 지불이 할인되는 이율"
 
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "구매하고 소비하는 원자재 재고 및 자재 마스터"
 
@@ -23164,6 +23179,9 @@ msgstr "선택한 클래스"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요금입니다. 셀을 클릭하여 변경하세요."
+
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr ""
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
@@ -23278,6 +23296,9 @@ msgstr "회사가 인원의 로그인을 관리하기 위해 사용하는 시스
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "설정된 시스템에서 귀사 데이터로 범위 내 모든 인수 테스트를 통과하고, 데이터가 검증되며, 귀사가 최종 승인합니다. 그다음 실제 가동을 시작합니다."
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr ""
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "영업 견적 요청, 그 견적서, 그리고 결과 수주를 연결하는 스레드입니다. 자체 상태가 있는 문서가 아니라 조인입니다."

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import type { TaxLedgerLine } from "@carbon/database/tax-ledger";
 import {
   effectiveTaxPercent,
@@ -87,4 +88,40 @@ export function purchaseTaxLedgerLines(
         exempt: null
       };
     });
+}
+
+/**
+ * The class of each account a purchase posting's tax legs can hit: the Tax
+ * Paid and reverse charge defaults and every component's Tax Paid account
+ * (`taxAccountClasses` on `buildPurchaseInvoicePostingLines`). One query.
+ */
+export async function loadTaxAccountClasses(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    defaults: {
+      taxPaidAccount: string | null;
+      reverseChargeSalesTaxPayableAccount: string | null;
+    };
+    taxCodes: ReadonlyMap<string, TaxCodeInput>;
+  }
+): Promise<Map<string, string>> {
+  const ids = [
+    args.defaults.taxPaidAccount,
+    args.defaults.reverseChargeSalesTaxPayableAccount,
+    ...[...args.taxCodes.values()].flatMap((code) =>
+      code.components.map((component) => component.taxPaidAccountId)
+    )
+  ].filter((id): id is string => !!id);
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .selectFrom("account")
+    .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
+    .select(["account.id", "account.class"])
+    .where("company.id", "=", args.companyId)
+    .where("account.id", "in", [...new Set(ids)])
+    .execute();
+  return new Map(
+    rows.flatMap((row) => (row.class ? [[row.id, row.class] as const] : []))
+  );
 }

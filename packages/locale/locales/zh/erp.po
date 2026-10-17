@@ -1119,6 +1119,9 @@ msgstr "一个测量仪器（游标卡尺、千分尺、塞规、CMM）作为记
 msgid "A name is required to save a view"
 msgstr "需要名称才能保存查看"
 
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr ""
+
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "为特定物料约定的固定价格——按客户、客户类型或所有客户——完全替代基准价格，可选择数量阶梯。"
 
@@ -15488,6 +15491,9 @@ msgstr "期限内每年一笔付款。"
 msgid "One payment for every three months."
 msgstr "每三个月一笔付款。"
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr ""
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "每张发票一行，每行一列。更改日期或金额，添加或删除一张发票。"
 
@@ -18158,6 +18164,9 @@ msgid "Recost {0}"
 msgstr "重新核算{0}的成本"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable percent"
 msgstr ""
 
 msgid "Recoverable Tax"
@@ -22087,6 +22096,9 @@ msgstr ""
 msgid "Tax collected and recoverable by authority, and the net due"
 msgstr ""
 
+msgid "Tax component"
+msgstr ""
+
 msgid "Tax Depreciation"
 msgstr "税务折旧"
 
@@ -22104,6 +22116,9 @@ msgstr "税号"
 
 msgid "Tax Information"
 msgstr "税务信息"
+
+msgid "Tax ledger"
+msgstr ""
 
 msgid "Tax Liability"
 msgstr ""
@@ -22563,9 +22578,6 @@ msgstr "订单拣货使用的默认方式，用于提供被跟踪实体：先到
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "制造此零件时的默认运行数量；计划轮次为此补充的倍数。"
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "适用于此客户的报价和销售订单行的默认税率，在每行覆盖之前；管辖区特定的税务计算在此之上运行。"
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
@@ -23077,6 +23089,9 @@ msgstr "生效日期的利率"
 msgid "The rate every asset's payments are discounted at."
 msgstr "用于折现每项资产付款的利率"
 
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "您购买和消耗的原材料库存及物料主档"
 
@@ -23164,6 +23179,9 @@ msgstr "选定的类别"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "此合同计费的服务：一次性费用和循环费用。单击单元格进行更改。"
+
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr ""
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存实际存放的货架和料箱"
@@ -23278,6 +23296,9 @@ msgstr "公司用来管理员工登录的系统——Okta、Entra ID 或 Google 
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "系统在您配置的系统中通过了每个范围内的验收测试,使用您的数据;数据已验证;您签署确认。然后上线。"
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr ""
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "连接销售询价单、其报价和生成的销售订单的线索——一个关联关系，而不是具有自己状态的文件。"

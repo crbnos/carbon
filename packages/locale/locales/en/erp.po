@@ -1119,6 +1119,9 @@ msgstr "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked a
 msgid "A name is required to save a view"
 msgstr "A name is required to save a view"
 
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 
@@ -15488,6 +15491,9 @@ msgstr "One payment for each year of the term."
 msgid "One payment for every three months."
 msgstr "One payment for every three months."
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 
@@ -18159,6 +18165,9 @@ msgstr "Recost {0}"
 
 msgid "Recoverable"
 msgstr "Recoverable"
+
+msgid "Recoverable percent"
+msgstr "Recoverable percent"
 
 msgid "Recoverable Tax"
 msgstr "Recoverable Tax"
@@ -22087,6 +22096,9 @@ msgstr "Tax Collected"
 msgid "Tax collected and recoverable by authority, and the net due"
 msgstr "Tax collected and recoverable by authority, and the net due"
 
+msgid "Tax component"
+msgstr "Tax component"
+
 msgid "Tax Depreciation"
 msgstr "Tax Depreciation"
 
@@ -22104,6 +22116,9 @@ msgstr "Tax ID"
 
 msgid "Tax Information"
 msgstr "Tax Information"
+
+msgid "Tax ledger"
+msgstr "Tax ledger"
 
 msgid "Tax Liability"
 msgstr "Tax Liability"
@@ -22563,9 +22578,6 @@ msgstr "The default order picking uses to offer tracked entities: FEFO (earliest
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
@@ -23077,6 +23089,9 @@ msgstr "The rate at the effective date"
 msgid "The rate every asset's payments are discounted at."
 msgstr "The rate every asset's payments are discounted at."
 
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "The raw stock and material master you buy and consume"
 
@@ -23164,6 +23179,9 @@ msgstr "the selected class"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
+
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "The shelves and bins where stock physically sits"
@@ -23278,6 +23296,9 @@ msgstr "The system a company uses to manage its people's logins — Okta, Entra 
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."

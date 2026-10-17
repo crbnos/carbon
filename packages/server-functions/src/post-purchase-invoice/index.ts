@@ -47,7 +47,11 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
-import { purchaseTaxLedgerLines, withPurchaseTax } from "../lib/purchase-tax";
+import {
+  loadTaxAccountClasses,
+  purchaseTaxLedgerLines,
+  withPurchaseTax
+} from "../lib/purchase-tax";
 import { loadTaxCodes } from "../lib/tax-codes";
 import { negateDocumentTaxLedger } from "../lib/tax-ledger-writes";
 import { loadLeasePostingFacts, resolveLeasePostingLine } from "./lease-lines";
@@ -1427,7 +1431,12 @@ const postPurchaseInvoice = defineServerFn({
         supplierTypeId: supplier.data.supplierTypeId ?? null,
         accounts: accountDefaults.data,
         payables,
-        lines: postingLines
+        lines: postingLines,
+        taxAccountClasses: await loadTaxAccountClasses(db, {
+          companyId,
+          defaults: accountDefaults.data,
+          taxCodes
+        })
       });
       const journalLineInserts = posting.lines.map(
         ({ dimensions: _dimensions, ...line }) => ({ ...line, companyId })

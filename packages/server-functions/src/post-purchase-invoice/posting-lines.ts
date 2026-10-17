@@ -196,6 +196,15 @@ export type BuildPurchaseInvoicePostingLinesInput = {
   };
   /** The invoice's lines in order, comments left out. */
   lines: PurchaseInvoicePostingLine[];
+  /**
+   * The class of each tax account a line can post to (Tax Paid defaults and
+   * components, the reverse charge account). A company may keep one VAT
+   * control account for both directions, so Tax Paid is not always an asset
+   * (spec "Accounts"); the legs are signed by the real class. An account
+   * missing here is taken as its usual class (Tax Paid an asset, reverse
+   * charge a liability).
+   */
+  taxAccountClasses?: ReadonlyMap<string, string>;
 };
 
 /** The units a line cleared from GR/IR and what their variance did. */
@@ -808,7 +817,14 @@ export function buildPurchaseInvoicePostingLines(
           {
             accountId,
             description: TAX_PAID_POSTING_DESCRIPTION,
-            amount: round(debit("asset", leg.part.recoverableAmount)),
+            amount: round(
+              debit(
+                accountTypeFromClass(
+                  input.taxAccountClasses?.get(accountId) ?? "Asset"
+                ),
+                leg.part.recoverableAmount
+              )
+            ),
             ...keys
           },
           taxMeta
@@ -825,7 +841,14 @@ export function buildPurchaseInvoicePostingLines(
             accountId: accounts.reverseChargeSalesTaxPayableAccount,
             description: "Reverse Charge Tax",
             amount: round(
-              credit("liability", line.amounts.selfAssessedTaxBase)
+              credit(
+                accountTypeFromClass(
+                  input.taxAccountClasses?.get(
+                    accounts.reverseChargeSalesTaxPayableAccount
+                  ) ?? "Liability"
+                ),
+                line.amounts.selfAssessedTaxBase
+              )
             ),
             ...keys
           },

@@ -92,6 +92,10 @@ export interface BuildMemoJournalInput {
   // and the reason leg takes the rest. Omit, or 0, for a memo with no tax.
   taxAmount?: number;
   taxAccountId?: string | null;
+  /** The tax account's class. A company may keep one VAT control account
+   *  for both directions, so Tax Paid is not always an asset. Omitted: Tax
+   *  Received is a liability, Tax Paid an asset. */
+  taxAccountClass?: string | null;
 }
 
 export interface BuildMemoJournalResult {
@@ -121,7 +125,8 @@ export function buildMemoJournal(
     varianceAccountId,
     reasonDescription,
     taxAmount = 0,
-    taxAccountId
+    taxAccountId,
+    taxAccountClass
   } = input;
 
   if (!controlAccountId) {
@@ -216,7 +221,11 @@ export function buildMemoJournal(
   if (taxMagnitude > 0 && taxAccountId) {
     pushLine(
       controlIsDebit ? "credit" : "debit",
-      isAR ? "liability" : "asset",
+      taxAccountClass
+        ? accountTypeFromClass(taxAccountClass)
+        : isAR
+          ? "liability"
+          : "asset",
       taxAccountId,
       isAR ? "Tax Received" : "Tax Paid",
       taxMagnitude

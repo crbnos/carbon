@@ -505,11 +505,15 @@ export function postMemoTransaction(
         );
       }
     }
+    const memoTaxAccountId = isAR
+      ? defaults.taxReceivedAccount
+      : defaults.taxPaidAccount;
     const accountIds = [
       ...new Set(
         [
           controlAccountId,
           reasonAccountId,
+          ...(taxToAccount > 0 ? [memoTaxAccountId] : []),
           ...contractLegs.map((leg) => leg.accountId)
         ].filter((id): id is string => !!id)
       )
@@ -554,9 +558,8 @@ export function postMemoTransaction(
       reasonAmountBase,
       varianceAccountId: defaults.purchaseVarianceAccount,
       taxAmount: taxToAccount,
-      taxAccountId: isAR
-        ? defaults.taxReceivedAccount
-        : defaults.taxPaidAccount,
+      taxAccountId: memoTaxAccountId,
+      taxAccountClass: accounts.find((a) => a.id === memoTaxAccountId)?.class,
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
         : contractCredit || rentalCredit

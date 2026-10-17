@@ -1119,6 +1119,9 @@ msgstr "Средство измерения (кронциркуль, микро�
 msgid "A name is required to save a view"
 msgstr "Требуется имя для сохранения представления"
 
+msgid "A named tax treatment, such as \"TX – Houston\", made of one or more tax components; a document line takes the combined rate of the components in force on its date."
+msgstr ""
+
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Согласованная цена, установленная для конкретной номенклатуры — по покупателю, типу покупателя или для всех покупателей — которая полностью заменяет базовую цену, опционально с шкалами количества."
 
@@ -15488,6 +15491,9 @@ msgstr "Один платеж за каждый год периода."
 msgid "One payment for every three months."
 msgstr "Один платеж за каждые три месяца."
 
+msgid "One rate inside a tax code, such as a state rate or a city rate, with its own tax authority, recoverable percent and effective dates."
+msgstr ""
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Одна строка на счет-фактуру, один столбец на строку. Измените дату или сумму, добавьте счет-фактуру или удалите его."
 
@@ -18158,6 +18164,9 @@ msgid "Recost {0}"
 msgstr "Переоценить {0}"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable percent"
 msgstr ""
 
 msgid "Recoverable Tax"
@@ -22087,6 +22096,9 @@ msgstr ""
 msgid "Tax collected and recoverable by authority, and the net due"
 msgstr ""
 
+msgid "Tax component"
+msgstr ""
+
 msgid "Tax Depreciation"
 msgstr "Налоговая амортизация"
 
@@ -22104,6 +22116,9 @@ msgstr "Налоговый ID"
 
 msgid "Tax Information"
 msgstr "Налоговая информация"
+
+msgid "Tax ledger"
+msgstr ""
 
 msgid "Tax Liability"
 msgstr ""
@@ -22563,9 +22578,6 @@ msgstr "Порядок отбора по умолчанию для предло�
 
 msgid "The default run quantity when this part is made; planning rounds replenishment up to multiples of this."
 msgstr "Количество прогона по умолчанию при изготовлении этой детали; циклы планирования дополняют пополнение на кратные этому."
-
-msgid "The default tax rate applied to this customer's quote and sales-order lines, before per-line overrides; jurisdiction-specific tax math runs on top."
-msgstr "Налоговая ставка по умолчанию, применяемая к строкам коммерческого предложения и заказа покупателя, до переопределений по строкам; поверх этого применяется математика налогообложения, специфичная для юрисдикции."
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
@@ -23077,6 +23089,9 @@ msgstr "Ставка на дату вступления в силу"
 msgid "The rate every asset's payments are discounted at."
 msgstr "Ставка, по которой дисконтируются платежи каждого актива."
 
+msgid "The rate this customer's document lines take when no tax code applies to them. Once the company has a tax code, assign one to the customer instead."
+msgstr ""
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Сырьё и материалы, которые вы покупаете и используете"
 
@@ -23164,6 +23179,9 @@ msgstr "выбранный класс"
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Услуги, которые выставляет этот контракт: разовые платежи и повторяющиеся сборы. Нажмите на ячейку, чтобы изменить её."
+
+msgid "The share of a tax component's purchase tax the company can reclaim: it posts to Tax Paid, and the rest stays in the cost of what was bought."
+msgstr ""
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и ячейки, где физически располагается запас."
@@ -23278,6 +23296,9 @@ msgstr "Система, которую Организация используе
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Система проходит все тесты приемки в области охвата в вашей настроенной системе с вашими данными; данные проверяются; и вы подписываете акт. Затем переход в боевую эксплуатацию."
+
+msgid "The tax record every posted invoice and memo writes with its journal: one row per line and tax component, with the taxable base, the tax and the recoverable tax."
+msgstr ""
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепь, связывающая запрос цен продаж, его коммерческое предложение и результирующий заказ покупателя — соединение, а не документ со своим собственным статусом."
