@@ -9,15 +9,17 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { checkRevisionLock } from "~/modules/items/items.server";
 
+// Deletes one or more operations of ONE make method: the form carries an `id`
+// per operation, so the bill of process's "Delete Selected" is a single request.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     delete: "parts"
   });
 
   const formData = await request.formData();
-  const id = formData.get("id") as string;
+  const ids = formData.getAll("id").map(String).filter(Boolean);
 
-  if (!id) {
+  if (ids.length === 0) {
     return data(
       { error: "Operation ID is required" },
       {
@@ -26,10 +28,33 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const operations = await client
+    .from("methodOperation")
+    .select("makeMethodId")
+    .in("id", ids)
+    .eq("companyId", companyId);
+  const makeMethodIds = new Set(
+    (operations.data ?? []).map((o) => o.makeMethodId)
+  );
+  if (operations.error || makeMethodIds.size !== 1) {
+    return data(
+      {
+        success: false,
+        error:
+          operations.error?.message ??
+          "Operations must belong to one bill of process"
+      },
+      {
+        status: 400
+      }
+    );
+  }
+  const [makeMethodId] = makeMethodIds;
+
   // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
   const lock = await checkRevisionLock(client, {
-    kind: "operation",
-    id,
+    kind: "makeMethod",
+    id: makeMethodId,
     companyId
   });
   if (!lock.ok) {
@@ -41,7 +66,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const { error } = await client.from("methodOperation").delete().eq("id", id);
+  const { error } = await client
+    .from("methodOperation")
+    .delete()
+    .in("id", ids)
+    .eq("makeMethodId", makeMethodId)
+    .eq("companyId", companyId);
 
   if (error) {
     return data(

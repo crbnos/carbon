@@ -7431,6 +7431,9 @@ msgstr "Eliminar pedido de venta"
 msgid "Delete Schedule"
 msgstr "Eliminar Programa"
 
+msgid "Delete Selected"
+msgstr "Eliminar Seleccionados"
+
 msgid "Delete Service"
 msgstr "Eliminar servicio"
 
@@ -8309,7 +8312,7 @@ msgstr "Cada unidad física obtiene su propia entidad rastreada y número único
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "Cada inserción reemplaza: {0}. Otros cambios permanecen."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "El vendedor de cada acuerdo de alquiler o contrato (o su creador) recibe un resumen diario de sus facturas."
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "Enviar a contabilidad"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "Las inserciones no modifican los campos de este artículo, así que los cambios realizados aquí permanecen."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "Las inserciones de Onshape dejan de modificar este artículo. Al insertar de nuevo esta pieza de Onshape, se vincula nuevamente."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "Las inserciones reemplazan solo los campos que la página Campos de Onshape establece para Actualizar en cada inserción."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Coloca este cargo en su propia factura, retenida para revisión antes de que se contabilice. De lo contrario, va en la siguiente factura del acuerdo."

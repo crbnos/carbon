@@ -8,36 +8,43 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  deleteJobMaterial,
-  recalculateJobOperationDependencies
-} from "~/modules/production";
+import { recalculateJobOperationDependencies } from "~/modules/production";
 import { getDatabaseClient } from "~/services/database.server";
 
+// Deletes one or more materials of the job: the form carries an `id` per
+// material, so the bill of material's "Delete Selected" is a single request and
+// the job's dependencies are recalculated once.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
     delete: "production"
   });
 
-  const { id, jobId } = params;
-  if (!id) {
-    throw new Error("id not found");
-  }
-
+  const { jobId } = params;
   if (!jobId) {
     throw new Error("jobId not found");
   }
 
-  const deleteMaterial = await deleteJobMaterial(client, id);
-  if (deleteMaterial.error) {
+  const formData = await request.formData();
+  const ids = formData.getAll("id").map(String).filter(Boolean);
+  if (ids.length === 0) {
+    throw new Error("id not found");
+  }
+
+  const deleteMaterials = await client
+    .from("jobMaterial")
+    .delete()
+    .in("id", ids)
+    .eq("jobId", jobId)
+    .eq("companyId", companyId);
+  if (deleteMaterials.error) {
     return data(
       {
         id: null
       },
       await flash(
         request,
-        error(deleteMaterial.error, "Failed to delete job material")
+        error(deleteMaterials.error, "Failed to delete job material")
       )
     );
   }

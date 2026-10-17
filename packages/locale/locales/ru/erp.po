@@ -7431,6 +7431,9 @@ msgstr "Удалить заказ покупателя"
 msgid "Delete Schedule"
 msgstr "Удалить расписание"
 
+msgid "Delete Selected"
+msgstr "Удалить выбранные"
+
 msgid "Delete Service"
 msgstr "Удалить услугу"
 
@@ -8309,7 +8312,7 @@ msgstr "Каждая физическая единица получает сво
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "Каждая отправка заменяет: {0}. Остальные изменения сохраняются."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Менеджер по продажам каждого договора аренды или контракта (или его создатель) получает ежедневное резюме своих счетов-фактур."
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "Отправки не изменяют поля этой номенклатуры, поэтому сделанные здесь изменения остаются."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "Отправки из Onshape прекращают обновление этой номенклатуры. Повторная отправка этой детали из Onshape свяжет её обратно."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "Отправки заменяют только поля, для которых на странице параметров Onshape установлено обновление при каждой отправке."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Поместить это начисление на отдельный счет-фактуру, находящуюся на рассмотрение перед проведением. В противном случае оно переходит на следующий счет-фактуру по соглашению."

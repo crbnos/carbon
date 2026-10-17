@@ -864,8 +864,8 @@ export const path = {
     deleteItemPostingGroup: (id: string) =>
       generatePath(`${x}/items/groups/delete/${id}`),
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
-    deleteJobMaterial: (jobId: string, id: string) =>
-      generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
+    deleteJobMaterials: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/material/delete`),
     deleteJobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/delete/${id}`),
     deleteJobOperationStep: (id: string) =>
@@ -903,8 +903,7 @@ export const path = {
       generatePath(`${x}/material/${itemId}/purchasing/${id}/delete`),
     deleteMaterialType: (id: string) =>
       generatePath(`${x}/items/types/delete/${id}`),
-    deleteMethodMaterial: (id: string) =>
-      generatePath(`${x}/items/methods/material/delete/${id}`),
+    deleteMethodMaterials: `${x}/items/methods/material/delete`,
     deleteMethodOperationParameter: (id: string) =>
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationStep: (id: string) =>
@@ -967,10 +966,8 @@ export const path = {
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
     deleteQuoteLineCost: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/cost/delete`),
-    deleteQuoteMaterial: (quoteId: string, lineId: string, id: string) =>
-      generatePath(
-        `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
-      ),
+    deleteQuoteMaterials: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/delete`),
     deleteQuoteOperationParameter: (id: string) =>
       generatePath(`${x}/quote/methods/operation/parameter/delete/${id}`),
     deleteQuoteOperationStep: (id: string) =>

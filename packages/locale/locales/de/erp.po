@@ -7431,6 +7431,9 @@ msgstr "Kundenauftrag löschen"
 msgid "Delete Schedule"
 msgstr "Zeitplan löschen"
 
+msgid "Delete Selected"
+msgstr "Ausgewählte löschen"
+
 msgid "Delete Service"
 msgstr "Dienstleistung löschen"
 
@@ -8309,7 +8312,7 @@ msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine ei
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "Jeder Push ersetzt: {0}. Andere Änderungen bleiben bestehen."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Der Verkäufer (oder Ersteller) jeder Mietvereinbarung oder eines Vertrags erhält eine tägliche Zusammenfassung seiner Rechnungen."
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "Zur Buchhaltung senden"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "Pushes ändern nicht die Felder dieses Artikels. Daher bleiben hier vorgenommene Änderungen bestehen."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "Pushes von Onshape stoppen die Aktualisierung dieses Artikels. Das erneute Pushen dieses Teils von Onshape stellt die Verknüpfung wieder her."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "Pushes ersetzen nur die Felder, die auf der Seite „Felder\" von Onshape auf „Bei jedem Push aktualisieren\" eingestellt sind."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Legen Sie diese Gebühr auf einer separaten Rechnung ab, die vor der Buchung überprüft wird. Andernfalls wird sie auf der nächsten Rechnung der Vereinbarung eingefügt."

@@ -7431,6 +7431,9 @@ msgstr "Satış Siparişini Sil"
 msgid "Delete Schedule"
 msgstr "Programı Sil"
 
+msgid "Delete Selected"
+msgstr "Seçilenleri Sil"
+
 msgid "Delete Service"
 msgstr "Hizmeti Sil"
 
@@ -8309,7 +8312,7 @@ msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "Her gönderim şunları değiştirir: {0}. Diğer düzenlemeler kalır."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "Gönderimleri bu stok kartının alanlarını değiştirmez, bu yüzden burada yapılan düzenlemeler kalır."
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "Onshape'ten gelen gönderimleri bu stok kartını artık güncellemeyecektir. Bu parçayı Onshape'ten yeniden göndermek onu yeniden bağlayacaktır."
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "Gönderimleri yalnızca Onshape'nin Fields sayfasında her gönderimde Güncelle olarak ayarlanmış alanları değiştirir."
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Bu masrafı, muhasebeleştirilmeden önce inceleme için kendi faturasında tutun. Aksi takdirde, sözleşmenin sonraki faturasına eklenir."

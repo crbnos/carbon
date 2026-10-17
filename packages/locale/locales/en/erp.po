@@ -7431,6 +7431,9 @@ msgstr "Delete Sales Order"
 msgid "Delete Schedule"
 msgstr "Delete Schedule"
 
+msgid "Delete Selected"
+msgstr "Delete Selected"
+
 msgid "Delete Service"
 msgstr "Delete Service"
 

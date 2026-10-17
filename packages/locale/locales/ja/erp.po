@@ -7431,6 +7431,9 @@ msgstr "受注を削除"
 msgid "Delete Schedule"
 msgstr "スケジュールを削除"
 
+msgid "Delete Selected"
+msgstr "選択項目を削除"
+
 msgid "Delete Service"
 msgstr "サービスを削除"
 
@@ -8309,7 +8312,7 @@ msgstr "各物理的な個が独自の追跡対象と一意番号を取得しま
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "各プッシュが置き換えるもの: {0}。その他の編集は保持されます。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "プッシュはこの品目のフィールドを変更しないため、ここで行われた編集は保持されます。"
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "Onshapeからのプッシュがこの品目を更新しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復元されます。"
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "プッシュは、Onshapeの [フィールド] ページで [毎回プッシュで更新] に設定されたフィールドのみを置き換えます。"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"

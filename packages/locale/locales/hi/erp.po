@@ -7431,6 +7431,9 @@ msgstr "विक्रय आदेश हटाएँ"
 msgid "Delete Schedule"
 msgstr "शेड्यूल हटाएं"
 
+msgid "Delete Selected"
+msgstr "चयनित हटाएँ"
+
 msgid "Delete Service"
 msgstr "सेवा हटाएं"
 
@@ -8309,7 +8312,7 @@ msgstr "प्रत्येक भौतिक इकाई को अपन�
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "प्रत्येक पुश प्रतिस्थापित करता है: {0}। अन्य संपादन बने रहते हैं।"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "प्रत्येक किराये की समझौते या अनुबंध के विक्रय प्रतिनिधि (या इसके निर्माता) को इसके चालानों का दैनिक सारांश मिलता है।"
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "पुशेस इस आइटम के फील्ड को नहीं बदलते, इसलिए यहाँ किए गए संपादन बने रहते हैं।"
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "Onshape से पुशेस इस आइटम को अपडेट करना बंद कर देते हैं। Onshape से इस पार्ट को फिर से पुश करने से यह फिर से लिंक हो जाता है।"
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "पुशेस केवल उन फील्ड को प्रतिस्थापित करते हैं जिन्हें Onshape का Fields पेज हर पुश पर अपडेट करने के लिए सेट करता है।"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "इस शुल्क को अपने चालान पर रखें, जिसे पोस्ट होने से पहले समीक्षा के लिए रोका जाता है। अन्यथा यह समझौते के अगले चालान पर जाता है।"

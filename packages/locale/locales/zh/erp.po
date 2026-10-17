@@ -7431,6 +7431,9 @@ msgstr "删除销售订单"
 msgid "Delete Schedule"
 msgstr "删除排程"
 
+msgid "Delete Selected"
+msgstr "删除已选"
+
 msgid "Delete Service"
 msgstr "删除服务"
 
@@ -8309,7 +8312,7 @@ msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个
 
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
-msgstr ""
+msgstr "每次推送替换: {0}. 其他编辑保留。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获得其发票摘要。"
@@ -17436,13 +17439,13 @@ msgid "Push to accounting"
 msgstr "推送到会计系统"
 
 msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr ""
+msgstr "推送不会更改此物料的字段，所以在此处进行的编辑保留。"
 
 msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr ""
+msgstr "来自 Onshape 的推送停止更新此物料。再次从 Onshape 推送此零件将其链接回。"
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr ""
+msgstr "推送仅替换 Onshape 的 Fields 页面在每次推送时设置为更新的字段。"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "将此费用单独放在发票上，在过账之前保留以待评审。否则，它将放在协议的下一张发票上。"

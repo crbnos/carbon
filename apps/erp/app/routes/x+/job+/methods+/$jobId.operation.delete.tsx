@@ -25,9 +25,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     );
   }
+  // One `id` per operation, so the bill of process's "Delete Selected" is a single
+  // request and the job's dependencies are recalculated once.
   const formData = await request.formData();
-  const id = formData.get("id") as string;
-  if (!id) {
+  const ids = formData.getAll("id").map(String).filter(Boolean);
+  if (ids.length === 0) {
     return data(
       { error: "Operation ID is required" },
       {
@@ -39,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const events = await client
     .from("productionEvent")
     .select("id", { count: "exact", head: true })
-    .eq("jobOperationId", id);
+    .in("jobOperationId", ids);
   if (events.error) {
     return data(
       {
@@ -59,7 +61,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error } = await client.from("jobOperation").delete().eq("id", id);
+  const { error } = await client
+    .from("jobOperation")
+    .delete()
+    .in("id", ids)
+    .eq("jobId", jobId)
+    .eq("companyId", companyId);
 
   if (error) {
     return data(
