@@ -46,7 +46,7 @@ Slice B — Posting
 - [x] Task 22: Post memo tax
 - [x] Task 23: Enter memo tax in the memo form and in memos made from a source
 - [x] Task 24: Write `taxLedger` rows in the legacy backfill
-- [ ] Task 25: Verify slice B end to end
+- [x] Task 25: Verify slice B end to end
 
 Slice C — Provider mapping
 - [x] Task 26: Write `core/tax-mapping.ts` with tests
@@ -64,7 +64,7 @@ Slice D — Reporting and documents
 - [x] Task 36: Print the tax summary, VAT clause and registration on sales PDFs
 - [x] Task 37: Move customers and suppliers from a bare percent to tax codes
 - [x] Task 38: Update docs, glossary, rules and AGENTS.md
-- [ ] Task 39: Verify Phase 1 in the browser
+- [x] Task 39: Verify Phase 1 in the browser
 
 ## Dependencies
 
