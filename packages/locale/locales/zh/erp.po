@@ -685,6 +685,9 @@ msgstr "{unitCount}件"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {先映射剩余的 # 个必需账户。} other {先映射剩余的 # 个必需账户。}}"
 
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} 条未读"
 
@@ -2324,6 +2327,9 @@ msgstr "所有高级功能可用"
 
 msgid "All Audit Logs"
 msgstr "所有审计日志"
+
+msgid "All authorities"
+msgstr ""
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "所有可审计实体的更改都正在被记录。"
@@ -5263,6 +5269,9 @@ msgstr "完成进行中 — 请在生产车间重试"
 msgid "Completion Time"
 msgstr "完成时间"
 
+msgid "Component"
+msgstr ""
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "组件详情：{0}"
@@ -6093,6 +6102,9 @@ msgstr "无法加载相关文档。创建新文档前请刷新以避免重复。
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "无法加载提供商的维度目标 — 检查连接并重新加载。"
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr ""
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
@@ -9260,6 +9272,9 @@ msgstr "每行都确认其计费内容"
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr ""
+
 msgid "Every required action has already been added."
 msgstr "每个必需的操作已添加。"
 
@@ -9268,6 +9283,9 @@ msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
 
 msgid "Every row was imported successfully."
 msgstr "每一行都已成功导入。"
+
+msgid "Every tax code in use is mapped"
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
@@ -9319,6 +9337,9 @@ msgstr "已排除"
 
 msgid "Executive P&L"
 msgstr "执行损益表"
+
+msgid "Exempt Sales"
+msgstr ""
 
 msgid "Exemption Certificate"
 msgstr "豁免证书"
@@ -13067,6 +13088,9 @@ msgstr "生产受阻"
 msgid "Map accounts"
 msgstr "映射科目"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -13185,6 +13209,9 @@ msgstr "按代码匹配"
 
 msgid "Match by name"
 msgstr "按名称匹配"
+
+msgid "Match by rate"
+msgstr ""
 
 msgid "Match none"
 msgstr "不匹配任何条件"
@@ -13811,6 +13838,9 @@ msgstr "账面净值"
 msgid "Net Change"
 msgstr "净变化"
 
+msgid "Net Due"
+msgstr ""
+
 msgid "Net Income"
 msgstr "净收益"
 
@@ -14358,6 +14388,9 @@ msgstr "还无资产。添加租赁涵盖的每项资产及其付款。"
 msgid "No attachments."
 msgstr "没有附件。"
 
+msgid "No authority"
+msgstr ""
+
 msgid "No available filters"
 msgstr "没有可用的筛选器"
 
@@ -14749,6 +14782,9 @@ msgstr "未找到选项。"
 msgid "No options found."
 msgstr "未找到选项。"
 
+msgid "No other active tax codes"
+msgstr ""
+
 msgid "No other bins hold this item"
 msgstr "没有其他料箱存放此物料"
 
@@ -14968,6 +15004,9 @@ msgstr "还没有供应商"
 msgid "No sync operations yet"
 msgstr "还没有同步操作"
 
+msgid "No tax code"
+msgstr ""
+
 msgid "No tax registration for {unregistered}"
 msgstr ""
 
@@ -14994,6 +15033,9 @@ msgstr "还没有设备。添加本协议租赁的设备。"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr ""
 
 msgid "No unmapped values match a provider option name"
 msgstr "没有未映射的值与提供商选项名称匹配"
@@ -15637,6 +15679,9 @@ msgstr "打开子装配"
 
 msgid "Open task details"
 msgstr "打开任务详情"
+
+msgid "Open Tax Rates"
+msgstr ""
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "在结转日期打开账簿。启用会计是单向的。"
@@ -17212,6 +17257,9 @@ msgstr "属性"
 msgid "Property"
 msgstr "属性"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr ""
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "提议的匹配项，其中 Carbon 账户编号与提供商账户代码完全相等。"
 
@@ -17247,6 +17295,9 @@ msgstr "提供商账户"
 
 msgid "Provider option"
 msgstr "提供商选项"
+
+msgid "Provider rate"
+msgstr ""
 
 msgid "Provisional"
 msgstr "临时"
@@ -18089,6 +18140,9 @@ msgid "Recost {0}"
 msgstr "重新核算{0}的成本"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable Tax"
 msgstr ""
 
 msgid "Recoverable: {amount}"
@@ -20088,6 +20142,9 @@ msgstr "选择打印机"
 msgid "Select provider account"
 msgstr "选择提供商账户"
 
+msgid "Select provider rate"
+msgstr ""
+
 msgid "Select provider target"
 msgstr "选择提供商目标"
 
@@ -21985,17 +22042,32 @@ msgstr "税务账面价值"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax code"
+msgstr ""
+
 msgid "Tax Code"
 msgstr ""
 
 msgid "tax codes"
 msgstr ""
 
+msgid "Tax codes"
+msgstr ""
+
 msgid "Tax Codes"
+msgstr ""
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
 msgstr ""
 
 msgid "Tax codes, rates"
 msgstr "税码、税率"
+
+msgid "Tax Collected"
+msgstr ""
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr ""
 
 msgid "Tax Depreciation"
 msgstr "税务折旧"
@@ -22014,6 +22086,9 @@ msgstr "税号"
 
 msgid "Tax Information"
 msgstr "税务信息"
+
+msgid "Tax Liability"
+msgstr ""
 
 msgid "Tax liability for reverse-charge transactions"
 msgstr "反向征税交易的税务负债"
@@ -22038,6 +22113,9 @@ msgstr "税收百分比"
 
 msgid "Tax Percent"
 msgstr "税收百分比"
+
+msgid "Tax Rates"
+msgstr ""
 
 msgid "Tax Received"
 msgstr ""
@@ -22079,6 +22157,12 @@ msgid "Tax:"
 msgstr "税:"
 
 msgid "Taxable"
+msgstr ""
+
+msgid "Taxable Purchases"
+msgstr ""
+
+msgid "Taxable Sales"
 msgstr ""
 
 msgid "Taxes"
@@ -22922,6 +23006,9 @@ msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "提供商不提供维度目标。首先在提供商中启用该功能（例如跟踪类别、类跟踪或字段）。"
+
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr ""
 
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
@@ -24535,6 +24622,9 @@ msgstr "未映射的维度值"
 
 msgid "Unmapped Extracted Lines"
 msgstr "未映射的提取行"
+
+msgid "Unmapped tax codes"
+msgstr ""
 
 msgid "Unmapped values"
 msgstr "未映射的值"

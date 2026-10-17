@@ -9939,3 +9939,90 @@ export async function deleteTaxRegistration(
 ) {
   return client.from("taxRegistration").delete().eq("id", taxRegistrationId);
 }
+
+export type TaxLiabilityRow = {
+  taxAuthorityId: string | null;
+  authorityName: string | null;
+  componentName: string | null;
+  taxableSales: number;
+  exemptSales: number;
+  taxCollected: number;
+  taxablePurchases: number;
+  recoverableTax: number;
+  /** Collected less recoverable. */
+  netDue: number;
+};
+
+/**
+ * Tax collected and recoverable per authority and component, from the tax
+ * ledger of Posted journals dated in the range (spec "Tax Liability
+ * report"). Sales rows give the collected tax and the taxable and exempt
+ * sales; purchase rows give the recoverable tax. A line taxed by a bare
+ * percent (no code) has no authority or component.
+ */
+export async function getTaxLiability(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  {
+    startDate,
+    endDate,
+    taxAuthorityId
+  }: { startDate: string; endDate: string; taxAuthorityId?: string | null }
+): Promise<TaxLiabilityRow[]> {
+  const sumWhere = (source: "Sales" | "Purchase", column: string) =>
+    sql<number>`coalesce(sum(case when "taxLedger"."source" = ${source} then ${sql.ref(`taxLedger.${column}`)} else 0 end), 0)`;
+  let query = db
+    .selectFrom("taxLedger")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "taxLedger.journalId")
+        .onRef("journal.companyId", "=", "taxLedger.companyId")
+    )
+    .leftJoin("taxAuthority", (join) =>
+      join
+        .onRef("taxAuthority.id", "=", "taxLedger.taxAuthorityId")
+        .onRef("taxAuthority.companyId", "=", "taxLedger.companyId")
+    )
+    .select([
+      "taxLedger.taxAuthorityId",
+      "taxAuthority.name as authorityName",
+      "taxLedger.componentName",
+      sumWhere("Sales", "taxableAmount").as("taxableSales"),
+      sumWhere("Sales", "exemptAmount").as("exemptSales"),
+      sumWhere("Sales", "taxAmount").as("taxCollected"),
+      sumWhere("Purchase", "taxableAmount").as("taxablePurchases"),
+      sumWhere("Purchase", "recoverableAmount").as("recoverableTax")
+    ])
+    .where("taxLedger.companyId", "=", companyId)
+    .where("journal.status", "=", "Posted")
+    .where("taxLedger.postingDate", ">=", startDate)
+    .where("taxLedger.postingDate", "<=", endDate);
+  if (taxAuthorityId) {
+    query = query.where("taxLedger.taxAuthorityId", "=", taxAuthorityId);
+  }
+  const rows = await query
+    .groupBy([
+      "taxLedger.taxAuthorityId",
+      "taxAuthority.name",
+      "taxLedger.componentName"
+    ])
+    .orderBy("taxAuthority.name")
+    .orderBy("taxLedger.componentName")
+    .execute();
+
+  return rows.map((row) => {
+    const taxCollected = round(Number(row.taxCollected));
+    const recoverableTax = round(Number(row.recoverableTax));
+    return {
+      taxAuthorityId: row.taxAuthorityId,
+      authorityName: row.authorityName,
+      componentName: row.componentName,
+      taxableSales: round(Number(row.taxableSales)),
+      exemptSales: round(Number(row.exemptSales)),
+      taxCollected,
+      taxablePurchases: round(Number(row.taxablePurchases)),
+      recoverableTax,
+      netDue: round(taxCollected - recoverableTax)
+    };
+  });
+}

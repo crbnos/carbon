@@ -685,6 +685,9 @@ msgstr "{unitCount} इकाई"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {पहले # शेष आवश्यक खाता मैप करें।} other {पहले # शेष आवश्यक खातों को मैप करें।}}"
 
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} अपठित"
 
@@ -2324,6 +2327,9 @@ msgstr "सभी उन्नत विशेषताएं उपलब्ध
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
+
+msgid "All authorities"
+msgstr ""
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "सभी ऑडिट योग्य संस्थाओं में किए गए परिवर्तन रिकॉर्ड किए जा रहे हैं।"
@@ -5263,6 +5269,9 @@ msgstr "समापन प्रगति में है — शॉप फ्
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
 
+msgid "Component"
+msgstr ""
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "घटक विवरण: {0}"
@@ -6093,6 +6102,9 @@ msgstr "संबंधित दस्तावेज़ लोड नहीं
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr ""
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "कार्य पुनर्निर्धारित नहीं हो सका। कृपया पुनः प्रयास करें।"
@@ -9260,6 +9272,9 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr ""
+
 msgid "Every required action has already been added."
 msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
 
@@ -9268,6 +9283,9 @@ msgstr "अवधि को बंद करने से पहले प्र
 
 msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
+
+msgid "Every tax code in use is mapped"
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "प्रत्येक इकाई की एक दर है।"
@@ -9319,6 +9337,9 @@ msgstr "बहिष्कृत"
 
 msgid "Executive P&L"
 msgstr "कार्यकारी P&L"
+
+msgid "Exempt Sales"
+msgstr ""
 
 msgid "Exemption Certificate"
 msgstr "छूट प्रमाणपत्र"
@@ -13067,6 +13088,9 @@ msgstr "विनिर्माण अवरुद्ध है"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -13185,6 +13209,9 @@ msgstr "कोड से मेल खाएं"
 
 msgid "Match by name"
 msgstr "नाम से मेल खाएं"
+
+msgid "Match by rate"
+msgstr ""
 
 msgid "Match none"
 msgstr "कोई भी मेल न खाएं"
@@ -13811,6 +13838,9 @@ msgstr "शुद्ध बही मूल्य"
 msgid "Net Change"
 msgstr "शुद्ध परिवर्तन"
 
+msgid "Net Due"
+msgstr ""
+
 msgid "Net Income"
 msgstr "शुद्ध आय"
 
@@ -14358,6 +14388,9 @@ msgstr "अभी कोई संपत्ति नहीं है। पट�
 msgid "No attachments."
 msgstr "कोई अनुलग्नक नहीं।"
 
+msgid "No authority"
+msgstr ""
+
 msgid "No available filters"
 msgstr "कोई उपलब्ध फ़िल्टर नहीं"
 
@@ -14749,6 +14782,9 @@ msgstr "कोई विकल्प नहीं मिला।"
 msgid "No options found."
 msgstr "कोई विकल्प नहीं मिला।"
 
+msgid "No other active tax codes"
+msgstr ""
+
 msgid "No other bins hold this item"
 msgstr "कोई अन्य बिन इस आइटम को नहीं रखता"
 
@@ -14968,6 +15004,9 @@ msgstr "अभी तक कोई आपूर्तिकर्ता नह�
 msgid "No sync operations yet"
 msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
 
+msgid "No tax code"
+msgstr ""
+
 msgid "No tax registration for {unregistered}"
 msgstr ""
 
@@ -14994,6 +15033,9 @@ msgstr "अभी कोई इकाई नहीं। उन फ्लीट 
 
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr ""
 
 msgid "No unmapped values match a provider option name"
 msgstr "कोई भी अनमैप्ड मान प्रदाता विकल्प नाम से मेल नहीं खाता"
@@ -15637,6 +15679,9 @@ msgstr "उप-असेंबली खोलें"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
+
+msgid "Open Tax Rates"
+msgstr ""
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "कटऑवर तारीख पर खाता बहियाँ खोलें। लेखांकन सक्षम करना एक-तरफा है।"
@@ -17212,6 +17257,9 @@ msgstr "गुण"
 msgid "Property"
 msgstr "प्रॉपर्टी"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr ""
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "प्रस्तावित मेल जहां कार्बन खाता संख्या प्रदाता खाता कोड के बिल्कुल बराबर है।"
 
@@ -17247,6 +17295,9 @@ msgstr "प्रदाता खाता"
 
 msgid "Provider option"
 msgstr "प्रदाता विकल्प"
+
+msgid "Provider rate"
+msgstr ""
 
 msgid "Provisional"
 msgstr "अनंतिम"
@@ -18089,6 +18140,9 @@ msgid "Recost {0}"
 msgstr "{0} की लागत पुनः निर्धारित करें"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable Tax"
 msgstr ""
 
 msgid "Recoverable: {amount}"
@@ -20088,6 +20142,9 @@ msgstr "प्रिंटर चुनें"
 msgid "Select provider account"
 msgstr "प्रदाता खाता चुनें"
 
+msgid "Select provider rate"
+msgstr ""
+
 msgid "Select provider target"
 msgstr "प्रदाता लक्ष्य चुनें"
 
@@ -21985,17 +22042,32 @@ msgstr "कर बही मूल्य"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax code"
+msgstr ""
+
 msgid "Tax Code"
 msgstr ""
 
 msgid "tax codes"
 msgstr ""
 
+msgid "Tax codes"
+msgstr ""
+
 msgid "Tax Codes"
+msgstr ""
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
 msgstr ""
 
 msgid "Tax codes, rates"
 msgstr "कर कोड, दरें"
+
+msgid "Tax Collected"
+msgstr ""
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr ""
 
 msgid "Tax Depreciation"
 msgstr "कर मूल्यह्रास"
@@ -22014,6 +22086,9 @@ msgstr "टैक्स आईडी"
 
 msgid "Tax Information"
 msgstr "कर जानकारी"
+
+msgid "Tax Liability"
+msgstr ""
 
 msgid "Tax liability for reverse-charge transactions"
 msgstr "रिवर्स-चार्ज लेनदेन के लिए कर देयता"
@@ -22038,6 +22113,9 @@ msgstr "कर प्रतिशत"
 
 msgid "Tax Percent"
 msgstr "कर प्रतिशत"
+
+msgid "Tax Rates"
+msgstr ""
 
 msgid "Tax Received"
 msgstr ""
@@ -22079,6 +22157,12 @@ msgid "Tax:"
 msgstr "कर:"
 
 msgid "Taxable"
+msgstr ""
+
+msgid "Taxable Purchases"
+msgstr ""
+
+msgid "Taxable Sales"
 msgstr ""
 
 msgid "Taxes"
@@ -22922,6 +23006,9 @@ msgstr "प्रक्रियाएँ जो यह वर्क सें�
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"
+
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr ""
 
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
@@ -24535,6 +24622,9 @@ msgstr "अनमैप्ड आयाम मान"
 
 msgid "Unmapped Extracted Lines"
 msgstr "अनमैप किए गए निकाली गई लाइनें"
+
+msgid "Unmapped tax codes"
+msgstr ""
 
 msgid "Unmapped values"
 msgstr "अनमैप्ड मान"

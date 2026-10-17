@@ -60,7 +60,7 @@ Slice C — Provider mapping
 - [ ] Task 34: Update the accounting sync rule
 
 Slice D — Reporting and documents
-- [ ] Task 35: Build the Tax Liability report
+- [x] Task 35: Build the Tax Liability report
 - [ ] Task 36: Print the tax summary, VAT clause and registration on sales PDFs
 - [ ] Task 37: Move customers and suppliers from a bare percent to tax codes
 - [ ] Task 38: Update docs, glossary, rules and AGENTS.md

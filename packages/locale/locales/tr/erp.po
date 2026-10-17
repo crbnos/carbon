@@ -685,6 +685,9 @@ msgstr "{unitCount} adet"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Önce kalan # gerekli hesabı eşleyin.} other {Önce kalan # gerekli hesabı eşleyin.}}"
 
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} okunmamış"
 
@@ -2324,6 +2327,9 @@ msgstr "Tüm gelişmiş özellikler kullanılabilir"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Günlükleri"
+
+msgid "All authorities"
+msgstr ""
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "Denetlenebilir varlıklardaki tüm değişiklikler kaydediliyor."
@@ -5263,6 +5269,9 @@ msgstr "Tamamlama devam ediyor — Atölye'de yeniden deneyin"
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
 
+msgid "Component"
+msgstr ""
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "Bileşen ayrıntıları: {0}"
@@ -6093,6 +6102,9 @@ msgstr "İlgili belgeler yüklenemedi. Yinelemelerden kaçınmak için yeni bir 
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr ""
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
@@ -9260,6 +9272,9 @@ msgstr "Her satır faturaladığı şeyi muhasebeleştirir."
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr ""
+
 msgid "Every required action has already been added."
 msgstr "Gerekli olan tüm eylemler zaten eklendi."
 
@@ -9268,6 +9283,9 @@ msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmal�
 
 msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
+
+msgid "Every tax code in use is mapped"
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "Her adetin bir oranı vardır."
@@ -9319,6 +9337,9 @@ msgstr "Hariç Tutulan"
 
 msgid "Executive P&L"
 msgstr "Yönetici P&L"
+
+msgid "Exempt Sales"
+msgstr ""
 
 msgid "Exemption Certificate"
 msgstr "İstisnai Sertifika"
@@ -13067,6 +13088,9 @@ msgstr "üretim engellendi"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -13185,6 +13209,9 @@ msgstr "Koda göre eşleştir"
 
 msgid "Match by name"
 msgstr "Ada göre eşleştir"
+
+msgid "Match by rate"
+msgstr ""
 
 msgid "Match none"
 msgstr "Hiçbiriyle eşleşme"
@@ -13811,6 +13838,9 @@ msgstr "Net Defter Değeri"
 msgid "Net Change"
 msgstr "Net Değişim"
 
+msgid "Net Due"
+msgstr ""
+
 msgid "Net Income"
 msgstr "Net Gelir"
 
@@ -14358,6 +14388,9 @@ msgstr "Henüz varlık yok. Kiralamadaki her varlığı ve bunun için ödediği
 msgid "No attachments."
 msgstr "Ek ekli değil."
 
+msgid "No authority"
+msgstr ""
+
 msgid "No available filters"
 msgstr "Kullanılabilir filtre yok"
 
@@ -14749,6 +14782,9 @@ msgstr "Hiç seçenek bulunamadı."
 msgid "No options found."
 msgstr "Seçenek bulunamadı."
 
+msgid "No other active tax codes"
+msgstr ""
+
 msgid "No other bins hold this item"
 msgstr "Bu stok kartını tutan başka göz yok"
 
@@ -14968,6 +15004,9 @@ msgstr "Henüz tedarikçi yok"
 msgid "No sync operations yet"
 msgstr "Henüz senkronizasyon operasyonu yok"
 
+msgid "No tax code"
+msgstr ""
+
 msgid "No tax registration for {unregistered}"
 msgstr ""
 
@@ -14994,6 +15033,9 @@ msgstr "Henüz adet yok. Bu anlaşmanın kiraladığı filo adetlerini ekleyin."
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr ""
 
 msgid "No unmapped values match a provider option name"
 msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşleşmiyor"
@@ -15637,6 +15679,9 @@ msgstr "Alt Montajı Aç"
 
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
+
+msgid "Open Tax Rates"
+msgstr ""
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Cutover tarihinde defteri-kebiri açınız. Muhasebeyi etkinleştirmek geri dönüşsüzdür."
@@ -17212,6 +17257,9 @@ msgstr "Özellikler"
 msgid "Property"
 msgstr "Özellik"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr ""
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Carbon hesap numarasının sağlayıcı hesap koduyla tam olarak eşleştiği önerilen eşleşmeler."
 
@@ -17247,6 +17295,9 @@ msgstr "Sağlayıcı hesabı"
 
 msgid "Provider option"
 msgstr "Sağlayıcı seçeneği"
+
+msgid "Provider rate"
+msgstr ""
 
 msgid "Provisional"
 msgstr "Geçici"
@@ -18089,6 +18140,9 @@ msgid "Recost {0}"
 msgstr "{0} için Maliyeti Yeniden Hesapla"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable Tax"
 msgstr ""
 
 msgid "Recoverable: {amount}"
@@ -20088,6 +20142,9 @@ msgstr "Yazıcı Seçin"
 msgid "Select provider account"
 msgstr "Sağlayıcı hesabı seç"
 
+msgid "Select provider rate"
+msgstr ""
+
 msgid "Select provider target"
 msgstr "Sağlayıcı hedefini seç"
 
@@ -21985,17 +22042,32 @@ msgstr "Vergi Defter değeri"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax code"
+msgstr ""
+
 msgid "Tax Code"
 msgstr ""
 
 msgid "tax codes"
 msgstr ""
 
+msgid "Tax codes"
+msgstr ""
+
 msgid "Tax Codes"
+msgstr ""
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
 msgstr ""
 
 msgid "Tax codes, rates"
 msgstr "Vergi kodları, oranları"
+
+msgid "Tax Collected"
+msgstr ""
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr ""
 
 msgid "Tax Depreciation"
 msgstr "Vergi Amortisman"
@@ -22014,6 +22086,9 @@ msgstr "Vergi Kimlik Numarası"
 
 msgid "Tax Information"
 msgstr "Vergi Bilgileri"
+
+msgid "Tax Liability"
+msgstr ""
 
 msgid "Tax liability for reverse-charge transactions"
 msgstr "Ters Muhasebeleştirme İşlemleri için Vergi Yükümlülüğü"
@@ -22038,6 +22113,9 @@ msgstr "Vergi yüzdesi"
 
 msgid "Tax Percent"
 msgstr "Vergi Yüzdesi"
+
+msgid "Tax Rates"
+msgstr ""
 
 msgid "Tax Received"
 msgstr ""
@@ -22079,6 +22157,12 @@ msgid "Tax:"
 msgstr "Vergi:"
 
 msgid "Taxable"
+msgstr ""
+
+msgid "Taxable Purchases"
+msgstr ""
+
+msgid "Taxable Sales"
 msgstr ""
 
 msgid "Taxes"
@@ -22922,6 +23006,9 @@ msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zaman
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etkinleştirin (örneğin, izleme kategorileri, sınıf izleme veya alanlar)."
+
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr ""
 
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
@@ -24535,6 +24622,9 @@ msgstr "Eşlenmemiş boyut değerleri"
 
 msgid "Unmapped Extracted Lines"
 msgstr "Eşlenmemiş Çıkarılan Satırlar"
+
+msgid "Unmapped tax codes"
+msgstr ""
 
 msgid "Unmapped values"
 msgstr "Eşlenmemiş değerler"

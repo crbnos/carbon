@@ -685,6 +685,9 @@ msgstr "{unitCount} единиц"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Сначала сопоставьте # оставшийся требуемый счет.} other {Сначала сопоставьте # оставшиеся требуемые счета.}}"
 
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} непрочитанных"
 
@@ -2324,6 +2327,9 @@ msgstr "Все расширенные функции доступны"
 
 msgid "All Audit Logs"
 msgstr "Все журналы аудита"
+
+msgid "All authorities"
+msgstr ""
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "Все изменения в аудируемых сущностях записываются."
@@ -5263,6 +5269,9 @@ msgstr "Завершение выполняется — повторите по�
 msgid "Completion Time"
 msgstr "Время завершения"
 
+msgid "Component"
+msgstr ""
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "Сведения о компоненте: {0}"
@@ -6093,6 +6102,9 @@ msgstr "Не удалось загрузить связанные докумен
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Не удалось загрузить целевые значения измерений поставщика — проверьте соединение и перезагрузите."
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr ""
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Не удалось перепланировать задание. Пожалуйста, попробуйте еще раз."
@@ -9260,6 +9272,9 @@ msgstr "Каждая строка признает выставленную су
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr ""
+
 msgid "Every required action has already been added."
 msgstr "Все требуемые действия уже добавлены."
 
@@ -9268,6 +9283,9 @@ msgstr "Каждая требуемая задача должна быть Го�
 
 msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
+
+msgid "Every tax code in use is mapped"
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
@@ -9319,6 +9337,9 @@ msgstr "Исключено"
 
 msgid "Executive P&L"
 msgstr "П&У для руководства"
+
+msgid "Exempt Sales"
+msgstr ""
 
 msgid "Exemption Certificate"
 msgstr "Сертификат освобождения"
@@ -13067,6 +13088,9 @@ msgstr "Производство заблокировано"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета-фактуры"
 
@@ -13185,6 +13209,9 @@ msgstr "Совпадение по коду"
 
 msgid "Match by name"
 msgstr "Совпадение по имени"
+
+msgid "Match by rate"
+msgstr ""
 
 msgid "Match none"
 msgstr "Не совпадает ни одно"
@@ -13811,6 +13838,9 @@ msgstr "Остаточная стоимость"
 msgid "Net Change"
 msgstr "Чистое изменение"
 
+msgid "Net Due"
+msgstr ""
+
 msgid "Net Income"
 msgstr "Чистый доход"
 
@@ -14358,6 +14388,9 @@ msgstr "Нет активов. Добавьте каждый актив, на к
 msgid "No attachments."
 msgstr "Нет вложений."
 
+msgid "No authority"
+msgstr ""
+
 msgid "No available filters"
 msgstr "Нет доступных фильтров"
 
@@ -14749,6 +14782,9 @@ msgstr "Опция не найдена."
 msgid "No options found."
 msgstr "Нет доступных вариантов."
 
+msgid "No other active tax codes"
+msgstr ""
+
 msgid "No other bins hold this item"
 msgstr "Ни одна другая ячейка не содержит эту номенклатуру"
 
@@ -14968,6 +15004,9 @@ msgstr "Поставщиков еще нет"
 msgid "No sync operations yet"
 msgstr "Операции синхронизации еще не выполнены"
 
+msgid "No tax code"
+msgstr ""
+
 msgid "No tax registration for {unregistered}"
 msgstr ""
 
@@ -14994,6 +15033,9 @@ msgstr "Еще нет единиц. Добавьте единицы флота, 
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr ""
 
 msgid "No unmapped values match a provider option name"
 msgstr "Никакие неотображенные значения не совпадают с названием параметра провайдера"
@@ -15637,6 +15679,9 @@ msgstr "Открытая подсборка"
 
 msgid "Open task details"
 msgstr "Открыть детали задачи"
+
+msgid "Open Tax Rates"
+msgstr ""
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Открыть учет на дату переходу. Включение бухгалтерии необратимо."
@@ -17212,6 +17257,9 @@ msgstr "Свойства"
 msgid "Property"
 msgstr "Свойство"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr ""
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Предложенные совпадения, где номер счета Carbon точно совпадает с кодом счета системы."
 
@@ -17247,6 +17295,9 @@ msgstr "Счет провайдера"
 
 msgid "Provider option"
 msgstr "Параметр провайдера"
+
+msgid "Provider rate"
+msgstr ""
 
 msgid "Provisional"
 msgstr "Предварительный"
@@ -18089,6 +18140,9 @@ msgid "Recost {0}"
 msgstr "Переоценить {0}"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable Tax"
 msgstr ""
 
 msgid "Recoverable: {amount}"
@@ -20088,6 +20142,9 @@ msgstr "Выберите принтер"
 msgid "Select provider account"
 msgstr "Выбрать счет провайдера"
 
+msgid "Select provider rate"
+msgstr ""
+
 msgid "Select provider target"
 msgstr "Выбрать цель провайдера"
 
@@ -21985,17 +22042,32 @@ msgstr "Налоговая балансовая стоимость"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax code"
+msgstr ""
+
 msgid "Tax Code"
 msgstr ""
 
 msgid "tax codes"
 msgstr ""
 
+msgid "Tax codes"
+msgstr ""
+
 msgid "Tax Codes"
+msgstr ""
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
 msgstr ""
 
 msgid "Tax codes, rates"
 msgstr "Налоговые коды, ставки"
+
+msgid "Tax Collected"
+msgstr ""
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr ""
 
 msgid "Tax Depreciation"
 msgstr "Налоговая амортизация"
@@ -22014,6 +22086,9 @@ msgstr "Налоговый ID"
 
 msgid "Tax Information"
 msgstr "Налоговая информация"
+
+msgid "Tax Liability"
+msgstr ""
 
 msgid "Tax liability for reverse-charge transactions"
 msgstr "Налоговое обязательство по транзакциям с обратным начислением"
@@ -22038,6 +22113,9 @@ msgstr "Налоговый процент"
 
 msgid "Tax Percent"
 msgstr "Процент налога"
+
+msgid "Tax Rates"
+msgstr ""
 
 msgid "Tax Received"
 msgstr ""
@@ -22079,6 +22157,12 @@ msgid "Tax:"
 msgstr "Налог:"
 
 msgid "Taxable"
+msgstr ""
+
+msgid "Taxable Purchases"
+msgstr ""
+
+msgid "Taxable Sales"
 msgstr ""
 
 msgid "Taxes"
@@ -22922,6 +23006,9 @@ msgstr "Процессы, которые может выполнять этот 
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Поставщик не предлагает целевые показатели по измерениям. Сначала включите функцию у поставщика (например, категории отслеживания, отслеживание класса или поля)."
+
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr ""
 
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
@@ -24535,6 +24622,9 @@ msgstr "Неотображенные значения измерений"
 
 msgid "Unmapped Extracted Lines"
 msgstr "Неотображённые извлечённые строки"
+
+msgid "Unmapped tax codes"
+msgstr ""
 
 msgid "Unmapped values"
 msgstr "Неотображенные значения"

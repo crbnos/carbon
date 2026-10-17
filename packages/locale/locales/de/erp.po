@@ -685,6 +685,9 @@ msgstr "{unitCount} Einheiten"
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Ordnen Sie zunächst das # verbleibende erforderliche Konto zu.} other {Ordnen Sie zunächst die # verbleibenden erforderlichen Konten zu.}}"
 
+msgid "{unmappedTaxCodeCount, plural, one {Map the # remaining tax code first.} other {Map the # remaining tax codes first.}}"
+msgstr ""
+
 msgid "{unread} unread"
 msgstr "{unread} ungelesen"
 
@@ -2324,6 +2327,9 @@ msgstr "Alle erweiterten Funktionen verfügbar"
 
 msgid "All Audit Logs"
 msgstr "Alle Änderungsprotokolle"
+
+msgid "All authorities"
+msgstr ""
 
 msgid "All changes to auditable entities are being recorded."
 msgstr "Alle Änderungen an prüfbaren Entitäten werden aufgezeichnet."
@@ -5263,6 +5269,9 @@ msgstr "Fertigstellung in Bearbeitung – versuchen Sie es in der Werkstatt erne
 msgid "Completion Time"
 msgstr "Abschlusszeit"
 
+msgid "Component"
+msgstr ""
+
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "Komponentendetails: {0}"
@@ -6093,6 +6102,9 @@ msgstr "Konnte zugehörige Dokumente nicht laden. Aktualisieren Sie den Bereich,
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Die Dimensionsziele des Providers konnten nicht geladen werden — überprüfen Sie die Verbindung und laden Sie neu."
+
+msgid "Couldn't load the provider's tax rates — check the connection and reload."
+msgstr ""
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Der Auftrag konnte nicht umgeplant werden. Bitte versuchen Sie es erneut."
@@ -9260,6 +9272,9 @@ msgstr "Jede Position verbucht, was sie fakturiert."
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
 
+msgid "Every other active tax code. Pick a different provider rate to re-map."
+msgstr ""
+
 msgid "Every required action has already been added."
 msgstr "Jede erforderliche Aktion wurde bereits hinzugefügt."
 
@@ -9268,6 +9283,9 @@ msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevo
 
 msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
+
+msgid "Every tax code in use is mapped"
+msgstr ""
 
 msgid "Every unit has a rate."
 msgstr "Jede Einheit hat einen Satz."
@@ -9319,6 +9337,9 @@ msgstr "Ausgeschlossen"
 
 msgid "Executive P&L"
 msgstr "Geschäftsführungs-Gewinn- und Verlustrechnung"
+
+msgid "Exempt Sales"
+msgstr ""
 
 msgid "Exemption Certificate"
 msgstr "Ausnahmezertifikat"
@@ -13067,6 +13088,9 @@ msgstr "Fertigung ist blockiert"
 msgid "Map accounts"
 msgstr "Konten zuordnen"
 
+msgid "Map each Carbon tax code to a provider tax rate, once for sales and once for purchases. Pushed documents send Carbon's tax amount with the mapped rate."
+msgstr ""
+
 msgid "Map Extracted Invoice Lines"
 msgstr "Extrahierte Rechnungspositionen zuordnen"
 
@@ -13185,6 +13209,9 @@ msgstr "Nach Code zuordnen"
 
 msgid "Match by name"
 msgstr "Nach Namen abgleichen"
+
+msgid "Match by rate"
+msgstr ""
 
 msgid "Match none"
 msgstr "Keine Übereinstimmung"
@@ -13811,6 +13838,9 @@ msgstr "Restbuchwert"
 msgid "Net Change"
 msgstr "Nettoänderung"
 
+msgid "Net Due"
+msgstr ""
+
 msgid "Net Income"
 msgstr "Nettoeinkommen"
 
@@ -14358,6 +14388,9 @@ msgstr "Noch keine Anlagen. Fügen Sie jede Anlage hinzu, die das Leasing abdeck
 msgid "No attachments."
 msgstr "Keine Anhänge."
 
+msgid "No authority"
+msgstr ""
+
 msgid "No available filters"
 msgstr "Keine verfügbaren Filter"
 
@@ -14749,6 +14782,9 @@ msgstr "Keine Option gefunden."
 msgid "No options found."
 msgstr "Keine Optionen gefunden."
 
+msgid "No other active tax codes"
+msgstr ""
+
 msgid "No other bins hold this item"
 msgstr "Keine anderen Lagerplätze enthalten diesen Artikel"
 
@@ -14968,6 +15004,9 @@ msgstr "Noch keine Lieferanten"
 msgid "No sync operations yet"
 msgstr "Noch keine Synchronisierungsvorgänge"
 
+msgid "No tax code"
+msgstr ""
+
 msgid "No tax registration for {unregistered}"
 msgstr ""
 
@@ -14994,6 +15033,9 @@ msgstr "Noch keine Einheiten. Fügen Sie die Flotteneinheiten hinzu, die diese V
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Keine nicht zugeordneten Konten entsprechen einem Provider-Code"
+
+msgid "No unmapped tax code matches exactly one provider rate"
+msgstr ""
 
 msgid "No unmapped values match a provider option name"
 msgstr "Keine nicht zugeordneten Werte entsprechen einem Provider-Optionsnamen"
@@ -15637,6 +15679,9 @@ msgstr "Baugruppe öffnen"
 
 msgid "Open task details"
 msgstr "Aufgabendetails öffnen"
+
+msgid "Open Tax Rates"
+msgstr ""
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Starten Sie die Buchhaltung zum Übergangsdatum. Die Aktivierung der Buchhaltung ist nicht reversibel."
@@ -17212,6 +17257,9 @@ msgstr "Eigenschaften"
 msgid "Property"
 msgstr "Eigenschaft"
 
+msgid "Proposed matches where exactly one provider rate has the tax code's percentage, for sales and for purchases."
+msgstr ""
+
 msgid "Proposed matches where the Carbon account number equals the provider account code exactly."
 msgstr "Vorgeschlagene Zuordnungen, bei denen die Carbon-Kontonummer genau dem Provider-Accountcode entspricht."
 
@@ -17247,6 +17295,9 @@ msgstr "Anbieterkonto"
 
 msgid "Provider option"
 msgstr "Provider-Option"
+
+msgid "Provider rate"
+msgstr ""
 
 msgid "Provisional"
 msgstr "Vorläufig"
@@ -18089,6 +18140,9 @@ msgid "Recost {0}"
 msgstr "Neu bewerten {0}"
 
 msgid "Recoverable"
+msgstr ""
+
+msgid "Recoverable Tax"
 msgstr ""
 
 msgid "Recoverable: {amount}"
@@ -20088,6 +20142,9 @@ msgstr "Drucker auswählen"
 msgid "Select provider account"
 msgstr "Anbieterkonto auswählen"
 
+msgid "Select provider rate"
+msgstr ""
+
 msgid "Select provider target"
 msgstr "Provider-Ziel wählen"
 
@@ -21985,17 +22042,32 @@ msgstr "Steuerlicher Buchwert"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax code"
+msgstr ""
+
 msgid "Tax Code"
 msgstr ""
 
 msgid "tax codes"
 msgstr ""
 
+msgid "Tax codes"
+msgstr ""
+
 msgid "Tax Codes"
+msgstr ""
+
+msgid "Tax codes used on customers, suppliers or documents with no provider rate for that use. Sync stays off until they are mapped."
 msgstr ""
 
 msgid "Tax codes, rates"
 msgstr "Steuercodes, Sätze"
+
+msgid "Tax Collected"
+msgstr ""
+
+msgid "Tax collected and recoverable by authority, and the net due"
+msgstr ""
 
 msgid "Tax Depreciation"
 msgstr "Steuerabschreibung"
@@ -22014,6 +22086,9 @@ msgstr "Steuernummer"
 
 msgid "Tax Information"
 msgstr "Steuerinformationen"
+
+msgid "Tax Liability"
+msgstr ""
 
 msgid "Tax liability for reverse-charge transactions"
 msgstr "Steuerschuld für Reverse-Charge-Transaktionen"
@@ -22038,6 +22113,9 @@ msgstr "Steuerprozentsatz"
 
 msgid "Tax Percent"
 msgstr "Steuerprozentsatz"
+
+msgid "Tax Rates"
+msgstr ""
 
 msgid "Tax Received"
 msgstr ""
@@ -22079,6 +22157,12 @@ msgid "Tax:"
 msgstr "Steuern:"
 
 msgid "Taxable"
+msgstr ""
+
+msgid "Taxable Purchases"
+msgstr ""
+
+msgid "Taxable Sales"
 msgstr ""
 
 msgid "Taxes"
@@ -22922,6 +23006,9 @@ msgstr "Die Verfahren, die dieser Arbeitsplatz ausführen kann; erscheint in Ver
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Der Provider bietet keine Dimensionsziele. Aktivieren Sie die Funktion zuerst beim Provider (z. B. Tracking-Kategorien, Klassenverfolgung oder Felder)."
+
+msgid "The provider returned no tax rates — check the connection and reload."
+msgstr ""
 
 #. placeholder {0}: formatter.format(invoicedOption)
 msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
@@ -24535,6 +24622,9 @@ msgstr "Nicht zugeordnete Dimensionswerte"
 
 msgid "Unmapped Extracted Lines"
 msgstr "Nicht zugeordnete extrahierte Zeilen"
+
+msgid "Unmapped tax codes"
+msgstr ""
 
 msgid "Unmapped values"
 msgstr "Nicht zugeordnete Werte"

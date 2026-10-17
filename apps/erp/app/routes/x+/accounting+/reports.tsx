@@ -174,6 +174,15 @@ export default function ReportsIndexRoute() {
         defaultPinned: true
       },
       {
+        key: "tax-liability",
+        name: t`Tax Liability`,
+        description: t`Tax collected and recoverable by authority, and the net due`,
+        to: path.to.taxLiability,
+        icon: LuFileSpreadsheet,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
         key: "trial-balance",
         name: t`Trial Balance`,
         description: t`Account balances with debits and credits`,

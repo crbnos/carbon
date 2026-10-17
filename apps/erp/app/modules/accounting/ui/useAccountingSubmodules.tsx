@@ -148,6 +148,12 @@ export default function useAccountingSubmodules() {
             to: path.to.taxRegistrations,
             role: "employee",
             icon: <LuIdCard />
+          },
+          {
+            name: t`Tax Liability`,
+            to: path.to.taxLiability,
+            role: "employee",
+            icon: <LuFileSpreadsheet />
           }
         ]
       },
