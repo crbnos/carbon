@@ -1161,7 +1161,9 @@ export function decideLineTax(facts: {
     const components = effectiveComponents(code, facts.date);
     return {
       taxCodeId: code.id,
-      taxPercent: effectiveTaxPercent(components),
+      // A stored rate, at internal scale: summing components leaves float
+      // noise (0.15000000000000002).
+      taxPercent: round(effectiveTaxPercent(components)),
       components,
       exempt: false,
       exemptionReason: null
@@ -1219,5 +1221,5 @@ export function toTaxCodeInput(row: TaxCodeRow): TaxCodeInput {
 
 /** A code's combined rate on `date`. */
 export function taxCodeRate(code: TaxCodeInput, date: string): number {
-  return effectiveTaxPercent(effectiveComponents(code, date));
+  return round(effectiveTaxPercent(effectiveComponents(code, date)));
 }

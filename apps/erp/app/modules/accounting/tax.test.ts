@@ -112,6 +112,20 @@ describe("decideLineTax", () => {
     expect(decision.components).toHaveLength(2);
   });
 
+  it("stores the summed rate at internal scale, without float noise", () => {
+    const code: TaxCodeInput = {
+      ...austin,
+      components: [
+        component({ id: "a", taxPercent: 0.1 }),
+        component({ id: "b", taxPercent: 0.05 })
+      ]
+    };
+    expect(decideLineTax({ ...facts, partyTaxCode: code }).taxPercent).toBe(
+      0.15
+    );
+    expect(taxCodeRate(code, facts.date)).toBe(0.15);
+  });
+
   it("falls back to the party's bare percent when there is no code", () => {
     const decision = decideLineTax(facts);
     expect(decision).toMatchObject({
