@@ -70,9 +70,9 @@ To change a rate, set `expirationDate` on the old component and add a new row. T
 
 Carbon removed the posting-group matrix on purpose (`20260229000000_drop-posting-groups.sql`, lesson "Posting-group-style matrices are a rejected pattern"). Tax follows the same rule: flat assignment with an override, as Xero does.
 
-- `customer.taxCodeId` is the customer's default.
+- `customerTax.taxCodeId` is the customer's default. `customerTax` is the 1:1 tax record that already holds `taxExempt`, and the customer's Tax card edits it.
 - `customerLocation.taxCodeId` overrides it for that ship-to. `salesInvoiceShipment.customerLocationId` already exists, so the invoice knows its ship-to.
-- `supplier.taxCodeId` defaults purchase lines. The supplier's invoice still decides the amount.
+- `supplierTax.taxCodeId` defaults purchase lines. The supplier's invoice still decides the amount.
 - `item.taxable`, default true. A non-taxable item gets zero tax and an exempt-base ledger row.
 - A line can override the code. The audit log records the old and new values.
 
@@ -80,11 +80,11 @@ Carbon removed the posting-group matrix on purpose (`20260229000000_drop-posting
 
 1. If `customerTax.taxExempt` is true, return zero tax and the exemption reason.
 2. If `item.taxable` is false, return zero tax with no reason.
-3. Take `customerLocation.taxCodeId` for the ship-to, else `customer.taxCodeId`.
+3. Take `customerLocation.taxCodeId` for the ship-to, else `customerTax.taxCodeId`.
 4. If there is a code, return its effective components and rate.
 5. If there is no code, return `customer.taxPercent`, as today.
 
-A purchase line uses `supplier.taxCodeId`, else `supplier.taxPercent`.
+A purchase line uses `supplierTax.taxCodeId`, else `supplier.taxPercent`.
 
 When a user creates or edits a customer, a location or a supplier, Carbon suggests active codes whose `countryId` and `state` match the address. The user confirms. A document never reads the address to pick a code, so a posted line's tax always traces to two fields.
 
@@ -127,11 +127,11 @@ The defaults adopt Odoo's names (grill 2). The user rejected "input tax" and "ou
 
 | Default column | Today's name | Seeded account (new companies) | Class | Posted by |
 |---|---|---|---|---|
-| `taxReceivedAccount` | `salesTaxPayableAccount` | 2210 Tax Received | Liability | sales invoice tax, memo tax unwind |
-| `taxPaidAccount` | `purchaseTaxPayableAccount` | 1310 Tax Paid | Asset (current) | recoverable purchase tax |
+| `taxReceivedAccount` | `salesTaxPayableAccount` | 2210 Tax Received (renamed from Sales Tax Payable) | Liability | sales invoice tax, memo tax unwind |
+| `taxPaidAccount` | `purchaseTaxPayableAccount` | 1170 Tax Paid (replaces 2220 Purchase Tax Payable), under `receivables` | Asset (current) | recoverable purchase tax |
 | `reverseChargeSalesTaxPayableAccount` | unchanged | 2230 Reverse Charge Sales Tax | Liability | reverse charge and use tax accruals |
-| `taxPayableAccount` | new (Phase 2) | 2520 Tax Payable | Liability | the settlement, when the company owes |
-| `taxReceivableAccount` | new (Phase 2) | 1320 Tax Receivable | Asset (current) | the settlement, when the authority owes |
+| `taxPayableAccount` | new (Phase 2) | 2240 Tax Payable, under `tax-liabilities` | Liability | the settlement, when the company owes |
+| `taxReceivableAccount` | new (Phase 2) | 1180 Tax Receivable, under `receivables` | Asset (current) | the settlement, when the authority owes |
 
 The migration renames the two columns. It does not rename or reclassify an existing company's accounts. To do that, it would have to find them by number or name, which the lesson "Never resolve a control account by number/name" forbids. A company that keeps one VAT control account points `taxReceivedAccount` and `taxPaidAccount` at the same account. Each new FK to `account` is `ON DELETE RESTRICT` and gets a `REFERENCE_POLICY` entry in `account-import.ts`.
 
@@ -241,7 +241,7 @@ The connector lives in `packages/ee` and plugs in behind `resolveLineTaxes`, cho
 | Decision | Choice | Rationale |
 |---|---|---|
 | One model or two | One: `taxCode` + components covers VAT, GST and stacked US rates | Odoo, Xero and Avalara use one model. Business Central's VAT / sales-tax split is legacy. One resolver, one ledger, one report. |
-| Determination | Direct assignment (location → customer; supplier), `item.taxable`, line override. No matrix. | Carbon removed the posting-group matrix (lesson). Xero's per-contact default plus override is the proven small-business model. |
+| Determination | Direct assignment (location → `customerTax`; `supplierTax`), `item.taxable`, line override. No matrix. | Carbon removed the posting-group matrix (lesson). Xero's per-contact default plus override is the proven small-business model. |
 | Addresses | Address fields on the code drive suggestions only | A document's tax always traces to two fields. Editing an address never changes posted tax. |
 | Rate on lines | Keep `taxPercent`, set by the resolver. Add nullable `taxCodeId`. | Views, PDFs, Stripe and provider components read `taxPercent` today. NULL `taxCodeId` means a legacy line. |
 | Recoverability | `recoverablePercent` (0–1) per component, default 0 | Grill 1. Business Central, Acumatica and Odoo. One code covers partial recovery. |
@@ -267,7 +267,7 @@ The connector lives in `packages/ee` and plugs in behind `resolveLineTaxes`, cho
 | Avalara | Behind `resolveLineTaxes`, in `packages/ee` | NetSuite SuiteTax plug-in pattern and Avalara's ERP guide. Integrations live in `packages/ee`. |
 | Multi-tenancy (heuristic 1) | Every new table: `companyId`, composite PK `("id", "companyId")`, `id('prefix')`, audit columns; child FKs on the composite | House convention. Lesson "Single-column FKs on multi-tenant children accept cross-tenant ids". |
 | Service shape (heuristic 2) | New functions in `accounting.service.ts` / `accounting.models.ts`, `(client, companyId, …)` → `{data, error}` | One service file per module. Tax is accounting-owned, as payment terms and dimensions are. Provider code stays in `packages/ee/src/accounting`. |
-| RLS (heuristic 3) | Four policies per table: SELECT for employees of the company, writes with `accounting_*` permissions | Same as `dimension`. `taxLedger` writes come from server functions with explicit `companyId`. |
+| RLS (heuristic 3) | One rule per table in `packages/database/src/authz/manifest.ts`: `company("accounting")` for config tables (read also for `sales_view` and `purchasing_view`, as `paymentTerm`); `taxLedger` denies API writes. Shipped with `pnpm --filter @carbon/database authz migration`. No `CREATE POLICY` in a migration. | `.claude/rules/authz-manifest.md`. `taxLedger` writes come from server functions with explicit `companyId`. |
 | Permissions (heuristic 4) | Tax routes `view/update: "accounting"`; line resolution inside the document's own permission | Same as payment terms and dimensions. |
 | Forms (heuristic 5) | `ValidatedForm` + `validator(taxCodeValidator)` + route action; components edited inline like `dimensionValues` | The `DimensionForm` sibling. |
 | Module layout (heuristic 6) | No new module. `accounting` module, `ui/Tax/`, routes `x+/accounting+/tax-*` | Tax configuration is accounting configuration. |
@@ -275,15 +275,15 @@ The connector lives in `packages/ee` and plugs in behind `resolveLineTaxes`, cho
 
 ## Data Model Changes
 
-One idempotent Phase 1 migration (`pnpm db:migrate:new multi-jurisdiction-tax`) and one Phase 2 migration. Run `pnpm run generate:types` after each. Every table below also gets the audit columns, an index on `companyId` and on each FK, and the four RLS policies. The sketch leaves them out.
+One idempotent Phase 1 migration (`pnpm db:migrate:new multi-jurisdiction-tax`) and one Phase 2 migration. Run `pnpm run generate:types` after each. Every table below also gets the audit columns and an index on `companyId` and on each FK. RLS rules go in the authz manifest, not in the migration. The sketch leaves them out.
 
 ```mermaid
 erDiagram
     taxAuthority ||--o{ taxCodeComponent : "collects"
     taxCode ||--|{ taxCodeComponent : "has"
-    taxCode ||--o{ customer : "default for"
+    taxCode ||--o{ customerTax : "default for"
     taxCode ||--o{ customerLocation : "override for"
-    taxCode ||--o{ supplier : "default for"
+    taxCode ||--o{ supplierTax : "default for"
     taxCode ||--o{ taxLedger : "snapshot in"
     taxCodeComponent ||--o{ taxLedger : "snapshot in"
     taxReturn ||--o{ taxLedger : "stamps"
@@ -418,9 +418,9 @@ ALTER TABLE "accountDefault" RENAME COLUMN "purchaseTaxPayableAccount" TO "taxPa
 
 -- Phase 1: additions (nullable or defaulted to today's behavior)
 ALTER TABLE "item"                    ADD COLUMN "taxable" BOOLEAN NOT NULL DEFAULT TRUE;
-ALTER TABLE "customer"                ADD COLUMN "taxCodeId" TEXT;
+ALTER TABLE "customerTax"             ADD COLUMN "taxCodeId" TEXT;
 ALTER TABLE "customerLocation"        ADD COLUMN "taxCodeId" TEXT;
-ALTER TABLE "supplier"                ADD COLUMN "taxCodeId" TEXT;
+ALTER TABLE "supplierTax"             ADD COLUMN "taxCodeId" TEXT;
 ALTER TABLE "quoteLine"               ADD COLUMN "taxCodeId" TEXT;
 ALTER TABLE "salesOrderLine"          ADD COLUMN "taxCodeId" TEXT;
 ALTER TABLE "salesInvoiceLine"        ADD COLUMN "taxCodeId" TEXT;
@@ -439,7 +439,7 @@ ALTER TABLE "accountDefault" ADD COLUMN "taxPayableAccount" TEXT;     -- require
 ALTER TABLE "accountDefault" ADD COLUMN "taxReceivableAccount" TEXT;
 ```
 
-Views that change: `salesInvoices` (newest `20261006221401`), `purchaseInvoices` (newest `20260916143022`), `salesInvoiceLines`, `purchaseInvoiceLines` (newest `20261011163211`), `customers` and `suppliers` (newest `20260521124731`), `quotes`, `salesOrders`. Each is recreated with DROP + `SELECT *`, forked from its newest definition, keeping `security_invoker`.
+Views that change: `salesInvoices` (newest `20261006221401`), `purchaseInvoices` (newest `20260916143022`), `salesInvoiceLines`, `purchaseInvoiceLines` (newest `20261011163211`), `salesOrderLines` (newest `20261006220201`), `quoteLines` (newest `20260811123619`), `purchaseOrderLines` and `supplierQuoteLines` (newest `20260811123616`). The line views select `table.*`, which Postgres expands when the view is created, so each must be recreated to show `taxCodeId`. Each is recreated with DROP + `SELECT *`, forked from its newest definition, keeping `security_invoker`.
 
 Platform surfaces:
 
@@ -499,7 +499,7 @@ In `packages/ee/src/accounting/`:
   - Tax Liability: the report, with a date range, an authority filter and CSV export.
   - Tax Returns (Phase 2): the list and the detail, with period, layout, live box preview, Finalize and Reopen.
 - **Accounting → Defaults.** The "Taxes" group shows "Tax Received" and "Tax Paid". Phase 2 adds "Tax Payable" and "Tax Receivable".
-- **Customer, location, supplier.** A Tax Code select with the address suggestion. The customers and suppliers tables get a bulk "Assign tax code" action. Once a company assigns a code, the `taxPercent` fields hide behind a "Move to tax codes" banner (July OQ 4). The banner lists the parties still on a bare percent.
+- **Customer, location, supplier.** A Tax Code select with the address suggestion, on the Tax card (`CustomerTaxForm`, `SupplierTaxForm`) and on the location form. The customers and suppliers tables get a bulk "Assign tax code" action. Once a company assigns a code, the `taxPercent` fields hide behind a "Move to tax codes" banner (July OQ 4). The banner lists the parties still on a bare percent.
 - **Item.** A "Taxable" switch in the properties panel, default on.
 - **Document lines.** The line drawers show the resolved code and amount, with an override select. A "Recalculate taxes" action follows a ship-to change. Purchase lines show the recoverable share. Phase 2 adds "Accrue use tax".
 - **Memo form.** Net amount, tax code, computed tax, gross.
@@ -593,3 +593,4 @@ From the 2026-10-16 grill (`.ai/runs/2026-10-16-grill-multi-jurisdiction-tax.md`
 ## Changelog
 
 - 2026-10-16: Created. Replaces the July spec, which moves to `archived/`. Rebased on current code: posting lives in `packages/server-functions` and `packages/database/src`. The sales tax split shipped in #1599. Receipts add tax to cost. Rentals, contracts, discounts and lessee leases now exist. Added recoverable purchase tax at the receipt and the invoice, and the account-default renames. Added `taxesShipping` and forward-computed memo tax. Moved the Xero and QuickBooks Online tax-rate mapping into Phase 1. Resolved grill questions 1–9 with the user. Questions 10 and 11 came up while writing. The user resolved both. Repointed the dependent specs (MTD, e-invoicing, Avalara foundation, public-company readiness, RMA, posting corrections) to this spec.
+- 2026-10-16: Planning corrections. The code assignment moved to `customerTax.taxCodeId` and `supplierTax.taxCodeId` (the Tax card's table). The seeded account numbers changed, because 1310 and 1320 belong to fixed assets: Tax Paid 1170, Tax Receivable 1180, Tax Payable 2240. RLS rules go in the authz manifest. Four line views joined the views list.
