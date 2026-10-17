@@ -393,7 +393,7 @@ const QuoteBillOfProcess = ({
   const onUploadImage = useImageUpload(`opportunity-line/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
