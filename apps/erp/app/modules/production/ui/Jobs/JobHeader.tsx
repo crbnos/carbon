@@ -162,7 +162,10 @@ const JobHeader = () => {
   });
   const release = useJobRelease();
   const cancel = useAction<typeof cancelAction>({
-    onSuccess: () => toast.success(t`Job cancelled`)
+    onSuccess: ({ data }) => {
+      toast.success(t`Job cancelled`);
+      if (data?.warning) toast.error(data.warning);
+    }
   });
   const expediteFetcher = useFetcher<{
     expedite: {
@@ -192,6 +195,7 @@ const JobHeader = () => {
   const currentValue = getOptionFromPath(jobId);
 
   const markAsPlanned = () => {
+    if (status === "Planned") return;
     statusFetcher.submit(
       {
         status: "Planned"
@@ -520,13 +524,11 @@ const JobHeader = () => {
             <RecordAction slot="overflow">
               <Button
                 onClick={cancelModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Cancelled"
-                }
+                isLoading={cancel.isPending}
                 isDisabled={
                   ["Cancelled", "Completed"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
+                  cancel.isPending ||
                   !permissions.can("update", "production")
                 }
                 leftIcon={<LuCircleStop />}

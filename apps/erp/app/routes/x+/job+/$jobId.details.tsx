@@ -6,7 +6,7 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Badge,
@@ -33,7 +33,10 @@ import {
 } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import { jobValidator } from "~/modules/production/production.models";
+import {
+  JOB_LOCKED_MESSAGE,
+  jobValidator
+} from "~/modules/production/production.models";
 import {
   getJob,
   getJobDocumentsWithItemId,
@@ -163,6 +166,13 @@ export async function action(args: ActionFunctionArgs) {
     id: jobId,
     customFields: setCustomFields(input.formData ?? new FormData())
   });
+  // The item cannot complete to the job's asset: say so on the item field.
+  if (
+    result.error?.category === "rule" &&
+    result.error.message !== JOB_LOCKED_MESSAGE
+  ) {
+    return validationError({ fieldErrors: { itemId: result.error.message } });
+  }
   return respond(args.request, result).redirect(path.to.job(jobId), {
     message: "Updated job"
   });

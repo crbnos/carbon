@@ -222,6 +222,7 @@ import {
   getAssemblyModelState,
   isJobLocked,
   isJobOrderStatusHidden,
+  JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
   makeToAssetReleaseError,
@@ -256,11 +257,14 @@ export async function convertSalesOrderLinesToJobs(
   {
     orderId,
     companyId,
-    userId
+    userId,
+    refusedItems
   }: {
     orderId: string;
     companyId: string;
     userId: string;
+    /** Items no job may be made for, with the reason; their lines are skipped. */
+    refusedItems?: Map<string, string>;
   }
 ) {
   const salesOrder = await client
@@ -340,6 +344,12 @@ export async function convertSalesOrderLinesToJobs(
       line.itemId &&
       !lineIdsWithJobs.has(line.id)
     ) {
+      const refused = refusedItems?.get(line.itemId);
+      if (refused) {
+        errors.push(refused);
+        continue;
+      }
+
       const manufacturing = await client
         .from("itemReplenishment")
         .select("*")
@@ -3323,28 +3333,20 @@ export async function returnPickedRemaindersForOperation(
 }
 
 /**
- * Job-scope sweep after an explicit job completion (the ERP Complete button),
- * or, with `cancelling`, before a cancel flips the job's status. post-picking
- * sweeps a Completed or Cancelled job, or an open one being cancelled, and is
- * idempotent.
+ * Job-scope sweep after a job is completed or cancelled. post-picking sweeps
+ * only a Completed or Cancelled job, and is idempotent.
  */
 export async function returnPickedRemaindersForJob(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: {
-    jobId: string;
-    userId: string;
-    companyId: string;
-    cancelling?: boolean;
-  }
+  args: { jobId: string; userId: string; companyId: string }
 ) {
   return invokePosting(
     { client, db, companyId: args.companyId, userId: args.userId },
     "post-picking",
     {
       type: "returnJobRemainders",
-      jobId: args.jobId,
-      cancelling: args.cancelling
+      jobId: args.jobId
     },
     inventoryPostings.postPicking,
     { as: inventoryPostings.postPickingPermission }
@@ -6465,6 +6467,9 @@ export async function setPeopleAbsenceRange(
  * Reactive replanning: notify that a scheduling INPUT changed (shift,
  * qualification, work center, location). Marks the company's active jobs
  * schedule-outdated immediately and schedules a debounced replan wave.
+ *
+ * Every caller sends it after its write has landed, so a failed send is
+ * logged and returned as `false`, never thrown: the change stands either way.
  */
 export async function notifyScheduleInputsChanged(
   companyId: string,
@@ -6478,14 +6483,26 @@ export async function notifyScheduleInputsChanged(
     | "people",
   reason: string,
   entityId?: string
-) {
-  const { trigger } = await import("@carbon/jobs");
-  await trigger("schedule-inputs-changed", {
-    companyId,
-    kind,
-    reason,
-    entityId
-  });
+): Promise<boolean> {
+  try {
+    const { trigger } = await import("@carbon/jobs");
+    await trigger("schedule-inputs-changed", {
+      companyId,
+      kind,
+      reason,
+      entityId
+    });
+    return true;
+  } catch (error) {
+    logger.error("Failed to notify the scheduler", {
+      companyId,
+      kind,
+      reason,
+      entityId,
+      error
+    });
+    return false;
+  }
 }
 
 // --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
@@ -11745,7 +11762,12 @@ type OwnedTable =
   | "customer"
   | "modelUpload"
   | "fixedAssetClass"
-  | "fixedAsset";
+  | "fixedAsset"
+  | "storageUnit"
+  | "salesOrder"
+  | "salesOrderLine"
+  | "quote"
+  | "quoteLine";
 
 /**
  * `notFound` unless every id is a row of this company. Ids from a form prove
@@ -11792,14 +11814,16 @@ export async function requireOwnRecords(
 export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
   const jobs = await ctx.asCaller.supabase
     .from("job")
-    .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
+    .select(
+      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId"
+    )
     .in("id", ids)
     .eq("companyId", ctx.company.id);
   if (jobs.error) {
     return ctx.error("internal", "Failed to read the jobs", jobs.error);
   }
   if (jobs.data.some((job) => isJobLocked(job.status))) {
-    return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
+    return ctx.error("rule", JOB_LOCKED_MESSAGE);
   }
   return jobs.data;
 }
@@ -11852,7 +11876,10 @@ export function parseConfiguration(
   }
 }
 
-/** `notFound` unless the job is this company's (read as the caller). */
+/**
+ * The job, read as the caller, for a write to it: `notFound` unless it is
+ * this company's, `rule` when it is locked (Completed, Closed or Cancelled).
+ */
 export async function requireJob(ctx: ServiceContext, jobId: string) {
   const job = await ctx.asCaller.supabase
     .from("job")
@@ -11863,6 +11890,9 @@ export async function requireJob(ctx: ServiceContext, jobId: string) {
   if (job.error)
     return ctx.error("internal", "Failed to read the job", job.error);
   if (!job.data) return ctx.error("notFound", "Job not found");
+  if (isJobLocked(job.data.status)) {
+    return ctx.error("rule", JOB_LOCKED_MESSAGE);
+  }
   return job.data;
 }
 
@@ -12086,7 +12116,7 @@ export async function notifyForEmployeeDate(
 }
 
 /** A write that throws on failure, as an `internal` error with `message`. */
-export async function attempt<T>(
+export async function catchInternal<T>(
   ctx: ServiceContext,
   message: string,
   write: () => Promise<T>
@@ -12118,29 +12148,6 @@ export async function readPlanningJob(
     return ctx.error("conflict", "This job is for another location.");
   }
   return target.data;
-}
-
-/**
- * Tell the scheduler after a planning write. A follow-up to a write that
- * already landed, so a failure is logged and reported, never thrown.
- */
-export async function notifyPlanningScheduleChange(
-  ctx: ServiceContext,
-  reason: string,
-  jobId?: string
-): Promise<boolean> {
-  try {
-    await notifyScheduleInputsChanged(ctx.company.id, "reorder", reason, jobId);
-    return true;
-  } catch (error) {
-    logger.error("Failed to notify the scheduler from planning", {
-      companyId: ctx.company.id,
-      jobId,
-      reason,
-      error
-    });
-    return false;
-  }
 }
 
 /**
@@ -22377,8 +22384,6 @@ export async function postProductionEvent(
       : !event.duration
         ? "event has no duration"
         : "event has no work center";
-    // FIXME: returns { success: false } at HTTP 200, so callers (error === null)
-    // read it as success. A real status (409/422?) needs its own decision — see §6c.
     return { success: false, reason } as PostProductionEventResult;
   }
 
@@ -22484,8 +22489,6 @@ export async function postProductionEvent(
   // can't attribute/reverse. A zero-cost posted event posted nothing, so
   // there's nothing to reverse and it's safe to delete.
   if (event.postedToGL && reversalLines.length === 0 && hasOldSchemePostings) {
-    // FIXME: returns { success: false } at HTTP 200, so callers (error === null)
-    // read it as success. A real status (409/422?) needs its own decision — see §6c.
     return {
       success: false,
       reason:
@@ -24281,6 +24284,11 @@ async function completeBatch(
     if (posted.error) {
       throw new Error(
         `Failed to post GL for production event ${e.id}: ${posted.error.message}`
+      );
+    }
+    if (posted.data.success === false) {
+      throw new Error(
+        `Production event ${e.id} was not posted to GL: ${posted.data.reason}`
       );
     }
   }

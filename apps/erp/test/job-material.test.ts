@@ -50,7 +50,7 @@ import {
 } from "../app/modules/production/production.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
-/** The service-role client: each table's one row, or none. */
+/** The caller's and the service-role client: each table's one row, or none. */
 function systemWith(rows: Record<string, unknown>) {
   return {
     from: (table: string) => {
@@ -75,7 +75,7 @@ const contextWith = (rows: Record<string, unknown>) =>
       }
     },
     company: { id: "c1", groupId: "g1" },
-    caller: {} as never,
+    caller: systemWith(rows),
     system: () => systemWith(rows),
     pg: () => ({}) as never,
     kv: () => ({}) as never
@@ -123,7 +123,10 @@ describe("createJobMaterial", () => {
 
 describe("updateJobMaterial", () => {
   it("refuses a material that is not on this job and method", async () => {
-    const result = await updateJobMaterial(contextWith(parents), material);
+    const result = await updateJobMaterial(
+      contextWith({ job: { status: "Draft" }, ...parents }),
+      material
+    );
     expect(result.error?.category).toBe("notFound");
     expect(upsertJobMaterial).not.toHaveBeenCalled();
   });

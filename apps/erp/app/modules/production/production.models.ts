@@ -109,6 +109,18 @@ export function isJobEditableFromPlanning(
 // The one definition lives in @carbon/utils, shared with the OEE sync.
 export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
+export const JOB_LOCKED_MESSAGE =
+  "Cannot modify a locked job. Reopen it first.";
+
+/** The statuses a job can be cancelled from. */
+export const CANCELLABLE_JOB_STATUSES = [
+  "Draft",
+  "Planned",
+  "Ready",
+  "In Progress",
+  "Paused"
+] as const;
+
 export const DATE_COLUMN_SENTINELS = [
   "unscheduled",
   "next-week",

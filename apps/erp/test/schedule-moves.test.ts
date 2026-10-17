@@ -209,9 +209,7 @@ describe("moveScheduleJob", () => {
   });
 
   it("keeps the move when the scheduler cannot be told", async () => {
-    vi.mocked(notifyScheduleInputsChanged).mockRejectedValueOnce(
-      new Error("inngest down")
-    );
+    vi.mocked(notifyScheduleInputsChanged).mockResolvedValueOnce(false);
     const result = await move(callerWith({ job: { data: { id: "j1" }, error: null } }));
     expect(result.error).toBeNull();
   });

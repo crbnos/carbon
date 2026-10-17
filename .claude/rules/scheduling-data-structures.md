@@ -66,8 +66,11 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).
 - **ERP authoring boards** (`apps/erp/app/routes/x+/priority+/`): `operations.tsx`
-  (ops Kanban; drag → `operations.update.tsx` writes `jobOperation.workCenterId` +
-  `priority`, no reschedule — the board header carries a tooltip: *"Reorders dispatch
+  (ops Kanban; drag → `operations.update.tsx` → `api.production.reorderScheduleOperations`,
+  which writes `jobOperation.workCenterId` + `priority` and, only when a card moved to
+  another work center, calls `notifyScheduleInputsChanged(…, "work-center", …)`; a
+  reorder within one column re-sequences the dispatch order and reschedules nothing — the
+  board header carries a tooltip: *"Reorders dispatch
   sequence and work center only — does not reschedule. Change dates on the Dates board."*)
   and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` → `api.production.moveScheduleJob`, which writes `job.dueDate` +
@@ -574,10 +577,12 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   `getJobPromiseDate` returns `job.projectedCompletionAt` or
   null (its old max-op-dueDate fallback would now just echo the job due date and
   was removed).
-- Editing the ERP ops board (`operations.update.tsx`) does NOT re-run the engine and does
-  not even notify — it only re-sequences `workCenterId` + `priority`. The dates board
-  notifies (`notifyScheduleInputsChanged`), and the debounced wave regenerates the whole
-  location. The MES board is display/drag-only.
+- Editing the ERP ops board (`operations.update.tsx`, `reorderScheduleOperations`) does NOT
+  re-run the engine: it re-sequences `workCenterId` + `priority`, and notifies
+  (`notifyScheduleInputsChanged`, kind `work-center`) only when a card changed work
+  center. The dates board always notifies, and the debounced wave regenerates the whole
+  location. A failed notify is logged and never fails the write. The MES board is
+  display/drag-only.
 - The selector MUTATES each context's reservation arrays as it places, so the quote
   what-if runs every simulation on a `cloneFiniteContext` copy (`quote-lead-time.ts`) —
   reusing one context across quantities/scenarios would let earlier runs' placements

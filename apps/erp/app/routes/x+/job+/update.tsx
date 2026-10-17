@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
+import { CarbonError, toResult } from "@carbon/api/service-fn.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -32,7 +33,8 @@ const updateForm = z.object({
   value: zfd.text(z.string().optional())
 });
 
-const invalid = (message: string) => ({ data: null, error: { message } });
+const invalid = (message: string) =>
+  toResult({ data: null, error: new CarbonError("validation", message) });
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(updateForm).request(args);

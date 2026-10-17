@@ -15,6 +15,7 @@ import type { Json } from "@carbon/database";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
 import {
@@ -30,21 +31,33 @@ import { sql } from "kysely";
 import { z } from "zod";
 import {
   cancelOpenPickingListsForJob,
+  issueMaterial,
   mergeTrackedEntities
 } from "~/modules/inventory/inventory.service";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils";
-import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
+import {
+  checkRevisionLock,
+  getUnreleasedChangeOrderItems,
+  jobCreationRefusal,
+  methodStepRefusal,
+  saveMethodRefusal,
+  unreleasedChangeOrderItemsMessage,
+  withLockNotice
+} from "~/modules/items/items.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
+import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import { invokeCreate, invokePosting } from "../shared/shared.service";
+import { updateSortOrder } from "../shared/sort-order";
 import {
   type AssemblyModelState,
   assemblyStepComponentsReassignValidator,
   bulkJobValidator,
+  CANCELLABLE_JOB_STATUSES,
   copyPeopleBoardValidator,
   copyPeopleWeekValidator,
   deadlineTypes,
@@ -53,6 +66,7 @@ import {
   isAssemblyPlanRunning,
   isJobEditableFromPlanning,
   isJobLocked,
+  JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   jobOperationStatus,
   jobOperationValidator,
@@ -74,6 +88,7 @@ import {
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  salesOrderToJobValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator
 } from "./production.models";
@@ -542,15 +557,15 @@ export const releaseJobs = defineServiceFn({
  * @remarks
  * The one cancel path: the job status route and the planning Cancel action
  * both call it, so neither can skip a step. In order:
- *   1. return the picked material the job did not consume,
- *   2. cancel its lines on every open picking list,
- *   3. set the job Cancelled and clear its assignee.
- * It stops at the first failure, before the status changes, so a retry starts
- * from the same place.
+ *   1. set the job Cancelled and clear its assignee, only while it is in
+ *      `fromStatuses` (by default any status a job can be cancelled from),
+ *   2. return the picked material the job did not consume,
+ *   3. cancel its lines on every open picking list.
+ * A refused cancel changes nothing. The job stays Cancelled when step 2 or 3
+ * fails; that failure is returned as `warning`.
  *
  * Returns `notFound` for a job that is not this company's, and `conflict`
- * when `fromStatuses` is sent and the job has left them, both with nothing
- * changed.
+ * when the job is not in `fromStatuses`.
  *
  * @mcp
  */
@@ -559,19 +574,16 @@ export const cancelJob = defineServiceFn({
     jobId: z.string(),
     /**
      * Cancel only while the job is still in one of these statuses, checked
-     * before step 1 and again in the status UPDATE. Planning's Cancel sends
-     * Draft / Planned: it read the status earlier, and a job released since
-     * must not lose its picks.
+     * in the status UPDATE. Planning's Cancel sends Draft / Planned: it read
+     * the status earlier, and a job released since must not lose its picks.
      */
     fromStatuses: z.array(z.enum(jobStatus)).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { jobId, fromStatuses }) {
+  async run(ctx, { jobId, fromStatuses = [...CANCELLABLE_JOB_STATUSES] }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
-    const statusChanged = () =>
-      ctx.error("conflict", "The job's status changed; cancel it on the job");
 
     // The steps below write past RLS: the job must be this company's first.
     const job = await ctx.asSystem.pg
@@ -581,21 +593,41 @@ export const cancelJob = defineServiceFn({
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!job) return ctx.error("notFound", "Job not found");
-    if (fromStatuses && !fromStatuses.includes(job.status)) {
-      return statusChanged();
+
+    const update = await service.updateJobStatus(ctx.asCaller.supabase, {
+      id: jobId,
+      companyId,
+      status: "Cancelled",
+      assignee: null,
+      updatedBy: userId,
+      fromStatuses
+    });
+    if (update.error) {
+      return ctx.error("internal", "Failed to update job status", update.error);
+    }
+    if (!update.updated) {
+      return ctx.error(
+        "conflict",
+        "The job's status changed; cancel it on the job"
+      );
     }
 
     const sweep = await service.returnPickedRemaindersForJob(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
-      { jobId, userId, companyId, cancelling: true }
+      { jobId, userId, companyId }
     );
     if (sweep.error) {
-      return ctx.error(
-        "internal",
-        "Cancel aborted: returning picked material failed",
-        sweep.error
-      );
+      logger.error("Returning picked material failed after a cancel", {
+        companyId,
+        jobId,
+        error: sweep.error
+      });
+      return {
+        jobId,
+        warning:
+          "The job is cancelled, but its picked material was not returned to stock."
+      };
     }
 
     const picks = await cancelOpenPickingListsForJob(ctx.asSystem.pg, {
@@ -604,27 +636,19 @@ export const cancelJob = defineServiceFn({
       userId
     });
     if (picks.error) {
-      return ctx.error(
-        "internal",
-        "Cancel aborted: its picking lists could not be closed",
-        picks.error
-      );
+      logger.error("Closing picking lists failed after a cancel", {
+        companyId,
+        jobId,
+        error: picks.error
+      });
+      return {
+        jobId,
+        warning:
+          "The job is cancelled, but its open picking lists were not cancelled."
+      };
     }
 
-    const update = await service.updateJobStatus(ctx.asCaller.supabase, {
-      id: jobId,
-      companyId,
-      status: "Cancelled",
-      assignee: null,
-      updatedBy: userId,
-      ...(fromStatuses ? { fromStatuses } : {})
-    });
-    if (update.error) {
-      return ctx.error("internal", "Failed to update job status", update.error);
-    }
-    if (!update.updated) return statusChanged();
-
-    return { jobId };
+    return { jobId, warning: null };
   }
 });
 /**
@@ -1297,19 +1321,11 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("conflict", "Job unavailable or locked");
     }
 
-    try {
-      await service.notifyScheduleInputsChanged(
-        companyId,
-        "reorder",
-        "Schedule reordered"
-      );
-    } catch (notifyError) {
-      // The wave can retry; the move stands.
-      logger.error("Failed to notify schedule inputs changed", {
-        companyId,
-        error: notifyError
-      });
-    }
+    await service.notifyScheduleInputsChanged(
+      companyId,
+      "reorder",
+      "Schedule reordered"
+    );
     return { id };
   }
 });
@@ -1344,7 +1360,7 @@ export const createProductionEvent = defineServiceFn({
     }
     if (!operation.data) return ctx.error("notFound", "Operation not found");
     if (isJobLocked(operation.data.job?.status)) {
-      return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
+      return ctx.error("rule", JOB_LOCKED_MESSAGE);
     }
 
     const insert = await service.upsertProductionEvent(ctx.asCaller.supabase, {
@@ -1546,8 +1562,9 @@ export const setJobItem = defineServiceFn({
  *
  * @remarks
  * Refused when any job is locked. Each job's priority is recalculated among
- * the jobs at its location on the new date (`calculateJobPriority`). A field
- * left out keeps the job's current value; a `dueDate` of null clears it.
+ * the jobs at its location on the new date (`nextJobPriority`), in one read
+ * and one write for every job. A field left out keeps the job's current
+ * value; a `dueDate` of null clears it.
  *
  * @mcp
  */
@@ -1561,45 +1578,70 @@ export const setJobDeadline = defineServiceFn({
 
   async run(ctx, { ids, dueDate, deadlineType }) {
     const companyId = ctx.company.id;
-    const client = ctx.asCaller.supabase;
     const jobs = await service.readUnlockedJobs(ctx, ids);
     if (jobs instanceof CarbonError) return jobs;
+    if (jobs.length === 0) return { ids };
 
-    for (const id of ids) {
-      const current = await client
-        .from("job")
-        .select("dueDate, deadlineType, locationId")
-        .eq("id", id)
-        .eq("companyId", companyId)
-        .single();
-      if (current.error) {
-        return ctx.error("internal", current.error.message, current.error);
-      }
-      const newDueDate =
-        dueDate !== undefined ? dueDate || null : current.data.dueDate;
-      const newDeadlineType = deadlineType ?? current.data.deadlineType;
-      const priority = await service.calculateJobPriority(client, {
-        jobId: id,
-        dueDate: newDueDate,
-        deadlineType: newDeadlineType,
-        companyId,
-        locationId: current.data.locationId
-      });
-      const update = await client
-        .from("job")
-        .update({
-          ...(dueDate !== undefined && { dueDate: newDueDate }),
-          ...(deadlineType && { deadlineType }),
-          priority,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", id)
-        .eq("companyId", companyId);
-      if (update.error) {
-        return ctx.error("internal", update.error.message, update.error);
-      }
-    }
+    const moves = jobs.map((job) => ({
+      id: job.id,
+      locationId: job.locationId,
+      dueDate: dueDate !== undefined ? dueDate || null : job.dueDate,
+      deadlineType: deadlineType ?? job.deadlineType
+    }));
+
+    // The jobs already on each new date at each location, in one read: a
+    // moved job is ranked among them, then joins them for the next.
+    const siblings = await ctx.asSystem.pg
+      .selectFrom("job")
+      .select(["locationId", "dueDate", "priority", "deadlineType"])
+      .where("companyId", "=", companyId)
+      .where(
+        "locationId",
+        "in",
+        moves.map((move) => move.locationId)
+      )
+      .where((eb) => {
+        const dates = moves.flatMap((move) =>
+          move.dueDate ? [move.dueDate] : []
+        );
+        return eb.or([
+          ...(dates.length > 0 ? [eb("dueDate", "in", dates)] : []),
+          ...(moves.some((move) => !move.dueDate)
+            ? [eb("dueDate", "is", null)]
+            : [])
+        ]);
+      })
+      .where(
+        "id",
+        "not in",
+        moves.map((move) => move.id)
+      )
+      .orderBy("priority", "asc")
+      .execute();
+    const key = (locationId: string, date: string | null) =>
+      `${locationId}\u001f${date ?? ""}`;
+    const ranked = groupBy(siblings, (row) => key(row.locationId, row.dueDate));
+
+    const values = moves.map((move) => {
+      const onDate = (ranked[key(move.locationId, move.dueDate)] ??= []);
+      const priority = service.nextJobPriority(onDate, move.deadlineType);
+      onDate.push({ ...move, priority });
+      onDate.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+      return sql`(${move.id}, ${move.dueDate}, ${move.deadlineType}, ${priority})`;
+    });
+
+    await sql`
+      UPDATE "job" AS j
+      SET "dueDate" = v."dueDate"::date,
+          "deadlineType" = v."deadlineType"::"deadlineType",
+          "priority" = v."priority"::numeric,
+          "updatedBy" = ${ctx.auditUserId},
+          "updatedAt" = ${datetime.timestamp()}
+      FROM (VALUES ${sql.join(values)}) AS v("id", "dueDate", "deadlineType", "priority")
+      WHERE j."id" = v."id"
+        AND j."companyId" = ${companyId}
+        AND j."status" NOT IN (${sql.join(JOB_LOCKED_STATUSES.map((status) => sql`${status}`))})
+    `.execute(ctx.asSystem.pg);
     return { ids };
   }
 });
@@ -1885,6 +1927,8 @@ export const configureJob = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
     const client = ctx.asCaller.supabase;
+    const unlocked = await service.requireJob(ctx, jobId);
+    if (unlocked instanceof CarbonError) return unlocked;
     const [result, job] = await Promise.all([
       client
         .from("job")
@@ -1965,13 +2009,8 @@ export const createJobs = defineServiceFn({
 
     const configuration = service.parseConfiguration(configStr);
 
-    const owned = await service.requireOwnRecords(ctx, [
-      ["item", job.itemId, "item"],
-      ["location", job.locationId, "location"],
-      ["customer", job.customerId, "customer"],
-      ["modelUpload", job.modelUploadId, "model"]
-    ]);
-    if (owned) return owned;
+    const refusal = await jobCreationRefusal(ctx, job);
+    if (refusal) return refusal;
 
     const jobs = Math.ceil(totalQuantity / quantityPerJob);
     const quantityOfLastJob = totalQuantity - (jobs - 1) * quantityPerJob;
@@ -2046,44 +2085,8 @@ export const createJob = defineServiceFn({
 
     const configuration = service.parseConfiguration(configStr);
 
-    // insertJob runs as the system: every id the caller sent must be this
-    // company's before it is written.
-    const owned = await service.requireOwnRecords(ctx, [
-      ["item", job.itemId, "item"],
-      ["location", job.locationId, "location"],
-      ["customer", job.customerId, "customer"],
-      ["modelUpload", job.modelUploadId, "model"],
-      ["fixedAssetClass", job.fixedAssetClassId, "fixed asset class"],
-      ["fixedAsset", job.fixedAssetId, "fixed asset"]
-    ]);
-    if (owned) return owned;
-
-    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
-      ctx.asSystem.supabase,
-      { itemId: job.itemId, companyId }
-    );
-    if (unreleasedIssue) {
-      return ctx.error(
-        "rule",
-        `${unreleasedIssue} A job cannot be made for it.`
-      );
-    }
-
-    // Refused here, not only at release, so the form says why while the item
-    // is still being chosen.
-    if (job.fixedAssetClassId || job.fixedAssetId) {
-      const item = await ctx.asSystem.supabase
-        .from("item")
-        .select("itemTrackingType")
-        .eq("id", job.itemId)
-        .eq("companyId", companyId)
-        .single();
-      const itemError = makeToAssetItemError({
-        ...job,
-        itemTrackingType: item.data?.itemTrackingType
-      });
-      if (itemError) return ctx.error("rule", itemError);
-    }
+    const refusal = await jobCreationRefusal(ctx, job);
+    if (refusal) return refusal;
 
     const created = await service.insertJob(
       ctx.asSystem.supabase,
@@ -2193,6 +2196,19 @@ export const copyMethodToMaterial = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, method) {
+    const target = await ctx.asCaller.supabase
+      .from("jobMakeMethod")
+      .select("jobId")
+      .eq("id", method.targetId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (target.error) {
+      return ctx.error("internal", "Failed to read the method", target.error);
+    }
+    if (!target.data) return ctx.error("notFound", "Make method not found");
+    const job = await service.requireJob(ctx, target.data.jobId);
+    if (job instanceof CarbonError) return job;
+
     const copied = await service.upsertJobMaterialMakeMethod(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
@@ -2251,20 +2267,13 @@ export const createJobMaterial = defineServiceFn({
     const userId = ctx.auditUserId;
     const system = ctx.asSystem.supabase;
     const [job, parents] = await Promise.all([
-      system
-        .from("job")
-        .select("status")
-        .eq("id", material.jobId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
+      service.requireJob(ctx, material.jobId),
       service.requireJobChildren(ctx, material.jobId, {
         jobMakeMethodId: material.jobMakeMethodId,
         jobOperationId: material.jobOperationId
       })
     ]);
-    if (job.error)
-      return ctx.error("internal", "Failed to read the job", job.error);
-    if (!job.data) return ctx.error("notFound", "Job not found");
+    if (job instanceof CarbonError) return job;
     if (parents) return parents;
 
     const insert = await service.upsertJobMaterial(system, {
@@ -2301,7 +2310,7 @@ export const createJobMaterial = defineServiceFn({
       }
     }
 
-    if (!["Draft", "Planned"].includes(job.data.status ?? "")) {
+    if (!["Draft", "Planned"].includes(job.status ?? "")) {
       const recalculated = await service.recalculateMaterialMethod(ctx, {
         jobId: material.jobId,
         jobMakeMethodId: material.jobMakeMethodId,
@@ -2334,6 +2343,8 @@ export const updateJobMaterial = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
     const system = ctx.asSystem.supabase;
+    const job = await service.requireJob(ctx, material.jobId);
+    if (job instanceof CarbonError) return job;
     const [existing, parents] = await Promise.all([
       system
         .from("jobMaterial")
@@ -2416,6 +2427,8 @@ export const deleteJobMaterial = defineServiceFn({
   permission: { delete: "production" },
 
   async run(ctx, { jobId, id }) {
+    const job = await service.requireJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
     const deleted = await ctx.asCaller.supabase
       .from("jobMaterial")
       .delete()
@@ -2502,6 +2515,8 @@ export const updateJobOperation = defineServiceFn({
   permission: { create: "production" },
 
   async run(ctx, operation) {
+    const job = await service.requireJob(ctx, operation.jobId);
+    if (job instanceof CarbonError) return job;
     const update = await service.upsertJobOperation(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
@@ -2532,6 +2547,8 @@ export const deleteJobOperation = defineServiceFn({
   permission: { delete: "production" },
 
   async run(ctx, { jobId, id }) {
+    const job = await service.requireJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
     const client = ctx.asCaller.supabase;
     const events = await client
       .from("productionEvent")
@@ -2587,6 +2604,8 @@ export const reorderJobOperations = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { jobId, orders }) {
+    const job = await service.requireJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
     try {
       await service.updateJobOperationOrder(
         ctx.asSystem.pg,
@@ -2671,6 +2690,169 @@ export const setJobOperationStatus = defineServiceFn({
 });
 
 /**
+ * Report a produced quantity on a job operation, and finish the operation
+ * when it reaches its target.
+ *
+ * @remarks
+ * For an operation whose item is not serial or batch tracked; a tracked one is
+ * completed per tracked entity at the MES station. In order: the good
+ * quantity is recorded (refused on a locked job), the operation's materials
+ * are backflushed (`issue`), and when good plus reworked quantity reaches the
+ * operation's target it is set Done, which completes the job when it was the
+ * last operation. Then its ended production events are posted to the GL and
+ * the picked material it did not consume is returned; a failure there is
+ * returned as `warning`. A failed backflush leaves the quantity recorded.
+ *
+ * @mcp
+ */
+export const completeOperation = defineServiceFn({
+  input: z.object({
+    operationId: z.string(),
+    quantity: z.number().positive()
+  }),
+  permission: { create: "production", update: "production" },
+
+  async run(ctx, { operationId, quantity }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const operation = await ctx.asCaller.supabase
+      .from("jobOperation")
+      .select(
+        "jobId, quantityComplete, quantityReworked, targetQuantity, operationQuantity, jobMakeMethod(requiresSerialTracking, requiresBatchTracking)"
+      )
+      .eq("id", operationId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (operation.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the operation",
+        operation.error
+      );
+    }
+    if (!operation.data) return ctx.error("notFound", "Operation not found");
+    const method = operation.data.jobMakeMethod;
+    if (method?.requiresSerialTracking || method?.requiresBatchTracking) {
+      return ctx.error(
+        "rule",
+        "This operation's item is serial or batch tracked: complete it per tracked entity at the MES station"
+      );
+    }
+
+    const recorded = await createProductionQuantity(ctx, {
+      jobOperationId: operationId,
+      type: "Production",
+      quantity
+    });
+    if (recorded.error) return recorded.error;
+
+    const issued = await invokePosting(
+      ctx,
+      "issue",
+      { type: "jobOperation", id: operationId, quantity },
+      issueMaterial
+    );
+    if (issued.error) {
+      return ctx.error(
+        "internal",
+        "The quantity is recorded, but its materials were not issued",
+        issued.error
+      );
+    }
+
+    // Scrap is left out, as the database's own completion check leaves it.
+    const accounted =
+      Number(operation.data.quantityComplete ?? 0) +
+      Number(operation.data.quantityReworked ?? 0) +
+      quantity;
+    const target = Number(
+      operation.data.targetQuantity ?? operation.data.operationQuantity ?? 0
+    );
+    if (accounted < target) return { operationId, done: false, warning: null };
+
+    const finished = await ctx.asCaller.supabase
+      .from("jobOperation")
+      .update({
+        status: "Done",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", operationId)
+      .eq("companyId", companyId);
+    if (finished.error) {
+      return ctx.error(
+        "internal",
+        "The quantity is recorded, but the operation could not be finished",
+        finished.error
+      );
+    }
+
+    const warnings: string[] = [];
+    const unposted = await ctx.asSystem.supabase
+      .from("productionEvent")
+      .select("id")
+      .eq("jobOperationId", operationId)
+      .eq("companyId", companyId)
+      .not("endTime", "is", null)
+      .eq("postedToGL", false);
+    const postingFailures = unposted.error
+      ? [unposted.error.message]
+      : (
+          await async.map(unposted.data, (event) =>
+            service.postEndedEvent(ctx, event.id)
+          )
+        ).filter((reason) => reason !== null);
+    if (postingFailures.length > 0) {
+      logger.error("Posting an operation's production events failed", {
+        companyId,
+        operationId,
+        failures: postingFailures
+      });
+      warnings.push("its time was not posted to the GL");
+    }
+
+    const sweep = await service.returnPickedRemaindersForOperation(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      { jobOperationId: operationId, userId, companyId }
+    );
+    if (sweep.error) {
+      logger.error("Returning picked material failed after an operation", {
+        companyId,
+        operationId,
+        error: sweep.error
+      });
+      warnings.push("its picked material was not returned");
+    }
+
+    await raiseMoment("production.jobOperationCompleted", {
+      outputs: {
+        job: { id: operation.data.jobId },
+        jobOperation: { id: operationId },
+        completedBy: { id: userId }
+      },
+      companyId,
+      actorId: userId
+    });
+    trackWorkEvent("job_operation_finished", {
+      companyId,
+      userId,
+      jobOperationId: operationId,
+      jobId: operation.data.jobId
+    });
+
+    return {
+      operationId,
+      done: true,
+      warning:
+        warnings.length > 0
+          ? `The operation is done, but ${warnings.join(" and ")}.`
+          : null
+    };
+  }
+});
+
+/**
  * Pin a job operation's need-by date, or clear the pin.
  *
  * @remarks
@@ -2725,6 +2907,23 @@ export const syncJobOperationProcedure = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { operationId, procedureId }) {
+    const operation = await ctx.asCaller.supabase
+      .from("jobOperation")
+      .select("jobId")
+      .eq("id", operationId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (operation.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the operation",
+        operation.error
+      );
+    }
+    if (!operation.data) return ctx.error("notFound", "Operation not found");
+    const job = await service.requireJob(ctx, operation.data.jobId);
+    if (job instanceof CarbonError) return job;
+
     const sync = await invokePosting(
       {
         db: ctx.asSystem.pg,
@@ -2869,12 +3068,13 @@ export const mergeBatchOutputs = defineServiceFn({
  *
  * @remarks
  * Groups open operations of one batchable process at `locationId` into a
- * batch (`batch-operations` `create`: eligibility, the process's material
- * rules and the planned output lots are checked there). With `release`, the
- * operations' Draft / Planned jobs are released first through the job page's
- * checks (any problem refuses the batch untouched; `purchaseOrdersBySupplierId`
- * is the release dialog's choice), the batch is created already on the floor,
- * and the scheduler is told.
+ * Planned batch (`batch-operations` `create`: eligibility, the process's
+ * material rules and the planned output lots are checked there). With
+ * `release`, the operations' Draft / Planned jobs are then released through
+ * the job page's checks (`purchaseOrdersBySupplierId` is the release dialog's
+ * choice), the batch is put on the floor and the scheduler is told. When the
+ * jobs' checks refuse, nothing is released and the batch is taken apart
+ * again; any other failure leaves it Planned, to release or dissolve.
  *
  * @mcp
  */
@@ -2899,11 +3099,27 @@ export const createBatch = defineServiceFn({
   }),
   permission: { update: "production" },
 
-  async run(ctx, { purchaseOrdersBySupplierId, ...batch }) {
+  async run(ctx, { purchaseOrdersBySupplierId, release, ...batch }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
 
-    if (batch.release) {
+    const result = await service.createJobOperationBatch(
+      client,
+      ctx.asSystem.pg,
+      { ...batch, companyId, userId }
+    );
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to create batch"),
+        result.error
+      );
+    }
+    const created = result.data as { id?: string; readableId?: string } | null;
+    const batchId = created?.id ?? null;
+
+    if (release && batchId) {
       const ops = await client
         .from("jobOperation")
         .select("jobId")
@@ -2916,32 +3132,41 @@ export const createBatch = defineServiceFn({
           ops.error
         );
       }
-      const released = await releaseBatchMemberJobs(ctx, {
+      const jobs = await releaseBatchMemberJobs(ctx, {
         jobIds: ops.data.map((op) => op.jobId),
         purchaseOrdersBySupplierId
       });
-      if (released.error) return released.error;
-    }
-
-    const result = await service.createJobOperationBatch(
-      client,
-      ctx.asSystem.pg,
-      {
-        ...batch,
-        companyId,
-        userId: ctx.auditUserId
+      if (jobs.error) {
+        // The checks refuse before any job is released.
+        if (jobs.error.category === "rule") {
+          const dissolved = await service.updateJobOperationBatch(
+            client,
+            ctx.asSystem.pg,
+            { type: "dissolve", batchId, companyId, userId }
+          );
+          if (dissolved.error) {
+            logger.error("Failed to dissolve a batch whose release failed", {
+              companyId,
+              batchId,
+              error: dissolved.error
+            });
+          }
+        }
+        return jobs.error;
       }
-    );
-    if (result.error) {
-      return ctx.error(
-        "rule",
-        getErrorMessage(result.error, "Failed to create batch"),
-        result.error
-      );
-    }
 
-    if (batch.release) {
-      // The batch was inserted Active: the wave places it as one unit.
+      const flipped = await service.releaseJobOperationBatch(
+        client,
+        ctx.asSystem.pg,
+        { batchId, companyId, userId }
+      );
+      if (flipped.error) {
+        return ctx.error(
+          "rule",
+          getErrorMessage(flipped.error, "Failed to release the batch"),
+          flipped.error
+        );
+      }
       await service.notifyScheduleInputsChanged(
         companyId,
         "work-center",
@@ -2949,11 +3174,7 @@ export const createBatch = defineServiceFn({
         batch.workCenterId
       );
     }
-    const created = result.data as { id?: string; readableId?: string } | null;
-    return {
-      batchId: created?.id ?? null,
-      readableId: created?.readableId ?? null
-    };
+    return { batchId, readableId: created?.readableId ?? null };
   }
 });
 
@@ -3073,7 +3294,7 @@ export const assignPerson = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await service.attempt(
+    const written = await service.catchInternal(
       ctx,
       "Failed to assign people member",
       () =>
@@ -3219,12 +3440,15 @@ export const movePerson = defineServiceFn({
     });
     if (refused) return refused;
 
-    const moved = await service.attempt(ctx, "Failed to move assignment", () =>
-      service.movePeopleAssignment(ctx.asSystem.pg, {
-        id,
-        companyId: ctx.company.id,
-        workCenterId
-      })
+    const moved = await service.catchInternal(
+      ctx,
+      "Failed to move assignment",
+      () =>
+        service.movePeopleAssignment(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          workCenterId
+        })
     );
     if (moved instanceof CarbonError) return moved;
     await service.notifyPeopleChange(ctx, "People assignment moved", [
@@ -3259,7 +3483,7 @@ export const setPersonDay = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await service.attempt(
+    const written = await service.catchInternal(
       ctx,
       "Failed to save working hours",
       () =>
@@ -3333,15 +3557,18 @@ export const setPeopleOvertime = defineServiceFn({
     });
     if (refused) return refused;
 
-    const rows = await service.attempt(ctx, "Failed to set overtime", () =>
-      service.setPeopleOvertimeBulk(ctx.asSystem.pg, {
-        ...overtime,
-        companyId: ctx.company.id,
-        toDate: overtime.toDate || null,
-        shiftId: overtime.shiftId || null,
-        departmentId: overtime.departmentId || null,
-        updatedBy: ctx.auditUserId
-      })
+    const rows = await service.catchInternal(
+      ctx,
+      "Failed to set overtime",
+      () =>
+        service.setPeopleOvertimeBulk(ctx.asSystem.pg, {
+          ...overtime,
+          companyId: ctx.company.id,
+          toDate: overtime.toDate || null,
+          shiftId: overtime.shiftId || null,
+          departmentId: overtime.departmentId || null,
+          updatedBy: ctx.auditUserId
+        })
     );
     if (rows instanceof CarbonError) return rows;
     await service.notifyPeopleChange(
@@ -3373,7 +3600,7 @@ export const copyPeopleDay = defineServiceFn({
     });
     if (refused) return refused;
 
-    const result = await service.attempt(
+    const result = await service.catchInternal(
       ctx,
       "Failed to copy people board",
       () =>
@@ -3415,12 +3642,15 @@ export const assignPersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await service.attempt(ctx, "Failed to assign week", () =>
-      service.assignPeopleWeek(ctx.asSystem.pg, ctx.auditUserId, {
-        ...week,
-        companyId: ctx.company.id,
-        shiftId: week.shiftId || null
-      })
+    const written = await service.catchInternal(
+      ctx,
+      "Failed to assign week",
+      () =>
+        service.assignPeopleWeek(ctx.asSystem.pg, ctx.auditUserId, {
+          ...week,
+          companyId: ctx.company.id,
+          shiftId: week.shiftId || null
+        })
     );
     if (written instanceof CarbonError) return written;
     await service.notifyPeopleChange(ctx, "People week assignment", [
@@ -3450,12 +3680,15 @@ export const unassignPersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await service.attempt(ctx, "Failed to unassign week", () =>
-      service.unassignPeopleWeek(ctx.asSystem.pg, {
-        ...week,
-        companyId: ctx.company.id,
-        shiftId: week.shiftId || null
-      })
+    const written = await service.catchInternal(
+      ctx,
+      "Failed to unassign week",
+      () =>
+        service.unassignPeopleWeek(ctx.asSystem.pg, {
+          ...week,
+          companyId: ctx.company.id,
+          shiftId: week.shiftId || null
+        })
     );
     if (written instanceof CarbonError) return written;
     await service.notifyPeopleChange(ctx, "People week unassignment", [
@@ -3485,12 +3718,15 @@ export const movePersonWeek = defineServiceFn({
     });
     if (refused) return refused;
 
-    const written = await service.attempt(ctx, "Failed to move week", () =>
-      service.movePeopleWeek(ctx.asSystem.pg, {
-        ...week,
-        companyId: ctx.company.id,
-        shiftId: week.shiftId || null
-      })
+    const written = await service.catchInternal(
+      ctx,
+      "Failed to move week",
+      () =>
+        service.movePeopleWeek(ctx.asSystem.pg, {
+          ...week,
+          companyId: ctx.company.id,
+          shiftId: week.shiftId || null
+        })
     );
     if (written instanceof CarbonError) return written;
     await service.notifyPeopleChange(ctx, "People week move", [
@@ -3520,7 +3756,7 @@ export const copyPeopleWeekBoard = defineServiceFn({
     });
     if (refused) return refused;
 
-    const result = await service.attempt(
+    const result = await service.catchInternal(
       ctx,
       "Failed to copy people week",
       () =>
@@ -3560,7 +3796,7 @@ export const markPersonAbsentRange = defineServiceFn({
     });
     if (refused) return refused;
 
-    const result = await service.attempt(
+    const result = await service.catchInternal(
       ctx,
       "Failed to set absence range",
       () =>
@@ -3586,8 +3822,9 @@ export const markPersonAbsentRange = defineServiceFn({
  * and due date, the planning week). Only new jobs: an order naming an
  * existing job is refused, since an existing job is changed through
  * `updatePlannedJob` or Apply. The location and every item must
- * be this company's. Per item: one whose manufacturing is blocked or needs
- * configuration is skipped and named in `errors`; each order becomes a
+ * be this company's. Per item: one whose manufacturing is blocked, needs
+ * configuration or is held by an unreleased change notice is skipped and
+ * named in `errors`; each order becomes a
  * Planned job (ASAP or Soft Deadline) at the location with the item's method.
  * Then the Make suggestions those orders answer are settled, the jobs' supply
  * is recorded per week (`supplyForecast`) and their requirements are
@@ -3684,10 +3921,29 @@ export const orderPlannedJobs = defineServiceFn({
       (manufacturingRows.data ?? []).map((row) => [row.itemId, row])
     );
 
+    const unreleased = await getUnreleasedChangeOrderItems(client, {
+      itemIds: items.flatMap((item) =>
+        item.orders.length > 0 ? [item.id] : []
+      ),
+      companyId
+    });
+    if (unreleased.error) return ctx.error("internal", unreleased.error);
+    const heldByChangeNotice = new Map(
+      unreleased.data.map((held) => [held.itemId, held])
+    );
+
     for (const item of items) {
       if (item.orders.length === 0) {
         // Nothing to make: existing supply already covers demand.
         itemsWithoutOrders.push(item.id);
+        continue;
+      }
+
+      const held = heldByChangeNotice.get(item.id);
+      if (held) {
+        errors.push(
+          `${unreleasedChangeOrderItemsMessage([held])} A job cannot be made for it.`
+        );
         continue;
       }
 
@@ -3935,8 +4191,9 @@ export const updatePlannedJob = defineServiceFn({
       return { id: target.id, warning: null };
     }
 
-    const notified = await service.notifyPlanningScheduleChange(
-      ctx,
+    const notified = await service.notifyScheduleInputsChanged(
+      ctx.company.id,
+      "reorder",
       "Planning changed a job's due date",
       target.id
     );
@@ -4101,7 +4358,7 @@ export const applyPlanningActions = defineServiceFn({
 
     // One statement: the id list is a parameter, never a PostgREST URL.
     const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
-    const jobs = await service.attempt(
+    const jobs = await service.catchInternal(
       ctx,
       "Failed to read the planning actions' jobs",
       async () =>
@@ -4168,8 +4425,9 @@ export const applyPlanningActions = defineServiceFn({
         errors.push(`Planning action ${id} was already applied`);
       }
       if (outcome.applied.length > 0) {
-        const notified = await service.notifyPlanningScheduleChange(
-          ctx,
+        const notified = await service.notifyScheduleInputsChanged(
+          ctx.company.id,
+          "reorder",
           `Planning rescheduled ${outcome.applied.length} job(s)`
         );
         if (!notified) {
@@ -4250,6 +4508,7 @@ export const applyPlanningActions = defineServiceFn({
               }
               continue;
             }
+            if (cancelled.data.warning) warnings.push(cancelled.data.warning);
           } else {
             const update = await service.updatePlanningJob(client, {
               id: jobId,
@@ -4438,7 +4697,7 @@ export const createProductionQuantity = defineServiceFn({
     }
     if (!operation.data) return ctx.error("notFound", "Operation not found");
     if (isJobLocked(operation.data.job?.status)) {
-      return ctx.error("rule", "Cannot modify a locked job. Reopen it first.");
+      return ctx.error("rule", JOB_LOCKED_MESSAGE);
     }
 
     const scrapReasonId =
@@ -4447,6 +4706,8 @@ export const createProductionQuantity = defineServiceFn({
       ctx.asCaller.supabase,
       {
         ...quantity,
+        // The form names the employee who produced it; else the caller.
+        createdBy: quantity.createdBy || ctx.auditUserId,
         scrapReasonId,
         companyId
       }
@@ -5094,7 +5355,7 @@ export const reassignAssemblyComponents = defineServiceFn({
   permission: { update: "production" },
 
   async run(ctx, { id, targetStepId, componentNodeIds, mode }) {
-    const moved = await service.attempt(
+    const moved = await service.catchInternal(
       ctx,
       "Failed to assign components",
       () =>
@@ -5230,20 +5491,152 @@ export const syncAssemblyToOperation = defineServiceFn({
 /**
  * Convert sales order lines to jobs
  *
+ * @remarks
+ * One job per lot (the item's batch size) for every Make to Order line of
+ * order `orderId` that has no job yet, each with the line's configuration and
+ * its quote line's method (the item's when the line was reconfigured). A line
+ * whose item an unreleased change notice holds gets no job. A line that is
+ * refused or fails is named in the refusal; the jobs made for the other lines
+ * stay.
+ *
  * @mcp
  */
 export const convertSalesOrderLinesToJobs = defineServiceFn({
-  input: z.looseObject({ orderId: z.string() }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return envelope(
-      ctx,
-      await service.convertSalesOrderLinesToJobs(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
-      )
+  input: z.object({ orderId: z.string() }),
+  permission: { create: "production" },
+  async run(ctx, { orderId }) {
+    const companyId = ctx.company.id;
+    const owned = await service.requireOwnRecords(ctx, [
+      ["salesOrder", orderId, "sales order"]
+    ]);
+    if (owned) return owned;
+
+    const lines = await ctx.asSystem.supabase
+      .from("salesOrderLine")
+      .select("itemId")
+      .eq("salesOrderId", orderId)
+      .eq("companyId", companyId)
+      .not("itemId", "is", null);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the order lines",
+        lines.error
+      );
+    }
+    const unreleased = await getUnreleasedChangeOrderItems(
+      ctx.asSystem.supabase,
+      {
+        itemIds: [...new Set(lines.data.map((line) => line.itemId!))],
+        companyId
+      }
     );
+    if (unreleased.error) return ctx.error("internal", unreleased.error);
+
+    const converted = await service.convertSalesOrderLinesToJobs(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        orderId,
+        companyId,
+        userId: ctx.auditUserId,
+        refusedItems: new Map(
+          unreleased.data.map((held) => [
+            held.itemId,
+            `${unreleasedChangeOrderItemsMessage([held])} A job cannot be made for it.`
+          ])
+        )
+      }
+    );
+    if (converted.error) {
+      return ctx.error(
+        "rule",
+        `Failed to convert sales order lines to jobs: ${
+          typeof converted.error === "string"
+            ? converted.error
+            : converted.error.message
+        }`,
+        converted.error
+      );
+    }
+    return { orderId };
+  }
+});
+
+/**
+ * Create a job for one sales order line.
+ *
+ * @remarks
+ * The line must be on order `salesOrderId`, and the job's records this
+ * company's; refused for an item an unreleased change notice holds and for a
+ * Make to Asset item that cannot complete to an asset. The order line's
+ * configuration wins over its quote line's, and a line reconfigured on the
+ * order is built from the item, not the quote's method. Not published: the
+ * sales order line's Jobs form.
+ */
+export const createSalesOrderLineJob = defineServiceFn({
+  input: salesOrderToJobValidator.safeExtend({
+    customFields: customFieldsInput
+  }),
+  permission: { create: "production" },
+  async run(ctx, { id: _id, ...job }) {
+    const companyId = ctx.company.id;
+    const system = ctx.asSystem.supabase;
+    const line = await system
+      .from("salesOrderLine")
+      .select("configuration")
+      .eq("id", job.salesOrderLineId)
+      .eq("salesOrderId", job.salesOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (line.error) {
+      return ctx.error("internal", "Failed to read the order line", line.error);
+    }
+    if (!line.data) {
+      return ctx.error("notFound", "The sales order line could not be found.");
+    }
+
+    const refusal = await jobCreationRefusal(ctx, job);
+    if (refusal) return refusal;
+
+    const quoteLine = job.quoteLineId
+      ? await system
+          .from("quoteLine")
+          .select("configuration")
+          .eq("id", job.quoteLineId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : { data: null };
+    const { configuration, reconfigured } = resolveJobConfiguration(
+      line.data.configuration,
+      quoteLine.data?.configuration
+    );
+
+    const created = await service.insertJob(
+      system,
+      ctx.asSystem.pg,
+      {
+        ...job,
+        configuration:
+          configuration ?? service.parseConfiguration(job.configuration),
+        jobId: job.jobId || undefined,
+        fixedAssetClassId: job.fixedAssetClassId || null,
+        fixedAssetId: job.fixedAssetId || null,
+        companyId,
+        createdBy: ctx.auditUserId
+      },
+      {
+        methodSource:
+          job.quoteId && job.quoteLineId && !reconfigured
+            ? "quoteLine"
+            : "item",
+        source: "salesOrder"
+      }
+    );
+    if (created.error || !created.data) {
+      return ctx.error("internal", "Failed to insert job", created.error);
+    }
+    return { id: created.data.id };
   }
 });
 
@@ -5459,8 +5852,8 @@ export const getActiveJobOperationsByLocation = defineServiceFn({
       ctx,
       await service.getActiveJobOperationsByLocation(
         ctx.asCaller.supabase,
-        input.locationId as never,
-        stamp(ctx, input.workCenterIds, ["companyId"]) as never
+        input.locationId,
+        input.workCenterIds
       )
     );
   }
@@ -5777,7 +6170,8 @@ export const getJobPurchaseOrderLines = defineServiceFn({
 });
 
 /**
- * The Outbound report: open jobs at a location that fill a sales order, with where each one ships (RPC `get_completion_jobs`), ordered by the plant-calendar day…
+ * The Outbound report: open jobs at a location that fill a sales order, with
+ * where each one ships, ordered by the plant-calendar day they complete.
  *
  * @mcp read
  */
@@ -6851,10 +7245,17 @@ export const recalculateJobRequirements = defineServiceFn({
 /**
  * Run MRP
  *
+ * @remarks
+ * Plans the whole company whatever `type` and `id` name (they are logged),
+ * and rewrites its forecasts and planning actions. It reads with the service
+ * role, as every MRP run does: a caller's partial view would plan from part of
+ * the demand. The planning pages' Recalculate (`api+/mrp.ts`) needs the same
+ * inventory update.
+ *
  * @mcp
  */
 export const runMRP = defineServiceFn({
-  input: z.looseObject({
+  input: z.object({
     type: z.enum([
       "company",
       "location",
@@ -6865,15 +7266,16 @@ export const runMRP = defineServiceFn({
     ]),
     id: z.string()
   }),
-  permission: { update: "production" },
-  async run(ctx, input) {
+  permission: { update: "inventory" },
+  async run(ctx, { type, id }) {
     return envelope(
       ctx,
-      await service.runMRP(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        stamp(ctx, input, ["companyId", "updatedBy", "userId"]) as never
-      )
+      await service.runMRP(ctx.asSystem.supabase, ctx.asSystem.pg, {
+        type,
+        id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
     );
   }
 });
@@ -6915,7 +7317,7 @@ export const getJobReleaseReadiness = defineServiceFn({
       ctx,
       await service.getJobReleaseReadiness(
         ctx.asCaller.supabase,
-        stamp(ctx, input.jobIds, ["companyId"]) as never,
+        input.jobIds,
         ctx.company.id
       )
     );
@@ -6983,45 +7385,74 @@ export const updateKanbanJob = defineServiceFn({
   }
 });
 
+const stepOrderInput = z.object({
+  operationId: z.string(),
+  updates: z.array(z.object({ id: z.string(), sortOrder: z.number() })).min(1)
+});
+
 /**
- * Update quote operation step order
+ * Reorder the steps of a quote line's operation.
+ *
+ * @remarks
+ * All or nothing: a step that is not on `operationId` refuses the whole
+ * reorder. Needs sales update, as the quote's method editor does, and
+ * production update, which the step rows require.
  *
  * @mcp
  */
 export const updateQuoteOperationStepOrder = defineServiceFn({
-  input: z.looseObject({
-    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
-  }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return envelopes(
-      ctx,
-      await service.updateQuoteOperationStepOrder(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
-    );
+  input: stepOrderInput,
+  permission: { update: ["sales", "production"] },
+  async run(ctx, { operationId, updates }) {
+    await updateSortOrder(ctx.asSystem.pg, {
+      table: "quoteOperationStep",
+      column: "sortOrder",
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      parent: { column: "operationId", id: operationId },
+      updates
+    });
+    return { operationId };
   }
 });
 
 /**
- * Update method operation step order
+ * Reorder the steps of an item's make method operation.
+ *
+ * @remarks
+ * Refused unless the method is a Draft, when the item's revision is released
+ * and release control enforces it, and while a change notice holds the
+ * method. All or nothing: a step that is not on `operationId` refuses the
+ * whole reorder. Needs parts update, as the method editor does, and
+ * production update, which the step rows require.
  *
  * @mcp
  */
 export const updateMethodOperationStepOrder = defineServiceFn({
-  input: z.looseObject({
-    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
-  }),
-  permission: { update: "production" },
-  async run(ctx, input) {
-    return envelopes(
-      ctx,
-      await service.updateMethodOperationStepOrder(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
+  input: stepOrderInput,
+  permission: { update: ["parts", "production"] },
+  async run(ctx, { operationId, updates }) {
+    const lock = await checkRevisionLock(ctx.asCaller.supabase, {
+      kind: "operation",
+      id: operationId,
+      companyId: ctx.company.id
+    });
+    if (!lock.ok) return ctx.error("rule", lock.message);
+    const refusal = await methodStepRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      { operationId }
     );
+    if (refusal) return ctx.error("rule", refusal);
+    await updateSortOrder(ctx.asSystem.pg, {
+      table: "methodOperationStep",
+      column: "sortOrder",
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      parent: { column: "operationId", id: operationId },
+      updates
+    });
+    return withLockNotice(lock, { operationId });
   }
 });
 
@@ -7050,7 +7481,11 @@ export const updateProcedureStepOrder = defineServiceFn({
  * Create a job for an item.
  *
  * @remarks
- * `options.source` is telemetry only: it records which surface raised the job.
+ * Draft unless `status` is Planned; a job reaches the floor only through its
+ * release. The records it names must be this company's, and it is refused for
+ * an item an unreleased change notice holds and for a Make to Asset item that
+ * cannot complete to an asset, as `createJob` is. `options.source` is
+ * telemetry only: it records which surface raised the job.
  *
  * @mcp
  */
@@ -7063,20 +7498,7 @@ export const insertJob = defineServiceFn({
     dueDate: z.string().optional(),
     startDate: z.string().optional(),
     priority: z.number().optional(),
-    status: z
-      .enum([
-        "Draft",
-        "Planned",
-        "Ready",
-        "In Progress",
-        "Paused",
-        "Completed",
-        "Closed",
-        "Cancelled",
-        "Overdue",
-        "Due Today"
-      ])
-      .optional(),
+    status: z.enum(["Draft", "Planned"]).optional(),
     deadlineType: z
       .enum(["ASAP", "Hard Deadline", "Soft Deadline", "No Deadline"])
       .optional(),
@@ -7115,14 +7537,20 @@ export const insertJob = defineServiceFn({
       .optional()
   }),
   permission: { create: "production" },
-  async run(ctx, input) {
-    const { options, ...job } = input;
+  async run(ctx, { options, ...job }) {
+    const refusal = await jobCreationRefusal(ctx, job);
+    if (refusal) return refusal;
     return envelope(
       ctx,
       await service.insertJob(
         ctx.asCaller.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, job, ["companyId", "createdBy", "updatedBy"]) as never,
+        {
+          ...job,
+          customFields: job.customFields as Json | undefined,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        },
         options as never
       )
     );
@@ -7556,77 +7984,61 @@ export const setJobOperationToolStepLink = defineServiceFn({
   }
 });
 
+const saveMethodInput = z.object({
+  sourceId: z.string(),
+  targetId: z.string(),
+  parts: methodPartsInput.optional()
+});
+
 /**
- * Upsert make method from job
+ * Save a job's method onto an item's make method (Save Method).
  *
- * @mcp
+ * @remarks
+ * Overwrites make method `targetId` with job `sourceId`'s root method, the
+ * parts `parts` names. Needs parts update, since it rewrites the item's bill
+ * of material and process, and is refused under the same revision lock.
+ *
+ * @mcp destructive
  */
 export const upsertMakeMethodFromJob = defineServiceFn({
-  input: z.looseObject({
-    sourceId: z.string(),
-    targetId: z.string(),
-    parts: z
-      .looseObject({
-        billOfMaterial: z.boolean(),
-        billOfProcess: z.boolean(),
-        parameters: z.boolean(),
-        tools: z.boolean(),
-        steps: z.boolean(),
-        workInstructions: z.boolean()
-      })
-      .optional()
-  }),
-  permission: { create: "production", update: "production" },
+  input: saveMethodInput,
+  permission: { update: ["production", "parts"] },
   async run(ctx, input) {
+    const refusal = await saveMethodRefusal(ctx, input.targetId);
+    if (refusal) return refusal;
     return envelope(
       ctx,
       await service.upsertMakeMethodFromJob(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
+        { ...input, companyId: ctx.company.id, userId: ctx.auditUserId }
       )
     );
   }
 });
 
 /**
- * Upsert make method from job method
+ * Save a job's sub-assembly method onto an item's make method.
  *
- * @mcp
+ * @remarks
+ * Overwrites make method `targetId` with job make method `sourceId`, the
+ * parts `parts` names. Needs parts update and is refused under the same
+ * revision lock as `upsertMakeMethodFromJob`.
+ *
+ * @mcp destructive
  */
 export const upsertMakeMethodFromJobMethod = defineServiceFn({
-  input: z.looseObject({
-    sourceId: z.string(),
-    targetId: z.string(),
-    parts: z
-      .looseObject({
-        billOfMaterial: z.boolean(),
-        billOfProcess: z.boolean(),
-        parameters: z.boolean(),
-        tools: z.boolean(),
-        steps: z.boolean(),
-        workInstructions: z.boolean()
-      })
-      .optional()
-  }),
-  permission: { create: "production", update: "production" },
+  input: saveMethodInput,
+  permission: { update: ["production", "parts"] },
   async run(ctx, input) {
+    const refusal = await saveMethodRefusal(ctx, input.targetId);
+    if (refusal) return refusal;
     return envelope(
       ctx,
       await service.upsertMakeMethodFromJobMethod(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         ctx.asSystem.pg,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
+        { ...input, companyId: ctx.company.id, userId: ctx.auditUserId }
       )
     );
   }
@@ -8450,7 +8862,7 @@ export const getWorkCenterShifts = defineServiceFn({
       await service.getWorkCenterShifts(
         ctx.asCaller.supabase,
         ctx.company.id,
-        stamp(ctx, input.workCenterIds, ["companyId"]) as never
+        input.workCenterIds
       )
     );
   }
@@ -8556,15 +8968,13 @@ export const notifyScheduleInputsChanged = defineServiceFn({
   }),
   permission: { update: "production" },
   async run(ctx, input) {
-    return plain(
-      ctx,
-      await service.notifyScheduleInputsChanged(
-        ctx.company.id,
-        input.kind as never,
-        input.reason as never,
-        input.entityId as never
-      )
+    const sent = await service.notifyScheduleInputsChanged(
+      ctx.company.id,
+      input.kind,
+      input.reason,
+      input.entityId
     );
+    if (!sent) return ctx.error("unavailable", "The scheduler was not told");
   }
 });
 
@@ -8904,7 +9314,12 @@ export const getAssemblyInstructionVersions = defineServiceFn({
 });
 
 /**
- * Create a new editable Draft version as a perfect copy of an existing instruction: a fresh assemblyInstruction row (new id, version = max+1, status Draft) plus…
+ * Create a new Draft version of an assembly instruction as a copy of an
+ * existing one, with every step and its materials, slides and tools.
+ *
+ * @remarks
+ * The new version is the highest version plus one. A copy that fails partway
+ * leaves a Draft that can be deleted.
  *
  * @mcp
  */
@@ -8928,7 +9343,12 @@ export const copyAssemblyInstructionAsVersion = defineServiceFn({
 });
 
 /**
- * Make a version the active (Published) one: archive whichever sibling is currently Published, publish the target, and repoint in-flight work to it — but only ac…
+ * Publish a version of an assembly instruction: archive the version that was
+ * Published, publish this one, and move in-flight work to it.
+ *
+ * @remarks
+ * Only job operations that are not Done or Canceled, on jobs that are not
+ * Completed, Closed or Cancelled, move. Method operations are not changed.
  *
  * @mcp
  */
@@ -9949,7 +10369,11 @@ export const deleteAssemblyComponentMapping = defineServiceFn({
 });
 
 /**
- * The engineering bill of materials for a made item, flattened through its Make subassemblies (makeMethod → methodMaterial → materialMakeMethodId), with quantiti…
+ * The engineering bill of materials of a made item, flattened through its Make
+ * subassemblies with quantities multiplied per level.
+ *
+ * @remarks
+ * Uses the Active make method, else the first one.
  *
  * @mcp read
  */

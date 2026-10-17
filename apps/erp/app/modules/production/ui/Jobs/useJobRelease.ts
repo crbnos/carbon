@@ -15,7 +15,7 @@ export type ReleaseChoices = {
 };
 
 /**
- * The Release dialog's submission: `production.job.release` for one job, with
+ * The Release dialog's submission: `releaseJobs` for one job, with
  * the dialog's choices. Owned by the page, not the dialog, so the result is
  * still toasted after the dialog closes and the page can show it pending.
  */
