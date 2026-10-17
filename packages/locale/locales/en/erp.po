@@ -10769,6 +10769,9 @@ msgstr "Grant each user fine-grained, per-module permissions instead of giving e
 msgid "Grants Ability"
 msgstr "Grants Ability"
 
+msgid "Gross"
+msgstr "Gross"
+
 msgid "Gross Profit"
 msgstr "Gross Profit"
 
@@ -13840,6 +13843,9 @@ msgstr "Needs Review"
 
 msgid "Negative Adjustment"
 msgstr "Negative Adjustment"
+
+msgid "Net Amount"
+msgstr "Net Amount"
 
 msgid "Net book value"
 msgstr "Net book value"

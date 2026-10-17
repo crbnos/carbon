@@ -10769,6 +10769,9 @@ msgstr "Otorga a cada usuario permisos granulares por módulo en lugar de dar ac
 msgid "Grants Ability"
 msgstr "Otorga Habilidad"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Ganancia Bruta"
 
@@ -13840,6 +13843,9 @@ msgstr "Requiere revisión"
 
 msgid "Negative Adjustment"
 msgstr "Ajuste Negativo"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "Valor en Libros Neto"

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CREDIT_REASON_ITEM_ENTITY_TYPE } from "../../../../core/credit-reason-item";
 import type { ExternalIntegrationMappingService } from "../../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../../core/posting";
+import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Qbo } from "../../models";
 import {
   buildQboCreditMemoApplicationPayload,
@@ -17,13 +18,16 @@ import {
   type QboMemoSource,
   qboCreditMemoSkipReason,
   qboMemoApplicationAmount,
+  resolveQboCreditMemoTax,
   resolveQboCreditReasonItemRef
 } from "../credit-memo";
+import type { QboInvoiceTaxCatalog } from "../invoice-tax";
 import {
   buildQboVendorCreditApplicationPayload,
   buildQboVendorCreditPayload,
   QboVendorCreditSyncer,
-  qboVendorCreditSkipReason
+  qboVendorCreditSkipReason,
+  resolveQboVendorCreditTax
 } from "../vendor-credit";
 
 /**
@@ -70,6 +74,9 @@ function memo(overrides: Partial<QboMemoSource> = {}): QboMemoSource {
     currencyCode: "USD",
     exchangeRate: 1,
     amount: 250,
+    taxAmount: 0,
+    taxCodeId: null,
+    decimalPlaces: 2,
     reasonAccount: "acc_returns",
     reference: null,
     notes: "Short shipment on SO-000019",
@@ -785,5 +792,152 @@ describe("QboVendorCreditSyncer.applySettlements", () => {
     const payload = applyVendorCredit.mock.calls[0]?.[0] as object;
     expect(payload).not.toHaveProperty("CurrencyRef");
     expect(payload).not.toHaveProperty("ExchangeRate");
+  });
+});
+
+describe("memo tax (mapped codes)", () => {
+  const code = (Id: string, Name: string, rateId?: string): Qbo.TaxCode => ({
+    Id,
+    Name,
+    Active: true,
+    ...(rateId
+      ? {
+          SalesTaxRateList: {
+            TaxRateDetail: [{ TaxRateRef: { value: rateId } }]
+          },
+          PurchaseTaxRateList: {
+            TaxRateDetail: [{ TaxRateRef: { value: rateId } }]
+          }
+        }
+      : {})
+  });
+  const catalog = (country: string): QboInvoiceTaxCatalog => ({
+    country,
+    taxCodes: [code("20S", "20.0% S", "r20"), code("NOVAT", "No VAT", "r0")],
+    taxRates: [
+      { Id: "r20", RateValue: 20 },
+      { Id: "r0", RateValue: 0 }
+    ]
+  });
+  const mappings = buildTaxCodeMappingLookup(
+    (["sales", "purchase"] as const).map((direction) => ({
+      taxCodeId: "tc_std",
+      direction,
+      externalId: "20S",
+      externalName: "20.0% S",
+      externalRate: 0.2
+    }))
+  );
+  const taxed = { amount: 1200, taxAmount: 200, taxCodeId: "tc_std" };
+
+  it("sends a GB credit memo's line at net with its mapped code and the tax detail", () => {
+    const source = memo({ ...taxed, currencyCode: "GBP" });
+    const payload = buildQboCreditMemoPayload({
+      memo: source,
+      customerRef: { value: "17" },
+      reasonItemRef: { value: "901" },
+      baseCurrencyCode: "GBP",
+      tax: resolveQboCreditMemoTax({
+        memo: source,
+        catalog: catalog("GB"),
+        mappings
+      })
+    });
+    expect(payload.GlobalTaxCalculation).toBe("TaxExcluded");
+    expect(payload.Line[0]).toMatchObject({
+      Amount: 1000,
+      SalesItemLineDetail: {
+        ItemRef: { value: "901" },
+        Qty: 1,
+        UnitPrice: 1000,
+        TaxCodeRef: { value: "20S" }
+      }
+    });
+    expect(payload.TxnTaxDetail).toEqual({
+      TotalTax: 200,
+      TaxLine: [
+        {
+          Amount: 200,
+          DetailType: "TaxLineDetail",
+          TaxLineDetail: {
+            TaxRateRef: { value: "r20" },
+            NetAmountTaxable: 1000,
+            PercentBased: true,
+            TaxPercent: 20
+          }
+        }
+      ]
+    });
+  });
+
+  it("sends a US credit memo with the TAX marker and the mapped transaction code", () => {
+    const tax = resolveQboCreditMemoTax({
+      memo: memo(taxed),
+      catalog: catalog("US"),
+      mappings
+    });
+    expect(tax.lineTaxCodeRef).toEqual({ value: "TAX" });
+    expect(tax.txnTaxDetail?.TxnTaxCodeRef).toEqual({ value: "20S" });
+    expect(tax.globalTaxCalculation).toBeUndefined();
+  });
+
+  it("splits a partly recoverable vendor credit like a bill line", () => {
+    const source = supplierMemo({ ...taxed, currencyCode: "GBP" });
+    const payload = buildQboVendorCreditPayload({
+      memo: source,
+      vendorRef: { value: "55" },
+      reasonAccountRef: { value: "84" },
+      baseCurrencyCode: "GBP",
+      tax: resolveQboVendorCreditTax({
+        memo: source,
+        recoverableShare: 0.5,
+        catalog: catalog("GB"),
+        mappings
+      })
+    });
+    expect(
+      payload.Line.map((line) => [
+        line.Amount,
+        line.AccountBasedExpenseLineDetail?.AccountRef.value,
+        line.AccountBasedExpenseLineDetail?.TaxCodeRef?.value
+      ])
+    ).toEqual([
+      [500, "84", "20S"],
+      [600, "84", "NOVAT"]
+    ]);
+    expect(payload.TxnTaxDetail?.TotalTax).toBe(100);
+    expect(
+      payload.Line.reduce((sum, line) => sum + line.Amount, 0) +
+        payload.TxnTaxDetail!.TotalTax
+    ).toBe(1200);
+  });
+
+  it("refuses a memo whose code has no mapping", () => {
+    expect(() =>
+      resolveQboCreditMemoTax({
+        memo: memo(taxed),
+        catalog: catalog("GB"),
+        mappings: new Map()
+      })
+    ).toThrow(/UNMAPPED_TAX_CODES/);
+  });
+
+  it("sends a memo without tax exactly as before", () => {
+    const payload = buildQboVendorCreditPayload({
+      memo: supplierMemo(),
+      vendorRef: { value: "55" },
+      reasonAccountRef: { value: "84" },
+      baseCurrencyCode: "USD"
+    });
+    expect(payload.Line).toEqual([
+      {
+        Amount: 250,
+        Description: "Short shipment on SO-000019",
+        DetailType: "AccountBasedExpenseLineDetail",
+        AccountBasedExpenseLineDetail: { AccountRef: { value: "84" } }
+      }
+    ]);
+    expect(payload).not.toHaveProperty("TxnTaxDetail");
+    expect(payload).not.toHaveProperty("GlobalTaxCalculation");
   });
 });

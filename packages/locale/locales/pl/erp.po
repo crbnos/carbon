@@ -10769,6 +10769,9 @@ msgstr "Przydzielaj każdemu użytkownikowi szczegółowe uprawnienia dla każde
 msgid "Grants Ability"
 msgstr "Przyznaje Umiejętność"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Zysk brutto"
 
@@ -13840,6 +13843,9 @@ msgstr "Wymaga przeglądu"
 
 msgid "Negative Adjustment"
 msgstr "Ujemna Korekta"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "Wartość księgowa netto"

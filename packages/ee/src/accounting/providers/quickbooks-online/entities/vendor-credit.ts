@@ -3,11 +3,13 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { deriveRate, round } from "@carbon/utils";
 import {
   createMappingService,
   type ExternalIntegrationMapping
 } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
+import { getTaxCodeMappings } from "../../../core/tax-mapping";
 import { BaseEntitySyncer, type ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
@@ -23,11 +25,22 @@ import {
   qboMemoApplicationAmount,
   qboMemoApplicationSkipReason,
   qboMemoCurrencyFields,
+  qboMemoHasTax,
+  qboMemoNetAmount,
   qboMemoStatusSkipReason,
   readQboAppliedSettlementIds,
   readQboMemoApplication,
   recordQboMemoApplication
 } from "./credit-memo";
+import {
+  buildQboTxnTaxDetail,
+  isQboUsCompany,
+  loadQboInvoiceTaxCatalog,
+  type QboInvoiceTaxCatalog,
+  type QboTaxCodeMappings,
+  QboTaxContext,
+  splitQboPurchaseTax
+} from "./invoice-tax";
 import {
   buildQboDocNumberFields,
   loadQboAccountRefsById,
@@ -72,10 +85,72 @@ export function qboVendorCreditSkipReason(memo: QboMemoSource): string | null {
   return qboMemoApplicationSkipReason(memo);
 }
 
+/** How a vendor credit's tax goes out, outside the US. */
+export type QboVendorCreditTax = {
+  lines: Array<{ amount: number; taxCodeRef: Qbo.Ref }>;
+  txnTaxDetail: Qbo.TxnTaxDetail | undefined;
+};
+
+/**
+ * The tax of a supplier memo with tax, outside the US. The posting moved only
+ * the recoverable share of the tax through Tax Paid and left the rest in the
+ * reason account, so the memo splits like a bill line (grill 10): the
+ * recoverable part at the mapped purchase code with the recoverable tax, the
+ * rest at the company's non-taxable code. `recoverableShare` is 0..1. Pure —
+ * exported for tests.
+ */
+export function resolveQboVendorCreditTax(args: {
+  memo: QboMemoSource;
+  recoverableShare: number;
+  catalog: QboInvoiceTaxCatalog;
+  mappings: QboTaxCodeMappings;
+}): QboVendorCreditTax {
+  const { memo } = args;
+  const { netAmount, decimalPlaces } = qboMemoNetAmount(memo);
+  // The same rounding the posting used for the Tax Paid leg (planMemoTax).
+  const recoverableTax = round(
+    memo.taxAmount * args.recoverableShare,
+    decimalPlaces
+  );
+  const parts = splitQboPurchaseTax({
+    documentId: memo.id,
+    sources: [
+      {
+        id: memo.id,
+        amount: round(memo.amount - recoverableTax, decimalPlaces),
+        tax: {
+          taxCodeId: memo.taxCodeId,
+          taxPercent: deriveRate(memo.taxAmount, netAmount),
+          recoverableShare: args.recoverableShare
+        }
+      }
+    ],
+    recoverableTax,
+    decimalPlaces,
+    catalog: args.catalog,
+    mappings: args.mappings
+  });
+  return {
+    lines: parts.map((part) => ({
+      amount: part.amount,
+      taxCodeRef: part.codeRef
+    })),
+    txnTaxDetail: buildQboTxnTaxDetail(
+      parts.map((part) => ({
+        rate: part.rate,
+        netAmount: part.amount,
+        taxAmount: part.taxAmount
+      })),
+      decimalPlaces
+    )
+  };
+}
+
 /**
  * Build the QBO VendorCredit create payload. Pure — exported for tests. ONE
  * account-coded line carrying the memo's whole amount against its reason
- * account.
+ * account; a memo with tax outside the US sends its tax lines instead, all on
+ * the reason account.
  */
 export function buildQboVendorCreditPayload(args: {
   memo: QboMemoSource;
@@ -83,8 +158,9 @@ export function buildQboVendorCreditPayload(args: {
   reasonAccountRef: Qbo.Ref;
   apAccountRef?: Qbo.Ref;
   baseCurrencyCode: string;
+  tax?: QboVendorCreditTax;
 }): QboCreatePayload<Qbo.VendorCredit> {
-  const { memo } = args;
+  const { memo, tax } = args;
   const docNumber = buildQboDocNumberFields(
     memo.memoId,
     memo.reference ? `Ref ${memo.reference}` : undefined
@@ -99,16 +175,23 @@ export function buildQboVendorCreditPayload(args: {
     ...(args.apAccountRef ? { APAccountRef: args.apAccountRef } : {}),
     // QBO quotes company base per document currency, reciprocal to Carbon.
     ...qboMemoCurrencyFields(memo, args.baseCurrencyCode),
-    Line: [
-      {
-        Amount: memo.amount,
+    ...(tax
+      ? {
+          GlobalTaxCalculation: "TaxExcluded" as const,
+          ...(tax.txnTaxDetail ? { TxnTaxDetail: tax.txnTaxDetail } : {})
+        }
+      : {}),
+    Line: (tax?.lines ?? [{ amount: memo.amount, taxCodeRef: undefined }]).map(
+      (line) => ({
+        Amount: line.amount,
         ...(description ? { Description: description } : {}),
         DetailType: "AccountBasedExpenseLineDetail",
         AccountBasedExpenseLineDetail: {
-          AccountRef: args.reasonAccountRef
+          AccountRef: args.reasonAccountRef,
+          ...(line.taxCodeRef ? { TaxCodeRef: line.taxCodeRef } : {})
         }
-      }
-    ]
+      })
+    )
   };
 }
 
@@ -162,6 +245,14 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     bankCashAccount: string;
   } | null>;
   private baseCurrencyCodePromise?: Promise<string>;
+  private readonly taxContext = new QboTaxContext({
+    catalog: () => loadQboInvoiceTaxCatalog(this.qboProvider),
+    mappings: () =>
+      getTaxCodeMappings(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      })
+  });
   private remoteMetaById = new Map<
     string,
     { syncToken?: string; lastUpdatedTime?: string }
@@ -209,6 +300,58 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
       })();
     }
     return this.accountDefaultsPromise;
+  }
+
+  /**
+   * The memo's tax, resolved before any dependency is pushed. Undefined for a
+   * memo without tax and for a US company (QuickBooks US has no purchase
+   * tax): both go out as before.
+   */
+  private async resolveTax(
+    local: QboMemoSource
+  ): Promise<QboVendorCreditTax | undefined> {
+    if (!qboMemoHasTax(local)) return undefined;
+    const catalog = await this.taxContext.catalog(local.id);
+    if (isQboUsCompany(catalog)) return undefined;
+    const mappings = await this.taxContext.mappings(local.id);
+    return resolveQboVendorCreditTax({
+      memo: local,
+      recoverableShare: await this.getRecoverableShare(local),
+      catalog,
+      mappings
+    });
+  }
+
+  /**
+   * The share of the memo's tax the posting moved through Tax Paid. With no
+   * tax code it moved all of it (planMemoTax); with a code, the tax ledger
+   * holds the recoverable amount of each component.
+   */
+  private async getRecoverableShare(local: QboMemoSource): Promise<number> {
+    if (local.taxAmount === 0) return 0;
+    if (!local.taxCodeId) return 1;
+    const rows = await this.database
+      .selectFrom("taxLedger")
+      .select(["taxAmount", "recoverableAmount"])
+      .where("companyId", "=", this.companyId)
+      .where("documentId", "=", local.id)
+      .where("documentType", "=", "Memo")
+      .where("source", "=", "Purchase")
+      .execute();
+    const tax = rows.reduce((sum, row) => sum + Number(row.taxAmount), 0);
+    const recoverable = rows.reduce(
+      (sum, row) => sum + Number(row.recoverableAmount),
+      0
+    );
+    if (rows.length === 0 || tax === 0) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: `Cannot sync memo ${local.memoId}: its tax has no tax ledger rows, so its recoverable share is unknown. Repost the memo, then retry.`,
+        metadata: { memoId: local.id, taxCodeId: local.taxCodeId }
+      });
+    }
+    return deriveRate(Math.abs(recoverable), Math.abs(tax));
   }
 
   private getBaseCurrencyCode(): Promise<string> {
@@ -327,6 +470,8 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
       );
     }
 
+    const tax = await this.resolveTax(local);
+
     // JIT dependency: vendor before the document
     let vendorRemoteId = await this.mappingService.getExternalId(
       "vendor",
@@ -378,7 +523,8 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
       vendorRef: { value: vendorRemoteId },
       reasonAccountRef,
       apAccountRef,
-      baseCurrencyCode: await this.getBaseCurrencyCode()
+      baseCurrencyCode: await this.getBaseCurrencyCode(),
+      tax
     });
   }
 

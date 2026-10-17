@@ -10769,6 +10769,9 @@ msgstr "Gewähren Sie jedem Benutzer granulare, modulspezifische Berechtigungen,
 msgid "Grants Ability"
 msgstr "Verleiht Qualifikation"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Bruttogewinn"
 
@@ -13840,6 +13843,9 @@ msgstr "Überprüfung erforderlich"
 
 msgid "Negative Adjustment"
 msgstr "Negative Korrektur"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "Restbuchwert"

@@ -10769,6 +10769,9 @@ msgstr "Concedi a ogni utente autorizzazioni granulari per modulo invece di dare
 msgid "Grants Ability"
 msgstr "Assegna Competenza"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Margine lordo"
 
@@ -13840,6 +13843,9 @@ msgstr "Necessita di revisione"
 
 msgid "Negative Adjustment"
 msgstr "Rettifica Negativa"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "Valore Netto Contabile"

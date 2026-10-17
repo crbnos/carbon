@@ -10769,6 +10769,9 @@ msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes içi
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Brüt Kar"
 
@@ -13840,6 +13843,9 @@ msgstr "İncelemesi Gerekli"
 
 msgid "Negative Adjustment"
 msgstr "Negatif düzeltme"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "Net Defter Değeri"

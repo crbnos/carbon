@@ -10769,6 +10769,9 @@ msgstr "सभी को पूर्ण पहुंच देने के ब
 msgid "Grants Ability"
 msgstr "कौशल प्रदान करता है"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "सकल लाभ"
 
@@ -13840,6 +13843,9 @@ msgstr "समीक्षा की आवश्यकता है"
 
 msgid "Negative Adjustment"
 msgstr "नकारात्मक समायोजन"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "शुद्ध बही मूल्य"

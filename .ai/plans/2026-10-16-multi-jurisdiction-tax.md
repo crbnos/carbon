@@ -56,7 +56,7 @@ Slice C — Provider mapping
 - [x] Task 30: Send mapped tax on Xero invoices, sales orders and purchase orders
 - [x] Task 31: Carry per-line tax through bill costing
 - [x] Task 32: Send tax on Xero bills, credit notes and vendor credits
-- [ ] Task 33: Send mapped tax on QuickBooks Online documents
+- [x] Task 33: Send mapped tax on QuickBooks Online documents
 - [ ] Task 34: Update the accounting sync rule
 
 Slice D — Reporting and documents

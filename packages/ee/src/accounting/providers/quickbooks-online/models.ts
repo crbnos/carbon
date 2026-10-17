@@ -162,6 +162,14 @@ export namespace Qbo {
   });
   export type TxnTaxDetail = z.infer<typeof TxnTaxDetailSchema>;
 
+  /** Whether line amounts include tax. Outside the US Carbon sends
+   *  `TaxExcluded`; a US company leaves it to QuickBooks' sales tax. */
+  export const GlobalTaxCalculationSchema = z.enum([
+    "TaxExcluded",
+    "TaxInclusive",
+    "NotApplicable"
+  ]);
+
   export const SalesItemLineDetailSchema = z.object({
     TaxCodeRef: RefSchema.optional(),
     ItemRef: RefSchema.optional(),
@@ -190,9 +198,7 @@ export namespace Qbo {
     TxnTaxDetail: TxnTaxDetailSchema.optional(),
     CurrencyRef: RefSchema.optional(),
     ExchangeRate: z.number().optional(),
-    GlobalTaxCalculation: z
-      .enum(["TaxExcluded", "TaxInclusive", "NotApplicable"])
-      .optional(),
+    GlobalTaxCalculation: GlobalTaxCalculationSchema.optional(),
     Id: z.string(),
     SyncToken: z.string(),
     /** QBO caps DocNumber at 21 characters. */
@@ -211,6 +217,8 @@ export namespace Qbo {
 
   export const AccountBasedExpenseLineDetailSchema = z.object({
     AccountRef: RefSchema,
+    /** The line's tax code (a TaxCode id; `TAX`/`NON` markers in the US). */
+    TaxCodeRef: RefSchema.optional(),
     /** Dimension slot target "class" (QBO Class entity) — per line on
      * expense-style transactions; `DepartmentRef` is transaction-level there
      * (only JournalEntry carries it per line). */
@@ -223,6 +231,8 @@ export namespace Qbo {
 
   export const ItemBasedExpenseLineDetailSchema = z.object({
     ItemRef: RefSchema.optional(),
+    /** The line's tax code (a TaxCode id; `TAX`/`NON` markers in the US). */
+    TaxCodeRef: RefSchema.optional(),
     Qty: z.number().optional(),
     UnitPrice: z.number().optional()
   });
@@ -269,6 +279,8 @@ export namespace Qbo {
      */
     APAccountRef: RefSchema.optional(),
     Line: z.array(ExpenseLineSchema),
+    TxnTaxDetail: TxnTaxDetailSchema.optional(),
+    GlobalTaxCalculation: GlobalTaxCalculationSchema.optional(),
     /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX bills. */
     CurrencyRef: RefSchema.optional(),
     /** Foreign→home exchange rate — set on FX bills (omitted at rate 1). */
@@ -297,6 +309,8 @@ export namespace Qbo {
     /** Email address the PO is sent to (supplier's primary contact). */
     POEmail: EmailAddressSchema.optional(),
     Line: z.array(ExpenseLineSchema),
+    TxnTaxDetail: TxnTaxDetailSchema.optional(),
+    GlobalTaxCalculation: GlobalTaxCalculationSchema.optional(),
     POStatus: z.enum(["Open", "Closed"]).optional(),
     TotalAmt: z.number().optional(),
     PrivateNote: z.string().optional(),
@@ -373,6 +387,8 @@ export namespace Qbo {
     TxnDate: z.string().optional(), // YYYY-MM-DD
     CustomerRef: RefSchema,
     Line: z.array(InvoiceLineSchema),
+    TxnTaxDetail: TxnTaxDetailSchema.optional(),
+    GlobalTaxCalculation: GlobalTaxCalculationSchema.optional(),
     /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX credit memos. */
     CurrencyRef: RefSchema.optional(),
     /** HOME per FOREIGN unit — the inverse of Carbon's rate (toQboExchangeRate). */
@@ -405,6 +421,8 @@ export namespace Qbo {
     /** The A/P control account the credit lands on; omitted → QBO's default. */
     APAccountRef: RefSchema.optional(),
     Line: z.array(ExpenseLineSchema),
+    TxnTaxDetail: TxnTaxDetailSchema.optional(),
+    GlobalTaxCalculation: GlobalTaxCalculationSchema.optional(),
     CurrencyRef: RefSchema.optional(),
     /** HOME per FOREIGN unit — the inverse of Carbon's rate (toQboExchangeRate). */
     ExchangeRate: z.number().optional(),

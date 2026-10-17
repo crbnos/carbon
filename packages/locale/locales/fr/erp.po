@@ -10769,6 +10769,9 @@ msgstr "Accorder à chaque utilisateur des autorisations granulaires par module 
 msgid "Grants Ability"
 msgstr "Accorde une compétence"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Bénéfice brut"
 
@@ -13840,6 +13843,9 @@ msgstr "Nécessite une revue"
 
 msgid "Negative Adjustment"
 msgstr "Ajustement Négatif"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "Valeur Nette Comptable"

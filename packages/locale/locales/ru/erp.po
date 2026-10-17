@@ -10769,6 +10769,9 @@ msgstr "Предоставить каждому пользователю дет�
 msgid "Grants Ability"
 msgstr "Предоставляет Навык"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "Валовая прибыль"
 
@@ -13840,6 +13843,9 @@ msgstr "Требует рассмотрения"
 
 msgid "Negative Adjustment"
 msgstr "Отрицательная корректировка"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "остаточная стоимость"

@@ -10769,6 +10769,9 @@ msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 �
 msgid "Grants Ability"
 msgstr "역량 부여"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "매출총이익"
 
@@ -13840,6 +13843,9 @@ msgstr "검토 필요"
 
 msgid "Negative Adjustment"
 msgstr "음수 조정"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "순장부가액"

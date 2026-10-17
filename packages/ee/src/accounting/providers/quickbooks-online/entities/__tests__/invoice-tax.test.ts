@@ -4,13 +4,17 @@
 
 import { describe, expect, it, vi } from "vitest";
 import type { SalesDocumentComponents } from "../../../../core/sales-document-components";
+import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Qbo } from "../../models";
 import type { QboProvider } from "../../provider";
 import {
   loadQboInvoiceTaxCatalog,
   type QboInvoiceTaxCatalog,
+  QboTaxContext,
+  qboNonTaxableCode,
   qboTaxOptions,
-  resolveQboInvoiceTax
+  resolveQboInvoiceTax,
+  splitQboPurchaseTax
 } from "../invoice-tax";
 
 function document(): SalesDocumentComponents {
@@ -391,5 +395,323 @@ describe("qboTaxOptions", () => {
 
   it("offers nothing for a direction the codes have no rate list for", () => {
     expect(qboTaxOptions(catalog("GB"), "purchase")).toEqual([]);
+  });
+});
+
+/**
+ * A UK company: two 20% sales codes (so a bare 20% is ambiguous), a 20%
+ * purchase code, and three 0% codes of which "No VAT" is the non-taxable one.
+ */
+function gbCatalog(country = "GB"): QboInvoiceTaxCatalog {
+  const code = (
+    Id: string,
+    Name: string,
+    salesRate?: string,
+    purchaseRate?: string
+  ): Qbo.TaxCode => ({
+    Id,
+    Name,
+    Active: true,
+    ...(salesRate
+      ? {
+          SalesTaxRateList: {
+            TaxRateDetail: [{ TaxRateRef: { value: salesRate } }]
+          }
+        }
+      : {}),
+    ...(purchaseRate
+      ? {
+          PurchaseTaxRateList: {
+            TaxRateDetail: [{ TaxRateRef: { value: purchaseRate } }]
+          }
+        }
+      : {})
+  });
+  return {
+    country,
+    taxCodes: [
+      code("20S", "20.0% S", "r20s", "r20p"),
+      code("20ECS", "20.0% ECS", "r20ecs"),
+      code("0Z", "0.0% Z", "r0zs", "r0zp"),
+      code("EX", "Exempt", "r0exs", "r0exp"),
+      code("NOVAT", "No VAT", "r0ns", "r0np")
+    ],
+    taxRates: [
+      { Id: "r20s", RateValue: 20 },
+      { Id: "r20p", RateValue: 20 },
+      { Id: "r20ecs", RateValue: 20 },
+      { Id: "r0zs", RateValue: 0 },
+      { Id: "r0zp", RateValue: 0 },
+      { Id: "r0exs", RateValue: 0 },
+      { Id: "r0exp", RateValue: 0 },
+      { Id: "r0ns", RateValue: 0 },
+      { Id: "r0np", RateValue: 0 }
+    ]
+  };
+}
+
+const MAPPINGS = buildTaxCodeMappingLookup([
+  {
+    taxCodeId: "tc_std",
+    direction: "sales",
+    externalId: "20S",
+    externalName: "20.0% S",
+    externalRate: 0.2
+  },
+  {
+    taxCodeId: "tc_std",
+    direction: "purchase",
+    externalId: "20S",
+    externalName: "20.0% S",
+    externalRate: 0.2
+  }
+]);
+
+function codedDocument(): SalesDocumentComponents {
+  const source = document();
+  source.components = [
+    {
+      ...source.components[0]!,
+      taxPercent: 0.2,
+      taxAmount: 16,
+      taxCodeId: "tc_std"
+    },
+    // A non-taxable add-on carries no code.
+    source.components[3]!,
+    // Untaxed header shipping has no code.
+    source.components[4]!
+  ];
+  source.totalTax = 16;
+  return source;
+}
+
+describe("QuickBooks mapped tax codes on sales documents", () => {
+  it("sends the mapped code where a bare 20% matches two codes", () => {
+    const result = resolveQboInvoiceTax({
+      document: codedDocument(),
+      catalog: gbCatalog(),
+      mappings: MAPPINGS
+    });
+    expect(Object.fromEntries(result.lineTaxCodeRefs)).toEqual({
+      merch: { value: "20S" },
+      // Several 0% codes: the untaxed amounts take the non-taxable one.
+      nontax: { value: "NOVAT" },
+      header: { value: "NOVAT" }
+    });
+    expect(result.txnTaxDetail).toEqual({
+      TotalTax: 16,
+      TaxLine: [
+        {
+          Amount: 16,
+          DetailType: "TaxLineDetail",
+          TaxLineDetail: {
+            TaxRateRef: { value: "r20s" },
+            NetAmountTaxable: 80,
+            PercentBased: true,
+            TaxPercent: 20
+          }
+        }
+      ]
+    });
+  });
+
+  it("refuses a code with no sales mapping, naming the code", () => {
+    let error: unknown;
+    try {
+      resolveQboInvoiceTax({
+        document: codedDocument(),
+        catalog: gbCatalog(),
+        mappings: new Map()
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        metadata: { taxCodeId: "tc_std", direction: "sales" }
+      }
+    });
+  });
+
+  it("refuses a mapped code whose rate does not reproduce the line's tax", () => {
+    const source = codedDocument();
+    source.components[0]!.taxPercent = 0.1;
+    source.components[0]!.taxAmount = 8;
+    source.totalTax = 8;
+    expect(() =>
+      resolveQboInvoiceTax({
+        document: source,
+        catalog: gbCatalog(),
+        mappings: MAPPINGS
+      })
+    ).toThrow(/UNMAPPED_TAX_CODES/);
+  });
+
+  it("keeps the US markers and sends the mapped code as the transaction code", () => {
+    const us = catalog();
+    const result = resolveQboInvoiceTax({
+      document: codedDocument(),
+      catalog: {
+        ...us,
+        taxCodes: [
+          ...us.taxCodes,
+          {
+            Id: "state",
+            Name: "State",
+            SalesTaxRateList: {
+              TaxRateDetail: [{ TaxRateRef: { value: "rate-state" } }]
+            }
+          }
+        ],
+        taxRates: [...us.taxRates, { Id: "rate-state", RateValue: 20 }]
+      },
+      mappings: buildTaxCodeMappingLookup([
+        {
+          taxCodeId: "tc_std",
+          direction: "sales",
+          externalId: "state",
+          externalName: "State",
+          externalRate: 0.2
+        }
+      ])
+    });
+    expect(Object.fromEntries(result.lineTaxCodeRefs)).toEqual({
+      merch: { value: "TAX" },
+      nontax: { value: "NON" },
+      header: { value: "NON" }
+    });
+    expect(result.txnTaxDetail).toMatchObject({
+      TxnTaxCodeRef: { value: "state" },
+      TotalTax: 16
+    });
+  });
+});
+
+describe("qboNonTaxableCode", () => {
+  it("prefers a code QuickBooks marks non-taxable with no rate", () => {
+    const remote = gbCatalog();
+    remote.taxCodes = [
+      ...remote.taxCodes,
+      { Id: "OOS", Name: "Outside scope", Active: true, Taxable: false }
+    ];
+    expect(qboNonTaxableCode(remote, "purchase", "doc").Id).toBe("OOS");
+  });
+
+  it("falls back to the 0% code named No VAT", () => {
+    expect(qboNonTaxableCode(gbCatalog(), "purchase", "doc").Id).toBe("NOVAT");
+  });
+
+  it("refuses rather than choose between two candidates", () => {
+    const remote = gbCatalog();
+    remote.taxCodes = [
+      ...remote.taxCodes,
+      { Id: "NON", Name: "NON", Active: true }
+    ];
+    expect(() => qboNonTaxableCode(remote, "purchase", "doc")).toThrow(
+      /UNMAPPED_TAX_CODES/
+    );
+  });
+});
+
+describe("splitQboPurchaseTax", () => {
+  it("splits a partly recoverable amount into a taxed part and a non-taxable rest", () => {
+    // Net 1,000 at 20%, half recoverable: the posting put 1,100 (net plus the
+    // non-recoverable 100) on the cost account and 100 on Tax Paid.
+    expect(
+      splitQboPurchaseTax({
+        documentId: "bill",
+        sources: [
+          {
+            id: "leg",
+            amount: 1100,
+            tax: { taxCodeId: "tc_std", taxPercent: 0.2, recoverableShare: 0.5 }
+          }
+        ],
+        recoverableTax: 100,
+        decimalPlaces: 2,
+        catalog: gbCatalog(),
+        mappings: MAPPINGS
+      })
+    ).toEqual([
+      {
+        sourceId: "leg",
+        amount: 500,
+        codeRef: { value: "20S" },
+        rate: { Id: "r20p", RateValue: 20 },
+        taxAmount: 100
+      },
+      {
+        sourceId: "leg",
+        amount: 600,
+        codeRef: { value: "NOVAT" },
+        rate: null,
+        taxAmount: 0
+      }
+    ]);
+  });
+
+  it("makes the lines' tax add up exactly to the posted Tax Paid legs", () => {
+    const parts = splitQboPurchaseTax({
+      documentId: "bill",
+      sources: ["a", "b", "c"].map((id) => ({
+        id,
+        amount: 10.01,
+        tax: { taxCodeId: "tc_std", taxPercent: 0.2, recoverableShare: 1 }
+      })),
+      recoverableTax: 6.01,
+      decimalPlaces: 2,
+      catalog: gbCatalog(),
+      mappings: MAPPINGS
+    });
+    expect(parts.map((part) => part.taxAmount)).toEqual([2.01, 2, 2]);
+    expect(parts.map((part) => part.amount)).toEqual([10.01, 10.01, 10.01]);
+  });
+
+  it("refuses a line whose tax cannot be tied to one code", () => {
+    expect(() =>
+      splitQboPurchaseTax({
+        documentId: "bill",
+        sources: [{ id: "leg", amount: 100, tax: null }],
+        recoverableTax: 20,
+        decimalPlaces: 2,
+        catalog: gbCatalog(),
+        mappings: MAPPINGS
+      })
+    ).toThrow(/UNMAPPED_TAX_CODES/);
+  });
+});
+
+describe("QboTaxContext", () => {
+  it("reads the mappings once, and again after a failed read", async () => {
+    const results = [
+      { data: null, error: "connection reset" },
+      {
+        data: [
+          {
+            taxCodeId: "tc_std",
+            direction: "sales" as const,
+            externalId: "20S",
+            externalName: null,
+            externalRate: 0.2
+          }
+        ],
+        error: null
+      }
+    ];
+    let reads = 0;
+    const context = new QboTaxContext({
+      catalog: async () => gbCatalog(),
+      mappings: async () => results[reads++]!
+    });
+    await expect(context.mappings("doc")).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_TAX_CODES", warning: true }
+    });
+    expect(
+      (await context.mappings("doc")).get("tc_std:sales")?.externalId
+    ).toBe("20S");
+    await context.mappings("doc");
+    expect(reads).toBe(2);
   });
 });

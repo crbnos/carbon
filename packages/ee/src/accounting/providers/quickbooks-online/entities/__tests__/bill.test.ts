@@ -5,13 +5,16 @@
 import { describe, expect, it } from "vitest";
 import type { CostingLine } from "../../../../core/document-costing";
 import { JournalEntrySyncError } from "../../../../core/posting";
+import { buildTaxCodeMappingLookup } from "../../../../core/tax-mapping";
 import type { Accounting } from "../../../../core/types";
 import type { Qbo } from "../../models";
 import {
   buildQboBillLines,
+  buildQboBillPayloadLines,
   deriveCarbonBillStatus,
   QboBillSyncer
 } from "../bill";
+import type { QboInvoiceTaxCatalog } from "../invoice-tax";
 import { buildQboExpenseLines, type QboExpenseLineInput } from "../shared";
 
 const ACCOUNT_REFS: ReadonlyMap<string, Qbo.Ref> = new Map([
@@ -563,5 +566,312 @@ it("handles a malformed QBO account detail without AccountRef without losing the
   ).resolves.toMatchObject({
     totalAmount: 10,
     lines: expect.arrayContaining([expect.objectContaining({ id: "good" })])
+  });
+});
+
+describe("buildQboBillPayloadLines (recoverable purchase tax)", () => {
+  const purchaseCode = (
+    Id: string,
+    Name: string,
+    rateId: string
+  ): Qbo.TaxCode => ({
+    Id,
+    Name,
+    Active: true,
+    PurchaseTaxRateList: { TaxRateDetail: [{ TaxRateRef: { value: rateId } }] }
+  });
+  const catalog = (country: string): QboInvoiceTaxCatalog => ({
+    country,
+    taxCodes: [
+      purchaseCode("20S", "20.0% S", "r20p"),
+      purchaseCode("EX", "Exempt", "r0ex"),
+      purchaseCode("NOVAT", "No VAT", "r0n")
+    ],
+    taxRates: [
+      { Id: "r20p", RateValue: 20 },
+      { Id: "r0ex", RateValue: 0 },
+      { Id: "r0n", RateValue: 0 }
+    ]
+  });
+  const mappings = buildTaxCodeMappingLookup([
+    {
+      taxCodeId: "tc_std",
+      direction: "purchase",
+      externalId: "20S",
+      externalName: "20.0% S",
+      externalRate: 0.2
+    }
+  ]);
+  const accountRefs = new Map<string, Qbo.Ref>([
+    ...BILL_ACCOUNT_REFS,
+    ["acc-taxpaid", { value: "2201", name: "VAT Paid" }]
+  ]);
+  // Two invoice lines at 20%: net 1,000 half recoverable (cost leg 1,100, Tax
+  // Paid 100) and net 500 fully recoverable (cost leg 500, Tax Paid 100).
+  const costing = (
+    taxOverride?: CostingLine["tax"]
+  ): Parameters<typeof buildQboBillPayloadLines>[0]["costing"] => ({
+    exchangeRate: 1,
+    documentTotal: 1800,
+    decimalPlaces: 2,
+    lines: [
+      {
+        id: "jl-1",
+        accountId: "acc-grir",
+        amount: 1100,
+        description: "GR/IR Clearing",
+        tax:
+          taxOverride === undefined
+            ? { taxCodeId: "tc_std", taxPercent: 0.2, recoverableShare: 0.5 }
+            : taxOverride
+      },
+      {
+        id: "jl-2",
+        accountId: "acc-ppv",
+        amount: 500,
+        description: "Freight",
+        tax: { taxCodeId: "tc_std", taxPercent: 0.2, recoverableShare: 1 }
+      },
+      {
+        id: "jl-3",
+        accountId: "acc-taxpaid",
+        amount: 200,
+        description: "Tax Paid",
+        taxLeg: true,
+        tax: null
+      }
+    ]
+  });
+
+  it("sends a GB bill's recoverable tax at the mapped code and splits the partly recoverable line", () => {
+    const payload = buildQboBillPayloadLines({
+      bill: billFixture({ currencyCode: "GBP" }),
+      costing: costing(),
+      accountRefsById: accountRefs,
+      tax: { catalog: catalog("GB"), mappings }
+    });
+
+    expect(payload.GlobalTaxCalculation).toBe("TaxExcluded");
+    expect(payload.Line).toEqual([
+      {
+        Amount: 500,
+        Description: "GR/IR Clearing",
+        DetailType: "AccountBasedExpenseLineDetail",
+        AccountBasedExpenseLineDetail: {
+          AccountRef: { value: "2125", name: "GR/IR Clearing" },
+          TaxCodeRef: { value: "20S" }
+        }
+      },
+      {
+        Amount: 600,
+        Description: "GR/IR Clearing",
+        DetailType: "AccountBasedExpenseLineDetail",
+        AccountBasedExpenseLineDetail: {
+          AccountRef: { value: "2125", name: "GR/IR Clearing" },
+          TaxCodeRef: { value: "NOVAT" }
+        }
+      },
+      {
+        Amount: 500,
+        Description: "Freight",
+        DetailType: "AccountBasedExpenseLineDetail",
+        AccountBasedExpenseLineDetail: {
+          AccountRef: { value: "5210", name: "Purchase Price Variance" },
+          TaxCodeRef: { value: "20S" }
+        }
+      }
+    ]);
+    expect(payload.TxnTaxDetail).toEqual({
+      TotalTax: 200,
+      TaxLine: [
+        {
+          Amount: 200,
+          DetailType: "TaxLineDetail",
+          TaxLineDetail: {
+            TaxRateRef: { value: "r20p" },
+            NetAmountTaxable: 1000,
+            PercentBased: true,
+            TaxPercent: 20
+          }
+        }
+      ]
+    });
+    // The Tax Paid leg is not a line: QuickBooks books it from the codes, and
+    // the bill total is unchanged.
+    expect(
+      payload.Line.reduce((sum, line) => sum + line.Amount, 0) +
+        payload.TxnTaxDetail!.TotalTax
+    ).toBe(1800);
+  });
+
+  it("keeps a US bill as today: the Tax Paid leg replays as an account line, with no tax fields", () => {
+    const payload = buildQboBillPayloadLines({
+      bill: billFixture(),
+      costing: costing(),
+      accountRefsById: accountRefs,
+      tax: { catalog: catalog("US"), mappings: new Map() }
+    });
+    expect(payload).toEqual({
+      Line: buildQboBillLines({
+        bill: billFixture(),
+        costingLines: costing().lines,
+        accountRefsById: accountRefs
+      })
+    });
+    expect(payload.Line.map((line) => line.Amount)).toEqual([1100, 500, 200]);
+  });
+
+  it("sends a bill with no tax code and no recoverable tax exactly as before", () => {
+    // A bill posted before tax codes: legacy tax folded into cost, no code.
+    const lines = costing()
+      .lines.filter((line) => !line.taxLeg)
+      .map((line) => ({
+        ...line,
+        tax: { taxCodeId: null, taxPercent: 0.2, recoverableShare: 0 }
+      }));
+    const untaxed = { ...costing(), lines, documentTotal: 1600 };
+    expect(
+      buildQboBillPayloadLines({
+        bill: billFixture(),
+        costing: untaxed,
+        accountRefsById: accountRefs,
+        tax: null
+      })
+    ).toEqual({
+      Line: buildQboBillLines({
+        bill: billFixture(),
+        costingLines: lines,
+        accountRefsById: accountRefs
+      })
+    });
+  });
+
+  it("refuses a GB bill with a leg whose tax cannot be tied to one code", () => {
+    expect(() =>
+      buildQboBillPayloadLines({
+        bill: billFixture(),
+        costing: costing(null),
+        accountRefsById: accountRefs,
+        tax: { catalog: catalog("GB"), mappings }
+      })
+    ).toThrow(/UNMAPPED_TAX_CODES/);
+  });
+
+  it("refuses a GB bill whose code has no purchase mapping", () => {
+    try {
+      buildQboBillPayloadLines({
+        bill: billFixture(),
+        costing: costing(),
+        accountRefsById: accountRefs,
+        tax: { catalog: catalog("GB"), mappings: new Map() }
+      });
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect((error as JournalEntrySyncError).failure).toMatchObject({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        metadata: { taxCodeId: "tc_std", direction: "purchase" }
+      });
+    }
+  });
+
+  it("sends a GB bill's zero-rated line at its mapped code, so its net reaches the return", () => {
+    const zeroRated = buildTaxCodeMappingLookup([
+      {
+        taxCodeId: "tc_zero",
+        direction: "purchase",
+        externalId: "EX",
+        externalName: "Exempt",
+        externalRate: 0
+      },
+      {
+        taxCodeId: "tc_blocked",
+        direction: "purchase",
+        externalId: "20S",
+        externalName: "20.0% S",
+        externalRate: 0.2
+      }
+    ]);
+    const payload = buildQboBillPayloadLines({
+      bill: billFixture({ currencyCode: "GBP" }),
+      costing: {
+        exchangeRate: 1,
+        documentTotal: 1600,
+        decimalPlaces: 2,
+        lines: [
+          {
+            id: "jl-1",
+            accountId: "acc-grir",
+            amount: 1000,
+            description: "Books",
+            tax: { taxCodeId: "tc_zero", taxPercent: 0, recoverableShare: 0 }
+          },
+          {
+            // 20% folded into cost (none recoverable): the non-taxable code.
+            id: "jl-2",
+            accountId: "acc-ppv",
+            amount: 600,
+            description: "Entertainment",
+            tax: {
+              taxCodeId: "tc_blocked",
+              taxPercent: 0.2,
+              recoverableShare: 0
+            }
+          }
+        ]
+      },
+      accountRefsById: accountRefs,
+      tax: { catalog: catalog("GB"), mappings: zeroRated }
+    });
+
+    expect(
+      payload.Line.map((line) => [
+        line.Amount,
+        line.AccountBasedExpenseLineDetail?.TaxCodeRef?.value
+      ])
+    ).toEqual([
+      [1000, "EX"],
+      [600, "NOVAT"]
+    ]);
+    expect(payload.GlobalTaxCalculation).toBe("TaxExcluded");
+    expect(payload.TxnTaxDetail).toEqual({
+      TotalTax: 0,
+      TaxLine: [
+        {
+          Amount: 0,
+          DetailType: "TaxLineDetail",
+          TaxLineDetail: {
+            TaxRateRef: { value: "r0ex" },
+            NetAmountTaxable: 1000,
+            PercentBased: true,
+            TaxPercent: 0
+          }
+        }
+      ]
+    });
+  });
+
+  it("refuses a GB zero-rated line whose code has no purchase mapping", () => {
+    expect(() =>
+      buildQboBillPayloadLines({
+        bill: billFixture(),
+        costing: {
+          exchangeRate: 1,
+          documentTotal: 1000,
+          decimalPlaces: 2,
+          lines: [
+            {
+              id: "jl-1",
+              accountId: "acc-grir",
+              amount: 1000,
+              description: "Books",
+              tax: { taxCodeId: "tc_zero", taxPercent: 0, recoverableShare: 0 }
+            }
+          ]
+        },
+        accountRefsById: accountRefs,
+        tax: { catalog: catalog("GB"), mappings }
+      })
+    ).toThrow(/UNMAPPED_TAX_CODES/);
   });
 });

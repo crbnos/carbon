@@ -2,8 +2,19 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type { KyselyTx } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  deriveRate,
+  effectiveComponents,
+  effectiveTaxPercent,
+  recoverableTax,
+  round,
+  SCALE,
+  splitLineTax,
+  type TaxComponentInput
+} from "@carbon/utils";
 import { createMappingService } from "../../../core/external-mapping";
+import { getTaxCodeMappings } from "../../../core/tax-mapping";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -12,11 +23,22 @@ import {
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
 import {
+  buildQboTxnTaxDetail,
+  isQboUsCompany,
+  loadQboInvoiceTaxCatalog,
+  type QboInvoiceTaxCatalog,
+  type QboTaxCodeMappings,
+  QboTaxContext,
+  qboNonTaxableCode,
+  resolveQboLineTax
+} from "./invoice-tax";
+import {
   buildQboDocNumberFields,
   buildQboExpenseLines,
   loadQboAccountRefsById,
   type QboWriteOmit,
-  updateWithSyncTokenRetry
+  updateWithSyncTokenRetry,
+  withQboExpenseTaxCode
 } from "./shared";
 
 /**
@@ -90,12 +112,152 @@ export function mapQboPoStatusToCarbon(
   return status === "Closed" ? "Closed" : "To Receive";
 }
 
+/** A purchase order line as its tax is resolved. Amounts are base currency,
+ *  as the PO lines are sent. */
+export type QboPurchaseOrderTaxLine = {
+  id: string;
+  taxCodeId: string | null;
+  taxPercent?: number | null;
+  taxAmount?: number | null;
+  totalAmount: number;
+};
+
+/**
+ * The tax code of each PO line and the PO's `TxnTaxDetail`, outside the US:
+ * - a code with recoverable tax: its mapped purchase code with the line's tax;
+ * - a code at 0% (zero-rated, exempt): its mapped code with no tax;
+ * - a code whose tax is folded into cost (0% recoverable): the non-taxable
+ *   code, the tax left out as before;
+ * - a legacy taxed line (no code): the one purchase rate of its percentage;
+ * - an untaxed line with no code: the non-taxable code.
+ * A partly recoverable line is not split as a bill line is: a PO posts
+ * nothing, and an item line's amount must stay quantity × unit price.
+ * `recoverableShares` is keyed by tax code id, 0..1. Pure — exported for
+ * tests.
+ */
+export function resolveQboPurchaseOrderTax(args: {
+  documentId: string;
+  lines: ReadonlyArray<QboPurchaseOrderTaxLine>;
+  recoverableShares: ReadonlyMap<string, number>;
+  decimalPlaces: number;
+  catalog: QboInvoiceTaxCatalog;
+  mappings: QboTaxCodeMappings;
+}): {
+  lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
+  txnTaxDetail: Qbo.TxnTaxDetail | undefined;
+} {
+  const lineTaxCodeRefs = new Map<string, Qbo.Ref>();
+  const taxLines: Array<{
+    rate: Qbo.TaxRate | null;
+    netAmount: number;
+    taxAmount: number;
+  }> = [];
+  for (const line of args.lines) {
+    const netAmount = round(line.totalAmount, args.decimalPlaces);
+    const taxAmount = line.taxAmount ?? 0;
+    const taxPercent = line.taxPercent ?? 0;
+    const foldedIntoCost =
+      line.taxCodeId &&
+      taxPercent !== 0 &&
+      (args.recoverableShares.get(line.taxCodeId) ?? 0) === 0;
+    if (
+      foldedIntoCost ||
+      (!line.taxCodeId && taxAmount === 0 && taxPercent === 0)
+    ) {
+      lineTaxCodeRefs.set(line.id, {
+        value: qboNonTaxableCode(args.catalog, "purchase", args.documentId).Id
+      });
+      continue;
+    }
+    const match = resolveQboLineTax({
+      documentId: args.documentId,
+      direction: "purchase",
+      taxCodeId: line.taxCodeId,
+      taxPercent,
+      netAmount,
+      taxAmount,
+      decimalPlaces: args.decimalPlaces,
+      catalog: args.catalog,
+      mappings: args.mappings
+    });
+    lineTaxCodeRefs.set(line.id, { value: match.code.Id });
+    taxLines.push({ rate: match.rate, netAmount, taxAmount });
+  }
+  return {
+    lineTaxCodeRefs,
+    txnTaxDetail: buildQboTxnTaxDetail(taxLines, args.decimalPlaces)
+  };
+}
+
+/**
+ * The recoverable share (0..1) of each tax code's tax: its components in
+ * force on `date` (every component when the date is unknown), split as a
+ * posting splits a line's tax.
+ */
+async function loadRecoverableShares(
+  database: Kysely<KyselyDatabase>,
+  args: { companyId: string; taxCodeIds: string[]; date: string | null }
+): Promise<Map<string, number>> {
+  if (args.taxCodeIds.length === 0) return new Map();
+  const rows = await database
+    .selectFrom("taxCodeComponent")
+    .select([
+      "id",
+      "taxCodeId",
+      "name",
+      "taxAuthorityId",
+      "taxPercent",
+      "recoverablePercent",
+      "sequence",
+      "isCompound",
+      "taxReceivedAccountId",
+      "taxPaidAccountId",
+      "effectiveDate",
+      "expirationDate"
+    ])
+    .where("companyId", "=", args.companyId)
+    .where("taxCodeId", "in", args.taxCodeIds)
+    .execute();
+  return new Map(
+    args.taxCodeIds.map((taxCodeId) => {
+      const all: TaxComponentInput[] = rows
+        .filter((row) => row.taxCodeId === taxCodeId)
+        .map((row) => ({
+          ...row,
+          taxPercent: Number(row.taxPercent),
+          recoverablePercent: Number(row.recoverablePercent)
+        }));
+      const components = args.date
+        ? effectiveComponents({ components: all }, args.date)
+        : all;
+      const rate = effectiveTaxPercent(components);
+      if (rate === 0) return [taxCodeId, 0];
+      const parts = splitLineTax({
+        base: 1,
+        lineTax: rate,
+        components,
+        scale: SCALE
+      });
+      return [taxCodeId, deriveRate(recoverableTax(parts), rate)];
+    })
+  );
+}
+
 export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
   Accounting.PurchaseOrder,
   Qbo.PurchaseOrder,
   QboWriteOmit
 > {
   private accountRefsByIdPromise?: Promise<Map<string, Qbo.Ref>>;
+  private baseDecimalPlacesPromise?: Promise<number>;
+  private readonly taxContext = new QboTaxContext({
+    catalog: () => loadQboInvoiceTaxCatalog(this.qboProvider),
+    mappings: () =>
+      getTaxCodeMappings(this.database, {
+        companyId: this.companyId,
+        integration: this.provider.id
+      })
+  });
 
   private get qboProvider(): QboProvider {
     return this.provider as QboProvider;
@@ -109,6 +271,87 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
       });
     }
     return this.accountRefsByIdPromise;
+  }
+
+  /** The company base currency's decimals — the PO lines are base amounts. */
+  private getBaseDecimalPlaces(): Promise<number> {
+    this.baseDecimalPlacesPromise ??= (async () => {
+      const row = await this.database
+        .selectFrom("company")
+        .innerJoin("currency", (join) =>
+          join
+            .onRef("currency.code", "=", "company.baseCurrencyCode")
+            .onRef("currency.companyGroupId", "=", "company.companyGroupId")
+        )
+        .select("currency.decimalPlaces")
+        .where("company.id", "=", this.companyId)
+        .executeTakeFirst();
+      if (row?.decimalPlaces == null)
+        throw new Error("Company base currency precision is required");
+      return row.decimalPlaces;
+    })().catch((error) => {
+      this.baseDecimalPlacesPromise = undefined;
+      throw error;
+    });
+    return this.baseDecimalPlacesPromise;
+  }
+
+  /**
+   * The PO's tax outside the US, or null when it goes out as before: a PO
+   * with no tax and no tax code, or any PO of a US company (QuickBooks US
+   * has no purchase tax).
+   */
+  private async resolveTax(local: Accounting.PurchaseOrder): Promise<{
+    lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
+    txnTaxDetail: Qbo.TxnTaxDetail | undefined;
+  } | null> {
+    const lineIds = local.lines.map((line) => line.id);
+    const codes =
+      lineIds.length > 0
+        ? await this.database
+            .selectFrom("purchaseOrderLine")
+            .select(["id", "taxCodeId"])
+            .where("id", "in", lineIds)
+            .where("companyId", "=", this.companyId)
+            .execute()
+        : [];
+    const taxCodeIds = new Map(codes.map((row) => [row.id, row.taxCodeId]));
+    const taxed = local.lines.some(
+      (line) =>
+        (line.taxAmount ?? 0) !== 0 ||
+        (line.taxPercent ?? 0) !== 0 ||
+        taxCodeIds.get(line.id)
+    );
+    if (!taxed) return null;
+    const catalog = await this.taxContext.catalog(local.id);
+    if (isQboUsCompany(catalog)) return null;
+    const [mappings, decimalPlaces, recoverableShares] = await Promise.all([
+      this.taxContext.mappings(local.id),
+      this.getBaseDecimalPlaces(),
+      loadRecoverableShares(this.database, {
+        companyId: this.companyId,
+        taxCodeIds: [
+          ...new Set(
+            [...taxCodeIds.values()].filter((id): id is string => !!id)
+          )
+        ],
+        date: local.orderDate ?? null
+      })
+    ]);
+    return resolveQboPurchaseOrderTax({
+      documentId: local.id,
+      lines: local.lines.map((line) => ({
+        id: line.id,
+        taxCodeId: taxCodeIds.get(line.id) ?? null,
+        taxPercent: line.taxPercent,
+        taxAmount: line.taxAmount,
+        totalAmount: line.totalAmount
+      })),
+      recoverableShares,
+      decimalPlaces,
+      catalog,
+      mappings
+    });
   }
 
   // =================================================================
@@ -295,6 +538,9 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
   protected async mapToRemote(
     local: Accounting.PurchaseOrder
   ): Promise<Omit<Qbo.PurchaseOrder, QboWriteOmit>> {
+    // Tax resolves before any dependency is pushed.
+    const tax = await this.resolveTax(local);
+
     // JIT dependency: vendor before the document
     let vendorRemoteId = local.supplierExternalId;
     if (!vendorRemoteId && local.supplierId) {
@@ -336,11 +582,20 @@ export class QboPurchaseOrderSyncer extends BaseEntitySyncer<
       VendorRef: { value: vendorRemoteId },
       POEmail: supplierEmail ? { Address: supplierEmail } : undefined,
       POStatus: mapCarbonPoStatusToQbo(local.status),
+      ...(tax
+        ? {
+            GlobalTaxCalculation: "TaxExcluded" as const,
+            ...(tax.txnTaxDetail ? { TxnTaxDetail: tax.txnTaxDetail } : {})
+          }
+        : {}),
       Line: buildQboExpenseLines({
         lines: local.lines,
         itemRemoteIds,
         accountRefsById,
         documentLabel: `purchase order ${local.purchaseOrderId}`
+      }).map((line, index) => {
+        const taxCodeRef = tax?.lineTaxCodeRefs.get(local.lines[index]!.id);
+        return taxCodeRef ? withQboExpenseTaxCode(line, taxCodeRef) : line;
       })
     };
   }

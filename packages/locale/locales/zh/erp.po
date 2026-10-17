@@ -10769,6 +10769,9 @@ msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有
 msgid "Grants Ability"
 msgstr "授予能力"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "毛利润"
 
@@ -13840,6 +13843,9 @@ msgstr "需要评审"
 
 msgid "Negative Adjustment"
 msgstr "负调整"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "账面净值"

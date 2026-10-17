@@ -10769,6 +10769,9 @@ msgstr "全員にフルアクセスを付与するのではなく、各ユーザ
 msgid "Grants Ability"
 msgstr "スキルを付与"
 
+msgid "Gross"
+msgstr ""
+
 msgid "Gross Profit"
 msgstr "総利益"
 
@@ -13840,6 +13843,9 @@ msgstr "レビューが必要"
 
 msgid "Negative Adjustment"
 msgstr "負の調整"
+
+msgid "Net Amount"
+msgstr ""
 
 msgid "Net book value"
 msgstr "未償却残高"
