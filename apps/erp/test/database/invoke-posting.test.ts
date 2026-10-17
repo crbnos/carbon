@@ -11,7 +11,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import { createClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
 import { invokePosting } from "../../app/modules/shared/shared.service";

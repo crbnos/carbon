@@ -4,9 +4,9 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import { getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { type ErpPostingInput, erpPosting } from "~/services/erp";
 import { isPickingListLocked } from "~/services/models";
 
 export async function getAssignedPickingLists(
@@ -257,9 +257,11 @@ export async function setPickingListLineQuantity(
             companyId: pickingList.companyId
           };
 
-    const result = await serverFns
-      .as({ client, db, companyId: body.companyId, userId: body.userId })
-      .invoke("post-picking", body as ServerFnInput<"post-picking">);
+    const result = await erpPosting(
+      "post-picking",
+      { client, companyId: body.companyId, userId: body.userId },
+      body as ErpPostingInput<"post-picking">
+    );
 
     if (result.error) {
       return {
@@ -377,9 +379,11 @@ export async function setPickingListLineTrackedEntity(
     }
   }
 
-  const result = await serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-picking", body as ServerFnInput<"post-picking">);
+  const result = await erpPosting(
+    "post-picking",
+    { client, companyId: args.companyId, userId: args.userId },
+    body as ErpPostingInput<"post-picking">
+  );
   if (result.error) {
     return {
       data: null,

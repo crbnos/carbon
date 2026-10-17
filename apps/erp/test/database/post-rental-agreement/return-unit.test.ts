@@ -8,21 +8,19 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { rentalFixture } from "@carbon/server-functions/post-rental-agreement/rental-test-fixture";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { rentalFixture } from "../fixtures/rental";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
 async function returnUnitOnSeptember20(f: Fixture) {
-  const receipt = await create(f.ctx, {
-    type: "receiptFromRentalAgreement",
-    rentalAgreementId: f.agreementId,
-    rentalAgreementLineId: f.lineIds[0]!
-  });
+  const receipt = await invokeCreate(handlesOf(f.ctx), {
+        type: "receiptFromRentalAgreement",
+        rentalAgreementId: f.agreementId,
+        rentalAgreementLineId: f.lineIds[0]!
+      });
   if (receipt.error) return receipt;
   return invokePosting(handlesOf(f.ctx), "post-receipt", {
       type: "post",

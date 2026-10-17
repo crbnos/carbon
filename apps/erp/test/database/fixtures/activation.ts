@@ -19,20 +19,15 @@ import { OPTIONAL_DEFAULT_ROLES } from "@carbon/database/journal-posting-status"
 import { datetime } from "@carbon/utils";
 import { type Insertable, type Kysely, sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { connectLocalTestDatabase } from "@carbon/server-functions/local-database-test-fixture";
-import { postPayment } from "../../../app/modules/invoicing/invoicing.service";
-import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { postReimbursement } from "../../../app/modules/accounting/accounting.service";
-import { FILLER_ACCOUNT_DEFAULTS } from "@carbon/server-functions/post-reimbursement/post-reimbursement-test-fixture";
-import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { postShipment } from "../../../app/modules/inventory/inventory.service";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
-import { activateAccounting } from "../../../app/modules/accounting/accounting.service";
+import { connectLocalTestDatabase } from "./local-database";
+import { postPayment, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
+import { postReceipt, postShipment } from "../../../app/modules/inventory/inventory.service";
+import { postReimbursement, activateAccounting } from "../../../app/modules/accounting/accounting.service";
+import { FILLER_ACCOUNT_DEFAULTS } from "./post-reimbursement";
+import type { PostingHandles } from "@carbon/api/postings.server";
 import type { LegacyJournalCounts } from "../../../app/modules/accounting/accounting.service";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "./handles";
-
 type SourceType = Database["public"]["Enums"]["journalEntrySourceType"];
 
 export const USER = "system";
@@ -237,7 +232,7 @@ export async function activationFixture() {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = { db, companyId, userId: USER };
   const today = datetime.today(TIME_ZONE);
   // The first day of the current period: on or before today, and the
   // documents moved to the day before it are in the previous period.
@@ -409,11 +404,11 @@ export async function receiveFiveParts(
       .executeTakeFirstOrThrow();
   });
   const receipt = unwrap(
-    await create(f.ctx, {
-      type: "receiptFromPurchaseOrder",
-      purchaseOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "receiptFromPurchaseOrder",
+                  purchaseOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt));
   return line.id;
@@ -561,7 +556,7 @@ export async function moveBeforeCutover(f: Fixture) {
 /** What the reimbursement helpers need of a test company. */
 type ReimbursementCompany = {
   db: Kysely<KyselyDatabase>;
-  ctx: ServerFnContext;
+  ctx: PostingHandles;
   prefix: string;
   companyId: string;
   today: string;
@@ -745,11 +740,11 @@ export async function shipFiveParts(f: Fixture): Promise<string> {
       .execute();
   });
   const shipment = unwrap(
-    await create(f.ctx, {
-      type: "shipmentFromSalesOrder",
-      salesOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "shipmentFromSalesOrder",
+                  salesOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId: shipment.id }, postShipment));
   return shipment.id;

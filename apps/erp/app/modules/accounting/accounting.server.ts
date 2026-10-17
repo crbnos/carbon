@@ -19,9 +19,9 @@ import {
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
 import { insertSalesOrder } from "~/modules/sales/sales.service";
-import { invokePosting } from "~/modules/shared/shared.service";
+import { invokeCreate, invokePosting } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";
-import { fromServerFn, systemServerFns } from "../shared/shared.service";
+import { fromServerFn } from "../shared/shared.service";
 import * as service from "./accounting.service";
 import {
   accountMoveRefusal,
@@ -1115,7 +1115,7 @@ export const createJournalEntry = defineServiceFn({
   input: z.object({}),
   permission: { create: "accounting" },
   async run(ctx) {
-    const created = await systemServerFns(ctx).invoke("create", {
+    const created = await invokeCreate(ctx, {
       type: "journalEntry"
     });
     if (created.error || !created.data) {

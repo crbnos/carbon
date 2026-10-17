@@ -4,8 +4,8 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { chargeFixture } from "@carbon/server-functions/post-charge/post-charge-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { chargeFixture } from "../fixtures/post-charge";
 import { postChargeTransaction } from "../../../app/modules/accounting/accounting.service";
 
 databaseTest(

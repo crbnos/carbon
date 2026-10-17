@@ -7,7 +7,13 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import {
+  buildBatchSplitRecords,
+  datetime,
+  EPSILON,
+  resolveTrackedEntityBin,
+  round
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -38,28 +44,20 @@ import { inOrder, many, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
-import { assertCompanyRecords } from "@carbon/server-functions/company-records";
-import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
-import { getDefaultPostingGroup } from "@carbon/server-functions/lib/get-posting-group";
-import {
-  bookAdjustment,
-  createAdjustmentJournal
-} from "@carbon/server-functions/lib/post-adjustment";
-import type { AdjustmentItemCost } from "@carbon/server-functions/lib/post-adjustment-cost";
-import {
-  buildBatchSplitRecords,
-  EPSILON,
-  resolveTrackedEntityBin,
-  round
-} from "@carbon/utils";
 import { generateText, Output } from "ai";
 import template from "lodash.template";
 import { nanoid } from "nanoid";
 import { systemContext } from "~/modules/service-context.server";
 import { getCachedCompanyIntegrations } from "~/modules/settings/settings.service";
 import {
+  type AdjustmentItemCost,
+  assertCompanyRecords,
+  bookAdjustment,
+  createAdjustmentJournal,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
   getExternalLink,
+  invokeCreate,
   invokePosting
 } from "~/modules/shared/shared.service";
 import type { inspectionStatus } from "../shared/shared.models";
@@ -4928,13 +4926,14 @@ export async function notifyIssue(
 
 /** The issue's action tasks, from its required actions and approvals. */
 export function createIssueTasks(ctx: ServiceContext, issueId: string) {
-  return serverFns
-    .system({
+  return invokeCreate(
+    {
       db: ctx.asSystem.pg,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
-    })
-    .invoke("create", { type: "nonConformanceTasks", id: issueId });
+    },
+    { type: "nonConformanceTasks", id: issueId }
+  );
 }
 
 /**

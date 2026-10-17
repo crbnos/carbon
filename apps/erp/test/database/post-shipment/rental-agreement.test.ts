@@ -10,23 +10,21 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { type Insertable, sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { rentalFixture } from "@carbon/server-functions/post-rental-agreement/rental-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { rentalFixture } from "../fixtures/rental";
 import { synthesizeRentalAccruals } from "../../../app/modules/accounting/accounting.service";
 import { postShipment } from "../../../app/modules/inventory/inventory.service";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
 const TIME_ZONE = "America/New_York";
 
 async function draftShipment(f: Fixture): Promise<string> {
-  const result = await create(f.ctx, {
-    type: "shipmentFromRentalAgreement",
-    rentalAgreementId: f.agreementId
-  });
+  const result = await invokeCreate(handlesOf(f.ctx), {
+        type: "shipmentFromRentalAgreement",
+        rentalAgreementId: f.agreementId
+      });
   if (result.error) throw result.error;
   return result.data.id;
 }

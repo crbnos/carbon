@@ -26,11 +26,13 @@ import {
   unwrap,
   workCenterFixture
 } from "./fixtures/always-post";
-import issue from "@carbon/server-functions/issue";
-import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "@carbon/server-functions/lib/cutover-void";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import postMaintenanceEvent from "@carbon/server-functions/post-maintenance-event";
-import postProductionEvent from "@carbon/server-functions/post-production-event";
+import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
+import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "~/modules/shared/shared.service";
+import { databaseTest } from "./fixtures/local-database";
+import { postMaintenanceEvent } from "../../app/modules/resources/resources.service";
+import { postProductionEvent } from "../../app/modules/production/production.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
+import { handlesOf } from "./fixtures/handles";
 
 /** A completed one-hour labor event on the job's operation. */
 async function laborEvent(
@@ -106,11 +108,11 @@ databaseTest(
       const before = await jobFixture(f, "1");
       const provisional = await newJournals(f, async () =>
         unwrap(
-          await issue(f.ctx, {
-            type: "jobOperation",
-            id: before.operationId,
-            quantity: 1
-          })
+          await invokePosting(handlesOf(f.ctx), "issue", {
+                        type: "jobOperation",
+                        id: before.operationId,
+                        quantity: 1
+                      }, issue)
         )
       );
       await expectProvisionalJournals(f, provisional, "Job Consumption");
@@ -126,11 +128,11 @@ databaseTest(
       const after = await jobFixture(f, "2");
       const posted = await newJournals(f, async () =>
         unwrap(
-          await issue(f.ctx, {
-            type: "jobOperation",
-            id: after.operationId,
-            quantity: 1
-          })
+          await invokePosting(handlesOf(f.ctx), "issue", {
+                        type: "jobOperation",
+                        id: after.operationId,
+                        quantity: 1
+                      }, issue)
         )
       );
       await expectPostedJournals(f, posted, "Job Consumption", periodId);
@@ -153,7 +155,7 @@ databaseTest(
       const firstEvent = await laborEvent(f, job.operationId, workCenterId);
       const provisional = await newJournals(f, async () => {
         const result = unwrap(
-          await postProductionEvent(f.ctx, { productionEventId: firstEvent })
+          await invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: firstEvent }, postProductionEvent)
         );
         expect(result).toEqual({ success: true });
       });
@@ -177,9 +179,9 @@ databaseTest(
       const periodId = await stampCutover(f);
       const secondEvent = await laborEvent(f, job.operationId, workCenterId);
       const refused = await newJournals(f, async () => {
-        const result = await postProductionEvent(f.ctx, {
-          productionEventId: secondEvent
-        });
+        const result = await invokePosting(handlesOf(f.ctx), "post-production-event", {
+                  productionEventId: secondEvent
+                }, postProductionEvent);
         expect(result.error?.message).toBe(
           "Set the Labor & Machine Absorption account in Accounting → Default Accounts."
         );
@@ -191,7 +193,7 @@ databaseTest(
       await setLaborAbsorption(f, f.account("labor-absorption"));
       const posted = await newJournals(f, async () =>
         unwrap(
-          await postProductionEvent(f.ctx, { productionEventId: secondEvent })
+          await invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: secondEvent }, postProductionEvent)
         )
       );
       await expectPostedJournals(f, posted, "Production Event", periodId);
@@ -226,12 +228,12 @@ databaseTest(
 
       // The OEE sync posts a sensor event as it ends it while an operation
       // finish posts the same event: the second must not add it again.
-      const results: Awaited<ReturnType<typeof postProductionEvent>>[] = [];
+      const results: { error: { status: number } | null }[] = [];
       const journals = await newJournals(f, async () => {
         results.push(
           ...(await Promise.all([
-            postProductionEvent(f.ctx, { productionEventId: eventId }),
-            postProductionEvent(f.ctx, { productionEventId: eventId })
+            invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: eventId }, postProductionEvent),
+            invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: eventId }, postProductionEvent)
           ]))
         );
       });
@@ -258,7 +260,7 @@ databaseTest(
       const job = await jobFixture(f, "1");
       const eventId = await laborEvent(f, job.operationId, workCenterId);
       const posted = await newJournals(f, async () =>
-        unwrap(await postProductionEvent(f.ctx, { productionEventId: eventId }))
+        unwrap(await invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: eventId }, postProductionEvent))
       );
 
       // Edited to two hours, then reposted by two callers at once. Both read
@@ -269,12 +271,12 @@ databaseTest(
         .set({ startTime: sql<string>`now() - interval '2 hours'` })
         .where("id", "=", eventId)
         .execute();
-      const results: Awaited<ReturnType<typeof postProductionEvent>>[] = [];
+      const results: { error: { status: number } | null }[] = [];
       const adjustments = await newJournals(f, async () => {
         results.push(
           ...(await Promise.all([
-            postProductionEvent(f.ctx, { productionEventId: eventId }),
-            postProductionEvent(f.ctx, { productionEventId: eventId })
+            invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: eventId }, postProductionEvent),
+            invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: eventId }, postProductionEvent)
           ]))
         );
       });
@@ -302,7 +304,7 @@ databaseTest(
       const first = await maintenanceDispatch(f, workCenterId, "1");
       const provisional = await newJournals(f, async () =>
         unwrap(
-          await postMaintenanceEvent(f.ctx, { maintenanceDispatchIds: [first] })
+          await invokePosting(handlesOf(f.ctx), "post-maintenance-event", { maintenanceDispatchIds: [first] }, postMaintenanceEvent)
         )
       );
       await expectProvisionalJournals(f, provisional, "Maintenance Event");
@@ -324,9 +326,9 @@ databaseTest(
       const periodId = await stampCutover(f);
       const second = await maintenanceDispatch(f, workCenterId, "2");
       const refused = await newJournals(f, async () => {
-        const result = await postMaintenanceEvent(f.ctx, {
-          maintenanceDispatchIds: [second]
-        });
+        const result = await invokePosting(handlesOf(f.ctx), "post-maintenance-event", {
+                  maintenanceDispatchIds: [second]
+                }, postMaintenanceEvent);
         expect(result.error?.message).toBe(
           "Set the Labor & Machine Absorption account in Accounting → Default Accounts."
         );
@@ -336,9 +338,9 @@ databaseTest(
       await setLaborAbsorption(f, f.account("labor-absorption"));
       const posted = await newJournals(f, async () =>
         unwrap(
-          await postMaintenanceEvent(f.ctx, {
-            maintenanceDispatchIds: [second]
-          })
+          await invokePosting(handlesOf(f.ctx), "post-maintenance-event", {
+                        maintenanceDispatchIds: [second]
+                      }, postMaintenanceEvent)
         )
       );
       await expectPostedJournals(f, posted, "Maintenance Event", periodId);
@@ -370,12 +372,12 @@ databaseTest(
       // relieves their 20 from WIP to the scrap account.
       const journals = await newJournals(f, async () =>
         unwrap(
-          await issue(f.ctx, {
-            type: "jobOperationScrap",
-            jobOperationId: job.operationId,
-            quantity: 1,
-            scrapReasonId: scrapReason.id
-          })
+          await invokePosting(handlesOf(f.ctx), "issue", {
+                        type: "jobOperationScrap",
+                        jobOperationId: job.operationId,
+                        quantity: 1,
+                        scrapReasonId: scrapReason.id
+                      }, issue)
         )
       );
       await expectProvisionalJournals(f, journals, "Job Consumption");
@@ -428,7 +430,7 @@ databaseTest(
       const job = await jobFixture(f);
       const eventId = await laborEvent(f, job.operationId, workCenterId);
       const provisional = await newJournals(f, async () =>
-        unwrap(await postProductionEvent(f.ctx, { productionEventId: eventId }))
+        unwrap(await invokePosting(handlesOf(f.ctx), "post-production-event", { productionEventId: eventId }, postProductionEvent))
       );
       await expectProvisionalJournals(f, provisional, "Production Event");
       await enableOver(
@@ -446,10 +448,10 @@ databaseTest(
         .execute();
       const refused = await newJournals(f, async () => {
         for (const reverse of [false, true]) {
-          const result = await postProductionEvent(f.ctx, {
-            productionEventId: eventId,
-            reverse
-          });
+          const result = await invokePosting(handlesOf(f.ctx), "post-production-event", {
+                      productionEventId: eventId,
+                      reverse
+                    }, postProductionEvent);
           expect(result.error).toMatchObject({
             status: 400,
             message: TIME_ENTRY_BEFORE_CUTOVER_ERROR
@@ -472,9 +474,9 @@ databaseTest(
       const dispatchId = await maintenanceDispatch(f, workCenterId, "1");
       const provisional = await newJournals(f, async () =>
         unwrap(
-          await postMaintenanceEvent(f.ctx, {
-            maintenanceDispatchIds: [dispatchId]
-          })
+          await invokePosting(handlesOf(f.ctx), "post-maintenance-event", {
+                        maintenanceDispatchIds: [dispatchId]
+                      }, postMaintenanceEvent)
         )
       );
       await expectProvisionalJournals(f, provisional, "Maintenance Event");
@@ -487,9 +489,9 @@ databaseTest(
       // already holds the hour posted before the cutover.
       const unchanged = await newJournals(f, async () =>
         unwrap(
-          await postMaintenanceEvent(f.ctx, {
-            maintenanceDispatchIds: [dispatchId]
-          })
+          await invokePosting(handlesOf(f.ctx), "post-maintenance-event", {
+                        maintenanceDispatchIds: [dispatchId]
+                      }, postMaintenanceEvent)
         )
       );
       expect(unchanged).toEqual([]);
@@ -509,9 +511,9 @@ databaseTest(
         .execute();
       const added = await newJournals(f, async () =>
         unwrap(
-          await postMaintenanceEvent(f.ctx, {
-            maintenanceDispatchIds: [dispatchId]
-          })
+          await invokePosting(handlesOf(f.ctx), "post-maintenance-event", {
+                        maintenanceDispatchIds: [dispatchId]
+                      }, postMaintenanceEvent)
         )
       );
       await expectPostedJournals(f, added, "Maintenance Event", periodId);
@@ -533,9 +535,9 @@ databaseTest(
         .where("id", "=", oldEntry!.id)
         .execute();
       const refused = await newJournals(f, async () => {
-        const result = await postMaintenanceEvent(f.ctx, {
-          maintenanceDispatchIds: [dispatchId]
-        });
+        const result = await invokePosting(handlesOf(f.ctx), "post-maintenance-event", {
+                  maintenanceDispatchIds: [dispatchId]
+                }, postMaintenanceEvent);
         expect(result.error).toMatchObject({
           status: 400,
           message: TIME_ENTRY_BEFORE_CUTOVER_ERROR

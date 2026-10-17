@@ -22,7 +22,7 @@ import {
   unwrap
 } from "./fixtures/always-post";
 import type { Database } from "@carbon/database";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "./fixtures/local-database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
 import {

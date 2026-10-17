@@ -12,7 +12,7 @@
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "./fixtures/local-database";
 import { createClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
 import {

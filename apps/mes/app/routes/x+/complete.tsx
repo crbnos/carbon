@@ -10,11 +10,11 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
@@ -179,13 +179,15 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const response = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "jobOperationSerialComplete",
         ...validation.data,
         trackedEntityId: validation.data.trackedEntityId!
-      });
+      }
+    );
 
     const newTrackedEntityId = response.data?.newTrackedEntityId as
       | string
@@ -261,13 +263,15 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const response = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "jobOperationBatchComplete",
         ...validation.data,
         trackedEntityId: validation.data.trackedEntityId!
-      });
+      }
+    );
 
     if (response.error) {
       return data(
@@ -344,13 +348,15 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issued = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const issued = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         id: validation.data.jobOperationId,
         type: "jobOperation",
         quantity: validation.data.quantity
-      });
+      }
+    );
 
     if (issued.error) {
       return data(

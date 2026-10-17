@@ -11,13 +11,11 @@ import { EMPTY_POSITION } from "@carbon/database/contract-position";
 import type { SalesPostingAccount } from "@carbon/database/sales-posting-amounts";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { paymentFixture } from "../fixtures/payment";
 import { proposeRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
 import { dropRecognitionRuns } from "../fixtures/run";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
-import { planContractInvoiceLine } from "../../../app/modules/invoicing/invoicing.service";
-import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
+import { planContractInvoiceLine, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 
@@ -221,11 +219,11 @@ async function contractFixture(
       .execute();
   });
 
-  const ctx = ServerFnContext.system({
+  const ctx = {
     db: f.db,
     companyId: f.companyId,
     userId: "system"
-  });
+  };
   let invoices = 0;
 
   return {

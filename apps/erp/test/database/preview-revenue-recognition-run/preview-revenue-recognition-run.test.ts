@@ -3,13 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { paymentFixture } from "../fixtures/payment";
 import {
   dropRecognitionRuns,
   holdInDraftRun
 } from "../fixtures/run";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
 import { previewRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
@@ -55,11 +54,11 @@ async function preview(
   periodEnd: string,
   type: "Revenue Recognition" | "Lease" = "Revenue Recognition"
 ) {
-  const result = await invokePosting(handlesOf(ServerFnContext.system({
+  const result = await invokePosting(handlesOf({
         db: f.db,
         companyId: f.companyId,
         userId: "system"
-      })), "preview-revenue-recognition-run", { periodEnd, type }, previewRevenueRecognitionRun);
+      }), "preview-revenue-recognition-run", { periodEnd, type }, previewRevenueRecognitionRun);
   if (result.error) throw result.error;
   return result.data;
 }

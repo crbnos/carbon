@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { sql } from "kysely";
-import { connectLocalTestDatabase } from "@carbon/server-functions/local-database-test-fixture";
+import { connectLocalTestDatabase } from "./fixtures/local-database";
 
 /**
  * A scratch company with one Transfer kanban: From storage unit A, To storage

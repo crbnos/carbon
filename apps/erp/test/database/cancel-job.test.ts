@@ -12,8 +12,8 @@
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import postPicking from "@carbon/server-functions/post-picking";
+import { databaseTest } from "./fixtures/local-database";
+import { postPicking } from "../../app/modules/inventory/inventory.service";
 import { createClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
 import { cancelJob } from "../../app/modules/production/production.server";
@@ -26,6 +26,8 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
+import { invokePosting } from "../../app/modules/shared/shared.service";
+import { handlesOf } from "./fixtures/handles";
 
 /** A Ready job with one of its two parts picked from stock to a lineside bin,
  *  so its picking list is still open. */
@@ -79,13 +81,13 @@ async function pickedJob(f: Fixture) {
       .execute();
   });
   unwrap(
-    await postPicking(f.ctx, {
-      type: "inventory",
-      pickingListId,
-      pickingListLineId: lineId,
-      quantity: 1,
-      locationId: f.locationId
-    })
+    await invokePosting(handlesOf(f.ctx), "post-picking", {
+            type: "inventory",
+            pickingListId,
+            pickingListLineId: lineId,
+            quantity: 1,
+            locationId: f.locationId
+          }, postPicking)
   );
   return { ...job, linesideId, pickingListId, lineId };
 }
@@ -301,10 +303,10 @@ databaseTest(
       const job = await pickedJob(f);
 
       unwrap(
-        await postPicking(f.ctx, {
-          type: "returnJobRemainders",
-          jobId: job.jobId
-        })
+        await invokePosting(handlesOf(f.ctx), "post-picking", {
+                    type: "returnJobRemainders",
+                    jobId: job.jobId
+                  }, postPicking)
       );
 
       expect(await onHand(f, job.linesideId)).toBe(1);

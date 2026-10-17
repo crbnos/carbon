@@ -2,20 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The postings a package that cannot import the app calls (`@carbon/jobs`,
-// `@carbon/ee`). The app registers them once at start (`registerPostings`).
-// Each runs as `serverFns.invoke` ran it and answers `{ data, error }`, with
-// the `ServerFnError` it refused with.
+// The postings a caller that cannot import the ERP calls: `@carbon/jobs` and
+// `@carbon/ee` in the ERP's process, MES over a signed HTTP call. The ERP
+// registers them once at start (`registerPostings`). Each answers
+// `{ data, error }`, with the `ServerFnError` it refused with.
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { z } from "zod";
 import type { ServerFnError } from "./errors";
+import type {
+  batchOperationsInput,
+  CreateInput,
+  CreateResult,
+  IssueResult,
+  issueInput,
+  PostProductionEventResult,
+  postInventoryAdjustmentInput,
+  postMaintenanceEventInput,
+  postPickingInput,
+  postProductionEventInput,
+  recalculateInput,
+  triggerReworkInput
+} from "./postings";
 
 /**
  * What the caller holds. With a `client`, the caller behind it must hold the
- * posting's permission first (as `serverFns.as` checked it); without one, the
- * posting runs as the system on `userId`'s behalf (`serverFns.system`).
+ * posting's permission first; without one, the posting runs as the system on
+ * `userId`'s behalf.
  * Without `companyGroupId`, it is read from the company.
  */
 export type PostingHandles = {
@@ -143,6 +158,41 @@ export type PostingContract = {
   "propose-revenue-recognition-run": {
     input: { periodEnd: string; type?: "Revenue Recognition" | "Lease" };
     output: { id: string; runId: string; lineCount: number } | null;
+  };
+  issue: { input: z.input<typeof issueInput>; output: IssueResult };
+  "post-picking": {
+    input: z.input<typeof postPickingInput>;
+    output: { success: boolean; splitEntityId: string | undefined };
+  };
+  "post-production-event": {
+    input: z.input<typeof postProductionEventInput>;
+    output: PostProductionEventResult;
+  };
+  "post-maintenance-event": {
+    input: z.input<typeof postMaintenanceEventInput>;
+    output: { success: boolean; journalIds: string[] };
+  };
+  "post-inventory-adjustment": {
+    input: z.input<typeof postInventoryAdjustmentInput>;
+    output: { success: boolean; itemLedger: { id: string } | null };
+  };
+  create: { input: CreateInput; output: CreateResult };
+  "batch-operations": {
+    input: z.input<typeof batchOperationsInput>;
+    output: { success: boolean };
+  };
+  recalculate: {
+    input: z.input<typeof recalculateInput>;
+    output: { success: boolean };
+  };
+  "trigger-rework": {
+    input: z.input<typeof triggerReworkInput>;
+    output: {
+      success: boolean;
+      reworkId: string;
+      clonedOperationIds: string[];
+      operationsCloned: number;
+    };
   };
 };
 

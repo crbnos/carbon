@@ -2,27 +2,47 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
+import { postMaintenanceEventInput } from "@carbon/api/postings";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
 import {
   type BatchRules,
   compactBatchRules,
-  resolveBatchRules
+  credit,
+  datetime,
+  debit,
+  EPSILON,
+  indexBy,
+  resolveBatchRules,
+  round
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
-import { refuseUnlessOwned } from "~/modules/shared/shared.service";
+import {
+  createAdjustmentJournal,
+  refuseUnlessOwned,
+  resolveAccountingPeriod,
+  TIME_ENTRY_BEFORE_CUTOVER_ERROR
+} from "~/modules/shared/shared.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { invokePosting } from "../shared/shared.service";
 import type {
   failureModeValidator,
   locationValidator,
@@ -2175,13 +2195,16 @@ export async function postMaintenanceLabor(
 ): Promise<string | null> {
   if (maintenanceDispatchIds.length === 0) return null;
 
-  const posting = await serverFns
-    .system({
+  const posting = await invokePosting(
+    {
       db: ctx.asSystem.pg,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
-    })
-    .invoke("post-maintenance-event", { maintenanceDispatchIds });
+    },
+    "post-maintenance-event",
+    { maintenanceDispatchIds },
+    postMaintenanceEvent
+  );
 
   if (posting.error) {
     logger.error("Failed to post maintenance labor", {
@@ -2403,4 +2426,441 @@ export async function notifyTrainingAssignment(
       error: err
     });
   }
+}
+export interface LaborDimension {
+  dimensionId: string;
+  valueId: string;
+}
+
+export interface LaborGroup {
+  reference: string; // journalLine.documentLineReference
+  accountId: string;
+  dimensions: LaborDimension[];
+  amount: number; // signed, journalLine convention
+}
+
+export function maintenanceLaborCost(
+  durationSeconds: number | null | undefined,
+  laborRate: number | null | undefined
+): number {
+  const hours = Number(durationSeconds ?? 0) / 3600;
+  const cost = round(hours * Number(laborRate ?? 0));
+  return cost > 0 ? cost : 0;
+}
+
+export function laborGroupKey(
+  group: Pick<LaborGroup, "reference" | "accountId" | "dimensions">
+): string {
+  const dims = group.dimensions
+    .map((d) => `${d.dimensionId}=${d.valueId}`)
+    .sort()
+    .join(",");
+  return `${group.reference}|${group.accountId}|${dims}`;
+}
+
+// Sum signed amounts per group key (several postings of one entry collapse to
+// their net).
+export function netLaborGroups(groups: LaborGroup[]): Map<string, LaborGroup> {
+  const net = new Map<string, LaborGroup>();
+  for (const group of groups) {
+    const key = laborGroupKey(group);
+    const existing = net.get(key);
+    if (existing) {
+      existing.amount += group.amount;
+    } else {
+      net.set(key, { ...group, dimensions: [...group.dimensions] });
+    }
+  }
+  return net;
+}
+
+// desired − prior, per group. Both sides balance, so the result does too.
+export function diffLaborGroups(
+  desired: LaborGroup[],
+  prior: LaborGroup[]
+): LaborGroup[] {
+  const want = netLaborGroups(desired);
+  const have = netLaborGroups(prior);
+  const keys = new Set([...want.keys(), ...have.keys()]);
+
+  const delta: LaborGroup[] = [];
+  for (const key of keys) {
+    const target = want.get(key);
+    const current = have.get(key);
+    const amount = round((target?.amount ?? 0) - (current?.amount ?? 0));
+    if (Math.abs(amount) < EPSILON) continue;
+    const base = (target ?? current)!;
+    delta.push({ ...base, amount });
+  }
+  return delta;
+}
+
+/** A line of a journal the enable superseded (posted before the cutover). */
+export interface SupersededLaborLine {
+  reference: string;
+  accountId: string;
+  amount: number;
+}
+
+/**
+ * The enable superseded the labor journals posted before the cutover and
+ * opened their expense in retained earnings, so the reconcile no longer sees
+ * them as posted. An entry they cover is dropped from `desired` while its
+ * expense is unchanged; an entry whose expense changed (edited or deleted) is
+ * returned in `changed`, and the caller refuses: its correction is a journal
+ * entry, not a re-post dated today.
+ */
+export function withoutSupersededEntries(
+  desired: LaborGroup[],
+  superseded: SupersededLaborLine[],
+  maintenanceAccountId: string
+): { desired: LaborGroup[]; changed: string[] } {
+  if (superseded.length === 0) return { desired, changed: [] };
+  const expense = (
+    lines: Array<Pick<LaborGroup, "reference" | "accountId" | "amount">>
+  ) => {
+    const byReference = new Map<string, number>();
+    for (const line of lines) {
+      if (line.accountId !== maintenanceAccountId) continue;
+      byReference.set(
+        line.reference,
+        (byReference.get(line.reference) ?? 0) + line.amount
+      );
+    }
+    return byReference;
+  };
+  const opened = new Map<string, number>();
+  for (const line of superseded) {
+    opened.set(line.reference, opened.get(line.reference) ?? 0);
+  }
+  for (const [reference, amount] of expense(superseded)) {
+    opened.set(reference, amount);
+  }
+  const wanted = expense(desired);
+  const changed = [...opened]
+    .filter(
+      ([reference, amount]) =>
+        Math.abs(round((wanted.get(reference) ?? 0) - amount)) >= EPSILON
+    )
+    .map(([reference]) => reference);
+  return {
+    desired: desired.filter((group) => !opened.has(group.reference)),
+    changed
+  };
+}
+
+export const postMaintenanceEventPermission = {
+  update: "resources"
+} satisfies PermissionRule<z.output<typeof postMaintenanceEventInput>>;
+
+/**
+ * Reconciles maintenance dispatches' labor postings with their time entries —
+ * call it after an entry is ended, added, edited or deleted, or a dispatch is
+ * completed. Time is expensed at the work center's labor rate (no overhead):
+ * Dr maintenanceAccount / Cr laborAbsorptionAccount, one journal per dispatch
+ * that changed. Idempotent: see ./plan.ts.
+ */
+export async function postMaintenanceEvent(
+  ctx: ServiceContext,
+  raw: z.input<typeof postMaintenanceEventInput>
+) {
+  const { maintenanceDispatchIds } = postMaintenanceEventInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const dispatchIds = [...new Set(maintenanceDispatchIds)];
+
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  const journalIds = await db.transaction().execute(async (trx) => {
+    // Provisional before the company's accounting cutover, Posted after it.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+
+    // Row locks: two reconciles of one dispatch must not both post the same
+    // difference.
+    const dispatches = await trx
+      .selectFrom("maintenanceDispatch")
+      .select(["id", "maintenanceDispatchId"])
+      .where("id", "in", dispatchIds)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    if (dispatches.length !== dispatchIds.length) {
+      throw new NotFoundError("Maintenance dispatch not found");
+    }
+
+    const [events, priorLines, supersededLines, accountDefaults, dimensions] =
+      await Promise.all([
+        trx
+          .selectFrom("maintenanceDispatchEvent")
+          .select([
+            "id",
+            "maintenanceDispatchId",
+            "endTime",
+            "duration",
+            "workCenterId",
+            "employeeId"
+          ])
+          .where("maintenanceDispatchId", "in", dispatchIds)
+          .where("companyId", "=", companyId)
+          .execute(),
+        trx
+          .selectFrom("journalLine")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "journalLine.journalId")
+              .onRef("journal.companyId", "=", "journalLine.companyId")
+          )
+          .select([
+            "journalLine.id",
+            "journalLine.documentId",
+            "journalLine.documentLineReference",
+            "journalLine.accountId",
+            "journalLine.amount"
+          ])
+          .where("journalLine.documentType", "=", "Maintenance Event")
+          .where("journalLine.documentId", "in", dispatchIds)
+          .where("journalLine.companyId", "=", companyId)
+          .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+          .execute(),
+        // Lines the enable superseded: posted before the cutover.
+        trx
+          .selectFrom("journalLine")
+          .innerJoin("journal", (join) =>
+            join
+              .onRef("journal.id", "=", "journalLine.journalId")
+              .onRef("journal.companyId", "=", "journalLine.companyId")
+          )
+          .select([
+            "journalLine.documentId",
+            "journalLine.documentLineReference",
+            "journalLine.accountId",
+            "journalLine.amount"
+          ])
+          .where("journalLine.documentType", "=", "Maintenance Event")
+          .where("journalLine.documentId", "in", dispatchIds)
+          .where("journalLine.companyId", "=", companyId)
+          .where("journal.status", "=", "Superseded")
+          .execute(),
+        trx
+          .selectFrom("accountDefault")
+          .select([
+            "maintenanceAccount",
+            "laborAbsorptionAccount",
+            "retainedEarningsAccount"
+          ])
+          .where("companyId", "=", companyId)
+          .executeTakeFirst(),
+        trx
+          .selectFrom("dimension")
+          .innerJoin(
+            "company",
+            "company.companyGroupId",
+            "dimension.companyGroupId"
+          )
+          .select(["dimension.id", "dimension.entityType"])
+          .where("company.id", "=", companyId)
+          .where("dimension.active", "=", true)
+          .where("dimension.entityType", "in", [
+            "Employee",
+            "WorkCenter",
+            "Location"
+          ])
+          .execute()
+      ]);
+    if (!accountDefaults) throw new Error("Error getting account defaults");
+    // Resolved on the first event that carries cost: before the cutover an
+    // empty laborAbsorptionAccount becomes a stand-in line, after it the
+    // posting is refused.
+    let laborAbsorption: ReturnType<typeof resolveDefaultAccount> | null = null;
+
+    const ended = events.filter((e) => e.endTime && Number(e.duration) > 0);
+    const workCenterIds = [...new Set(ended.map((e) => e.workCenterId))];
+    const [workCenters, priorDimensions] = await Promise.all([
+      workCenterIds.length
+        ? trx
+            .selectFrom("workCenter")
+            .select(["id", "laborRate", "locationId"])
+            .where("id", "in", workCenterIds)
+            .where("companyId", "=", companyId)
+            .execute()
+        : Promise.resolve([]),
+      priorLines.length
+        ? trx
+            .selectFrom("journalLineDimension")
+            .select(["journalLineId", "dimensionId", "valueId"])
+            .where(
+              "journalLineId",
+              "in",
+              priorLines.map((l) => l.id)
+            )
+            .where("companyId", "=", companyId)
+            .execute()
+        : Promise.resolve([])
+    ]);
+    const workCenterById = indexBy(workCenters, (wc) => wc.id);
+
+    const dimensionIdByType = new Map(
+      dimensions
+        .filter((d) => d.entityType)
+        .map((d) => [d.entityType as string, d.id])
+    );
+    const tag = (entityType: string, valueId: string | null | undefined) =>
+      valueId && dimensionIdByType.has(entityType)
+        ? [{ dimensionId: dimensionIdByType.get(entityType)!, valueId }]
+        : [];
+
+    // What each dispatch's entries should have posted.
+    const desiredByDispatch = new Map<string, LaborGroup[]>();
+    for (const event of ended) {
+      const workCenter = workCenterById.get(event.workCenterId);
+      const cost = maintenanceLaborCost(event.duration, workCenter?.laborRate);
+      if (cost <= 0) continue;
+      laborAbsorption ??= resolveDefaultAccount(
+        accountDefaults,
+        "laborAbsorptionAccount",
+        postingStatus
+      );
+      const reference = journalReference.to.maintenanceEvent(event.id);
+      const eventDimensions: LaborDimension[] = [
+        ...tag("Employee", event.employeeId),
+        ...tag("WorkCenter", event.workCenterId),
+        ...tag("Location", workCenter?.locationId)
+      ];
+      const list = desiredByDispatch.get(event.maintenanceDispatchId) ?? [];
+      list.push(
+        {
+          reference,
+          accountId: accountDefaults.maintenanceAccount,
+          dimensions: eventDimensions,
+          amount: debit("expense", cost)
+        },
+        {
+          reference,
+          accountId: laborAbsorption.accountId,
+          dimensions: eventDimensions,
+          amount: credit("expense", cost)
+        }
+      );
+      desiredByDispatch.set(event.maintenanceDispatchId, list);
+    }
+
+    // What the journal already holds, with each line's own tags.
+    const dimensionsByLine = new Map<string, LaborDimension[]>();
+    for (const d of priorDimensions) {
+      const list = dimensionsByLine.get(d.journalLineId) ?? [];
+      list.push({ dimensionId: d.dimensionId, valueId: d.valueId });
+      dimensionsByLine.set(d.journalLineId, list);
+    }
+    const priorByDispatch = new Map<string, LaborGroup[]>();
+    for (const line of priorLines) {
+      const dispatchId = line.documentId ?? "";
+      const list = priorByDispatch.get(dispatchId) ?? [];
+      list.push({
+        reference: line.documentLineReference ?? "",
+        accountId: line.accountId ?? "",
+        dimensions: dimensionsByLine.get(line.id) ?? [],
+        amount: Number(line.amount)
+      });
+      priorByDispatch.set(dispatchId, list);
+    }
+
+    let accountingPeriodId: string | null = null;
+    const posted: string[] = [];
+
+    for (const dispatch of dispatches) {
+      const prior = priorByDispatch.get(dispatch.id) ?? [];
+      const desired = withoutSupersededEntries(
+        desiredByDispatch.get(dispatch.id) ?? [],
+        supersededLines
+          .filter((line) => line.documentId === dispatch.id)
+          .map((line) => ({
+            reference: line.documentLineReference ?? "",
+            accountId: line.accountId ?? "",
+            amount: Number(line.amount)
+          })),
+        accountDefaults.maintenanceAccount
+      );
+      if (desired.changed.length > 0) {
+        throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
+      }
+      const delta = diffLaborGroups(desired.desired, prior);
+      if (delta.length === 0) continue;
+
+      // A Provisional journal has no accounting period.
+      if (postingStatus === "Posted") {
+        accountingPeriodId ??= (
+          await resolveAccountingPeriod(trx, companyId, postingDate, "current")
+        ).id;
+      }
+      const journalId = await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId,
+        status: postingStatus,
+        description: `Maintenance Labor ${dispatch.maintenanceDispatchId}${
+          prior.length > 0 ? " (Adjustment)" : ""
+        }`,
+        postingDate,
+        userId,
+        sourceType: "Maintenance Event"
+      });
+
+      // One line per insert: each carries its own tags, and a multi-row
+      // RETURNING does not promise insert order.
+      const journalLineReference = nanoid();
+      for (const group of delta) {
+        const isMaintenanceLine =
+          group.accountId === accountDefaults.maintenanceAccount;
+        const line = await trx
+          .insertInto("journalLine")
+          .values({
+            journalId,
+            accountId: group.accountId,
+            description: isMaintenanceLine
+              ? "Maintenance Labor"
+              : "Labor Absorption",
+            // A Provisional absorption line on Retained Earnings is a
+            // stand-in, the new one or the reversal of a prior one; the
+            // enable re-points it.
+            accountDefaultRole:
+              postingStatus === "Provisional" &&
+              !isMaintenanceLine &&
+              group.accountId === accountDefaults.retainedEarningsAccount
+                ? "laborAbsorptionAccount"
+                : null,
+            amount: group.amount,
+            quantity: 1,
+            documentType: "Maintenance Event",
+            documentId: dispatch.id,
+            documentLineReference: group.reference,
+            journalLineReference,
+            companyId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+
+        if (group.dimensions.length > 0) {
+          await trx
+            .insertInto("journalLineDimension")
+            .values(
+              group.dimensions.map((d) => ({
+                journalLineId: line.id,
+                dimensionId: d.dimensionId,
+                valueId: d.valueId,
+                companyId
+              }))
+            )
+            .execute();
+        }
+      }
+      posted.push(journalId);
+    }
+
+    return posted;
+  });
+
+  return { success: true, journalIds };
 }

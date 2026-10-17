@@ -7,10 +7,9 @@
 // payment, and a line the posting would refuse is refused here too.
 
 import { expect } from "vitest";
-import { createLeaseInvoices } from "../../../../app/modules/purchasing/purchasing.service";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { postLeaseAction as postLease } from "../../../../app/modules/purchasing/purchasing.service";
-import { leaseFixture } from "@carbon/server-functions/post-lease/lease-test-fixture";
+import { createLeaseInvoices, postLeaseAction as postLease } from "../../../../app/modules/purchasing/purchasing.service";
+import { databaseTest } from "../../fixtures/local-database";
+import { leaseFixture } from "../../fixtures/lease";
 import { buildLegacyPurchaseInvoiceJournals } from "../../../../app/modules/accounting/accounting.service";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";

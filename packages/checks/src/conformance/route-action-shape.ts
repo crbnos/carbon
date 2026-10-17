@@ -12,15 +12,14 @@ const ROUTES = /^apps\/erp\/app\/routes\//;
 const WRITES = [
   /\.from\(\s*["'`][^"'`]+["'`]\s*\)\s*\.(?:insert|upsert|update|delete)\(/g,
   /\.(?:insertInto|updateTable|deleteFrom)\(/g,
-  /\bserverFns\s*\.\s*(?:system|as)\(/g,
-  // a posting body ported from @carbon/server-functions
-  /\binvokePosting(?:OrThrow)?\(/g
+  // a posting body, run outside its service function
+  /\binvoke(?:Posting(?:OrThrow)?|Create)\(/g
 ];
 
 export const routeActionShape: ConformanceCheck = {
   id: "route-action-shape",
   description:
-    "An ERP route writes only through a service function: no client, Kysely or server-function writes in the route",
+    "An ERP route writes only through a service function: no client, Kysely or posting writes in the route",
   provenance: {
     deprecates: "a route action that composes writes itself",
     replacedBy:

@@ -9,14 +9,12 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "./fixtures/local-database";
 import { postReceipt } from "../../app/modules/inventory/inventory.service";
-import { rentalFixture } from "@carbon/server-functions/post-rental-agreement/rental-test-fixture";
+import { rentalFixture } from "./fixtures/rental";
 import { createRentalInvoices } from "../../app/modules/sales/sales.service";
-import { invokePosting } from "../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";
-
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
 async function putOnRent(f: Fixture) {
@@ -108,11 +106,11 @@ databaseTest(
     const f = await rentalFixture({ billingCycle: "Monthly" });
     try {
       await putOnRent(f);
-      const receipt = await create(f.ctx, {
-        type: "receiptFromRentalAgreement",
-        rentalAgreementId: f.agreementId,
-        rentalAgreementLineId: f.lineIds[0]!
-      });
+      const receipt = await invokeCreate(handlesOf(f.ctx), {
+                    type: "receiptFromRentalAgreement",
+                    rentalAgreementId: f.agreementId,
+                    rentalAgreementLineId: f.lineIds[0]!
+                  });
       expect(receipt.error).toBeNull();
       const posted = await invokePosting(handlesOf(f.ctx), "post-receipt", {
               type: "post",

@@ -21,7 +21,6 @@ import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
@@ -65,7 +64,7 @@ import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import { invokePosting } from "../shared/shared.service";
+import { invokeCreate, invokePosting } from "../shared/shared.service";
 import {
   contractAmendmentChangeValidator,
   customerContractAmendmentValidator,
@@ -2318,13 +2317,14 @@ export const shipSalesOrderLine = defineServiceFn({
       );
     }
 
-    const shipment = await serverFns
-      .system({ db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId })
-      .invoke("create", {
+    const shipment = await invokeCreate(
+      { db: ctx.asSystem.pg, companyId, userId: ctx.auditUserId },
+      {
         type: "shipmentFromSalesOrderLine",
         locationId: line.data.locationId,
         salesOrderLineId
-      });
+      }
+    );
     if (!shipment.data || shipment.error) {
       return ctx.error("internal", "Failed to create shipment", shipment.error);
     }
@@ -2778,9 +2778,10 @@ export const escalateReturnOrderLine = defineServiceFn({
       return linked;
     }
 
-    const tasks = await serverFns
-      .system({ db: ctx.asSystem.pg, companyId, userId })
-      .invoke("create", { type: "nonConformanceTasks", id: issueId });
+    const tasks = await invokeCreate(
+      { db: ctx.asSystem.pg, companyId, userId },
+      { type: "nonConformanceTasks", id: issueId }
+    );
     if (tasks.error) {
       await deleteIssue(serviceRole, issueId);
       return ctx.error("internal", "Failed to create Issue tasks", tasks.error);
@@ -4585,13 +4586,14 @@ export const deliverRentalUnit = defineServiceFn({
   permission: { update: "sales", create: "inventory" },
 
   async run(ctx, input) {
-    const result = await serverFns
-      .system({
+    const result = await invokeCreate(
+      {
         db: ctx.asSystem.pg,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
-      })
-      .invoke("create", { type: "shipmentFromRentalAgreement", ...input });
+      },
+      { type: "shipmentFromRentalAgreement", ...input }
+    );
     if (result.error || !result.data) {
       return ctx.error(
         "rule",
@@ -4620,13 +4622,14 @@ export const returnRentalUnit = defineServiceFn({
   permission: { update: "sales", create: "inventory" },
 
   async run(ctx, input) {
-    const result = await serverFns
-      .system({
+    const result = await invokeCreate(
+      {
         db: ctx.asSystem.pg,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
-      })
-      .invoke("create", { type: "receiptFromRentalAgreement", ...input });
+      },
+      { type: "receiptFromRentalAgreement", ...input }
+    );
     if (result.error || !result.data) {
       return ctx.error(
         "rule",

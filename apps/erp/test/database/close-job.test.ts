@@ -16,10 +16,12 @@ import {
   stockPart,
   unwrap
 } from "./fixtures/always-post";
-import issue from "@carbon/server-functions/issue";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
+import { databaseTest } from "./fixtures/local-database";
 import { expect } from "vitest";
 import { closeJob } from "../../app/modules/production/production.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
+import { handlesOf } from "./fixtures/handles";
 
 /** Issues the job's two parts to its operation by hand. */
 async function issueTwoParts(
@@ -27,14 +29,14 @@ async function issueTwoParts(
   job: Awaited<ReturnType<typeof jobFixture>>
 ) {
   unwrap(
-    await issue(f.ctx, {
-      type: "partToOperation",
-      id: job.operationId,
-      itemId: f.partId,
-      materialId: job.materialId,
-      quantity: 2,
-      adjustmentType: "Negative Adjmt."
-    })
+    await invokePosting(handlesOf(f.ctx), "issue", {
+            type: "partToOperation",
+            id: job.operationId,
+            itemId: f.partId,
+            materialId: job.materialId,
+            quantity: 2,
+            adjustmentType: "Negative Adjmt."
+          }, issue)
   );
 }
 

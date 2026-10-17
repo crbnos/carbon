@@ -6,7 +6,7 @@
 // legacy backfill rebuilds, from plain facts.
 
 import { describe, expect, it } from "vitest";
-import { journalLineDimensionRows } from "@carbon/server-functions/lib/journal-line-dimensions";
+import { journalLineDimensionRows } from "~/modules/shared/shared.service";
 import {
   buildReturnShipmentJournal,
   buildSalesShipmentJournal,

@@ -14,13 +14,10 @@ import {
 import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { postCharge } from "../../../app/modules/accounting/accounting.service";
-import { postMemo } from "../../../app/modules/invoicing/invoicing.service";
-import { postPayment } from "../../../app/modules/invoicing/invoicing.service";
+import { databaseTest } from "../fixtures/local-database";
+import { postCharge, activateAccounting } from "../../../app/modules/accounting/accounting.service";
+import { postMemo, postPayment, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { activateAccounting } from "../../../app/modules/accounting/accounting.service";
 import {
   type AccountName,
   activationFixture,

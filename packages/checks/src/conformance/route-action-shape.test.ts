@@ -18,12 +18,12 @@ describe("route-action-shape", () => {
     ).toEqual(['.from("job").update(']);
   });
 
-  it("flags Kysely writes and server-function calls", () => {
+  it("flags Kysely writes and postings", () => {
     expect(
       scan(
-        'await db.updateTable("job").set({}).execute();\nawait serverFns.system(fields).invoke("issue", {});\nawait invokePosting(ctx, "post-receipt", {}, postReceipt);'
+        'await db.updateTable("job").set({}).execute();\nawait invokeCreate(ctx, { type: "receiptDefault" });\nawait invokePosting(ctx, "post-receipt", {}, postReceipt);'
       )
-    ).toEqual([".updateTable(", "serverFns.system(", "invokePosting("]);
+    ).toEqual([".updateTable(", "invokeCreate(", "invokePosting("]);
   });
 
   it("leaves reads and non-database deletes alone", () => {

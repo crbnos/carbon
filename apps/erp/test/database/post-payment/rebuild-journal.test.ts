@@ -7,11 +7,9 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
-import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
-import { rebuildPaymentJournals } from "../../../app/modules/invoicing/invoicing.service";
-
+import { databaseTest } from "../fixtures/local-database";
+import { paymentFixture } from "../fixtures/payment";
+import { postPaymentTransaction, rebuildPaymentJournals } from "../../../app/modules/invoicing/invoicing.service";
 type Fixture = Awaited<ReturnType<typeof paymentFixture>>;
 
 /** The journal's lines, in a fixed order, with what the parity compares. */

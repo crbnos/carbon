@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { journalLineDimensionRows } from "@carbon/server-functions/lib/journal-line-dimensions";
+import { journalLineDimensionRows } from "~/modules/shared/shared.service";
 import {
   buildPurchaseReceiptJournalLines,
   buildSalesReturnReceiptJournalLines,

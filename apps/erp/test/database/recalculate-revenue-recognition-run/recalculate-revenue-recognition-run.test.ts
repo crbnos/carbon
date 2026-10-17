@@ -4,16 +4,14 @@
 
 import { sql } from "kysely";
 import { expect, test } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { paymentFixture } from "../fixtures/payment";
 import {
-  proposeRevenueRecognitionRunInput, proposeRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
+  proposeRevenueRecognitionRunInput, proposeRevenueRecognitionRun, recalculateRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
 import {
   dropRecognitionRuns,
   holdInDraftRun
 } from "../fixtures/run";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
-import { recalculateRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 
@@ -71,11 +69,11 @@ async function runLines(f: Fixture, runId: string) {
 }
 
 async function recalculate(f: Fixture, runId: string) {
-  const result = await invokePosting(handlesOf(ServerFnContext.system({
+  const result = await invokePosting(handlesOf({
         db: f.db,
         companyId: f.companyId,
         userId: "system"
-      })), "recalculate-revenue-recognition-run", { runId }, recalculateRevenueRecognitionRun);
+      }), "recalculate-revenue-recognition-run", { runId }, recalculateRevenueRecognitionRun);
   if (result.error) throw result.error;
   return result.data;
 }
@@ -220,11 +218,11 @@ async function propose(f: Fixture, periodEnd: string) {
     })
     .onConflict((oc) => oc.doNothing())
     .execute();
-  const result = await invokePosting(handlesOf(ServerFnContext.system({
+  const result = await invokePosting(handlesOf({
         db: f.db,
         companyId: f.companyId,
         userId: "system"
-      })), "propose-revenue-recognition-run", { periodEnd }, proposeRevenueRecognitionRun);
+      }), "propose-revenue-recognition-run", { periodEnd }, proposeRevenueRecognitionRun);
   if (result.error) throw result.error;
   return result.data;
 }

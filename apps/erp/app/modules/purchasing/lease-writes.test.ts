@@ -27,7 +27,7 @@ vi.mock("@carbon/content/glossary", () => ({
   terms: {}
 }));
 
-import { leaseFixture } from "../../../../../packages/server-functions/src/post-lease/lease-test-fixture";
+import { leaseFixture } from "../../../test/database/fixtures/lease";
 import {
   leaseOpeningAsOf,
   regenerateLeasePayments,

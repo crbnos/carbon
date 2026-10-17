@@ -4,9 +4,9 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
+import { erpPosting } from "~/services/erp";
 
 export async function getActiveMaintenanceDispatchesByLocation(
   client: SupabaseClient<Database>,
@@ -180,9 +180,11 @@ export async function postMaintenanceLabor(
   db: Kysely<KyselyDatabase>,
   args: { maintenanceDispatchIds: string[]; companyId: string; userId: string }
 ) {
-  return serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-maintenance-event", args);
+  return erpPosting(
+    "post-maintenance-event",
+    { client, companyId: args.companyId, userId: args.userId },
+    args
+  );
 }
 
 export async function updateMaintenanceDispatchStatus(

@@ -3,11 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { postMemoTransaction } from "../../../app/modules/invoicing/invoicing.service";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
-import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
-
+import { databaseTest } from "../fixtures/local-database";
+import { postMemoTransaction, postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
+import { paymentFixture } from "../fixtures/payment";
 type Fixture = Awaited<ReturnType<typeof paymentFixture>>;
 async function party(f: Fixture, isAR: boolean) {
   if (isAR) {

@@ -4,9 +4,9 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { allocateJournalLineIds } from "@carbon/server-functions/lib/journal-line-ids";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { chargeFixture } from "@carbon/server-functions/post-charge/post-charge-test-fixture";
+import { allocateJournalLineIds } from "~/modules/shared/shared.service";
+import { databaseTest } from "../fixtures/local-database";
+import { chargeFixture } from "../fixtures/post-charge";
 import { postChargeTransaction } from "../../../app/modules/accounting/accounting.service";
 
 databaseTest(

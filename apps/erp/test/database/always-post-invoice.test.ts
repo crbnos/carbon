@@ -26,7 +26,7 @@ import {
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import { postSalesInvoice } from "../../app/modules/invoicing/invoicing.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";

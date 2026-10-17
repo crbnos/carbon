@@ -14,7 +14,7 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "./fixtures/local-database";
 import {
   convertDocument,
   invokePosting

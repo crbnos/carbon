@@ -14,7 +14,6 @@
     "@carbon/notifications": "workspace:*",
     "@carbon/planning": "workspace:*",
     "@carbon/printing": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",

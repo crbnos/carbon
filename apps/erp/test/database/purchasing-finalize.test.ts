@@ -7,7 +7,7 @@ import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import {
   finalizePurchasingRfq,
   finalizeSupplierQuote

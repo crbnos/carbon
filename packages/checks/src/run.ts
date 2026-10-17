@@ -61,7 +61,6 @@ import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { routeActionShape } from "./conformance/route-action-shape";
-import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 import { serviceFnFile } from "./conformance/service-fn-file";
 import {
   findUndeclaredSideEffectImports,
@@ -74,10 +73,7 @@ import {
 } from "./conformance/stamp-matches-columns";
 import { loadDbTableColumns } from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
-import {
-  loadEdgeFunctions,
-  loadServerFunctions
-} from "./sources/edge-functions";
+import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadLicenseFiles } from "./sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import {
@@ -130,9 +126,6 @@ export const TS_CHECKS: ConformanceCheck[] = [
 export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
   edgeFunctionAuthorizesCaller
 ];
-
-/** Checks that run once per `@carbon/server-functions` entry point. */
-export const SERVER_FN_CHECKS: ConformanceCheck[] = [serverFnAuthorizesCaller];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 
@@ -216,7 +209,6 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       indexRedirectBeforeLoaders
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
-    ...scanAll(loadServerFunctions(root), SERVER_FN_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
     ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
       (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })

@@ -2,8 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { NotFoundError } from "@carbon/api/errors";
+import {
+  InvalidInputError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  batchOperationsInput,
+  type PostProductionEventResult,
+  postProductionEventInput,
+  recalculateInput,
+  rescheduleInput,
+  triggerReworkInput
+} from "@carbon/api/postings";
 import type {
   CarbonError,
   ServiceContext
@@ -22,7 +34,17 @@ import {
   runConfigurationRule,
   transpileRule
 } from "@carbon/database/configuration-rule";
-import { journalPostingStatus } from "@carbon/database/journal-posting-status";
+import {
+  type ComputedJobQuantityNode,
+  computeJobQuantities,
+  flattenJobQuantityTree
+} from "@carbon/database/job-quantities-engine";
+import {
+  assertPostingStatusUnchanged,
+  journalPostingStatus,
+  MissingAccountDefaultError,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
 import { toJson, toJsonColumns } from "@carbon/database/json";
 import {
   calculateQuoteLinePrices,
@@ -37,14 +59,18 @@ import {
   traverseQuoteMethod
 } from "@carbon/database/methods";
 import { effectiveReplenishment } from "@carbon/database/mrp-engine";
+import type * as rows from "@carbon/database/rows";
 import {
   inOrder,
   isNull,
   many,
   maybeSingle,
+  neq,
+  notNull,
   selectRow,
   selectRows,
-  single
+  single,
+  updateRows
 } from "@carbon/database/rows";
 import {
   getNextRevisionSequence,
@@ -78,13 +104,14 @@ import {
   subtractIntervals
 } from "@carbon/planning";
 import type { JSONContent } from "@carbon/react";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
-import { getDefaultPostingGroup } from "@carbon/server-functions/lib/get-posting-group";
-import { getStorageUnitId } from "@carbon/server-functions/lib/storage-units";
-import { attributesContain } from "@carbon/server-functions/tracked-entity-attributes";
 import {
+  assertAllOperationsClaimed,
+  assertBatchCompletionMembership,
+  assertBatchWorkCenterMutable,
   async,
+  BATCH_RULE_DIMENSIONS,
+  type BatchRules,
+  buildBatchCompletionPlan,
   chunkArray,
   credit,
   datetime,
@@ -93,7 +120,11 @@ import {
   groupBy,
   HOUR_MS,
   isUniqueViolation,
+  type MemberValueSets,
+  mustViolations,
   nameSimilarity,
+  planBatchCompletion,
+  resolveBatchRules,
   round,
   scrapAllowance,
   textToTiptap,
@@ -125,7 +156,15 @@ import { type QueryCreator, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
-import { chunked } from "~/modules/shared/shared.service";
+import {
+  assertCompanyRecords,
+  attributesContain,
+  chunked,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
+  getStorageUnitId,
+  TIME_ENTRY_BEFORE_CUTOVER_ERROR
+} from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
 import { makeDurations } from "~/utils/duration";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -135,6 +174,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import * as inventoryPostings from "../inventory/inventory.service";
 import { getDefaultStorageUnitForJob } from "../inventory/inventory.utils";
 import { getEmployeeJob } from "../people/people.service";
 import { resolveJobConfiguration } from "../sales/sales.utils";
@@ -480,12 +520,16 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
-        await serverFns
-          .as({ client, db, companyId, userId })
-          .invoke("recalculate", {
+        await invokePosting(
+          { client, db, companyId, userId },
+          "recalculate",
+          {
             type: "jobRequirements",
             id: createJob.data.id
-          });
+          },
+          recalculateRequirements,
+          { as: recalculateRequirementsPermission }
+        );
 
         await assignJobSerialNumbers(client, db, {
           jobId: createJob.data.id,
@@ -711,12 +755,16 @@ export async function deleteProductionEvent(
   // A posted event's journal entry must be reversed before the row goes
   // away, otherwise WIP keeps the orphaned absorption.
   if (event.data.postedToGL) {
-    const reversal = await serverFns
-      .as({ client, db, companyId, userId })
-      .invoke("post-production-event", {
+    const reversal = await invokePosting(
+      { client, db, companyId, userId },
+      "post-production-event",
+      {
         productionEventId,
         reverse: true
-      });
+      },
+      postProductionEvent,
+      { as: postProductionEventPermission }
+    );
     if (reversal.error) {
       return {
         data: null,
@@ -2739,12 +2787,16 @@ export async function recalculateJobRequirements(
     userId: string;
   }
 ) {
-  return serverFns
-    .as({ client, db, companyId: params.companyId, userId: params.userId })
-    .invoke("recalculate", {
+  return invokePosting(
+    { client, db, companyId: params.companyId, userId: params.userId },
+    "recalculate",
+    {
       type: "jobRequirements",
       ...params
-    });
+    },
+    recalculateRequirements,
+    { as: recalculateRequirementsPermission }
+  );
 }
 
 export async function recalculateJobMakeMethodRequirements(
@@ -2756,12 +2808,16 @@ export async function recalculateJobMakeMethodRequirements(
     userId: string;
   }
 ) {
-  return serverFns
-    .as({ client, db, companyId: params.companyId, userId: params.userId })
-    .invoke("recalculate", {
+  return invokePosting(
+    { client, db, companyId: params.companyId, userId: params.userId },
+    "recalculate",
+    {
       type: "jobMakeMethodRequirements",
       ...params
-    });
+    },
+    recalculateRequirements,
+    { as: recalculateRequirementsPermission }
+  );
 }
 
 export async function runMRP(
@@ -3254,12 +3310,16 @@ export async function returnPickedRemaindersForOperation(
   db: Kysely<KyselyDatabase>,
   args: { jobOperationId: string; userId: string; companyId: string }
 ) {
-  return serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-picking", {
+  return invokePosting(
+    { client, db, companyId: args.companyId, userId: args.userId },
+    "post-picking",
+    {
       type: "returnOperationRemainders",
       ...args
-    });
+    },
+    inventoryPostings.postPicking,
+    { as: inventoryPostings.postPickingPermission }
+  );
 }
 
 /**
@@ -3278,13 +3338,17 @@ export async function returnPickedRemaindersForJob(
     cancelling?: boolean;
   }
 ) {
-  return serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-picking", {
+  return invokePosting(
+    { client, db, companyId: args.companyId, userId: args.userId },
+    "post-picking",
+    {
       type: "returnJobRemainders",
       jobId: args.jobId,
       cancelling: args.cancelling
-    });
+    },
+    inventoryPostings.postPicking,
+    { as: inventoryPostings.postPickingPermission }
+  );
 }
 
 export async function updateProcedureStepOrder(
@@ -3619,12 +3683,16 @@ export async function insertJob(
   });
 
   if (!options?.skipRecalculate) {
-    await serverFns
-      .as({ client, db, companyId: input.companyId, userId: input.createdBy })
-      .invoke("recalculate", {
+    await invokePosting(
+      { client, db, companyId: input.companyId, userId: input.createdBy },
+      "recalculate",
+      {
         type: "jobRequirements",
         id: createdJobId
-      });
+      },
+      recalculateRequirements,
+      { as: recalculateRequirementsPermission }
+    );
   }
 
   return { data: { id: createdJobId, jobId }, error: null };
@@ -7035,12 +7103,16 @@ export async function createJobOperationBatch(
   }
 ) {
   const { companyId, userId, ...input } = args;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("batch-operations", {
+  return invokePosting(
+    { client, db, companyId, userId },
+    "batch-operations",
+    {
       type: "create",
       ...input
-    });
+    },
+    batchOperation,
+    { as: batchOperationPermission }
+  );
 }
 
 /**
@@ -7062,9 +7134,13 @@ export async function updateJobOperationBatch(
 ) {
   const { companyId, userId, ...input } = args;
   // add/remove need jobOperationIds; the operation re-validates the shape.
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("batch-operations", input as ServerFnInput<"batch-operations">);
+  return invokePosting(
+    { client, db, companyId, userId },
+    "batch-operations",
+    input as z.input<typeof batchOperationsInput>,
+    batchOperation,
+    { as: batchOperationPermission }
+  );
 }
 
 /**
@@ -7077,12 +7153,16 @@ export async function releaseJobOperationBatch(
   args: { batchId: string; companyId: string; userId: string }
 ) {
   const { companyId, userId, batchId } = args;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("batch-operations", {
+  return invokePosting(
+    { client, db, companyId, userId },
+    "batch-operations",
+    {
       type: "release",
       batchId
-    });
+    },
+    batchOperation,
+    { as: batchOperationPermission }
+  );
 }
 
 /** The flip only; `unreleaseBatch` also tells the scheduler. */
@@ -7092,12 +7172,16 @@ export async function unreleaseJobOperationBatch(
   args: { batchId: string; companyId: string; userId: string }
 ) {
   const { companyId, userId, batchId } = args;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("batch-operations", {
+  return invokePosting(
+    { client, db, companyId, userId },
+    "batch-operations",
+    {
       type: "unrelease",
       batchId
-    });
+    },
+    batchOperation,
+    { as: batchOperationPermission }
+  );
 }
 
 // --- Assembly Instructions ---------------------------------------------
@@ -11638,13 +11722,16 @@ export async function postEndedEvent(
   ctx: ServiceContext,
   productionEventId: string
 ) {
-  const posting = await serverFns
-    .system({
+  const posting = await invokePosting(
+    {
       db: ctx.asSystem.pg,
       companyId: ctx.company.id,
       userId: ctx.auditUserId
-    })
-    .invoke("post-production-event", { productionEventId });
+    },
+    "post-production-event",
+    { productionEventId },
+    postProductionEvent
+  );
   if (posting.error) return posting.error.message || "unknown error";
   if (posting.data.success === false) {
     return posting.data.reason ?? "unknown reason";
@@ -21515,4 +21602,3061 @@ async function hydrateConfiguration(
     });
     return configuration;
   }
+}
+const rescheduleJobLogger = getLogger("server-functions", "reschedule");
+// Types
+type JobOperation = {
+  id: string;
+  jobId: string;
+  workCenterId: string | null;
+  status: string;
+  priority: number | null;
+  dueDate: string | null;
+  startDate: string | null;
+  setupTime: number | null;
+  laborTime: number | null;
+  machineTime: number | null;
+  setupUnit: string | null;
+  laborUnit: string | null;
+  machineUnit: string | null;
+  operationQuantity: number | null;
+};
+
+type JobOperationDependency = {
+  operationId: string;
+  dependsOnId: string;
+  jobId: string;
+};
+
+type DependencyGraph = Map<
+  string,
+  {
+    dependsOn: string[];
+    requiredBy: string[];
+  }
+>;
+
+type ScheduledOperation = JobOperation & {
+  hasConflict: boolean;
+  conflictReason: string | null;
+};
+
+type OperationWithJobInfo = {
+  id: string;
+  dueDate: string | null;
+  priority: number | null;
+  deadlineType: string | null;
+  jobPriority: number | null;
+  workCenterId: string | null;
+};
+
+// Helper: Get job with operations and dependencies
+async function getJobWithOperations(
+  trx: Transaction<KyselyDatabase>,
+  jobId: string
+) {
+  const job = await trx
+    .selectFrom("job")
+    .select(["id", "dueDate", "priority", "deadlineType"])
+    .where("id", "=", jobId)
+    .executeTakeFirstOrThrow();
+
+  const operations = await trx
+    .selectFrom("jobOperation")
+    .selectAll()
+    .where("jobId", "=", jobId)
+    .where("status", "not in", ["Done", "Canceled"])
+    .execute();
+
+  const dependencies = await trx
+    .selectFrom("jobOperationDependency")
+    .selectAll()
+    .where("jobId", "=", jobId)
+    .execute();
+
+  return { job, operations, dependencies };
+}
+
+// Helper: Build dependency graph
+function buildDependencyGraph(
+  operations: JobOperation[],
+  dependencies: JobOperationDependency[]
+): DependencyGraph {
+  const graph = new Map<
+    string,
+    {
+      dependsOn: string[];
+      requiredBy: string[];
+    }
+  >();
+
+  // Initialize all operations
+  for (const op of operations) {
+    graph.set(op.id, { dependsOn: [], requiredBy: [] });
+  }
+
+  // Build edges
+  for (const dep of dependencies) {
+    const opNode = graph.get(dep.operationId);
+    const depNode = graph.get(dep.dependsOnId);
+
+    if (opNode) {
+      opNode.dependsOn.push(dep.dependsOnId);
+    }
+    if (depNode) {
+      depNode.requiredBy.push(dep.operationId);
+    }
+  }
+
+  return graph;
+}
+
+// Helper: Topological sort
+function topologicalSort(
+  operations: JobOperation[],
+  graph: DependencyGraph,
+  direction: "forward" | "reverse"
+): JobOperation[] {
+  const inDegree = new Map<string, number>();
+  const queue: string[] = [];
+  const result: JobOperation[] = [];
+
+  // Calculate in-degrees
+  for (const op of operations) {
+    const deps =
+      direction === "forward"
+        ? graph.get(op.id)?.dependsOn || []
+        : graph.get(op.id)?.requiredBy || [];
+    inDegree.set(op.id, deps.length);
+    if (deps.length === 0) queue.push(op.id);
+  }
+
+  // Process queue
+  while (queue.length > 0) {
+    const opId = queue.shift()!;
+    const op = operations.find((o) => o.id === opId)!;
+    result.push(op);
+
+    const neighbors =
+      direction === "forward"
+        ? graph.get(opId)?.requiredBy || []
+        : graph.get(opId)?.dependsOn || [];
+
+    for (const neighborId of neighbors) {
+      const degree = inDegree.get(neighborId)! - 1;
+      inDegree.set(neighborId, degree);
+      if (degree === 0) queue.push(neighborId);
+    }
+  }
+
+  return result;
+}
+
+// Helper: Calculate operation duration in days
+function calculateOperationDuration(op: JobOperation): number {
+  const quantity = op.operationQuantity || 1;
+
+  // Calculate total hours
+  let setupHours = 0;
+  let laborHours = 0;
+  let machineHours = 0;
+
+  if (op.setupTime) {
+    setupHours =
+      op.setupUnit === "Hours/Piece" ? op.setupTime * quantity : op.setupTime;
+  }
+
+  if (op.laborTime) {
+    laborHours =
+      op.laborUnit === "Hours/Piece" ? op.laborTime * quantity : op.laborTime;
+  }
+
+  if (op.machineTime) {
+    machineHours =
+      op.machineUnit === "Hours/Piece"
+        ? op.machineTime * quantity
+        : op.machineTime;
+  }
+
+  // Total hours (setup + max of labor/machine since they can overlap)
+  const totalHours = setupHours + Math.max(laborHours, machineHours);
+
+  // Convert to days (assuming 8-hour workday)
+  const days = totalHours / 8;
+
+  // Round up to at least 1 day
+  return Math.max(Math.ceil(days), 1);
+}
+
+// Helper: Backward schedule operations
+function backwardScheduleOperations(
+  operations: JobOperation[],
+  graph: DependencyGraph,
+  jobDueDate: string | null
+): ScheduledOperation[] {
+  const scheduled = new Map<string, ScheduledOperation>();
+  const today = new Date().toISOString().split("T")[0]!;
+
+  // Default to today if no due date
+  const finalDueDate = jobDueDate || today;
+
+  // Topological sort (reverse: final ops first)
+  const sorted = topologicalSort(operations, graph, "reverse");
+
+  for (const op of sorted) {
+    const deps = graph.get(op.id);
+    if (!deps) continue;
+
+    const totalDuration = calculateOperationDuration(op);
+
+    // Calculate due date
+    let dueDate: string;
+    if (deps.requiredBy.length === 0) {
+      // Leaf operation: use job due date
+      dueDate = finalDueDate;
+    } else {
+      // Has dependents: must finish before earliest dependent starts
+      const dependentStartDates = deps.requiredBy
+        .map((depId) => scheduled.get(depId)?.startDate)
+        .filter((date): date is string => date !== null && date !== undefined);
+
+      if (dependentStartDates.length === 0) {
+        dueDate = finalDueDate;
+      } else {
+        // Subtract 1 day buffer
+        const minDate = new Date(
+          Math.min(...dependentStartDates.map((d) => new Date(d).getTime()))
+        );
+        minDate.setDate(minDate.getDate() - 1);
+        dueDate = minDate.toISOString().split("T")[0]!;
+      }
+    }
+
+    // Calculate start date
+    const dueDateObj = new Date(dueDate);
+    dueDateObj.setDate(dueDateObj.getDate() - totalDuration);
+    const startDate = dueDateObj.toISOString().split("T")[0]!;
+
+    // Check for conflicts
+    const hasConflict = startDate < today;
+    const conflictReason = hasConflict
+      ? `Operation must start on ${startDate} but current date is ${today}`
+      : null;
+
+    scheduled.set(op.id, {
+      ...op,
+      startDate,
+      dueDate,
+      hasConflict,
+      conflictReason
+    });
+  }
+
+  return Array.from(scheduled.values());
+}
+
+// Helper: Sort operations by priority criteria
+function sortOperationsByPriority(
+  operations: OperationWithJobInfo[]
+): OperationWithJobInfo[] {
+  const deadlineOrder: Record<string, number> = {
+    ASAP: 0,
+    "Hard Deadline": 1,
+    "Soft Deadline": 2,
+    "No Deadline": 3
+  };
+
+  return operations.sort((a, b) => {
+    // 1. Deadline type
+    const aDeadline = a.deadlineType || "No Deadline";
+    const bDeadline = b.deadlineType || "No Deadline";
+    if (aDeadline !== bDeadline) {
+      return deadlineOrder[aDeadline]! - deadlineOrder[bDeadline]!;
+    }
+
+    // 2. Due date (earliest first, nulls last)
+    if (a.dueDate && b.dueDate) {
+      const dateCompare =
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      if (dateCompare !== 0) return dateCompare;
+    } else if (a.dueDate) {
+      return -1;
+    } else if (b.dueDate) {
+      return 1;
+    }
+
+    // 3. Job priority
+    const aPriority = a.jobPriority || 0;
+    const bPriority = b.jobPriority || 0;
+    return aPriority - bPriority;
+  });
+}
+
+// Helper: Apply fractional priorities
+function applyFractionalPriorities(
+  sorted: OperationWithJobInfo[]
+): OperationWithJobInfo[] {
+  return sorted.map((op, index) => {
+    if (index === 0) {
+      op.priority = 0;
+    } else {
+      const prevPriority = sorted[index - 1]!.priority || 0;
+      op.priority = prevPriority + 1;
+    }
+    return op;
+  });
+}
+
+// Helper: Recalculate priorities by work center
+async function recalculatePriorities(
+  trx: Transaction<KyselyDatabase>,
+  scheduledOps: ScheduledOperation[],
+  workCenterIds: string[]
+): Promise<ScheduledOperation[]> {
+  const prioritizedOps = [...scheduledOps];
+
+  for (const wcId of workCenterIds) {
+    if (!wcId) continue;
+
+    // Get ALL active operations at this work center (not just from current job)
+    const allWcOps = await trx
+      .selectFrom("jobOperation as jo")
+      .innerJoin("job as j", "j.id", "jo.jobId")
+      .select([
+        "jo.id",
+        "jo.dueDate",
+        "jo.priority",
+        "j.deadlineType",
+        "j.priority as jobPriority",
+        "jo.workCenterId"
+      ])
+      .where("jo.workCenterId", "=", wcId)
+      .where("jo.status", "not in", ["Done", "Canceled"])
+      .execute();
+
+    // Merge with scheduled ops (use scheduled data if available)
+    const mergedOps = allWcOps.map((wcOp) => {
+      const scheduled = scheduledOps.find((s) => s.id === wcOp.id);
+      if (scheduled) {
+        return {
+          id: scheduled.id,
+          dueDate: scheduled.dueDate,
+          priority: scheduled.priority,
+          deadlineType: wcOp.deadlineType,
+          jobPriority: wcOp.jobPriority,
+          workCenterId: wcOp.workCenterId
+        };
+      }
+      return wcOp;
+    });
+
+    // Sort by priority criteria
+    const sorted = sortOperationsByPriority(mergedOps);
+
+    // Apply fractional indexing
+    const prioritized = applyFractionalPriorities(sorted);
+
+    // Update prioritized ops
+    for (const op of prioritized) {
+      const idx = prioritizedOps.findIndex((p) => p.id === op.id);
+      if (idx >= 0) {
+        prioritizedOps[idx]!.priority = op.priority;
+      }
+    }
+  }
+
+  return prioritizedOps;
+}
+
+export const rescheduleJobPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof rescheduleInput>>;
+
+/**
+ * Re-plans a job's operations: backward-schedules their dates from the job's due
+ * date, flags conflicts, and recalculates priorities on the affected work centers.
+ */
+export async function rescheduleJob(
+  ctx: ServiceContext,
+  raw: z.input<typeof rescheduleInput>
+) {
+  const { jobId } = rescheduleInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const owned = await db
+    .selectFrom("job")
+    .select("id")
+    .where("id", "=", jobId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!owned) throw new NotFoundError("Job not found");
+
+  rescheduleJobLogger.info(`🔰 Starting reschedule for job ${jobId}`);
+
+  const result = await db.transaction().execute(async (trx) => {
+    // 1. Get job and all its operations with dependencies
+    const { job, operations, dependencies } = await getJobWithOperations(
+      trx,
+      jobId
+    );
+
+    rescheduleJobLogger.info(
+      `📊 Job has ${operations.length} operations, ${dependencies.length} dependencies`
+    );
+
+    // 2. Build dependency graph
+    const graph = buildDependencyGraph(operations, dependencies);
+
+    // 3. Backward schedule (calculate dates, flag conflicts)
+    const scheduledOps = backwardScheduleOperations(
+      operations,
+      graph,
+      job.dueDate
+    );
+
+    const conflicts = scheduledOps.filter((op) => op.hasConflict);
+    rescheduleJobLogger.info(
+      `⚠️  Detected ${conflicts.length} scheduling conflicts`
+    );
+
+    // 4. Get affected work centers
+    const workCenterIds = [
+      ...new Set(
+        scheduledOps
+          .map((op) => op.workCenterId)
+          .filter((id): id is string => id !== null)
+      )
+    ];
+
+    rescheduleJobLogger.info(
+      `🏭 Affected work centers: ${workCenterIds.length}`
+    );
+
+    // 5. Recalculate priorities for each work center
+    const prioritizedOps = await recalculatePriorities(
+      trx,
+      scheduledOps,
+      workCenterIds
+    );
+
+    // 6. Batch update all operations
+    for (const op of prioritizedOps) {
+      await trx
+        .updateTable("jobOperation")
+        .set({
+          startDate: op.startDate,
+          dueDate: op.dueDate,
+          priority: op.priority!,
+          hasConflict: op.hasConflict,
+          conflictReason: op.conflictReason,
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .where("id", "=", op.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    rescheduleJobLogger.info(`✅ Updated ${prioritizedOps.length} operations`);
+
+    return {
+      operationsUpdated: prioritizedOps.length,
+      conflictsDetected: conflicts.length,
+      workCentersAffected: workCenterIds.length
+    };
+  });
+
+  return { success: true, ...result };
+}
+
+export const PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR =
+  "This production event was just posted by another process.";
+
+/** The net amount posted for one event so far, per account. */
+async function readPostedNet(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  eventReference: string
+) {
+  const lines = await db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .select([
+      "journalLine.accountId",
+      "journalLine.accountDefaultRole",
+      (eb) => eb.fn.sum("journalLine.amount").as("amount")
+    ])
+    .where("journalLine.documentLineReference", "=", eventReference)
+    .where("journalLine.companyId", "=", companyId)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .groupBy(["journalLine.accountId", "journalLine.accountDefaultRole"])
+    .execute();
+  return lines.filter((line) => Math.abs(Number(line.amount)) >= 0.000001);
+}
+
+/** A posted net as one comparable value, independent of row order. */
+const postedNetKey = (lines: Awaited<ReturnType<typeof readPostedNet>>) =>
+  lines
+    .map(
+      (line) =>
+        `${line.accountId}|${line.accountDefaultRole ?? ""}|${round(Number(line.amount))}`
+    )
+    .sort()
+    .join(";");
+
+export const postProductionEventPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
+
+/** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
+export async function postProductionEvent(
+  ctx: ServiceContext,
+  raw: z.input<typeof postProductionEventInput>
+): Promise<PostProductionEventResult> {
+  const { productionEventId, reverse } = postProductionEventInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  const companyRecord = await single(
+    db,
+    "company",
+    { id: companyId },
+    { columns: ["companyGroupId"] }
+  );
+
+  if (companyRecord.error) throw new Error("Failed to fetch company");
+
+  const [productionEvent, accountDefaults, dimensions] = await inOrder([
+    () =>
+      // `jobOperation!inner`: only an event that belongs to an operation.
+      maybeSingle<
+        "productionEvent",
+        rows.Tables["productionEvent"]["Row"] & {
+          jobOperation: Pick<
+            rows.Tables["jobOperation"]["Row"],
+            "jobId" | "processId"
+          > | null;
+        }
+      >(
+        db,
+        "productionEvent",
+        { id: productionEventId, companyId, jobOperationId: notNull },
+        {
+          embed: {
+            jobOperation: {
+              table: "jobOperation",
+              via: "jobOperationId",
+              columns: ["jobId", "processId"]
+            }
+          }
+        }
+      ),
+    () => getDefaultPostingGroup(db, companyId),
+    () =>
+      companyRecord.data.companyGroupId
+        ? many(
+            db,
+            "dimension",
+            {
+              companyGroupId: companyRecord.data.companyGroupId,
+              active: true,
+              entityType: [
+                "ItemPostingGroup",
+                "Item",
+                "Location",
+                "Employee",
+                "WorkCenter",
+                "Process"
+              ]
+            },
+            { columns: ["id", "entityType"] }
+          )
+        : Promise.resolve({ data: null, error: null })
+  ]);
+
+  if (productionEvent.error)
+    throw new Error("Failed to fetch production event");
+  // Service-role client: a production event outside companyId is a 404.
+  if (!productionEvent.data) {
+    throw new NotFoundError("Production event not found");
+  }
+  if (accountDefaults?.error || !accountDefaults?.data) {
+    throw new Error("Error getting account defaults");
+  }
+
+  // Every event with a cost posts a journal: Provisional before the
+  // company's accounting cutover, Posted after it. Read here to decide
+  // whether to resolve a period, and again inside the transaction.
+  const postingStatus = await journalPostingStatus(db, companyId);
+
+  // After the cutover an empty absorption account refuses the posting, as
+  // it always has. Before it, the line becomes a stand-in (see below).
+  if (
+    postingStatus === "Posted" &&
+    !accountDefaults.data.laborAbsorptionAccount
+  ) {
+    throw new MissingAccountDefaultError("laborAbsorptionAccount");
+  }
+
+  const event = productionEvent.data;
+
+  if (reverse && !event.postedToGL) {
+    // Nothing was posted for this event, so there is nothing to reverse.
+    return { success: true } as PostProductionEventResult;
+  }
+
+  if (!reverse && (!event.endTime || !event.duration || !event.workCenterId)) {
+    // Leave postedToGL untouched so the event can still be posted later
+    // (manually or by complete_job_to_inventory) once it's completable.
+    const reason = !event.endTime
+      ? "event has no end time"
+      : !event.duration
+        ? "event has no duration"
+        : "event has no work center";
+    // FIXME: returns { success: false } at HTTP 200, so callers (error === null)
+    // read it as success. A real status (409/422?) needs its own decision — see §6c.
+    return { success: false, reason } as PostProductionEventResult;
+  }
+
+  const jobId = (event.jobOperation as any).jobId as string;
+
+  let cost = 0;
+  let overheadCost = 0;
+  if (!reverse) {
+    const workCenter = await single(
+      db,
+      "workCenter",
+      { id: event.workCenterId! },
+      { columns: ["laborRate", "machineRate", "overheadRate"] }
+    );
+
+    if (workCenter.error)
+      throw new Error(
+        `Failed to fetch work center ${event.workCenterId}: ${workCenter.error.message}`
+      );
+
+    const durationHours = (event.duration ?? 0) / 3600;
+    const rate =
+      event.type === "Machine"
+        ? Number(workCenter.data.machineRate ?? 0)
+        : Number(workCenter.data.laborRate ?? 0);
+
+    cost = durationHours * rate;
+    overheadCost = durationHours * Number(workCenter.data.overheadRate ?? 0);
+
+    if (
+      postingStatus === "Posted" &&
+      overheadCost > 0 &&
+      !accountDefaults.data.overheadAbsorptionAccount
+    ) {
+      throw new MissingAccountDefaultError("overheadAbsorptionAccount");
+    }
+  }
+
+  // Net amount already posted for this specific event, grouped by account.
+  const eventReference = journalReference.to.productionEvent(productionEventId);
+
+  // The enable superseded the journal of an event posted before the
+  // cutover and opened the job's WIP with its cost, so the reads below see
+  // nothing to reverse: a re-post would add the cost again and a reversal
+  // would leave it. The re-post is dated today, after the cutover, so no
+  // closed period refuses it.
+  if (event.postedToGL) {
+    const superseded = await db
+      .selectFrom("journalLine")
+      .innerJoin("journal", (join) =>
+        join
+          .onRef("journal.id", "=", "journalLine.journalId")
+          .onRef("journal.companyId", "=", "journalLine.companyId")
+      )
+      .select("journalLine.id")
+      .where("journalLine.documentLineReference", "=", eventReference)
+      .where("journalLine.companyId", "=", companyId)
+      .where("journal.status", "=", "Superseded")
+      .limit(1)
+      .executeTakeFirst();
+    if (superseded) {
+      throw new InvalidInputError(TIME_ENTRY_BEFORE_CUTOVER_ERROR);
+    }
+  }
+  const reversalLines = event.postedToGL
+    ? await readPostedNet(db, companyId, eventReference)
+    : [];
+
+  // Did this event's job post any production-event lines under the old
+  // job-tagged scheme (documentLineReference = job:...)? Those can't be
+  // attributed to one event, so editing/reversing a posted event that has no
+  // per-event lines can't be done safely — it needs a manual journal entry.
+  // This is rate-independent: unlike recomputing cost, it still recognizes a
+  // zero-cost posted event (which posted nothing) as safe to delete even
+  // after the work center's rate later changes.
+  const hasOldSchemePostings =
+    event.postedToGL && reversalLines.length === 0
+      ? Number(
+          (
+            await db
+              .selectFrom("journalLine")
+              .innerJoin("journal", (join) =>
+                join
+                  .onRef("journal.id", "=", "journalLine.journalId")
+                  .onRef("journal.companyId", "=", "journalLine.companyId")
+              )
+              .select((eb) => eb.fn.countAll().as("count"))
+              .where("journalLine.documentType", "=", "Production Event")
+              .where("journalLine.documentId", "=", jobId)
+              .where(
+                "journalLine.documentLineReference",
+                "=",
+                journalReference.to.job(jobId)
+              )
+              .where("journalLine.companyId", "=", companyId)
+              .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+              .executeTakeFirst()
+          )?.count ?? 0
+        ) > 0
+      : false;
+
+  // Block only when the event posted amounts under the old scheme that we
+  // can't attribute/reverse. A zero-cost posted event posted nothing, so
+  // there's nothing to reverse and it's safe to delete.
+  if (event.postedToGL && reversalLines.length === 0 && hasOldSchemePostings) {
+    // FIXME: returns { success: false } at HTTP 200, so callers (error === null)
+    // read it as success. A real status (409/422?) needs its own decision — see §6c.
+    return {
+      success: false,
+      reason:
+        "event was posted before per-event journal references; adjust with a manual journal entry"
+    } as PostProductionEventResult;
+  }
+
+  if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
+    // Nothing to post and nothing to reverse. On a reversal this clears the
+    // flag so the event can be deleted; on a post it marks it done.
+    await updateRows(
+      db,
+      "productionEvent",
+      { postedToGL: !reverse },
+      { id: productionEventId, companyId }
+    );
+    return { success: true } as PostProductionEventResult;
+  }
+
+  const dimensionMap = new Map<string, string>();
+  if (dimensions?.data) {
+    for (const dim of dimensions.data) {
+      if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+    }
+  }
+
+  const job = await single(
+    db,
+    "job",
+    { id: jobId },
+    { columns: ["itemId", "locationId", "jobId"] }
+  );
+
+  if (job.error) throw new Error("Failed to fetch job");
+
+  const finishedItemCost = job.data.itemId
+    ? await single(
+        db,
+        "itemCost",
+        { itemId: job.data.itemId, companyId },
+        { columns: ["itemPostingGroupId"] }
+      )
+    : null;
+
+  const journalLineReference = nanoid();
+
+  // Resolved only for a line that is built: after the cutover an empty
+  // default has already refused the posting above.
+  const laborAbsorption =
+    !reverse && cost > 0
+      ? resolveDefaultAccount(
+          accountDefaults.data,
+          "laborAbsorptionAccount",
+          postingStatus
+        )
+      : null;
+  const overheadAbsorption =
+    !reverse && overheadCost > 0
+      ? resolveDefaultAccount(
+          accountDefaults.data,
+          "overheadAbsorptionAccount",
+          postingStatus
+        )
+      : null;
+
+  const journalLineInserts = [
+    // Reposting an edited event: first negate the net previously posted for
+    // this event per account, then post the new amount.
+    ...reversalLines.map((line) => ({
+      accountId: line.accountId,
+      accountDefaultRole: line.accountDefaultRole,
+      description: "Production Event Reversal",
+      amount: round(-Number(line.amount)),
+      quantity: 1,
+      documentType: "Production Event" as const,
+      documentId: jobId,
+      documentLineReference: eventReference,
+      journalLineReference,
+      companyId
+    })),
+    ...(laborAbsorption
+      ? [
+          {
+            accountId: accountDefaults.data.workInProgressAccount,
+            accountDefaultRole: null,
+            description: "WIP Account",
+            amount: round(debit("asset", cost)),
+            quantity: 1,
+            documentType: "Production Event" as const,
+            documentId: jobId,
+            documentLineReference: eventReference,
+            journalLineReference,
+            companyId
+          },
+          {
+            accountId: laborAbsorption.accountId,
+            accountDefaultRole: laborAbsorption.accountDefaultRole,
+            description: "Labor/Machine Absorption",
+            amount: round(credit("expense", cost)),
+            quantity: 1,
+            documentType: "Production Event" as const,
+            documentId: jobId,
+            documentLineReference: eventReference,
+            journalLineReference,
+            companyId
+          }
+        ]
+      : []),
+    ...(overheadAbsorption
+      ? [
+          {
+            accountId: accountDefaults.data.workInProgressAccount,
+            accountDefaultRole: null,
+            description: "WIP Account (Overhead)",
+            amount: round(debit("asset", overheadCost)),
+            quantity: 1,
+            documentType: "Production Event" as const,
+            documentId: jobId,
+            documentLineReference: eventReference,
+            journalLineReference,
+            companyId
+          },
+          {
+            accountId: overheadAbsorption.accountId,
+            accountDefaultRole: overheadAbsorption.accountDefaultRole,
+            description: "Overhead Absorption",
+            amount: round(credit("expense", overheadCost)),
+            quantity: 1,
+            documentType: "Production Event" as const,
+            documentId: jobId,
+            documentLineReference: eventReference,
+            journalLineReference,
+            companyId
+          }
+        ]
+      : [])
+  ];
+
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, db, today)
+      : null;
+
+  await db.transaction().execute(async (trx) => {
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+    // Several callers post an event as it ends: a press, the OEE sync, an
+    // operation finish, an edit's repost. Under the row lock, a second
+    // caller that read the event before the first committed sees what the
+    // first wrote and stops, instead of posting the cost or the adjustment
+    // twice: the flag for a first post, the net already posted for a
+    // repost (the flag stays true across reposts).
+    const locked = await trx
+      .selectFrom("productionEvent")
+      .select("postedToGL")
+      .where("id", "=", productionEventId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (
+      !locked ||
+      locked.postedToGL !== event.postedToGL ||
+      (locked.postedToGL &&
+        postedNetKey(await readPostedNet(trx, companyId, eventReference)) !==
+          postedNetKey(reversalLines))
+    ) {
+      throw new ServerFnError(PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR, 409);
+    }
+
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+
+    const journalResult = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        description: `${event.type} Time — Job ${job.data.jobId}${
+          reverse
+            ? " (Reversal)"
+            : reversalLines.length > 0
+              ? " (Adjustment)"
+              : ""
+        }`,
+        postingDate: today,
+        companyId,
+        sourceType: "Production Event",
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const journalLineResults = await trx
+      .insertInto("journalLine")
+      .values(
+        journalLineInserts.map((line) => ({
+          ...line,
+          journalId: journalResult.id
+        }))
+      )
+      .returning(["id"])
+      .execute();
+
+    if (dimensionMap.size > 0) {
+      const dimensionInserts: {
+        journalLineId: string;
+        dimensionId: string;
+        valueId: string;
+        companyId: string;
+      }[] = [];
+
+      journalLineResults.forEach((jl) => {
+        if (
+          finishedItemCost?.data?.itemPostingGroupId &&
+          dimensionMap.has("ItemPostingGroup")
+        ) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("ItemPostingGroup")!,
+            valueId: finishedItemCost.data.itemPostingGroupId,
+            companyId
+          });
+        }
+        if (job.data.itemId && dimensionMap.has("Item")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Item")!,
+            valueId: job.data.itemId,
+            companyId
+          });
+        }
+        if (job.data.locationId && dimensionMap.has("Location")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Location")!,
+            valueId: job.data.locationId,
+            companyId
+          });
+        }
+        if (event.employeeId && dimensionMap.has("Employee")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Employee")!,
+            valueId: event.employeeId,
+            companyId
+          });
+        }
+        if (event.workCenterId && dimensionMap.has("WorkCenter")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("WorkCenter")!,
+            valueId: event.workCenterId,
+            companyId
+          });
+        }
+        const processId = (event.jobOperation as any)?.processId as
+          | string
+          | null;
+        if (processId && dimensionMap.has("Process")) {
+          dimensionInserts.push({
+            journalLineId: jl.id,
+            dimensionId: dimensionMap.get("Process")!,
+            valueId: processId,
+            companyId
+          });
+        }
+      });
+
+      if (dimensionInserts.length > 0) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensionInserts)
+          .execute();
+      }
+    }
+
+    await trx
+      .updateTable("productionEvent")
+      .set({ postedToGL: !reverse })
+      .where("id", "=", productionEventId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+
+  return { success: true };
+}
+const recalculateRequirementsLogger = getLogger(
+  "server-functions",
+  "recalculate"
+);
+export const recalculateRequirementsPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof recalculateInput>>;
+
+/** Re-derives a job's (or one make method's) material and operation quantities. */
+export async function recalculateRequirements(
+  ctx: ServiceContext,
+  raw: z.input<typeof recalculateInput>
+) {
+  const { type, id } = recalculateInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  recalculateRequirementsLogger.info({ type, id, companyId, userId });
+
+  // Every read here goes over the direct connection: a PostgREST call costs
+  // roughly ten times a statement, and this runs on every job save.
+  switch (type) {
+    case "jobMakeMethodRequirements": {
+      const jobMakeMethodId = id;
+
+      const jobMakeMethod = await db
+        .selectFrom("jobMakeMethod")
+        .select(["id", "jobId", "parentMaterialId"])
+        .where("id", "=", jobMakeMethodId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+
+      // A make method outside companyId is a 404.
+      if (!jobMakeMethod) {
+        throw new NotFoundError("Job make method not found");
+      }
+
+      let parentQuantity = 1;
+      if (jobMakeMethod.parentMaterialId) {
+        const jobMaterial = await db
+          .selectFrom("jobMaterial")
+          .select(["methodType", "estimatedQuantity", "quantity"])
+          .where("id", "=", jobMakeMethod.parentMaterialId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+
+        if (jobMaterial?.methodType !== "Make to Order") {
+          recalculateRequirementsLogger.info(
+            `Job material ${jobMakeMethod.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
+          );
+          return { success: true };
+        }
+
+        parentQuantity = jobMaterial.estimatedQuantity ?? jobMaterial.quantity;
+      } else {
+        const job = await db
+          .selectFrom("job")
+          .select(["quantity"])
+          .where("id", "=", jobMakeMethod.jobId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!job) {
+          throw new Error("Failed to get job");
+        }
+        // Use job.quantity as the root's target quantity (not productionQuantity)
+        // The item's scrap percentage will be applied within updateJobQuantities
+        parentQuantity = job.quantity ?? 1;
+      }
+
+      const jobMethodTrees = await getJobMethodTree(
+        db,
+        jobMakeMethod.id,
+        jobMakeMethod.parentMaterialId
+      );
+
+      const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+      if (!jobMethodTree) {
+        throw new NotFoundError("Method tree not found");
+      }
+
+      await db.transaction().execute(async (trx) => {
+        await updateJobQuantities(trx, jobMethodTree, parentQuantity);
+      });
+
+      break;
+    }
+    case "jobRequirements": {
+      const jobId = id;
+      const [job, jobMakeMethods] = await inOrder([
+        () =>
+          db
+            .selectFrom("job")
+            .select(["quantity"])
+            .where("id", "=", jobId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst(),
+        () =>
+          db
+            .selectFrom("jobMakeMethod")
+            .select(["id"])
+            .where("jobId", "=", jobId)
+            .where("companyId", "=", companyId)
+            .where("parentMaterialId", "is", null)
+            .execute()
+      ]);
+
+      // A job outside companyId is a 404.
+      if (!job) throw new NotFoundError("Job not found");
+
+      // Exactly one root make method, as `.single()` required before.
+      const jobMakeMethod = jobMakeMethods[0];
+      if (!jobMakeMethod || jobMakeMethods.length > 1) {
+        throw new Error(
+          `Failed to get job make method: found ${jobMakeMethods.length}`
+        );
+      }
+
+      const jobMethodTrees = await getJobMethodTree(db, jobMakeMethod.id);
+
+      const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
+      if (!jobMethodTree) {
+        throw new NotFoundError("Method tree not found");
+      }
+
+      await db.transaction().execute(async (trx) => {
+        // Use job.quantity as the root's target quantity (not productionQuantity)
+        // The item's scrap percentage will be applied within updateJobQuantities
+        await updateJobQuantities(trx, jobMethodTree, job.quantity ?? 1);
+      });
+
+      break;
+    }
+
+    default:
+      throw new Error(`Invalid type  ${type}`);
+  }
+
+  return { success: true };
+}
+
+const updateJobQuantities = async (
+  trx: Transaction<KyselyDatabase>,
+  tree: JobMethodTreeItem,
+  parentEstimatedQuantity: number = 1
+) => {
+  // The tree is already fully loaded, so compute every node's quantities in
+  // memory (@carbon/database/job-quantities-engine, mirroring the mrp-engine pattern)
+  // and write them set-based. The previous per-node recursion issued 2–4
+  // statements per node on one transaction connection — O(tree) sequential
+  // roundtrips, which on a large BOM exceeded the request timeout.
+  const { nodes, cycleNodeIds: flattenCycles } = flattenJobQuantityTree(tree);
+
+  const jobMaterials = await trx
+    .selectFrom("jobMaterial")
+    .select(["id", "itemScrapPercentage"])
+    .where(
+      "id",
+      "in",
+      nodes.map((n) => n.id)
+    )
+    .execute();
+  const storedScrapById = new Map(
+    jobMaterials.map((m) => [m.id, m.itemScrapPercentage])
+  );
+
+  const fallbackItemIds = [
+    ...new Set(
+      nodes
+        .filter((n) => storedScrapById.get(n.id) == null)
+        .map((n) => n.data.itemId)
+    )
+  ];
+  const replenishmentScrapByItemId = new Map<string, number>();
+  if (fallbackItemIds.length > 0) {
+    const replenishments = await trx
+      .selectFrom("itemReplenishment")
+      .select(["itemId", "scrapPercentage"])
+      .where("itemId", "in", fallbackItemIds)
+      .execute();
+    for (const row of replenishments) {
+      replenishmentScrapByItemId.set(
+        row.itemId,
+        Number(row.scrapPercentage ?? 0)
+      );
+    }
+  }
+
+  const { computed, cycleNodeIds } = computeJobQuantities({
+    tree,
+    parentEstimatedQuantity,
+    storedScrapById,
+    replenishmentScrapByItemId
+  });
+  const allCycleNodeIds = new Set([...flattenCycles, ...cycleNodeIds]);
+  if (allCycleNodeIds.size > 0) {
+    // Corrupt tree data — the nodes were skipped rather than looped on.
+    recalculateRequirementsLogger.error(
+      "recalculate: cyclic job method tree; skipped nodes",
+      {
+        skippedNodeIds: [...allCycleNodeIds]
+      }
+    );
+  }
+
+  // jobMaterial scrap/estimated — one VALUES-join update for the whole tree
+  const materialRows = computed.filter((c) => c.hasJobMaterial);
+  if (materialRows.length > 0) {
+    await sql`
+      UPDATE "jobMaterial" AS m
+      SET "scrapQuantity" = v.scrap::numeric,
+          "estimatedQuantity" = v.estimated::numeric
+      FROM (VALUES ${sql.join(
+        materialRows.map(
+          (c) => sql`(${c.id}, ${c.scrapQuantity}, ${c.estimatedQuantity})`
+        )
+      )}) AS v(id, scrap, estimated)
+      WHERE m.id = v.id
+    `.execute(trx);
+  }
+
+  const makeNodes = computed.filter(
+    (c): c is ComputedJobQuantityNode & { jobMaterialMakeMethodId: string } =>
+      c.jobMaterialMakeMethodId !== null
+  );
+  if (makeNodes.length > 0) {
+    // Not the tree's root: the tree does not know how many of it its parent
+    // needs, and writing its placeholder reset a sub-assembly to 1.
+    const perParent = makeNodes.filter((c) => c.quantityPerParent !== null);
+    if (perParent.length > 0) {
+      await sql`
+        UPDATE "jobMakeMethod" AS jmm
+        SET "quantityPerParent" = v.qpp::numeric
+        FROM (VALUES ${sql.join(
+          perParent.map(
+            (c) => sql`(${c.jobMaterialMakeMethodId}, ${c.quantityPerParent})`
+          )
+        )}) AS v(id, qpp)
+        WHERE jmm.id = v.id
+      `.execute(trx);
+    }
+
+    await sql`
+      UPDATE "jobOperation" AS op
+      SET "targetQuantity" = v.target::numeric,
+          "operationQuantity" = v.total::numeric
+      FROM (VALUES ${sql.join(
+        makeNodes.map(
+          (c) =>
+            sql`(${c.jobMaterialMakeMethodId}, ${c.targetQuantity}, ${c.totalWithScrap})`
+        )
+      )}) AS v(id, target, total)
+      WHERE op."jobMakeMethodId" = v.id
+        AND op."reworkId" IS NULL
+    `.execute(trx);
+
+    const trackedMakeMethods = await trx
+      .selectFrom("jobMakeMethod")
+      .select(["id", "trackedEntityId", "requiresSerialTracking"])
+      .where(
+        "id",
+        "in",
+        makeNodes.map((c) => c.jobMaterialMakeMethodId)
+      )
+      .where("trackedEntityId", "is not", null)
+      .execute();
+
+    if (trackedMakeMethods.length > 0) {
+      const totalByMakeMethodId = new Map(
+        makeNodes.map((c) => [c.jobMaterialMakeMethodId, c.totalWithScrap])
+      );
+      await sql`
+        UPDATE "trackedEntity" AS te
+        SET "quantity" = v.quantity::numeric
+        FROM (VALUES ${sql.join(
+          trackedMakeMethods.map(
+            (m) =>
+              sql`(${m.trackedEntityId}, ${
+                m.requiresSerialTracking
+                  ? 1
+                  : (totalByMakeMethodId.get(m.id) ?? 1)
+              })`
+          )
+        )}) AS v(id, quantity)
+        WHERE te.id = v.id
+      `.execute(trx);
+    }
+  }
+};
+const triggerReworkLogger = getLogger("server-functions", "trigger-rework");
+
+interface TriggerReworkRequest {
+  jobId: string;
+  triggeredAtJobOperationId: string;
+  targetJobOperationId: string;
+  reason: string;
+  quantity: number;
+  trackedEntityIds?: string[];
+  // Provenance link when an inspection disposition triggered the rework —
+  // stamped on the Rework productionQuantity row.
+  inspectionId?: string;
+  companyId: string;
+  userId: string;
+}
+
+/**
+ * Finds the shortest path from targetOperationId to triggeredAtOperationId
+ * by walking backwards through the DAG from triggeredAt.
+ * Returns operations in forward order (target → ... → triggeredAt).
+ */
+async function findReworkPath(
+  trx: Transaction<KyselyDatabase>,
+  jobId: string,
+  targetOperationId: string,
+  triggeredAtOperationId: string
+): Promise<string[]> {
+  const dependencies = await trx
+    .selectFrom("jobOperationDependency")
+    .select(["operationId", "dependsOnId"])
+    .where("jobId", "=", jobId)
+    .execute();
+
+  // Build adjacency list: operationId → [operations it depends on]
+  const dependsOn = new Map<string, string[]>();
+  for (const dep of dependencies) {
+    const existing = dependsOn.get(dep.operationId) ?? [];
+    existing.push(dep.dependsOnId);
+    dependsOn.set(dep.operationId, existing);
+  }
+
+  // BFS backwards from triggeredAt to find target
+  const visited = new Set<string>();
+  const parent = new Map<string, string>();
+  const queue: string[] = [triggeredAtOperationId];
+  visited.add(triggeredAtOperationId);
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current === targetOperationId) break;
+
+    for (const predecessor of dependsOn.get(current) ?? []) {
+      if (!visited.has(predecessor)) {
+        visited.add(predecessor);
+        parent.set(predecessor, current);
+        queue.push(predecessor);
+      }
+    }
+  }
+
+  if (!visited.has(targetOperationId)) {
+    throw new Error(
+      `No path found from target operation ${targetOperationId} to triggered operation ${triggeredAtOperationId}`
+    );
+  }
+
+  // Trace path from target back to triggeredAt (forward order)
+  const path: string[] = [];
+  let current = targetOperationId;
+  while (current !== triggeredAtOperationId) {
+    path.push(current);
+    current = parent.get(current)!;
+  }
+  path.push(triggeredAtOperationId);
+
+  return path;
+}
+
+async function cloneReworkOperations(
+  trx: Transaction<KyselyDatabase>,
+  body: TriggerReworkRequest
+) {
+  const {
+    jobId,
+    triggeredAtJobOperationId,
+    targetJobOperationId,
+    reason,
+    quantity,
+    trackedEntityIds,
+    inspectionId,
+    companyId,
+    userId
+  } = body;
+
+  // 1. Find the path of operations to clone
+  const operationPath = await findReworkPath(
+    trx,
+    jobId,
+    targetJobOperationId,
+    triggeredAtJobOperationId
+  );
+
+  triggerReworkLogger.info(
+    `📋 Rework path: ${operationPath.length} operations to clone`
+  );
+
+  // 2. Create the rework record
+  const [rework] = await trx
+    .insertInto("rework")
+    .values({
+      jobId,
+      triggeredAtJobOperationId,
+      targetJobOperationId,
+      reason,
+      quantity,
+      requestedById: userId,
+      companyId
+    })
+    .returning(["id"])
+    .execute();
+
+  // 2b. Create tracked activity for traceability
+  if (trackedEntityIds && trackedEntityIds.length > 0) {
+    const activityId = nanoid();
+    await trx
+      .insertInto("trackedActivity")
+      .values({
+        id: activityId,
+        type: "Rework",
+        sourceDocument: "Rework",
+        sourceDocumentId: rework!.id,
+        attributes: {
+          Job: jobId,
+          "Triggered At": triggeredAtJobOperationId,
+          Target: targetJobOperationId,
+          Reason: reason,
+          Quantity: quantity
+        },
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    const isSerial = trackedEntityIds.length > 1 || quantity === 1;
+    for (const entityId of trackedEntityIds) {
+      await trx
+        .insertInto("trackedActivityInput")
+        .values({
+          trackedActivityId: activityId,
+          trackedEntityId: entityId,
+          quantity: isSerial ? 1 : quantity,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    }
+  }
+
+  // 3. Fetch the source operations to clone
+  const sourceOperations = await trx
+    .selectFrom("jobOperation")
+    .selectAll()
+    .where("id", "in", operationPath)
+    .execute();
+
+  // Sort by path order
+  const pathIndex = new Map(operationPath.map((id, i) => [id, i]));
+  sourceOperations.sort(
+    (a, b) => (pathIndex.get(a.id) ?? 0) - (pathIndex.get(b.id) ?? 0)
+  );
+
+  // 4. Compute sort order: place rework ops after the triggering operation
+  // "With Previous" on the first rework op lets it run in parallel with
+  // the triggering operation's successors until the DAG converges.
+  const [triggerOp, nextOp] = await Promise.all([
+    trx
+      .selectFrom("jobOperation")
+      .select("order")
+      .where("id", "=", triggeredAtJobOperationId)
+      .executeTakeFirstOrThrow(),
+    trx
+      .selectFrom("jobOperation")
+      .select("order")
+      .where("jobId", "=", jobId)
+      .where(
+        "order",
+        ">",
+        trx
+          .selectFrom("jobOperation")
+          .select("order")
+          .where("id", "=", triggeredAtJobOperationId)
+      )
+      .orderBy("order", "asc")
+      .executeTakeFirst()
+  ]);
+
+  const triggerOrder = Number(triggerOp.order);
+  const upperBound = nextOp?.order ? Number(nextOp.order) : triggerOrder + 1;
+  const gap = upperBound - triggerOrder;
+  const increment = gap / (sourceOperations.length + 1);
+
+  // 5. Clone operations (batch insert)
+  const clonedOps = await trx
+    .insertInto("jobOperation")
+    .values(
+      sourceOperations.map((sourceOp, i) => ({
+        jobId: sourceOp.jobId,
+        jobMakeMethodId: sourceOp.jobMakeMethodId,
+        order: triggerOrder + increment * (i + 1),
+        processId: sourceOp.processId,
+        workCenterId: sourceOp.workCenterId,
+        description: sourceOp.description,
+        setupTime: sourceOp.setupTime,
+        setupUnit: sourceOp.setupUnit,
+        laborTime: sourceOp.laborTime,
+        laborUnit: sourceOp.laborUnit,
+        machineTime: sourceOp.machineTime,
+        machineUnit: sourceOp.machineUnit,
+        operationOrder: i === 0 ? "With Previous" : sourceOp.operationOrder,
+        laborRate: sourceOp.laborRate,
+        overheadRate: sourceOp.overheadRate,
+        machineRate: sourceOp.machineRate,
+        operationType: sourceOp.operationType,
+        operationMinimumCost: sourceOp.operationMinimumCost,
+        operationLeadTime: sourceOp.operationLeadTime,
+        operationUnitCost: sourceOp.operationUnitCost,
+        operationSupplierProcessId: sourceOp.operationSupplierProcessId,
+        workInstruction: sourceOp.workInstruction,
+        procedureId: sourceOp.procedureId,
+        // A cloned Inspection op must re-inspect against the SAME plan — its
+        // lazily-created lot resolves features/sampling from this document.
+        // Assembly ops likewise keep their instruction link for 3D playback.
+        inspectionDocumentId: sourceOp.inspectionDocumentId,
+        assemblyInstructionId: sourceOp.assemblyInstructionId,
+        operationQuantity: quantity,
+        targetQuantity: quantity,
+        tags: sourceOp.tags,
+        companyId,
+        createdBy: userId,
+        reworkId: rework!.id,
+        status: i === 0 ? "Ready" : "Waiting",
+        customFields: sourceOp.customFields
+      }))
+    )
+    .returning(["id"])
+    .execute();
+
+  const clonedOperationIds = clonedOps.map((op) => op.id);
+  const sourceToCloneMap = new Map<string, string>();
+  sourceOperations.forEach((sourceOp, i) => {
+    sourceToCloneMap.set(sourceOp.id, clonedOps[i]!.id);
+  });
+
+  triggerReworkLogger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
+
+  // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
+  const [allSteps, allTools, allParams] = await Promise.all([
+    trx
+      .selectFrom("jobOperationStep")
+      .selectAll()
+      .where("operationId", "in", operationPath)
+      .execute(),
+    trx
+      .selectFrom("jobOperationTool")
+      .selectAll()
+      .where("operationId", "in", operationPath)
+      .execute(),
+    trx
+      .selectFrom("jobOperationParameter")
+      .selectAll()
+      .where("operationId", "in", operationPath)
+      .execute()
+  ]);
+
+  const stepValues = allSteps.map(
+    ({
+      id: _id,
+      operationId,
+      createdAt: _ca,
+      updatedAt: _ua,
+      updatedBy: _ub,
+      ...step
+    }) => ({
+      ...step,
+      operationId: sourceToCloneMap.get(operationId)!,
+      createdBy: userId
+    })
+  );
+
+  const toolValues = allTools.map((tool) => ({
+    toolId: tool.toolId,
+    quantity: tool.quantity,
+    operationId: sourceToCloneMap.get(tool.operationId)!,
+    companyId,
+    createdBy: userId
+  }));
+
+  const paramValues = allParams.map((param) => ({
+    key: param.key,
+    value: param.value,
+    operationId: sourceToCloneMap.get(param.operationId)!,
+    companyId,
+    createdBy: userId
+  }));
+
+  await Promise.all([
+    stepValues.length > 0
+      ? trx.insertInto("jobOperationStep").values(stepValues).execute()
+      : null,
+    toolValues.length > 0
+      ? trx.insertInto("jobOperationTool").values(toolValues).execute()
+      : null,
+    paramValues.length > 0
+      ? trx.insertInto("jobOperationParameter").values(paramValues).execute()
+      : null
+  ]);
+
+  // 7. Wire the rework operations into the DAG
+  // First rework op has no dependencies — it's an independent parallel branch.
+  // Traceability is captured via the rework record, not DAG edges.
+  const dagEdges: Array<{
+    operationId: string;
+    dependsOnId: string;
+    jobId: string;
+    companyId: string;
+  }> = [];
+
+  // 7a. Each subsequent rework op depends on the previous
+  for (let i = 1; i < clonedOperationIds.length; i++) {
+    dagEdges.push({
+      operationId: clonedOperationIds[i]!,
+      dependsOnId: clonedOperationIds[i - 1]!,
+      jobId,
+      companyId
+    });
+  }
+
+  // 7b. Convergence: downstream ops that depended on triggeredAt also depend
+  //     on the last rework op so the DAG merges back.
+  // Filter on `jobId`, not `companyId`: dependency edges are per-job, and
+  // `jobId` is the column the scheduler's own rebuild filters on. Trusting the
+  // row's stamped `companyId` would trust exactly the field that cross-tenant
+  // mis-stamping makes unreliable. Without any filter this read reaches every
+  // tenant's edges and re-inserts them under this job's company.
+  const downstreamDeps = await trx
+    .selectFrom("jobOperationDependency")
+    .select(["operationId"])
+    .where("jobId", "=", jobId)
+    .where("dependsOnId", "=", triggeredAtJobOperationId)
+    .where("operationId", "not in", clonedOperationIds)
+    .execute();
+
+  const lastReworkOpId = clonedOperationIds[clonedOperationIds.length - 1]!;
+
+  for (const dep of downstreamDeps) {
+    dagEdges.push({
+      operationId: dep.operationId,
+      dependsOnId: lastReworkOpId,
+      jobId,
+      companyId
+    });
+  }
+
+  if (dagEdges.length > 0) {
+    await trx.insertInto("jobOperationDependency").values(dagEdges).execute();
+  }
+
+  triggerReworkLogger.info(
+    `🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`
+  );
+
+  // 8. Record a productionQuantity entry for the rework
+  await trx
+    .insertInto("productionQuantity")
+    .values({
+      jobOperationId: triggeredAtJobOperationId,
+      type: "Rework",
+      quantity,
+      inspectionId: inspectionId ?? null,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+
+  return {
+    reworkId: rework!.id,
+    clonedOperationIds,
+    operationsCloned: clonedOperationIds.length
+  };
+}
+
+export const triggerReworkPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof triggerReworkInput>>;
+
+/**
+ * Sends a job back to an earlier operation: clones the operations from the
+ * target up to where the problem was found, then reschedules the job.
+ */
+export async function triggerRework(
+  ctx: ServiceContext,
+  raw: z.input<typeof triggerReworkInput>
+) {
+  const parsed = triggerReworkInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+
+  const body: TriggerReworkRequest = {
+    ...parsed,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId
+  };
+
+  // `jobId` and `companyId` both arrive in the payload, and nothing proved
+  // they belong together. Without this, a request pairing one company's id
+  // with another company's job writes rows attributed to the wrong tenant.
+  // See .ai/specs/2026-08-25-backup-durability.md Part 3.
+  const job = await db
+    .selectFrom("job")
+    .select(["id", "companyId"])
+    .where("id", "=", body.jobId)
+    .executeTakeFirst();
+
+  // 404, not 403: a job in another company must be indistinguishable from a
+  // job that does not exist.
+  if (!job || job.companyId !== body.companyId) {
+    throw new NotFoundError("Job not found in this company");
+  }
+
+  // The same holds for the two operation ids: triggerRework reads, clones and
+  // writes productionQuantity against them by id alone, so both must be
+  // operations of this job (the job is already proven to be this company's).
+  const operationIds = [
+    ...new Set([body.triggeredAtJobOperationId, body.targetJobOperationId])
+  ];
+  const operations = await db
+    .selectFrom("jobOperation")
+    .select("id")
+    .where("id", "in", operationIds)
+    .where("jobId", "=", body.jobId)
+    .where("companyId", "=", body.companyId)
+    .execute();
+  if (operations.length !== operationIds.length) {
+    throw new NotFoundError("Job operation not found in this company");
+  }
+
+  await assertCompanyRecords(
+    db,
+    "trackedEntity",
+    body.trackedEntityIds ?? [],
+    body.companyId,
+    "Tracked entity"
+  );
+
+  // Written as productionQuantity.inspectionId, whose FK accepts any company's
+  // inspection.
+  await assertCompanyRecords(
+    db,
+    "inspection",
+    [body.inspectionId],
+    body.companyId,
+    "Inspection"
+  );
+
+  triggerReworkLogger.info(
+    `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`
+  );
+
+  const result = await db.transaction().execute(async (trx) => {
+    return await cloneReworkOperations(trx, body);
+  });
+
+  // Reschedule for date/priority recalculation (after the transaction). A
+  // failure is logged, not raised: the rework itself has committed.
+  const rescheduled = await invokePosting(
+    { db, companyId: body.companyId, userId: body.userId },
+    "reschedule",
+    { jobId: body.jobId },
+    rescheduleJob
+  );
+  if (rescheduled.error) {
+    triggerReworkLogger.error("Failed to trigger reschedule after rework", {
+      error: rescheduled.error
+    });
+  }
+
+  return { success: true, ...result };
+}
+const NOT_STARTED = ["Todo", "Ready", "Waiting"];
+// The produced item + tracking of each member, and its live WIP entity (the
+// entity a member's output lot is finalized from; its readableId is the lot
+// number).
+async function loadMemberOutputs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobMakeMethodIds: string[]
+) {
+  if (jobMakeMethodIds.length === 0) return new Map();
+  const makeMethods = await trx
+    .selectFrom("jobMakeMethod")
+    .select(["id", "itemId", "requiresBatchTracking"])
+    .where("id", "in", jobMakeMethodIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select([
+      "id",
+      "createdAt",
+      sql<string>`"attributes"->>'Job Make Method'`.as("jobMakeMethodId")
+    ])
+    .where(sql`"attributes"->>'Job Make Method'`, "in", jobMakeMethodIds)
+    .where("companyId", "=", companyId)
+    .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+    // Deterministic among tied `createdAt` (bulk-minted serials).
+    .orderBy("createdAt", "asc")
+    .orderBy("readableId", "asc")
+    .orderBy("id", "asc")
+    .execute();
+  const entityByMakeMethod = new Map<string, string>();
+  for (const e of entities) {
+    if (!entityByMakeMethod.has(e.jobMakeMethodId)) {
+      entityByMakeMethod.set(e.jobMakeMethodId, e.id);
+    }
+  }
+  return new Map(
+    makeMethods.map((m) => [
+      m.id,
+      {
+        itemId: m.itemId as string | null,
+        requiresBatchTracking: Boolean(m.requiresBatchTracking),
+        trackedEntityId: entityByMakeMethod.get(m.id) ?? null
+      }
+    ])
+  );
+}
+
+// A merged batch's members must all produce ONE batch-tracked item: lots of
+// different items can never merge, and an untracked item has no lot at all.
+function assertMergeable(
+  operations: Array<{ jobMakeMethodId: string | null }>,
+  outputs: Map<
+    string,
+    { itemId: string | null; requiresBatchTracking: boolean }
+  >
+) {
+  const items = new Set<string>();
+  for (const op of operations) {
+    const out = op.jobMakeMethodId
+      ? outputs.get(op.jobMakeMethodId)
+      : undefined;
+    if (!out?.requiresBatchTracking || !out.itemId) {
+      throw new Error(
+        "Only operations that produce a batch-tracked item can combine into one lot"
+      );
+    }
+    items.add(out.itemId);
+  }
+  if (items.size > 1) {
+    throw new Error("Lots of different items can't combine into one lot");
+  }
+}
+
+async function assertEligible(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobOperationIds: string[],
+  expectedProcessId?: string
+) {
+  const operations = await trx
+    .selectFrom("jobOperation")
+    .selectAll()
+    .where("id", "in", jobOperationIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (operations.length !== jobOperationIds.length) {
+    throw new NotFoundError("One or more operations not found");
+  }
+  const processId = expectedProcessId ?? operations[0]!.processId;
+  const process = await trx
+    .selectFrom("process")
+    .select(["id", "batchable"])
+    .where("id", "=", processId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!process?.batchable) {
+    throw new Error("The process is not batchable");
+  }
+  for (const op of operations) {
+    if (op.processId !== processId) {
+      throw new Error(`Operation ${op.id} is not on the batch's process`);
+    }
+    if (op.jobOperationBatchId) {
+      throw new Error(`Operation ${op.id} is already in a batch`);
+    }
+    // A batch is one run on one of our work centers; subcontracted work runs
+    // at the supplier, and joining a batch would stamp the batch's work center
+    // onto it.
+    if (op.operationType === "Outside Processing") {
+      throw new Error(
+        `Operation ${op.id} is outside processing and can't be batched`
+      );
+    }
+    if (!NOT_STARTED.includes(op.status)) {
+      throw new Error(`Operation ${op.id} has already started`);
+    }
+  }
+  const events = await trx
+    .selectFrom("productionEvent")
+    .select("id")
+    .where("jobOperationId", "in", jobOperationIds)
+    .where("companyId", "=", companyId)
+    .limit(1)
+    .execute();
+  if (events.length > 0) {
+    throw new Error(
+      "Operations with recorded production events cannot be batched"
+    );
+  }
+  return { operations, processId };
+}
+
+// Record ids in the payload come straight from the caller and prove nothing
+// about tenancy — the permission check only authorizes the CALLER for companyId.
+// Re-read the record under companyId and refuse on a miss (the same rule the
+// composite FKs enforce at the schema level; this gives the caller a named
+// error instead of a constraint violation).
+// Enforce the process's "must match" compatibility rules across the WHOLE batch
+// membership (create: the incoming set; add: existing members + incoming). Skips
+// entirely when the process has no "must" dimension. Uses ids where the client
+// (BatchBuilder) uses names — mustViolations is value-agnostic, so both agree.
+async function assertMaterialCompatible(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  processId: string,
+  jobOperationIds: string[]
+) {
+  const process = await trx
+    .selectFrom("process")
+    .select(["batchRules"])
+    .where("id", "=", processId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const rules = resolveBatchRules(
+    (process?.batchRules ?? null) as BatchRules | null
+  );
+  if (!BATCH_RULE_DIMENSIONS.some((d) => rules[d] === "must")) return;
+
+  // Mirror the get_batchable_operations fallback: an op's materials are its
+  // op-linked BOM lines, or — when it has none — the JOB's unassigned lines
+  // (jobOperationId IS NULL). The gate must judge the same materials the
+  // builder shows, or a visible "must" match could still be refused (and vice
+  // versa).
+  // Produced item mirrors the builder's candidate `itemReadableId` (the JOB's
+  // item — get_batchable_operations joins item on job.itemId), so the gate and
+  // the builder judge the producedItem dimension by the same value.
+  const memberOps = await trx
+    .selectFrom("jobOperation")
+    .innerJoin("job", (join: any) =>
+      join
+        .onRef("job.id", "=", "jobOperation.jobId")
+        .onRef("job.companyId", "=", "jobOperation.companyId")
+    )
+    .leftJoin("item as pi", (join: any) =>
+      join
+        .onRef("pi.id", "=", "job.itemId")
+        .onRef("pi.companyId", "=", "job.companyId")
+    )
+    .select([
+      "jobOperation.id as id",
+      "jobOperation.jobId as jobId",
+      "pi.readableId as producedItemReadableId"
+    ])
+    .where("jobOperation.id", "in", jobOperationIds)
+    .where("jobOperation.companyId", "=", companyId)
+    .execute();
+  const jobIdByOp = new Map(memberOps.map((o) => [o.id, o.jobId]));
+  const producedByOp = new Map(
+    memberOps.map((o) => [o.id, o.producedItemReadableId])
+  );
+  const memberJobIds = [...new Set(memberOps.map((o) => o.jobId))];
+
+  const rows = await trx
+    .selectFrom("jobMaterial as jm")
+    .innerJoin("item as mi", (join: any) =>
+      join
+        .onRef("mi.id", "=", "jm.itemId")
+        .onRef("mi.companyId", "=", "jm.companyId")
+    )
+    .leftJoin("material as m", (join: any) =>
+      join
+        .onRef("m.id", "=", "mi.readableId")
+        .onRef("m.companyId", "=", "mi.companyId")
+    )
+    .select([
+      "jm.jobOperationId as opId",
+      "jm.jobId as jobId",
+      "mi.readableId as itemReadableId",
+      "m.materialSubstanceId as substanceId",
+      "m.gradeId as gradeId",
+      "m.dimensionId as dimensionId",
+      "m.materialFormId as formId",
+      "m.finishId as finishId"
+    ])
+    .where("jm.companyId", "=", companyId)
+    .where((eb: any) =>
+      eb.or([
+        eb("jm.jobOperationId", "in", jobOperationIds),
+        eb.and([
+          eb("jm.jobOperationId", "is", null),
+          eb("jm.jobId", "in", memberJobIds)
+        ])
+      ])
+    )
+    .execute();
+
+  type MaterialRow = (typeof rows)[number];
+  const pushRow = (sets: MemberValueSets, r: MaterialRow) => {
+    if (r.itemReadableId) sets.item!.push(r.itemReadableId);
+    if (r.substanceId) sets.substance!.push(r.substanceId);
+    if (r.gradeId) sets.grade!.push(r.gradeId);
+    if (r.dimensionId) sets.dimension!.push(r.dimensionId);
+    if (r.formId) sets.form!.push(r.formId);
+    if (r.finishId) sets.finish!.push(r.finishId);
+  };
+
+  const byOp = new Map<string, MemberValueSets>();
+  for (const id of jobOperationIds) {
+    const produced = producedByOp.get(id);
+    byOp.set(id, {
+      item: [],
+      substance: [],
+      grade: [],
+      dimension: [],
+      form: [],
+      finish: [],
+      producedItem: produced ? [produced] : []
+    });
+  }
+  const opsWithLinkedRows = new Set(
+    rows.map((r) => r.opId).filter(Boolean) as string[]
+  );
+  const unassignedByJob = new Map<string, MaterialRow[]>();
+  for (const r of rows) {
+    if (r.opId) {
+      const sets = byOp.get(r.opId);
+      if (sets) pushRow(sets, r);
+    } else if (r.jobId) {
+      const list = unassignedByJob.get(r.jobId) ?? [];
+      list.push(r);
+      unassignedByJob.set(r.jobId, list);
+    }
+  }
+  for (const id of jobOperationIds) {
+    if (opsWithLinkedRows.has(id)) continue;
+    const jobId = jobIdByOp.get(id);
+    const fallback = jobId ? unassignedByJob.get(jobId) : undefined;
+    if (!fallback) continue;
+    const sets = byOp.get(id)!;
+    for (const r of fallback) pushRow(sets, r);
+  }
+
+  const violations = mustViolations(rules, Array.from(byOp.values()));
+  if (violations.length > 0) {
+    throw new Error(
+      `These operations can't share a batch — the ${violations.join(
+        ", "
+      )} must match on this process`
+    );
+  }
+}
+
+// Two-phase, resumable batch completion.
+//
+// Phase 1 (one Kysely transaction, runs once): FOR UPDATE the batch row to
+// serialize completers, then slice the recorded aggregate timers into per-member
+// productionEvent rows (∝ operationQuantity) + write per-member productionQuantity
+// rows, and flip the batch Active -> Completing (guarded). productionEvent.duration
+// is a GENERATED column, so the proportional windows make each member's duration —
+// and thus GL cost — proportional with no manual duration write.
+//
+// Phase 2 (post-commit, idempotent): issue each member's own BOM (backflush-capped),
+// flip members Done (skipping already-Done), and post GL per sliced event (skipping
+// already-posted). Any throw here leaves the batch Completing; re-running with the
+// same payload re-enters via planBatchCompletion -> "resume" and finishes phase 2
+// without re-slicing. Only after every phase-2 effect succeeds is the batch flipped
+// Completing -> Completed. This removes the old failure mode where a post-commit
+// error left the batch Completed with unissued materials or unposted GL and no
+// recovery path.
+async function completeBatch(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    batchId: string;
+    members: {
+      jobOperationId: string;
+      quantity: number;
+      scrapQuantity?: number;
+      trackedEntityId?: string | null;
+      batchNumber?: string | null;
+      excluded?: boolean;
+    }[];
+  }
+): Promise<Record<string, unknown>> {
+  const { companyId, userId, batchId } = args;
+  // Partition "not in this run" members: they were never physically part of the
+  // batch run, so they detach back to the schedule un-run instead of completing.
+  // They may not carry quantities, and a batch cannot exclude everyone —
+  // dissolve exists for that.
+  const members = args.members.filter((m) => !m.excluded);
+  const excluded = args.members.filter((m) => m.excluded);
+  if (members.length === 0) {
+    throw new Error(
+      "Every operation is excluded — dissolve the batch instead of completing it"
+    );
+  }
+  for (const m of excluded) {
+    if (m.quantity > 0 || (m.scrapQuantity ?? 0) > 0) {
+      throw new Error(
+        `Excluded operation ${m.jobOperationId} cannot record quantities`
+      );
+    }
+  }
+  const memberIds = members.map((m) => m.jobOperationId);
+  const excludedIds = excluded.map((m) => m.jobOperationId);
+  const now = datetime.timestamp();
+
+  // The per-member sliced events whose GL is posted AFTER the transaction commits.
+  // postedToGL lets a resume skip events a prior attempt already posted. Populated
+  // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
+  let glEvents: { id: string; postedToGL: boolean }[] = [];
+
+  await db.transaction().execute(async (trx) => {
+    const batch = await trx
+      .selectFrom("jobOperationBatch")
+      .select(["id", "status"])
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!batch) throw new NotFoundError(`Batch ${batchId} was not found`);
+
+    if (batch.status === "Completed") {
+      throw new ServerFnError("This batch has already been completed", 409, {
+        alreadyCompleted: true
+      });
+    }
+    // "resume" if the batch is already Completing (a prior phase-2 step failed);
+    // "slice" if Active; throws for a terminal status.
+    const phase = planBatchCompletion(batch.status);
+
+    if (phase === "resume") {
+      // The payload must cover EXACTLY the batch's membership — phase 2 flips
+      // every member Done batch-wide but issues materials only for the submitted
+      // members, so a short payload would strand an omitted member Done with
+      // unissued BOM. Re-assert membership on resume just as the slice path does.
+      const currentMembers = await trx
+        .selectFrom("jobOperation")
+        .select("id")
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const currentIds = new Set(currentMembers.map((o: any) => o.id));
+      // An exclusion that phase 1 already applied is a stale-form resubmission
+      // and passes (the op is no longer a member). Excluding an op that IS still
+      // a member would rewrite phase 1's committed decision — reject it like a
+      // changed quantity.
+      const lateExclusion = excludedIds.find((id) => currentIds.has(id));
+      if (lateExclusion) {
+        throw new Error(
+          `Operation ${lateExclusion} was included when completion started — ` +
+            `retry with the recorded values; corrections happen after completion.`
+        );
+      }
+      assertBatchCompletionMembership(memberIds, [...currentIds]);
+
+      // Resume contract: the payload must match what phase 1 already recorded —
+      // an edited quantity on retry is rejected, never silently ignored and never
+      // rewritten (phase 1's slices/quantities are already committed). Batch
+      // members were unstarted at batch time and batch completion is the only
+      // productionQuantity writer between Active and Completing, so per-op sums
+      // equal the phase-1 inserts.
+      const recordedQuantities = await trx
+        .selectFrom("productionQuantity")
+        .select(["jobOperationId", "type", "quantity"])
+        .where("jobOperationId", "in", memberIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      const sums = new Map<string, { produced: number; scrap: number }>();
+      for (const r of recordedQuantities as any[]) {
+        const s = sums.get(r.jobOperationId) ?? { produced: 0, scrap: 0 };
+        if (r.type === "Production") s.produced += Number(r.quantity);
+        if (r.type === "Scrap") s.scrap += Number(r.quantity);
+        sums.set(r.jobOperationId, s);
+      }
+      const mismatches = members.filter((m) => {
+        const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
+        return s.produced !== m.quantity || s.scrap !== (m.scrapQuantity ?? 0);
+      });
+      if (mismatches.length > 0) {
+        const detail = mismatches
+          .map((m) => {
+            const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
+            return `${m.jobOperationId}: ${s.produced} produced / ${s.scrap} scrap`;
+          })
+          .join(", ");
+        throw new Error(
+          `Quantities were already recorded for this batch (${detail}). ` +
+            `Retry with the recorded values; corrections happen after completion.`
+        );
+      }
+
+      const existing = await trx
+        .selectFrom("productionEvent")
+        .select(["id", "postedToGL"])
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("endTime", "is not", null)
+        .execute();
+      glEvents = existing.map((e: any) => ({
+        id: e.id,
+        postedToGL: e.postedToGL ?? false
+      }));
+      return;
+    }
+
+    // phase === "slice": first attempt.
+    const operations = await trx
+      .selectFrom("jobOperation")
+      .select(["id", "operationQuantity"])
+      .where("jobOperationBatchId", "=", batchId)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (operations.length === 0)
+      throw new NotFoundError("Batch not found or empty");
+
+    // Reject dupes / unknown ids / omitted members — any would corrupt
+    // quantities or material issue. Included AND excluded together must cover
+    // the membership exactly; the excluded ones then detach below.
+    assertBatchCompletionMembership(
+      [...memberIds, ...excludedIds],
+      operations.map((o: any) => o.id)
+    );
+
+    // Detach "not in this run" members inside the same transaction: back to the
+    // schedule un-run — no time slice, no quantities, and phase 2's batch-wide
+    // Done flip no longer reaches them.
+    if (excludedIds.length > 0) {
+      const detached = await trx
+        .updateTable("jobOperation")
+        .set({ jobOperationBatchId: null, updatedBy: userId })
+        .where("id", "in", excludedIds)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (Number(detached?.numUpdatedRows ?? 0) !== excludedIds.length) {
+        throw new Error("Failed to detach excluded operations — retry");
+      }
+    }
+    const excludedIdSet = new Set(excludedIds);
+    const runOperations = operations.filter(
+      (o: any) => !excludedIdSet.has(o.id)
+    );
+
+    const opById = new Map(runOperations.map((o: any) => [o.id, o]));
+
+    // Auto-stop any still-running batch timer, mirroring the single-operation
+    // flow: writing jobOperation.status = 'Done' fires sync_finish_job_operation,
+    // which closes that op's open productionEvents with endTime = NOW(). A batch
+    // completes the same way — stop the shared timer here rather than refusing —
+    // so the just-closed aggregate is sliced per member below and its cost posts
+    // once in phase 2. (This is inside the phase-1 txn; the batch-tagged End path
+    // deliberately skips post-production-event, so there is no double GL post.)
+    await trx
+      .updateTable("productionEvent")
+      .set({ endTime: datetime.timestamp() })
+      .where("jobOperationBatchId", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("endTime", "is", null)
+      .execute();
+
+    const recorded = await trx
+      .selectFrom("productionEvent")
+      .select([
+        "id",
+        "type",
+        "startTime",
+        "endTime",
+        "workCenterId",
+        "employeeId"
+      ])
+      .where("jobOperationBatchId", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("endTime", "is not", null)
+      .execute();
+
+    const plan = buildBatchCompletionPlan(
+      recorded
+        .filter((e: any) => e.endTime)
+        .map((e: any) => ({
+          id: e.id,
+          type: e.type,
+          startTime: e.startTime,
+          endTime: e.endTime as string,
+          workCenterId: e.workCenterId,
+          employeeId: e.employeeId
+        })),
+      members.map((m) => ({
+        jobOperationId: m.jobOperationId,
+        operationQuantity: Number(
+          opById.get(m.jobOperationId)?.operationQuantity ?? 0
+        ),
+        quantity: m.quantity,
+        scrapQuantity: m.scrapQuantity
+      }))
+    );
+
+    // Replace the aggregate timers with the per-member slices.
+    if (recorded.length > 0) {
+      await trx
+        .deleteFrom("productionEvent")
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("endTime", "is not", null)
+        .execute();
+    }
+
+    for (const e of plan.memberEvents) {
+      const inserted = await trx
+        .insertInto("productionEvent")
+        .values({
+          // The shared plan types `type` as `string | null`; narrow it back to
+          // the column's enum here rather than casting the whole insert object.
+          type: e.type as
+            | Database["public"]["Enums"]["productionEventType"]
+            | null,
+          employeeId: e.employeeId,
+          workCenterId: e.workCenterId,
+          companyId,
+          createdBy: userId,
+          jobOperationBatchId: batchId,
+          jobOperationId: e.jobOperationId,
+          startTime: e.startTime,
+          endTime: e.endTime,
+          postedToGL: false
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      glEvents.push({ id: inserted.id, postedToGL: false });
+    }
+
+    if (plan.quantities.length > 0) {
+      await trx
+        .insertInto("productionQuantity")
+        .values(
+          // q.type is "Production" | "Scrap", a subset of productionQuantityType,
+          // so the insert types cleanly without a cast.
+          plan.quantities.map((q) => ({
+            jobOperationId: q.jobOperationId,
+            type: q.type,
+            quantity: q.quantity,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+
+    // Guarded Active -> Completing. WHERE status='Active' is the backstop to the
+    // FOR UPDATE lock: 0 rows means a concurrent completer won — throw and roll
+    // back every write in this transaction.
+    const marked = await trx
+      .updateTable("jobOperationBatch")
+      .set({ status: "Completing", updatedBy: userId, updatedAt: now })
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Active")
+      .returning("id")
+      .executeTakeFirst();
+    if (!marked) throw new Error("Only an active batch can be completed");
+  });
+
+  // Phase 2 (post-commit, idempotent). Any throw leaves the batch Completing; a
+  // retry re-runs these steps alone. Runs as the system: the batch completion
+  // itself was authorized.
+  const system = { db, companyId, userId };
+  for (const m of members) {
+    if (m.quantity <= 0) continue;
+    const issued = await invokePosting(
+      system,
+      "issue",
+      {
+        id: m.jobOperationId,
+        type: "jobOperation",
+        quantity: m.quantity
+      },
+      inventoryPostings.issueMaterial
+    );
+    if (issued.error) {
+      throw new Error(
+        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`
+      );
+    }
+  }
+
+  // Finalize batch-tracked outputs: for each member producing a batch-tracked
+  // item, flip its WIP entity to an Available lot via the lean
+  // jobOperationBatchOutput case (Produce activity + entity flip only — the
+  // productionQuantity rows were written in Phase 1 and the member's materials
+  // were issued above). Idempotent: an already-Available entity is a no-op, so
+  // a resume fast-forwards. Runs BEFORE the Done flip so a failure here leaves
+  // the batch resumable with no member stranded Done without its output lot.
+  const memberOpRows = await many(
+    db,
+    "jobOperation",
+    { id: memberIds, companyId },
+    { columns: ["id", "jobMakeMethodId"] }
+  );
+  if (memberOpRows.error) {
+    throw new Error(
+      `Failed to load member operations: ${memberOpRows.error.message}`
+    );
+  }
+  const makeMethodIds = [
+    ...new Set(
+      (memberOpRows.data ?? [])
+        .map((o: any) => o.jobMakeMethodId)
+        .filter(Boolean) as string[]
+    )
+  ];
+  const makeMethods = makeMethodIds.length
+    ? await many(
+        db,
+        "jobMakeMethod",
+        { id: makeMethodIds, companyId },
+        { columns: ["id", "requiresBatchTracking"] }
+      )
+    : { data: [], error: null };
+  if (makeMethods.error) {
+    throw new Error(
+      `Failed to load make methods: ${makeMethods.error.message}`
+    );
+  }
+  const requiresBatchByMakeMethod = new Map(
+    (makeMethods.data ?? []).map((m: any) => [m.id, m.requiresBatchTracking])
+  );
+  const makeMethodByOp = new Map(
+    (memberOpRows.data ?? []).map((o: any) => [o.id, o.jobMakeMethodId])
+  );
+
+  const outputTrackedEntityIds: string[] = [];
+  for (const m of members) {
+    const makeMethodId = makeMethodByOp.get(m.jobOperationId);
+    const requiresBatch = makeMethodId
+      ? (requiresBatchByMakeMethod.get(makeMethodId) ?? false)
+      : false;
+    if (!requiresBatch) continue;
+    if (m.quantity <= 0) continue;
+    if (!m.trackedEntityId) {
+      throw new Error(
+        `Operation ${m.jobOperationId} produces a batch-tracked item — its output lot is required`
+      );
+    }
+    const output = await invokePosting(
+      system,
+      "issue",
+      {
+        type: "jobOperationBatchOutput",
+        jobOperationId: m.jobOperationId,
+        trackedEntityId: m.trackedEntityId,
+        quantity: m.quantity,
+        readableId: m.batchNumber ?? null
+      },
+      inventoryPostings.issueMaterial
+    );
+    if (output.error) {
+      throw new Error(
+        `Failed to create the output lot for operation ${m.jobOperationId}: ${output.error.message}`
+      );
+    }
+    outputTrackedEntityIds.push(m.trackedEntityId);
+  }
+
+  // Flip members Done — sync_finish_job_operation readies each member job's next
+  // operation and completes the job independently. Skip already-Done so a resume
+  // does not re-fire the trigger.
+  const done = await updateRows(
+    db,
+    "jobOperation",
+    { status: "Done", updatedBy: userId },
+    { jobOperationBatchId: batchId, companyId, status: neq("Done") }
+  );
+  if (done.error) {
+    throw new Error(`Failed to finish batch operations: ${done.error.message}`);
+  }
+
+  // Post GL per sliced event; skip events a prior attempt already posted, and
+  // propagate errors so a GL failure keeps the batch resumable.
+  for (const e of glEvents) {
+    if (e.postedToGL) continue;
+    const posted = await invokePosting(
+      system,
+      "post-production-event",
+      {
+        productionEventId: e.id
+      },
+      postProductionEvent
+    );
+    if (posted.error) {
+      throw new Error(
+        `Failed to post GL for production event ${e.id}: ${posted.error.message}`
+      );
+    }
+  }
+
+  // Finalize: Completing -> Completed now that every phase-2 effect succeeded.
+  const finalized = await updateRows(
+    db,
+    "jobOperationBatch",
+    { status: "Completed", updatedBy: userId, updatedAt: now },
+    { id: batchId, companyId, status: "Completing" }
+  );
+  if (finalized.error) {
+    throw new Error(
+      `Failed to finalize batch completion: ${finalized.error.message}`
+    );
+  }
+
+  return {
+    completed: members.length,
+    excluded: excludedIds.length,
+    memberIds,
+    eventIds: glEvents.map((e) => e.id),
+    outputTrackedEntityIds
+  };
+}
+
+export const batchOperationPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof batchOperationsInput>>;
+
+/** Job-operation batches: create, change membership, release, dissolve and complete. */
+export async function batchOperation(
+  ctx: ServiceContext,
+  raw: z.input<typeof batchOperationsInput>
+) {
+  const payload = batchOperationsInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  let result: Record<string, unknown> = {};
+
+  switch (payload.type) {
+    case "create": {
+      result = await db.transaction().execute(async (trx) => {
+        const { operations, processId } = await assertEligible(
+          trx,
+          companyId,
+          payload.jobOperationIds
+        );
+        await assertCompanyRecords(
+          trx,
+          "location",
+          [payload.locationId],
+          companyId,
+          "Location"
+        );
+        await assertCompanyRecords(
+          trx,
+          "workCenter",
+          [payload.workCenterId],
+          companyId,
+          "Work center"
+        );
+        await assertMaterialCompatible(
+          trx,
+          companyId,
+          processId,
+          payload.jobOperationIds
+        );
+        // The board's "Create batch" sends no work center (assignment is a
+        // drag) — but when every member already sits on the same one, that IS
+        // the batch's work center; adopt it so the header isn't blank.
+        const memberWorkCenters = new Set(
+          operations.map((o: any) => o.workCenterId).filter(Boolean)
+        );
+        const workCenterId =
+          payload.workCenterId ??
+          (memberWorkCenters.size === 1
+            ? ([...memberWorkCenters][0] as string)
+            : null);
+        // Creating straight onto the floor (release: true) needs no work
+        // center: the scheduler's batch pre-pass auto-selects the
+        // earliest-finish candidate (load balancing, like single ops) for
+        // any Released batch still lacking one, and persists it.
+        const outputs = await loadMemberOutputs(
+          trx,
+          companyId,
+          operations.map((o: any) => o.jobMakeMethodId).filter(Boolean)
+        );
+        const mergeOutput = payload.mergeOutput === true;
+        if (mergeOutput) {
+          if (!payload.outputLotNumber) {
+            throw new Error("A combined output needs its lot number");
+          }
+          assertMergeable(operations, outputs);
+        }
+        // Split mode: one number per batch-tracked member, never repeated —
+        // two separate lots sharing a number is exactly the ambiguity the
+        // merge option exists to remove.
+        const lotNumbers = mergeOutput ? [] : (payload.lotNumbers ?? []);
+        const seen = new Set<string>();
+        const lotWrites: Array<{
+          trackedEntityId: string;
+          lotNumber: string;
+        }> = [];
+        for (const entry of lotNumbers) {
+          const op = operations.find((o: any) => o.id === entry.jobOperationId);
+          const out = op?.jobMakeMethodId
+            ? outputs.get(op.jobMakeMethodId)
+            : undefined;
+          if (!out?.requiresBatchTracking || !out.trackedEntityId) {
+            throw new Error(
+              `Operation ${entry.jobOperationId} does not produce a batch-tracked lot`
+            );
+          }
+          const key = entry.lotNumber.toLowerCase();
+          if (seen.has(key)) {
+            throw new Error(
+              `Lot number ${entry.lotNumber} is used twice — give each job its own, or combine them into one lot`
+            );
+          }
+          seen.add(key);
+          lotWrites.push({
+            trackedEntityId: out.trackedEntityId,
+            lotNumber: entry.lotNumber
+          });
+        }
+
+        const readableId = await getNextSequence(
+          trx,
+          "jobOperationBatch",
+          companyId
+        );
+        const batch = await trx
+          .insertInto("jobOperationBatch")
+          .values({
+            readableId,
+            companyId,
+            processId,
+            workCenterId,
+            locationId: payload.locationId,
+            status: payload.release ? "Active" : "Planned",
+            notes: payload.notes ?? null,
+            mergeOutput,
+            outputLotNumber: mergeOutput ? payload.outputLotNumber : null,
+            createdBy: userId
+          })
+          .returning(["id", "readableId"])
+          .executeTakeFirstOrThrow();
+
+        for (const write of lotWrites) {
+          await trx
+            .updateTable("trackedEntity")
+            .set({ readableId: write.lotNumber, updatedBy: userId })
+            .where("id", "=", write.trackedEntityId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+
+        const memberUpdate: Record<string, unknown> = {
+          jobOperationBatchId: batch.id,
+          updatedBy: userId
+        };
+        if (payload.workCenterId)
+          memberUpdate.workCenterId = payload.workCenterId;
+        // Claim only ops still unbatched (IS NULL) and in this company: two
+        // concurrent creates sharing an op both pass assertEligible's read, so
+        // the IS NULL predicate + row-count assert is what actually serializes
+        // the claim (assertEligible is not FOR UPDATE).
+        const claimed = await trx
+          .updateTable("jobOperation")
+          .set(memberUpdate)
+          .where("id", "in", payload.jobOperationIds)
+          .where("companyId", "=", companyId)
+          .where("jobOperationBatchId", "is", null)
+          .executeTakeFirst();
+        assertAllOperationsClaimed(
+          payload.jobOperationIds,
+          Number(claimed?.numUpdatedRows ?? 0)
+        );
+        return batch;
+      });
+      break;
+    }
+
+    case "add": {
+      result = await db.transaction().execute(async (trx) => {
+        const batch = await trx
+          .selectFrom("jobOperationBatch")
+          .selectAll()
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!batch) throw new NotFoundError("Batch not found");
+        // Membership is mutable while the batch is staged (Planned) or on
+        // the floor but unstarted (Active); the production-event check below
+        // is what actually freezes it.
+        if (batch.status !== "Planned" && batch.status !== "Active") {
+          throw new Error(
+            `Cannot add operations to a batch with status ${batch.status}`
+          );
+        }
+
+        const batchEvents = await trx
+          .selectFrom("productionEvent")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (batchEvents.length > 0) {
+          throw new Error(
+            "The batch has already started — complete it instead"
+          );
+        }
+
+        const { operations: incoming } = await assertEligible(
+          trx,
+          companyId,
+          payload.jobOperationIds,
+          batch.processId
+        );
+
+        // Compatibility is a property of the whole run: check existing members
+        // plus the incoming ops together, not the newcomers in isolation.
+        const existingMembers = await trx
+          .selectFrom("jobOperation")
+          .select(["id", "jobMakeMethodId"])
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        // A combined-output batch stays one item: a newcomer producing
+        // something else could never merge into the planned lot.
+        if (batch.mergeOutput) {
+          const all = [...existingMembers, ...incoming];
+          const outputs = await loadMemberOutputs(
+            trx,
+            companyId,
+            all.map((o: any) => o.jobMakeMethodId).filter(Boolean)
+          );
+          assertMergeable(all, outputs);
+        }
+        await assertMaterialCompatible(trx, companyId, batch.processId, [
+          ...existingMembers.map((m: any) => m.id as string),
+          ...payload.jobOperationIds
+        ]);
+
+        const memberUpdate: Record<string, unknown> = {
+          jobOperationBatchId: batch.id,
+          updatedBy: userId
+        };
+        if (batch.workCenterId) memberUpdate.workCenterId = batch.workCenterId;
+        const claimed = await trx
+          .updateTable("jobOperation")
+          .set(memberUpdate)
+          .where("id", "in", payload.jobOperationIds)
+          .where("companyId", "=", companyId)
+          .where("jobOperationBatchId", "is", null)
+          .executeTakeFirst();
+        assertAllOperationsClaimed(
+          payload.jobOperationIds,
+          Number(claimed?.numUpdatedRows ?? 0)
+        );
+        return { added: payload.jobOperationIds.length };
+      });
+      break;
+    }
+
+    case "remove": {
+      result = await db.transaction().execute(async (trx) => {
+        const batch = await trx
+          .selectFrom("jobOperationBatch")
+          .select("status")
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!batch) throw new NotFoundError("Batch not found");
+        if (batch.status !== "Planned" && batch.status !== "Active") {
+          throw new Error(
+            `Cannot remove operations from a batch with status ${batch.status}`
+          );
+        }
+        const batchEvents = await trx
+          .selectFrom("productionEvent")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (batchEvents.length > 0) {
+          throw new Error(
+            "Cannot remove operations: production has been recorded. Complete the batch instead."
+          );
+        }
+        // Count actual detaches — an id that isn't a member of this batch
+        // (already removed, or never belonged) must not be reported removed.
+        const removedResult = await trx
+          .updateTable("jobOperation")
+          .set({ jobOperationBatchId: null, updatedBy: userId })
+          .where("id", "in", payload.jobOperationIds)
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        const removed = Number(removedResult?.numUpdatedRows ?? 0);
+
+        const remaining = await trx
+          .selectFrom("jobOperation")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (remaining.length === 0) {
+          await trx
+            .deleteFrom("jobOperationBatch")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+          return { removed, dissolved: true };
+        }
+        return { removed, dissolved: false };
+      });
+      break;
+    }
+
+    case "update": {
+      const nextWorkCenterId = payload.workCenterId ?? null;
+      result = await db.transaction().execute(async (trx) => {
+        const batch = await trx
+          .selectFrom("jobOperationBatch")
+          .select("status")
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!batch) throw new NotFoundError("Batch not found");
+        await assertCompanyRecords(
+          trx,
+          "workCenter",
+          [nextWorkCenterId],
+          companyId,
+          "Work center"
+        );
+        // A Completed/Completing batch's events are already attributed to a
+        // machine — re-pointing the work center would rewrite that history.
+        assertBatchWorkCenterMutable(batch.status);
+        // And once any production event exists, production has started against
+        // the current work center, so the reassignment is no longer safe.
+        const batchEvents = await trx
+          .selectFrom("productionEvent")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (batchEvents.length > 0) {
+          throw new Error(
+            "Cannot change the work center: production has been recorded."
+          );
+        }
+        await trx
+          .updateTable("jobOperationBatch")
+          .set({
+            workCenterId: nextWorkCenterId,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .execute();
+        // Members mirror the header in BOTH directions: assigning pushes the
+        // work center down, and clearing (nextWorkCenterId === null) clears it
+        // on the members too — otherwise they keep a stale workCenterId the
+        // header no longer has.
+        await trx
+          .updateTable("jobOperation")
+          .set({ workCenterId: nextWorkCenterId, updatedBy: userId })
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .execute();
+        return { updated: true };
+      });
+      break;
+    }
+
+    case "release": {
+      result = await db.transaction().execute(async (trx) => {
+        // FOR UPDATE serializes against concurrent release/complete/dissolve
+        // on the same batch; the WHERE status='Planned' on the flip below is
+        // the backstop.
+        const batch = await trx
+          .selectFrom("jobOperationBatch")
+          .select(["id", "status", "workCenterId"])
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!batch) throw new NotFoundError("Batch not found");
+        if (batch.status !== "Planned") {
+          throw new Error(`Cannot release a batch with status ${batch.status}`);
+        }
+        // No work-center requirement: release must never wait on a human
+        // picking a machine. The scheduler's batch pre-pass auto-selects the
+        // earliest-finish work center among the process's candidates (the
+        // same load-balancing rule single operations get) and persists it.
+        const members = await trx
+          .selectFrom("jobOperation")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (members.length === 0) {
+          throw new Error("Cannot release an empty batch");
+        }
+        const released = await trx
+          .updateTable("jobOperationBatch")
+          .set({
+            status: "Active",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Planned")
+          .returning("id")
+          .executeTakeFirst();
+        if (!released) {
+          throw new Error("Only a planned batch can be released");
+        }
+        return { success: true };
+      });
+      break;
+    }
+
+    case "unrelease": {
+      result = await db.transaction().execute(async (trx) => {
+        const batch = await trx
+          .selectFrom("jobOperationBatch")
+          .select(["id", "status"])
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!batch) throw new NotFoundError("Batch not found");
+        if (batch.status !== "Active") {
+          throw new Error(
+            `Cannot unrelease a batch with status ${batch.status}`
+          );
+        }
+        // Once anything has run against the batch, pulling it back off the
+        // floor would orphan that recorded time.
+        const batchEvents = await trx
+          .selectFrom("productionEvent")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (batchEvents.length > 0) {
+          throw new Error(
+            "production has been recorded — complete the batch instead"
+          );
+        }
+        const unreleased = await trx
+          .updateTable("jobOperationBatch")
+          .set({
+            status: "Planned",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Active")
+          .returning("id")
+          .executeTakeFirst();
+        if (!unreleased) {
+          throw new Error("Only an active batch can be unreleased");
+        }
+        return { success: true };
+      });
+      break;
+    }
+
+    case "dissolve": {
+      result = await db.transaction().execute(async (trx) => {
+        const batchEvents = await trx
+          .selectFrom("productionEvent")
+          .select("id")
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .limit(1)
+          .execute();
+        if (batchEvents.length > 0) {
+          throw new Error(
+            "Cannot dissolve: production has been recorded. Complete the batch instead — member jobs then proceed independently."
+          );
+        }
+        const members = await trx
+          .updateTable("jobOperation")
+          .set({ jobOperationBatchId: null, updatedBy: userId })
+          .where("jobOperationBatchId", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .execute();
+        await trx
+          .deleteFrom("jobOperationBatch")
+          .where("id", "=", payload.batchId)
+          .where("companyId", "=", companyId)
+          .execute();
+        return { dissolved: members.length };
+      });
+      break;
+    }
+
+    case "complete": {
+      result = await completeBatch(db, {
+        companyId,
+        userId,
+        batchId: payload.batchId,
+        members: payload.members
+      });
+      break;
+    }
+  }
+
+  return { success: true, ...result };
 }

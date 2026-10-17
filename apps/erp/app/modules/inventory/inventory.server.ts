@@ -58,11 +58,11 @@ import {
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
+  invokeCreate,
   invokePosting,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
-import { systemServerFns } from "../shared/shared.service";
 import {
   finishPickingList,
   inventoryAdjustmentTypes,
@@ -151,7 +151,7 @@ export const createReceipt = defineServiceFn({
     const created = await (() => {
       switch (sourceDocument) {
         case "Purchase Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromPurchaseOrder",
             locationId,
             purchaseOrderId: sourceDocumentId,
@@ -160,25 +160,25 @@ export const createReceipt = defineServiceFn({
         case "Sales Return Order":
           // No default-location guard: the server function falls back to the
           // return order's own location and errors specifically otherwise.
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromSalesReturnOrder",
             locationId,
             salesReturnOrderId: sourceDocumentId,
             receiptId: undefined
           });
         case "Inbound Transfer":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromInboundTransfer",
             warehouseTransferId: sourceDocumentId,
             receiptId: undefined
           });
         case "Rental Agreement":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
           });
         default:
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptDefault",
             locationId: locationId as string
           });
@@ -269,21 +269,21 @@ export const updateReceipt = defineServiceFn({
     const created = await (() => {
       switch (receipt.sourceDocument) {
         case "Purchase Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromPurchaseOrder",
             locationId: receipt.locationId,
             purchaseOrderId: receipt.sourceDocumentId,
             receiptId: id
           });
         case "Sales Return Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromSalesReturnOrder",
             locationId: receipt.locationId,
             salesReturnOrderId: receipt.sourceDocumentId,
             receiptId: id
           });
         case "Inbound Transfer":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "receiptFromInboundTransfer",
             warehouseTransferId: receipt.sourceDocumentId,
             receiptId: id
@@ -622,7 +622,7 @@ export const splitReceiptLine = defineServiceFn({
       return ctx.error("notFound", "The receipt line could not be found");
     }
 
-    const split = await systemServerFns(ctx).invoke("create", {
+    const split = await invokeCreate(ctx, {
       type: "receiptLineSplit",
       locationId,
       receiptId,
@@ -1176,46 +1176,46 @@ export const createShipment = defineServiceFn({
     const created = await (() => {
       switch (sourceDocument) {
         case "Sales Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromSalesOrder",
             locationId: locationId!,
             salesOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Sales Return Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromSalesReturnOrder",
             locationId,
             salesReturnOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Purchase Return Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromPurchaseReturnOrder",
             locationId,
             purchaseReturnOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Purchase Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromPurchaseOrder",
             locationId: locationId!,
             purchaseOrderId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Outbound Transfer":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromWarehouseTransfer",
             warehouseTransferId: sourceDocumentId,
             shipmentId: undefined
           });
         case "Rental Agreement":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
           });
         default:
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentDefault",
             locationId
           });
@@ -1307,35 +1307,35 @@ export const updateShipment = defineServiceFn({
     const created = await (() => {
       switch (shipment.sourceDocument) {
         case "Sales Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromSalesOrder",
             locationId: locationId as string,
             salesOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Sales Return Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromSalesReturnOrder",
             locationId,
             salesReturnOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Purchase Return Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromPurchaseReturnOrder",
             locationId,
             purchaseReturnOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Purchase Order":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromPurchaseOrder",
             locationId: locationId as string,
             purchaseOrderId: sourceDocumentId,
             shipmentId: id
           });
         case "Outbound Transfer":
-          return systemServerFns(ctx).invoke("create", {
+          return invokeCreate(ctx, {
             type: "shipmentFromWarehouseTransfer",
             warehouseTransferId: sourceDocumentId,
             shipmentId: id
@@ -1722,7 +1722,7 @@ export const splitShipmentLine = defineServiceFn({
       return ctx.error("notFound", "The shipment line could not be found");
     }
 
-    const split = await systemServerFns(ctx).invoke("create", {
+    const split = await invokeCreate(ctx, {
       type: "shipmentLineSplit",
       locationId,
       shipmentId,

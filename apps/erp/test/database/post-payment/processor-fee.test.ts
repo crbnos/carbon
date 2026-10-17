@@ -10,8 +10,8 @@
 import { MISSING_PROCESSOR_FEE_ACCOUNT_ERROR } from "@carbon/database/payment-processor-fee";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { paymentFixture } from "../fixtures/payment";
 import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
 
 type Fixture = Awaited<ReturnType<typeof paymentFixture>>;

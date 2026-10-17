@@ -32,7 +32,6 @@ export { noServerCodeInClient } from "./conformance/no-server-code-in-client";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export { routeActionShape } from "./conformance/route-action-shape";
-export { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 export { serviceFnFile } from "./conformance/service-fn-file";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
 export {
@@ -58,17 +57,13 @@ export {
   type Finding,
   newViolations,
   SERVER_CHECKS,
-  SERVER_FN_CHECKS,
   STRUCTURE_CHECKS,
   scanAll,
   scanModules,
   TS_CHECKS
 } from "./run";
 export { loadDbTableColumns } from "./sources/db-columns";
-export {
-  loadEdgeFunctions,
-  loadServerFunctions
-} from "./sources/edge-functions";
+export { loadEdgeFunctions } from "./sources/edge-functions";
 export {
   listLicenseCandidates,
   loadLicenseFiles

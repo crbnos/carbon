@@ -17,9 +17,6 @@ const { invoke, evaluate } = vi.hoisted(() => ({
   // Storage rules: the violations each surface reports.
   evaluate: vi.fn()
 }));
-vi.mock("@carbon/server-functions", () => ({
-  serverFns: { system: () => ({ invoke }) }
-}));
 vi.mock("@carbon/ee/rules.server", async () => ({
   // The real block / dedupe rules; only the rule reads are stubbed.
   ...(await vi.importActual<typeof import("@carbon/ee/rules.server")>(

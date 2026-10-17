@@ -15,8 +15,7 @@ import {
 } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
 import { postPurchaseInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
 import { activateAccounting } from "../../../app/modules/accounting/accounting.service";
@@ -28,7 +27,7 @@ import {
   USER,
   unwrap
 } from "../fixtures/activation";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 
 /** A purchase order for 5 parts at `unitPrice`; returns its line id. */
@@ -229,11 +228,11 @@ databaseTest(
       // After the cutover: the 5 parts arrive. The receipt costs them at
       // the accrual (9), not the PO price (8), and clears the accrual.
       const receipt = unwrap(
-        await create(f.ctx, {
-          type: "receiptFromPurchaseOrder",
-          purchaseOrderId: order.purchaseOrderId,
-          locationId: f.locationId
-        })
+        await invokeCreate(handlesOf(f.ctx), {
+                              type: "receiptFromPurchaseOrder",
+                              purchaseOrderId: order.purchaseOrderId,
+                              locationId: f.locationId
+                            })
       );
       unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt));
 

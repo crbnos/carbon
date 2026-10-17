@@ -15,7 +15,6 @@ import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
 import { datetime, unchecked } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -25,6 +24,8 @@ import {
   invalidateLocationTimeZone,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
+import * as inventoryPostings from "../inventory/inventory.service";
+import { invokePosting } from "../shared/shared.service";
 import {
   abilityValidator,
   employeeAbilityCellValidator,
@@ -1181,27 +1182,27 @@ export const issueMaintenancePart = defineServiceFn({
       return ctx.error("validation", "Quantity must be greater than 0");
     }
 
-    const fns = serverFns.system({
-      db: ctx.asSystem.pg,
-      companyId: ctx.company.id,
-      userId: ctx.auditUserId
-    });
     const tracked = !!children && children.length > 0;
-    const issued = tracked
-      ? await fns.invoke("issue", {
-          type: "maintenanceDispatchTrackedEntities",
-          maintenanceDispatchId: dispatchId,
-          itemId,
-          unitOfMeasureCode,
-          children
-        })
-      : await fns.invoke("issue", {
-          type: "maintenanceDispatchInventory",
-          maintenanceDispatchId: dispatchId,
-          itemId,
-          unitOfMeasureCode,
-          quantity: total
-        });
+    const issued = await invokePosting(
+      ctx,
+      "issue",
+      tracked
+        ? {
+            type: "maintenanceDispatchTrackedEntities" as const,
+            maintenanceDispatchId: dispatchId,
+            itemId,
+            unitOfMeasureCode,
+            children
+          }
+        : {
+            type: "maintenanceDispatchInventory" as const,
+            maintenanceDispatchId: dispatchId,
+            itemId,
+            unitOfMeasureCode,
+            quantity: total
+          },
+      inventoryPostings.issueMaterial
+    );
     if (issued.error) {
       return ctx.error(
         "internal",
@@ -1248,16 +1249,19 @@ export const unissueMaintenancePart = defineServiceFn({
     }
     if (!item.data) return ctx.error("notFound", "Item not found");
 
-    const returned = await serverFns
-      .system({
+    const returned = await invokePosting(
+      {
         db: ctx.asSystem.pg,
         companyId: ctx.company.id,
         userId: ctx.auditUserId
-      })
-      .invoke("issue", {
+      },
+      "issue",
+      {
         type: "maintenanceDispatchUnissue",
         maintenanceDispatchItemId
-      });
+      },
+      inventoryPostings.issueMaterial
+    );
     if (returned.error) {
       return ctx.error("internal", "Failed to remove item", returned.error);
     }

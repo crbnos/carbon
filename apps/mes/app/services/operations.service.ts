@@ -16,7 +16,6 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
 import {
   async,
   datetime,
@@ -29,6 +28,7 @@ import {
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
@@ -363,15 +363,11 @@ export async function finishJobOperation(
         if (unposted.error) throw unposted.error;
         if (unposted.data.length === 0) return;
 
-        const fns = serverFns.system({
-          db,
-          companyId: args.companyId,
-          userId: args.userId
-        });
+        const caller = { companyId: args.companyId, userId: args.userId };
         await async.map(
           unposted.data,
           (event) =>
-            fns.invoke("post-production-event", {
+            erpPosting("post-production-event", caller, {
               productionEventId: event.id
             }),
           { concurrency: 4 }
@@ -457,12 +453,14 @@ export async function returnPickedRemainders(
     companyId: string;
   }
 ): Promise<void> {
-  const { error } = await serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-picking", {
+  const { error } = await erpPosting(
+    "post-picking",
+    { client, companyId: args.companyId, userId: args.userId },
+    {
       type: "returnOperationRemainders",
       ...args
-    });
+    }
+  );
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
@@ -1550,16 +1548,18 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     }
     const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
-    const issued = await serverFns
-      .as({ client, db, companyId: args.companyId, userId: args.userId })
-      .invoke("issue", {
+    const issued = await erpPosting(
+      "issue",
+      { client, companyId: args.companyId, userId: args.userId },
+      {
         id: operationId,
         type: "partToOperation",
         itemId: material.itemId,
         materialId: material.id,
         quantity: delta,
         adjustmentType: "Negative Adjmt."
-      });
+      }
+    );
     if (issued.error) failures.push(material.itemId);
   }
 
@@ -2557,14 +2557,10 @@ export async function postEndedProductionEvents(
     });
     return;
   }
-  const functions = serverFns.system({
-    db,
-    companyId: args.companyId,
-    userId: args.userId
-  });
+  const caller = { companyId: args.companyId, userId: args.userId };
   for (const event of events.data ?? []) {
     try {
-      await functions.invoke("post-production-event", {
+      await erpPosting("post-production-event", caller, {
         productionEventId: event.id
       });
     } catch (error) {

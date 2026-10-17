@@ -5,7 +5,7 @@
 // Draft revenue recognition runs for the live-database regressions, on top of
 // `paymentFixture`'s company.
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import type { RunType } from "@carbon/server-functions/lib/run-type";
+import type { RunType } from "@carbon/database/run-type";
 import { claimScheduleRows } from "../../../app/modules/accounting/accounting.service";
 
 /** A Draft run for `periodEnd` holding exactly `scheduleIds`, claimed the way

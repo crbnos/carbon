@@ -12,7 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   connectLocalTestDatabase,
   hasLocalDatabase
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import * as inventory from "../../app/modules/inventory/inventory.server";
 import * as items from "../../app/modules/items/items.server";
 import { LOCKED_REVISION_MESSAGE } from "../../app/modules/items/items.service";

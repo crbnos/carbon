@@ -8,8 +8,8 @@
 // invoice. Posting re-derives funding, so these run through the post itself: a
 // crafted Draft cannot get past it.
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { paymentFixture } from "@carbon/server-functions/post-payment/payment-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { paymentFixture } from "../fixtures/payment";
 import { postPaymentTransaction } from "../../../app/modules/invoicing/invoicing.service";
 
 async function depositFixture() {

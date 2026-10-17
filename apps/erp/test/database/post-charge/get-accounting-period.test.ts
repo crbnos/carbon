@@ -10,9 +10,9 @@ import { expect } from "vitest";
 import {
   getAccountingPeriodForDate,
   getCurrentAccountingPeriod
-} from "@carbon/server-functions/lib/get-accounting-period";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { chargeFixture } from "@carbon/server-functions/post-charge/post-charge-test-fixture";
+} from "~/modules/shared/shared.service";
+import { databaseTest } from "../fixtures/local-database";
+import { chargeFixture } from "../fixtures/post-charge";
 
 for (const [name, resolve] of [
   ["historical", getAccountingPeriodForDate],

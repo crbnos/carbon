@@ -19,9 +19,6 @@ vi.mock("@carbon/logger", () => ({
 }));
 const { trigger } = vi.hoisted(() => ({ trigger: vi.fn() }));
 vi.mock("@carbon/jobs", () => ({ trigger, batchTrigger: vi.fn() }));
-vi.mock("@carbon/server-functions", () => ({
-  serverFns: { system: () => ({ invoke: vi.fn() }) }
-}));
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
 vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),

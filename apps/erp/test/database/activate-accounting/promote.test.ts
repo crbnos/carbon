@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
 import { activationFixture, USER } from "../fixtures/activation";
 import { repointStandInLines } from "../../../app/modules/accounting/accounting.service";
 

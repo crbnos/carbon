@@ -12,13 +12,11 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
-import { createContractInvoices } from "../../../app/modules/sales/sales.service";
+import { createContractInvoices, type ContractCancellationResult, postCustomerContract } from "../../../app/modules/sales/sales.service";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
-import { type ContractCancellationResult, postCustomerContract } from "../../../app/modules/sales/sales.service";
+} from "../fixtures/local-database";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 
@@ -184,7 +182,7 @@ async function contractFixture() {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = { db, companyId, userId: USER };
 
   return {
     db,

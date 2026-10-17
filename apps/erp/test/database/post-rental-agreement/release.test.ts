@@ -10,13 +10,11 @@
 import { datetime } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
 import { postRentalAgreement as postRentalAgreement } from "../../../app/modules/sales/sales.service";
-import { rentalFixture } from "@carbon/server-functions/post-rental-agreement/rental-test-fixture";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { rentalFixture } from "../fixtures/rental";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
 // The fixture company's timezone.
@@ -144,10 +142,10 @@ databaseTest("a unit treated as a sale is not released", async () => {
 databaseTest("a unit on an open rental shipment is not released", async () => {
   const f = await rentalFixture();
   try {
-    const shipment = await create(f.ctx, {
-      type: "shipmentFromRentalAgreement",
-      rentalAgreementId: f.agreementId
-    });
+    const shipment = await invokeCreate(handlesOf(f.ctx), {
+              type: "shipmentFromRentalAgreement",
+              rentalAgreementId: f.agreementId
+            });
     expect(shipment.error).toBeNull();
 
     const result = await release(f, "2026-09-20");

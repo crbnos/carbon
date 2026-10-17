@@ -8,7 +8,7 @@
 // be one UPDATE per operation, so a reorder that failed halfway left the job
 // with half of its new order.
 
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "./fixtures/local-database";
 import { expect } from "vitest";
 import { updateJobOperationOrder } from "../../app/modules/production/production.service";
 import {

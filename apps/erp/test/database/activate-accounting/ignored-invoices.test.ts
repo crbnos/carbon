@@ -15,7 +15,7 @@ import {
 } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
 import { postPayment } from "../../../app/modules/invoicing/invoicing.service";
 import { activateAccounting } from "../../../app/modules/accounting/accounting.service";
 import {

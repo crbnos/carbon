@@ -12,8 +12,8 @@ import {
   receiveFiveParts,
   USER
 } from "./fixtures/activation";
-import { STOCK_CORRECTION_BEFORE_CUTOVER_ERROR } from "@carbon/server-functions/lib/cutover-void";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { STOCK_CORRECTION_BEFORE_CUTOVER_ERROR } from "~/modules/shared/shared.service";
+import { databaseTest } from "./fixtures/local-database";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postStockMovementCorrection } from "../../app/modules/inventory/inventory.service";

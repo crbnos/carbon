@@ -214,7 +214,7 @@ describe("noUnscopedKyselyWrite", () => {
     }
   });
   it("holds updateRows and deleteRows to the same rule", () => {
-    const fn = "packages/server-functions/src/post-receipt/index.ts";
+    const fn = "apps/erp/app/modules/inventory/inventory.service.ts";
     expect(
       scan(
         'await updateRows(db, "fixedAsset", { status }, { id: assetId });',

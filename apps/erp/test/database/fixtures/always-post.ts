@@ -13,20 +13,12 @@ import { datetime } from "@carbon/utils";
 import { endOfMonth } from "@internationalized/date";
 import { type Insertable, sql, type Transaction } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { connectLocalTestDatabase } from "@carbon/server-functions/local-database-test-fixture";
-import postInventoryAdjustment from "@carbon/server-functions/post-inventory-adjustment";
-import { postMemo } from "../../../app/modules/invoicing/invoicing.service";
-import { postPayment } from "../../../app/modules/invoicing/invoicing.service";
-import { postPurchaseInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { FILLER_ACCOUNT_DEFAULTS } from "@carbon/server-functions/post-reimbursement/post-reimbursement-test-fixture";
-import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { postShipment } from "../../../app/modules/inventory/inventory.service";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { connectLocalTestDatabase } from "./local-database";
+import { postInventoryAdjustment, postReceipt, postShipment } from "../../../app/modules/inventory/inventory.service";
+import { postMemo, postPayment, postPurchaseInvoice, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
+import { FILLER_ACCOUNT_DEFAULTS } from "./post-reimbursement";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "./handles";
-
 export const USER = "system";
 export const TIME_ZONE = "America/New_York";
 
@@ -241,7 +233,7 @@ export async function alwaysPostFixture() {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = { db, companyId, userId: USER };
   // The same caller as a service function sees it, for a body ported to the
   // ERP modules: the system actor, on behalf of the test user.
   const service = createServiceContext({
@@ -492,12 +484,12 @@ export async function stockPart(
   locationId: string = f.locationId
 ) {
   unwrap(
-    await postInventoryAdjustment(f.ctx, {
-      adjustmentType: "Positive Adjmt.",
-      itemId: f.partId,
-      locationId,
-      quantity
-    })
+    await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
+            adjustmentType: "Positive Adjmt.",
+            itemId: f.partId,
+            locationId,
+            quantity
+          }, postInventoryAdjustment)
   );
 }
 
@@ -551,11 +543,11 @@ export async function receiveFromPurchaseOrder(
       .execute();
   });
   const receipt = unwrap(
-    await create(f.ctx, {
-      type: "receiptFromPurchaseOrder",
-      purchaseOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "receiptFromPurchaseOrder",
+                  purchaseOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt));
   return receipt.id;
@@ -598,11 +590,11 @@ export async function shipSalesOrder(f: Fixture, key = "1"): Promise<string> {
       .execute();
   });
   const shipment = unwrap(
-    await create(f.ctx, {
-      type: "shipmentFromSalesOrder",
-      salesOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "shipmentFromSalesOrder",
+                  salesOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId: shipment.id }, postShipment));
   return shipment.id;

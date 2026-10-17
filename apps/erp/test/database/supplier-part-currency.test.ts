@@ -7,7 +7,7 @@ import { expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import { updatePurchasedPrices } from "../../app/modules/purchasing/purchasing.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 

@@ -6,13 +6,11 @@
 // still open refuses the close and names the document.
 
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
 import { postRentalAgreement as postRentalAgreement } from "../../../app/modules/sales/sales.service";
-import { rentalFixture } from "@carbon/server-functions/post-rental-agreement/rental-test-fixture";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { rentalFixture } from "../fixtures/rental";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 databaseTest(
   "an open rental receipt refuses the agreement's close",
   async () => {
@@ -24,10 +22,10 @@ databaseTest(
         .where("id", "=", f.lineIds[0]!)
         .where("companyId", "=", f.companyId)
         .execute();
-      const receipt = await create(f.ctx, {
-        type: "receiptFromRentalAgreement",
-        rentalAgreementId: f.agreementId
-      });
+      const receipt = await invokeCreate(handlesOf(f.ctx), {
+                    type: "receiptFromRentalAgreement",
+                    rentalAgreementId: f.agreementId
+                  });
       expect(receipt.error).toBeNull();
 
       const result = await invokePosting(handlesOf(f.ctx), "post-rental-agreement", {

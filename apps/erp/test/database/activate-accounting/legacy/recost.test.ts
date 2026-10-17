@@ -9,11 +9,10 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import issue from "@carbon/server-functions/issue";
-import { repairLegacyJournals as journalLegacyDocuments } from "../../../../app/modules/accounting/accounting.service";
-import { bookAdjustment } from "@carbon/server-functions/lib/post-adjustment";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { activateAccounting } from "../../../../app/modules/accounting/accounting.service";
+import { issueMaterial as issue } from "../../../../app/modules/inventory/inventory.service";
+import { repairLegacyJournals as journalLegacyDocuments, activateAccounting } from "../../../../app/modules/accounting/accounting.service";
+import { bookAdjustment } from "~/modules/shared/shared.service";
+import { databaseTest } from "../../fixtures/local-database";
 import {
   activationFixture,
   enableWithStockAtTen,
@@ -28,7 +27,6 @@ import {
 } from "../../fixtures/activation";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
-
 databaseTest(
   "the enable's re-cost leaves a job return out of the layers",
   async () => {
@@ -42,14 +40,14 @@ databaseTest(
         "Positive Adjmt."
       ] as const) {
         unwrap(
-          await issue(f.ctx, {
-            type: "partToOperation",
-            id: job.operationId,
-            itemId: f.partId,
-            materialId: job.materialId,
-            quantity: adjustmentType === "Negative Adjmt." ? 2 : 1,
-            adjustmentType
-          })
+          await invokePosting(handlesOf(f.ctx), "issue", {
+                        type: "partToOperation",
+                        id: job.operationId,
+                        itemId: f.partId,
+                        materialId: job.materialId,
+                        quantity: adjustmentType === "Negative Adjmt." ? 2 : 1,
+                        adjustmentType
+                      }, issue)
         );
       }
 

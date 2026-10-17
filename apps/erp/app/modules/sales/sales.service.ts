@@ -80,13 +80,6 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { currencyDecimals } from "@carbon/server-functions/lib/currency-decimals";
-import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
-import { resolveInventoryAccount } from "@carbon/server-functions/lib/get-posting-group";
-import {
-  bookAdjustment,
-  createAdjustmentJournal
-} from "@carbon/server-functions/lib/post-adjustment";
 import type { PickPartial, Violation } from "@carbon/utils";
 import {
   billingHorizon,
@@ -145,8 +138,13 @@ import {
 } from "~/modules/settings/settings.service";
 import { itemType as sellableItemTypes } from "~/modules/shared/shared.models";
 import {
+  bookAdjustment,
+  createAdjustmentJournal,
+  currencyDecimals,
   getCompanyTimeZone as getCachedCompanyTimeZone,
-  refuseUnlessOwned
+  getCurrentAccountingPeriod,
+  refuseUnlessOwned,
+  resolveInventoryAccount
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";

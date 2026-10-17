@@ -18,16 +18,13 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
-import create from "@carbon/server-functions/create";
 import {
   databaseTest,
   hasLocalDatabase
-} from "@carbon/server-functions/local-database-test-fixture";
-import { postShipment } from "../../app/modules/inventory/inventory.service";
-import { postStockTransfer } from "../../app/modules/inventory/inventory.service";
-import { invokePosting } from "../../app/modules/shared/shared.service";
+} from "./fixtures/local-database";
+import { postShipment, postStockTransfer } from "../../app/modules/inventory/inventory.service";
+import { invokePosting, invokeCreate } from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";
-
 describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
   let f: Fixture;
   let serialItemId: string;
@@ -201,11 +198,11 @@ describe.skipIf(!hasLocalDatabase)("tracked entity source bin", () => {
         .execute();
     });
     const shipment = unwrap(
-      await create(f.ctx, {
-        type: "shipmentFromSalesOrder",
-        salesOrderId,
-        locationId: f.locationId
-      })
+      await invokeCreate(handlesOf(f.ctx), {
+                        type: "shipmentFromSalesOrder",
+                        salesOrderId,
+                        locationId: f.locationId
+                      })
     );
     const shipmentLine = await f.db
       .selectFrom("shipmentLine")

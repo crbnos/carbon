@@ -10,23 +10,12 @@ import type { Database } from "@carbon/database";
 import { MissingAccountDefaultError } from "@carbon/database/journal-posting-status";
 import type { SalesPostingAccount } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
-import { journalLineDimensionRows } from "@carbon/server-functions/lib/journal-line-dimensions";
+import { journalLineDimensionRows } from "~/modules/shared/shared.service";
 import {
   planSalesInvoiceAccounts,
   resolveSalesInvoiceAccounts,
   type SalesInvoiceAccountNeeds,
-  type SalesInvoiceAccounts
-} from "../../../app/modules/invoicing/invoicing.service";
-import {
-  buildSalesInvoiceJournal,
-  fillDirectCogs,
-  postingAccountNeeds,
-  postingLineRevenue,
-  type SalesInvoiceJournalFacts,
-  type SalesInvoiceLine,
-  salesLineDimensions
-} from "../../../app/modules/invoicing/invoicing.service";
-
+  type SalesInvoiceAccounts, buildSalesInvoiceJournal, fillDirectCogs, postingAccountNeeds, postingLineRevenue, type SalesInvoiceJournalFacts, type SalesInvoiceLine, salesLineDimensions } from "../../../app/modules/invoicing/invoicing.service";
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 type Status = "Provisional" | "Posted";
 

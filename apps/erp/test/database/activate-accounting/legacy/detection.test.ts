@@ -10,8 +10,8 @@
 import { LEGACY_DOCUMENT_FAMILIES } from "@carbon/database/legacy-documents";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import issue from "@carbon/server-functions/issue";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { issueMaterial as issue } from "../../../../app/modules/inventory/inventory.service";
+import { databaseTest } from "../../fixtures/local-database";
 import {
   activationFixture,
   deleteJournals,
@@ -25,6 +25,8 @@ import {
   USER,
   unwrap
 } from "../../fixtures/activation";
+import { invokePosting } from "../../../../app/modules/shared/shared.service";
+import { handlesOf } from "../../fixtures/handles";
 
 const NONE = Object.fromEntries(
   LEGACY_DOCUMENT_FAMILIES.map((family) => [family, 0])
@@ -113,14 +115,14 @@ databaseTest(
       await deleteJournals(f, ["Sales Shipment"]);
       const job = await jobFixture(f);
       unwrap(
-        await issue(f.ctx, {
-          type: "partToOperation",
-          id: job.operationId,
-          itemId: f.partId,
-          materialId: job.materialId,
-          quantity: 2,
-          adjustmentType: "Negative Adjmt."
-        })
+        await invokePosting(handlesOf(f.ctx), "issue", {
+                    type: "partToOperation",
+                    id: job.operationId,
+                    itemId: f.partId,
+                    materialId: job.materialId,
+                    quantity: 2,
+                    adjustmentType: "Negative Adjmt."
+                  }, issue)
       );
       await f.db
         .deleteFrom("costLedger")

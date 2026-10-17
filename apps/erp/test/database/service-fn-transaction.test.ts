@@ -13,7 +13,7 @@ import {
   connectLocalTestDatabase,
   databaseTest,
   hasLocalDatabase
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
 import { z } from "zod";

@@ -32,21 +32,23 @@ vi.mock("@carbon/ee/rules.server", async () => {
 });
 // Workflow moments go to the event bus.
 vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
-vi.mock("@carbon/server-functions", () => ({
-  serverFns: { as: () => ({ invoke }), system: () => ({ invoke }) }
-}));
 vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   refuseUnlessOwned: vi.fn(async () => null),
   sendSalesOrderEmail: vi.fn(),
   getCompanyTimeZone: vi.fn(async () => "UTC"),
   getLocationTimeZone: vi.fn(async () => "UTC"),
-  // The ported server functions (convert) run through invokePosting.
+  // The postings (convert, create) run through invokePosting / invokeCreate.
   invokePosting: (_from: unknown, name: string, input: unknown) =>
-    invoke(name, input)
+    invoke(name, input),
+  invokeCreate: (_from: unknown, input: unknown) => invoke("create", input)
 }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+
+// Load the service first: shared.service imports it, and a module first loaded
+// while shared.service's mock is being built binds the unmocked one.
+await import("../app/modules/sales/sales.service");
 
 const {
   acceptDigitalQuote,

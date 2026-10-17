@@ -42,7 +42,6 @@ import {
   enrollImplementation,
   getImplementationHub
 } from "@carbon/onboarding/server";
-import { serverFns } from "@carbon/server-functions";
 import {
   createConnectAccountLink,
   getOrCreateConnectAccount,
@@ -65,6 +64,7 @@ import {
   importSchemas
 } from "./imports.models";
 import * as service from "./shared.service";
+import { invokeCreate } from "./shared.service";
 
 const logger = getLogger("erp", "shared");
 // tzdata only changes when the Postgres image is upgraded — a day-long TTL
@@ -472,9 +472,10 @@ export const createIssueFromSlack = defineServiceFn({
         },
         { slackToken, slackUserId: input.slackUserId, channelId }
       ),
-      serverFns
-        .system({ db: ctx.asSystem.pg, companyId, userId })
-        .invoke("create", { type: "nonConformanceTasks", id: issueId })
+      invokeCreate(
+        { db: ctx.asSystem.pg, companyId, userId },
+        { type: "nonConformanceTasks", id: issueId }
+      )
     ]);
     if (tasks.error) {
       logger.error("Error creating tasks", { error: tasks.error });

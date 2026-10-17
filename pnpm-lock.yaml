@@ -747,9 +747,6 @@ importers:
       '@carbon/serve':
         specifier: workspace:*
         version: link:../../packages/serve
-      '@carbon/server-functions':
-        specifier: workspace:*
-        version: link:../../packages/server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
@@ -1086,7 +1083,7 @@ importers:
         version: 6.9.0
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)(vite@8.3.1)
+        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.1)
       '@react-aria/optimize-locales-plugin':
         specifier: 'catalog:'
         version: 2.0.2
@@ -1120,6 +1117,9 @@ importers:
       '@types/papaparse':
         specifier: 5.5.2
         version: 5.5.2
+      '@types/pg':
+        specifier: 8.15.6
+        version: 8.15.6
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -1147,6 +1147,9 @@ importers:
       npm-run-all:
         specifier: 'catalog:'
         version: 4.1.5
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
       supabase:
         specifier: 'catalog:'
         version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
@@ -1167,7 +1170,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
+        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(vite@8.3.1)
@@ -1177,6 +1180,9 @@ importers:
       '@carbon/account':
         specifier: workspace:*
         version: link:../../packages/account
+      '@carbon/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@carbon/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -1225,9 +1231,6 @@ importers:
       '@carbon/serve':
         specifier: workspace:*
         version: link:../../packages/serve
-      '@carbon/server-functions':
-        specifier: workspace:*
-        version: link:../../packages/server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
@@ -1266,7 +1269,7 @@ importers:
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@lingui/vite-plugin':
         specifier: 'catalog:'
-        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.1)
+        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)(vite@8.3.1)
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1489,7 +1492,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: 'catalog:'
-        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
+        version: 8.3.1(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(vite@8.3.1)
@@ -2547,9 +2550,6 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../react
-      '@carbon/server-functions':
-        specifier: workspace:*
-        version: link:../server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../stripe
@@ -2905,9 +2905,6 @@ importers:
       '@carbon/printing':
         specifier: workspace:*
         version: link:../printing
-      '@carbon/server-functions':
-        specifier: workspace:*
-        version: link:../server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../stripe
@@ -3801,58 +3798,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(vite@7.3.5(@types/node@20.19.39)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
-
-  packages/server-functions:
-    dependencies:
-      '@carbon/api':
-        specifier: workspace:*
-        version: link:../api
-      '@carbon/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
-      '@carbon/env':
-        specifier: workspace:*
-        version: link:../env
-      '@carbon/files':
-        specifier: workspace:*
-        version: link:../files
-      '@carbon/logger':
-        specifier: workspace:*
-        version: link:../logger
-      '@carbon/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@internationalized/date':
-        specifier: 'catalog:'
-        version: 3.12.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
-      kysely:
-        specifier: 'catalog:'
-        version: 0.28.17
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
-      zod:
-        specifier: 'catalog:'
-        version: 4.5.4
-    devDependencies:
-      '@carbon/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/pg':
-        specifier: 8.15.6
-        version: 8.15.6
-      pg:
-        specifier: 8.20.0
-        version: 8.20.0
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(vite@7.3.5(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
 
   packages/stripe:
     dependencies:

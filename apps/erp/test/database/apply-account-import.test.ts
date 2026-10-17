@@ -22,7 +22,7 @@ import { afterEach, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
+} from "./fixtures/local-database";
 import { applyAccountImport } from "../../app/modules/accounting/accounting.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 

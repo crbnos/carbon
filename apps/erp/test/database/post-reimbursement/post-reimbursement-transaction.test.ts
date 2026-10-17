@@ -4,8 +4,8 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { reimbursementFixture } from "@carbon/server-functions/post-reimbursement/post-reimbursement-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { reimbursementFixture } from "../fixtures/post-reimbursement";
 import { postReimbursementTransaction } from "../../../app/modules/accounting/accounting.service";
 
 type Fixture = Awaited<ReturnType<typeof reimbursementFixture>>;

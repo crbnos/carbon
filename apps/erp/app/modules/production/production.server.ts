@@ -17,7 +17,6 @@ import { batchTrigger, trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
-import { serverFns } from "@carbon/server-functions";
 import {
   async,
   chunkArray,
@@ -41,7 +40,7 @@ import {
   getCompanyTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
-import { invokePosting } from "../shared/shared.service";
+import { invokeCreate, invokePosting } from "../shared/shared.service";
 import {
   type AssemblyModelState,
   assemblyStepComponentsReassignValidator,
@@ -298,13 +297,14 @@ export const releaseCheckedJobs = defineServiceFn({
       }
       releasedJobIds.push(id);
 
-      const purchaseOrder = await serverFns
-        .system({ db: ctx.asSystem.pg, companyId, userId })
-        .invoke("create", {
+      const purchaseOrder = await invokeCreate(
+        { db: ctx.asSystem.pg, companyId, userId },
+        {
           type: "purchaseOrderFromJob",
           jobId: id,
           purchaseOrdersBySupplierId: purchaseOrders
-        });
+        }
+      );
       if (purchaseOrder.error) {
         return report(
           ctx.error(

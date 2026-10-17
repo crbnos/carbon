@@ -6,8 +6,7 @@ import { round } from "@carbon/database/precision";
 import {
   buildLessorSchedule,
   generateRentalBillingPeriods,
-  netInvestmentExceedsFairValue
-} from "@carbon/utils";
+  netInvestmentExceedsFairValue, certainPurchaseOption, classifyRentalLine, leasePaymentTerms, salesTypeRequirementError, wholeMonthsInTerm } from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
   activationBillingThrough,
@@ -21,14 +20,6 @@ import {
   scheduleBillingPeriods,
   settledClassification
 } from "../../../app/modules/sales/sales.service";
-import {
-  certainPurchaseOption,
-  classifyRentalLine,
-  leasePaymentTerms,
-  salesTypeRequirementError,
-  wholeMonthsInTerm
-} from "@carbon/utils";
-
 /** USD: rent is billed, and so valued, in cents. */
 const DECIMALS = 2;
 

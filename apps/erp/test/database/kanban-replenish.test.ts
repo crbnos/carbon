@@ -6,7 +6,7 @@
 
 import { KANBAN_REPLENISHMENT_NOTE_PREFIX } from "@carbon/database/stock-transfer";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "./fixtures/local-database";
 import { replenishKanban } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import { kanbanFixture } from "./kanban-test-fixture";

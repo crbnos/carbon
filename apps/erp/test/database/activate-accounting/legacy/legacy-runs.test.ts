@@ -20,8 +20,7 @@ import { round } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../../fixtures/local-database";
 import { postSalesInvoice } from "../../../../app/modules/invoicing/invoicing.service";
 import { postShipment } from "../../../../app/modules/inventory/inventory.service";
 import { activateAccounting } from "../../../../app/modules/accounting/accounting.service";
@@ -35,9 +34,8 @@ import {
   USER,
   unwrap
 } from "../../fixtures/activation";
-import { invokePosting } from "../../../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
-
 databaseTest(
   "enabling accounting writes legacy depreciation and scrap journals again, and the opening takes out the depreciation after the cutover",
   async () => {
@@ -688,11 +686,11 @@ async function shipAsset(f: Fixture, assetId: string) {
       .execute();
   });
   const shipment = unwrap(
-    await create(f.ctx, {
-      type: "shipmentFromSalesOrder",
-      salesOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "shipmentFromSalesOrder",
+                  salesOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId: shipment.id }, postShipment));
 }

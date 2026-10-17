@@ -20,26 +20,20 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { type Insertable, sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import create from "@carbon/server-functions/create";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/local-database-test-fixture";
-import { postPayment } from "../../../app/modules/invoicing/invoicing.service";
-import { postPurchaseInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { FILLER_ACCOUNT_DEFAULTS } from "@carbon/server-functions/post-reimbursement/post-reimbursement-test-fixture";
-import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
-import { postShipment } from "../../../app/modules/inventory/inventory.service";
-import { ServerFnContext } from "@carbon/server-functions/server-fn-context";
+} from "../fixtures/local-database";
+import { postPayment, postPurchaseInvoice, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
+import { postReceipt, postShipment } from "../../../app/modules/inventory/inventory.service";
+import { FILLER_ACCOUNT_DEFAULTS } from "../fixtures/post-reimbursement";
 import {
   insertEmployee,
   payOutReimbursement,
   postReimbursementOf
 } from "../fixtures/activation";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 const USER = "system";
 const TIME_ZONE = "America/New_York";
 
@@ -219,7 +213,7 @@ async function cutoverReadsFixture() {
       .execute();
   });
 
-  const ctx = ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = { db, companyId, userId: USER };
   const today = datetime.today(TIME_ZONE);
 
   return {
@@ -337,11 +331,11 @@ async function receiveTenParts(f: Fixture): Promise<string> {
       .executeTakeFirstOrThrow();
   });
   const receipt = unwrap(
-    await create(f.ctx, {
-      type: "receiptFromPurchaseOrder",
-      purchaseOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "receiptFromPurchaseOrder",
+                  purchaseOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt));
   return purchaseOrderLine.id;
@@ -441,11 +435,11 @@ async function shipFourParts(f: Fixture) {
       .execute();
   });
   const shipment = unwrap(
-    await create(f.ctx, {
-      type: "shipmentFromSalesOrder",
-      salesOrderId,
-      locationId: f.locationId
-    })
+    await invokeCreate(handlesOf(f.ctx), {
+                  type: "shipmentFromSalesOrder",
+                  salesOrderId,
+                  locationId: f.locationId
+                })
   );
   unwrap(await invokePosting(handlesOf(f.ctx), "post-shipment", { type: "post", shipmentId: shipment.id }, postShipment));
 }

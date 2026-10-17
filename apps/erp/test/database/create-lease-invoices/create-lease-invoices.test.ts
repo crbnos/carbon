@@ -4,10 +4,9 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { postLeaseAction as postLease } from "../../../app/modules/purchasing/purchasing.service";
-import { leaseFixture } from "@carbon/server-functions/post-lease/lease-test-fixture";
-import { createLeaseInvoices } from "../../../app/modules/purchasing/purchasing.service";
+import { databaseTest } from "../fixtures/local-database";
+import { postLeaseAction as postLease, createLeaseInvoices } from "../../../app/modules/purchasing/purchasing.service";
+import { leaseFixture } from "../fixtures/lease";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 

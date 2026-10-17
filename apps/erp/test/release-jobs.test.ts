@@ -21,9 +21,39 @@ const { invoke, events } = vi.hoisted(() => ({
   // What reached the outside world, in order.
   events: [] as string[]
 }));
-vi.mock("@carbon/server-functions", () => ({
-  serverFns: { system: () => ({ invoke }) }
-}));
+vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("../app/modules/shared/shared.service")
+    >();
+  // The postings the server functions package ran are the boundary; every
+  // other posting runs its (mocked) body as before.
+  const stubbed = new Set([
+    "issue",
+    "create",
+    "batch-operations",
+    "post-inventory-adjustment",
+    "post-maintenance-event",
+    "post-picking",
+    "post-production-event",
+    "recalculate",
+    "reschedule",
+    "trigger-rework"
+  ]);
+  return {
+    ...actual,
+    invokePosting: ((from: never, name: string, input: never, ...rest: never[]) =>
+      stubbed.has(name)
+        ? invoke(name, input)
+        : (actual.invokePosting as (...args: unknown[]) => unknown)(
+            from,
+            name,
+            input,
+            ...rest
+          )) as typeof actual.invokePosting,
+    invokeCreate: (_from: unknown, input: unknown) => invoke("create", input)
+  };
+});
 vi.mock("@carbon/planning", () => ({
   runLocationSchedule: vi.fn(async () => {
     events.push("schedule");

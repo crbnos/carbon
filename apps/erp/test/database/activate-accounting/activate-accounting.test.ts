@@ -16,10 +16,9 @@ import {
 import { REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION } from "@carbon/database/accounting-posting";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import postInventoryAdjustment from "@carbon/server-functions/post-inventory-adjustment";
-import { postPayment } from "../../../app/modules/invoicing/invoicing.service";
-import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
+import { databaseTest } from "../fixtures/local-database";
+import { postInventoryAdjustment } from "../../../app/modules/inventory/inventory.service";
+import { postPayment, postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
 import { activateAccounting } from "../../../app/modules/accounting/accounting.service";
 import {
   activationFixture,
@@ -39,7 +38,6 @@ import {
 } from "../fixtures/activation";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 databaseTest(
   "enabling accounting splits the Provisional ledger at the cutover and opens it with one journal",
   async () => {
@@ -67,13 +65,13 @@ databaseTest(
         .returning("id")
         .executeTakeFirstOrThrow();
       unwrap(
-        await postInventoryAdjustment(f.ctx, {
-          adjustmentType: "Scrap",
-          itemId: f.partId,
-          locationId: f.locationId,
-          quantity: 1,
-          scrapReasonId: scrapReason.id
-        })
+        await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
+                    adjustmentType: "Scrap",
+                    itemId: f.partId,
+                    locationId: f.locationId,
+                    quantity: 1,
+                    scrapReasonId: scrapReason.id
+                  }, postInventoryAdjustment)
       );
       // And invoice 15 of shipping while the shipping revenue default is
       // empty: the shipping line stands in on retained earnings.

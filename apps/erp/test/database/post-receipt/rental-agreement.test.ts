@@ -9,14 +9,12 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Insertable, sql } from "kysely";
 import { expect } from "vitest";
-import create from "@carbon/server-functions/create";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { FILLER_ACCOUNT_DEFAULTS } from "@carbon/server-functions/post-reimbursement/post-reimbursement-test-fixture";
-import { rentalFixture } from "@carbon/server-functions/post-rental-agreement/rental-test-fixture";
+import { databaseTest } from "../fixtures/local-database";
+import { FILLER_ACCOUNT_DEFAULTS } from "../fixtures/post-reimbursement";
+import { rentalFixture } from "../fixtures/rental";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
-
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
 async function putOnRent(f: Fixture, lineIds: string[]) {
@@ -29,10 +27,10 @@ async function putOnRent(f: Fixture, lineIds: string[]) {
 }
 
 async function draftReceipt(f: Fixture): Promise<string> {
-  const result = await create(f.ctx, {
-    type: "receiptFromRentalAgreement",
-    rentalAgreementId: f.agreementId
-  });
+  const result = await invokeCreate(handlesOf(f.ctx), {
+        type: "receiptFromRentalAgreement",
+        rentalAgreementId: f.agreementId
+      });
   if (result.error) throw result.error;
   return result.data.id;
 }

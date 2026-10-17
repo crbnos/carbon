@@ -16,15 +16,10 @@ import {
 } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import issue from "@carbon/server-functions/issue";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
-import { postCharge } from "../../../../app/modules/accounting/accounting.service";
-import postInventoryAdjustment from "@carbon/server-functions/post-inventory-adjustment";
-import { postMemo } from "../../../../app/modules/invoicing/invoicing.service";
-import { postPayment } from "../../../../app/modules/invoicing/invoicing.service";
-import { postPurchaseInvoice } from "../../../../app/modules/invoicing/invoicing.service";
-import { postSalesInvoice } from "../../../../app/modules/invoicing/invoicing.service";
-import { activateAccounting } from "../../../../app/modules/accounting/accounting.service";
+import { issueMaterial as issue, postInventoryAdjustment } from "../../../../app/modules/inventory/inventory.service";
+import { databaseTest } from "../../fixtures/local-database";
+import { postCharge, activateAccounting } from "../../../../app/modules/accounting/accounting.service";
+import { postMemo, postPayment, postPurchaseInvoice, postSalesInvoice } from "../../../../app/modules/invoicing/invoicing.service";
 import {
   activationFixture,
   deleteJournals,
@@ -47,7 +42,6 @@ import {
 } from "../../fixtures/activation";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
-
 type SourceType = Database["public"]["Enums"]["journalEntrySourceType"];
 
 const INVOICE_SOURCES: SourceType[] = ["Sales Invoice", "Purchase Invoice"];
@@ -417,23 +411,23 @@ databaseTest(
         unitPrice: 12
       });
       unwrap(
-        await postInventoryAdjustment(f.ctx, {
-          adjustmentType: "Scrap",
-          itemId: f.partId,
-          locationId: f.locationId,
-          quantity: 1,
-          scrapReasonId: scrapReason.id,
-          comment: "Dropped"
-        })
+        await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
+                    adjustmentType: "Scrap",
+                    itemId: f.partId,
+                    locationId: f.locationId,
+                    quantity: 1,
+                    scrapReasonId: scrapReason.id,
+                    comment: "Dropped"
+                  }, postInventoryAdjustment)
       );
       unwrap(
-        await postInventoryAdjustment(f.ctx, {
-          adjustmentType: "Positive Adjmt.",
-          itemId: f.partId,
-          locationId: f.locationId,
-          quantity: 2,
-          comment: "Found"
-        })
+        await invokePosting(handlesOf(f.ctx), "post-inventory-adjustment", {
+                    adjustmentType: "Positive Adjmt.",
+                    itemId: f.partId,
+                    locationId: f.locationId,
+                    quantity: 2,
+                    comment: "Found"
+                  }, postInventoryAdjustment)
       );
       await shipFiveParts(f);
 
@@ -754,14 +748,14 @@ databaseTest(
       await moveBeforeCutover(f);
       const job = await jobFixture(f);
       unwrap(
-        await issue(f.ctx, {
-          type: "partToOperation",
-          id: job.operationId,
-          itemId: f.partId,
-          materialId: job.materialId,
-          quantity: 2,
-          adjustmentType: "Negative Adjmt."
-        })
+        await invokePosting(handlesOf(f.ctx), "issue", {
+                    type: "partToOperation",
+                    id: job.operationId,
+                    itemId: f.partId,
+                    materialId: job.materialId,
+                    quantity: 2,
+                    adjustmentType: "Negative Adjmt."
+                  }, issue)
       );
       await sql`SELECT complete_job_to_inventory(${job.jobId}, ${1}::numeric, ${null}, ${f.locationId}, ${f.companyId}, ${USER})`.execute(
         f.db

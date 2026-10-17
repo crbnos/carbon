@@ -18,13 +18,46 @@ const { invoke, trigger } = vi.hoisted(() => ({
   // Inngest: scheduler notices, notifications, maintenance generation.
   trigger: vi.fn()
 }));
-vi.mock("@carbon/server-functions", () => ({
-  serverFns: { system: () => ({ invoke }) }
-}));
+vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("../app/modules/shared/shared.service")
+    >();
+  // The postings the server functions package ran are the boundary; every
+  // other posting runs its (mocked) body as before.
+  const stubbed = new Set([
+    "issue",
+    "create",
+    "batch-operations",
+    "post-inventory-adjustment",
+    "post-maintenance-event",
+    "post-picking",
+    "post-production-event",
+    "recalculate",
+    "reschedule",
+    "trigger-rework"
+  ]);
+  return {
+    ...actual,
+    invokePosting: ((from: never, name: string, input: never, ...rest: never[]) =>
+      stubbed.has(name)
+        ? invoke(name, input)
+        : (actual.invokePosting as (...args: unknown[]) => unknown)(
+            from,
+            name,
+            input,
+            ...rest
+          )) as typeof actual.invokePosting,
+    invokeCreate: (_from: unknown, input: unknown) => invoke("create", input)
+  };
+});
 vi.mock("@carbon/jobs", () => ({ trigger }));
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
+// Load the service first: shared.service imports it, and a module first loaded
+// while shared.service's mock is being built binds the unmocked one.
+await import("../app/modules/resources/resources.service");
 const {
   createMaintenanceEvent,
   createProcess,

@@ -12,7 +12,7 @@ import { getCutoverOpenItems } from "@carbon/database/accounting-cutover-reads";
 import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { expect } from "vitest";
-import { databaseTest } from "@carbon/server-functions/local-database-test-fixture";
+import { databaseTest } from "../../fixtures/local-database";
 import { activationFixture, USER } from "../../fixtures/activation";
 
 databaseTest(

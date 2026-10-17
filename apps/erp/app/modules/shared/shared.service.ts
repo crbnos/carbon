@@ -2,13 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { NotFoundError, ServerFnError } from "@carbon/api/errors";
 import {
+  ForbiddenError,
+  InvalidInputError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
+import {
+  hasPermissions,
   type PermissionRule,
   type Permissions,
+  permissionsFromClaims,
   type RequiredPermissions,
   resolvePermissions
 } from "@carbon/api/permissions";
+import {
+  type CreateInput,
+  type CreateResult,
+  type CreateResultFor,
+  createInput
+} from "@carbon/api/postings";
 import type { PostingHandles } from "@carbon/api/postings.server";
 import {
   type Actor,
@@ -30,27 +43,60 @@ import {
   type AnyPostgresClient,
   type Database,
   getLocationOwnTimeZone,
+  isKysely,
   type Json,
   getCompanyTimeZone as resolveCompanyTimeZone,
   type Tables
 } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import type {
+  KyselyDatabase as DB,
+  Kysely,
+  KyselyDatabase,
+  KyselyTx
+} from "@carbon/database/client";
+import {
+  type ContractPosition,
+  EMPTY_POSITION
+} from "@carbon/database/contract-position";
+import {
+  isCostLayer,
+  orderLayersForConsumption,
+  relieveLayers
+} from "@carbon/database/cost-relief";
+import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import {
   assertPostingStatusUnchanged,
-  journalPostingStatus
+  journalPostingStatus,
+  type OptionalDefaultRole,
+  readAccountingCutoverDate,
+  resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
+import type { AccountType } from "@carbon/database/ledger";
+import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
+import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import type * as rows from "@carbon/database/rows";
+import type * as rowsModule from "@carbon/database/rows";
 import {
+  contains,
   inOrder,
   insertRows,
   many,
   maybeSingle,
+  neq,
   rpcValue,
-  single
+  single,
+  updateRows
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
+import {
+  type CurrencyRate,
+  convertUnitPrice,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import {
   ImplementationHubEmail,
   SalesOrderEmail
@@ -61,7 +107,11 @@ import {
   actionTaskParentId
 } from "@carbon/ee/action-task-entity";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import { ERP_URL, SESSION_SECRET } from "@carbon/env";
+import {
+  ERP_URL,
+  SESSION_SECRET,
+  SUPABASE_SERVICE_ROLE_KEY
+} from "@carbon/env";
 import {
   getContentType,
   getFileExtension,
@@ -76,40 +126,33 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { Signals } from "@carbon/onboarding";
 import { detectImplementationSignals } from "@carbon/onboarding/server";
 import type { PrinterRoute } from "@carbon/printing";
-import { serverFns } from "@carbon/server-functions";
-import { getCurrentAccountingPeriod } from "@carbon/server-functions/lib/get-accounting-period";
-import { getDefaultPostingGroup } from "@carbon/server-functions/lib/get-posting-group";
+import type { SalesPostingAccount } from "@carbon/utils";
 import {
-  buildAdjustmentJournalLines,
-  buildCostLedgerRow,
-  buildItemLedgerRow,
-  buildJournalLineDimensions,
-  carriesAdjustmentValue,
-  planStockRows
-} from "@carbon/server-functions/lib/plan-adjustment";
-import {
-  createAdjustmentJournal,
-  loadOpenCostLayers
-} from "@carbon/server-functions/lib/post-adjustment";
-import { getSupplierPartPriceConverter } from "@carbon/server-functions/lib/supplier-part-currency";
-import {
-  authorize,
-  ServerFnContext
-} from "@carbon/server-functions/server-fn-context";
-import {
+  assertBalanced,
   async,
+  credit,
   datetime,
+  debit,
   deriveRate,
+  EPSILON,
+  generateLeasePayments,
   getReadableIdWithRevision,
   getRemainingQuantityToInvoice,
+  type LeasePaymentRowInput,
   redirect,
+  remainingLeasePayments,
+  resolveTrackedEntityBins,
   round,
+  settleQuantity,
+  type TrackedEntityBin,
   unchecked
 } from "@carbon/utils";
 import {
   type CalendarDate,
+  endOfMonth,
   parseAbsolute,
   parseDate,
+  startOfMonth,
   startOfWeek
 } from "@internationalized/date";
 import { render, renderAsync } from "@react-email/components";
@@ -118,6 +161,7 @@ import type {
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
+import type { Selectable } from "kysely";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { createCookieSessionStorage, data } from "react-router";
@@ -1766,14 +1810,14 @@ type PostingOptionsFor<H, I> = H extends { client: SupabaseClient<Database> }
   : [options?: PostingOptions<I>];
 
 /**
- * Run a posting body (a server function ported from `@carbon/server-functions`)
- * and read it as `{ data, error }`, as `serverFns…invoke` returned it.
+ * Run a posting body and read it as `{ data, error }`, with the
+ * `ServerFnError` it refused with.
  *
  * - From an operation, pass its `ctx` and no `as`: its own gate already
  *   checked the caller.
  * - From handles that carry the caller's `client`, `as` is required (the
  *   body's permission rule, or what the input requires): the caller must hold
- *   it first, as `serverFns.as` checked it — a user's claims, an API key's
+ *   it first — a user's claims, an API key's
  *   scopes, nothing for the service role. The body then runs as the system
  *   on the user's behalf, over that same `db` (a transaction stays one).
  * - From handles without a client, the body runs as the system.
@@ -1829,6 +1873,16 @@ export async function invokePostingOrThrow<I, R>(
   return result.data;
 }
 
+/** {@link invokePosting} for `create`, with the result its document type returns. */
+export function invokeCreate<I extends CreateInput>(
+  from: ServiceContext | PostingHandles,
+  input: I
+): Promise<PostingResult<CreateResultFor<I["type"]>>> {
+  return runPosting(from, "create", input, createDocument, {}) as Promise<
+    PostingResult<CreateResultFor<I["type"]>>
+  >;
+}
+
 async function runPosting<I, R>(
   from: ServiceContext | PostingHandles,
   name: string,
@@ -1851,13 +1905,10 @@ async function runPosting<I, R>(
     name,
     async (span) => {
       if (handles.client && as) {
-        const caller = await ServerFnContext.fromClient(handles.client, {
-          db: handles.db,
-          companyId: handles.companyId,
-          userId: handles.userId
-        });
-        span.setAttribute("carbon.function.actor", caller.actor);
-        await authorize(
+        const caller = postingCaller(handles.client, handles.userId);
+        span.setAttribute("carbon.function.actor", caller.type);
+        await authorizePostingCaller(
+          handles,
           caller,
           typeof as === "function" ? as(input) : resolvePermissions(as, input)
         );
@@ -10034,12 +10085,6349 @@ export function fromServerFn(
               : "internal";
   return ctx.error(category, error.message || fallback, error);
 }
+const createDocumentLogger = getLogger("server-functions", "create");
 
-/** The server functions, run as the system for this call's company and user. */
-export function systemServerFns(ctx: ServiceContext) {
-  return serverFns.system({
-    db: ctx.asSystem.pg,
-    companyId: ctx.company.id,
-    userId: ctx.auditUserId
+// Resolves a fallback location when a caller omits locationId, so creating a
+// blank shipment degrades gracefully instead of failing payload validation.
+// Prefers the creating user's assigned employeeJob location, then the company's
+// earliest-created location. Only safe where locationId does not scope which
+// source-document lines are shipped (i.e. shipmentDefault).
+async function getFallbackLocationId(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string
+): Promise<string | null> {
+  const employeeJob = await maybeSingle(
+    db,
+    "employeeJob",
+    { id: userId, companyId },
+    { columns: ["locationId"] }
+  );
+  if (employeeJob.data?.locationId) return employeeJob.data.locationId;
+
+  const location = await maybeSingle(
+    db,
+    "location",
+    { companyId },
+    { columns: ["id"], orderBy: ["createdAt"], limit: 1 }
+  );
+  return location.data?.id ?? null;
+}
+
+export const createDocumentPermission = {
+  by: "type",
+  rules: {
+    nonConformanceTasks: { update: "quality" },
+    purchaseOrderFromJob: { create: ["purchasing", "production"] },
+    receiptDefault: { create: "inventory" },
+    receiptFromPurchaseOrder: { create: "inventory" },
+    receiptFromInboundTransfer: { create: "inventory" },
+    receiptFromSalesReturnOrder: { create: "inventory" },
+    receiptFromWarehouseTransfer: { create: "inventory" },
+    receiptLineSplit: { create: "inventory" },
+    shipmentDefault: { create: "inventory" },
+    shipmentFromPurchaseOrder: { create: "inventory" },
+    shipmentFromWarehouseTransfer: { create: "inventory" },
+    shipmentFromPurchaseReturnOrder: { create: "inventory" },
+    shipmentFromSalesOrder: { create: "inventory" },
+    shipmentFromSalesReturnOrder: { create: "inventory" },
+    shipmentFromSalesOrderLine: { create: "inventory" },
+    shipmentLineSplit: { create: "inventory" },
+    shipmentFromRentalAgreement: { create: "inventory" },
+    receiptFromRentalAgreement: { create: "inventory" },
+    journalEntry: { create: "accounting" }
+  }
+} satisfies PermissionRule<z.output<typeof createInput>>;
+
+/** Creates receipts, shipments, NCR tasks, purchase orders and journal entries, per `type`. */
+export async function createDocument(
+  ctx: ServiceContext,
+  raw: CreateInput
+): Promise<CreateResult> {
+  const input = createInput.parse(raw);
+
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const payload = { ...input, companyId, userId };
+  const { type } = payload;
+
+  // Every receipt/shipment type writes the body's locationId onto the new
+  // document (and its lines); the FK alone accepts another company's location.
+  await assertCompanyRecords(
+    db,
+    "location",
+    ["locationId" in payload ? payload.locationId : undefined],
+    companyId,
+    "Location"
+  );
+
+  switch (payload.type) {
+    case "nonConformanceTasks": {
+      const { id } = payload;
+
+      createDocumentLogger.info({ type, id });
+
+      const [nonConformance, actionTasks, approvalTasks, existingReviewers] =
+        await inOrder([
+          () => maybeSingle(db, "nonConformance", { id, companyId }),
+          () =>
+            many(db, "nonConformanceActionTask", {
+              nonConformanceId: id,
+              companyId
+            }),
+          () =>
+            many(db, "nonConformanceApprovalTask", {
+              nonConformanceId: id,
+              companyId
+            }),
+          () =>
+            many(db, "nonConformanceReviewer", {
+              nonConformanceId: id,
+              companyId
+            })
+        ]);
+
+      if (nonConformance.error) throw new Error(nonConformance.error.message);
+      if (!nonConformance.data)
+        throw new NotFoundError("Non-conformance not found");
+
+      const workflow = nonConformance.data?.nonConformanceWorkflowId
+        ? await maybeSingle(db, "nonConformanceWorkflow", {
+            id: nonConformance.data?.nonConformanceWorkflowId,
+            companyId
+          })
+        : null;
+
+      if (workflow?.error) throw new Error(workflow.error.message);
+
+      const currentActionTasks =
+        actionTasks.data?.reduce<Record<string, string>>((acc, d) => {
+          if (d.actionTypeId && !acc[d.actionTypeId]) {
+            acc[d.actionTypeId] = d.id;
+          }
+          return acc;
+        }, {}) ?? {};
+
+      const currentApprovalTasks =
+        approvalTasks.data?.reduce<Record<string, string>>((acc, d) => {
+          if (d.approvalType && !acc[d.approvalType]) {
+            acc[d.approvalType] = d.id;
+          }
+          return acc;
+        }, {}) ?? {};
+
+      const actionTasksToDelete: string[] = [];
+      const approvalTasksToDelete: string[] = [];
+      const reviewersToDelete: string[] = [];
+
+      Object.keys(currentActionTasks).forEach((actionTypeId) => {
+        if (
+          !(nonConformance.data?.requiredActionIds ?? []).some(
+            (d) => d === actionTypeId
+          )
+        ) {
+          actionTasksToDelete.push(currentActionTasks[actionTypeId]!);
+        }
+      });
+
+      Object.keys(currentApprovalTasks).forEach((approvalType) => {
+        if (
+          !(nonConformance.data?.approvalRequirements ?? []).some(
+            (d) => d === approvalType
+          )
+        ) {
+          approvalTasksToDelete.push(currentApprovalTasks[approvalType]!);
+        }
+      });
+
+      const actionTaskInserts: Database["public"]["Tables"]["nonConformanceActionTask"]["Insert"][] =
+        [];
+      const approvalTaskInserts: Database["public"]["Tables"]["nonConformanceApprovalTask"]["Insert"][] =
+        [];
+
+      const reviewerInserts: Database["public"]["Tables"]["nonConformanceReviewer"]["Insert"][] =
+        [];
+
+      nonConformance.data?.requiredActionIds?.forEach((actionTypeId, index) => {
+        if (!currentActionTasks[actionTypeId]) {
+          actionTaskInserts.push({
+            nonConformanceId: id,
+            actionTypeId,
+            sortOrder: index + 1,
+            companyId,
+            createdBy: userId
+          });
+        }
+      });
+
+      nonConformance.data?.approvalRequirements?.forEach((approvalType) => {
+        if (!currentApprovalTasks[approvalType]) {
+          approvalTaskInserts.push({
+            nonConformanceId: id,
+            approvalType,
+            companyId,
+            createdBy: userId
+          });
+        }
+      });
+
+      // Check if MRB approval is required
+      const hasMRBApproval =
+        Array.isArray(nonConformance.data?.approvalRequirements) &&
+        nonConformance.data?.approvalRequirements.includes("MRB");
+
+      const hasExistingMRBTask =
+        Object.keys(currentApprovalTasks).includes("MRB");
+      const hasExistingReviewers = (existingReviewers.data?.length ?? 0) > 0;
+
+      // If MRB is no longer required but we have existing reviewers, delete them
+      if (!hasMRBApproval && hasExistingReviewers) {
+        existingReviewers.data?.forEach((reviewer) => {
+          reviewersToDelete.push(reviewer.id);
+        });
+      }
+      // Only add reviewers if MRB is required and either:
+      // 1. MRB task is newly added (not in currentApprovalTasks)
+      // 2. There are no existing reviewers
+      else if (
+        hasMRBApproval &&
+        (!hasExistingMRBTask || !hasExistingReviewers)
+      ) {
+        reviewerInserts.push({
+          nonConformanceId: id,
+          title: "Engineering",
+          companyId,
+          createdBy: userId
+        });
+
+        reviewerInserts.push({
+          nonConformanceId: id,
+          title: "Quality",
+          companyId,
+          createdBy: userId
+        });
+      }
+
+      await db.transaction().execute(async (trx) => {
+        if (
+          typeof nonConformance.data?.content === "object" &&
+          // @ts-ignore -- content is json
+          Object.keys(nonConformance.data?.content ?? {}).length === 0
+        ) {
+          const contentFromWorkflow =
+            (workflow?.data?.content as { content?: unknown[] } | null)
+              ?.content ?? [];
+          const insertedContent = {
+            type: "doc",
+            content: contentFromWorkflow
+          };
+
+          if (nonConformance.data?.description) {
+            insertedContent.content.unshift({
+              type: "paragraph",
+              content: [
+                { type: "text", text: nonConformance.data?.description }
+              ]
+            });
+          }
+
+          createDocumentLogger.debug({
+            description: nonConformance.data?.description,
+            insertedContent
+          });
+
+          if (insertedContent.content.length > 0) {
+            await trx
+              .updateTable("nonConformance")
+              .set({
+                content: JSON.stringify(insertedContent)
+              })
+              .where("id", "=", id)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+        }
+
+        if (actionTaskInserts.length > 0) {
+          await trx
+            .insertInto("nonConformanceActionTask")
+            .values(actionTaskInserts)
+            .execute();
+        }
+        if (approvalTaskInserts.length > 0) {
+          await trx
+            .insertInto("nonConformanceApprovalTask")
+            .values(approvalTaskInserts)
+            .execute();
+        }
+
+        if (actionTasksToDelete.length > 0) {
+          await trx
+            .deleteFrom("nonConformanceActionTask")
+            .where("id", "in", actionTasksToDelete)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+        if (approvalTasksToDelete.length > 0) {
+          await trx
+            .deleteFrom("nonConformanceApprovalTask")
+            .where("id", "in", approvalTasksToDelete)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+
+        if (reviewerInserts.length > 0) {
+          await trx
+            .insertInto("nonConformanceReviewer")
+            .values(reviewerInserts)
+            .execute();
+        }
+
+        if (reviewersToDelete.length > 0) {
+          await trx
+            .deleteFrom("nonConformanceReviewer")
+            .where("id", "in", reviewersToDelete)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+      });
+      return { success: true };
+    }
+
+    case "purchaseOrderFromJob": {
+      const { jobId, purchaseOrdersBySupplierId } = payload;
+      // The PO each supplier's lines landed on (created or chosen), so a caller
+      // releasing several jobs can put them on one PO per supplier.
+      const purchaseOrderIdsBySupplierId: Record<string, string> = {};
+
+      createDocumentLogger.info({ type, jobId, companyId, userId });
+      const [job, jobOperations] = await inOrder([
+        () => maybeSingle(db, "job", { id: jobId, companyId }),
+        () =>
+          many<
+            "jobOperation",
+            rowsModule.Tables["jobOperation"]["Row"] & {
+              jobMakeMethod: Pick<
+                rowsModule.Tables["jobMakeMethod"]["Row"],
+                "itemId"
+              > | null;
+            }
+          >(
+            db,
+            "jobOperation",
+            { jobId, companyId },
+            {
+              embed: {
+                jobMakeMethod: {
+                  table: "jobMakeMethod",
+                  via: "jobMakeMethodId",
+                  columns: ["itemId"]
+                }
+              }
+            }
+          )
+      ]);
+
+      if (job.error) throw new Error(job.error.message);
+      if (!job.data) throw new NotFoundError("Job not found");
+      if (jobOperations.error) throw new Error(jobOperations.error.message);
+
+      // Caller-chosen existing POs must belong to this company — lines are
+      // appended to them by id below.
+      await assertCompanyRecords(
+        db,
+        "purchaseOrder",
+        Object.values(
+          purchaseOrdersBySupplierId as Record<string, string>
+        ).filter((poId) => poId && poId !== "new"),
+        companyId,
+        "Purchase order"
+      );
+
+      const outsideOperations = jobOperations.data?.filter(
+        (d) => d.operationType === "Outside Processing"
+      );
+
+      if (outsideOperations.length > 0) {
+        const supplierProcessIds = new Set(
+          outsideOperations
+            .map((d) => d.operationSupplierProcessId)
+            .filter(Boolean)
+        );
+        const outsideProcessIds = new Set(
+          outsideOperations.map((d) => d.processId).filter(Boolean)
+        );
+        const [
+          supplierProcesses,
+          supplierProcessesByProcess,
+          existingPurchaseOrderLines
+        ] = await inOrder([
+          () =>
+            supplierProcessIds.size > 0
+              ? many(db, "supplierProcess", {
+                  id: Array.from(supplierProcessIds) as string[],
+                  companyId
+                })
+              : Promise.resolve({ data: [], error: null }),
+          () =>
+            outsideProcessIds.size > 0
+              ? many(db, "supplierProcess", {
+                  processId: Array.from(outsideProcessIds),
+                  companyId
+                })
+              : Promise.resolve({ data: [], error: null }),
+          () =>
+            many(db, "purchaseOrderLine", {
+              jobId,
+              companyId,
+              jobOperationId: outsideOperations.map((d) => d.id)
+            })
+        ]);
+
+        if (supplierProcesses.error)
+          throw new Error(supplierProcesses.error.message);
+        if (supplierProcessesByProcess.error)
+          throw new Error(supplierProcessesByProcess.error.message);
+
+        // Resolve an operation's supplier process: its own, or — when it has none
+        // — the sole supplier configured for its process (a process with exactly
+        // one supplier is unambiguous). Mirrors the release modal's resolution so
+        // an operation the modal counted as "has a supplier" actually gets a PO.
+        const allSupplierProcesses = [
+          ...(supplierProcesses.data ?? []),
+          ...(supplierProcessesByProcess.data ?? [])
+        ];
+        const supplierProcessById = new Map(
+          allSupplierProcesses.map((sp) => [sp.id, sp])
+        );
+        const supplierProcessesByProcessId = new Map<
+          string,
+          typeof allSupplierProcesses
+        >();
+        for (const sp of supplierProcessesByProcess.data ?? []) {
+          const list = supplierProcessesByProcessId.get(sp.processId) ?? [];
+          list.push(sp);
+          supplierProcessesByProcessId.set(sp.processId, list);
+        }
+        const resolveSupplierProcess = (oo: {
+          operationSupplierProcessId: string | null;
+          processId: string | null;
+        }) => {
+          if (oo.operationSupplierProcessId) {
+            return supplierProcessById.get(oo.operationSupplierProcessId);
+          }
+          const candidates = oo.processId
+            ? (supplierProcessesByProcessId.get(oo.processId) ?? [])
+            : [];
+          return candidates.length === 1 ? candidates[0] : undefined;
+        };
+
+        const outsideOperationsBySupplierId = outsideOperations.reduce<
+          Record<
+            string,
+            (Database["public"]["Tables"]["jobOperation"]["Row"] & {
+              jobMakeMethod: { itemId: string } | null;
+            })[]
+          >
+        >((acc, oo) => {
+          const supplierProcess = resolveSupplierProcess(oo);
+          if (
+            existingPurchaseOrderLines.data?.find(
+              (d) => d.jobOperationId === oo.id
+            )
+          ) {
+            return acc;
+          }
+          if (!supplierProcess) return acc;
+          if (!acc[supplierProcess.supplierId]) {
+            acc[supplierProcess.supplierId] = [];
+          }
+          acc[supplierProcess.supplierId]!.push(oo);
+          return acc;
+        }, {});
+
+        const supplierIds = new Set(Object.keys(outsideOperationsBySupplierId));
+        const itemIds = new Set(
+          outsideOperations.map((d) => d.jobMakeMethod?.itemId).filter(Boolean)
+        );
+
+        const [suppliers, supplierPayments, supplierShipping, items] =
+          await inOrder([
+            () =>
+              many(db, "supplier", {
+                id: Array.from(supplierIds),
+                companyId
+              }),
+            () =>
+              many(db, "supplierPayment", {
+                supplierId: Array.from(supplierIds),
+                companyId
+              }),
+            () =>
+              many(db, "supplierShipping", {
+                supplierId: Array.from(supplierIds),
+                companyId
+              }),
+            () =>
+              many(db, "item", {
+                id: Array.from(itemIds) as string[],
+                companyId
+              })
+          ]);
+
+        if (suppliers.error) throw new Error(suppliers.error.message);
+        if (supplierPayments.error)
+          throw new Error(supplierPayments.error.message);
+        if (supplierShipping.error)
+          throw new Error(supplierShipping.error.message);
+
+        // A supplier with no configured currency means "the company's own
+        // base currency" (rate 1 by definition) -- never a hardcoded USD,
+        // which is only correct for USD-base companies.
+        const companyRecord = await single(
+          db,
+          "company",
+          { id: companyId },
+          { columns: ["baseCurrencyCode"] }
+        );
+        if (companyRecord.error) {
+          throw new Error(companyRecord.error.message);
+        }
+        const baseCurrencyCode = companyRecord.data.baseCurrencyCode;
+
+        const currencyCodes = new Set(
+          suppliers.data?.map((d) => d.currencyCode ?? baseCurrencyCode)
+        );
+
+        // get_exchange_rate raises on a missing rate -- a resolver error
+        // must fail the operation rather than default the rate.
+        const exchangeRates = await Promise.all(
+          Array.from(currencyCodes).map(async (currencyCode) => {
+            const exchangeRate = await rpcValue(db, "get_exchange_rate", {
+              p_company_id: companyId,
+              p_currency_code: currencyCode
+            });
+            if (exchangeRate.error) {
+              throw new Error(exchangeRate.error.message);
+            }
+            return {
+              currencyCode,
+              exchangeRate: Number(exchangeRate.data)
+            };
+          })
+        );
+
+        await db.transaction().execute(async (trx) => {
+          for await (const supplier of Object.keys(
+            outsideOperationsBySupplierId
+          )) {
+            const outsideOperations = outsideOperationsBySupplierId[supplier];
+
+            const payment = supplierPayments.data?.find(
+              (d) => d.supplierId === supplier
+            );
+            const shipping = supplierShipping.data?.find(
+              (d) => d.supplierId === supplier
+            );
+
+            const supplierCurrencyCode =
+              suppliers.data?.find((d) => d.id === supplier)?.currencyCode ??
+              baseCurrencyCode;
+            const exchangeRate = exchangeRates.find(
+              (d) => d.currencyCode === supplierCurrencyCode
+            )?.exchangeRate;
+            if (exchangeRate === undefined) {
+              throw new Error(
+                `No exchange rate resolved for currency ${supplierCurrencyCode}`
+              );
+            }
+
+            let purchaseOrderId =
+              purchaseOrdersBySupplierId[supplier] === "new"
+                ? undefined
+                : purchaseOrdersBySupplierId[supplier];
+
+            if (!purchaseOrderId) {
+              const supplierInteraction = await trx
+                .insertInto("supplierInteraction")
+                .values({
+                  companyId,
+                  supplierId: supplier
+                })
+                .returning(["id"])
+                .execute();
+
+              const supplierInteractionId = supplierInteraction?.[0]?.id;
+              const nextSequence = await getNextSequence(
+                trx,
+                "purchaseOrder",
+                companyId
+              );
+
+              if (!nextSequence) throw new Error("Failed to get next sequence");
+              if (!supplierInteractionId)
+                throw new Error("Failed to create supplier interaction");
+
+              const order = await trx
+                .insertInto("purchaseOrder")
+                .values({
+                  purchaseOrderId: nextSequence,
+                  status: "Draft",
+                  supplierId: supplier,
+                  jobId: jobId,
+                  jobReadableId: job.data?.jobId,
+                  companyId: companyId,
+                  createdBy: userId,
+                  purchaseOrderType: "Outside Processing",
+                  supplierInteractionId: supplierInteractionId,
+                  currencyCode: supplierCurrencyCode,
+                  exchangeRate,
+                  exchangeRateUpdatedAt: datetime.timestamp()
+                })
+                .returning(["id"])
+                .execute();
+
+              if (!order?.[0]?.id)
+                throw new Error("Failed to create purchase order");
+
+              purchaseOrderId = order[0].id;
+
+              // Create purchase order delivery and payment
+              const locationId = job.data?.locationId ?? null; // Default location
+              const shippingMethodId = shipping?.shippingMethodId;
+              const shippingTermId = shipping?.shippingTermId;
+
+              const paymentTermId = payment?.paymentTermId;
+              const invoiceSupplierId = payment?.invoiceSupplierId;
+              const invoiceSupplierContactId =
+                payment?.invoiceSupplierContactId;
+              const invoiceSupplierLocationId =
+                payment?.invoiceSupplierLocationId;
+
+              await Promise.all([
+                trx
+                  .insertInto("purchaseOrderDelivery")
+                  .values({
+                    id: purchaseOrderId,
+                    locationId,
+                    shippingMethodId,
+                    shippingTermId,
+                    companyId
+                  })
+                  .execute(),
+                trx
+                  .insertInto("purchaseOrderPayment")
+                  .values({
+                    id: purchaseOrderId,
+                    invoiceSupplierId,
+                    invoiceSupplierContactId,
+                    invoiceSupplierLocationId,
+                    paymentTermId,
+                    companyId
+                  })
+                  .execute()
+              ]);
+            }
+
+            purchaseOrderIdsBySupplierId[supplier] = purchaseOrderId;
+
+            const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
+              [];
+
+            // Create purchase order lines for each process
+            for await (const operation of outsideOperations!) {
+              // Get the item associated with the operation
+              const item = items.data?.find(
+                (d) => d.id === operation.jobMakeMethod?.itemId
+              );
+              const supplierProcess = resolveSupplierProcess(operation);
+
+              if (item && supplierProcess) {
+                const totalCostWithUnitPrice =
+                  (operation.operationUnitCost ?? 0) *
+                  (operation.operationQuantity ?? 0);
+                const totalCostWithMinimumCost =
+                  (operation.operationMinimumCost ?? 0) > totalCostWithUnitPrice
+                    ? (operation.operationMinimumCost ?? 0)
+                    : totalCostWithUnitPrice;
+
+                // Create purchase order line
+                purchaseOrderLineInserts.push({
+                  purchaseOrderId,
+                  purchaseOrderLineType: item.type,
+                  itemId: item.id,
+                  description: item.name || item.description,
+                  purchaseQuantity: operation.operationQuantity || 1,
+                  purchaseUnitOfMeasureCode: item.unitOfMeasureCode,
+                  inventoryUnitOfMeasureCode: item.unitOfMeasureCode,
+                  conversionFactor: 1,
+                  supplierUnitPrice:
+                    operation.operationQuantity &&
+                    operation.operationQuantity > 0
+                      ? totalCostWithMinimumCost / operation.operationQuantity
+                      : totalCostWithMinimumCost,
+                  locationId: job.data?.locationId,
+                  jobId: job.data?.id,
+                  jobOperationId: operation.id,
+                  companyId,
+                  createdBy: userId,
+                  exchangeRate
+                });
+              }
+            }
+
+            // Insert all purchase order lines
+            if (purchaseOrderLineInserts.length > 0) {
+              await trx
+                .insertInto("purchaseOrderLine")
+                .values(purchaseOrderLineInserts)
+                .execute();
+            }
+          }
+        });
+      }
+
+      return { success: true, purchaseOrderIdsBySupplierId };
+    }
+    case "receiptDefault": {
+      const { locationId } = payload;
+      let createdDocumentId;
+      createDocumentLogger.info({ type, locationId, companyId, userId });
+      const id = await db.transaction().execute(async (trx) => {
+        createdDocumentId = await getNextSequence(trx, "receipt", companyId);
+        const newReceipt = await trx
+          .insertInto("receipt")
+          .values({
+            receiptId: createdDocumentId,
+            companyId: companyId,
+            locationId: locationId,
+            createdBy: userId
+          })
+          .returning(["id", "receiptId"])
+          .execute();
+
+        createdDocumentId = newReceipt?.[0]?.id;
+        if (!createdDocumentId) throw new Error("Failed to create receipt");
+        return createdDocumentId;
+      });
+
+      return { id };
+    }
+    case "receiptFromPurchaseOrder": {
+      const {
+        purchaseOrderId,
+        receiptId: existingReceiptId,
+        locationId: userLocationId
+      } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        purchaseOrderId,
+        existingReceiptId,
+        userLocationId,
+        userId
+      });
+
+      const [purchaseOrder, purchaseOrderLines, fixedAssetPoLines, receipt] =
+        await inOrder([
+          () =>
+            single(db, "purchaseOrders", { companyId, id: purchaseOrderId }),
+          () =>
+            many(db, "purchaseOrderLine", {
+              companyId,
+              purchaseOrderId,
+              purchaseOrderLineType: [
+                "Part",
+                "Material",
+                "Tool",
+                "Fixture",
+                "Consumable"
+              ]
+            }),
+          () =>
+            many(
+              db,
+              "purchaseOrderLine",
+              {
+                companyId,
+                purchaseOrderId,
+                purchaseOrderLineType: "Fixed Asset"
+              },
+              {
+                columns: [
+                  "id",
+                  "purchaseOrderLineType",
+                  "assetId",
+                  "purchaseQuantity",
+                  "quantityReceived",
+                  "receivedComplete"
+                ]
+              }
+            ),
+          () =>
+            maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
+        ]);
+
+      if (!purchaseOrder.data)
+        throw new NotFoundError("Purchase order not found");
+      if (purchaseOrderLines.error)
+        throw new Error(purchaseOrderLines.error.message);
+
+      let locationId = purchaseOrder.data.locationId;
+      if (
+        purchaseOrderLines.data.some(
+          (d) => d.locationId !== locationId && d.locationId === userLocationId
+        )
+      ) {
+        locationId = userLocationId ?? null;
+      }
+
+      const items = await many(
+        db,
+        "item",
+        {
+          companyId,
+          id: purchaseOrderLines.data
+            .filter((d) => d.locationId === locationId)
+            .map((d) => d.itemId) as string[]
+        },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // Map (itemId, locationId) -> defaultStorageUnitId. Receipt lines
+      // fall back to the pickMethod-configured storage unit for their
+      // destination location when the purchase order line doesn't pin
+      // one explicitly. Scoped by locationId because a single item can
+      // be stocked across multiple locations with different defaults
+      // per location (that's why pickMethod exists).
+      const receiptItemIds = purchaseOrderLines.data
+        .filter((d): d is typeof d & { itemId: string } => !!d.itemId)
+        .map((d) => d.itemId);
+      const pickMethods = await many(
+        db,
+        "pickMethod",
+        { companyId, itemId: receiptItemIds },
+        { columns: ["itemId", "locationId", "defaultStorageUnitId"] }
+      );
+      const pickMethodKey = (itemId: string, loc: string | null) =>
+        `${itemId}::${loc ?? ""}`;
+      const defaultStorageUnitByItemLocation = new Map<string, string>();
+      for (const row of pickMethods.data ?? []) {
+        if (row.defaultStorageUnitId) {
+          defaultStorageUnitByItemLocation.set(
+            pickMethodKey(row.itemId, row.locationId),
+            row.defaultStorageUnitId
+          );
+        }
+      }
+
+      // A supplied id that is not this company's receipt is a 404, not a
+      // silent create-new.
+      if (existingReceiptId && !receipt.data)
+        throw new NotFoundError("Receipt not found");
+      const hasReceipt = !!receipt.data?.id;
+      const isOutsideOperation =
+        purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+      const previouslyReceivedQuantitiesByLine = (
+        purchaseOrderLines.data ?? []
+      ).reduce<Record<string, number>>((acc, d) => {
+        if (d.id) acc[d.id] = d.quantityReceived ?? 0;
+        return acc;
+      }, {});
+
+      const receiptLineItems = purchaseOrderLines.data.reduce<
+        ReceiptLineItem[]
+      >((acc, d) => {
+        if (
+          !d.itemId ||
+          !d.purchaseQuantity ||
+          d.receivedComplete ||
+          d.purchaseOrderLineType === "Service" ||
+          d.purchaseOrderLineType === "G/L Account"
+        ) {
+          return acc;
+        }
+
+        const unitPrice = d.unitPrice ?? 0;
+        const outstandingQuantity =
+          d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
+
+        const shippingAndTaxUnitCost =
+          ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
+          (d.purchaseQuantity * (d.conversionFactor ?? 1));
+
+        acc.push({
+          lineId: d.id,
+          companyId: companyId,
+          itemId: d.itemId,
+          orderQuantity: d.purchaseQuantity * (d.conversionFactor ?? 1),
+          outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
+          receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
+          conversionFactor: d.conversionFactor ?? 1,
+          requiresSerialTracking:
+            serializedItems.has(d.itemId) && !isOutsideOperation,
+          requiresBatchTracking:
+            batchItems.has(d.itemId) && !isOutsideOperation,
+          unitPrice:
+            unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
+          unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
+          locationId: d.locationId ?? null,
+          storageUnitId:
+            d.storageUnitId ??
+            defaultStorageUnitByItemLocation.get(
+              pickMethodKey(d.itemId!, d.locationId ?? null)
+            ) ??
+            null,
+          createdBy: userId ?? ""
+        });
+
+        return acc;
+      }, []);
+
+      const hasUnreceivedFaLines = (fixedAssetPoLines.data ?? []).some(
+        (d) => d.assetId && d.purchaseQuantity && !d.receivedComplete
+      );
+      if (receiptLineItems.length === 0 && !hasUnreceivedFaLines) {
+        throw new Error("No valid receipt line items found");
+      }
+
+      let receiptId = hasReceipt ? receipt.data?.id! : "";
+      let receiptIdReadable = hasReceipt ? receipt.data?.receiptId! : "";
+
+      await db.transaction().execute(async (trx) => {
+        if (hasReceipt) {
+          // update existing receipt
+          await trx
+            .updateTable("receipt")
+            .set({
+              sourceDocument: "Purchase Order",
+              sourceDocumentId: purchaseOrder.data.id,
+              sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              locationId: locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", receiptId)
+            .returning(["id", "receiptId"])
+            .where("companyId", "=", companyId)
+            .execute();
+          // delete existing receipt lines
+          await trx
+            .deleteFrom("receiptLine")
+            .where("receiptId", "=", receiptId)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          receiptIdReadable = await getNextSequence(trx, "receipt", companyId);
+          const newReceipt = await trx
+            .insertInto("receipt")
+            .values({
+              receiptId: receiptIdReadable,
+              sourceDocument: "Purchase Order",
+              sourceDocumentId: purchaseOrder.data.id,
+              sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+              companyId: companyId,
+              locationId: locationId,
+              createdBy: userId
+            })
+            .returning(["id", "receiptId"])
+            .execute();
+
+          receiptId = newReceipt?.[0]?.id!;
+          receiptIdReadable = newReceipt?.[0]?.receiptId!;
+        }
+
+        if (receiptLineItems.length > 0) {
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((line) => ({
+                ...line,
+                receiptId: receiptId,
+                locationId
+              }))
+            )
+            .execute();
+        }
+
+        const unreceivedFaLines = (fixedAssetPoLines.data ?? []).filter(
+          (d) => d.assetId && d.purchaseQuantity && !d.receivedComplete
+        );
+        if (unreceivedFaLines.length > 0) {
+          await trx
+            .deleteFrom("receiptFixedAssetLine")
+            .where("receiptId", "=", receiptId)
+            .where("companyId", "=", companyId)
+            .execute();
+          await trx
+            .insertInto("receiptFixedAssetLine")
+            .values(
+              unreceivedFaLines.map((line) => ({
+                receiptId: receiptId,
+                purchaseOrderLineId: line.id,
+                received: true,
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+        }
+      });
+
+      return { id: receiptId };
+    }
+    case "receiptFromInboundTransfer": {
+      const { warehouseTransferId, receiptId: existingReceiptId } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        warehouseTransferId,
+        existingReceiptId,
+        userId
+      });
+
+      const [warehouseTransfer, warehouseTransferLines, receipt] =
+        await inOrder([
+          () =>
+            single(db, "warehouseTransfer", {
+              companyId,
+              id: warehouseTransferId
+            }),
+          () =>
+            many(db, "warehouseTransferLine", {
+              companyId,
+              transferId: warehouseTransferId
+            }),
+          () =>
+            maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
+        ]);
+
+      if (!warehouseTransfer.data)
+        throw new NotFoundError("Warehouse transfer not found");
+      if (warehouseTransferLines.error)
+        throw new Error(warehouseTransferLines.error.message);
+
+      const locationId = warehouseTransfer.data.toLocationId;
+
+      const items = await many(
+        db,
+        "item",
+        {
+          companyId,
+          id: warehouseTransferLines.data
+            .map((d) => d.itemId)
+            .filter(Boolean) as string[]
+        },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's receipt is a 404, not a
+      // silent create-new.
+      if (existingReceiptId && !receipt.data)
+        throw new NotFoundError("Receipt not found");
+      const hasReceipt = !!receipt.data?.id;
+
+      const previouslyReceivedQuantitiesByLine = (
+        warehouseTransferLines.data ?? []
+      ).reduce<Record<string, number>>((acc, d) => {
+        if (d.id) acc[d.id] = d.receivedQuantity ?? 0;
+        return acc;
+      }, {});
+
+      const receiptLineItems = warehouseTransferLines.data.reduce<
+        ReceiptLineItem[]
+      >((acc, d) => {
+        if (!d.itemId || !d.quantity) return acc;
+
+        const serialTracking = serializedItems.has(d.itemId);
+        const batchTracking = batchItems.has(d.itemId);
+        // For unshipped lines, we want all lines where shippedQuantity < quantity
+        const quantityToReceive = Math.max(
+          0,
+          (d.shippedQuantity ?? 0) -
+            (previouslyReceivedQuantitiesByLine[d.id] ?? 0)
+        );
+
+        if (quantityToReceive === 0) return acc;
+
+        acc.push({
+          lineId: d.id,
+          itemId: d.itemId,
+          locationId: d.toLocationId ?? locationId,
+          storageUnitId: d.toStorageUnitId,
+          requiresSerialTracking: serialTracking,
+          requiresBatchTracking: batchTracking,
+          receivedQuantity: quantityToReceive,
+          outstandingQuantity: quantityToReceive,
+          unitPrice: 0, // Transfers don't have a unit price
+          conversionFactor: 1,
+          unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+          companyId,
+          createdBy: userId,
+          orderQuantity: d.quantity ?? 0
+        });
+
+        return acc;
+      }, []);
+
+      if (receiptLineItems.length === 0) {
+        throw new Error("No lines to receive");
+      }
+
+      const result = await db.transaction().execute(async (trx) => {
+        const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+        let id: string;
+        if (hasReceipt) {
+          id = receipt.data!.id;
+          await trx
+            .updateTable("receipt")
+            .set({
+              sourceDocument: "Inbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          const insertReceipt = await trx
+            .insertInto("receipt")
+            .values({
+              receiptId,
+              sourceDocument: "Inbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .execute();
+
+          id = insertReceipt[0]?.id ?? "";
+        }
+
+        await trx
+          .deleteFrom("receiptLine")
+          .where("receiptId", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await trx
+          .insertInto("receiptLine")
+          .values(
+            receiptLineItems.map((lineItem) => ({
+              ...lineItem,
+              receiptId: id
+            }))
+          )
+          .execute();
+
+        return { id };
+      });
+
+      return result;
+    }
+    case "receiptFromSalesReturnOrder": {
+      const {
+        salesReturnOrderId,
+        receiptId: existingReceiptId,
+        locationId: userLocationId
+      } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        salesReturnOrderId,
+        existingReceiptId,
+        userId
+      });
+
+      const [salesReturnOrder, salesReturnOrderLines, receipt] = await inOrder([
+        () =>
+          single(db, "salesReturnOrder", {
+            id: salesReturnOrderId,
+            companyId
+          }),
+        () =>
+          many(db, "salesReturnOrderLine", {
+            salesReturnOrderId,
+            companyId
+          }),
+        () => maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
+      ]);
+
+      if (!salesReturnOrder.data)
+        throw new NotFoundError("Sales return order not found");
+      if (salesReturnOrder.data.status !== "To Receive")
+        throw new Error(
+          `Cannot receive against a return order in ${salesReturnOrder.data.status} status`
+        );
+      if (salesReturnOrderLines.error)
+        throw new Error(salesReturnOrderLines.error.message);
+
+      const locationId =
+        userLocationId ?? salesReturnOrder.data.locationId ?? null;
+      if (!locationId)
+        throw new Error(
+          "The return order has no receiving location — set one before creating a receipt"
+        );
+
+      const returnItemIds = salesReturnOrderLines.data
+        .map((d) => d.itemId)
+        .filter(Boolean) as string[];
+      const items = await many(
+        db,
+        "item",
+        { companyId, id: returnItemIds },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      const pickMethods = await many(
+        db,
+        "pickMethod",
+        { companyId, itemId: returnItemIds },
+        { columns: ["itemId", "locationId", "defaultStorageUnitId"] }
+      );
+      const defaultStorageUnitByItem = new Map<string, string>();
+      for (const row of pickMethods.data ?? []) {
+        if (row.defaultStorageUnitId && row.locationId === locationId) {
+          defaultStorageUnitByItem.set(row.itemId, row.defaultStorageUnitId);
+        }
+      }
+
+      // A supplied id that is not this company's receipt is a 404, not a
+      // silent create-new.
+      if (existingReceiptId && !receipt.data)
+        throw new NotFoundError("Receipt not found");
+      const hasReceipt = !!receipt.data?.id;
+      // Re-targeting deletes and rebuilds the lines — only a Draft may be
+      // rebuilt; a Posted document's lines are referenced by ledger rows.
+      if (hasReceipt && receipt.data!.status !== "Draft")
+        throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
+
+      const receiptLineItems = salesReturnOrderLines.data.reduce<
+        ReceiptLineItem[]
+      >((acc, d) => {
+        if (!d.itemId || !d.quantity || d.closedComplete) return acc;
+
+        const outstanding = Math.max(
+          0,
+          (d.quantity ?? 0) - (d.quantityReceived ?? 0)
+        );
+        if (outstanding === 0) return acc;
+
+        acc.push({
+          lineId: d.id,
+          itemId: d.itemId,
+          locationId,
+          storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+          requiresSerialTracking: serializedItems.has(d.itemId),
+          requiresBatchTracking: batchItems.has(d.itemId),
+          receivedQuantity: outstanding,
+          outstandingQuantity: outstanding,
+          // Cost is resolved at posting (original outbound cost / current /
+          // zero-value reason) — never the line's credit-basis unitPrice.
+          unitPrice: 0,
+          conversionFactor: 1,
+          unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+          companyId,
+          createdBy: userId,
+          orderQuantity: d.quantity ?? 0
+        });
+
+        return acc;
+      }, []);
+
+      if (receiptLineItems.length === 0) {
+        throw new Error("No lines to receive");
+      }
+
+      const result = await db.transaction().execute(async (trx) => {
+        const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+        let id: string;
+        if (hasReceipt) {
+          id = receipt.data!.id;
+          await trx
+            .updateTable("receipt")
+            .set({
+              sourceDocument: "Sales Return Order",
+              sourceDocumentId: salesReturnOrderId,
+              sourceDocumentReadableId:
+                salesReturnOrder.data.salesReturnOrderId,
+              locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          const insertReceipt = await trx
+            .insertInto("receipt")
+            .values({
+              receiptId,
+              sourceDocument: "Sales Return Order",
+              sourceDocumentId: salesReturnOrderId,
+              sourceDocumentReadableId:
+                salesReturnOrder.data.salesReturnOrderId,
+              locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .execute();
+
+          id = insertReceipt[0]?.id ?? "";
+        }
+
+        await trx
+          .deleteFrom("receiptLine")
+          .where("receiptId", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await trx
+          .insertInto("receiptLine")
+          .values(
+            receiptLineItems.map((lineItem) => ({
+              ...lineItem,
+              receiptId: id
+            }))
+          )
+          .execute();
+
+        return { id };
+      });
+
+      return result;
+    }
+    case "receiptFromWarehouseTransfer": {
+      const { warehouseTransferId, receiptId: existingReceiptId } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        warehouseTransferId,
+        existingReceiptId,
+        userId
+      });
+
+      const [warehouseTransfer, warehouseTransferLines, receipt] =
+        await inOrder([
+          () =>
+            single(db, "warehouseTransfer", {
+              companyId,
+              id: warehouseTransferId
+            }),
+          () =>
+            many(db, "warehouseTransferLine", {
+              companyId,
+              transferId: warehouseTransferId
+            }),
+          () =>
+            maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
+        ]);
+
+      if (!warehouseTransfer.data)
+        throw new NotFoundError("Warehouse transfer not found");
+      if (warehouseTransferLines.error)
+        throw new Error(warehouseTransferLines.error.message);
+
+      const locationId = warehouseTransfer.data.toLocationId;
+
+      const items = await many(
+        db,
+        "item",
+        {
+          companyId,
+          id: warehouseTransferLines.data
+            .map((d) => d.itemId)
+            .filter(Boolean) as string[]
+        },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's receipt is a 404, not a
+      // silent create-new.
+      if (existingReceiptId && !receipt.data)
+        throw new NotFoundError("Receipt not found");
+      const hasReceipt = !!receipt.data?.id;
+
+      const previouslyReceivedQuantitiesByLine = (
+        warehouseTransferLines.data ?? []
+      ).reduce<Record<string, number>>((acc, d) => {
+        if (d.id) acc[d.id] = d.receivedQuantity ?? 0;
+        return acc;
+      }, {});
+
+      const receiptLineItems = warehouseTransferLines.data.reduce<
+        ReceiptLineItem[]
+      >((acc, d) => {
+        if (!d.itemId || !d.quantity) return acc;
+
+        const serialTracking = serializedItems.has(d.itemId);
+        const batchTracking = batchItems.has(d.itemId);
+        const quantityToReceive = Math.max(
+          0,
+          (d.shippedQuantity ?? 0) -
+            (previouslyReceivedQuantitiesByLine[d.id] ?? 0)
+        );
+
+        if (quantityToReceive === 0) return acc;
+
+        acc.push({
+          lineId: d.id,
+          itemId: d.itemId,
+          locationId: d.toLocationId ?? locationId,
+          storageUnitId: d.toStorageUnitId,
+          requiresSerialTracking: serialTracking,
+          requiresBatchTracking: batchTracking,
+          receivedQuantity: quantityToReceive,
+          outstandingQuantity: quantityToReceive,
+          unitPrice: 0, // Transfers don't have a unit price
+          conversionFactor: 1,
+          unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+          companyId,
+          createdBy: userId,
+          orderQuantity: d.quantity ?? 0
+        });
+
+        return acc;
+      }, []);
+
+      if (receiptLineItems.length === 0) {
+        throw new Error("No lines to receive");
+      }
+
+      const result = await db.transaction().execute(async (trx) => {
+        const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+        let id: string;
+        if (hasReceipt) {
+          id = receipt.data!.id;
+          await trx
+            .updateTable("receipt")
+            .set({
+              sourceDocument: "Inbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          const insertReceipt = await trx
+            .insertInto("receipt")
+            .values({
+              receiptId,
+              sourceDocument: "Inbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .execute();
+
+          id = insertReceipt[0]?.id ?? "";
+        }
+
+        await trx
+          .insertInto("receiptLine")
+          .values(
+            receiptLineItems.map((d) => ({
+              receiptId: id,
+              lineId: d.lineId,
+              itemId: d.itemId,
+              locationId: d.locationId,
+              storageUnitId: d.storageUnitId,
+              requiresSerialTracking: d.requiresSerialTracking,
+              requiresBatchTracking: d.requiresBatchTracking,
+              receivedQuantity: d.receivedQuantity,
+              outstandingQuantity: d.outstandingQuantity,
+              unitPrice: d.unitPrice,
+              conversionFactor: d.conversionFactor,
+              unitOfMeasure: d.unitOfMeasure,
+              orderQuantity: d.orderQuantity,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+
+        return { id };
+      });
+
+      return result;
+    }
+    case "receiptLineSplit": {
+      const { receiptId, receiptLineId, quantity, locationId } = payload;
+
+      createDocumentLogger.info({
+        type,
+        locationId,
+        receiptId,
+        receiptLineId,
+        quantity,
+        userId
+      });
+
+      const [receiptLine, trackedEntities] = await inOrder([
+        () => single(db, "receiptLine", { companyId, id: receiptLineId }),
+        () =>
+          many(db, "trackedEntity", {
+            companyId,
+            attributes: contains({ "Receipt Line": receiptLineId })
+          })
+      ]);
+
+      createDocumentLogger.debug({ trackedEntities });
+
+      if (!receiptLine.data) throw new NotFoundError("Receipt line not found");
+
+      await db.transaction().execute(async (trx) => {
+        const { id: _id, ...data } = receiptLine.data;
+
+        if (
+          receiptLine.data.requiresSerialTracking &&
+          trackedEntities.data?.length
+        ) {
+          // TODO: update the Receipt Line and Index attributes to point to the new line
+          await trx
+            .deleteFrom("trackedEntity")
+            .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+
+        const newReceiptLineRows = await trx
+          .insertInto("receiptLine")
+          .values({
+            ...data,
+            orderQuantity: quantity,
+            outstandingQuantity: quantity,
+            receivedQuantity: quantity,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .execute();
+
+        const newReceiptLineId = newReceiptLineRows[0]?.id;
+
+        await trx
+          .updateTable("receiptLine")
+          .set({
+            orderQuantity: receiptLine.data.orderQuantity - quantity,
+            outstandingQuantity:
+              receiptLine.data.outstandingQuantity - quantity,
+            receivedQuantity: receiptLine.data.receivedQuantity - quantity,
+            updatedBy: userId
+          })
+          .where("id", "=", receiptLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        // Carry batch tracking onto the new line: clone each existing
+        // trackedEntity (batch number + expirationDate + attributes) and
+        // shrink the original entity's quantity by the split amount.
+        if (
+          !receiptLine.data.requiresSerialTracking &&
+          newReceiptLineId &&
+          trackedEntities.data?.length
+        ) {
+          for (const entity of trackedEntities.data) {
+            const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
+            const { "Receipt Line Index": _ignored, ...rest } = attrs;
+            const newAttributes = {
+              ...rest,
+              "Receipt Line": newReceiptLineId
+            };
+
+            await trx
+              .insertInto("trackedEntity")
+              .values({
+                id: nanoid(),
+                quantity: round(quantity),
+                status: entity.status,
+                sourceDocument: entity.sourceDocument,
+                sourceDocumentId: entity.sourceDocumentId,
+                sourceDocumentReadableId: entity.sourceDocumentReadableId,
+                readableId: entity.readableId,
+                attributes: newAttributes,
+                companyId: entity.companyId,
+                createdBy: userId,
+                itemId: entity.itemId,
+                expirationDate: entity.expirationDate
+              })
+              .execute();
+
+            await trx
+              .updateTable("trackedEntity")
+              // A parent drained to zero by the split is Consumed, not a
+              // zero-quantity Available husk; a Scrapped parent stays so.
+              // The Math.max clamp is kept deliberately: a receipt-line
+              // split over the parent's quantity has always clamped here
+              // rather than refused, and that is not this change to make.
+              .set(
+                settleQuantity({
+                  quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
+                  status: entity.status
+                })
+              )
+              .where("id", "=", entity.id)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+        }
+      });
+
+      return { id: receiptLineId };
+    }
+    case "shipmentDefault": {
+      let createdDocumentId;
+      const { locationId } = payload;
+      createDocumentLogger.info({ type, companyId, locationId, userId });
+      const effectiveLocationId =
+        locationId ?? (await getFallbackLocationId(db, companyId, userId));
+
+      const id = await db.transaction().execute(async (trx) => {
+        createdDocumentId = await getNextSequence(trx, "shipment", companyId);
+
+        const newShipment = await trx
+          .insertInto("shipment")
+          .values({
+            shipmentId: createdDocumentId,
+            companyId: companyId,
+            locationId: effectiveLocationId,
+            createdBy: userId
+          })
+          .returning(["id", "shipmentId"])
+          .execute();
+
+        createdDocumentId = newShipment?.[0]?.id;
+        if (!createdDocumentId) throw new Error("Failed to create shipment");
+        return createdDocumentId;
+      });
+
+      return { id };
+    }
+    case "shipmentFromWarehouseTransfer": {
+      const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        warehouseTransferId,
+        existingShipmentId,
+        userId
+      });
+
+      const [warehouseTransfer, warehouseTransferLines, shipment] =
+        await inOrder([
+          () =>
+            single(db, "warehouseTransfer", {
+              companyId,
+              id: warehouseTransferId
+            }),
+          () =>
+            many(db, "warehouseTransferLine", {
+              companyId,
+              transferId: warehouseTransferId
+            }),
+          () =>
+            maybeSingle(db, "shipment", {
+              companyId,
+              id: existingShipmentId!
+            })
+        ]);
+
+      if (!warehouseTransfer.data)
+        throw new NotFoundError("Warehouse transfer not found");
+      if (warehouseTransferLines.error)
+        throw new Error(warehouseTransferLines.error.message);
+
+      const locationId = warehouseTransfer.data.toLocationId;
+
+      const items = await many(
+        db,
+        "item",
+        {
+          companyId,
+          id: warehouseTransferLines.data
+            .map((d) => d.itemId)
+            .filter(Boolean) as string[]
+        },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's shipment is a 404, not a
+      // silent create-new.
+      if (existingShipmentId && !shipment.data)
+        throw new NotFoundError("Shipment not found");
+      const hasShipment = !!shipment.data?.id;
+
+      const previouslyShippedQuantitiesByLine = (
+        warehouseTransferLines.data ?? []
+      ).reduce<Record<string, number>>((acc, d) => {
+        if (d.id) acc[d.id] = d.shippedQuantity ?? 0;
+        return acc;
+      }, {});
+
+      const shipmentLineItems = warehouseTransferLines.data.reduce<
+        ShipmentLineItem[]
+      >((acc, d) => {
+        if (!d.itemId || !d.quantity) return acc;
+
+        const serialTracking = serializedItems.has(d.itemId);
+        const batchTracking = batchItems.has(d.itemId);
+        // For unshipped lines, we want all lines where shippedQuantity < quantity
+        const quantityToShip = Math.max(
+          0,
+          (d.quantity ?? 0) - (previouslyShippedQuantitiesByLine[d.id] ?? 0)
+        );
+
+        if (quantityToShip === 0) return acc;
+
+        acc.push({
+          lineId: d.id,
+          itemId: d.itemId,
+          locationId: d.fromLocationId ?? locationId,
+          storageUnitId: d.fromStorageUnitId,
+          requiresSerialTracking: serialTracking,
+          requiresBatchTracking: batchTracking,
+          shippedQuantity: quantityToShip,
+          outstandingQuantity: quantityToShip,
+          unitPrice: 0, // Transfers don't have a unit price
+          unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+          companyId,
+          createdBy: userId,
+          orderQuantity: d.quantity ?? 0
+        });
+
+        return acc;
+      }, []);
+
+      if (shipmentLineItems.length === 0) {
+        throw new Error("No lines to ship");
+      }
+
+      const result = await db.transaction().execute(async (trx) => {
+        const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+        let id: string;
+        if (hasShipment) {
+          id = shipment.data!.id;
+          await trx
+            .updateTable("shipment")
+            .set({
+              sourceDocument: "Outbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          const insertShipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId,
+              sourceDocument: "Outbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .execute();
+
+          id = insertShipment[0]?.id ?? "";
+        }
+
+        await trx
+          .deleteFrom("shipmentLine")
+          .where("shipmentId", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await trx
+          .insertInto("shipmentLine")
+          .values(
+            shipmentLineItems.map((lineItem) => ({
+              ...lineItem,
+              shipmentId: id
+            }))
+          )
+          .execute();
+
+        return { id };
+      });
+
+      return result;
+    }
+    case "shipmentFromSalesReturnOrder": {
+      // Return-to-customer shipment: ships back RECEIVED quantity on lines
+      // dispositioned "Return to Customer", minus what earlier posted
+      // shipments of this source already sent back.
+      const {
+        salesReturnOrderId,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId
+      } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        salesReturnOrderId,
+        existingShipmentId,
+        userId
+      });
+
+      const [salesReturnOrder, salesReturnOrderLines, shipment] = await inOrder(
+        [
+          () =>
+            single(db, "salesReturnOrder", {
+              id: salesReturnOrderId,
+              companyId
+            }),
+          () =>
+            many(db, "salesReturnOrderLine", {
+              salesReturnOrderId,
+              companyId
+            }),
+          () =>
+            maybeSingle(db, "shipment", {
+              companyId,
+              id: existingShipmentId!
+            })
+        ]
+      );
+
+      if (!salesReturnOrder.data)
+        throw new NotFoundError("Sales return order not found");
+      if (salesReturnOrderLines.error)
+        throw new Error(salesReturnOrderLines.error.message);
+      // Goods can only go back out once they came in: the return must be
+      // confirmed (To Receive) or already Completed — never Draft/Cancelled.
+      if (!["To Receive", "Completed"].includes(salesReturnOrder.data.status))
+        throw new Error(
+          `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
+        );
+
+      const locationId =
+        userLocationId ?? salesReturnOrder.data.locationId ?? null;
+      if (!locationId) throw new Error("The return order has no location");
+
+      const returnLines = salesReturnOrderLines.data.filter(
+        (d) => d.disposition === "Return to Customer"
+      );
+      if (returnLines.length === 0)
+        throw new Error('No lines are dispositioned "Return to Customer"');
+
+      // Quantity already shipped back by earlier posted shipments
+      const priorShipments = await many(
+        db,
+        "shipment",
+        {
+          sourceDocumentId: salesReturnOrderId,
+          sourceDocument: "Sales Return Order",
+          status: "Posted",
+          companyId
+        },
+        { columns: ["id"] }
+      );
+      const priorShipmentIds = (priorShipments.data ?? []).map((d) => d.id);
+      const shippedBackByLine = new Map<string, number>();
+      if (priorShipmentIds.length > 0) {
+        const priorLines = await many(
+          db,
+          "shipmentLine",
+          { companyId, shipmentId: priorShipmentIds },
+          { columns: ["lineId", "shippedQuantity"] }
+        );
+        for (const line of priorLines.data ?? []) {
+          if (!line.lineId) continue;
+          shippedBackByLine.set(
+            line.lineId,
+            (shippedBackByLine.get(line.lineId) ?? 0) +
+              (line.shippedQuantity ?? 0)
+          );
+        }
+      }
+
+      const returnItemIds = returnLines
+        .map((d) => d.itemId)
+        .filter(Boolean) as string[];
+      const items = await many(
+        db,
+        "item",
+        { companyId, id: returnItemIds },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's shipment is a 404, not a
+      // silent create-new.
+      if (existingShipmentId && !shipment.data)
+        throw new NotFoundError("Shipment not found");
+      const hasShipment = !!shipment.data?.id;
+      if (hasShipment && shipment.data!.status !== "Draft")
+        throw new Error(`Cannot re-source a ${shipment.data!.status} shipment`);
+
+      const shipmentLineItems = returnLines.reduce<ShipmentLineItem[]>(
+        (acc, d) => {
+          if (!d.itemId) return acc;
+          const outstanding = Math.max(
+            0,
+            (d.quantityReceived ?? 0) - (shippedBackByLine.get(d.id) ?? 0)
+          );
+          if (outstanding === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            shippedQuantity: outstanding,
+            outstandingQuantity: outstanding,
+            orderQuantity: d.quantityReceived ?? 0,
+            // No revenue on a rejected-claim return
+            unitPrice: 0,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId
+          });
+          return acc;
+        },
+        []
+      );
+
+      if (shipmentLineItems.length === 0) {
+        throw new Error("No quantity remains to ship back");
+      }
+
+      const result = await db.transaction().execute(async (trx) => {
+        const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+        let id: string;
+        if (hasShipment) {
+          id = shipment.data!.id;
+          await trx
+            .updateTable("shipment")
+            .set({
+              sourceDocument: "Sales Return Order",
+              sourceDocumentId: salesReturnOrderId,
+              sourceDocumentReadableId:
+                salesReturnOrder.data.salesReturnOrderId,
+              customerId: salesReturnOrder.data.customerId,
+              locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          const insertShipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId,
+              sourceDocument: "Sales Return Order",
+              sourceDocumentId: salesReturnOrderId,
+              sourceDocumentReadableId:
+                salesReturnOrder.data.salesReturnOrderId,
+              customerId: salesReturnOrder.data.customerId,
+              locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .execute();
+
+          id = insertShipment[0]?.id ?? "";
+        }
+
+        await trx
+          .deleteFrom("shipmentLine")
+          .where("shipmentId", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await trx
+          .insertInto("shipmentLine")
+          .values(
+            shipmentLineItems.map((lineItem) => ({
+              ...lineItem,
+              shipmentId: id
+            }))
+          )
+          .execute();
+
+        return { id };
+      });
+
+      return result;
+    }
+    case "shipmentFromPurchaseReturnOrder": {
+      // Supplier return shipment: open (not short-closed) return lines,
+      // quantity minus already shipped. Quantities are inventory units.
+      const {
+        purchaseReturnOrderId,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId
+      } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        purchaseReturnOrderId,
+        existingShipmentId,
+        userId
+      });
+
+      const [purchaseReturnOrder, purchaseReturnOrderLines, shipment] =
+        await inOrder([
+          () =>
+            single(db, "purchaseReturnOrder", {
+              id: purchaseReturnOrderId,
+              companyId
+            }),
+          () =>
+            many(db, "purchaseReturnOrderLine", {
+              purchaseReturnOrderId,
+              companyId
+            }),
+          () =>
+            maybeSingle(db, "shipment", {
+              companyId,
+              id: existingShipmentId!
+            })
+        ]);
+
+      if (!purchaseReturnOrder.data)
+        throw new NotFoundError("Purchase return order not found");
+      if (purchaseReturnOrder.data.status !== "To Ship")
+        throw new Error(
+          `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
+        );
+      if (purchaseReturnOrderLines.error)
+        throw new Error(purchaseReturnOrderLines.error.message);
+
+      const locationId =
+        userLocationId ?? purchaseReturnOrder.data.locationId ?? null;
+      if (!locationId) throw new Error("The return order has no location");
+
+      const returnItemIds = purchaseReturnOrderLines.data
+        .map((d) => d.itemId)
+        .filter(Boolean) as string[];
+      const items = await many(
+        db,
+        "item",
+        { companyId, id: returnItemIds },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's shipment is a 404, not a
+      // silent create-new.
+      if (existingShipmentId && !shipment.data)
+        throw new NotFoundError("Shipment not found");
+      const hasShipment = !!shipment.data?.id;
+      if (hasShipment && shipment.data!.status !== "Draft")
+        throw new Error(`Cannot re-source a ${shipment.data!.status} shipment`);
+
+      const shipmentLineItems = purchaseReturnOrderLines.data.reduce<
+        ShipmentLineItem[]
+      >((acc, d) => {
+        if (!d.itemId || d.closedComplete) return acc;
+        const outstanding = Math.max(
+          0,
+          (d.quantity ?? 0) - (d.quantityShipped ?? 0)
+        );
+        if (outstanding === 0) return acc;
+
+        acc.push({
+          lineId: d.id,
+          itemId: d.itemId,
+          locationId,
+          requiresSerialTracking: serializedItems.has(d.itemId),
+          requiresBatchTracking: batchItems.has(d.itemId),
+          shippedQuantity: outstanding,
+          outstandingQuantity: outstanding,
+          orderQuantity: d.quantity ?? 0,
+          unitPrice: d.unitPrice ?? 0,
+          unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+          companyId,
+          createdBy: userId
+        });
+        return acc;
+      }, []);
+
+      if (shipmentLineItems.length === 0) {
+        throw new Error("No lines to ship");
+      }
+
+      // Carry the batches/serials picked on each return line onto the
+      // shipment's tracked entities, so the shipment already knows what to
+      // send back (post-shipment reads entities via attributes ->> Shipment).
+      const returnLineIds = purchaseReturnOrderLines.data.map((l) => l.id);
+      const lineTrackedEntities = await many<
+        "purchaseReturnOrderLineTrackedEntity",
+        Pick<
+          rowsModule.Tables["purchaseReturnOrderLineTrackedEntity"]["Row"],
+          "purchaseReturnOrderLineId"
+        > & {
+          trackedEntity: Pick<
+            rowsModule.Tables["trackedEntity"]["Row"],
+            "id" | "attributes"
+          > | null;
+        }
+      >(
+        db,
+        "purchaseReturnOrderLineTrackedEntity",
+        { purchaseReturnOrderLineId: returnLineIds, companyId },
+        {
+          columns: ["purchaseReturnOrderLineId"],
+          embed: {
+            trackedEntity: {
+              table: "trackedEntity",
+              via: "trackedEntityId",
+              columns: ["id", "attributes"]
+            }
+          }
+        }
+      );
+      if (lineTrackedEntities.error)
+        throw new Error(lineTrackedEntities.error.message);
+
+      const entitiesByReturnLine = new Map<
+        string,
+        { id: string; attributes: Record<string, unknown> | null }[]
+      >();
+      for (const row of lineTrackedEntities.data ?? []) {
+        const entity = row.trackedEntity;
+        if (!entity) continue;
+        const list =
+          entitiesByReturnLine.get(row.purchaseReturnOrderLineId) ?? [];
+        list.push({
+          id: entity.id,
+          attributes: entity.attributes as Record<string, unknown> | null
+        });
+        entitiesByReturnLine.set(row.purchaseReturnOrderLineId, list);
+      }
+
+      // Re-source path: clear the shipment tag off any entity previously
+      // stamped for this shipment before re-stamping the current selection.
+      const staleEntities = hasShipment
+        ? await many(
+            db,
+            "trackedEntity",
+            {
+              companyId,
+              attributes: contains({ Shipment: shipment.data!.id })
+            },
+            { columns: ["id", "attributes"] }
+          )
+        : { data: [], error: null };
+      if (staleEntities.error) throw new Error(staleEntities.error.message);
+
+      const result = await db.transaction().execute(async (trx) => {
+        const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+        let id: string;
+        if (hasShipment) {
+          id = shipment.data!.id;
+          await trx
+            .updateTable("shipment")
+            .set({
+              sourceDocument: "Purchase Return Order",
+              sourceDocumentId: purchaseReturnOrderId,
+              sourceDocumentReadableId:
+                purchaseReturnOrder.data.purchaseReturnOrderId,
+              supplierId: purchaseReturnOrder.data.supplierId,
+              locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          const insertShipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId,
+              sourceDocument: "Purchase Return Order",
+              sourceDocumentId: purchaseReturnOrderId,
+              sourceDocumentReadableId:
+                purchaseReturnOrder.data.purchaseReturnOrderId,
+              supplierId: purchaseReturnOrder.data.supplierId,
+              locationId,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            })
+            .returning(["id"])
+            .execute();
+
+          id = insertShipment[0]?.id ?? "";
+        }
+
+        await trx
+          .deleteFrom("shipmentLine")
+          .where("shipmentId", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        const insertedLines = await trx
+          .insertInto("shipmentLine")
+          .values(
+            shipmentLineItems.map((lineItem) => ({
+              ...lineItem,
+              shipmentId: id
+            }))
+          )
+          .returning(["id", "lineId"])
+          .execute();
+
+        // Strip the shipment tag off entities left over from a prior source.
+        for (const entity of staleEntities.data ?? []) {
+          const attrs = {
+            ...((entity.attributes as Record<string, unknown> | null) ?? {})
+          };
+          delete attrs.Shipment;
+          delete attrs["Shipment Line"];
+          delete attrs["Shipment Line Index"];
+          await trx
+            .updateTable("trackedEntity")
+            .set({ attributes: attrs as Json })
+            .where("id", "=", entity.id)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+
+        // Stamp each return line's picked entities onto its shipment line, so
+        // the batch/serial flows through to posting. post-shipment splits a
+        // batch when the shipped quantity is less than the entity's quantity.
+        for (const shipmentLine of insertedLines) {
+          const entities = shipmentLine.lineId
+            ? entitiesByReturnLine.get(shipmentLine.lineId)
+            : undefined;
+          for (const entity of entities ?? []) {
+            const attrs = {
+              ...(entity.attributes ?? {}),
+              Shipment: id,
+              "Shipment Line": shipmentLine.id
+            };
+            await trx
+              .updateTable("trackedEntity")
+              .set({ attributes: attrs as Json })
+              .where("id", "=", entity.id)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+        }
+
+        return { id };
+      });
+
+      return result;
+    }
+    case "shipmentFromPurchaseOrder": {
+      const {
+        purchaseOrderId,
+        shipmentId: existingShipmentId,
+        locationId
+      } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        locationId,
+        purchaseOrderId,
+        existingShipmentId,
+        userId
+      });
+
+      const [
+        purchaseOrder,
+        purchaseOrderLines,
+        purchaseOrderDelivery,
+        shipment
+      ] = await inOrder([
+        () => single(db, "purchaseOrder", { companyId, id: purchaseOrderId }),
+        () =>
+          many(db, "purchaseOrderLine", {
+            companyId,
+            purchaseOrderId,
+            purchaseOrderLineType: [
+              "Part",
+              "Material",
+              "Tool",
+              "Fixture",
+              "Consumable"
+            ],
+            locationId
+          }),
+        () =>
+          maybeSingle(db, "purchaseOrderDelivery", {
+            companyId,
+            id: purchaseOrderId
+          }),
+        () =>
+          maybeSingle(db, "shipment", { companyId, id: existingShipmentId! })
+      ]);
+
+      if (!purchaseOrder.data)
+        throw new NotFoundError("Purchase order not found");
+      if (purchaseOrderLines.error)
+        throw new Error(purchaseOrderLines.error.message);
+
+      const items = await many(
+        db,
+        "item",
+        {
+          companyId,
+          id: purchaseOrderLines.data.map((d) => d.itemId) as string[]
+        },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's shipment is a 404, not a
+      // silent create-new.
+      if (existingShipmentId && !shipment.data)
+        throw new NotFoundError("Shipment not found");
+      const hasShipment = !!shipment.data?.id;
+      const isOutsideOperation =
+        purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+      const previouslyShippedQuantitiesByLine = (
+        purchaseOrderLines.data ?? []
+      ).reduce<Record<string, number>>((acc, d) => {
+        if (d.id) acc[d.id] = d.quantityShipped ?? 0;
+        return acc;
+      }, {});
+
+      let shipmentId = hasShipment ? shipment.data?.id! : "";
+      let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+
+      await db.transaction().execute(async (trx) => {
+        if (hasShipment) {
+          // update existing shipment
+          await trx
+            .updateTable("shipment")
+            .set({
+              sourceDocument: "Purchase Order",
+              sourceDocumentId: purchaseOrder.data.id,
+              sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+              shippingMethodId: purchaseOrderDelivery.data?.shippingMethodId,
+              locationId: locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", shipmentId)
+            .returning(["id", "shipmentId"])
+            .where("companyId", "=", companyId)
+            .execute();
+          // delete existing shipment lines
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", shipmentId)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          shipmentIdReadable = await getNextSequence(
+            trx,
+            "shipment",
+            companyId
+          );
+
+          const newShipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId: shipmentIdReadable,
+              sourceDocument: "Purchase Order",
+              sourceDocumentId: purchaseOrder.data.id,
+              sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+              externalDocumentId: purchaseOrder.data.supplierReference,
+              supplierId: purchaseOrder.data.supplierId,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+              shippingMethodId: purchaseOrderDelivery.data?.shippingMethodId,
+              companyId: companyId,
+              locationId: locationId,
+              createdBy: userId
+            })
+            .returning(["id", "shipmentId"])
+            .execute();
+
+          shipmentId = newShipment?.[0]?.id!;
+          shipmentIdReadable = newShipment?.[0]?.shipmentId!;
+        }
+
+        // Process each sales order line
+        for await (const purchaseOrderLine of purchaseOrderLines.data) {
+          if (
+            !purchaseOrderLine.itemId ||
+            !purchaseOrderLine.purchaseQuantity ||
+            purchaseOrderLine.purchaseOrderLineType === "Service" ||
+            purchaseOrderLine.purchaseOrderLineType === "G/L Account"
+          ) {
+            continue;
+          }
+
+          const isSerial = serializedItems.has(purchaseOrderLine.itemId);
+          const isBatch = batchItems.has(purchaseOrderLine.itemId);
+
+          const outstandingQuantity =
+            (purchaseOrderLine.purchaseQuantity ?? 0) -
+            (previouslyShippedQuantitiesByLine[purchaseOrderLine.id] ?? 0);
+
+          const shippingAndTaxUnitCost =
+            ((purchaseOrderLine.shippingCost ?? 0) /
+              (purchaseOrderLine.purchaseQuantity ?? 0) +
+              (purchaseOrderLine.unitPrice ?? 0)) *
+            (1 + (purchaseOrderLine.taxPercent ?? 0));
+
+          await trx
+            .insertInto("shipmentLine")
+            .values({
+              shipmentId: shipmentId,
+              lineId: purchaseOrderLine.id,
+              companyId: companyId,
+              itemId: purchaseOrderLine.itemId,
+              orderQuantity: purchaseOrderLine.purchaseQuantity,
+              outstandingQuantity: outstandingQuantity,
+              shippedQuantity: outstandingQuantity ?? 0,
+              requiresSerialTracking: isSerial && !isOutsideOperation,
+              requiresBatchTracking: isBatch && !isOutsideOperation,
+              unitPrice: shippingAndTaxUnitCost,
+              unitOfMeasure:
+                purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
+              locationId: purchaseOrderLine.locationId,
+              storageUnitId: purchaseOrderLine.storageUnitId,
+              createdBy: userId ?? ""
+            })
+            .execute();
+        }
+      });
+
+      return { id: shipmentId };
+    }
+    case "shipmentFromSalesOrder": {
+      const {
+        salesOrderId,
+        shipmentId: existingShipmentId,
+        locationId
+      } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        locationId,
+        salesOrderId,
+        existingShipmentId,
+        userId
+      });
+
+      const [
+        salesOrder,
+        salesOrderLines,
+        fixedAssetSoLines,
+        salesOrderShipment,
+        shipment,
+        jobs
+      ] = await inOrder([
+        () => single(db, "salesOrder", { id: salesOrderId, companyId }),
+        () =>
+          many(db, "salesOrderLine", {
+            companyId,
+            salesOrderId,
+            salesOrderLineType: [
+              "Part",
+              "Material",
+              "Tool",
+              "Fixture",
+              "Consumable"
+            ],
+            locationId
+          }),
+        () =>
+          many(
+            db,
+            "salesOrderLine",
+            { companyId, salesOrderId, salesOrderLineType: "Fixed Asset" },
+            {
+              columns: [
+                "id",
+                "salesOrderLineType",
+                "assetId",
+                "saleQuantity",
+                "quantitySent",
+                "sentComplete"
+              ]
+            }
+          ),
+        () =>
+          maybeSingle(db, "salesOrderShipment", {
+            companyId,
+            id: salesOrderId
+          }),
+        () =>
+          maybeSingle(db, "shipment", { companyId, id: existingShipmentId! }),
+        () =>
+          many(db, "job", {
+            companyId,
+            salesOrderId,
+            status: neq("Cancelled")
+          })
+      ]);
+
+      if (!salesOrder.data) throw new NotFoundError("Sales order not found");
+      if (salesOrderLines.error) throw new Error(salesOrderLines.error.message);
+
+      const items = await many(
+        db,
+        "item",
+        {
+          companyId,
+          id: salesOrderLines.data.map((d) => d.itemId) as string[]
+        },
+        { columns: ["id", "itemTrackingType"] }
+      );
+      const serializedItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Serial")
+          .map((d) => d.id)
+      );
+      const batchItems = new Set(
+        items.data
+          ?.filter((d) => d.itemTrackingType === "Batch")
+          .map((d) => d.id)
+      );
+
+      // A supplied id that is not this company's shipment is a 404, not a
+      // silent create-new.
+      if (existingShipmentId && !shipment.data)
+        throw new NotFoundError("Shipment not found");
+      const hasShipment = !!shipment.data?.id;
+
+      // Group jobs by sales order line ID
+      const jobsBySalesOrderLine = (jobs.data || []).reduce<
+        Record<string, Database["public"]["Tables"]["job"]["Row"][]>
+      >((acc, job) => {
+        if (job.salesOrderLineId) {
+          if (!acc[job.salesOrderLineId]) {
+            acc[job.salesOrderLineId] = [];
+          }
+          acc[job.salesOrderLineId]!.push(job);
+        }
+        return acc;
+      }, {});
+
+      const previouslyShippedQuantitiesByLine = (
+        salesOrderLines.data ?? []
+      ).reduce<Record<string, number>>((acc, d) => {
+        if (d.id) acc[d.id] = d.quantitySent ?? 0;
+        return acc;
+      }, {});
+
+      let shipmentId = hasShipment ? shipment.data?.id! : "";
+      let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+
+      await db.transaction().execute(async (trx) => {
+        if (hasShipment) {
+          // update existing shipment
+          await trx
+            .updateTable("shipment")
+            .set({
+              sourceDocument: "Sales Order",
+              sourceDocumentId: salesOrder.data.id,
+              sourceDocumentReadableId: salesOrder.data.salesOrderId,
+              customerId: salesOrder.data.customerId,
+              shippingMethodId: salesOrderShipment.data?.shippingMethodId,
+              opportunityId: salesOrder.data.opportunityId,
+              locationId: locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", shipmentId)
+            .returning(["id", "shipmentId"])
+            .where("companyId", "=", companyId)
+            .execute();
+          // delete existing shipment lines
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", shipmentId)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          shipmentIdReadable = await getNextSequence(
+            trx,
+            "shipment",
+            companyId
+          );
+
+          const newShipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId: shipmentIdReadable,
+              sourceDocument: "Sales Order",
+              sourceDocumentId: salesOrder.data.id,
+              sourceDocumentReadableId: salesOrder.data.salesOrderId,
+              externalDocumentId: salesOrder.data.customerReference,
+              shippingMethodId: salesOrderShipment.data?.shippingMethodId,
+              customerId: salesOrder.data.customerId,
+              opportunityId: salesOrder.data.opportunityId,
+              companyId: companyId,
+              locationId: locationId,
+              createdBy: userId
+            })
+            .returning(["id", "shipmentId"])
+            .execute();
+
+          shipmentId = newShipment?.[0]?.id!;
+          shipmentIdReadable = newShipment?.[0]?.shipmentId!;
+        }
+
+        const shipmentLineItems: ShipmentLineItem[] = [];
+
+        // Process each sales order line
+        for await (const salesOrderLine of salesOrderLines.data) {
+          if (
+            !salesOrderLine.itemId ||
+            !salesOrderLine.saleQuantity ||
+            salesOrderLine.salesOrderLineType === "Service"
+          ) {
+            continue;
+          }
+
+          const isSerial = serializedItems.has(salesOrderLine.itemId);
+          const isBatch = batchItems.has(salesOrderLine.itemId);
+
+          if (salesOrderLine.methodType === "Make to Order") {
+            for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ??
+              []) {
+              if (!salesOrderLine.itemId) return;
+
+              const quantityToShip = Math.max(
+                0,
+                (job.quantityComplete ?? 0) - (job.quantityShipped ?? 0)
+              );
+
+              if (!isSerial || (isSerial && quantityToShip > 0)) {
+                const fulfillment = await trx
+                  .insertInto("fulfillment")
+                  .values({
+                    salesOrderLineId: salesOrderLine.id,
+                    type: "Job",
+                    jobId: job.id,
+                    quantity: quantityToShip,
+                    companyId: companyId,
+                    createdBy: userId
+                  })
+                  .returning(["id"])
+                  .execute();
+
+                const fulfillmentId = fulfillment?.[0]?.id;
+
+                const shippingAndTaxUnitCost =
+                  (salesOrderLine.shippingCost / quantityToShip +
+                    (salesOrderLine.unitPrice ?? 0)) *
+                  (1 + salesOrderLine.taxPercent);
+
+                const shipmentLine = await trx
+                  .insertInto("shipmentLine")
+                  .values({
+                    shipmentId: shipmentId,
+                    lineId: salesOrderLine.id,
+                    companyId: companyId,
+                    fulfillmentId,
+                    itemId: salesOrderLine.itemId,
+                    orderQuantity: salesOrderLine.saleQuantity,
+                    outstandingQuantity:
+                      salesOrderLine.quantityToSend ??
+                      salesOrderLine.saleQuantity,
+                    shippedQuantity: quantityToShip,
+                    requiresSerialTracking: isSerial,
+                    requiresBatchTracking: isBatch,
+                    unitPrice: shippingAndTaxUnitCost,
+                    unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
+                    createdBy: userId ?? ""
+                  })
+                  .returning(["id"])
+                  .execute();
+
+                const shipmentLineId = shipmentLine?.[0]?.id;
+
+                if (!shipmentLineId)
+                  throw new NotFoundError("Shipment line not found");
+
+                if (isSerial || isBatch) {
+                  const jobMakeMethod = await trx
+                    .selectFrom("jobMakeMethod")
+                    .select(["id"])
+                    .where("jobId", "=", job.id)
+                    .where("parentMaterialId", "is", null)
+                    .executeTakeFirst();
+
+                  if (jobMakeMethod?.id) {
+                    const trackedEntities = await many(
+                      trx,
+                      "trackedEntity",
+                      {
+                        companyId,
+                        attributes: contains({
+                          "Job Make Method": jobMakeMethod.id
+                        })
+                      },
+                      { orderBy: ["createdAt", "readableId", "id"] }
+                    );
+
+                    let index = 0;
+                    for await (const trackedEntity of trackedEntities?.data ??
+                      []) {
+                      await trx
+                        .updateTable("trackedEntity")
+                        .set({
+                          attributes: {
+                            ...(trackedEntity.attributes as Record<
+                              string,
+                              unknown
+                            >),
+                            Shipment: shipmentId,
+                            "Shipment Line": shipmentLineId,
+                            "Shipment Line Index": index
+                          }
+                        })
+                        .where("id", "=", trackedEntity.id)
+                        .where("companyId", "=", companyId)
+                        .execute();
+                      index++;
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            const outstandingQuantity =
+              (salesOrderLine.saleQuantity ?? 0) -
+              (previouslyShippedQuantitiesByLine[salesOrderLine.id] ?? 0);
+
+            const shippingAndTaxUnitCost =
+              (salesOrderLine.shippingCost /
+                (salesOrderLine.saleQuantity ?? 0) +
+                (salesOrderLine.unitPrice ?? 0)) *
+              (1 + salesOrderLine.taxPercent);
+
+            await trx
+              .insertInto("shipmentLine")
+              .values({
+                shipmentId: shipmentId,
+                lineId: salesOrderLine.id,
+                companyId: companyId,
+                itemId: salesOrderLine.itemId,
+                orderQuantity: salesOrderLine.saleQuantity,
+                outstandingQuantity: outstandingQuantity,
+                shippedQuantity: outstandingQuantity ?? 0,
+                requiresSerialTracking: isSerial,
+                requiresBatchTracking: isBatch,
+                unitPrice: shippingAndTaxUnitCost,
+                unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
+                locationId: salesOrderLine.locationId,
+                storageUnitId: salesOrderLine.storageUnitId,
+                createdBy: userId ?? ""
+              })
+              .execute();
+          }
+        }
+
+        if (shipmentLineItems.length > 0) {
+          // Insert all shipment lines
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((line) => ({
+                ...line,
+                shipmentId: shipmentId,
+                locationId
+              }))
+            )
+            .execute();
+        }
+
+        const unshippedFaLines = (fixedAssetSoLines.data ?? []).filter(
+          (d) => d.assetId && d.saleQuantity && !d.sentComplete
+        );
+        if (unshippedFaLines.length > 0) {
+          await trx
+            .deleteFrom("shipmentFixedAssetLine")
+            .where("shipmentId", "=", shipmentId)
+            .where("companyId", "=", companyId)
+            .execute();
+          await trx
+            .insertInto("shipmentFixedAssetLine")
+            .values(
+              unshippedFaLines.map((line) => ({
+                shipmentId: shipmentId,
+                salesOrderLineId: line.id,
+                shipped: true,
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+        }
+      });
+
+      return { id: shipmentId };
+    }
+    case "shipmentFromSalesOrderLine": {
+      const {
+        salesOrderLineId,
+        shipmentId: existingShipmentId,
+        locationId
+      } = payload;
+
+      createDocumentLogger.info({
+        type,
+        companyId,
+        locationId,
+        salesOrderLineId,
+        existingShipmentId,
+        userId
+      });
+
+      const salesOrderLine = await single(db, "salesOrderLine", {
+        companyId,
+        id: salesOrderLineId,
+        locationId
+      });
+
+      if (!salesOrderLine.data || !salesOrderLine.data.itemId)
+        throw new NotFoundError("Sales order line not found");
+      // Services are never shipped
+      if (salesOrderLine.data.salesOrderLineType === "Service")
+        throw new Error("Service lines cannot be shipped");
+      const salesOrderId = salesOrderLine.data.salesOrderId;
+
+      const [salesOrder, salesOrderShipment, shipment, jobs] = await inOrder([
+        () => single(db, "salesOrder", { companyId, id: salesOrderId }),
+        () =>
+          maybeSingle(db, "salesOrderShipment", {
+            companyId,
+            id: salesOrderId
+          }),
+        () =>
+          maybeSingle(db, "shipment", { companyId, id: existingShipmentId! }),
+        () =>
+          many(db, "job", {
+            companyId,
+            salesOrderLineId,
+            status: neq("Cancelled")
+          })
+      ]);
+
+      if (!salesOrder.data) throw new NotFoundError("Sales order not found");
+
+      const item = await single(
+        db,
+        "item",
+        { companyId, id: salesOrderLine.data.itemId },
+        { columns: ["id", "itemTrackingType"] }
+      );
+
+      if (!item.data) throw new NotFoundError("Item not found");
+
+      const isSerial = item.data.itemTrackingType === "Serial";
+      const isBatch = item.data.itemTrackingType === "Batch";
+
+      // A supplied id that is not this company's shipment is a 404, not a
+      // silent create-new.
+      if (existingShipmentId && !shipment.data)
+        throw new NotFoundError("Shipment not found");
+      const hasShipment = !!shipment.data?.id;
+      if (hasShipment && shipment.data!.status !== "Draft")
+        throw new Error(`Cannot re-source a ${shipment.data!.status} shipment`);
+      const previouslyShippedQuantity = salesOrderLine.data.quantitySent ?? 0;
+
+      let shipmentId = hasShipment ? shipment.data?.id! : "";
+      let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+
+      await db.transaction().execute(async (trx) => {
+        if (hasShipment) {
+          // update existing shipment
+          await trx
+            .updateTable("shipment")
+            .set({
+              sourceDocument: "Sales Order",
+              sourceDocumentId: salesOrder.data.id,
+              sourceDocumentReadableId: salesOrder.data.salesOrderId,
+              locationId: locationId,
+              updatedBy: userId
+            })
+            .where("id", "=", shipmentId)
+            .returning(["id", "shipmentId"])
+            .where("companyId", "=", companyId)
+            .execute();
+          // delete existing shipment lines
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", shipmentId)
+            .where("companyId", "=", companyId)
+            .execute();
+        } else {
+          shipmentIdReadable = await getNextSequence(
+            trx,
+            "shipment",
+            companyId
+          );
+
+          const newShipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId: shipmentIdReadable,
+              sourceDocument: "Sales Order",
+              sourceDocumentId: salesOrder.data.id,
+              sourceDocumentReadableId: salesOrder.data.salesOrderId,
+              externalDocumentId: salesOrder.data.customerReference,
+              shippingMethodId: salesOrderShipment.data?.shippingMethodId,
+              customerId: salesOrder.data.customerId,
+              opportunityId: salesOrder.data.opportunityId,
+              companyId: companyId,
+              locationId: locationId,
+              createdBy: userId
+            })
+            .returning(["id", "shipmentId"])
+            .execute();
+
+          shipmentId = newShipment?.[0]?.id!;
+          shipmentIdReadable = newShipment?.[0]?.shipmentId!;
+        }
+
+        if (salesOrderLine.data.methodType === "Make to Order") {
+          for await (const job of jobs.data ?? []) {
+            if (!salesOrderLine.data.itemId) return;
+            const quantityToShip = Math.max(
+              0,
+              (job.quantityComplete ?? 0) - (job.quantityShipped ?? 0)
+            );
+
+            if (!isSerial || (isSerial && quantityToShip > 0)) {
+              const fulfillment = await trx
+                .insertInto("fulfillment")
+                .values({
+                  salesOrderLineId: salesOrderLineId,
+                  type: "Job",
+                  jobId: job.id,
+                  quantity: quantityToShip,
+                  companyId: companyId,
+                  createdBy: userId
+                })
+                .returning(["id"])
+                .execute();
+
+              const fulfillmentId = fulfillment?.[0]?.id;
+
+              const shippingAndTaxUnitCost =
+                (salesOrderLine.data.shippingCost / quantityToShip +
+                  (salesOrderLine.data.unitPrice ?? 0)) *
+                (1 + salesOrderLine.data.taxPercent);
+
+              const shipmentLine = await trx
+                .insertInto("shipmentLine")
+                .values({
+                  shipmentId: shipmentId,
+                  lineId: salesOrderLineId,
+                  companyId: companyId,
+                  fulfillmentId,
+                  itemId: salesOrderLine.data.itemId,
+                  orderQuantity: job.productionQuantity ?? 0,
+                  outstandingQuantity: Math.max(0, job.productionQuantity ?? 0),
+                  shippedQuantity: quantityToShip,
+                  requiresSerialTracking: isSerial,
+                  requiresBatchTracking: isBatch,
+                  unitPrice: shippingAndTaxUnitCost,
+                  unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
+                  createdBy: userId ?? ""
+                })
+                .returning(["id"])
+                .execute();
+
+              const shipmentLineId = shipmentLine?.[0]?.id;
+
+              if (!shipmentLineId)
+                throw new NotFoundError("Shipment line not found");
+
+              if (isSerial || isBatch) {
+                const jobMakeMethod = await trx
+                  .selectFrom("jobMakeMethod")
+                  .select(["id"])
+                  .where("jobId", "=", job.id)
+                  .where("parentMaterialId", "is", null)
+                  .executeTakeFirst();
+
+                if (jobMakeMethod?.id) {
+                  const trackedEntities = await many(
+                    trx,
+                    "trackedEntity",
+                    {
+                      companyId,
+                      attributes: contains({
+                        "Job Make Method": jobMakeMethod.id
+                      })
+                    },
+                    { orderBy: ["createdAt", "readableId", "id"] }
+                  );
+
+                  let index = 0;
+                  for await (const trackedEntity of trackedEntities?.data ??
+                    []) {
+                    await trx
+                      .updateTable("trackedEntity")
+                      .set({
+                        attributes: {
+                          ...(trackedEntity.attributes as Record<
+                            string,
+                            unknown
+                          >),
+                          Shipment: shipmentId,
+                          "Shipment Line": shipmentLineId,
+                          "Shipment Line Index": index
+                        }
+                      })
+                      .where("id", "=", trackedEntity.id)
+                      .where("companyId", "=", companyId)
+                      .execute();
+                    index++;
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          const outstandingQuantity = Math.max(
+            0,
+            (salesOrderLine.data.saleQuantity ?? 0) - previouslyShippedQuantity
+          );
+
+          const shippingAndTaxUnitCost =
+            (salesOrderLine.data.shippingCost /
+              (salesOrderLine.data.saleQuantity ?? 0) +
+              (salesOrderLine.data.unitPrice ?? 0)) *
+            (1 + salesOrderLine.data.taxPercent);
+
+          await trx
+            .insertInto("shipmentLine")
+            .values({
+              shipmentId: shipmentId,
+              lineId: salesOrderLineId,
+              companyId: companyId,
+              itemId: salesOrderLine.data.itemId!,
+              orderQuantity: salesOrderLine.data.saleQuantity ?? 0,
+              outstandingQuantity: outstandingQuantity,
+              shippedQuantity: outstandingQuantity,
+              requiresSerialTracking: isSerial,
+              requiresBatchTracking: isBatch,
+              unitPrice: shippingAndTaxUnitCost,
+              unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
+              locationId: salesOrderLine.data.locationId!,
+              storageUnitId: salesOrderLine.data.storageUnitId!,
+              createdBy: userId ?? ""
+            })
+            .execute();
+        }
+      });
+
+      return { id: shipmentId };
+    }
+    case "shipmentLineSplit": {
+      const { shipmentId, shipmentLineId, quantity, locationId } = payload;
+
+      createDocumentLogger.info({
+        type,
+        locationId,
+        shipmentId,
+        shipmentLineId,
+        quantity,
+        userId
+      });
+
+      const [shipmentLine] = await inOrder([
+        () => single(db, "shipmentLine", { companyId, id: shipmentLineId })
+      ]);
+
+      if (!shipmentLine.data)
+        throw new NotFoundError("Shipment line not found");
+
+      await db.transaction().execute(async (trx) => {
+        const { id: _id, ...data } = shipmentLine.data;
+
+        await trx
+          .insertInto("shipmentLine")
+          .values({
+            ...data,
+            orderQuantity: quantity,
+            outstandingQuantity: quantity,
+            shippedQuantity: quantity,
+            createdBy: userId
+          })
+          .execute();
+
+        await trx
+          .updateTable("shipmentLine")
+          .set({
+            orderQuantity: shipmentLine.data.orderQuantity - quantity,
+            outstandingQuantity:
+              shipmentLine.data.outstandingQuantity - quantity,
+            shippedQuantity: shipmentLine.data.shippedQuantity - quantity,
+            updatedBy: userId
+          })
+          .where("id", "=", shipmentLineId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+
+      return { id: shipmentLineId };
+    }
+    case "shipmentFromRentalAgreement": {
+      // A rental delivery: one Draft shipment per agreement holds the
+      // Pending units. A per-unit shortcut adds (or ticks) its unit on it.
+      const { rentalAgreementId, rentalAgreementLineId } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        rentalAgreementId,
+        rentalAgreementLineId,
+        userId
+      });
+
+      return db.transaction().execute(async (trx) => {
+        const agreement = await trx
+          .selectFrom("rentalAgreement")
+          .select([
+            "id",
+            "rentalAgreementId",
+            "status",
+            "customerId",
+            "locationId"
+          ])
+          .where("id", "=", rentalAgreementId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!agreement) throw new NotFoundError("Rental agreement not found");
+        if (agreement.status !== "Active") {
+          throw new InvalidInputError(
+            `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are delivered from an Active agreement`
+          );
+        }
+
+        const draft = await trx
+          .selectFrom("shipment")
+          .select("id")
+          .where("sourceDocument", "=", "Rental Agreement")
+          .where("sourceDocumentId", "=", agreement.id)
+          .where("status", "=", "Draft")
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+
+        const onOpenShipments = await trx
+          .selectFrom("shipmentFixedAssetLine as sfl")
+          .innerJoin("shipment as s", (join) =>
+            join
+              .onRef("s.id", "=", "sfl.shipmentId")
+              .onRef("s.companyId", "=", "sfl.companyId")
+          )
+          .select([
+            "sfl.id",
+            "sfl.shipmentId",
+            "sfl.rentalAgreementLineId",
+            "sfl.shipped"
+          ])
+          .where("s.sourceDocument", "=", "Rental Agreement")
+          .where("s.sourceDocumentId", "=", agreement.id)
+          .where("s.status", "in", ["Draft", "Pending"])
+          .where("sfl.companyId", "=", companyId)
+          .execute();
+
+        let candidatesQuery = trx
+          .selectFrom("rentalAgreementLine")
+          .select(["id", "status"])
+          .where("rentalAgreementId", "=", agreement.id)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Pending");
+        if (rentalAgreementLineId) {
+          candidatesQuery = candidatesQuery.where(
+            "id",
+            "=",
+            rentalAgreementLineId
+          );
+        }
+        const candidates = await candidatesQuery.orderBy("id").execute();
+        if (rentalAgreementLineId && candidates.length === 0) {
+          throw new InvalidInputError("Only a Pending unit can be delivered");
+        }
+
+        if (draft) {
+          if (!rentalAgreementLineId) return { id: draft.id };
+          const onDocument = onOpenShipments.find(
+            (row) => row.rentalAgreementLineId === rentalAgreementLineId
+          );
+          if (onDocument && onDocument.shipmentId !== draft.id) {
+            throw new InvalidInputError(
+              "The unit is already on an open shipment"
+            );
+          }
+          if (onDocument) {
+            if (!onDocument.shipped) {
+              await trx
+                .updateTable("shipmentFixedAssetLine")
+                .set({ shipped: true, updatedBy: userId })
+                .where("id", "=", onDocument.id)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+            return { id: draft.id };
+          }
+          await trx
+            .insertInto("shipmentFixedAssetLine")
+            .values({
+              shipmentId: draft.id,
+              rentalAgreementLineId,
+              shipped: true,
+              companyId,
+              createdBy: userId
+            })
+            .execute();
+          return { id: draft.id };
+        }
+
+        const onOpenDocument = new Set(
+          onOpenShipments.map((row) => row.rentalAgreementLineId)
+        );
+        const units = candidates.filter((line) => !onOpenDocument.has(line.id));
+        if (units.length === 0) {
+          throw new InvalidInputError("No units to deliver");
+        }
+
+        const header = await trx
+          .insertInto("shipment")
+          .values({
+            shipmentId: await getNextSequence(trx, "shipment", companyId),
+            sourceDocument: "Rental Agreement",
+            sourceDocumentId: agreement.id,
+            sourceDocumentReadableId: agreement.rentalAgreementId,
+            customerId: agreement.customerId,
+            locationId: agreement.locationId,
+            status: "Draft",
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("shipmentFixedAssetLine")
+          .values(
+            units.map((line) => ({
+              shipmentId: header.id,
+              rentalAgreementLineId: line.id,
+              shipped: true,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+        return { id: header.id };
+      });
+    }
+    case "receiptFromRentalAgreement": {
+      // A rental return: one Draft receipt per agreement holds the units
+      // that can come back — On Rent ticked, Pending unticked (spec Q8). A
+      // per-unit shortcut adds (or ticks) its unit on it.
+      const { rentalAgreementId, rentalAgreementLineId } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        rentalAgreementId,
+        rentalAgreementLineId,
+        userId
+      });
+
+      return db.transaction().execute(async (trx) => {
+        const agreement = await trx
+          .selectFrom("rentalAgreement")
+          .select([
+            "id",
+            "rentalAgreementId",
+            "status",
+            "customerId",
+            "locationId"
+          ])
+          .where("id", "=", rentalAgreementId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!agreement) throw new NotFoundError("Rental agreement not found");
+        if (agreement.status !== "Active") {
+          throw new InvalidInputError(
+            `Rental agreement ${agreement.rentalAgreementId} is ${agreement.status}; units are returned from an Active agreement`
+          );
+        }
+
+        const draft = await trx
+          .selectFrom("receipt")
+          .select("id")
+          .where("sourceDocument", "=", "Rental Agreement")
+          .where("sourceDocumentId", "=", agreement.id)
+          .where("status", "=", "Draft")
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+
+        // Only another open RECEIPT keeps a unit off this one: a Pending
+        // unit may sit on an open shipment too, and the first to post wins.
+        const onOpenReceipts = await trx
+          .selectFrom("receiptFixedAssetLine as rfl")
+          .innerJoin("receipt as r", (join) =>
+            join
+              .onRef("r.id", "=", "rfl.receiptId")
+              .onRef("r.companyId", "=", "rfl.companyId")
+          )
+          .select([
+            "rfl.id",
+            "rfl.receiptId",
+            "rfl.rentalAgreementLineId",
+            "rfl.received"
+          ])
+          .where("r.sourceDocument", "=", "Rental Agreement")
+          .where("r.sourceDocumentId", "=", agreement.id)
+          .where("r.status", "in", ["Draft", "Pending"])
+          .where("rfl.companyId", "=", companyId)
+          .execute();
+
+        let candidatesQuery = trx
+          .selectFrom("rentalAgreementLine")
+          .select(["id", "status"])
+          .where("rentalAgreementId", "=", agreement.id)
+          .where("companyId", "=", companyId)
+          .where("status", "in", ["Pending", "On Rent"]);
+        if (rentalAgreementLineId) {
+          candidatesQuery = candidatesQuery.where(
+            "id",
+            "=",
+            rentalAgreementLineId
+          );
+        }
+        const candidates = await candidatesQuery.orderBy("id").execute();
+        if (rentalAgreementLineId && candidates.length === 0) {
+          throw new InvalidInputError(
+            "Only a Pending or On Rent unit can be returned"
+          );
+        }
+
+        if (draft) {
+          if (!rentalAgreementLineId) return { id: draft.id };
+          const onDocument = onOpenReceipts.find(
+            (row) => row.rentalAgreementLineId === rentalAgreementLineId
+          );
+          if (onDocument && onDocument.receiptId !== draft.id) {
+            throw new InvalidInputError(
+              "The unit is already on an open receipt"
+            );
+          }
+          if (onDocument) {
+            if (!onDocument.received) {
+              await trx
+                .updateTable("receiptFixedAssetLine")
+                .set({ received: true, updatedBy: userId })
+                .where("id", "=", onDocument.id)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+            return { id: draft.id };
+          }
+          await trx
+            .insertInto("receiptFixedAssetLine")
+            .values({
+              receiptId: draft.id,
+              rentalAgreementLineId,
+              received: true,
+              companyId,
+              createdBy: userId
+            })
+            .execute();
+          return { id: draft.id };
+        }
+
+        const onOpenDocument = new Set(
+          onOpenReceipts.map((row) => row.rentalAgreementLineId)
+        );
+        const units = candidates.filter((line) => !onOpenDocument.has(line.id));
+        if (units.length === 0) {
+          throw new InvalidInputError("No units to return");
+        }
+
+        const header = await trx
+          .insertInto("receipt")
+          .values({
+            receiptId: await getNextSequence(trx, "receipt", companyId),
+            sourceDocument: "Rental Agreement",
+            sourceDocumentId: agreement.id,
+            sourceDocumentReadableId: agreement.rentalAgreementId,
+            locationId: agreement.locationId,
+            status: "Draft",
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("receiptFixedAssetLine")
+          .values(
+            units.map((line) => ({
+              receiptId: header.id,
+              rentalAgreementLineId: line.id,
+              // The shortcut names its unit, so it comes back ticked; a
+              // whole-agreement receipt ticks only what is out on rent.
+              received: rentalAgreementLineId
+                ? true
+                : line.status === "On Rent",
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+        return { id: header.id };
+      });
+    }
+    case "journalEntry": {
+      let createdDocumentId;
+      const id = await db.transaction().execute(async (trx) => {
+        const journalEntryId = await getNextSequence(
+          trx,
+          "journalEntry",
+          companyId
+        );
+
+        const newJournalEntry = await trx
+          .insertInto("journal")
+          .values({
+            journalEntryId,
+            postingDate: datetime
+              .today(await resolveCompanyTimeZone(trx, companyId))
+              .toString(),
+            companyId,
+            sourceType: "Manual",
+            status: "Draft",
+            createdBy: userId
+          })
+          .returning(["id"])
+          .execute();
+
+        createdDocumentId = newJournalEntry?.[0]?.id;
+        if (!createdDocumentId)
+          throw new Error("Failed to create journal entry");
+        return createdDocumentId;
+      });
+
+      return { id };
+    }
+    default:
+      throw new InvalidInputError("Invalid document type");
+  }
+}
+
+export type ReceiptLineItem = Omit<
+  Database["public"]["Tables"]["receiptLine"]["Insert"],
+  "id" | "receiptId" | "updatedBy" | "createdAt" | "updatedAt"
+>;
+
+export type ShipmentLineItem = Omit<
+  Database["public"]["Tables"]["shipmentLine"]["Insert"],
+  "id" | "shipmentId" | "updatedBy" | "createdAt" | "updatedAt"
+>;
+/**
+ * Pure journal-line builders for moving value between inventory and the fixed
+ * asset register — capitalising stock / WIP / CIP into an asset, and returning
+ * an asset to stock at its net book value.
+ *
+ * A line's stored amount is natural-balance-signed the way `journalLine.amount`
+ * is: on an Asset account `debit("asset", x)` is +x and `credit("asset", x)` is
+ * −x. Every account is class Asset except the offset of `buildOffsetLines`
+ * (and an entered cost's credit), which is signed by its own class. Each
+ * amount is rounded to the internal scale before it is placed on a line, and
+ * every builder refuses to return an unbalanced set of lines.
+ */
+
+export type PostingLine = {
+  accountId: string;
+  description: string;
+  amount: number;
+};
+
+export type AssetAccounts = {
+  assetAccountId: string;
+  accumulatedDepreciationAccountId: string;
+};
+
+/** A finite input, rounded to the internal scale the ledger stores. */
+function ledgerAmount(value: number, label: string): number {
+  if (!Number.isFinite(value)) throw new Error(`${label} must be finite`);
+  return round(value);
+}
+
+// Every line here sits on an Asset-class account, so the stored amounts are
+// already signed debits (+ debit, − credit) and a balanced journal sums to 0.
+function assertAssetLinesBalance(lines: PostingLine[], label: string): void {
+  const signedDebitTotal = round(
+    lines.reduce((sum, line) => sum + line.amount, 0)
+  );
+  assertBalanced(signedDebitTotal, 0, EPSILON, label);
+}
+
+/** A stored, natural-balance-signed amount as a signed debit. */
+function asSignedDebit(type: AccountType, amount: number): number {
+  return amount * debit(type, 1);
+}
+
+/**
+ * Capitalise `cost` into a fixed asset: Dr the asset account, Cr the account
+ * the value came from — a stock account (Finished Goods / Raw Materials), WIP,
+ * or CIP — under `creditDescription`. `creditAccountType` is that account's
+ * class (default asset): an entered cost is credited to whatever account it
+ * was spent from — Retained Earnings is Equity, so its credit is stored +x.
+ */
+export function buildCapitalizationLines(args: {
+  cost: number;
+  assetAccountId: string;
+  creditAccountId: string;
+  creditDescription: string;
+  creditAccountType?: AccountType;
+}): PostingLine[] {
+  const cost = ledgerAmount(args.cost, "Asset cost");
+  // A cost that rounds to nothing at ledger precision has nothing to post.
+  if (cost <= 0) throw new Error("Asset cost must be positive");
+
+  return buildOffsetLines({
+    amount: cost,
+    accountId: args.assetAccountId,
+    description: "Fixed Asset Acquisition",
+    offsetAccountId: args.creditAccountId,
+    offsetDescription: args.creditDescription,
+    offsetAccountType: args.creditAccountType ?? "asset",
+    label: "Asset capitalization journal"
   });
+}
+
+/**
+ * Raise (`amount` > 0) or lower (`amount` < 0) an Asset-class account against
+ * an offset account of any class: Dr asset / Cr offset to raise, the reverse
+ * to lower. Each line is signed by its own account's natural balance, and the
+ * pair is checked as debits = credits.
+ */
+export function buildOffsetLines(args: {
+  amount: number;
+  accountId: string;
+  description: string;
+  offsetAccountId: string;
+  offsetDescription: string;
+  offsetAccountType: AccountType;
+  label: string;
+}): PostingLine[] {
+  const amount = ledgerAmount(args.amount, args.label);
+  if (amount === 0) throw new Error(`${args.label} has nothing to post`);
+  const raise = amount > 0;
+  const size = Math.abs(amount);
+  const lines: PostingLine[] = [
+    {
+      accountId: args.accountId,
+      description: args.description,
+      amount: raise ? debit("asset", size) : credit("asset", size)
+    },
+    {
+      accountId: args.offsetAccountId,
+      description: args.offsetDescription,
+      amount: raise
+        ? credit(args.offsetAccountType, size)
+        : debit(args.offsetAccountType, size)
+    }
+  ];
+  const [assetLine, offsetLine] = lines as [PostingLine, PostingLine];
+  assertBalanced(
+    round(
+      asSignedDebit("asset", assetLine.amount) +
+        asSignedDebit(args.offsetAccountType, offsetLine.amount)
+    ),
+    0,
+    EPSILON,
+    args.label
+  );
+  return lines;
+}
+
+/**
+ * Return a fixed asset to inventory at its net book value: Dr inventory for
+ * `cost − accumulatedDepreciation`, Dr accumulated depreciation to clear it
+ * (omitted when nothing has been depreciated), Cr the asset account at cost.
+ */
+export function buildReturnToInventoryLines(args: {
+  cost: number;
+  accumulatedDepreciation: number;
+  inventoryAccountId: string;
+  inventoryDescription: string;
+  accounts: AssetAccounts;
+}): PostingLine[] {
+  const cost = ledgerAmount(args.cost, "Asset cost");
+  const accumulatedDepreciation = ledgerAmount(
+    args.accumulatedDepreciation,
+    "Accumulated depreciation"
+  );
+  if (cost <= 0) throw new Error("Asset cost must be positive");
+  if (accumulatedDepreciation < 0) {
+    throw new Error("Accumulated depreciation must not be negative");
+  }
+  if (accumulatedDepreciation > cost) {
+    throw new Error("Accumulated depreciation exceeds asset cost");
+  }
+  const netBookValue = round(cost - accumulatedDepreciation);
+
+  const lines: PostingLine[] = [
+    {
+      accountId: args.inventoryAccountId,
+      description: args.inventoryDescription,
+      amount: debit("asset", netBookValue)
+    }
+  ];
+  if (accumulatedDepreciation !== 0) {
+    lines.push({
+      accountId: args.accounts.accumulatedDepreciationAccountId,
+      description: "Accumulated Depreciation",
+      amount: debit("asset", accumulatedDepreciation)
+    });
+  }
+  lines.push({
+    accountId: args.accounts.assetAccountId,
+    description: "Fixed Asset Cost",
+    amount: credit("asset", cost)
+  });
+  assertAssetLinesBalance(lines, "Asset return to inventory journal");
+  return lines;
+}
+export interface CostLayer {
+  costLedgerId: string;
+  quantityConsumed: number;
+  unitCost: number;
+}
+
+export interface COGSResult {
+  unitCost: number;
+  totalCost: number;
+  layersConsumed: CostLayer[];
+}
+
+export async function calculateCOGS(
+  trx: Transaction<DB>,
+  {
+    itemId,
+    quantity,
+    companyId,
+    trackedEntityIds
+  }: {
+    itemId: string;
+    quantity: number;
+    companyId: string;
+    // The serial units leaving, when the caller knows them: each is relieved
+    // from the layer booked for it (specific identification) before the
+    // FIFO / LIFO layers (`orderLayersForConsumption`).
+    trackedEntityIds?: readonly string[];
+  }
+): Promise<COGSResult> {
+  const itemCost = await trx
+    .selectFrom("itemCost")
+    .selectAll()
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+
+  const costingMethod = itemCost.costingMethod;
+
+  switch (costingMethod) {
+    case "Standard": {
+      const standardCost = Number(itemCost.standardCost ?? 0);
+      return {
+        unitCost: standardCost,
+        totalCost: standardCost * quantity,
+        layersConsumed: []
+      };
+    }
+
+    case "Average": {
+      const unitCost = Number(itemCost.unitCost ?? 0);
+      return {
+        unitCost,
+        totalCost: unitCost * quantity,
+        layersConsumed: []
+      };
+    }
+
+    case "FIFO":
+    case "LIFO": {
+      // The item's open layers, oldest first, and their open adjustment
+      // children. Locked for this transaction: two concurrent consumers
+      // would otherwise both read the same remainingQuantity and consume the
+      // layer twice (lost update).
+      const openLayers = trx
+        .selectFrom("costLedger")
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .where("remainingQuantity", ">", 0)
+        .where(isCostLayer);
+      const layers = await openLayers
+        .select([
+          "id",
+          "quantity",
+          "cost",
+          "remainingQuantity",
+          "trackedEntityId"
+        ])
+        .orderBy("postingDate", "asc")
+        .orderBy("createdAt", "asc")
+        .forUpdate()
+        .execute();
+      const children = await trx
+        .selectFrom("costLedger")
+        .select([
+          "id",
+          "appliesToCostLedgerId",
+          "quantity",
+          "cost",
+          "remainingQuantity"
+        ])
+        .where("companyId", "=", companyId)
+        .where("appliesToCostLedgerId", "in", openLayers.select("id"))
+        .where("remainingQuantity", ">", 0)
+        .orderBy("createdAt", "asc")
+        .forUpdate()
+        .execute();
+      const childrenByLayer = Map.groupBy(
+        children,
+        (child) => child.appliesToCostLedgerId
+      );
+
+      const relief = relieveLayers(
+        layers.map((layer) => ({
+          id: layer.id,
+          quantity: Number(layer.quantity),
+          cost: Number(layer.cost),
+          remainingQuantity: Number(layer.remainingQuantity),
+          trackedEntityId: layer.trackedEntityId,
+          children: (childrenByLayer.get(layer.id) ?? []).map((child) => ({
+            id: child.id,
+            quantity: Number(child.quantity),
+            cost: Number(child.cost),
+            remainingQuantity: Number(child.remainingQuantity)
+          }))
+        })),
+        costingMethod,
+        { quantity, trackedEntityIds: trackedEntityIds ?? [] },
+        // Negative inventory: a quantity no layer covers.
+        Number(itemCost.unitCost ?? 0)
+      );
+
+      if (relief.remaining.size > 0) {
+        await sql`
+          UPDATE "costLedger" AS c
+          SET "remainingQuantity" = v."remaining"
+          FROM (VALUES ${sql.join(
+            [...relief.remaining].map(
+              ([id, remaining]) => sql`(${id}, ${remaining}::numeric)`
+            )
+          )}) AS v("id", "remaining")
+          WHERE c."id" = v."id" AND c."companyId" = ${companyId}
+        `.execute(trx);
+      }
+
+      return {
+        unitCost: quantity > 0 ? relief.totalCost / quantity : 0,
+        totalCost: relief.totalCost,
+        layersConsumed: relief.layersConsumed.map((layer) => ({
+          costLedgerId: layer.layerId,
+          quantityConsumed: layer.quantity,
+          unitCost: layer.unitCost
+        }))
+      };
+    }
+
+    default:
+      throw new Error(`Unsupported costing method: ${costingMethod}`);
+  }
+}
+/**
+ * Serializes every writer of one company's contract positions. A movement is
+ * computed from the position as read, so two writers interleaving on one line
+ * would both draw on the same pool. Transaction-scoped: released at commit.
+ */
+export async function lockContractPositions(
+  trx: KyselyTx,
+  companyId: string
+): Promise<void> {
+  await sql`SELECT pg_advisory_xact_lock(hashtext(${`contract-position:${companyId}`}))`.execute(
+    trx
+  );
+}
+
+/** Each line's position — the sum of its ledger entries — in one grouped
+ *  read. A line with no entries is the empty position. */
+export async function loadContractPositions(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  lineIds: string[]
+): Promise<Map<string, ContractPosition>> {
+  const positions = new Map<string, ContractPosition>();
+  const ids = [...new Set(lineIds)];
+  for (const id of ids) positions.set(id, { ...EMPTY_POSITION });
+  if (ids.length === 0) return positions;
+  const rows = await db
+    .selectFrom("customerContractLedgerEntry")
+    .select([
+      "customerContractLineId",
+      sql<number>`COALESCE(SUM("deferredAmount"), 0)`.as("deferredAmount"),
+      sql<number>`COALESCE(SUM("deferredBase"), 0)`.as("deferredBase"),
+      sql<number>`COALESCE(SUM("assetAmount"), 0)`.as("assetAmount"),
+      sql<number>`COALESCE(SUM("assetBase"), 0)`.as("assetBase")
+    ])
+    .where("companyId", "=", companyId)
+    .where("customerContractLineId", "in", ids)
+    .groupBy("customerContractLineId")
+    .execute();
+  for (const row of rows) {
+    positions.set(row.customerContractLineId, {
+      deferredAmount: Number(row.deferredAmount),
+      deferredBase: Number(row.deferredBase),
+      assetAmount: Number(row.assetAmount),
+      assetBase: Number(row.assetBase)
+    });
+  }
+  return positions;
+}
+
+export function samePosition(a: ContractPosition, b: ContractPosition) {
+  return (
+    equals(a.deferredAmount, b.deferredAmount) &&
+    equals(a.deferredBase, b.deferredBase) &&
+    equals(a.assetAmount, b.assetAmount) &&
+    equals(a.assetBase, b.assetBase)
+  );
+}
+
+/** A signed credit (negative = debit) as the stored natural-balance amount of
+ *  an account of `accountClass`. */
+export function signedCreditAmount(accountClass: string, amount: number) {
+  const type = accountTypeFromClass(accountClass);
+  return amount >= 0 ? credit(type, amount) : debit(type, -amount);
+}
+/**
+ * The dimension a charge or reimbursement line's cost center and project
+ * post under: the oldest active Cost Center and Project dimension of the
+ * company group, or null when the group has none. One read for both.
+ */
+export async function costCenterAndProjectDimensions(
+  trx: Kysely<DB>,
+  companyGroupId: string | null
+): Promise<{ costCenter: string | null; project: string | null }> {
+  // A company in no group has no dimensions.
+  if (!companyGroupId) return { costCenter: null, project: null };
+  const dimensions = await trx
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", companyGroupId)
+    .where("active", "=", true)
+    .where("entityType", "in", ["CostCenter", "Project"])
+    .orderBy("createdAt")
+    .orderBy("id")
+    .execute();
+  return {
+    costCenter:
+      dimensions.find((dimension) => dimension.entityType === "CostCenter")
+        ?.id ?? null,
+    project:
+      dimensions.find((dimension) => dimension.entityType === "Project")?.id ??
+      null
+  };
+}
+// The tracked entities an item's outgoing ledger rows name — the ids to pass
+// calculateCOGS as `trackedEntityIds`. Batch ids come along harmlessly: only
+// serial layers are ever stamped, so a batch id matches no layer.
+export function leavingTrackedEntityIds(
+  ledgerRows: readonly {
+    itemId?: string | null;
+    trackedEntityId?: string | null;
+    quantity?: number | null;
+  }[],
+  itemId: string
+): string[] {
+  const leaving = new Set<string>();
+  for (const row of ledgerRows) {
+    if (
+      row.itemId === itemId &&
+      row.trackedEntityId &&
+      (row.quantity ?? 0) < 0
+    ) {
+      leaving.add(row.trackedEntityId);
+    }
+  }
+  return [...leaving];
+}
+/** A currency's settlement precision for this company: the group's
+ *  `currency.decimalPlaces`, never a literal. Billed amounts (rental billing
+ *  periods, lease payment rows) are rounded to it. */
+export async function currencyDecimals(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  currencyCode: string
+): Promise<number> {
+  const currency = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select("currency.decimalPlaces")
+    .where("company.id", "=", companyId)
+    .where("currency.code", "=", currencyCode)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces === null) {
+    throw new InvalidInputError(
+      `Currency ${currencyCode} is not set up for this company`
+    );
+  }
+  return currency.decimalPlaces;
+}
+export const INVENTORY_VOID_BEFORE_CUTOVER_ERROR =
+  "This document is from before your accounting cutover. Record a return or an inventory adjustment instead.";
+
+export const SALES_INVOICE_VOID_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Issue a credit memo instead.";
+
+export const PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR =
+  "This invoice is from before your accounting cutover. Record a debit memo instead.";
+
+export const CHARGE_VOID_BEFORE_CUTOVER_ERROR =
+  "This charge is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+export const REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR =
+  "This reimbursement is from before your accounting cutover. Record a journal entry to correct it instead.";
+
+export const STOCK_CORRECTION_BEFORE_CUTOVER_ERROR =
+  "This movement is from before your accounting cutover. Record an inventory adjustment instead.";
+
+export const TIME_ENTRY_BEFORE_CUTOVER_ERROR =
+  "This time entry was posted before your accounting cutover. Record a journal entry to correct it instead.";
+
+/**
+ * Throws `message` when the document's posting date is before the company's
+ * cutover. Call it before any write. A company with no cutover, or a document
+ * with no posting date, passes.
+ */
+export async function refuseVoidBeforeCutover(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  postingDate: string | null | undefined,
+  message: string
+): Promise<void> {
+  if (!postingDate) return;
+  const cutoverDate = await readAccountingCutoverDate(db, companyId);
+  if (isBeforeCutover(postingDate, cutoverDate)) {
+    throw new InvalidInputError(message);
+  }
+}
+
+/**
+ * Refuses a rebuilt void line on Migration Clearing. Only the opening journal
+ * and the trial balance post there; a void that did would move the proof
+ * that the opening ties out.
+ */
+export function assertNoMigrationClearing(
+  lines: { accountId: string | null }[],
+  migrationClearingAccountId: string | null
+): void {
+  if (
+    migrationClearingAccountId &&
+    lines.some((line) => line.accountId === migrationClearingAccountId)
+  ) {
+    throw new Error("A void never posts to the Migration Clearing account.");
+  }
+}
+type DocumentType = Database["public"]["Enums"]["journalLineDocumentType"];
+
+/** What narrows the lines. Every field set must match; an empty list matches
+ *  nothing. */
+export type DocumentJournalLineFilter = {
+  documentId?: string;
+  documentType?: DocumentType | readonly DocumentType[];
+  documentLineReference?: readonly string[];
+  journalId?: readonly string[];
+  journalLineReference?: readonly string[];
+  accrual?: boolean;
+};
+
+export async function documentJournalLines(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string,
+  filter: DocumentJournalLineFilter
+): Promise<Selectable<KyselyDatabase["journalLine"]>[]> {
+  const lists = [
+    filter.documentLineReference,
+    filter.journalId,
+    filter.journalLineReference
+  ];
+  if (lists.some((list) => list !== undefined && list.length === 0)) {
+    return [];
+  }
+  let query = db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .selectAll("journalLine")
+    .where("journalLine.companyId", "=", companyId)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES]);
+  if (filter.documentId !== undefined) {
+    query = query.where("journalLine.documentId", "=", filter.documentId);
+  }
+  if (typeof filter.documentType === "string") {
+    query = query.where("journalLine.documentType", "=", filter.documentType);
+  } else if (filter.documentType !== undefined) {
+    query = query.where("journalLine.documentType", "in", [
+      ...filter.documentType
+    ]);
+  }
+  if (filter.documentLineReference !== undefined) {
+    query = query.where("journalLine.documentLineReference", "in", [
+      ...filter.documentLineReference
+    ]);
+  }
+  if (filter.journalId !== undefined) {
+    query = query.where("journalLine.journalId", "in", [...filter.journalId]);
+  }
+  if (filter.journalLineReference !== undefined) {
+    query = query.where("journalLine.journalLineReference", "in", [
+      ...filter.journalLineReference
+    ]);
+  }
+  if (filter.accrual !== undefined) {
+    query = query.where("journalLine.accrual", "=", filter.accrual);
+  }
+  return query.execute();
+}
+/**
+ * Keeps Draft revenue recognition runs in step with a Planned schedule row a
+ * document is about to delete or shrink. A run line copies its row's amount
+ * when the run is proposed and posting uses that copy, so a credit memo that
+ * trimmed a held deferral left the run recognizing the old amount, and a void
+ * or memo that deleted one tripped the line's ON DELETE RESTRICT foreign key.
+ * Only a Draft run can hold a Planned row (posting flips both), so this never
+ * touches a posted run. A run left with no lines is deleted — it could not
+ * post. Call it in the document's transaction, BEFORE the schedule write.
+ */
+export async function syncDraftRecognitionRuns(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    deletedScheduleIds?: string[];
+    reduced?: { id: string; amount: number }[];
+  }
+): Promise<void> {
+  const { companyId, userId, deletedScheduleIds = [], reduced = [] } = args;
+
+  if (deletedScheduleIds.length > 0) {
+    const released = await trx
+      .deleteFrom("revenueRecognitionRunLine")
+      .where("companyId", "=", companyId)
+      .where("scheduleId", "in", deletedScheduleIds)
+      .returning("runId")
+      .execute();
+    const runIds = [...new Set(released.map((line) => line.runId))];
+    if (runIds.length > 0) {
+      await trx
+        .deleteFrom("revenueRecognitionRun")
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .where("id", "in", runIds)
+        .where(({ not, exists, selectFrom }) =>
+          not(
+            exists(
+              selectFrom("revenueRecognitionRunLine as l")
+                .select("l.id")
+                .whereRef("l.runId", "=", "revenueRecognitionRun.id")
+                .where("l.companyId", "=", companyId)
+            )
+          )
+        )
+        .execute();
+    }
+  }
+
+  if (reduced.length > 0) {
+    await trx
+      .updateTable("revenueRecognitionRunLine")
+      .set({
+        amount: sql<number>`CASE "scheduleId" ${sql.join(
+          reduced.map(
+            ({ id, amount }) => sql`WHEN ${id} THEN ${amount}::numeric`
+          ),
+          sql` `
+        )} END`,
+        updatedBy: userId
+      })
+      .where("companyId", "=", companyId)
+      .where(
+        "scheduleId",
+        "in",
+        reduced.map(({ id }) => id)
+      )
+      .execute();
+  }
+}
+type FixedAssetUpdate = Database["public"]["Tables"]["fixedAsset"]["Update"];
+
+type Write = (trx: Kysely<KyselyDatabase>) => Promise<unknown>;
+
+/** Fixed-asset writes decided while the journal is built, applied inside the
+ *  posting transaction so a failed post leaves the asset register untouched. */
+export class FixedAssetWrites {
+  private patches = new Map<string, FixedAssetUpdate>();
+  private writes: Write[] = [];
+
+  /** Later lines of one document see what earlier lines staged. */
+  overlay<T extends object>(assetId: string, row: T): T {
+    return Object.assign(row, this.patches.get(assetId));
+  }
+
+  patch(assetId: string, set: FixedAssetUpdate): void {
+    this.patches.set(assetId, { ...this.patches.get(assetId), ...set });
+  }
+
+  defer(write: Write): void {
+    this.writes.push(write);
+  }
+
+  async apply(trx: Kysely<KyselyDatabase>, companyId: string): Promise<void> {
+    for (const [id, set] of this.patches) {
+      await updateRows(trx, "fixedAsset", set, { id, companyId });
+    }
+    for (const write of this.writes) await write(trx);
+  }
+}
+const MONTH_NUMBER: Record<string, number> = {
+  January: 1,
+  February: 2,
+  March: 3,
+  April: 4,
+  May: 5,
+  June: 6,
+  July: 7,
+  August: 8,
+  September: 9,
+  October: 10,
+  November: 11,
+  December: 12
+};
+
+type PeriodMode = "historical" | "historical-with-shift" | "current";
+
+function closedPeriodError(mode: PeriodMode, closed: boolean): Error {
+  if (mode === "historical") {
+    return new Error(
+      closed
+        ? "The original movement's accounting period is closed — its movements can no longer be corrected."
+        : "The original movement's accounting period is locked. Unlock it before posting a correction."
+    );
+  }
+  return new Error(
+    closed
+      ? "Accounting period is closed. Reopen it before posting."
+      : "Accounting period is locked. Unlock it before posting operational documents."
+  );
+}
+
+/** Resolve a posting date and lock its period on the caller's transaction.
+ * Historical card imports may shift to the next open period; corrections keep
+ * their original date. Only current-period posting changes the Active period,
+ * and only when the period contains the company's today: a posting dated in
+ * another month (a catch-up run, a back-dated document) leaves it alone.
+ */
+export async function resolveAccountingPeriod(
+  db: Kysely<DB>,
+  companyId: string,
+  requestedDate: string,
+  mode: PeriodMode
+): Promise<{ id: string; postingDate: string }> {
+  // Reuse a transaction instead of borrowing a second pool connection. All
+  // reads observe the same transaction.
+  if (!db.isTransaction) {
+    return db
+      .transaction()
+      .execute((trx) =>
+        resolveAccountingPeriod(trx, companyId, requestedDate, mode)
+      );
+  }
+
+  const periods = db
+    .selectFrom("accountingPeriod")
+    .select([
+      "id",
+      // Keep calendar values as ISO text, never passing through a JavaScript
+      // Date.
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string>`"endDate"::text`.as("endDate"),
+      "status",
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId);
+  let period = await periods
+    .where("startDate", "<=", requestedDate)
+    .where("endDate", ">=", requestedDate)
+    .orderBy("startDate")
+    .orderBy("id")
+    .forUpdate()
+    .executeTakeFirst();
+
+  const isClosed =
+    period &&
+    (period.closeStatus === "Locked" ||
+      period.closeStatus === "Closed" ||
+      period.closedAt !== null);
+  if (isClosed && mode === "historical-with-shift") {
+    period = await periods
+      .where("startDate", ">", requestedDate)
+      .where("closeStatus", "=", "Open")
+      .where("closedAt", "is", null)
+      .orderBy("startDate")
+      .orderBy("id")
+      .forUpdate()
+      .executeTakeFirst();
+    if (!period) {
+      throw new Error(
+        "Accounting period is locked or closed; no open successor exists"
+      );
+    }
+  } else if (period && isClosed) {
+    throw closedPeriodError(
+      mode,
+      period.closeStatus === "Closed" || period.closedAt !== null
+    );
+  }
+
+  if (!period) {
+    const date = parseDate(requestedDate);
+    const fiscalSettings = await db
+      .selectFrom("fiscalYearSettings")
+      .select("startMonth")
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const startMonth = fiscalSettings?.startMonth
+      ? (MONTH_NUMBER[fiscalSettings.startMonth] ?? 1)
+      : 1;
+    const fiscalYear =
+      startMonth === 1 || date.month < startMonth ? date.year : date.year + 1;
+    const periodNumber = ((date.month - startMonth + 12) % 12) + 1;
+    // Create inactive, then activate below: this also preserves one active
+    // period while simultaneous first-time callers converge on the same row.
+    await db
+      .insertInto("accountingPeriod")
+      .values({
+        startDate: startOfMonth(date).toString(),
+        endDate: endOfMonth(date).toString(),
+        fiscalYear,
+        periodNumber,
+        status: "Inactive",
+        closeStatus: "Open",
+        companyId,
+        createdBy: "system"
+      })
+      .onConflict((oc) =>
+        oc.columns(["companyId", "fiscalYear", "periodNumber"]).doNothing()
+      )
+      .execute();
+    period = await periods
+      .where("fiscalYear", "=", fiscalYear)
+      .where("periodNumber", "=", periodNumber)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (
+      period.closeStatus === "Locked" ||
+      period.closeStatus === "Closed" ||
+      period.closedAt !== null
+    ) {
+      throw closedPeriodError(
+        mode,
+        period.closeStatus === "Closed" || period.closedAt !== null
+      );
+    }
+  }
+
+  if (mode === "current" && period.status !== "Active") {
+    const today = datetime
+      .today(await resolveCompanyTimeZone(db, companyId))
+      .toString();
+    if (period.startDate <= today && period.endDate >= today) {
+      await db
+        .updateTable("accountingPeriod")
+        .set({ status: "Inactive" })
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Active")
+        .execute();
+      await db
+        .updateTable("accountingPeriod")
+        .set({ status: "Active" })
+        .where("companyId", "=", companyId)
+        .where("id", "=", period.id)
+        .execute();
+    }
+  }
+  return {
+    id: period.id,
+    postingDate:
+      mode === "historical-with-shift" && period.startDate > requestedDate
+        ? period.startDate
+        : requestedDate
+  };
+}
+
+/** Original-period corrections retain the existing public calling contract. */
+export async function getAccountingPeriodForDate(
+  companyId: string,
+  db: Kysely<DB>,
+  date: string
+) {
+  return (await resolveAccountingPeriod(db, companyId, date, "historical")).id;
+}
+
+/** Pass the same business day used by the caller's journal and ledger rows. */
+export async function getCurrentAccountingPeriod(
+  companyId: string,
+  db: Kysely<DB>,
+  forDate?: string
+) {
+  const date =
+    forDate ??
+    datetime.today(await resolveCompanyTimeZone(db, companyId)).toString();
+  return (await resolveAccountingPeriod(db, companyId, date, "current")).id;
+}
+/** The company's posting accounts. Pass `db` (or `trx`); a Supabase client still works. */
+export async function getDefaultPostingGroup(
+  client: AnyPostgresClient,
+  companyId: string
+) {
+  if (isKysely(client)) {
+    return await single(client, "accountDefault", { companyId });
+  }
+  return await client
+    .from("accountDefault")
+    .select("*")
+    .eq("companyId", companyId)
+    .single();
+}
+
+// Buy → Raw Materials; Make / Buy and Make → Finished Goods. The rule is a
+// stable property of the item so the debit side (receipt/job completion) and
+// the credit side (shipment/issue/invoice) always hit the same account.
+export function resolveInventoryAccount(
+  replenishmentSystem:
+    | Database["public"]["Enums"]["itemReplenishmentSystem"]
+    | null,
+  accountDefaults: {
+    rawMaterialsAccount: string;
+    finishedGoodsAccount: string;
+  }
+): { account: string; description: string } {
+  return replenishmentSystem === "Make" ||
+    replenishmentSystem === "Buy and Make"
+    ? {
+        account: accountDefaults.finishedGoodsAccount,
+        description: "Finished Goods Account"
+      }
+    : {
+        account: accountDefaults.rawMaterialsAccount,
+        description: "Raw Materials Account"
+      };
+}
+/** A journal line's dimension values, by entity type: the shape a pure
+ *  posting builder returns and the legacy backfill writes as is. */
+export type JournalLineDimensionValues = Partial<
+  Record<Database["public"]["Enums"]["dimensionEntityType"], string | null>
+>;
+
+/**
+ * The `journalLineDimension` rows of inserted lines: `journalLineIds[i]` is
+ * the id of `lines[i]`. A value whose entity type has no active dimension
+ * (`dimensionIdByEntity`) writes none. Rows follow each line's key order.
+ */
+export function journalLineDimensionRows({
+  journalLineIds,
+  lines,
+  dimensionIdByEntity,
+  companyId
+}: {
+  journalLineIds: string[];
+  lines: { dimensions: JournalLineDimensionValues }[];
+  dimensionIdByEntity: ReadonlyMap<string, string>;
+  companyId: string;
+}) {
+  return journalLineIds.flatMap((journalLineId, index) =>
+    Object.entries(lines[index]?.dimensions ?? {}).flatMap(
+      ([entityType, valueId]) => {
+        const dimensionId = dimensionIdByEntity.get(entityType);
+        return dimensionId && valueId
+          ? [{ journalLineId, dimensionId, valueId, companyId }]
+          : [];
+      }
+    )
+  );
+}
+/**
+ * Allocate native journal-line ids before a bulk insert. Callers can then keep
+ * related rows bound to the intended line without depending on PostgreSQL's
+ * unspecified INSERT ... RETURNING row order.
+ */
+export async function allocateJournalLineIds(
+  trx: Transaction<KyselyDatabase>,
+  count: number
+): Promise<string[]> {
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new Error("Journal line id count must be a non-negative integer");
+  }
+  if (count === 0) return [];
+
+  const allocated = await sql<{ id: string; position: number }>`
+    SELECT id('jl') AS id, position::integer AS position
+    FROM generate_series(1, ${count}) WITH ORDINALITY AS requested(_, position)
+    ORDER BY position
+  `.execute(trx);
+  if (allocated.rows.length !== count) {
+    throw new Error("Failed to allocate journal line ids");
+  }
+  return allocated.rows.map((row) => row.id);
+}
+type Enums = Database["public"]["Enums"];
+
+/** The lease terms a payment row is cut from. */
+export type LeasePaymentCutTerms = {
+  commencementDate: string;
+  /** Null is open-ended: pass `through`. */
+  endDate: string | null;
+  /** A row due before it was paid outside Carbon: it is Skipped. */
+  invoiceFromDate: string;
+  paymentFrequency: Enums["leasePaymentFrequency"];
+  paymentTiming: Enums["rentalBillingTiming"];
+  annualEscalationPercent: number;
+};
+
+/** The leased asset (`leaseLine`) whose rows are cut. */
+export type LeasePaymentCutAsset = {
+  id: string;
+  /** The payment at commencement. */
+  paymentAmount: number;
+  purchaseOptionAmount: number | null;
+  purchaseOptionReasonablyCertain: boolean;
+};
+
+export type CutLeasePaymentRow = LeasePaymentRowInput & {
+  leaseLineId: string;
+  status: Extract<Enums["leasePaymentStatus"], "Pending" | "Skipped">;
+};
+
+/**
+ * One asset's payment rows, cut from the COMMENCEMENT so the escalation steps
+ * up on its anniversaries and a lease from the 29th–31st keeps its clamped
+ * months (`generateLeasePayments`: a short last period prorated by days; the
+ * purchase option on the end date, only when it is reasonably certain). A row
+ * due before `invoiceFromDate` was paid outside Carbon and is `Skipped`; a row
+ * of 0 is never cut.
+ *
+ * - `through` — an open-ended lease: the last date a period may start on
+ *   (`openEndedLeaseHorizon`).
+ * - `after` — only the periods that start after it (the rows an open-ended
+ *   lease already has end there, edited or not).
+ * - `from` — Modify: only the rows from lease month `month` on, where the
+ *   asset pays `paymentAtStart` (`remainingLeasePayments`, the math the
+ *   Modify preview shares): its commencement payment is derived from it,
+ *   and a period that started before the month (the frequency changed) is
+ *   cut down to its days from there.
+ *
+ * Returns the commencement payment the rows are cut at, which Modify stores
+ * on the asset.
+ */
+export function cutLeasePaymentRows(args: {
+  lease: LeasePaymentCutTerms;
+  asset: LeasePaymentCutAsset;
+  decimals: number;
+  through?: string;
+  after?: string | null;
+  from?: { month: number; paymentAtStart: number };
+}): { commencementPayment: number; rows: CutLeasePaymentRow[] } {
+  const { lease, asset, decimals, from } = args;
+  const purchaseOptionAmount = asset.purchaseOptionReasonablyCertain
+    ? (asset.purchaseOptionAmount ?? 0)
+    : 0;
+  let cut: { commencementPayment: number; rows: LeasePaymentRowInput[] };
+  if (from) {
+    if (!lease.endDate) {
+      throw new Error("Only a lease with an end date is cut from a month");
+    }
+    cut = remainingLeasePayments({
+      commencementDate: lease.commencementDate,
+      fromMonth: from.month,
+      endDate: lease.endDate,
+      paymentAtStart: from.paymentAtStart,
+      frequency: lease.paymentFrequency,
+      timing: lease.paymentTiming,
+      annualEscalationPercent: lease.annualEscalationPercent,
+      purchaseOptionAmount,
+      decimals
+    });
+  } else {
+    cut = {
+      commencementPayment: asset.paymentAmount,
+      rows: generateLeasePayments({
+        commencementDate: lease.commencementDate,
+        endDate: lease.endDate,
+        through: args.through,
+        paymentAmount: asset.paymentAmount,
+        frequency: lease.paymentFrequency,
+        timing: lease.paymentTiming,
+        annualEscalationPercent: lease.annualEscalationPercent,
+        purchaseOptionAmount,
+        decimals
+      })
+    };
+  }
+
+  const rows = cut.rows
+    .filter(
+      (row) => row.amount > 0 && (!args.after || row.periodStart > args.after)
+    )
+    .map(
+      (row): CutLeasePaymentRow => ({
+        ...row,
+        leaseLineId: asset.id,
+        status: row.dueDate < lease.invoiceFromDate ? "Skipped" : "Pending"
+      })
+    );
+
+  return { commencementPayment: round(cut.commencementPayment), rows };
+}
+// The account an entered cost is credited to: where that value was booked
+// when it was spent (an expense this year, Retained Earnings for an earlier
+// one). Any active posting account of the company group.
+export async function getOffsetAccount(
+  db: Kysely<DB>,
+  companyId: string,
+  accountId: string | null | undefined
+): Promise<{ id: string; type: AccountType }> {
+  if (!accountId) {
+    throw new InvalidInputError(
+      "Choose the account the cost was booked to when it was spent"
+    );
+  }
+  const account = await db
+    .selectFrom("account")
+    .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
+    .select(["account.id", "account.class"])
+    .where("account.id", "=", accountId)
+    .where("company.id", "=", companyId)
+    .where("account.active", "=", true)
+    .where("account.isGroup", "=", false)
+    .executeTakeFirst();
+  if (!account || !isAccountClass(account.class)) {
+    throw new InvalidInputError(
+      "The offset account must be an active posting account"
+    );
+  }
+  // The credit is signed by the account's own class (Retained Earnings is
+  // Equity), not as the inventory account it replaces.
+  return { id: account.id, type: accountTypeFromClass(account.class) };
+}
+type PartyDimension = { id: string; entityType: string };
+
+/** The company group's active party dimensions, for `partyDimensionValuesFrom`. */
+export function loadPartyDimensions(
+  trx: Transaction<KyselyDatabase>,
+  companyGroupId: string,
+  entityTypes: ("CustomerType" | "Customer" | "SupplierType" | "Supplier")[] = [
+    "CustomerType",
+    "Customer",
+    "SupplierType",
+    "Supplier"
+  ]
+): Promise<PartyDimension[]> {
+  return trx
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", companyGroupId)
+    .where("active", "=", true)
+    .where("entityType", "in", entityTypes)
+    .execute();
+}
+
+/** `partyDimensionValues` over dimensions already read. */
+export function partyDimensionValuesFrom(
+  dimensions: PartyDimension[],
+  args: { isAR: boolean; partyId: string; typeId: string | null }
+): { dimensionId: string; valueId: string }[] {
+  const { isAR, partyId, typeId } = args;
+  const partyType = isAR ? "Customer" : "Supplier";
+  return dimensions
+    .filter((dimension) =>
+      isAR
+        ? dimension.entityType === "CustomerType" ||
+          dimension.entityType === "Customer"
+        : dimension.entityType === "SupplierType" ||
+          dimension.entityType === "Supplier"
+    )
+    .flatMap((dimension) => {
+      const valueId = dimension.entityType === partyType ? partyId : typeId;
+      return valueId ? [{ dimensionId: dimension.id, valueId }] : [];
+    });
+}
+
+/**
+ * The party dimensions of a payment or memo journal: Customer and
+ * CustomerType for a customer, Supplier and SupplierType for a supplier.
+ * Every line of the journal carries each of them.
+ */
+export async function partyDimensionValues(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyGroupId: string;
+    isAR: boolean;
+    partyId: string;
+    typeId: string | null;
+  }
+): Promise<{ dimensionId: string; valueId: string }[]> {
+  const { companyGroupId, isAR } = args;
+  const dimensions = await loadPartyDimensions(
+    trx,
+    companyGroupId,
+    isAR ? ["CustomerType", "Customer"] : ["SupplierType", "Supplier"]
+  );
+  return partyDimensionValuesFrom(dimensions, args);
+}
+type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
+
+type CostLedgerInsert = Database["public"]["Tables"]["costLedger"]["Insert"];
+
+type JournalLineInsert = Database["public"]["Tables"]["journalLine"]["Insert"];
+
+type JournalLineDimensionInsert =
+  Database["public"]["Tables"]["journalLineDimension"]["Insert"];
+
+type ItemLedgerDocumentType =
+  Database["public"]["Enums"]["itemLedgerDocumentType"];
+
+type JournalLineDocumentType =
+  Database["public"]["Enums"]["journalLineDocumentType"];
+
+// itemLedgerDocumentType values that also exist on journalLineDocumentType.
+// The journal line falls back to 'Inventory Adjustment' for ledger documentType
+// values the journal enum doesn't carry (e.g. 'Sales Invoice', 'Direct
+// Transfer', 'Posted Assembly') — inserting those would fail the enum cast.
+export const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
+  "Sales Shipment",
+  "Purchase Receipt",
+  "Purchase Invoice",
+  "Transfer Shipment",
+  "Job Consumption",
+  "Job Receipt",
+  "Batch Split",
+  "Maintenance Consumption",
+  "Inventory Count",
+  "Non-Conformance",
+  "Inbound Inspection",
+  "Scrap",
+  "Asset Transfer"
+]);
+
+export function toJournalLineDocumentType(
+  documentType: ItemLedgerDocumentType | null | undefined
+): JournalLineDocumentType {
+  return (
+    documentType && JOURNAL_LINE_SAFE_DOCUMENT_TYPES.has(documentType)
+      ? documentType
+      : "Inventory Adjustment"
+  ) as JournalLineDocumentType;
+}
+
+// The item ledger row for a movement — the stock movement itself, written
+// before anything that references it. `quantity` is SIGNED (positive for an
+// increase, negative for a decrease) and is the only field with arithmetic on
+// it. Every caller goes through here so a column added to the movement lands
+// on the single-record path and the bulk importer at once.
+export function buildItemLedgerRow(args: {
+  postingDate: string;
+  entryType: Database["public"]["Enums"]["itemLedgerType"];
+  documentType?: ItemLedgerDocumentType | null;
+  documentId?: string | null;
+  correctionOfItemLedgerId?: string | null;
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  trackedEntityId: string | null;
+  quantity: number;
+  comment?: string | null;
+  scrapReasonId?: string | null;
+  companyId: string;
+  createdBy: string;
+}): ItemLedgerInsert {
+  return {
+    postingDate: args.postingDate,
+    entryType: args.entryType,
+    documentType: args.documentType ?? null,
+    documentId: args.documentId ?? null,
+    correctionOfItemLedgerId: args.correctionOfItemLedgerId ?? null,
+    itemId: args.itemId,
+    locationId: args.locationId,
+    storageUnitId: args.storageUnitId,
+    trackedEntityId: args.trackedEntityId,
+    quantity: round(args.quantity),
+    comment: args.comment ?? null,
+    scrapReasonId: args.scrapReasonId ?? null,
+    companyId: args.companyId,
+    createdBy: args.createdBy
+  };
+}
+
+// One cost-ledger row for a movement. `quantity` and `cost` are SIGNED —
+// negative for a decrease (the relief of carrying value), positive for an
+// increase. A decrease leaves nothing to consume later, so its layer opens
+// with remainingQuantity 0; an increase opens a layer for its full quantity.
+export function buildCostLedgerRow(args: {
+  entryType: Database["public"]["Enums"]["itemLedgerType"];
+  documentType?: ItemLedgerDocumentType | null;
+  documentId: string;
+  itemId: string;
+  quantity: number;
+  cost: number;
+  postingDate: string;
+  // A serial unit's own layer (specific identification); null for FIFO/LIFO.
+  trackedEntityId?: string | null;
+  companyId: string;
+}): CostLedgerInsert {
+  const quantity = round(args.quantity);
+  return {
+    itemLedgerType: args.entryType,
+    costLedgerType: "Direct Cost",
+    adjustment: false,
+    documentType: args.documentType ?? null,
+    documentId: args.documentId,
+    itemId: args.itemId,
+    quantity,
+    cost: round(args.cost),
+    remainingQuantity: quantity > 0 ? quantity : 0,
+    postingDate: args.postingDate,
+    trackedEntityId: args.trackedEntityId ?? null,
+    companyId: args.companyId
+  };
+}
+
+// The balanced pair for a movement that carries value: the inventory account
+// against the offset (variance / scrap) account. `cost` and `quantity` are
+// ABSOLUTE; `isGain` picks which side each account takes.
+export function buildAdjustmentJournalLines(args: {
+  journalId: string;
+  documentId: string;
+  documentType?: ItemLedgerDocumentType | null;
+  journalLineReference: string;
+  isGain: boolean;
+  cost: number;
+  quantity: number;
+  replenishmentSystem:
+    | Database["public"]["Enums"]["itemReplenishmentSystem"]
+    | null;
+  accountDefaults: {
+    rawMaterialsAccount: string;
+    finishedGoodsAccount: string;
+    inventoryAdjustmentVarianceAccount: string;
+  };
+  offsetAccount?: string | null;
+  offsetDescription?: string;
+  companyId: string;
+}): [JournalLineInsert, JournalLineInsert] {
+  const inventoryAccount = resolveInventoryAccount(
+    args.replenishmentSystem,
+    args.accountDefaults
+  );
+  const documentType = toJournalLineDocumentType(args.documentType);
+  const quantity = round(args.quantity);
+  const shared = {
+    journalId: args.journalId,
+    quantity,
+    documentType,
+    documentId: args.documentId,
+    journalLineReference: args.journalLineReference,
+    companyId: args.companyId
+  };
+  return [
+    {
+      ...shared,
+      accountId: inventoryAccount.account,
+      description: inventoryAccount.description,
+      amount: round(
+        args.isGain ? debit("asset", args.cost) : credit("asset", args.cost)
+      )
+    },
+    {
+      ...shared,
+      accountId:
+        args.offsetAccount ??
+        args.accountDefaults.inventoryAdjustmentVarianceAccount,
+      description: args.offsetDescription ?? "Inventory Adjustment",
+      amount: round(
+        args.isGain ? credit("expense", args.cost) : debit("expense", args.cost)
+      )
+    }
+  ];
+}
+
+// Dimension tags (post-shipment precedent): every line of the entry gets the
+// movement's Item / ItemPostingGroup / Location, for whichever dimensions are
+// active on the company group, plus any caller-supplied extras.
+export function buildJournalLineDimensions(args: {
+  journalLineIds: string[];
+  dimensions: Record<string, string>;
+  itemId: string;
+  itemPostingGroupId?: string | null;
+  locationId: string | null;
+  extraDimensions?: Array<{ entityType: string; valueId: string }>;
+  companyId: string;
+}): JournalLineDimensionInsert[] {
+  const dimensionValues: Array<[string, string | null | undefined]> = [
+    ["Item", args.itemId],
+    ["ItemPostingGroup", args.itemPostingGroupId],
+    ["Location", args.locationId],
+    ...(args.extraDimensions ?? []).map(
+      (d) => [d.entityType, d.valueId] as [string, string]
+    )
+  ];
+  return args.journalLineIds.flatMap((journalLineId) =>
+    dimensionValues
+      .filter(([entityType, valueId]) => args.dimensions[entityType] && valueId)
+      .map(([entityType, valueId]) => ({
+        journalLineId,
+        dimensionId: args.dimensions[entityType]!,
+        valueId: valueId as string,
+        companyId: args.companyId
+      }))
+  );
+}
+
+export interface PlannedIncrease {
+  /** The layer's unit cost, as `computeCurrentUnitCost` would return it. */
+  unitCost: number;
+  /** quantity × unitCost, unrounded — `buildCostLedgerRow` rounds it. */
+  cost: number;
+}
+
+// Successive increases for ONE item, in the order they will be written.
+//
+// Booking them one at a time re-reads the item's open cost layers before every
+// row, so row n+1 sees the layer row n just wrote. This replays that read in
+// memory from a SINGLE starting snapshot, which is what lets the caller write
+// the whole file in a few statements instead of a query per row.
+//
+// Why the replay and not one hoisted unit cost per item:
+//
+// - Standard and Average ignore the layers entirely (`computeCurrentUnitCost`
+//   returns standardCost / itemCost.unitCost), so every row of an item gets
+//   the same unit cost. The replay reproduces that for free.
+// - FIFO and LIFO take the remaining-quantity-weighted average of the open
+//   layers. Adding a layer of quantity q at exactly that average u contributes
+//   value q·u against quantity q, so the average is unchanged: (V + q·u) /
+//   (R + q) = (u·R + q·u) / (R + q) = u. In EXACT arithmetic the cost is
+//   therefore hoistable. It is not hoistable as written, because the layer is
+//   stored as round(q·u, 5) (`buildCostLedgerRow`): row n+1 reads the rounded
+//   cost back and divides by q, so the average drifts by up to half a unit of
+//   the 5th decimal per row — and the drift is scaled up by the next row's
+//   quantity. A 1-unit row at 1/3 stores 0.33333; a following 1000-unit row
+//   then books 333.33, not 333.33333. Replaying the rounded layer keeps the
+//   batch path byte-identical to the per-row path instead of "close".
+// - The fallback branch (no open layers → itemCost.unitCost) is covered by the
+//   same replay: the first row opens a layer at that fallback cost, and every
+//   later row averages over it.
+//
+// Rows whose quantity rounds to 0 open no layer the next row can see (the
+// open-layer query filters remainingQuantity > 0), so they are skipped here
+// exactly as the query would skip them.
+export function planIncreaseUnitCosts(
+  itemCost: AdjustmentItemCost,
+  openLayers: OpenCostLayer[],
+  quantities: number[]
+): PlannedIncrease[] {
+  const layers = [...openLayers];
+  return quantities.map((quantity) => {
+    const unitCost = computeCurrentUnitCost(itemCost, layers);
+    // Build the layer through the same builder the caller will insert with,
+    // and read the stored values back off it — the replay must see what the
+    // database would have handed the next row, not a second derivation of it.
+    // Only quantity / remainingQuantity / cost are read, so the identity
+    // fields are placeholders.
+    const row = buildCostLedgerRow({
+      entryType: "Positive Adjmt.",
+      documentType: null,
+      documentId: "",
+      itemId: "",
+      quantity,
+      cost: quantity * unitCost,
+      postingDate: "",
+      companyId: ""
+    });
+    if ((row.remainingQuantity ?? 0) > 0) {
+      // New layers carry no applied adjustment children.
+      layers.push({
+        quantity: row.quantity as number,
+        remainingQuantity: row.remainingQuantity as number,
+        cost: row.cost as number,
+        appliedChildCost: 0
+      });
+    }
+    return { unitCost, cost: quantity * unitCost };
+  });
+}
+
+// Whether a movement carries value at all — `bookAdjustment`'s early return:
+// a Non-Inventory item or a zero-quantity movement books the ledger row alone,
+// with no cost layer and no journal.
+export function carriesAdjustmentValue(
+  quantity: number,
+  itemTrackingType: string | null
+): boolean {
+  return quantity !== 0 && itemTrackingType !== "Non-Inventory";
+}
+
+export interface StockRowPlanInput {
+  itemId: string;
+  quantity: number;
+  itemTrackingType: string | null;
+}
+
+export interface StockRowPlan {
+  /** false ⇒ ledger row only: no cost layer, no journal line. */
+  carriesValue: boolean;
+  /** The layer's cost, unrounded; 0 when the row carries no value. */
+  cost: number;
+  /** Whether this row contributes a journal line pair. */
+  postsJournal: boolean;
+}
+
+// The whole-file plan the bulk opening-stock importer writes from, one entry
+// per source row in source order.
+//
+// This is the batching itself, kept pure and away from the transaction: group
+// the valued rows by item, replay each item's cost layers once
+// (`planIncreaseUnitCosts`), scatter the per-item costs back onto the rows
+// they came from, and decide which rows post to the GL. `bookAdjustment` makes
+// the same three decisions one movement at a time; getting the scatter or the
+// journal filter wrong here is what would put a wrong cost on every row, so it
+// is a function with a test rather than a loop inside a transaction.
+export function planStockRows(args: {
+  rows: StockRowPlanInput[];
+  itemCosts: ReadonlyMap<string, AdjustmentItemCost>;
+  openLayersByItem: ReadonlyMap<string, OpenCostLayer[]>;
+}): StockRowPlan[] {
+  const plans: StockRowPlan[] = args.rows.map((row) => ({
+    carriesValue: carriesAdjustmentValue(row.quantity, row.itemTrackingType),
+    cost: 0,
+    postsJournal: false
+  }));
+
+  const rowIndexesByItem = new Map<string, number[]>();
+  args.rows.forEach((row, rowIndex) => {
+    if (!plans[rowIndex]!.carriesValue) return;
+    const indexes = rowIndexesByItem.get(row.itemId) ?? [];
+    indexes.push(rowIndex);
+    rowIndexesByItem.set(row.itemId, indexes);
+  });
+
+  for (const [itemId, rowIndexes] of rowIndexesByItem) {
+    const itemCost = args.itemCosts.get(itemId);
+    if (!itemCost) {
+      throw new Error(`No item cost for item ${itemId}`);
+    }
+    const increases = planIncreaseUnitCosts(
+      itemCost,
+      args.openLayersByItem.get(itemId) ?? [],
+      rowIndexes.map((rowIndex) => args.rows[rowIndex]!.quantity)
+    );
+    rowIndexes.forEach((rowIndex, n) => {
+      const cost = increases[n]!.cost;
+      plans[rowIndex]!.cost = cost;
+      // A zero-value movement posts no journal — `bookAdjustment`'s
+      // `!accounting || cost === 0` guard, per row.
+      plans[rowIndex]!.postsJournal = cost !== 0;
+    });
+  }
+
+  return plans;
+}
+export interface AdjustmentItemCost {
+  costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
+  unitCost: number | null;
+  standardCost: number | null;
+}
+
+export interface OpenCostLayer {
+  quantity: number;
+  remainingQuantity: number;
+  cost: number;
+  appliedChildCost: number;
+}
+
+// Current carrying unit cost for a POSITIVE adjustment's new layer / journal
+// value. Mirrors the valuation RPC's carrying CTE: FIFO/LIFO use the
+// weighted-average effective cost of open layers (including applied
+// invoice-vs-receipt children); Average/Standard come straight from itemCost.
+export function computeCurrentUnitCost(
+  itemCost: AdjustmentItemCost,
+  openLayers: OpenCostLayer[]
+): number {
+  switch (itemCost.costingMethod) {
+    case "Standard":
+      return Number(itemCost.standardCost ?? 0);
+    case "Average":
+      return Number(itemCost.unitCost ?? 0);
+    case "FIFO":
+    case "LIFO": {
+      let remaining = 0;
+      let value = 0;
+      for (const layer of openLayers) {
+        const quantity = Number(layer.quantity);
+        const layerRemaining = Number(layer.remainingQuantity);
+        if (quantity <= 0 || layerRemaining <= 0) continue;
+        const effectiveUnitCost =
+          (Number(layer.cost) + Number(layer.appliedChildCost)) / quantity;
+        remaining += layerRemaining;
+        value += layerRemaining * effectiveUnitCost;
+      }
+      if (remaining <= 0) return Number(itemCost.unitCost ?? 0);
+      return value / remaining;
+    }
+    default:
+      return Number(itemCost.unitCost ?? 0);
+  }
+}
+export interface BookAdjustmentArgs {
+  ledger: {
+    postingDate: string; // yyyy-MM-dd
+    itemId: string;
+    // SIGNED delta: > 0 for Positive Adjmt., < 0 for Negative Adjmt.
+    quantity: number;
+    locationId: string | null;
+    storageUnitId: string | null;
+    trackedEntityId: string | null;
+    entryType: "Positive Adjmt." | "Negative Adjmt.";
+    // itemLedgerDocumentType — manual adjustments stay NULL (ledger rows keep
+    // today's shape; 'Inventory Adjustment' exists only on journalLineDocumentType).
+    // Non-Conformance / Inbound Inspection tag NCR-disposition & inspection-reject
+    // write-offs (these also flow to the journal line's documentType). The full
+    // enum is accepted because stock-movement corrections copy the ORIGINAL
+    // movement's documentType so document-scoped movement views keep including
+    // the fix.
+    documentType?: Database["public"]["Enums"]["itemLedgerDocumentType"] | null;
+    documentId?: string | null;
+    correctionOfItemLedgerId?: string | null;
+    comment?: string | null;
+    // Reason for scrap/unscrap movements (documentType 'Scrap'); NULL for
+    // every other adjustment. MES production scrap keeps its reason on
+    // productionQuantity.scrapReasonId.
+    scrapReasonId?: string | null;
+    companyId: string;
+    createdBy: string;
+  };
+  item: {
+    itemTrackingType: string | null;
+    replenishmentSystem:
+      | Database["public"]["Enums"]["itemReplenishmentSystem"]
+      | null;
+    itemPostingGroupId?: string | null;
+  };
+  itemCost: AdjustmentItemCost;
+  // null ⇒ no journal: ledger + cost layers only (asset transfers and rental
+  // returns value the movement inside a journal of their own)
+  accounting: {
+    // Provisional before the company's accounting cutover, Posted after it
+    // (journalPostingStatus). A Provisional journal has no accounting period.
+    postingStatus: AutomaticJournalStatus;
+    accountingPeriodId: string | null;
+    accountDefaults: {
+      rawMaterialsAccount: string;
+      finishedGoodsAccount: string;
+      inventoryAdjustmentVarianceAccount: string;
+    };
+    // Offset (non-inventory) side of the balanced pair. Defaults to
+    // inventoryAdjustmentVarianceAccount; NCR-disposition / inspection-reject
+    // write-offs pass the company's scrapAccount so cost of quality is separable
+    // on the P&L.
+    offsetAccount?: string | null;
+    offsetDescription?: string;
+    // journal.sourceType for a header this call creates (default
+    // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
+    sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
+    description: string;
+    userId: string;
+    // active dimensions for the company group, entityType → dimension id
+    // (Item / ItemPostingGroup / Location are consulted) — journal lines get
+    // journalLineDimension tags for whichever are configured
+    dimensions?: Record<string, string>;
+    // Additional journalLineDimension tags beyond Item/ItemPostingGroup/
+    // Location (ScrapReason / WorkCenter / Employee for scrap postings).
+    // entityType must be a dimensionEntityType value present in `dimensions`;
+    // valueId is the referenced entity id (polymorphic, no FK).
+    extraDimensions?: Array<{ entityType: string; valueId: string }>;
+    // When set, lines append to this shared journal instead of the core
+    // creating one journal per movement — inventory counts post ONE journal
+    // per count with a line pair per variance. Lazy (called only when a
+    // movement writes a pair: one with value, or any outbound one) so a run
+    // of zero-cost increases never creates an empty journal.
+    getJournalId?: () => Promise<string>;
+  } | null;
+  // storage-unit-transfer legs move stock between bins without changing its
+  // value: ledger row only — no cost layers, no journal
+  skipValuation?: boolean;
+  // Book an INCREASE's new cost layer at this unit cost instead of
+  // computeCurrentUnitCost — Unscrap reverses at the original scrapped cost
+  // (Oracle Return-from-Scrap precedent). Ignored for decreases, which always
+  // relieve via calculateCOGS.
+  fixedUnitCost?: number;
+}
+
+export interface BookAdjustmentResult {
+  itemLedgerId: string;
+  journalId: string | null;
+  cost: number;
+}
+
+export interface CreateAdjustmentJournalArgs {
+  companyId: string;
+  // null for a Provisional journal: it has no accounting period
+  accountingPeriodId: string | null;
+  status: AutomaticJournalStatus;
+  description: string;
+  postingDate: string;
+  userId: string;
+  sourceType?: Database["public"]["Enums"]["journalEntrySourceType"];
+}
+
+// One journal header for adjustment postings ('Inventory Adjustment' source,
+// Provisional before the accounting cutover, Posted after it). Manual adjustments create one per movement; inventory
+// counts share ONE journal per count post via accounting.getJournalId.
+export async function createAdjustmentJournal(
+  trx: Transaction<DB>,
+  args: CreateAdjustmentJournalArgs
+): Promise<string> {
+  const journalEntryId = await getNextSequence(
+    trx,
+    "journalEntry",
+    args.companyId
+  );
+  const journal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId,
+      accountingPeriodId: args.accountingPeriodId,
+      description: args.description,
+      postingDate: args.postingDate,
+      companyId: args.companyId,
+      sourceType: args.sourceType ?? "Inventory Adjustment",
+      status: args.status,
+      postedAt: datetime.timestamp(),
+      postedBy: args.userId,
+      createdBy: args.userId
+    })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+  return journal.id;
+}
+
+// The open cost layers an INCREASE values itself against, per item. Same
+// filters as calculateCOGS so both sides of the math agree: positive
+// remaining quantity, not an adjustment child, and not a 'Purchase Order'
+// planning artifact. Applied adjustment children (invoice-vs-receipt price
+// corrections) are folded into each layer's `appliedChildCost`.
+//
+// Takes a LIST of items so the bulk importer reads every item it is about to
+// post in a couple of queries instead of two per row. `bookAdjustment` passes
+// one.
+const CHILD_LAYER_CHUNK_SIZE = 500;
+
+export async function loadOpenCostLayers(
+  trx: Transaction<DB>,
+  args: { itemIds: string[]; companyId: string }
+): Promise<Map<string, OpenCostLayer[]>> {
+  const byItem = new Map<string, OpenCostLayer[]>();
+  if (args.itemIds.length === 0) return byItem;
+
+  const openLayers = await trx
+    .selectFrom("costLedger")
+    .select(["id", "itemId", "quantity", "remainingQuantity", "cost"])
+    .where("itemId", "in", args.itemIds)
+    .where("companyId", "=", args.companyId)
+    .where("remainingQuantity", ">", 0)
+    .where("adjustment", "=", false)
+    .where("appliesToCostLedgerId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("documentType", "is", null),
+        eb("documentType", "!=", "Purchase Order")
+      ])
+    )
+    .execute();
+  if (openLayers.length === 0) return byItem;
+
+  // The child lookup is chunked over the LAYER ids, not the item ids: open
+  // layers are receipts not yet consumed, so their count is data-dependent and
+  // unbounded. The bulk importer reaches here with every referenced item's
+  // layers at once, and a single `in (...)` over them would exceed Postgres'
+  // 65535 bind parameters on a large file against well-stocked items.
+  const appliedChildCostByLayer = new Map<string, number>();
+  const layerIds = openLayers.map((layer) => layer.id);
+  for (let i = 0; i < layerIds.length; i += CHILD_LAYER_CHUNK_SIZE) {
+    const children = await trx
+      .selectFrom("costLedger")
+      .select(["appliesToCostLedgerId", "cost"])
+      .where(
+        "appliesToCostLedgerId",
+        "in",
+        layerIds.slice(i, i + CHILD_LAYER_CHUNK_SIZE)
+      )
+      .where("companyId", "=", args.companyId)
+      .execute();
+    for (const child of children) {
+      const key = child.appliesToCostLedgerId as string;
+      appliedChildCostByLayer.set(
+        key,
+        (appliedChildCostByLayer.get(key) ?? 0) + Number(child.cost)
+      );
+    }
+  }
+
+  for (const layer of openLayers) {
+    const itemId = layer.itemId as string;
+    const list = byItem.get(itemId) ?? [];
+    list.push({
+      quantity: Number(layer.quantity),
+      remainingQuantity: Number(layer.remainingQuantity),
+      cost: Number(layer.cost),
+      appliedChildCost: appliedChildCostByLayer.get(layer.id) ?? 0
+    });
+    byItem.set(itemId, list);
+  }
+  return byItem;
+}
+
+// Book one adjustment movement inside the caller's transaction: the item
+// ledger row, then its valuation (`valueMovement`). Tracked-entity mutations
+// are the caller's responsibility.
+export async function bookAdjustment(
+  trx: Transaction<DB>,
+  args: BookAdjustmentArgs
+): Promise<BookAdjustmentResult> {
+  const { ledger, item, itemCost, accounting, skipValuation } = args;
+
+  const inserted = await trx
+    .insertInto("itemLedger")
+    .values(
+      buildItemLedgerRow({
+        postingDate: ledger.postingDate,
+        entryType: ledger.entryType,
+        documentType: ledger.documentType,
+        documentId: ledger.documentId,
+        correctionOfItemLedgerId: ledger.correctionOfItemLedgerId,
+        itemId: ledger.itemId,
+        locationId: ledger.locationId,
+        storageUnitId: ledger.storageUnitId,
+        trackedEntityId: ledger.trackedEntityId,
+        quantity: ledger.quantity,
+        comment: ledger.comment,
+        scrapReasonId: ledger.scrapReasonId,
+        companyId: ledger.companyId,
+        createdBy: ledger.createdBy
+      })
+    )
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
+
+  if (skipValuation) {
+    return { itemLedgerId: inserted.id, journalId: null, cost: 0 };
+  }
+
+  const { journalId, cost } = await valueMovement(trx, {
+    movement: {
+      postingDate: ledger.postingDate,
+      itemId: ledger.itemId,
+      quantity: ledger.quantity,
+      locationId: ledger.locationId,
+      entryType: ledger.entryType,
+      documentType: ledger.documentType,
+      documentId: ledger.documentId ?? inserted.id,
+      trackedEntityId: ledger.trackedEntityId,
+      companyId: ledger.companyId
+    },
+    item,
+    itemCost,
+    accounting,
+    fixedUnitCost: args.fixedUnitCost
+  });
+
+  return { itemLedgerId: inserted.id, journalId, cost };
+}
+
+export interface ValueMovementArgs {
+  movement: {
+    postingDate: string; // yyyy-MM-dd
+    itemId: string;
+    // SIGNED: < 0 relieves cost layers, > 0 opens one
+    quantity: number;
+    locationId: string | null;
+    entryType: Database["public"]["Enums"]["itemLedgerType"];
+    documentType?: Database["public"]["Enums"]["itemLedgerDocumentType"] | null;
+    // costLedger.documentId and journalLine.documentId
+    documentId: string;
+    // The moved unit or batch; only a serial unit's is used for costing.
+    trackedEntityId?: string | null;
+    companyId: string;
+  };
+  item: BookAdjustmentArgs["item"];
+  itemCost: AdjustmentItemCost;
+  accounting: BookAdjustmentArgs["accounting"];
+  fixedUnitCost?: number;
+}
+
+// Value a stock movement whose item ledger row the caller has already written:
+// cost-layer maintenance (consume via calculateCOGS on decreases, open a layer
+// at current cost — or `fixedUnitCost` — on increases) and, when the caller
+// passes `accounting`, a balanced journal of the inventory account against
+// the offset account: for every decrease, and for an increase with value. `bookAdjustment` is this plus the ledger
+// row; maintenance consumption calls it directly because its ledger rows are
+// written alongside tracked-entity splits.
+export async function valueMovement(
+  trx: Transaction<DB>,
+  args: ValueMovementArgs
+): Promise<{ journalId: string | null; cost: number }> {
+  const { movement, item, itemCost, accounting } = args;
+  const { companyId, documentId } = movement;
+
+  if (!carriesAdjustmentValue(movement.quantity, item.itemTrackingType)) {
+    return { journalId: null, cost: 0 };
+  }
+
+  const absQuantity = Math.abs(movement.quantity);
+  // A serial unit's movement is costed by specific identification: an
+  // increase books a layer that belongs to the unit, and a decrease relieves
+  // that layer first (calculateCOGS / cost-layer-order.ts). A batch entity is
+  // split and re-pointed as it moves, so its layers stay FIFO / LIFO.
+  const serialId =
+    item.itemTrackingType === "Serial"
+      ? (movement.trackedEntityId ?? null)
+      : null;
+  let cost = 0;
+
+  if (movement.quantity < 0) {
+    // Decrease: relieve carrying value exactly as shipments do — consume
+    // layers (FIFO/LIFO) / current cost (Average/Standard).
+    const cogs = await calculateCOGS(trx, {
+      itemId: movement.itemId,
+      quantity: absQuantity,
+      companyId,
+      trackedEntityIds: serialId ? [serialId] : []
+    });
+    cost = cogs.totalCost;
+
+    await trx
+      .insertInto("costLedger")
+      .values(
+        buildCostLedgerRow({
+          entryType: movement.entryType,
+          documentType: movement.documentType,
+          documentId,
+          itemId: movement.itemId,
+          quantity: -absQuantity,
+          cost: -cogs.totalCost,
+          postingDate: movement.postingDate,
+          trackedEntityId: serialId,
+          companyId
+        })
+      )
+      .execute();
+  } else if (args.fixedUnitCost != null) {
+    // Increase at a caller-fixed unit cost: Unscrap restores stock at the
+    // ORIGINAL scrapped cost so a scrap→unscrap round trip nets zero P&L.
+    cost = absQuantity * args.fixedUnitCost;
+
+    await trx
+      .insertInto("costLedger")
+      .values(
+        buildCostLedgerRow({
+          entryType: movement.entryType,
+          documentType: movement.documentType,
+          documentId,
+          itemId: movement.itemId,
+          quantity: absQuantity,
+          cost,
+          postingDate: movement.postingDate,
+          trackedEntityId: serialId,
+          companyId
+        })
+      )
+      .execute();
+  } else {
+    // Increase: create a layer at the item's current carrying cost.
+    const openLayers = await loadOpenCostLayers(trx, {
+      itemIds: [movement.itemId],
+      companyId
+    });
+    const unitCost = computeCurrentUnitCost(
+      itemCost,
+      openLayers.get(movement.itemId) ?? []
+    );
+    cost = absQuantity * unitCost;
+
+    await trx
+      .insertInto("costLedger")
+      .values(
+        buildCostLedgerRow({
+          entryType: movement.entryType,
+          documentType: movement.documentType,
+          documentId,
+          itemId: movement.itemId,
+          quantity: absQuantity,
+          cost,
+          postingDate: movement.postingDate,
+          trackedEntityId: serialId,
+          companyId
+        })
+      )
+      .execute();
+  }
+
+  // An inbound movement at no value posts no journal (nothing to tie out).
+  // An outbound one always writes its pair, at zero too: every outbound cost
+  // row carries a pair, because the accounting enable's re-cost may give it
+  // a cost and adjusts the pair it finds. With no pair, and another journal
+  // of the document that day, neither the legacy backfill (which skips a
+  // document-day that has a journal) nor the re-cost could book the cost.
+  if (!accounting || (cost === 0 && movement.quantity > 0)) {
+    return { journalId: null, cost };
+  }
+
+  const journalId = accounting.getJournalId
+    ? await accounting.getJournalId()
+    : await createAdjustmentJournal(trx, {
+        companyId,
+        accountingPeriodId: accounting.accountingPeriodId,
+        status: accounting.postingStatus,
+        description: accounting.description,
+        postingDate: movement.postingDate,
+        userId: accounting.userId,
+        sourceType: accounting.sourceType
+      });
+
+  const [inventoryLine, offsetLine] = buildAdjustmentJournalLines({
+    journalId,
+    documentId,
+    documentType: movement.documentType,
+    journalLineReference: nanoid(),
+    isGain: movement.quantity > 0,
+    cost,
+    quantity: absQuantity,
+    replenishmentSystem: item.replenishmentSystem,
+    accountDefaults: accounting.accountDefaults,
+    offsetAccount: accounting.offsetAccount,
+    offsetDescription: accounting.offsetDescription,
+    companyId
+  });
+  const journalLines = await trx
+    .insertInto("journalLine")
+    .values([inventoryLine, offsetLine])
+    .returning(["id"])
+    .execute();
+
+  const journalLineDimensionInserts = buildJournalLineDimensions({
+    journalLineIds: journalLines.map((line) => line.id),
+    dimensions: accounting.dimensions ?? {},
+    itemId: movement.itemId,
+    itemPostingGroupId: item.itemPostingGroupId,
+    locationId: movement.locationId,
+    extraDimensions: accounting.extraDimensions,
+    companyId
+  });
+  if (journalLineDimensionInserts.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(journalLineDimensionInserts)
+      .execute();
+  }
+
+  return { journalId, cost };
+}
+type PostableTable =
+  | "receipt"
+  | "shipment"
+  | "purchaseInvoice"
+  | "salesInvoice";
+
+/** Call BEFORE the posting function's `try`: its failure handler resets the
+ *  document to Draft, which must not happen to one that is already posted. */
+export async function assertPostable(
+  db: Kysely<KyselyDatabase>,
+  table: PostableTable,
+  id: string,
+  companyId: string
+): Promise<void> {
+  const document = await db
+    .selectFrom(table)
+    .select(["status"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (document && !["Draft", "Pending"].includes(document.status ?? "")) {
+    throw new ServerFnError(
+      `Cannot post: it is already ${document.status}`,
+      409
+    );
+  }
+}
+// Manual accounting work (recognition runs here) runs only after the
+// company's accounting cutover: before it, journals are Provisional and count
+// nowhere (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1). The ERP
+// service functions refuse the same work with the same message.
+export const ACCOUNTING_NOT_STARTED =
+  "Set up accounting before you post journals, runs or period closes.";
+
+export async function assertAccountingCutover(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string
+) {
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new InvalidInputError(ACCOUNTING_NOT_STARTED);
+  }
+}
+type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
+
+/**
+ * The optional defaults a sales invoice line may stand in for, with the class
+ * each one must have. A stand-in line is signed for that class, so the enable
+ * can re-point it without changing its amount.
+ */
+export const STAND_IN_CLASS = {
+  leaseRevenueAccount: "Revenue",
+  netInvestmentInLeasesAccount: "Asset",
+  salesShippingRevenueAccount: "Revenue"
+} as const satisfies Partial<Record<OptionalDefaultRole, string>>;
+
+export type StandInRole = keyof typeof STAND_IN_CLASS;
+
+/** The prefix of a placeholder id. Never an account id: those come from id('…'). */
+export const STAND_IN_PREFIX = "stand-in:";
+
+/** The stand-in bookkeeping of one sales invoice posting. */
+export function salesInvoiceStandIns(
+  defaults: Pick<AccountDefaults, StandInRole | "retainedEarningsAccount">,
+  postingStatus: AutomaticJournalStatus
+) {
+  const roles = new Map<string, StandInRole>();
+
+  /** The account a line takes for `role`: the default when it is set; a
+   *  placeholder before the cutover; null after it. */
+  const defaultId = (role: StandInRole): string | null => {
+    if (defaults[role]) return defaults[role];
+    if (postingStatus === "Posted") return null;
+    const resolved = resolveDefaultAccount(defaults, role, postingStatus);
+    if (!resolved.accountDefaultRole) return resolved.accountId;
+    const placeholder = `${STAND_IN_PREFIX}${role}`;
+    roles.set(placeholder, role);
+    return placeholder;
+  };
+
+  const isPlaceholder = (id: string) => roles.has(id);
+
+  /** The account id a row stores: Retained Earnings for a placeholder. */
+  const storedAccountId = (id: string) =>
+    roles.has(id) ? defaults.retainedEarningsAccount : id;
+
+  /** A journal line as stored: a placeholder becomes Retained Earnings and
+   *  the line names the default it stands in for. */
+  const storedLine = <T extends { accountId?: string | null }>(line: T) =>
+    line.accountId && roles.has(line.accountId)
+      ? {
+          ...line,
+          accountId: defaults.retainedEarningsAccount,
+          accountDefaultRole: roles.get(line.accountId)!
+        }
+      : line;
+
+  /** One account per placeholder, of the class its default must have. */
+  const placeholderAccounts = (companyGroupId: string): SalesPostingAccount[] =>
+    [...roles].map(([placeholder, role]) => ({
+      id: placeholder,
+      class: STAND_IN_CLASS[role],
+      active: true,
+      isGroup: false,
+      companyGroupId
+    }));
+
+  return {
+    defaultId,
+    isPlaceholder,
+    storedAccountId,
+    storedLine,
+    placeholderAccounts
+  };
+}
+// What ONE serial unit would leave stock at right now, without consuming
+// anything: the same arithmetic calculateCOGS runs for a quantity of one —
+// Standard at the standard cost, Average at the unit cost, FIFO / LIFO from
+// the unit's own layer first (cost-layer-order.ts), then the unstamped layers,
+// each with its price-correction children, falling back to the item's unit
+// cost when no layer is left. Pure, so a whole item's units are valued from
+// one read of its layers.
+
+export type UnitCostLayer = {
+  id: string;
+  trackedEntityId: string | null;
+  quantity: number;
+  cost: number;
+  remainingQuantity: number;
+};
+
+export type UnitCostChild = {
+  quantity: number;
+  cost: number;
+  remainingQuantity: number;
+};
+
+export type UnitCostBasis = {
+  costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
+  unitCost: number | null;
+  standardCost: number | null;
+};
+
+export function serialUnitCost(args: {
+  itemCost: UnitCostBasis;
+  // Open layers already in FIFO / LIFO order, as calculateCOGS reads them.
+  layers: UnitCostLayer[];
+  // Open price-correction children per layer id, oldest first.
+  childrenByLayer: ReadonlyMap<string, UnitCostChild[]>;
+  trackedEntityId: string;
+}): number {
+  const { itemCost } = args;
+  switch (itemCost.costingMethod) {
+    case "Standard":
+      return Number(itemCost.standardCost ?? 0);
+    case "Average":
+      return Number(itemCost.unitCost ?? 0);
+    case "FIFO":
+    case "LIFO": {
+      let remaining = 1;
+      let total = 0;
+      const ordered = orderLayersForConsumption(args.layers, [
+        args.trackedEntityId
+      ]);
+      for (const layer of ordered) {
+        if (remaining <= 0) break;
+        const layerRemaining = Number(layer.remainingQuantity);
+        if (layerRemaining <= 0) continue;
+        const layerUnitCost =
+          Number(layer.quantity) > 0
+            ? Number(layer.cost) / Number(layer.quantity)
+            : 0;
+        const taken = Math.min(remaining, layerRemaining);
+        total += taken * layerUnitCost;
+        remaining -= taken;
+
+        let unapplied = taken;
+        for (const child of args.childrenByLayer.get(layer.id) ?? []) {
+          if (unapplied <= 0) break;
+          const childRemaining = Number(child.remainingQuantity);
+          const perUnitBump =
+            Number(child.quantity) > 0
+              ? Number(child.cost) / Number(child.quantity)
+              : 0;
+          const applied = Math.min(childRemaining, unapplied);
+          total += applied * perUnitBump;
+          unapplied -= applied;
+        }
+      }
+      if (remaining > 0) total += remaining * Number(itemCost.unitCost ?? 0);
+      return total;
+    }
+    default:
+      throw new Error(`Unsupported costing method: ${itemCost.costingMethod}`);
+  }
+}
+export async function getStorageUnitId(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string,
+  storageUnitId?: string
+): Promise<string | undefined> {
+  if (storageUnitId) return storageUnitId;
+
+  const pickMethod = await trx
+    .selectFrom("pickMethod")
+    .where("itemId", "=", itemId)
+    .where("locationId", "=", locationId)
+    .select("defaultStorageUnitId")
+    .executeTakeFirst();
+
+  if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
+
+  const storageUnitWithHighestQuantity =
+    await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
+
+  return storageUnitWithHighestQuantity ?? undefined;
+}
+
+/**
+ * Where each tracked entity holds stock, and how much, per location (see
+ * `resolveTrackedEntityBins`: `null` is the unassigned bin). The lookup returns
+ * `undefined` for an entity with no positive bin at that location.
+ */
+export async function getTrackedEntityBins(
+  db: Kysely<DB>,
+  args: { trackedEntityIds: string[]; locationIds: string[]; companyId: string }
+): Promise<
+  (trackedEntityId: string, locationId: string) => TrackedEntityBin | undefined
+> {
+  if (args.trackedEntityIds.length === 0 || args.locationIds.length === 0) {
+    return () => undefined;
+  }
+
+  const rows = await db
+    .selectFrom("itemLedger")
+    .where("trackedEntityId", "in", args.trackedEntityIds)
+    .where("locationId", "in", args.locationIds)
+    .where("companyId", "=", args.companyId)
+    .select(["trackedEntityId", "locationId", "storageUnitId", "quantity"])
+    .execute();
+
+  const binsByLocation = new Map<string, Map<string, TrackedEntityBin>>();
+  for (const locationId of args.locationIds) {
+    binsByLocation.set(
+      locationId,
+      resolveTrackedEntityBins(rows.filter((r) => r.locationId === locationId))
+    );
+  }
+  return (trackedEntityId, locationId) =>
+    binsByLocation.get(locationId)?.get(trackedEntityId);
+}
+
+/** A tracked entity's on-hand in one bin; `null` is the unassigned bin. */
+export async function getTrackedEntityOnHandInBin(
+  trx: Transaction<DB>,
+  args: {
+    trackedEntityId: string;
+    locationId: string;
+    storageUnitId: string | null;
+    companyId: string;
+  }
+): Promise<number> {
+  const row = await trx
+    .selectFrom("itemLedger")
+    .where("trackedEntityId", "=", args.trackedEntityId)
+    .where("locationId", "=", args.locationId)
+    .where("storageUnitId", "is not distinct from", args.storageUnitId)
+    .where("companyId", "=", args.companyId)
+    .select((eb) => eb.fn.sum<number>("quantity").as("onHand"))
+    .executeTakeFirst();
+  return Number(row?.onHand ?? 0);
+}
+
+// Utility function to get the storage unit with the highest quantity
+export async function getStorageUnitWithHighestQuantity(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string
+): Promise<string | null> {
+  const storageUnitWithHighestQuantity = await trx
+    .selectFrom("itemLedger")
+    .where("itemId", "=", itemId)
+    .where("locationId", "=", locationId)
+    .where("storageUnitId", "is not", null)
+    .groupBy("storageUnitId")
+    .select([
+      "storageUnitId",
+      (eb) => eb.fn.sum("quantity").as("totalQuantity")
+    ])
+    .having((eb) => eb.fn.sum("quantity"), ">", 0)
+    .orderBy("totalQuantity", "desc")
+    .executeTakeFirst();
+
+  return storageUnitWithHighestQuantity?.storageUnitId ?? null;
+}
+
+// Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit
+export async function updatePickMethodDefaultStorageUnitIfNeeded(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string | null | undefined,
+  storageUnitId: string | null | undefined,
+  companyId: string,
+  userId: string
+): Promise<void> {
+  // Only proceed if storageUnitId and locationId are not null
+  if (!storageUnitId || !locationId) return;
+
+  // Check if there are other non-null storage units for this item/location
+  const otherStorageUnits = await trx
+    .selectFrom("itemLedger")
+    .where("itemId", "=", itemId)
+    .where("locationId", "=", locationId)
+    .where("storageUnitId", "is not", null)
+    .where("storageUnitId", "!=", storageUnitId)
+    .select("storageUnitId")
+    .executeTakeFirst();
+
+  // If there are no other non-null storage units, update or insert pickMethod
+  if (!otherStorageUnits) {
+    const existingPickMethod = await trx
+      .selectFrom("pickMethod")
+      .where("itemId", "=", itemId)
+      .where("locationId", "=", locationId)
+      .where("companyId", "=", companyId)
+      .select("defaultStorageUnitId")
+      .executeTakeFirst();
+
+    if (existingPickMethod) {
+      // Update existing pickMethod
+      await trx
+        .updateTable("pickMethod")
+        .set({
+          defaultStorageUnitId: storageUnitId,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("itemId", "=", itemId)
+        .where("locationId", "=", locationId)
+        .where("companyId", "=", companyId)
+        .execute();
+    } else {
+      // Insert new pickMethod
+      await trx
+        .insertInto("pickMethod")
+        .values({
+          itemId,
+          locationId,
+          defaultStorageUnitId: storageUnitId,
+          companyId,
+          createdBy: userId,
+          createdAt: datetime.timestamp()
+        })
+        .execute();
+    }
+  }
+}
+export type SupplierPartPriceConverter = {
+  /** The currency a supplier part's price is in (NULL = base). */
+  currencyOf: (partCurrencyCode: string | null) => string;
+  /** A price per purchase unit in the DOCUMENT's currency, in the part's. */
+  toPartCurrency: (price: number, partCurrencyCode: string | null) => number;
+};
+
+/**
+ * Converts prices learned from a purchase document (a supplier quote, order or
+ * invoice) into the currency of the supplier part that records them. A part
+ * keeps the currency it was set up in; a price in that same currency is copied
+ * exactly, any other crosses through base at the document's own rate and the
+ * part currency's CURRENT rate. A missing rate raises (`get_exchange_rate`)
+ * rather than recording the price at par.
+ *
+ * A NULL document or part currency is the company base currency. Rates are
+ * loaded once, for every part currency the caller will convert into.
+ */
+export async function getSupplierPartPriceConverter(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  document: { currencyCode: string | null; exchangeRate: number },
+  partCurrencyCodes: (string | null)[]
+): Promise<SupplierPartPriceConverter> {
+  const company = await db
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const baseCurrencyCode = company.baseCurrencyCode;
+
+  const currencyOf = (code: string | null) =>
+    supplierPartCurrency(code, baseCurrencyCode);
+  const from: CurrencyRate = {
+    currencyCode: currencyOf(document.currencyCode),
+    exchangeRate: document.exchangeRate
+  };
+
+  const codes = [
+    ...new Set(
+      partCurrencyCodes
+        .map(currencyOf)
+        .filter((code) => code !== from.currencyCode)
+    )
+  ];
+
+  const rates = new Map<string, number>();
+  if (codes.length > 0) {
+    const { rows } = await sql<{ code: string; rate: number }>`
+      SELECT code, get_exchange_rate(${companyId}, code) AS rate
+      FROM unnest(${codes}::text[]) AS code
+    `.execute(db);
+    for (const row of rows) rates.set(row.code, Number(row.rate));
+  }
+
+  return {
+    currencyOf,
+    toPartCurrency: (price, partCurrencyCode) => {
+      const currencyCode = currencyOf(partCurrencyCode);
+      return convertUnitPrice(price, from, {
+        currencyCode,
+        exchangeRate:
+          currencyCode === from.currencyCode
+            ? from.exchangeRate
+            : rates.get(currencyCode)!
+      });
+    }
+  };
+}
+type JournalLine = Selectable<KyselyDatabase["journalLine"]>;
+
+/**
+ * Voids a journal with a negated copy: a new journal dated `date` (in the
+ * period `periodMode` resolves for it once the company has a cutover; a
+ * Provisional journal has none), each original line negated with its
+ * documents, account default role and dimensions. The caller checks the
+ * original's provenance and passes its lines. Returns the copy's id.
+ *
+ * Used by the charge, reimbursement and lease voids.
+ */
+export async function insertNegatedJournal(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    originalLines: JournalLine[];
+    description: string;
+    sourceType: Database["public"]["Enums"]["journalEntrySourceType"];
+    postingStatus: AutomaticJournalStatus;
+    date: string;
+    periodMode: "current" | "historical-with-shift";
+    postedAt: string;
+  }
+): Promise<string> {
+  const { companyId, userId, originalLines } = args;
+  const period =
+    args.postingStatus === "Posted"
+      ? await resolveAccountingPeriod(
+          trx,
+          companyId,
+          args.date,
+          args.periodMode
+        )
+      : null;
+  const reversal = await trx
+    .insertInto("journal")
+    .values({
+      journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+      accountingPeriodId: period?.id ?? null,
+      description: args.description,
+      postingDate: period?.postingDate ?? args.date,
+      companyId,
+      sourceType: args.sourceType,
+      status: args.postingStatus,
+      postedAt: args.postedAt,
+      postedBy: userId,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (originalLines.length === 0) return reversal.id;
+
+  const reversalLineIds = await allocateJournalLineIds(
+    trx,
+    originalLines.length
+  );
+  await trx
+    .insertInto("journalLine")
+    .values(
+      originalLines.map((line, index) => ({
+        id: reversalLineIds[index],
+        journalId: reversal.id,
+        accountId: line.accountId,
+        amount: -Number(line.amount),
+        quantity: line.quantity,
+        description: `VOID: ${line.description ?? ""}`,
+        documentType: line.documentType,
+        documentId: line.documentId,
+        documentLineReference: line.documentLineReference,
+        journalLineReference: line.journalLineReference,
+        accountDefaultRole: line.accountDefaultRole,
+        companyId
+      }))
+    )
+    .execute();
+
+  const dimensions = await trx
+    .selectFrom("journalLineDimension")
+    .select(["journalLineId", "dimensionId", "valueId"])
+    .where("companyId", "=", companyId)
+    .where(
+      "journalLineId",
+      "in",
+      originalLines.map((line) => line.id)
+    )
+    .execute();
+  if (dimensions.length > 0) {
+    const reversalByOriginal = new Map(
+      originalLines.map((line, index) => [line.id, reversalLineIds[index]])
+    );
+    await trx
+      .insertInto("journalLineDimension")
+      .values(
+        dimensions.map((dimension) => {
+          const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+          if (!journalLineId) {
+            throw new Error("Failed to map a reversed journal line");
+          }
+          return { ...dimension, journalLineId, companyId };
+        })
+      )
+      .execute();
+  }
+  return reversal.id;
+}
+// Record ids in an input come straight from the caller and prove nothing about
+// tenancy: a permission check authorizes the CALLER for companyId, not the ids it
+// sends. Several of these ids are only ever written as references into the
+// caller's own rows (a ledger's locationId, an activity's trackedEntityId), and
+// their single-column FKs accept a row from any company, so nothing downstream
+// refuses a foreign id. Re-read them under companyId before writing.
+
+type _lib_companyRecordsCompanyScopedTable =
+  | "inspection"
+  | "inspectionSample"
+  | "jobOperationStep"
+  | "location"
+  | "nonConformance"
+  | "productionEvent"
+  | "purchaseOrder"
+  | "scrapReason"
+  | "storageUnit"
+  | "trackedEntity"
+  | "workCenter";
+
+/**
+ * Throws `NotFoundError` unless every provided id is a row of `table` in
+ * `companyId`. Null / undefined / duplicate ids are ignored, so optional input
+ * fields stay optional. One query per call — collect the ids first.
+ */
+export async function assertCompanyRecords(
+  db: Kysely<KyselyDatabase>,
+  table: _lib_companyRecordsCompanyScopedTable,
+  ids: Iterable<string | null | undefined>,
+  companyId: string,
+  label: string
+): Promise<void> {
+  const unique = [
+    ...new Set([...ids].filter((id): id is string => typeof id === "string"))
+  ];
+  if (unique.length === 0) return;
+
+  const rows = await db
+    .selectFrom(table)
+    .select("id")
+    .where("id", "in", unique)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  if (rows.length !== unique.length) {
+    throw new NotFoundError(`${label} not found`);
+  }
+}
+export type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+
+/** An operator's request to consume or move expired material anyway. */
+export type ExpiryOverride = { allowed: boolean; reason: string | null };
+
+/**
+ * The company's expired-entity policy (`companySettings.inventoryShelfLife`).
+ * `Block` when unset, so the safe behavior is the default.
+ */
+export async function getExpiredEntityPolicy(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<ExpiredEntityPolicy> {
+  const row = await db
+    .selectFrom("companySettings")
+    .select("inventoryShelfLife")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const settings = row?.inventoryShelfLife as {
+    expiredEntityPolicy?: ExpiredEntityPolicy;
+  } | null;
+  return settings?.expiredEntityPolicy ?? "Block";
+}
+
+/** The entities that expired before `today`; an unparseable date never counts. */
+export function expiredEntities<E extends { expirationDate: string | null }>(
+  entities: E[],
+  today: CalendarDate
+): E[] {
+  return entities.filter(({ expirationDate }) => {
+    if (!expirationDate) return false;
+    try {
+      return parseDate(expirationDate).compare(today) < 0;
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * What the policy does with expired material: `warn` under `Warn`, `allow`
+ * under `BlockWithOverride` when the override carries a reason, else `block`.
+ */
+export function expiryVerdict(
+  policy: ExpiredEntityPolicy,
+  override: ExpiryOverride
+): "warn" | "allow" | "block" {
+  if (policy === "Warn") return "warn";
+  if (
+    policy === "BlockWithOverride" &&
+    override.allowed &&
+    (override.reason?.trim().length ?? 0) > 0
+  ) {
+    return "allow";
+  }
+  return "block";
+}
+/**
+ * `"attributes" @> {…}`: the containment form the `trackedEntity` GIN index
+ * serves. `attributes->>'Key' = value` reads the same rows but cannot use the
+ * index, so it walks every tracked entity of the company.
+ */
+export function attributesContain(values: Record<string, string>) {
+  return sql<boolean>`"attributes" @> ${JSON.stringify(values)}::jsonb`;
+}
+/**
+ * Who stands behind a posting's client: the service role (the system), an API
+ * key (checked against its scopes) or the signed-in user (checked against the
+ * user's claims). Never derive it from input.
+ */
+export type PostingCaller =
+  | { type: "system" }
+  | { type: "apiKey"; apiKey: string }
+  | { type: "user" };
+
+/**
+ * The client's key decides the caller. A user's token must be `userId`'s,
+ * since the permissions are read for that user. Never replace this with a flag
+ * the caller passes: /api/v1 fills unknown parameters from the body.
+ */
+export function postingCaller(
+  client: SupabaseClient<Database>,
+  userId: string
+): PostingCaller {
+  const { supabaseKey, headers = {} } = client as unknown as {
+    supabaseKey?: string;
+    headers?: Record<string, string>;
+  };
+  const apiKey = headers["carbon-key"];
+  if (apiKey) return { type: "apiKey", apiKey };
+  if (SUPABASE_SERVICE_ROLE_KEY && supabaseKey === SUPABASE_SERVICE_ROLE_KEY) {
+    return { type: "system" };
+  }
+  if (bearerSubject(headers.Authorization) !== userId) {
+    throw new ForbiddenError("userId does not match the signed-in user");
+  }
+  return { type: "user" };
+}
+
+/** The `sub` of a `Bearer` JWT, unverified: the token is on a client this
+ *  process built from its own session, not on request input. */
+function bearerSubject(authorization: string | undefined): string | undefined {
+  const payload = authorization?.replace(/^Bearer\s+/i, "").split(".")[1];
+  if (!payload) return undefined;
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")).sub;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Refuses a caller who does not hold `required` in the company. */
+export async function authorizePostingCaller(
+  {
+    db,
+    companyId,
+    userId
+  }: Pick<PostingHandles, "db" | "companyId" | "userId">,
+  caller: PostingCaller,
+  required: Permissions
+): Promise<void> {
+  if (caller.type === "system") return;
+  if (required === "system") {
+    throw new ForbiddenError("Only server-side callers may run this");
+  }
+  if (caller.type === "apiKey") {
+    return authorizeApiKey(db, companyId, caller.apiKey, required);
+  }
+  const { rows } = await sql<{
+    claims: Record<string, unknown> | null;
+  }>`SELECT get_claims(${userId}, ${companyId}) AS claims`.execute(db);
+  const claims = rows[0]?.claims ?? {};
+  // A portal account holds a few view permissions, so the list alone would admit it.
+  if (claims.role === "customer" || claims.role === "supplier") {
+    throw new ForbiddenError();
+  }
+  if (!hasPermissions(permissionsFromClaims(claims), companyId, required)) {
+    throw new ForbiddenError();
+  }
+}
+
+/** A key of this company, unexpired, whose scopes (`<module>_<action>` →
+ *  company ids, shaped like claims) cover `required`. Rate limiting stays with
+ *  the route that authenticated the key. */
+async function authorizeApiKey(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  apiKey: string,
+  required: RequiredPermissions
+): Promise<void> {
+  const key = await db
+    .selectFrom("apiKey")
+    .select("scopes")
+    .where(
+      "keyHash",
+      "=",
+      sql<string>`encode(sha256(convert_to(${apiKey}, 'UTF8')), 'hex')`
+    )
+    .where("companyId", "=", companyId)
+    .where((eb) =>
+      eb.or([
+        eb("expiresAt", "is", null),
+        eb("expiresAt", ">", sql<string>`now()`)
+      ])
+    )
+    .executeTakeFirst();
+  if (!key) throw new ForbiddenError("Invalid API key");
+  if (Object.keys(required).length === 0) return;
+  const scopes = permissionsFromClaims(
+    (key.scopes ?? {}) as Record<string, unknown>
+  );
+  if (!hasPermissions(scopes, companyId, required)) {
+    throw new ForbiddenError("API key lacks required permissions");
+  }
 }
