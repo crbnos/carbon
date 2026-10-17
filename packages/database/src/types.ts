@@ -95553,7 +95553,7 @@ export type Database = {
       reimbursementStatus: "Draft" | "Posted" | "Voided"
       rentalAgreementLineStatus: "Pending" | "On Rent" | "Returned" | "Sold"
       rentalAgreementStatus: "Draft" | "Active" | "Closed" | "Cancelled"
-      rentalBillingCycle: "Calendar Month" | "28 Days"
+      rentalBillingCycle: "Calendar Month" | "28 Days" | "Monthly"
       rentalBillingPeriodStatus: "Pending" | "Invoiced"
       rentalBillingTiming: "Advance" | "Arrears"
       rentalInvoiceLineType: "Rent" | "Charge" | "Purchase Option"
@@ -97119,7 +97119,7 @@ export const Constants = {
       reimbursementStatus: ["Draft", "Posted", "Voided"],
       rentalAgreementLineStatus: ["Pending", "On Rent", "Returned", "Sold"],
       rentalAgreementStatus: ["Draft", "Active", "Closed", "Cancelled"],
-      rentalBillingCycle: ["Calendar Month", "28 Days"],
+      rentalBillingCycle: ["Calendar Month", "28 Days", "Monthly"],
       rentalBillingPeriodStatus: ["Pending", "Invoiced"],
       rentalBillingTiming: ["Advance", "Arrears"],
       rentalInvoiceLineType: ["Rent", "Charge", "Purchase Option"],

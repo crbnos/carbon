@@ -33,6 +33,7 @@ import {
 import {
   formatPercent,
   netInvestmentExceedsFairValue,
+  type RentalBillingCycle,
   salesTypeRequirementError
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -220,7 +221,7 @@ const TEST_KEYS: (keyof LeaseClassificationTests)[] = ["a", "b", "c", "d", "e"];
 export type LeaseTermsDraft = {
   startDate: string;
   endDate: string | null;
-  billingCycle: "Calendar Month" | "28 Days";
+  billingCycle: RentalBillingCycle;
   billingTiming: "Advance" | "Arrears";
   discountRate: number;
   ownershipTransfers: boolean;

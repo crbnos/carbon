@@ -110,30 +110,33 @@ beforeEach(() => {
 it.each([
   ["Disbursement", "customerId", "sales"],
   ["Receipt", "supplierId", "purchase"]
-])("loads memo refund targets for %s %s", async (paymentType, partyKey, side) => {
-  h.payment = { ...h.payment, paymentType, [partyKey]: "party" };
-  const result = await loader({
-    request: new Request("http://localhost/x/payments/refund"),
-    params: { paymentId: "refund" },
-    context: {}
-  } as never);
-  expect(result.openInvoices).toEqual([
-    expect.objectContaining({
-      id: "memo",
-      invoiceId: "CM1",
-      balance: 40,
-      remainingDocument: 44
-    })
-  ]);
-  expect(h.credits).toHaveBeenCalledWith(
-    "client",
-    "company",
-    { side, [partyKey]: "party" },
-    "refund",
-    "EUR"
-  );
-  expect(h.sales).not.toHaveBeenCalled();
-  expect(h.purchase).not.toHaveBeenCalled();
-  expect(h.funding).not.toHaveBeenCalled();
-  expect(h.staged).not.toHaveBeenCalled();
-});
+])(
+  "loads memo refund targets for %s %s",
+  async (paymentType, partyKey, side) => {
+    h.payment = { ...h.payment, paymentType, [partyKey]: "party" };
+    const result = await loader({
+      request: new Request("http://localhost/x/payments/refund"),
+      params: { paymentId: "refund" },
+      context: {}
+    } as never);
+    expect(result.openInvoices).toEqual([
+      expect.objectContaining({
+        id: "memo",
+        invoiceId: "CM1",
+        balance: 40,
+        remainingDocument: 44
+      })
+    ]);
+    expect(h.credits).toHaveBeenCalledWith(
+      "client",
+      "company",
+      { side, [partyKey]: "party" },
+      "refund",
+      "EUR"
+    );
+    expect(h.sales).not.toHaveBeenCalled();
+    expect(h.purchase).not.toHaveBeenCalled();
+    expect(h.funding).not.toHaveBeenCalled();
+    expect(h.staged).not.toHaveBeenCalled();
+  }
+);

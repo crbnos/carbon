@@ -14,12 +14,15 @@ describe("Rillet monetary decimal strings", () => {
     [1.005, 2, "1.01"],
     [-2.5, 3, "-2.500"],
     [0, 0, "0"]
-  ] as const)("serializes %s at %s decimals without exponent notation or grouping", (amount, decimals, expected) => {
-    expect(toRilletMoney(amount, "USD", decimals)).toEqual({
-      amount: expected,
-      currency: "USD"
-    });
-  });
+  ] as const)(
+    "serializes %s at %s decimals without exponent notation or grouping",
+    (amount, decimals, expected) => {
+      expect(toRilletMoney(amount, "USD", decimals)).toEqual({
+        amount: expected,
+        currency: "USD"
+      });
+    }
+  );
 });
 
 const { links, control } = vi.hoisted(() => ({

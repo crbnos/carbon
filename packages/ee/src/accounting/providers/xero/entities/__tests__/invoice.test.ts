@@ -450,22 +450,25 @@ describe("Xero posted facts and monetary representation", () => {
     source.currencyCode = "EUR";
     expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
   });
-  it.each([
-    false,
-    true
-  ])("opts into supported unit precision at the actual invoice transport (batch=%s)", async (batch) => {
-    const syncer = reviewSyncer();
-    const requests: string[] = [];
-    (syncer as any).provider.request = async (_method: string, url: string) => {
-      requests.push(url);
-      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-    };
-    const payload = await syncer.mapToRemote(invoice());
-    if (batch)
-      await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
-    else await (syncer as any).upsertRemote(payload, "si_1");
-    expect(requests).toEqual(["/Invoices?unitdp=4"]);
-  });
+  it.each([false, true])(
+    "opts into supported unit precision at the actual invoice transport (batch=%s)",
+    async (batch) => {
+      const syncer = reviewSyncer();
+      const requests: string[] = [];
+      (syncer as any).provider.request = async (
+        _method: string,
+        url: string
+      ) => {
+        requests.push(url);
+        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+      };
+      const payload = await syncer.mapToRemote(invoice());
+      if (batch)
+        await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
+      else await (syncer as any).upsertRemote(payload, "si_1");
+      expect(requests).toEqual(["/Invoices?unitdp=4"]);
+    }
+  );
 });
 
 it("preserves an exact extended net when the source unit price has four decimals", async () => {

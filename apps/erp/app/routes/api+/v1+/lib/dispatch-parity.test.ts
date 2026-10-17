@@ -280,65 +280,65 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(payload.storageUnitIds).toBeNull();
   });
 
-  it.each([
-    undefined,
-    "forged-user"
-  ])("attributes memo applications to the authenticated author (caller author: %s)", async (createdBy) => {
-    const input = {
-      paymentId: "payment-1",
-      appliedDate: "2026-09-09",
-      side: "purchase",
-      applications: [{ memoId: "memo-1", invoiceId: "invoice-1", amount: 30 }]
-    };
-    const result = await runDispatch(
-      "invoicing_applyCreditsToInvoices",
-      spies.applyCreditsToInvoices,
-      { ...input, ...(createdBy ? { createdBy } : {}) }
-    );
-    expect(result.dispatchError).toBeUndefined();
-    expect(result.calls).toEqual([
-      [spies.FAKE_DB, { ...input, companyId: "c1", createdBy: "u1" }]
-    ]);
-  });
-
-  it.each([
-    undefined,
-    "forged-user"
-  ])("attributes replacement settlements to the authenticated author (caller author: %s)", async (createdBy) => {
-    const applications = [
-      {
-        targetPurchaseInvoiceId: "invoice-1",
-        appliedAmount: 90,
-        sourceAmount: 90,
-        discountAmount: 5,
-        writeOffAmount: 5,
-        targetExchangeRate: 1,
-        sourceExchangeRate: 1,
-        appliedDate: "2026-09-09"
-      }
-    ];
-    const result = await runDispatch(
-      "invoicing_replaceInvoiceSettlements",
-      spies.replaceInvoiceSettlements,
-      {
+  it.each([undefined, "forged-user"])(
+    "attributes memo applications to the authenticated author (caller author: %s)",
+    async (createdBy) => {
+      const input = {
         paymentId: "payment-1",
-        applications,
-        ...(createdBy ? { createdBy } : {})
-      }
-    );
-    expect(result.dispatchError).toBeUndefined();
-    expect(result.calls).toEqual([
-      [
-        spies.FAKE_DB,
+        appliedDate: "2026-09-09",
+        side: "purchase",
+        applications: [{ memoId: "memo-1", invoiceId: "invoice-1", amount: 30 }]
+      };
+      const result = await runDispatch(
+        "invoicing_applyCreditsToInvoices",
+        spies.applyCreditsToInvoices,
+        { ...input, ...(createdBy ? { createdBy } : {}) }
+      );
+      expect(result.dispatchError).toBeUndefined();
+      expect(result.calls).toEqual([
+        [spies.FAKE_DB, { ...input, companyId: "c1", createdBy: "u1" }]
+      ]);
+    }
+  );
+
+  it.each([undefined, "forged-user"])(
+    "attributes replacement settlements to the authenticated author (caller author: %s)",
+    async (createdBy) => {
+      const applications = [
+        {
+          targetPurchaseInvoiceId: "invoice-1",
+          appliedAmount: 90,
+          sourceAmount: 90,
+          discountAmount: 5,
+          writeOffAmount: 5,
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+          appliedDate: "2026-09-09"
+        }
+      ];
+      const result = await runDispatch(
+        "invoicing_replaceInvoiceSettlements",
+        spies.replaceInvoiceSettlements,
         {
           paymentId: "payment-1",
           applications,
-          companyId: "c1",
-          createdBy: "u1"
+          ...(createdBy ? { createdBy } : {})
         }
-      ]
-    ]);
-  });
+      );
+      expect(result.dispatchError).toBeUndefined();
+      expect(result.calls).toEqual([
+        [
+          spies.FAKE_DB,
+          {
+            paymentId: "payment-1",
+            applications,
+            companyId: "c1",
+            createdBy: "u1"
+          }
+        ]
+      ]);
+    }
+  );
 
   // The `companyId` in a. and a2. is the fix for the `args` branch skipping
   // enrichWithAuthContext. getAccountLedger's args type REQUIRES companyId; without
@@ -1422,18 +1422,19 @@ function idIn(payload: unknown): string | undefined {
 }
 
 describe("callOperation (the MCP/agent/workflow entry point)", () => {
-  it.each(
-    WORKFLOW_CALL_IDS
-  )("%s returns data the workflow create action can read an id out of", async (name, spy, args) => {
-    spy.mockResolvedValue({ data: { id: "rec_1" }, error: null });
-    const asObject = await callOperation(name, ctx, args);
-    expect(asObject).toEqual({ success: true, data: { id: "rec_1" } });
-    expect(idIn((asObject as { data: unknown }).data)).toBe("rec_1");
+  it.each(WORKFLOW_CALL_IDS)(
+    "%s returns data the workflow create action can read an id out of",
+    async (name, spy, args) => {
+      spy.mockResolvedValue({ data: { id: "rec_1" }, error: null });
+      const asObject = await callOperation(name, ctx, args);
+      expect(asObject).toEqual({ success: true, data: { id: "rec_1" } });
+      expect(idIn((asObject as { data: unknown }).data)).toBe("rec_1");
 
-    spy.mockResolvedValue({ data: [{ id: "rec_2" }], error: null });
-    const asList = await callOperation(name, ctx, args);
-    expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
-  });
+      spy.mockResolvedValue({ data: [{ id: "rec_2" }], error: null });
+      const asList = await callOperation(name, ctx, args);
+      expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
+    }
+  );
 
   it("maps a Supabase error to the errorKind:database envelope with a closed-set message", async () => {
     const supabaseError = { message: "boom", code: "XX000" };

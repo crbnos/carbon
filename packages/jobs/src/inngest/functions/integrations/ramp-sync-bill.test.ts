@@ -82,15 +82,15 @@ describe("Ramp invoice posting observation", () => {
     expect(row.status).toBe("Open");
   });
 
-  it.each([
-    "Pending",
-    "Voided"
-  ])("does not restart an invoice already %s", async (status) => {
-    const { ctx, row } = postingFixture(status, "Open");
-    expect(await postRampInvoice(ctx, "invoice-1")).toEqual({
-      fail: expect.stringContaining(status)
-    });
-    expect(post).not.toHaveBeenCalled();
-    expect(row.status).toBe(status);
-  });
+  it.each(["Pending", "Voided"])(
+    "does not restart an invoice already %s",
+    async (status) => {
+      const { ctx, row } = postingFixture(status, "Open");
+      expect(await postRampInvoice(ctx, "invoice-1")).toEqual({
+        fail: expect.stringContaining(status)
+      });
+      expect(post).not.toHaveBeenCalled();
+      expect(row.status).toBe(status);
+    }
+  );
 });

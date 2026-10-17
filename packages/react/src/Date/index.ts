@@ -8,4 +8,4 @@ import DateRangePicker from "./DateRangePicker";
 import DateTimePicker from "./DateTimePicker";
 import TimePicker from "./TimePicker";
 
-export { Calendar, DatePicker, DateTimePicker, DateRangePicker, TimePicker };
+export { Calendar, DatePicker, DateRangePicker, DateTimePicker, TimePicker };

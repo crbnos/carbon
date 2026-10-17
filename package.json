@@ -1,10 +1,10 @@
 {
   "name": "carbon",
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
+    "@biomejs/biome": "2.5.15",
     "@lingui/cli": "catalog:",
     "@react-router/dev": "catalog:",
-    "@types/aws-lambda": "8.10.152",
+    "@types/aws-lambda": "8.10.164",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
     "cli-table3": "^0.6.5",
@@ -18,7 +18,7 @@
     "supabase": "catalog:",
     "ts-morph": "28.0.0",
     "tsx": "catalog:",
-    "turbo": "2.9.6",
+    "turbo": "2.11.7",
     "typescript": "catalog:",
     "vite": "catalog:",
     "zod": "catalog:"
@@ -94,7 +94,7 @@
     "@react-router/remix-routes-option-adapter": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
-    "fast-uri": "3.1.5",
+    "fast-uri": "3.1.8",
     "fdir": "6.5.0",
     "nanoid": "catalog:",
     "react-pdf": "catalog:",
@@ -125,6 +125,9 @@
       "@react-router/dev@7.18.4": "patches/@react-router__dev@7.18.4.patch",
       "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
       "supabase@2.89.0": "patches/supabase@2.89.0.patch"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "simple-git-hooks"
+    ]
   }
 }

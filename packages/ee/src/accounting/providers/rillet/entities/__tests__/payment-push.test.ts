@@ -490,43 +490,44 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
 });
 
 describe("RilletPaymentSyncer push — void routing", () => {
-  it.each([
-    "ar",
-    "ap"
-  ])("voids every Carbon-originated %s settlement and retains idempotent tombstones", async (family) => {
-    const remote = (n: number) =>
-      `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
-    const mappings = [1, 2].map((n) => ({
-      entityId: `pay_1:doc-${n}`,
-      externalId: remote(n),
-      metadata: { origin: "carbon", other: "preserved" }
-    }));
-    const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
-      db: makePushDb({
-        payment: { ...apPayment, status: "Voided" },
-        settlements: [apSettlement],
-        mappings,
-        linkSink: []
-      })
-    });
-    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
-      status: "success",
-      action: "deleted"
-    });
-    const deletion = family === "ar" ? deleteInvoicePayment : deleteBillPayment;
-    expect(deletion.mock.calls).toEqual([
-      ["doc-1", "pay-1"],
-      ["doc-2", "pay-2"]
-    ]);
-    expect(txLinkSink).toHaveLength(2);
-    expect(
-      txLinkSink.every(
-        (row) =>
-          (row.metadata as any)?.voided === true &&
-          (row.metadata as any)?.other === "preserved"
-      )
-    ).toBe(true);
-  });
+  it.each(["ar", "ap"])(
+    "voids every Carbon-originated %s settlement and retains idempotent tombstones",
+    async (family) => {
+      const remote = (n: number) =>
+        `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
+      const mappings = [1, 2].map((n) => ({
+        entityId: `pay_1:doc-${n}`,
+        externalId: remote(n),
+        metadata: { origin: "carbon", other: "preserved" }
+      }));
+      const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
+        db: makePushDb({
+          payment: { ...apPayment, status: "Voided" },
+          settlements: [apSettlement],
+          mappings,
+          linkSink: []
+        })
+      });
+      expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+        status: "success",
+        action: "deleted"
+      });
+      const deletion =
+        family === "ar" ? deleteInvoicePayment : deleteBillPayment;
+      expect(deletion.mock.calls).toEqual([
+        ["doc-1", "pay-1"],
+        ["doc-2", "pay-2"]
+      ]);
+      expect(txLinkSink).toHaveLength(2);
+      expect(
+        txLinkSink.every(
+          (row) =>
+            (row.metadata as any)?.voided === true &&
+            (row.metadata as any)?.other === "preserved"
+        )
+      ).toBe(true);
+    }
+  );
 
   it("retains all mappings on partial delete failure so retry is safe", async () => {
     const deletion = vi

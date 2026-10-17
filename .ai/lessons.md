@@ -3751,3 +3751,15 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Use `.eq()` / `.in()` instead of a hand-built `.or()` string whenever any operand comes from outside Carbon (CAD part numbers, external ids, user text). Chained filters on one query are AND-ed, so an OR across two columns ("remove mappings matching `entityId` OR `externalId`") becomes one parameterized statement PER COLUMN — two separate deletes — never both filters chained onto one delete, which removes only rows matching both and leaves the conflicting row that the next insert trips over.
 
 **Applies to:** every Supabase client call with `.or(` whose operands are not literals; `apps/erp/app/routes/api+/integrations.onshape.*`.
+
+---
+
+## A docs heading is read by the in-app agent, and its length counts against a budget
+
+**Context:** Adding a billing cycle to rental agreements lengthened two troubleshooting headings in `docs/content/docs/reference/rental-agreements.mdx`, each quoting every variant of an error message.
+
+**Problem:** The in-app agent's `read_doc` returns a long page as its intro plus a link per section, and `agent.kb.test.ts` caps every page and section read at `READ_BUDGET` (16,000 characters). Each heading appears twice in that list, as text and inside its anchor URL. About 1,400 characters of heading growth pushed the page over the cap and failed the ERP test suite, far from the docs package.
+
+**Rule:** Keep a troubleshooting heading to one message. Use `…` for the part that varies and list the variants in the body. After you edit a long reference page, run `apps/erp/app/modules/agent/agent.kb.test.ts` as well as the docs checks.
+
+**Applies to:** `docs/content/docs/**`, `apps/erp/app/modules/agent/agent.kb.ts`.

@@ -434,7 +434,7 @@ export async function requirePermissions(
 
   return {
     client:
-      !!requiredPermissions.bypassRls && myClaims.role === "employee"
+      requiredPermissions.bypassRls && myClaims.role === "employee"
         ? serviceRoleForRequest()
         : carbonForRequest(accessToken, request),
     companyId,

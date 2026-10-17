@@ -21,18 +21,16 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, import.meta.dirname);
 
   /**
-   * SSR dependencies that must be bundled into the server output rather than
-   * left as bare `import`s. Applied to BOTH `ssr.noExternal` (honored by the
-   * dev server and the plain `react-router build`) and
-   * `environments.ssr.resolve.noExternal`.
+   * Dev-server SSR dependencies that must be inlined rather than left as bare
+   * `import`s. A production build inlines every dependency (see the ERP's
+   * vite.config.ts for why). Applied to BOTH `ssr` and
+   * `environments.ssr.resolve`.
    *
    * The second location is not redundant: with `future.v8_viteEnvironmentApi`
    * enabled, the Vercel preset builds each route group as a named server-bundle
    * environment (`ssr_bundle_*`), and React Router's server-bundle environment
    * resolver merges `viteUserConfig.environments.ssr` — NOT the top-level `ssr`
-   * config. Without this, `zustand` (default-imported by @react-three/fiber,
-   * see below) is externalized in the Vercel Lambda and crashes the function on
-   * cold start with "does not provide an export named 'default'".
+   * config.
    */
   const ssrNoExternal = [
     "react-dropzone",
@@ -65,6 +63,11 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
      */
     "@dicebear/styles",
   ];
+
+  const ssrResolve =
+    command === "build"
+      ? { noExternal: true as const }
+      : { noExternal: ssrNoExternal };
 
   return {
     // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
@@ -102,14 +105,18 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     define: {
       global: "globalThis",
     },
-    ssr: {
-      noExternal: ssrNoExternal,
-    },
+    ssr: ssrResolve,
     environments: {
       ssr: {
-        resolve: {
-          noExternal: ssrNoExternal,
-        },
+        resolve: ssrResolve,
+        // Bundled CommonJS that reads __dirname/__filename (yoga-layout under
+        // react-pdf, libheif) runs in ES module output, where neither exists.
+        ...(command === "build" && {
+          define: {
+            __dirname: "import.meta.dirname",
+            __filename: "import.meta.filename",
+          },
+        }),
       },
     },
     server: {

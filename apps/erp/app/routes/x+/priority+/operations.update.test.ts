@@ -297,17 +297,16 @@ describe("Operations schedule update action", () => {
     );
   });
 
-  it.each([
-    " ",
-    "\t",
-    "\n"
-  ])("rejects whitespace-only priority %j before any database call", async (priority) => {
-    const result = await runAction({ ...baseFields, priority });
+  it.each([" ", "\t", "\n"])(
+    "rejects whitespace-only priority %j before any database call",
+    async (priority) => {
+      const result = await runAction({ ...baseFields, priority });
 
-    expect(result).toEqual({ success: false, message: "Invalid form data" });
-    expect(mocks.client.from).not.toHaveBeenCalled();
-    expectNoMutation();
-  });
+      expect(result).toEqual({ success: false, message: "Invalid form data" });
+      expect(mocks.client.from).not.toHaveBeenCalled();
+      expectNoMutation();
+    }
+  );
 
   it("rejects missing priority before any database call", async () => {
     const { priority: _priority, ...fields } = baseFields;
@@ -318,18 +317,16 @@ describe("Operations schedule update action", () => {
     expectNoMutation();
   });
 
-  it.each([
-    "",
-    "Infinity",
-    "-Infinity",
-    "NaN"
-  ])("rejects invalid priority %j before any database call", async (priority) => {
-    const result = await runAction({ ...baseFields, priority });
+  it.each(["", "Infinity", "-Infinity", "NaN"])(
+    "rejects invalid priority %j before any database call",
+    async (priority) => {
+      const result = await runAction({ ...baseFields, priority });
 
-    expect(result).toEqual({ success: false, message: "Invalid form data" });
-    expect(mocks.client.from).not.toHaveBeenCalled();
-    expectNoMutation();
-  });
+      expect(result).toEqual({ success: false, message: "Invalid form data" });
+      expect(mocks.client.from).not.toHaveBeenCalled();
+      expectNoMutation();
+    }
+  );
 
   it("performs no update when the source operation is missing", async () => {
     mocks.results.source.data = null;
@@ -351,32 +348,31 @@ describe("Operations schedule update action", () => {
     expectNoMutation();
   });
 
-  it.each([
-    "Completed",
-    "Closed",
-    "Cancelled"
-  ])("performs no update for a %s parent job", async (status) => {
-    if (mocks.results.parent.data) mocks.results.parent.data.status = status;
+  it.each(["Completed", "Closed", "Cancelled"])(
+    "performs no update for a %s parent job",
+    async (status) => {
+      if (mocks.results.parent.data) mocks.results.parent.data.status = status;
 
-    await expect(runAction(baseFields)).resolves.toEqual({
-      success: false,
-      message: "Invalid scheduling request"
-    });
-    expectNoMutation();
-  });
+      await expect(runAction(baseFields)).resolves.toEqual({
+        success: false,
+        message: "Invalid scheduling request"
+      });
+      expectNoMutation();
+    }
+  );
 
-  it.each([
-    "Done",
-    "Canceled"
-  ])("performs no update for a %s operation", async (status) => {
-    if (mocks.results.source.data) mocks.results.source.data.status = status;
+  it.each(["Done", "Canceled"])(
+    "performs no update for a %s operation",
+    async (status) => {
+      if (mocks.results.source.data) mocks.results.source.data.status = status;
 
-    await expect(runAction(baseFields)).resolves.toEqual({
-      success: false,
-      message: "Invalid scheduling request"
-    });
-    expectNoMutation();
-  });
+      await expect(runAction(baseFields)).resolves.toEqual({
+        success: false,
+        message: "Invalid scheduling request"
+      });
+      expectNoMutation();
+    }
+  );
 
   it("performs no update for a foreign-company destination", async () => {
     if (mocks.results.destination.data) {

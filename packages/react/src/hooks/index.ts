@@ -32,21 +32,22 @@ import { useShortcutSequence } from "./useShortcutSequence";
 import useThrottle from "./useThrottle";
 import { useUrlParams } from "./useUrlParams";
 
+export type { Shortcut, ShortcutDefinition };
 export {
   getSystemMode,
+  useCloseRoute,
   useDebounce,
   useDisclosure,
   useEdition,
   useEscape,
   useHydrated,
+  useIdle,
   useInitialDimensions,
   useInterval,
   useIsomorphicLayoutEffect,
   useKeyboardWedge,
   useLocalStorage,
   useMode,
-  useCloseRoute,
-  useIdle,
   useModePreference,
   useMount,
   useNProgress,
@@ -61,5 +62,3 @@ export {
   useThrottle,
   useUrlParams
 };
-
-export type { Shortcut, ShortcutDefinition };

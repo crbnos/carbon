@@ -31,19 +31,15 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
     Date.now().toString(36);
 
   /**
-   * SSR dependencies that must be bundled into the server output rather than
-   * left as bare `import`s. Defined once and applied to BOTH `ssr.noExternal`
-   * (honored by the dev server and the plain `react-router build`) and
-   * `environments.ssr.resolve.noExternal`.
+   * Dev-server SSR dependencies that must be inlined rather than left as bare
+   * `import`s. A production build inlines every dependency (`ssrBuild` below).
+   * Applied to BOTH `ssr` and `environments.ssr.resolve`.
    *
    * The second location is not redundant: with `future.v8_viteEnvironmentApi`
    * enabled, the Vercel preset builds each route group as a named server-bundle
    * environment (`ssr_bundle_*`), and React Router's server-bundle environment
    * resolver merges `viteUserConfig.environments.ssr` — NOT the top-level `ssr`
-   * config. Without this, every entry below is externalized in the Vercel
-   * Lambda, and `zustand` (default-imported by @react-three/fiber, see below)
-   * crashes the function on cold start with "does not provide an export named
-   * 'default'".
+   * config.
    */
   const ssrNoExternal = [
     "react-tweet",
@@ -51,26 +47,6 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
     "react-icons",
     "react-phone-number-input",
     "tailwind-merge",
-    /**
-     * react-csv@2.2.2 ships a broken manifest: it `require('react')` and
-     * `require('prop-types')` at runtime but declares neither as a
-     * dependency or peer. Externalized, the SSR server bundle keeps the bare
-     * `require('react')`, which resolves locally via pnpm's hoisted store
-     * but is NOT traced into the Vercel serverless function — so the Lambda
-     * crashes on cold start with "Cannot find module 'react'". Bundling it
-     * inline resolves react/prop-types against the app's copies at build
-     * time, the same reason the react-* packages above are inlined.
-     *
-     * Build-only: react-csv also declares `"jsnext:main": "src/index.js"`,
-     * so when inlined in the dev server Vite picks the untranspiled ESM
-     * source, whose `import { func } from "prop-types"` fails under Node's
-     * CJS interop ("Named export 'func' not found"). In dev the CJS entry is
-     * externalized and `require`d directly, which works via pnpm's store.
-     * (Gated on `command` — not `isSsrBuild` — because under the environment
-     * API the config callback runs once for the whole build, so `isSsrBuild`
-     * is unreliable, whereas `command` is always "build" vs "serve".)
-     */
-    ...(command === "build" ? ["react-csv"] : []),
     /**
      * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
      * its nested zustand v3, while the app uses zustand v5 (no default
@@ -89,6 +65,22 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
      */
     "@dicebear/styles",
   ];
+
+  /**
+   * The production server bundles every dependency. Left as bare imports they
+   * are read from node_modules one file at a time when a function starts —
+   * over 4,000 files, most of an ~8 s Vercel cold start.
+   *
+   * The AI SDK stays external: @ai-sdk/provider-utils require()s `undici`
+   * relative to its own file at runtime, which only resolves from where pnpm
+   * installed it.
+   */
+  const ssrBuild = {
+    noExternal: true as const,
+    external: ["ai", "@ai-sdk/anthropic", "@ai-sdk/openai", "@ai-sdk/react"],
+  };
+  const ssrResolve =
+    command === "build" ? ssrBuild : { noExternal: ssrNoExternal };
 
   return {
     // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
@@ -128,14 +120,18 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
     define: {
       global: "globalThis",
     },
-    ssr: {
-      noExternal: ssrNoExternal,
-    },
+    ssr: ssrResolve,
     environments: {
       ssr: {
-        resolve: {
-          noExternal: ssrNoExternal,
-        },
+        resolve: ssrResolve,
+        // Bundled CommonJS that reads __dirname/__filename (yoga-layout under
+        // react-pdf, libheif) runs in ES module output, where neither exists.
+        ...(command === "build" && {
+          define: {
+            __dirname: "import.meta.dirname",
+            __filename: "import.meta.filename",
+          },
+        }),
       },
     },
     server: {

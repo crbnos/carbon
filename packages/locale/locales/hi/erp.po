@@ -4022,6 +4022,9 @@ msgstr "बीटा"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "कारण, आइटम या वर्क सेंटर के अनुसार स्क्रैप के सबसे बड़े कारण"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "कैलेंडर महीनों के अनुसार बिल करें, पहले आंशिक महीने के साथ। बंद होने पर, प्रत्येक अवधि प्रारंभ तिथि के दिन से शुरू होती है।"
+
 msgid "Bill of Material"
 msgstr "सामग्री की बिल"
 
@@ -4058,8 +4061,8 @@ msgstr "बिल भेजा गया:"
 msgid "Billing"
 msgstr "बिलिंग"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "किराये को निश्चित अवधियों में बिल करना, या तो कैलेंडर महीने या लगातार 28-दिन की अवधि, प्रत्येक को इसके पहले दिन (अग्रिम) या इसके अंतिम दिन (बकाया) पर चालान किया जाता है।"
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "किराये को निर्धारित अवधि में बिल करना - प्रारंभ तिथि से महीने, कैलेंडर महीने, या लगातार 28 दिन की अवधि - प्रत्येक को पहले दिन (अग्रिम) या अंतिम दिन (बकाया) चालान किया जाता है।"
 
 msgid "Billing Address"
 msgstr "बिलिंग पता"
@@ -4317,9 +4320,6 @@ msgstr "गणना विधि"
 
 msgid "Calendar"
 msgstr "कैलेंडर"
-
-msgid "Calendar Month"
-msgstr "कैलेंडर माह"
 
 msgid "Calibration"
 msgstr "अंशांकन"
@@ -5135,6 +5135,9 @@ msgstr "एक प्राप्ति, शिपमेंट या चाल�
 
 msgid "Community support"
 msgstr "सामुदायिक समर्थन"
+
+msgid "Compact"
+msgstr "कॉम्पैक्ट"
 
 msgid "Companies"
 msgstr "कंपनियां"
@@ -7691,6 +7694,9 @@ msgstr "Onshape से अलग करें?"
 msgid "Detail"
 msgstr "विवरण"
 
+msgid "Detailed"
+msgstr "विस्तृत"
+
 msgid "Details"
 msgstr "विवरण"
 
@@ -8283,9 +8289,6 @@ msgstr "प्रत्येक भुगतान अपनी अवधि �
 msgid "Each period is 28 days from the start date."
 msgstr "प्रत्येक अवधि प्रारंभ तिथि से 28 दिन है।"
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "प्रत्येक अवधि एक कैलेंडर महीना है, पहले एक आंशिक महीना है।"
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "प्रत्येक अवधि का चालान उसके पहले दिन, सेवा दिए जाने से पहले बनाया जाता है।"
 
@@ -8297,6 +8300,9 @@ msgstr "प्रत्येक अवधि का चालान उसक�
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "प्रत्येक अवधि को इसके अंतिम दिन चालान दिया जाता है, इकाइयों के उपयोग के बाद।"
+
+msgid "Each period is one month, for the month rate."
+msgstr "प्रत्येक अवधि एक महीना है, मासिक दर के लिए।"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
@@ -10886,8 +10892,8 @@ msgstr "अनुबंध की पंक्ति अपने राजस�
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "अनुबंध या संशोधन को आवर्ती-राजस्व रिपोर्टिंग के लिए कैसे वर्गीकृत किया जाता है: नई बिक्री, मौजूदा, विस्तार, पुनः सक्रियण, या संकुचन। Carbon इसका सुझाव देता है और आप इसे बदल सकते हैं।"
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "एक किराया समझौता अपनी प्रारंभ तिथि से बिलिंग अवधि को कैसे काटता है: कैलेंडर माह कैलेंडर महीनों को काटता है, और 28 दिन लगातार 28-दिन की अवधि को काटते हैं। प्रत्येक इकाई एक दर पर अपनी आवृत्ति पर बिल करती है जो एक अवधि द्वारा कवर किए जाने वाले पूरे दिन, सप्ताह, या महीने के लिए है; कैलेंडर माह में एक मासिक दर दिनों द्वारा आनुपातिक है।"
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "किराया समझौता अपनी प्रारंभ तिथि से बिलिंग अवधि को कैसे विभाजित करता है: मासिक विकल्प प्रारंभ तिथि के दिन से एक महीना निर्धारित करता है (7 तारीख को शुरू होने पर 7वीं से 6वीं तक का बिल), कैलेंडर माह (मासिक, कैलेंडर अवधि के साथ संरेखित) कैलेंडर महीनों को निर्धारित करता है, और 28 दिन का विकल्प लगातार 28 दिन की अवधि निर्धारित करता है। प्रत्येक विकल्प अपनी आवृत्ति पर एक दर से बिल करता है जो अवधि के सभी दिनों, हफ्तों, या महीनों को कवर करता है; एक आंशिक अवधि में महीने की दर दिनों के आधार पर समानुपाती होती है।"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "किसी आइटम को समग्र रूप से कैसे आपूर्ति किया जाता है (खरीद, निर्माण, या खरीद और निर्माण), प्रति आइटम सेट किया जाता है, प्रति-पंक्ति आपूर्ति प्रकार के विपरीत।"
@@ -13552,6 +13558,9 @@ msgstr "माह दर"
 
 msgid "Monthly"
 msgstr "मासिक"
+
+msgid "Monthly (calendar)"
+msgstr "मासिक (कैलेंडर)"
 
 msgid "Monthly Depreciation"
 msgstr "मासिक मूल्यह्रास"

@@ -777,8 +777,8 @@ async function rollBillingPeriodsForward(
 
 /** "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate — Skid Steer 4
  *  SN-1001", "… · 31 days · Month rate — …" (a Monthly unit on a Calendar
- *  Month agreement is its month rate prorated by days, so it names no unit
- *  count), or for an early-return credit "Early return credit — 3 days used". */
+ *  Month or Monthly agreement is its month rate prorated by days, so it names
+ *  no unit count), or for an early-return credit "Early return credit — 3 days used". */
 export function rentLineDescription(period: {
   cycle: Database["public"]["Enums"]["rentalBillingCycle"];
   periodStart: string;
@@ -802,7 +802,7 @@ export function rentLineDescription(period: {
   const tier =
     period.rateUnitApplied === null
       ? ""
-      : period.cycle === "Calendar Month" && period.rateUnitApplied === "Month"
+      : period.cycle !== "28 Days" && period.rateUnitApplied === "Month"
         ? " · Month rate"
         : ` · ${wholeRateUnits(period.days, period.rateUnitApplied)} × ${period.rateUnitApplied} rate`;
   return `${period.periodStart} – ${period.periodEnd} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;
