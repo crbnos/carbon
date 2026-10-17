@@ -108,6 +108,11 @@ const TaxCodeForm = ({
       : [newRow()]
   );
 
+  // A Reverse Charge line is charged no tax; its rate is self-assessed.
+  const [isReverseCharge, setIsReverseCharge] = useState(
+    initialValues.calculationType === "Reverse Charge"
+  );
+
   const updateRow = (index: number, patch: Partial<ComponentRow>) =>
     setRows((current) =>
       current.map((row, i) => (i === index ? { ...row, ...patch } : row))
@@ -183,6 +188,9 @@ const TaxCodeForm = ({
                   name="calculationType"
                   label={t`Calculation Type`}
                   options={calculationTypeOptions}
+                  onChange={(option) =>
+                    setIsReverseCharge(option?.value === "Reverse Charge")
+                  }
                 />
                 <Select
                   name="reportingCategory"
@@ -312,12 +320,22 @@ const TaxCodeForm = ({
                 </Table>
               </Card>
               <p className="text-sm text-muted-foreground">
-                <Trans>
-                  Effective rate today:{" "}
-                  <span className="font-medium text-foreground tabular-nums">
-                    {percentFormatter.format(effectiveRate)}
-                  </span>
-                </Trans>
+                {isReverseCharge ? (
+                  <Trans>
+                    Self-assessed rate today:{" "}
+                    <span className="font-medium text-foreground tabular-nums">
+                      {percentFormatter.format(effectiveRate)}
+                    </span>
+                    . Lines using this code are charged no tax.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    Effective rate today:{" "}
+                    <span className="font-medium text-foreground tabular-nums">
+                      {percentFormatter.format(effectiveRate)}
+                    </span>
+                  </Trans>
+                )}
               </p>
             </VStack>
           </DrawerBody>

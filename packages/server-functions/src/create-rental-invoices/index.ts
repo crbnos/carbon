@@ -12,10 +12,7 @@ import type { Database } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
-import {
-  effectiveComponents,
-  effectiveTaxPercent
-} from "@carbon/database/tax-components";
+import { chargedTaxPercent } from "@carbon/database/tax-components";
 import {
   billingHorizon,
   effectiveInvoiceAutomation,
@@ -371,9 +368,7 @@ async function draftAgreementInvoices(
     date: string
   ) => {
     const code = taxCodeId ? taxCodes.get(taxCodeId) : undefined;
-    return code
-      ? round(effectiveTaxPercent(effectiveComponents(code, date)))
-      : Number(storedPercent);
+    return code ? chargedTaxPercent(code, date) : Number(storedPercent);
   };
 
   const creditMemos: DraftedRentalCreditMemo[] =

@@ -25,8 +25,7 @@ import {
 import { round } from "@carbon/database/precision";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
-  effectiveComponents,
-  effectiveTaxPercent,
+  chargedTaxPercent,
   type TaxCodeInput
 } from "@carbon/database/tax-components";
 import {
@@ -682,19 +681,17 @@ type InvoiceLineValues = {
   unitOfMeasureCode: string;
 };
 
-/** A line with a tax code bills at the code's rate on `date` — the schedule
- *  row's period start — so a component that starts or ends mid-term bills at
- *  the rate posting splits by. A line with no code (or a code since deleted)
- *  keeps its stored percent. */
+/** A line with a tax code bills at the code's charged rate on `date` — the
+ *  schedule row's period start — so a component that starts or ends mid-term
+ *  bills at the rate posting splits by, and a Reverse Charge code bills none.
+ *  A line with no code (or a code since deleted) keeps its stored percent. */
 function taxPercentOn(
   line: ContractLineRow,
   taxCodes: Map<string, TaxCodeInput>,
   date: string
 ): number {
   const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
-  return code
-    ? round(effectiveTaxPercent(effectiveComponents(code, date)))
-    : Number(line.taxPercent);
+  return code ? chargedTaxPercent(code, date) : Number(line.taxPercent);
 }
 
 /** One schedule row as a Service sales-invoice line (plan decision 10). */

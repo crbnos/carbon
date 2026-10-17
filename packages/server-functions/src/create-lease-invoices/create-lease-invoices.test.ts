@@ -301,3 +301,82 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a Reverse Charge supplier code drafts no supplier tax: posting self-assesses it",
+  async () => {
+    const f = await leaseFixture();
+    try {
+      // US use tax: the lessor charges none, the company accrues 8.25%.
+      const taxCode = await f.db
+        .insertInto("taxCode")
+        .values({
+          name: "Use Tax 8.25%",
+          calculationType: "Reverse Charge",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("taxCodeComponent")
+        .values({
+          taxCodeId: taxCode.id,
+          name: "Use Tax",
+          taxPercent: 0.0825,
+          sequence: 1,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+      await f.db
+        .insertInto("supplierTax")
+        .values({
+          supplierId: f.supplierId,
+          companyId: f.companyId,
+          taxCodeId: taxCode.id
+        })
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet({ taxCodeId: taxCode.id })
+        )
+        .execute();
+
+      await postLease(f.ctx, { type: "activate", leaseId: f.leaseId });
+      const result = await draft(f, "2027-01-31");
+      expect(result.failures).toEqual([]);
+      expect(result.invoices).toHaveLength(1);
+
+      const line = await f.db
+        .selectFrom("purchaseInvoiceLine")
+        .innerJoin(
+          "purchaseInvoice",
+          "purchaseInvoice.id",
+          "purchaseInvoiceLine.invoiceId"
+        )
+        .select([
+          "purchaseInvoice.totalTax",
+          "purchaseInvoice.totalAmount",
+          "purchaseInvoiceLine.taxCodeId",
+          "purchaseInvoiceLine.taxPercent",
+          "purchaseInvoiceLine.supplierTaxAmount"
+        ])
+        .where("purchaseInvoiceLine.companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect({
+        taxCodeId: line.taxCodeId,
+        taxPercent: Number(line.taxPercent),
+        supplierTaxAmount: Number(line.supplierTaxAmount),
+        totalTax: Number(line.totalTax),
+        totalAmount: Number(line.totalAmount)
+      }).toEqual({
+        taxCodeId: taxCode.id,
+        taxPercent: 0,
+        supplierTaxAmount: 0,
+        totalTax: 0,
+        totalAmount: 10000
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

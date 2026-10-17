@@ -87,6 +87,22 @@ export function effectiveTaxPercent(components: TaxComponentInput[]): number {
 }
 
 /**
+ * The rate a line using `code` is CHARGED on `date`, rounded to internal
+ * scale: it is stored as the line's `taxPercent`. 0 for a Reverse Charge
+ * code — the seller charges no tax (EU B2B sale, a reverse charge or use tax
+ * purchase); only purchase posting self-assesses it, from the components.
+ * Every default of a line's `taxPercent` from a code goes through this.
+ */
+export function chargedTaxPercent(
+  code: Pick<TaxCodeInput, "calculationType" | "components">,
+  date: string
+): number {
+  if (code.calculationType === "Reverse Charge") return 0;
+  // Summing components leaves float noise (0.15000000000000002).
+  return round(effectiveTaxPercent(effectiveComponents(code, date)));
+}
+
+/**
  * Split a line's tax across its components, then split each component's part
  * into a recoverable and a non-recoverable share.
  *

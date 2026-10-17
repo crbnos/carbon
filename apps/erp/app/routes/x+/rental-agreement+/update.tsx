@@ -7,13 +7,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
-import { datetime } from "@carbon/utils";
+import { chargedTaxPercent, datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate, getTaxCode } from "~/modules/accounting";
-import {
-  taxCodeRate,
-  toTaxCodeInput
-} from "~/modules/accounting/accounting.utils";
+import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
 import {
   getRentalAgreement,
   rentalAgreementInvoiceAutomationValidator,
@@ -195,7 +192,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       return { error: { message: "Tax code not found" }, data: null };
     }
-    terms.taxPercent = taxCodeRate(
+    terms.taxPercent = chargedTaxPercent(
       toTaxCodeInput(taxCode.data),
       datetime.today(timeZone).toString()
     );

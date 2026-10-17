@@ -55,8 +55,7 @@ import {
 import { monthEnd } from "@carbon/database/revenue-schedule";
 import { getNextSequences } from "@carbon/database/sequence";
 import {
-  effectiveComponents,
-  effectiveTaxPercent,
+  chargedTaxPercent,
   groupByTaxRate,
   memoAmounts
 } from "@carbon/database/tax-components";
@@ -1878,7 +1877,7 @@ async function planCancellationCredit(
     return {
       taxCodeId: line?.taxCodeId ?? null,
       taxPercent: code
-        ? round(effectiveTaxPercent(effectiveComponents(code, row.periodStart)))
+        ? chargedTaxPercent(code, row.periodStart)
         : Number(line?.taxPercent ?? 0)
     };
   };

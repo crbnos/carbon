@@ -6,11 +6,13 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import type { TaxLedgerLine } from "@carbon/database/tax-ledger";
 import {
   effectiveTaxPercent,
+  equals,
   round,
   SCALE,
   splitLineTax,
   type TaxCodeInput
 } from "@carbon/utils";
+import { InvalidInputError } from "../errors";
 import type {
   PurchasePostingAmounts,
   PurchasePostingLine
@@ -30,6 +32,10 @@ type TaxedLine = {
  * amounts): the supplier's tax for a Normal code, self-assessed tax for a
  * Reverse Charge code. A line with no code is returned as it is. Shared by
  * the posting and the cutover backfill so both split the same way.
+ *
+ * Refuses a Reverse Charge line that carries a tax amount: the supplier
+ * charges no tax on a reverse charge, so that amount would be paid to the
+ * supplier AND self-assessed — the same tax twice.
  */
 export function withPurchaseTax<T extends TaxedLine>(
   lines: ReadonlyArray<T>,
@@ -41,6 +47,11 @@ export function withPurchaseTax<T extends TaxedLine>(
     const base =
       line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0);
     if (code.calculationType === "Reverse Charge") {
+      if (!equals(line.taxAmount ?? 0, 0)) {
+        throw new InvalidInputError(
+          `Purchase invoice line ${line.id} has a Reverse Charge tax code and a tax amount of ${line.taxAmount}. A supplier charges no tax on a reverse charge, and Carbon self-assesses it when it posts. Clear the line's tax amount.`
+        );
+      }
       return {
         ...line,
         selfAssessedParts: splitLineTax({
@@ -94,6 +105,9 @@ export function purchaseTaxLedgerLines(
  * The class of each account a purchase posting's tax legs can hit: the Tax
  * Paid and reverse charge defaults and every component's Tax Paid account
  * (`taxAccountClasses` on `buildPurchaseInvoicePostingLines`). One query.
+ *
+ * Refuses an account that is not in the company's group: the posting would
+ * otherwise default its class and post to another company's account.
  */
 export async function loadTaxAccountClasses(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -114,13 +128,21 @@ export async function loadTaxAccountClasses(
     )
   ].filter((id): id is string => !!id);
   if (ids.length === 0) return new Map();
+  const requested = [...new Set(ids)];
   const rows = await db
     .selectFrom("account")
     .innerJoin("company", "company.companyGroupId", "account.companyGroupId")
     .select(["account.id", "account.class"])
     .where("company.id", "=", args.companyId)
-    .where("account.id", "in", [...new Set(ids)])
+    .where("account.id", "in", requested)
     .execute();
+  const found = new Set(rows.map((row) => row.id));
+  const foreign = requested.find((id) => !found.has(id));
+  if (foreign) {
+    throw new InvalidInputError(
+      `Tax account ${foreign} is not an account of this company. Choose one of this company's accounts on the tax code or in the account defaults.`
+    );
+  }
   return new Map(
     rows.flatMap((row) => (row.class ? [[row.id, row.class] as const] : []))
   );

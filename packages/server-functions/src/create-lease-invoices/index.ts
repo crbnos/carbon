@@ -13,8 +13,7 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   applyRate,
-  effectiveComponents,
-  effectiveTaxPercent,
+  chargedTaxPercent,
   openEndedLeaseHorizon,
   round,
   type TaxCodeInput
@@ -201,7 +200,9 @@ async function draftLeaseInvoices(
     .executeTakeFirst();
 
   // The supplier's tax code taxes each line at the rate in force on its due
-  // date. A supplier with no code bills no tax, as before tax codes.
+  // date. A supplier with no code bills no tax, as before tax codes, and nor
+  // does a Reverse Charge code: the supplier charges none, and posting
+  // self-assesses it from the code's components.
   const taxCode = await readSupplierTaxCode(trx, companyId, lease.supplierId);
   const decimals = taxCode
     ? await currencyDecimals(trx, companyId, lease.currencyCode)
@@ -219,9 +220,7 @@ async function draftLeaseInvoices(
     const subtotal = round(
       group.reduce((sum, row) => sum + Number(row.amount), 0)
     );
-    const taxPercent = taxCode
-      ? round(effectiveTaxPercent(effectiveComponents(taxCode, dueDate)))
-      : 0;
+    const taxPercent = taxCode ? chargedTaxPercent(taxCode, dueDate) : 0;
     const lineTax = (amount: number) =>
       decimals === null ? 0 : applyRate(amount, taxPercent, decimals);
     const totalTax = round(

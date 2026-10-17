@@ -4,6 +4,8 @@
 
 import { credit, debit, SCALE, splitLineTax } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
+import { InvalidInputError } from "../errors";
+import { withPurchaseTax } from "../lib/purchase-tax";
 import {
   type BuildPurchaseInvoicePostingLinesInput,
   buildPurchaseInvoicePostingLines,
@@ -655,6 +657,63 @@ describe("recoverable purchase tax", () => {
         quantity: 1
       }
     ]);
+  });
+
+  describe("a Reverse Charge code through withPurchaseTax", () => {
+    // US use tax: 8.25%, nothing recoverable, on a $1,000 bill.
+    const useTax = {
+      id: "use-tax",
+      calculationType: "Reverse Charge" as const,
+      taxesShipping: false,
+      components: [{ ...vat(0), id: "tx", taxPercent: 0.0825 }]
+    };
+    const line = (taxAmount: number) => ({
+      id: "l",
+      invoiceLineType: "Part",
+      conversionFactor: 1,
+      quantity: 1,
+      unitPrice: 1000,
+      shippingCost: 0,
+      taxAmount,
+      taxCodeId: "use-tax"
+    });
+
+    it("self-assesses from the components and keeps AP net", () => {
+      const [lineAmounts] = calculatePurchasePostingAmounts({
+        lines: withPurchaseTax([line(0)], new Map([["use-tax", useTax]])),
+        exchangeRate: 1,
+        supplierShippingCost: 0
+      });
+      const { lines } = build([
+        {
+          id: "l",
+          invoiceLineType: "Part",
+          locationId: "loc-1",
+          amounts: lineAmounts!,
+          kind: "direct",
+          item: part,
+          receivedWithInvoice: true
+        }
+      ]);
+      expect(summary(lines)).toEqual([
+        { accountId: "raw", amount: debit("asset", 1082.5), quantity: 1 },
+        { accountId: "ap", amount: credit("liability", 1000), quantity: 1 },
+        {
+          accountId: "reverse-charge",
+          amount: credit("liability", 82.5),
+          quantity: 1
+        }
+      ]);
+    });
+
+    it("refuses a line that also carries a supplier tax amount", () => {
+      expect(() =>
+        withPurchaseTax([line(82.5)], new Map([["use-tax", useTax]]))
+      ).toThrow(InvalidInputError);
+      expect(() =>
+        withPurchaseTax([line(82.5)], new Map([["use-tax", useTax]]))
+      ).toThrow(/Clear the line's tax amount/);
+    });
   });
 
   it("debits a liability-class Tax Paid account as a liability: one VAT control account", () => {

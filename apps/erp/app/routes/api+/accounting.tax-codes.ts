@@ -4,13 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader } from "@carbon/query/cache";
-import { datetime } from "@carbon/utils";
+import { chargedTaxPercent, datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getTaxCodesList } from "~/modules/accounting";
-import {
-  taxCodeRate,
-  toTaxCodeInput
-} from "~/modules/accounting/accounting.utils";
+import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -25,7 +22,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     data: (taxCodes.data ?? []).map((code) => ({
       ...code,
-      rate: taxCodeRate(toTaxCodeInput(code), today)
+      // The rate a line using the code is charged — 0 for a Reverse Charge
+      // code. The forms default a line's `taxPercent` from it.
+      rate: chargedTaxPercent(toTaxCodeInput(code), today)
     })),
     error: taxCodes.error
   };

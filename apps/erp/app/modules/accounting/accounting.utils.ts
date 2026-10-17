@@ -4,6 +4,7 @@
 
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
 import {
+  chargedTaxPercent,
   credit,
   debit,
   effectiveComponents,
@@ -1161,9 +1162,9 @@ export function decideLineTax(facts: {
     const components = effectiveComponents(code, facts.date);
     return {
       taxCodeId: code.id,
-      // A stored rate, at internal scale: summing components leaves float
-      // noise (0.15000000000000002).
-      taxPercent: round(effectiveTaxPercent(components)),
+      // The CHARGED rate: 0 for a Reverse Charge code, which the posting
+      // self-assesses from the components instead.
+      taxPercent: chargedTaxPercent(code, facts.date),
       components,
       exempt: false,
       exemptionReason: null
@@ -1219,7 +1220,11 @@ export function toTaxCodeInput(row: TaxCodeRow): TaxCodeInput {
   };
 }
 
-/** A code's combined rate on `date`. */
+/**
+ * A code's combined rate on `date` — for a Reverse Charge code, the rate the
+ * company self-assesses. A display and provider-mapping value, never a line's
+ * default `taxPercent`: that is `chargedTaxPercent` (`@carbon/utils`).
+ */
 export function taxCodeRate(code: TaxCodeInput, date: string): number {
   return round(effectiveTaxPercent(effectiveComponents(code, date)));
 }

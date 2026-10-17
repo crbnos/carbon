@@ -2,7 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { TaxCodeInput, TaxComponentInput } from "@carbon/utils";
+import {
+  chargedTaxPercent,
+  type TaxCodeInput,
+  type TaxComponentInput
+} from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { decideLineTax, taxCodeRate } from "./accounting.utils";
 
@@ -146,5 +150,32 @@ describe("decideLineTax", () => {
     const decision = decideLineTax({ ...facts, partyTaxCode: code });
     expect(decision.components.map((c) => c.id)).toEqual(["new"]);
     expect(taxCodeRate(code, "2026-06-30")).toBeCloseTo(0.0625, 10);
+  });
+});
+
+describe("a Reverse Charge code", () => {
+  const useTax: TaxCodeInput = { ...dallas, calculationType: "Reverse Charge" };
+
+  it("is charged at 0, on a purchase and on a sale, and keeps its code and components", () => {
+    for (const source of ["purchase", "sales"] as const) {
+      const decision = decideLineTax({
+        ...facts,
+        source,
+        partyTaxCode: useTax
+      });
+      expect(decision).toMatchObject({
+        taxCodeId: "dallas",
+        taxPercent: 0,
+        exempt: false
+      });
+      expect(decision.components).toHaveLength(1);
+    }
+  });
+
+  it("charges 0 where a Normal code charges its summed rate", () => {
+    expect(chargedTaxPercent(useTax, facts.date)).toBe(0);
+    expect(chargedTaxPercent(austin, facts.date)).toBe(0.0825);
+    // The self-assessed rate is still the code's own.
+    expect(taxCodeRate(useTax, facts.date)).toBe(0.0825);
   });
 });

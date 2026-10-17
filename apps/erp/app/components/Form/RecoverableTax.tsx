@@ -3,15 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLoaderQuery } from "@carbon/query";
-import { effectiveComponents, round, splitLineTax } from "@carbon/utils";
+import {
+  chargedTaxPercent,
+  effectiveComponents,
+  effectiveTaxPercent,
+  splitLineTax
+} from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useMemo } from "react";
 import { useCurrencyFormatter } from "~/hooks";
 import type { getTaxCodesList } from "~/modules/accounting";
-import {
-  taxCodeRate,
-  toTaxCodeInput
-} from "~/modules/accounting/accounting.utils";
+import { toTaxCodeInput } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
 type TaxCodeRow = NonNullable<
@@ -34,17 +36,18 @@ function useTaxCodeInputs() {
 }
 
 /**
- * A code's combined rate on the document's date (YYYY-MM-DD), not today's —
- * a component that starts or ends between the two changes the rate. `null`
- * when the code is not loaded (yet).
+ * A code's charged rate on the document's date (YYYY-MM-DD), not today's —
+ * a component that starts or ends between the two changes the rate. 0 for a
+ * Reverse Charge code. `null` when the code is not loaded (yet).
  */
 export function useTaxCodeRateOn(date: string) {
   const codes = useTaxCodeInputs();
   return useCallback(
     (taxCodeId: string) => {
       const code = codes.get(taxCodeId);
-      // Rounded to internal scale: it is stored as the line's rate.
-      return code ? round(taxCodeRate(code, date)) : null;
+      // The charged rate (0 for Reverse Charge), at internal scale: it is
+      // stored as the line's rate.
+      return code ? chargedTaxPercent(code, date) : null;
     },
     [codes, date]
   );
@@ -54,7 +57,8 @@ type RecoverableTaxProps = {
   taxCodeId: string | null | undefined;
   /** The line's taxable base: unit price × quantity + shipping. */
   subtotal: number;
-  /** The tax the supplier charged on the line. */
+  /** The tax the supplier charged on the line (ignored for a Reverse Charge
+   *  code, which self-assesses from its components). */
   taxAmount: number;
   /** The document's date, YYYY-MM-DD. */
   date: string;
@@ -88,9 +92,15 @@ export function RecoverableTax({
     return null;
   }
 
+  // A Reverse Charge supplier charges no tax: the company self-assesses it
+  // from the components, as `withPurchaseTax` posts it.
+  const lineTax =
+    code.calculationType === "Reverse Charge"
+      ? subtotal * effectiveTaxPercent(components)
+      : taxAmount;
   const recoverable = splitLineTax({
     base: subtotal,
-    lineTax: taxAmount,
+    lineTax,
     components,
     scale: currencyDecimals
   }).reduce((total, part) => total + part.recoverableAmount, 0);
