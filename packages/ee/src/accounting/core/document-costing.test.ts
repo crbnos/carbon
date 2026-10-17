@@ -4,8 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  type BillTaxLedgerRow,
   type CostingLine,
   loadBillCostingLines,
+  resolveCostingLineTax,
+  splitBillTaxLegs,
   toTransactionCurrencyLines
 } from "./document-costing";
 
@@ -148,7 +151,8 @@ describe("loadBillCostingLines", () => {
         id: "jl-1",
         accountId: "acct_grir",
         amount: 300,
-        description: "GR/IR Clearing"
+        description: "GR/IR Clearing",
+        tax: null
       }
     ]);
   });
@@ -203,13 +207,15 @@ describe("loadBillCostingLines", () => {
         accountId: "acct_grir",
         amount: 280,
         description: "GR/IR Clearing",
-        sourceItem: { id: "item-1", code: "WIDGET-1", name: "Widget" }
+        sourceItem: { id: "item-1", code: "WIDGET-1", name: "Widget" },
+        tax: null
       },
       {
         id: "jl-2",
         accountId: "acct_ppv",
         amount: 20,
-        description: "Purchase Price Variance"
+        description: "Purchase Price Variance",
+        tax: null
       }
     ]);
   });
@@ -531,4 +537,119 @@ describe("original bill control provenance", () => {
       });
     }
   );
+});
+
+describe("bill tax", () => {
+  const ledger = (
+    documentLineId: string,
+    taxAmount: number,
+    recoverableAmount: number
+  ): BillTaxLedgerRow => ({
+    documentLineId,
+    taxCodeId: null,
+    taxCodeComponentId: null,
+    taxPercent: 0.2,
+    taxableAmount: taxAmount * 5,
+    taxAmount,
+    recoverableAmount
+  });
+
+  it("replays a recoverable line as its cost, with the Tax Paid leg beside it, and still reconciles", () => {
+    const lines: CostingLine[] = [
+      { id: "cost", accountId: "expense", amount: 1000, description: "Travel" },
+      {
+        id: "tax",
+        accountId: "tax-paid",
+        amount: 200,
+        description: "Tax Paid",
+        taxLeg: true,
+        tax: null
+      }
+    ];
+    const split = splitBillTaxLegs(lines);
+    expect(split.lines.map((line) => line.id)).toEqual(["cost"]);
+    expect(split.taxLegs.map((line) => line.id)).toEqual(["tax"]);
+    const converted = toTransactionCurrencyLines(split.lines, {
+      exchangeRate: 1,
+      documentTotal: 1200,
+      decimalPlaces: 2,
+      taxLegs: split.taxLegs
+    });
+    expect(converted.map((line) => line.amount)).toEqual([1000]);
+  });
+
+  it("still refuses a cost gap once the tax legs are set aside", () => {
+    expect(() =>
+      toTransactionCurrencyLines(
+        [{ id: "cost", accountId: "x", amount: 990, description: null }],
+        {
+          exchangeRate: 1,
+          documentTotal: 1200,
+          decimalPlaces: 2,
+          taxLegs: [
+            { id: "tax", accountId: "t", amount: 200, description: null }
+          ]
+        }
+      )
+    ).toThrow(/does not reconcile/);
+  });
+
+  const lines = [
+    {
+      id: "po-line",
+      purchaseOrderLineId: "po-1",
+      accountId: null,
+      taxCodeId: "uk20",
+      taxPercent: 0.2
+    },
+    {
+      id: "gl-line",
+      purchaseOrderLineId: null,
+      accountId: "travel",
+      taxCodeId: "exempt",
+      taxPercent: 0
+    }
+  ];
+  const taxOf = resolveCostingLineTax(lines, [
+    ledger("po-line", 200, 150),
+    ledger("gl-line", 0, 0)
+  ]);
+
+  it("ties a PO-backed leg to its purchase-order line's tax and recoverable share", () => {
+    expect(taxOf({ purchaseOrderLineId: "po-1", accountId: "grni" })).toEqual({
+      taxCodeId: "uk20",
+      taxPercent: 0.2,
+      recoverableShare: 0.75
+    });
+  });
+
+  it("ties a direct leg to the direct line on its account", () => {
+    expect(
+      taxOf({ purchaseOrderLineId: null, accountId: "travel" })
+    ).toMatchObject({ taxCodeId: "exempt", taxPercent: 0 });
+  });
+
+  it("leaves a leg it cannot tie to one tax unresolved", () => {
+    expect(taxOf({ purchaseOrderLineId: null, accountId: "other" })).toBeNull();
+    const conflicting = resolveCostingLineTax(
+      [
+        { ...lines[1]!, id: "a" },
+        { ...lines[1]!, id: "b", taxCodeId: "uk20", taxPercent: 0.2 }
+      ],
+      []
+    );
+    expect(
+      conflicting({ purchaseOrderLineId: null, accountId: "travel" })
+    ).toBeNull();
+  });
+
+  it("gives every leg the bill's one tax when all lines share it", () => {
+    const one = resolveCostingLineTax(
+      [lines[0]!],
+      [ledger("po-line", 200, 200)]
+    );
+    expect(
+      one({ purchaseOrderLineId: null, accountId: "variance" })
+    ).toMatchObject({ taxCodeId: "uk20", recoverableShare: 1 });
+  });
 });

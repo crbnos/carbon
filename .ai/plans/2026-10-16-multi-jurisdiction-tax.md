@@ -54,7 +54,7 @@ Slice C — Provider mapping
 - [ ] Task 28: Add the Tax Rates tab and the sync gate to the integration drawer
 - [x] Task 29: Write the shared provider tax-rate resolver with tests
 - [ ] Task 30: Send mapped tax on Xero invoices, sales orders and purchase orders
-- [ ] Task 31: Carry per-line tax through bill costing
+- [x] Task 31: Carry per-line tax through bill costing
 - [ ] Task 32: Send tax on Xero bills, credit notes and vendor credits
 - [ ] Task 33: Send mapped tax on QuickBooks Online documents
 - [ ] Task 34: Update the accounting sync rule
@@ -1439,6 +1439,15 @@ pnpm --filter @carbon/ee test -- src/accounting/core/document-costing.test.ts
 ```
 
 **Out of scope:** charge costing (`loadChargeCostingLines`).
+
+**Deviation (executed):**
+- Step 1 does not hold. `documentLineReference` names the purchase-order line, not the invoice line, and a direct line's legs carry none. The AP leg shares the same keys, and the payment journal pairs control lines by that reference, so the posting was not changed.
+- Each leg's tax resolves on the read side instead (`resolveCostingLineTax`):
+  1. the bill's one shared tax;
+  2. else the leg's purchase-order line;
+  3. else the direct line on the leg's account;
+  4. else null.
+- `lines` still include the Tax Paid legs, flagged `taxLeg`, because QuickBooks Online, Rillet and Ramp replay them as account lines. A provider that sends tax calls `splitBillTaxLegs` and passes `taxLegs` to `toTransactionCurrencyLines`.
 
 ## Task 32: Send tax on Xero bills, credit notes and vendor credits
 
