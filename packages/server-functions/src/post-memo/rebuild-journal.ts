@@ -18,6 +18,7 @@ import {
   loadPartyDimensions,
   partyDimensionValuesFrom
 } from "../lib/party-dimensions";
+import { loadTaxCodes } from "../lib/tax-codes";
 import {
   isContractOrRentalCredit,
   type MemoJournalLineWithRole,
@@ -26,6 +27,7 @@ import {
   supplierReturnCarriedCosts,
   withReasonRole
 } from "./memo-accounts";
+import { planMemoTax } from "./memo-tax";
 
 export const MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR =
   "This credit memo is from before your accounting cutover and credits a contract or a rental agreement. Invoice the customer for the amount instead.";
@@ -154,6 +156,45 @@ export async function rebuildMemoJournals(
     reasonAccounts.map((row) => [row.id, row.class])
   );
   const carriedCosts = await supplierReturnCarriedCosts(trx, memos, companyId);
+  // Memo tax plans exactly as the posting did (planMemoTax): the codes on
+  // each memo's posting date and each currency's precision, read once.
+  const taxedMemos = memos.filter((memo) => Number(memo.taxAmount ?? 0) > 0);
+  const postingDates = [
+    ...new Set(taxedMemos.map((memo) => memo.postingDate ?? ""))
+  ];
+  const codesByDate = new Map(
+    await Promise.all(
+      postingDates.map(
+        async (date) =>
+          [
+            date,
+            await loadTaxCodes(
+              trx,
+              companyId,
+              taxedMemos
+                .filter((memo) => (memo.postingDate ?? "") === date)
+                .map((memo) => memo.taxCodeId),
+              date
+            )
+          ] as const
+      )
+    )
+  );
+  const currencyCodes = [
+    ...new Set(taxedMemos.map((memo) => memo.currencyCode).filter(Boolean))
+  ] as string[];
+  const decimalsByCurrency = new Map(
+    currencyCodes.length > 0
+      ? (
+          await trx
+            .selectFrom("currency")
+            .select(["code", "decimalPlaces"])
+            .where("companyGroupId", "=", companyGroupId)
+            .where("code", "in", currencyCodes)
+            .execute()
+        ).map((row) => [row.code, row.decimalPlaces ?? 2])
+      : []
+  );
   const dimensions = await loadPartyDimensions(trx, companyGroupId);
 
   return plans.map((plan) => {
@@ -164,6 +205,17 @@ export async function rebuildMemoJournals(
         "Memo accounts must be active posting accounts in this company group with the correct control class"
       );
     }
+    const memoTax = Number(memo.taxAmount ?? 0);
+    const { taxToAccount } = planMemoTax({
+      isAR,
+      amount: Number(memo.amount),
+      taxAmount: memoTax,
+      exchangeRate: Number(memo.exchangeRate),
+      decimals: decimalsByCurrency.get(memo.currencyCode ?? "") ?? 2,
+      taxCode: memo.taxCodeId
+        ? codesByDate.get(memo.postingDate ?? "")?.get(memo.taxCodeId)
+        : undefined
+    });
     const { lines } = buildMemoJournal({
       memoId: memo.id,
       companyId,
@@ -179,7 +231,9 @@ export async function rebuildMemoJournals(
       varianceAccountId: defaults.purchaseVarianceAccount,
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
-        : undefined
+        : undefined,
+      taxAmount: taxToAccount,
+      taxAccountId: isAR ? defaults.taxReceivedAccount : defaults.taxPaidAccount
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);
     return {

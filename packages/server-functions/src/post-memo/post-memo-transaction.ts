@@ -19,9 +19,11 @@ import {
 } from "@carbon/database/journal-posting-status";
 import { buildMemoJournal } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import { buildTaxLedgerRows } from "@carbon/database/tax-ledger";
 import {
   datetime,
   EPSILON,
+  effectiveTaxPercent,
   round,
   toBaseAmount,
   toDocumentAmount
@@ -36,12 +38,15 @@ import {
 } from "../lib/contract-ledger";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { partyDimensionValues } from "../lib/party-dimensions";
+import { loadTaxCodes } from "../lib/tax-codes";
+import { negateDocumentTaxLedger } from "../lib/tax-ledger-writes";
 import type { RentalScheduleFact } from "../post-sales-invoice/rental-posting";
 import {
   plainMemoReasonAccount,
   supplierReturnCarriedCost,
   withReasonRole
 } from "./memo-accounts";
+import { planMemoTax } from "./memo-tax";
 import { rebuildMemoJournal } from "./rebuild-journal";
 import { planRentalCredit, type RentalCreditPlan } from "./rental-credit";
 
@@ -176,6 +181,14 @@ export function postMemoTransaction(
         const rebuilt = await rebuildMemoJournal(trx, memo, postingStatus);
         const reversedId = await insertVoidJournal();
         journalId = reversedId;
+        await negateDocumentTaxLedger(trx, {
+          companyId,
+          documentType: "Memo",
+          documentId: memoId,
+          journalId: reversedId,
+          postingDate: today,
+          createdBy: userId
+        });
         const lines = await trx
           .insertInto("journalLine")
           .values(
@@ -243,6 +256,14 @@ export function postMemoTransaction(
         }
         const reversedId = await insertVoidJournal();
         journalId = reversedId;
+        await negateDocumentTaxLedger(trx, {
+          companyId,
+          documentType: "Memo",
+          documentId: memoId,
+          journalId: reversedId,
+          postingDate: today,
+          createdBy: userId
+        });
         const lines = await trx
           .insertInto("journalLine")
           .values(
@@ -361,6 +382,28 @@ export function postMemoTransaction(
     if (company.baseCurrencyCode === memo.currencyCode && exchangeRate !== 1) {
       throw new Error("Base-currency memo must use exchange rate 1");
     }
+    // The tax inside the memo (spec "Memo tax"): `amount` is the gross on AR
+    // or AP, `taxAmount` the tax the form computed forward from the net. A
+    // customer memo unwinds Tax Received in full; a supplier memo unwinds the
+    // recoverable share in Tax Paid and leaves the rest in the reason leg.
+    const memoTax = Number(memo.taxAmount ?? 0);
+    const memoTaxCode = memo.taxCodeId
+      ? (await loadTaxCodes(trx, companyId, [memo.taxCodeId], today)).get(
+          memo.taxCodeId
+        )
+      : undefined;
+    const {
+      netAmount,
+      taxToAccount,
+      parts: memoTaxParts
+    } = planMemoTax({
+      isAR,
+      amount,
+      taxAmount: memoTax,
+      exchangeRate,
+      decimals: currency.decimalPlaces,
+      taxCode: memoTaxCode
+    });
     const party = isAR
       ? await trx
           .selectFrom("customer")
@@ -405,7 +448,7 @@ export function postMemoTransaction(
             memoId,
             companyId,
             customerContractId: memo.customerContractId,
-            amount,
+            amount: netAmount,
             exchangeRate
           })
         : null;
@@ -418,7 +461,7 @@ export function postMemoTransaction(
             memoId,
             companyId,
             rentalAgreementId: memo.rentalAgreementId,
-            amount,
+            amount: netAmount,
             decimals: currency.decimalPlaces
           })
         : null;
@@ -511,6 +554,10 @@ export function postMemoTransaction(
       reasonAccountClass: reason.class,
       reasonAmountBase,
       varianceAccountId: defaults.purchaseVarianceAccount,
+      taxAmount: taxToAccount,
+      taxAccountId: isAR
+        ? defaults.taxReceivedAccount
+        : defaults.taxPaidAccount,
       reasonDescription: memo.purchaseReturnOrderId
         ? "Goods Received Not Invoiced"
         : contractCredit || rentalCredit
@@ -559,6 +606,39 @@ export function postMemoTransaction(
       )
       .returning("id")
       .execute();
+    if (memoTax > 0) {
+      const memoLedgerRows = buildTaxLedgerRows({
+        companyId,
+        createdBy: userId,
+        source: isAR ? "Sales" : "Purchase",
+        documentType: "Memo",
+        documentId: memoId,
+        journalId: journal.id,
+        postingDate: today,
+        customerId: isAR ? partyId : null,
+        supplierId: isAR ? null : partyId,
+        currencyCode: memo.currencyCode,
+        exchangeRate,
+        currencyDecimals: currency.decimalPlaces,
+        // A customer credit and a supplier debit reverse tax the invoice
+        // recorded; the other two add to it.
+        sign: (memo.direction === "Credit") === isAR ? -1 : 1,
+        lines: [
+          {
+            documentLineId: null,
+            taxCodeId: memo.taxCodeId ?? null,
+            taxableBase: toBaseAmount(netAmount, exchangeRate),
+            components: memoTaxParts,
+            taxPercent: memoTaxCode
+              ? effectiveTaxPercent(memoTaxCode.components)
+              : 0,
+            taxAmount: toBaseAmount(memoTax, exchangeRate),
+            exempt: null
+          }
+        ]
+      });
+      await trx.insertInto("taxLedger").values(memoLedgerRows).execute();
+    }
     if (rentalCredit && rentalCredit.scheduleRows.length > 0) {
       await trx
         .insertInto("revenueRecognitionSchedule")

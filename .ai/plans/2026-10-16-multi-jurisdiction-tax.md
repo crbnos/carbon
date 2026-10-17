@@ -43,7 +43,7 @@ Slice B — Posting
 - [x] Task 19: Leave recoverable tax out of the received unit cost
 - [x] Task 20: Write the pure tax-ledger row builder with tests
 - [x] Task 21: Write `taxLedger` rows when sales and purchase invoices post and void
-- [ ] Task 22: Post memo tax
+- [x] Task 22: Post memo tax
 - [ ] Task 23: Enter memo tax in the memo form and in memos made from a source
 - [ ] Task 24: Write `taxLedger` rows in the legacy backfill
 - [ ] Task 25: Verify slice B end to end
