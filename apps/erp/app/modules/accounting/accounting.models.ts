@@ -1225,3 +1225,93 @@ export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Lease Run": "lease",
   "Asset Depreciation": "depreciation"
 };
+
+// -- Tax Models --
+// See .ai/specs/2026-10-16-multi-jurisdiction-tax.md. Every rate is a 0..1
+// fraction, as `taxPercent` is on document lines.
+
+export const taxCalculationTypes = Constants.public.Enums.taxCalculationType;
+
+export const taxReportingCategories =
+  Constants.public.Enums.taxReportingCategory;
+
+const fraction = (label: string) =>
+  zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} must be at least 0` })
+      .max(1, { message: `${label} must be at most 100%` })
+  );
+
+export const taxCodeComponentValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    taxAuthorityId: zfd.text(z.string().optional()),
+    taxPercent: fraction("Rate"),
+    recoverablePercent: fraction("Recoverable percent"),
+    sequence: zfd.numeric(z.number().int().min(1)),
+    isCompound: zfd.checkbox(),
+    taxReceivedAccountId: zfd.text(z.string().optional()),
+    taxPaidAccountId: zfd.text(z.string().optional()),
+    effectiveDate: zfd.text(z.string().optional()),
+    expirationDate: zfd.text(z.string().optional())
+  })
+  .refine(
+    (c) =>
+      !c.effectiveDate ||
+      !c.expirationDate ||
+      c.expirationDate >= c.effectiveDate,
+    {
+      message: "The expiry date must be on or after the effective date",
+      path: ["expirationDate"]
+    }
+  );
+
+export const taxCodeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().optional()),
+  calculationType: z.enum(taxCalculationTypes, {
+    error: "Calculation type is required"
+  }),
+  reportingCategory: z.enum(taxReportingCategories, {
+    error: "Reporting category is required"
+  }),
+  taxesShipping: zfd.checkbox(),
+  invoiceMessage: zfd.text(z.string().optional()),
+  countryCode: zfd.text(z.string().optional()),
+  state: zfd.text(z.string().optional()),
+  active: zfd.checkbox(),
+  components: zfd
+    .repeatableOfType(taxCodeComponentValidator)
+    .refine((components) => components.length > 0, {
+      message: "Add at least one component"
+    })
+});
+
+export const taxAuthorityValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  supplierId: zfd.text(z.string().optional())
+});
+
+export const taxRegistrationValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    countryCode: z.string().min(1, { message: "Country is required" }),
+    state: zfd.text(z.string().optional()),
+    registrationNumber: z
+      .string()
+      .trim()
+      .min(1, { message: "Registration number is required" }),
+    effectiveDate: zfd.text(z.string().optional()),
+    endDate: zfd.text(z.string().optional())
+  })
+  .refine(
+    (r) => !r.effectiveDate || !r.endDate || r.endDate >= r.effectiveDate,
+    {
+      message: "The end date must be on or after the effective date",
+      path: ["endDate"]
+    }
+  );

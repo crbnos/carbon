@@ -25,7 +25,7 @@ Slice A — Foundation
 - [x] Task 3: Apply the migration, regenerate types, ship the authz migration
 - [x] Task 4: Follow the account-default renames through code, seed data and backups
 - [x] Task 5: Write the pure tax-component helpers with tests
-- [ ] Task 6: Add tax models and service functions, with the resolver
+- [x] Task 6: Add tax models and service functions, with the resolver
 - [ ] Task 7: Add the tax code API route and the `TaxCode` select
 - [ ] Task 8: Build the Tax Codes screens
 - [ ] Task 9: Build the Tax Authorities and Tax Registrations screens

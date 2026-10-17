@@ -63,7 +63,11 @@ import type {
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
   projectValidator,
-  taxDepreciationMethods
+  taxAuthorityValidator,
+  taxCodeComponentValidator,
+  taxCodeValidator,
+  taxDepreciationMethods,
+  taxRegistrationValidator
 } from "./accounting.models";
 import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
@@ -73,10 +77,13 @@ import {
 import {
   buildDepreciationLines,
   type DepreciationLine,
+  decideLineTax,
   depreciationFloor,
   diffJournalLines,
   hasAccountingCutover,
+  type LineTaxDecision,
   monthEndOf,
+  toTaxCodeInput,
   usageKey
 } from "./accounting.utils";
 import {
@@ -9400,4 +9407,535 @@ export async function getAccountingSyncTieOutCell(
   );
 
   return { data: { cell, journals, truncated }, error: null };
+}
+
+// -- Tax codes, authorities and registrations --
+// See .ai/specs/2026-10-16-multi-jurisdiction-tax.md.
+
+const TAX_CODE_COMPONENT_COLUMNS =
+  "id, name, taxAuthorityId, taxPercent, recoverablePercent, sequence, isCompound, taxReceivedAccountId, taxPaidAccountId, effectiveDate, expirationDate";
+
+/** @mcp read */
+export async function getTaxCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("taxCode")
+    .select(`*, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`, {
+      count: LIST_COUNT
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+/** @mcp read */
+export async function getTaxCodesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("taxCode")
+    .select(
+      `id, name, calculationType, taxesShipping, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`
+    )
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+}
+
+/** @mcp read */
+export async function getTaxCode(
+  client: SupabaseClient<Database>,
+  taxCodeId: string
+) {
+  return client
+    .from("taxCode")
+    .select(`*, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`)
+    .eq("id", taxCodeId)
+    .single();
+}
+
+type TaxCodeComponentInput = z.infer<typeof taxCodeComponentValidator>;
+
+/**
+ * Create or update a tax code and replace its components, in one transaction.
+ * Components that keep their id are updated, components with no id are
+ * inserted, and components missing from the list are deleted.
+ * @mcp upsert destructive
+ */
+export async function upsertTaxCode(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    taxCode: Omit<z.infer<typeof taxCodeValidator>, "components">;
+    components: TaxCodeComponentInput[];
+    customFields?: Json;
+  }
+): Promise<{ data: { id: string } | null; error: string | null }> {
+  const { companyId, companyGroupId, userId, taxCode, components } = args;
+  try {
+    const id = await db.transaction().execute(async (trx) => {
+      // Kysely bypasses RLS: refuse accounts outside the company's group.
+      const accountIds = [
+        ...new Set(
+          components
+            .flatMap((c) => [c.taxReceivedAccountId, c.taxPaidAccountId])
+            .filter((accountId): accountId is string => !!accountId)
+        )
+      ];
+      if (accountIds.length > 0) {
+        const accounts = await trx
+          .selectFrom("account")
+          .select("id")
+          .where("id", "in", accountIds)
+          .where("companyGroupId", "=", companyGroupId)
+          .execute();
+        if (accounts.length !== accountIds.length) {
+          throw new Error("A tax account does not belong to this company");
+        }
+      }
+
+      const header = {
+        name: taxCode.name,
+        description: taxCode.description ?? null,
+        calculationType: taxCode.calculationType,
+        reportingCategory: taxCode.reportingCategory,
+        taxesShipping: taxCode.taxesShipping,
+        invoiceMessage: taxCode.invoiceMessage ?? null,
+        countryCode: taxCode.countryCode ?? null,
+        state: taxCode.state ?? null,
+        active: taxCode.active
+      };
+
+      let taxCodeId: string;
+      if (taxCode.id) {
+        const updated = await trx
+          .updateTable("taxCode")
+          .set({
+            ...header,
+            ...(args.customFields ? { customFields: args.customFields } : {}),
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", taxCode.id)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirst();
+        if (!updated) throw new Error("Tax code not found");
+        taxCodeId = updated.id;
+      } else {
+        const inserted = await trx
+          .insertInto("taxCode")
+          .values({
+            ...header,
+            customFields: args.customFields ?? null,
+            companyId,
+            createdBy: userId
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        taxCodeId = inserted.id;
+      }
+
+      const row = (c: TaxCodeComponentInput) => ({
+        name: c.name,
+        taxAuthorityId: c.taxAuthorityId || null,
+        taxPercent: c.taxPercent,
+        recoverablePercent: c.recoverablePercent,
+        sequence: c.sequence,
+        isCompound: c.isCompound,
+        taxReceivedAccountId: c.taxReceivedAccountId || null,
+        taxPaidAccountId: c.taxPaidAccountId || null,
+        effectiveDate: c.effectiveDate || null,
+        expirationDate: c.expirationDate || null
+      });
+      const kept = components.filter((c) => !!c.id);
+      const added = components.filter((c) => !c.id);
+
+      let removal = trx
+        .deleteFrom("taxCodeComponent")
+        .where("taxCodeId", "=", taxCodeId)
+        .where("companyId", "=", companyId);
+      if (kept.length > 0) {
+        removal = removal.where(
+          "id",
+          "not in",
+          kept.map((c) => c.id!)
+        );
+      }
+      await removal.execute();
+
+      // Two statements: one column list per multi-row insert, so rows with and
+      // without an id never share one (lesson "Kysely builds ONE column list").
+      if (kept.length > 0) {
+        await trx
+          .insertInto("taxCodeComponent")
+          .values(
+            kept.map((c) => ({
+              ...row(c),
+              id: c.id!,
+              taxCodeId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .onConflict((oc) =>
+            oc.columns(["id", "companyId"]).doUpdateSet((eb) => ({
+              name: eb.ref("excluded.name"),
+              taxAuthorityId: eb.ref("excluded.taxAuthorityId"),
+              taxPercent: eb.ref("excluded.taxPercent"),
+              recoverablePercent: eb.ref("excluded.recoverablePercent"),
+              sequence: eb.ref("excluded.sequence"),
+              isCompound: eb.ref("excluded.isCompound"),
+              taxReceivedAccountId: eb.ref("excluded.taxReceivedAccountId"),
+              taxPaidAccountId: eb.ref("excluded.taxPaidAccountId"),
+              effectiveDate: eb.ref("excluded.effectiveDate"),
+              expirationDate: eb.ref("excluded.expirationDate"),
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            }))
+          )
+          .execute();
+      }
+      if (added.length > 0) {
+        await trx
+          .insertInto("taxCodeComponent")
+          .values(
+            added.map((c) => ({
+              ...row(c),
+              taxCodeId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+      return taxCodeId;
+    });
+    return { data: { id }, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err)
+    };
+  }
+}
+
+/**
+ * Retire a tax code. Lines that name it keep it, so it is never deleted.
+ * @mcp update
+ */
+export async function deleteTaxCode(
+  client: SupabaseClient<Database>,
+  taxCodeId: string
+) {
+  return client.from("taxCode").update({ active: false }).eq("id", taxCodeId);
+}
+
+/** @mcp read */
+export async function suggestTaxCodes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { countryCode: string | null; state: string | null }
+) {
+  if (!args.countryCode) return { data: [], error: null };
+  let query = client
+    .from("taxCode")
+    .select("id, name, state")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .eq("countryCode", args.countryCode);
+  query = args.state
+    ? query.or(`state.is.null,state.eq.${args.state}`)
+    : query.is("state", null);
+  return query.order("state", { ascending: false, nullsFirst: false });
+}
+
+/**
+ * The tax a new document line takes. Reads the party's tax record, the
+ * ship-to location, the item and the codes, then decides with the pure
+ * `decideLineTax` (accounting.utils.ts).
+ * @mcp read
+ */
+export async function resolveLineTaxes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    source: "sales" | "purchase";
+    customerId?: string | null;
+    customerLocationId?: string | null;
+    supplierId?: string | null;
+    itemId?: string | null;
+    date: string;
+  }
+): Promise<{ data: LineTaxDecision | null; error: string | null }> {
+  const sales = args.source === "sales";
+  const [party, partyTax, location, item] = await Promise.all([
+    sales
+      ? args.customerId
+        ? client
+            .from("customer")
+            .select("taxPercent")
+            .eq("id", args.customerId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null
+      : args.supplierId
+        ? client
+            .from("supplier")
+            .select("taxPercent")
+            .eq("id", args.supplierId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null,
+    sales
+      ? args.customerId
+        ? client
+            .from("customerTax")
+            .select("taxExempt, taxExemptionReason, taxCodeId")
+            .eq("customerId", args.customerId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null
+      : args.supplierId
+        ? client
+            .from("supplierTax")
+            .select("taxCodeId")
+            .eq("supplierId", args.supplierId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null,
+    sales && args.customerLocationId
+      ? client
+          .from("customerLocation")
+          .select("taxCodeId")
+          .eq("id", args.customerLocationId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.itemId
+      ? client
+          .from("item")
+          .select("taxable")
+          .eq("id", args.itemId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  const failed = [party, partyTax, location, item].find((r) => r?.error);
+  if (failed?.error) return { data: null, error: failed.error.message };
+
+  const taxRecord = partyTax?.data as
+    | {
+        taxCodeId: string | null;
+        taxExempt?: boolean;
+        taxExemptionReason?: string | null;
+      }
+    | null
+    | undefined;
+  const locationCodeId = location?.data?.taxCodeId ?? null;
+  const partyCodeId = taxRecord?.taxCodeId ?? null;
+  const codeIds = [locationCodeId, partyCodeId].filter(
+    (id): id is string => !!id
+  );
+
+  let codes = new Map<string, ReturnType<typeof toTaxCodeInput>>();
+  if (codeIds.length > 0) {
+    const result = await client
+      .from("taxCode")
+      .select(
+        `id, calculationType, taxesShipping, taxCodeComponent(${TAX_CODE_COMPONENT_COLUMNS})`
+      )
+      .in("id", codeIds)
+      .eq("companyId", companyId)
+      .eq("active", true);
+    if (result.error) return { data: null, error: result.error.message };
+    codes = new Map(
+      (result.data ?? []).map((row) => [row.id, toTaxCodeInput(row)])
+    );
+  }
+
+  return {
+    data: decideLineTax({
+      source: args.source,
+      taxExempt: taxRecord?.taxExempt ?? false,
+      taxExemptionReason: taxRecord?.taxExemptionReason ?? null,
+      itemTaxable: item?.data?.taxable ?? true,
+      locationTaxCode: locationCodeId
+        ? (codes.get(locationCodeId) ?? null)
+        : null,
+      partyTaxCode: partyCodeId ? (codes.get(partyCodeId) ?? null) : null,
+      fallbackTaxPercent: Number(party?.data?.taxPercent ?? 0),
+      date: args.date
+    }),
+    error: null
+  };
+}
+
+/** @mcp read */
+export async function getTaxAuthorities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("taxAuthority")
+    .select("*, supplier(name)", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+/** @mcp read */
+export async function getTaxAuthoritiesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("taxAuthority")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name", { ascending: true });
+}
+
+/** @mcp read */
+export async function getTaxAuthority(
+  client: SupabaseClient<Database>,
+  taxAuthorityId: string
+) {
+  return client
+    .from("taxAuthority")
+    .select("*")
+    .eq("id", taxAuthorityId)
+    .single();
+}
+
+/** @mcp upsert */
+export async function upsertTaxAuthority(
+  client: SupabaseClient<Database>,
+  taxAuthority:
+    | (Omit<z.infer<typeof taxAuthorityValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof taxAuthorityValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const values = {
+    ...taxAuthority,
+    supplierId: taxAuthority.supplierId || null
+  };
+  if ("createdBy" in values) {
+    return client.from("taxAuthority").insert([values]).select("id").single();
+  }
+  return client
+    .from("taxAuthority")
+    .update({ ...values, updatedAt: datetime.timestamp() })
+    .eq("id", values.id)
+    .select("id")
+    .single();
+}
+
+/** @mcp delete destructive */
+export async function deleteTaxAuthority(
+  client: SupabaseClient<Database>,
+  taxAuthorityId: string
+) {
+  return client.from("taxAuthority").delete().eq("id", taxAuthorityId);
+}
+
+/** @mcp read */
+export async function getTaxRegistrations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("taxRegistration")
+    .select("*, country(name)", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+  if (args.search) {
+    query = query.ilike("registrationNumber", `%${args.search}%`);
+  }
+  query = setGenericQueryFilters(query, args, [
+    { column: "countryCode", ascending: true }
+  ]);
+  return query;
+}
+
+/** @mcp read */
+export async function getTaxRegistration(
+  client: SupabaseClient<Database>,
+  taxRegistrationId: string
+) {
+  return client
+    .from("taxRegistration")
+    .select("*")
+    .eq("id", taxRegistrationId)
+    .single();
+}
+
+/** @mcp upsert */
+export async function upsertTaxRegistration(
+  client: SupabaseClient<Database>,
+  taxRegistration:
+    | (Omit<z.infer<typeof taxRegistrationValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof taxRegistrationValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const values = {
+    ...taxRegistration,
+    state: taxRegistration.state || null,
+    effectiveDate: taxRegistration.effectiveDate || null,
+    endDate: taxRegistration.endDate || null
+  };
+  if ("createdBy" in values) {
+    return client
+      .from("taxRegistration")
+      .insert([values])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("taxRegistration")
+    .update({ ...values, updatedAt: datetime.timestamp() })
+    .eq("id", values.id)
+    .select("id")
+    .single();
+}
+
+/** @mcp delete destructive */
+export async function deleteTaxRegistration(
+  client: SupabaseClient<Database>,
+  taxRegistrationId: string
+) {
+  return client.from("taxRegistration").delete().eq("id", taxRegistrationId);
 }
