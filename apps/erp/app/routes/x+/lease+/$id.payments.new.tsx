@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  leasePaymentValidator,
-  upsertLeasePayment
-} from "~/modules/purchasing";
+import { leasePaymentValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertLeasePayment } from "~/modules/purchasing/purchasing.service";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "lease-payment-new");

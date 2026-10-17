@@ -54,3 +54,7 @@ async-trait = "0.1"
 # to the OS. Prefixed, it served Rust only and the C++ side stayed on glibc,
 # whose arenas keep an idle service near its last job's peak.
 tikv-jemallocator = { version = "0.6", features = ["unprefixed_malloc_on_supported_platforms", "background_threads"] }
+
+[dev-dependencies]
+# Hermetic STEP fixtures for the optimize/ingest tests.
+occt-bridge = { path = "../../crates/occt-bridge" }

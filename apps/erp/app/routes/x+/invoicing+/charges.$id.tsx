@@ -33,7 +33,8 @@ import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { JournalEntryStatus } from "~/modules/accounting/ui/JournalEntries";
-import { ChargeStatus, getCharge } from "~/modules/invoicing";
+import { getCharge } from "~/modules/invoicing/invoicing.service";
+import { ChargeStatus } from "~/modules/invoicing/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

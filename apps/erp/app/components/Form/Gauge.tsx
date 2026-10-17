@@ -9,9 +9,11 @@ import { useDisclosure } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
-import type { getGaugesList, getGaugeTypesList } from "~/modules/quality";
+import type {
+  getGaugesList,
+  getGaugeTypesList
+} from "~/modules/quality/quality.service";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

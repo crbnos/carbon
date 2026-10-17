@@ -12,7 +12,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { EmployeeType } from "~/modules/users";
+import type { EmployeeType } from "~/modules/users/types";
 import { path } from "~/utils/path";
 
 type EmployeeTypesTableProps = {

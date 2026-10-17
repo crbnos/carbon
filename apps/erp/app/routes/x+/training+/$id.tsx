@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, useCarbon } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
@@ -20,12 +20,12 @@ import {
   RichTextView,
   ToggleGroup,
   ToggleGroupItem,
+  toast,
   useDebounce,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { redirect } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -33,15 +33,15 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { Confirm } from "~/components/Modals";
-import { useImageUpload, usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions } from "~/hooks";
+import { getTraining } from "~/modules/resources/resources.service";
 import {
-  getTraining,
   TrainingExplorer,
   TrainingGuide,
   TrainingHeader,
   TrainingProperties
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/resources/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -135,19 +135,24 @@ function TrainingContent() {
     (loaderData?.training?.content ?? {}) as JSONContent
   );
 
-  const { carbon } = useCarbon();
-  const { id: userId } = useUser();
-
+  // A quiet POST, not a fetcher: an autosave every pause in typing must not
+  // reload every loader on the page.
   const updateTraining = useDebounce(
     async (content: JSONContent) => {
-      await carbon
-        ?.from("training")
-        .update({
-          content: content ?? {},
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", id!);
+      const formData = new FormData();
+      formData.append("ids", id);
+      formData.append("field", "content");
+      formData.append("value", JSON.stringify(content ?? {}));
+      const response = await fetch(path.to.bulkUpdateTraining, {
+        method: "post",
+        body: formData
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
+        error?: { message: string } | null;
+      } | null;
+      if (!response?.ok || body?.error) {
+        toast.error(body?.error?.message ?? t`Failed to save the content`);
+      }
     },
     500,
     true
@@ -157,6 +162,7 @@ function TrainingContent() {
 
   const canEdit =
     permissions.can("update", "people") &&
+    permissions.can("update", "resources") &&
     loaderData?.training?.status === "Draft";
 
   const guidePath = loaderData?.training?.guidePath ?? null;

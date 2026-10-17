@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef } from "react";
-import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
+import type { getSupplierProcessesByProcess } from "~/modules/purchasing/purchasing.service";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";

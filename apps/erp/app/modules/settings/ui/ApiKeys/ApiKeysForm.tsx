@@ -44,7 +44,7 @@ import {
   apiKeyOptInPermissionKeys,
   apiKeyPermissionModules,
   apiKeyValidator
-} from "~/modules/settings";
+} from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 
@@ -63,11 +63,9 @@ const ApiKeyForm = ({
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useAction<{ key: string }>({
-    onSettled: (data) => {
-      if (data?.key) {
-        setKey(data.key);
-      }
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (data?.key) setKey(data.key);
     }
   });
 

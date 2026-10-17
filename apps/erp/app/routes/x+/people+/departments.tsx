@@ -33,7 +33,7 @@ import { useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarAction } from "~/components/New";
-import { getDepartmentsTree } from "~/modules/people";
+import { getDepartmentsTree } from "~/modules/people/people.service";
 import {
   DepartmentsListView,
   DepartmentsTreeView

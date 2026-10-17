@@ -74,15 +74,14 @@ import {
 import { CSVLink } from "~/components/CSVLink";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import type { PurchaseInvoice } from "~/modules/invoicing";
-import { PurchaseInvoicingStatus } from "~/modules/invoicing";
-import type { PurchaseOrder, SupplierQuote } from "~/modules/purchasing";
-import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing";
+import type { PurchaseInvoice } from "~/modules/invoicing/types";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
+import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing/purchasing.service";
+import type { PurchaseOrder, SupplierQuote } from "~/modules/purchasing/types";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
-
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";

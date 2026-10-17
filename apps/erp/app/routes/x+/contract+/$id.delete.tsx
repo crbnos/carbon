@@ -8,8 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getContract } from "~/modules/sales";
-import { deleteContractReleasingSalesOrderLines } from "~/modules/sales/sales.server";
+import {
+  deleteContractReleasingSalesOrderLines,
+  getContract
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

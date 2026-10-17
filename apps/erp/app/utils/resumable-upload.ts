@@ -9,7 +9,7 @@ import * as tus from "tus-js-client";
 // file into ONE multipart request; a multi-GB CAD model then times out at the
 // dev `.dev` proxy (it waits for storage to respond, but storage only responds
 // once the entire body has arrived). TUS streams the file in fixed chunks, so
-// the gateways never see a multi-GB body and the upload is resumable on failure.
+// the gateways never see a multi-GB body, and a dropped chunk is retried.
 //
 // Supabase requires the chunk size to be EXACTLY 6 MB (except the final chunk).
 const CHUNK_SIZE = 6 * 1024 * 1024;
@@ -95,7 +95,11 @@ export function uploadModelResumable({
         "x-upsert": upsert ? "true" : "false"
       },
       uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
+      // Never resume an earlier attempt. tus fingerprints the FILE (name,
+      // size, type, mtime), not the destination, and every attempt uploads to
+      // a new path. Resuming sent the bytes to the earlier attempt's object
+      // while the caller recorded the new path, so the model had no file.
+      storeFingerprintForResuming: false,
       chunkSize: CHUNK_SIZE,
       metadata: {
         bucketName: bucket,
@@ -113,13 +117,6 @@ export function uploadModelResumable({
       },
       onSuccess: () => resolve()
     });
-
-    // Resume a previously-interrupted upload of the same file if one is pending.
-    upload.findPreviousUploads().then((previous) => {
-      if (previous.length > 0) {
-        upload.resumeFromPreviousUpload(previous[0]);
-      }
-      upload.start();
-    });
+    upload.start();
   });
 }

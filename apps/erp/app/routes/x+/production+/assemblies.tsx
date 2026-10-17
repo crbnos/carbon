@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAssemblyInstructions } from "~/modules/production";
+import { getAssemblyInstructions } from "~/modules/production/production.service";
 import AssemblyInstructionsTable from "~/modules/production/ui/Assemblies/AssemblyInstructionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

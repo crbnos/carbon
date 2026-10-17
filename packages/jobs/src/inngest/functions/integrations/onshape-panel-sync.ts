@@ -82,24 +82,8 @@ export const onshapePanelSyncFunction = inngest.createFunction(
       })
     );
 
-    if (result.modelUploadId) {
-      await step.sendEvent("model-optimize", {
-        name: "carbon/model-optimize" as const,
-        data: {
-          modelUploadId: result.modelUploadId,
-          companyId: payload.companyId,
-          userId: payload.userId
-        }
-      });
-    }
-
-    if (result.modelUploadId && !result.thumbnailAttached) {
-      await step.sendEvent("model-thumbnail", {
-        name: "carbon/model-thumbnail" as const,
-        data: { companyId: payload.companyId, modelId: result.modelUploadId }
-      });
-    }
-
+    // A new model row starts its own optimise, which also renders the
+    // thumbnail; an unchanged export reuses its model.
     return result;
   }
 );

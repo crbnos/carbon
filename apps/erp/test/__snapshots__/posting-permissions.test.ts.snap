@@ -1,0 +1,497 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`posting permissions > match the reviewed manifest 1`] = `
+{
+  "accounting.activateAccountingPermission": {
+    "update": "accounting",
+  },
+  "accounting.applyAccountImportPermission": {
+    "update": "accounting",
+  },
+  "accounting.journalLegacyDocumentsPermission": {
+    "update": "accounting",
+  },
+  "accounting.postAssetTransferPermission": {
+    "by": "type",
+    "rules": {
+      "adjustCost": {
+        "update": "accounting",
+      },
+      "attachJob": {
+        "create": "accounting",
+      },
+      "capitalize": {
+        "create": "accounting",
+      },
+      "capitalizeCip": {
+        "create": "accounting",
+      },
+      "return": {
+        "create": "accounting",
+      },
+    },
+  },
+  "accounting.postChargePermission": {
+    "update": "invoicing",
+  },
+  "accounting.postReimbursementPermission": {
+    "update": "invoicing",
+  },
+  "accounting.previewAssetCapitalizationPermission": {
+    "view": "accounting",
+  },
+  "accounting.previewRevenueRecognitionRunPermission": {
+    "view": "accounting",
+  },
+  "accounting.proposeRevenueRecognitionRunPermission": {
+    "create": "accounting",
+  },
+  "accounting.recalculateRevenueRecognitionRunPermission": {
+    "update": "accounting",
+  },
+  "inventory.issueMaterialPermission": {
+    "by": "type",
+    "rules": {
+      "convertEntity": {
+        "update": "inventory",
+      },
+      "jobCompleteMakeToOrder": {},
+      "jobOperation": {
+        "update": "production",
+      },
+      "jobOperationBatchComplete": {
+        "update": "production",
+      },
+      "jobOperationBatchOutput": {
+        "update": "production",
+      },
+      "jobOperationScrap": {
+        "update": "production",
+      },
+      "jobOperationSerialComplete": {
+        "update": "production",
+      },
+      "maintenanceDispatchInventory": {
+        "update": "resources",
+      },
+      "maintenanceDispatchTrackedEntities": {
+        "update": "resources",
+      },
+      "maintenanceDispatchUnconsume": {
+        "update": "resources",
+      },
+      "maintenanceDispatchUnissue": {
+        "update": "resources",
+      },
+      "mergeTrackedEntities": {
+        "update": "inventory",
+      },
+      "partToOperation": {
+        "update": "production",
+      },
+      "scrapTrackedEntity": {
+        "update": "production",
+      },
+      "trackedEntitiesToBatch": {
+        "update": "production",
+      },
+      "trackedEntitiesToOperation": {
+        "update": "production",
+      },
+      "unconsumeTrackedEntities": {
+        "update": "production",
+      },
+    },
+  },
+  "inventory.postInventoryAdjustmentPermission": {
+    "update": "inventory",
+  },
+  "inventory.postInventoryCountPermission": {
+    "update": "inventory",
+  },
+  "inventory.postPickingPermission": {},
+  "inventory.postReceiptPermission": {
+    "update": "inventory",
+  },
+  "inventory.postShipmentPermission": {
+    "update": "inventory",
+  },
+  "inventory.postStockMovementCorrectionPermission": {
+    "update": "inventory",
+  },
+  "inventory.postStockTransferPermission": {},
+  "inventory.previewSerialUnitCostsPermission": {
+    "view": "accounting",
+  },
+  "inventory.recostSerialUnitPermission": {
+    "update": "accounting",
+  },
+  "inventory.replenishKanbanPermission": {
+    "by": "mode",
+    "rules": {
+      "level": "system",
+      "scan": {
+        "create": "inventory",
+      },
+    },
+  },
+  "invoicing.postMemoPermission": {
+    "update": "invoicing",
+  },
+  "invoicing.postPaymentPermission": {
+    "update": "invoicing",
+  },
+  "invoicing.postPurchaseInvoicePermission": {
+    "update": "invoicing",
+  },
+  "invoicing.postSalesInvoicePermission": {
+    "update": "invoicing",
+  },
+  "items.syncMakeMethodPermission": {
+    "update": "resources",
+  },
+  "production.assignSerialNumbersPermission": {
+    "update": "production",
+  },
+  "production.batchOperationPermission": {
+    "update": "production",
+  },
+  "production.getMethodPermission": {
+    "update": "production",
+  },
+  "production.postProductionEventPermission": {
+    "update": "production",
+  },
+  "production.recalculateRequirementsPermission": {
+    "update": "production",
+  },
+  "production.rescheduleJobPermission": {
+    "update": "production",
+  },
+  "production.triggerReworkPermission": {
+    "update": "production",
+  },
+  "purchasing.createLeaseInvoicesPermission": {
+    "create": "invoicing",
+    "update": "purchasing",
+  },
+  "purchasing.finalizePurchasingRfqPermission": {
+    "create": "purchasing",
+  },
+  "purchasing.finalizeSupplierQuotePermission": {
+    "create": "purchasing",
+  },
+  "purchasing.postLeaseActionPermission": {
+    "update": "purchasing",
+  },
+  "purchasing.updatePurchasedPricesPermission": {
+    "update": "purchasing",
+  },
+  "quality.postNonconformancePermission": {
+    "update": "quality",
+  },
+  "resources.postMaintenanceEventPermission": {
+    "update": "resources",
+  },
+  "sales.createContractInvoicesPermission": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "sales.createRentalInvoicesPermission": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "sales.postCustomerContractPermission": {
+    "update": "sales",
+  },
+  "sales.postRentalAgreementPermission": {
+    "update": "sales",
+  },
+  "settings.seedCompanyPermission": "system",
+  "shared.convertDocumentPermission": {
+    "by": "type",
+    "rules": {
+      "methodVersionToActive": {
+        "update": "resources",
+      },
+      "purchaseOrderToPurchaseInvoice": {
+        "update": "invoicing",
+      },
+      "quoteToSalesOrder": {
+        "update": "sales",
+      },
+      "salesOrderToSalesInvoice": {
+        "update": "invoicing",
+      },
+      "salesRfqToQuote": {
+        "update": "sales",
+      },
+      "shipmentToSalesInvoice": {
+        "update": "invoicing",
+      },
+      "supplierQuoteToPurchaseOrder": {
+        "update": "purchasing",
+      },
+      "warehouseTransferToReceipt": {
+        "update": "inventory",
+      },
+      "warehouseTransferToShipment": {
+        "update": "inventory",
+      },
+    },
+  },
+  "shared.createDocumentPermission": {
+    "by": "type",
+    "rules": {
+      "journalEntry": {
+        "create": "accounting",
+      },
+      "nonConformanceTasks": {
+        "update": "quality",
+      },
+      "purchaseOrderFromJob": {
+        "create": [
+          "purchasing",
+          "production",
+        ],
+      },
+      "receiptDefault": {
+        "create": "inventory",
+      },
+      "receiptFromInboundTransfer": {
+        "create": "inventory",
+      },
+      "receiptFromPurchaseOrder": {
+        "create": "inventory",
+      },
+      "receiptFromRentalAgreement": {
+        "create": "inventory",
+      },
+      "receiptFromSalesReturnOrder": {
+        "create": "inventory",
+      },
+      "receiptFromWarehouseTransfer": {
+        "create": "inventory",
+      },
+      "receiptLineSplit": {
+        "create": "inventory",
+      },
+      "shipmentDefault": {
+        "create": "inventory",
+      },
+      "shipmentFromPurchaseOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromPurchaseReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromRentalAgreement": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesOrderLine": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromWarehouseTransfer": {
+        "create": "inventory",
+      },
+      "shipmentLineSplit": {
+        "create": "inventory",
+      },
+    },
+  },
+}
+`;
+
+exports[`posting permissions > match the reviewed manifest 2`] = `
+{
+  "batch-operations": {
+    "update": "production",
+  },
+  "create": {
+    "by": "type",
+    "rules": {
+      "journalEntry": {
+        "create": "accounting",
+      },
+      "nonConformanceTasks": {
+        "update": "quality",
+      },
+      "purchaseOrderFromJob": {
+        "create": [
+          "purchasing",
+          "production",
+        ],
+      },
+      "receiptDefault": {
+        "create": "inventory",
+      },
+      "receiptFromInboundTransfer": {
+        "create": "inventory",
+      },
+      "receiptFromPurchaseOrder": {
+        "create": "inventory",
+      },
+      "receiptFromRentalAgreement": {
+        "create": "inventory",
+      },
+      "receiptFromSalesReturnOrder": {
+        "create": "inventory",
+      },
+      "receiptFromWarehouseTransfer": {
+        "create": "inventory",
+      },
+      "receiptLineSplit": {
+        "create": "inventory",
+      },
+      "shipmentDefault": {
+        "create": "inventory",
+      },
+      "shipmentFromPurchaseOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromPurchaseReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromRentalAgreement": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesOrderLine": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromWarehouseTransfer": {
+        "create": "inventory",
+      },
+      "shipmentLineSplit": {
+        "create": "inventory",
+      },
+    },
+  },
+  "create-contract-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "create-lease-invoices": {
+    "create": "invoicing",
+    "update": "purchasing",
+  },
+  "create-rental-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
+  "issue": {
+    "by": "type",
+    "rules": {
+      "convertEntity": {
+        "update": "inventory",
+      },
+      "jobCompleteMakeToOrder": {},
+      "jobOperation": {
+        "update": "production",
+      },
+      "jobOperationBatchComplete": {
+        "update": "production",
+      },
+      "jobOperationBatchOutput": {
+        "update": "production",
+      },
+      "jobOperationScrap": {
+        "update": "production",
+      },
+      "jobOperationSerialComplete": {
+        "update": "production",
+      },
+      "maintenanceDispatchInventory": {
+        "update": "resources",
+      },
+      "maintenanceDispatchTrackedEntities": {
+        "update": "resources",
+      },
+      "maintenanceDispatchUnconsume": {
+        "update": "resources",
+      },
+      "maintenanceDispatchUnissue": {
+        "update": "resources",
+      },
+      "mergeTrackedEntities": {
+        "update": "inventory",
+      },
+      "partToOperation": {
+        "update": "production",
+      },
+      "scrapTrackedEntity": {
+        "update": "production",
+      },
+      "trackedEntitiesToBatch": {
+        "update": "production",
+      },
+      "trackedEntitiesToOperation": {
+        "update": "production",
+      },
+      "unconsumeTrackedEntities": {
+        "update": "production",
+      },
+    },
+  },
+  "kanban-replenish": {
+    "by": "mode",
+    "rules": {
+      "level": "system",
+      "scan": {
+        "create": "inventory",
+      },
+    },
+  },
+  "post-charge": {
+    "update": "invoicing",
+  },
+  "post-inventory-adjustment": {
+    "update": "inventory",
+  },
+  "post-maintenance-event": {
+    "update": "resources",
+  },
+  "post-payment": {
+    "update": "invoicing",
+  },
+  "post-picking": {},
+  "post-production-event": {
+    "update": "production",
+  },
+  "post-purchase-invoice": {
+    "update": "invoicing",
+  },
+  "post-receipt": {
+    "update": "inventory",
+  },
+  "post-sales-invoice": {
+    "update": "invoicing",
+  },
+  "post-shipment": {
+    "update": "inventory",
+  },
+  "propose-revenue-recognition-run": {
+    "create": "accounting",
+  },
+  "recalculate": {
+    "update": "production",
+  },
+  "trigger-rework": {
+    "update": "production",
+  },
+  "update-purchased-prices": {
+    "update": "purchasing",
+  },
+}
+`;

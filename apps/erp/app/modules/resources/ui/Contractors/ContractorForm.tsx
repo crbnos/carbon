@@ -28,7 +28,7 @@ import {
   SupplierContact
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { contractorValidator } from "~/modules/resources";
+import { contractorValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type ContractorFormProps = {

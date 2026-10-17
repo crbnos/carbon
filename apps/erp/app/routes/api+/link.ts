@@ -12,7 +12,7 @@ import {
 } from "@carbon/notifications";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanies } from "~/modules/settings";
+import { getCompanies } from "~/modules/settings/settings.service";
 import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 

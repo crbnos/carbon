@@ -111,7 +111,8 @@ Other config knobs:
 - `tableLabels` — friendly per-`tableName` labels for diff provenance (fallback: camelCase → Title Case).
 - `skipFields: ["updatedAt", "updatedBy", "embedding"]` — excluded from diffs (matched top-level and as nested `.suffix`).
 - `retentionDays: 30`
-- `archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz"` and `archiveBucket: "private"`.
+- `archivePath: "{companyId}/audit-logs/{year}/{month}.jsonl.gz"`. Archives live in the company's own
+  bucket (`getCompanyPrivateBucket(companyId)`); there is no `archiveBucket` setting.
 - `createFields` (allowlist of columns surfaced on INSERT) is declared per table.
 - `fkDisplayRegistry` — display columns per FK *target* table (e.g. `supplier: ["name"]`, `user: ["fullName"]`, ~64 targets). FK columns are discovered from the schema at runtime via the `get_foreign_key_map` RPC (reads `pg_constraint`; only FKs referencing the target's `id`; returns `targetHasCompanyId` so non-tenant targets like `user` skip the companyId filter). Any changed FK column whose target is in the registry gets its display values frozen into the diff automatically; targets missing from the registry degrade to showing the raw id. Per-column `snapshotFields` on a table config still exist as overrides and win over the registry — they're REQUIRED for columns with no FK constraint in the DB (e.g. `salesOrder.salesPersonId`, several line-level `locationId`s), which `get_foreign_key_map` cannot see. An override target's tenancy is inherited from any schema FK referencing the same table (so a `user` override is correctly unscoped).
 - `fkDisplayHops` — junction targets whose display value lives one hop away (`customerContact`/`supplierContact` → `contact.fullName`). The handler resolves these in two batched lookups (junction id → hop column → display row); hops win over the registry for the same target.
@@ -145,9 +146,11 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 
 `auditArchiveFunction` in `packages/jobs/src/inngest/functions/scheduled/audit-archive.ts`
 (Inngest id `audit-log-archive`, cron `0 2 * * *`): per company, fetch rows older than `retentionDays`,
-gzip to JSONL, upload to the `private` bucket, record an `auditLogArchive` row, then delete the rows.
+gzip to JSONL, upload to the company's own bucket, record an `auditLogArchive` row, then delete the rows.
+`getArchiveDownloadUrl` reads the company bucket only. Archives written to the retired shared `private`
+bucket were moved there, and their `archivePath` rewritten, by `scripts/one-off/relocate-legacy-audit-archives.ts`.
 
-GOTCHA: the runtime path is `audit-logs/{companyId}/{year}/{month}/{YYYY-MM-DD}.jsonl.gz`, which does
+GOTCHA: the runtime path is `{companyId}/audit-logs/{year}/{month}/{YYYY-MM-DD}.jsonl.gz`, which does
 **not** match `auditConfig.archivePath` (`.../{month}.jsonl.gz`) — the job builds the path inline rather
 than from config.
 

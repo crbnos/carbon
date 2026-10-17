@@ -9,13 +9,14 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShipmentTracking } from "~/modules/inventory";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
+import { getShipmentTracking } from "~/modules/inventory/inventory.utils";
 import {
+  getCompany,
   getCompanyLogoForLabel,
+  getCompanySettings,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "id-labels-pdf");
 

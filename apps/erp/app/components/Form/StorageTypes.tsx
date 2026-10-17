@@ -7,7 +7,7 @@ import { CreatableMultiSelect } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import type { getStorageTypesList } from "~/modules/inventory";
+import type { getStorageTypesList } from "~/modules/inventory/inventory.service";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

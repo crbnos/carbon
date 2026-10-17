@@ -10,6 +10,11 @@ import { readFileSync } from "node:fs";
 import { sql } from "kysely";
 import { expect, it, vi } from "vitest";
 
+// purchasing.server's operations reach modules whose `msg` macros only run
+// compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
@@ -22,13 +27,13 @@ vi.mock("@carbon/content/glossary", () => ({
   terms: {}
 }));
 
-import { leaseFixture } from "../../../../../packages/server-functions/src/post-lease/lease-test-fixture";
+import { leaseFixture } from "../../../test/database/fixtures/lease";
 import {
   leaseOpeningAsOf,
   regenerateLeasePayments,
   saveDraftLeaseLine,
   updateDraftLease
-} from "./purchasing.server";
+} from "./purchasing.service";
 
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 

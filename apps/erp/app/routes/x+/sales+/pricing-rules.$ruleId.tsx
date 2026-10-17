@@ -10,13 +10,13 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { pricingRuleValidator } from "~/modules/sales/sales.models";
 import {
   duplicatePricingRule,
   getPricingRule,
-  pricingRuleValidator,
-  toMatchedRule,
   updatePricingRule
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import { toMatchedRule } from "~/modules/sales/sales.utils";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 

@@ -2,21 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { getWorkCenterCapitalCost } from "~/modules/accounting";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import {
-  getWorkCenter,
-  upsertWorkCenter,
-  WorkCenterForm,
-  workCenterValidator
-} from "~/modules/resources";
+import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
+import { workCenterValidator } from "~/modules/resources/resources.models";
+import { getWorkCenter } from "~/modules/resources/resources.service";
+import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -51,50 +48,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(workCenterValidator).request(args, {
+    params: ["id"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(workCenterValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, ...d } = validation.data;
-  if (!id) throw new Error("ID is was not found");
-
-  const updateWorkCenter = await upsertWorkCenter(client, {
-    id,
-    ...d,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.updateWorkCenter({
+    ...input.data,
+    id: input.params.id,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-  if (updateWorkCenter.error) {
-    throw redirect(
-      path.to.workCenters,
-      await flash(
-        request,
-        error(updateWorkCenter.error, "Failed to update work center")
-      )
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "work-center",
-    "Work center hours changed",
-    id
-  );
-
-  throw redirect(
-    path.to.workCenters,
-    await flash(request, success("Updated work center "))
-  );
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Updated work center"
+  });
 }
 
 export default function WorkCenterRoute() {

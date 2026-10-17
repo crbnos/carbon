@@ -4,7 +4,7 @@ paths:
   - "apps/erp/app/modules/inventory/ui/Kanbans/*.tsx"
   - "packages/documents/src/pdf/KanbanLabelPDF.tsx"
   - "packages/database/supabase/migrations/*kanban*.sql"
-  - "packages/server-functions/src/kanban-replenish/**"
+  - "apps/erp/app/modules/inventory/inventory.service.ts"
   - "packages/database/src/stock-transfer.ts"
   - "packages/database/src/event-system/handlers/*kanban*.sql"
   - "packages/jobs/src/inngest/functions/tasks/kanban-level-check.ts"
@@ -75,10 +75,10 @@ RLS: SELECT = any employee role; INSERT/UPDATE/DELETE = `inventory_create`/`inve
 
 API routes in `apps/erp/app/routes/api+/`: `kanban.$id.tsx`, `kanban.collision.$id.tsx`, `kanban.start.$id.tsx`, `kanban.complete.$id.tsx`, `kanban.link.$id.tsx`.
 
-`kanban.$id.tsx` (the "order"/create scan) branches on `replenishmentSystem`:
-- **Make** — if a job is already linked (`jobReadableId`) it redirects to the collision route (no duplicate job); otherwise creates a job from the item, links it (`updateKanbanJob`), then `autoRelease` runs MRP + schedules and `autoStartJob` redirects into MES to start the first operation.
+`kanban.$id.tsx` (the "order"/create scan) calls `scanKanban` (`inventory.server.ts`), which branches on `replenishmentSystem` and returns what it made; the route picks the page:
+- **Make** — if a job is already linked (`jobReadableId`) it returns `collision` and the route opens the collision page (no duplicate job); otherwise creates a job from the item, links it (`updateKanbanJob`), then `autoRelease` runs MRP + schedules and `autoStartJob` redirects into MES to start the first operation.
 - **Buy** — reuses an existing draft/planned PO for the supplier (or creates one), adds a PO line with the kanban qty (applying `conversionFactor`/`purchaseUnitOfMeasureCode`/storage unit), redirects to the PO.
-- **Transfer** — calls the `kanban-replenish` server function with `mode: "scan"`, which writes a Released stock transfer with one line: `itemId`, `fromStorageUnitId` → `storageUnitId` (to), `quantity`, and serial/batch flags from `item.itemTrackingType` (a serial line of qty > 1 splits into qty-1 lines, `expandSerialTrackedLines`). The transfer carries `stockTransfer.kanbanId` and a Tiptap note "Kanban replenishment — … Signal: scan by <user>." Redirects to the stock transfer, where the qty can be **partially picked** at pick time. Each scan makes a new transfer, with no level test. Storage rules are NOT evaluated (a QR scan can't show the acknowledge dialog the interactive wizard uses). The route calls it with `serverFns.as` (the scanner's client): scan mode needs `create: "inventory"`, the same check the `stockTransfer` RLS rule made when the route inserted directly. Never switch this call to `serverFns.system` — that lets any employee create transfers. The server function re-checks that both bins belong to the company and the kanban's location (CWE-639).
+- **Transfer** — calls `replenishKanban` (`inventory.service.ts`, ported from the `kanban-replenish` server function) with `mode: "scan"`, which writes a Released stock transfer with one line: `itemId`, `fromStorageUnitId` → `storageUnitId` (to), `quantity`, and serial/batch flags from `item.itemTrackingType` (a serial line of qty > 1 splits into qty-1 lines, `expandSerialTrackedLines`). The transfer carries `stockTransfer.kanbanId` and a Tiptap note "Kanban replenishment — … Signal: scan by <user>." Redirects to the stock transfer, where the qty can be **partially picked** at pick time. Each scan makes a new transfer, with no level test. Storage rules are NOT evaluated (a QR scan can't show the acknowledge dialog the interactive wizard uses). `scanKanban` calls it as the scanner (`invokePosting` with the scanner's client and `{ as: replenishKanbanPermission }`): scan mode needs `create: "inventory"`, the same check the `stockTransfer` RLS rule made when the route inserted directly. Never drop the client or the `as` — that lets any employee create transfers. The function re-checks that both bins belong to the company and the kanban's location (CWE-639).
 - **Buy and Make** — not a kanban option (the enum has no such value).
 
 `start`/`complete` resolve the linked job's active operation and redirect to the MES operation start/complete endpoints; `link` navigates to the job/operation.
@@ -93,7 +93,7 @@ Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
 - Fires **strictly below** the level (`isBelowReplenishmentLevel`, `@carbon/database/stock-transfer`).
   One level signal = one transfer of `n × quantity`, `n = ceil((level − projected) / quantity)`
   (`levelReplenishmentQuantity`), so the level is reached in one signal. A scan moves one `quantity`.
-  Kanbans sharing an item and To bin share supply within a call (`addedInbound` in the server function).
+  Kanbans sharing an item and To bin share supply within a call (`addedInbound` in `replenishKanban`).
 - The open transfer counts as supply, so a second signal for the same shortfall writes nothing, and
   the pick moves stock from "inbound" to "on-hand" without changing the projected quantity.
 - Three wake paths, all sending `carbon/kanban.level-check` `{ companyId, kanbanIds }` and only for
@@ -105,7 +105,7 @@ Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
   Both trigger bodies return early under `app.sync_in_progress` (seeds, restores, test fixtures).
   All three need the Vault secret `inngest_event_url`.
 - `kanbanLevelCheckFunction` (`functions/tasks/kanban-level-check.ts`, concurrency 1 per company, no
-  `debounce`) calls `kanban-replenish` with `mode: "level"` (`"system"` permission; `kanbanIds` required). The server function locks the kanbans
+  `debounce`) calls `kanban-replenish` with `mode: "level"` (`"system"` permission; `kanbanIds` required). `replenishKanban` locks the kanbans
   `FOR UPDATE` in id order and re-reads the projected quantity inside its transaction, so a stale or
   duplicate event is a no-op. `createdBy` is `"system"` on this path.
 - A kanban replenishment is a stock transfer with `kanbanId` set: the stock transfers list has a

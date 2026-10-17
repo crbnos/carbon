@@ -4,9 +4,10 @@
 
 // Validates the oRPC wiring the Carbon API v1 surface depends on, without booting the
 // app: a runtime-built router of procedures, the OpenAPIHandler matching a prefixed
-// POST path, server-side call(), the scope gate, and the custom JSON-Schema converter
-// feeding OpenAPIGenerator. Uses the REAL base/gate/jsonSchema/converter with tiny
-// inline handlers (so it never pulls the full service registry).
+// POST path, server-side call(), and the custom JSON-Schema converter feeding
+// OpenAPIGenerator. Uses the REAL base/jsonSchema/converter with tiny inline
+// handlers (so it never pulls the full service registry). The caller's permission
+// is the service function's gate (`service-fn.server.test.ts`).
 
 import type { ManifestEntry } from "@carbon/api";
 import { CarbonJsonSchemaConverter, jsonSchema } from "@carbon/api/schema";
@@ -14,12 +15,7 @@ import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { call } from "@orpc/server";
 import { describe, expect, it } from "vitest";
-import {
-  type AuthedContext,
-  base,
-  gate,
-  scopesFromPermissions
-} from "./base.server";
+import { type AuthedContext, base, scopesFromPermissions } from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
 import { specOptions } from "./spec-options.server";
 
@@ -31,20 +27,15 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     module: "demo",
     classification: "READ",
     description: "demo ping",
-    paramCount: 1,
-    serviceParams: ["client", "args"],
-    contextParams: { client: "client" },
-    injectAuth: [],
-    resultShape: "plain",
     permission: { module: null, actions: [] },
     paginates: false,
+    serviceFn: { path: ["demo", "ping"] },
     schema: { type: "object", properties: { name: { type: "string" } } },
     ...overrides
   };
 }
 
 const ping = base
-  .use(gate(meta({})))
   .route({
     method: "POST",
     path: "/demo/ping",
@@ -70,18 +61,7 @@ const ping = base
   )
   .handler(({ input }) => ({ data: input }));
 
-const gatedMeta = meta({
-  name: "parts_getParts",
-  module: "parts",
-  permission: { module: "parts", actions: ["view"] }
-});
-const gated = base
-  .use(gate(gatedMeta))
-  .route({ method: "POST", path: "/parts/getParts", summary: "gated" })
-  .input(jsonSchema({ type: "object", properties: {} }))
-  .handler(() => ({ data: "ok" }));
-
-const router = { demo: { ping }, parts: { getParts: gated } };
+const router = { demo: { ping } };
 const handler = new OpenAPIHandler(router);
 
 function ctx(overrides: Partial<AuthedContext> = {}): AuthedContext {
@@ -135,76 +115,17 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     expect(result).toEqual({ data: { name: "y" } });
   });
 
-  it("403s an API-key caller missing the required scope", async () => {
-    const request = new Request(`https://x.test${PREFIX}/parts/getParts`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: "{}"
-    });
-    const { matched, response } = await handler.handle(request, {
-      prefix: PREFIX,
-      context: ctx({ authKind: "api-key", scopes: {} })
-    });
-    expect(matched).toBe(true);
-    expect(response?.status).toBe(403);
-  });
-
-  it("allows an API-key caller holding the scope for the active company", async () => {
-    const result = await call(
-      router.parts.getParts,
-      {},
-      { context: ctx({ authKind: "api-key", scopes: { parts_view: ["c1"] } }) }
-    );
-    expect(result).toEqual({ data: "ok" });
-  });
-
-  // An OAuth connector caller is gated on its user's own permissions. Before
-  // this it skipped the gate, and a service handed `db` (the direct connection,
-  // no RLS) wrote for a user who held no permission for the operation.
-  it("403s an oauth (connector) caller whose user lacks the permission", async () => {
-    await expect(
-      call(router.parts.getParts, {}, { context: ctx({ authKind: "oauth" }) })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-      message: "You do not have the required permission: parts_view"
-    });
-  });
-
-  it("allows an oauth caller whose user holds the permission in the token's company", async () => {
-    const scopes = scopesFromPermissions(
-      { parts: { view: ["c1"], create: [], update: [], delete: [] } },
-      "c1"
-    );
-    const result = await call(
-      router.parts.getParts,
-      {},
-      { context: ctx({ authKind: "oauth", scopes }) }
-    );
-    expect(result).toEqual({ data: "ok" });
-  });
-
-  it("does not let a permission held in another company pass the oauth gate", async () => {
-    const scopes = scopesFromPermissions(
-      { parts: { view: ["c2"], create: [], update: [], delete: [] } },
-      "c1"
-    );
-    expect(scopes).toEqual({});
-    await expect(
-      call(
-        router.parts.getParts,
-        {},
-        { context: ctx({ authKind: "oauth", scopes }) }
+  it("scopes an OAuth caller to the token's company only", () => {
+    const none = { create: [], update: [], delete: [] };
+    expect(
+      scopesFromPermissions(
+        {
+          parts: { view: ["c1", "c2"], ...none },
+          sales: { view: ["c2"], ...none }
+        },
+        "c1"
       )
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-  });
-
-  it("skips the scope gate for in-process session callers", async () => {
-    const result = await call(
-      router.parts.getParts,
-      {},
-      { context: ctx({ authKind: "session" }) }
-    );
-    expect(result).toEqual({ data: "ok" });
+    ).toEqual({ parts_view: ["c1"] });
   });
 
   it("emits the precomputed JSON Schema into the OpenAPI spec via the custom converter", async () => {

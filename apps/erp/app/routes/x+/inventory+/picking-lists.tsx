@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPickingLists } from "~/modules/inventory";
+import { getPickingLists } from "~/modules/inventory/inventory.service";
 import type { PickingList } from "~/modules/inventory/ui/PickingLists";
 import { PickingListsTable } from "~/modules/inventory/ui/PickingLists";
 import type { Handle } from "~/utils/handle";

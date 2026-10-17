@@ -70,6 +70,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
@@ -77,7 +78,6 @@
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
@@ -110,7 +110,6 @@
     "zod-form-data": "catalog:"
   },
   "devDependencies": {
-    "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
     "@carbon/content": "workspace:*",
     "@logtape/logtape": "catalog:",

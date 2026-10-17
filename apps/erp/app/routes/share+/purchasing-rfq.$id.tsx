@@ -35,9 +35,9 @@ import {
   getPurchasingRFQLines
 } from "~/modules/purchasing/purchasing.service";
 import type { PurchasingRFQLine } from "~/modules/purchasing/types";
-import type { Company } from "~/modules/settings";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 export const meta = () => {
   return [{ title: "RFQ Preview" }];

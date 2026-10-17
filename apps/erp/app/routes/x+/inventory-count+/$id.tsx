@@ -16,14 +16,14 @@ import {
   getInventoryCountLines,
   getInventoryCountMovements,
   getStorageTypesList,
-  getStorageUnitsListForLocation,
-  InventoryCountDetails
-} from "~/modules/inventory";
+  getStorageUnitsListForLocation
+} from "~/modules/inventory/inventory.service";
+import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList
-} from "~/modules/items";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/items/items.service";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

@@ -38,7 +38,8 @@ export default $config({
     const account = process.env.AWS_ACCOUNT_ID;
     const region = process.env.AWS_REGION;
     const imageTag = process.env.IMAGE_TAG ?? "latest";
-    // Same image for both runtimes (built once by .github/workflows/assembler.yml).
+    // Same image for both runtimes: build-images.yml builds it and deploy.yml
+    // copies it into this account's ECR.
     const image = `${account}.dkr.ecr.${region}.amazonaws.com/carbon/assembler:${imageTag}`;
 
     // Shared runtime env (same knobs on Lambda and the ECS service).

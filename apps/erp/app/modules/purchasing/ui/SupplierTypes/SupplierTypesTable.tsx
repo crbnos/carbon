@@ -13,7 +13,7 @@ import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SupplierType } from "~/modules/purchasing";
+import type { SupplierType } from "~/modules/purchasing/types";
 import { path } from "~/utils/path";
 
 type SupplierTypesTableProps = {

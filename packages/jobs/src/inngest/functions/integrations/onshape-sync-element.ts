@@ -114,7 +114,7 @@ async function downloadTranslationBytes(
 // The one and only model export path: export GLTF from Onshape and stream it
 // to disk (a whole-vehicle export can be >1.5GB — it is never buffered in
 // memory). The raw export is attached as-is; the assembler pipeline
-// ("carbon/model-optimize", fired by the caller) turns it into the
+// ("carbon/model-optimize", started by the new model row) turns it into the
 // meshopt-compressed viewer GLB, so no local compression happens here. STEP
 // export was deliberately dropped: real assemblies produce multi-GB STEP
 // files, and Onshape stays the CAD system of record. Throws
@@ -193,9 +193,8 @@ async function exportRawGltfModel(
     // Immutable generation: old optimizer/thumbnail/compact jobs can only
     // finish against their old model ID. Replays of this exact released source
     // share one ID; a different part/configuration cannot reuse its artifacts.
-    // Keep whole-assembly attachment behavior unchanged. A workspace id is
-    // mutable: without a microversion there is no fixed source to name, so
-    // the model refreshes in place instead of reusing old geometry.
+    // A whole assembly, or a workspace part with no microversion, has no fixed
+    // source to name; the attach names it by its bytes instead.
     sourceId:
       input.modelElementKind === "partstudio" &&
       (input.sourceWvm !== "w" || input.sourceMicroversionId)
@@ -237,8 +236,8 @@ export async function syncOnshapeElementAssetsToItem(
   const scratchDir = await mkdtemp(join(tmpdir(), "onshape-gltf-"));
   try {
     // Raw GLTF is the only model export (STEP was deliberately dropped — see
-    // exportRawGltfModel). The assembler pipeline does the compression; the
-    // caller fires "carbon/model-optimize" for the returned modelUploadId.
+    // exportRawGltfModel). The assembler pipeline does the compression; a new
+    // model row starts it.
     // Throws OnshapeAssetTooLargeError past the raw cap; callers treat that as
     // a permanent skip.
     const model = await exportRawGltfModel(client, input, scratchDir);
@@ -281,7 +280,7 @@ export async function syncOnshapeElementAssetsToItem(
 
     // The element-thumbnail endpoint cannot select a part or configuration.
     // Keep it only for unconfigured assemblies. All other thumbnails are
-    // generated from the selected model by the optimizer's completion event.
+    // rendered from the selected model by the optimise itself.
     let thumbnailAttached = false;
     if (
       attached.modelUploadId &&
@@ -304,7 +303,7 @@ export async function syncOnshapeElementAssetsToItem(
         thumbnailAttached = true;
       } catch (thumbnailError) {
         console.warn(
-          `syncOnshapeElementAssetsToItem: Onshape thumbnail fetch failed for ${baseName}; falling back to the model-thumbnail job`,
+          `syncOnshapeElementAssetsToItem: Onshape thumbnail fetch failed for ${baseName}; the optimise renders one`,
           thumbnailError
         );
       }

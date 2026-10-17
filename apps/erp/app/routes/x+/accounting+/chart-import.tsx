@@ -8,7 +8,8 @@
 // files would do; `apply` runs the same plan in one transaction through the
 // apply-account-import server function.
 
-import { error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -18,9 +19,9 @@ import {
 } from "@carbon/database/account-import";
 import { loadAccountImportContext } from "@carbon/database/account-import-reads";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import { Button, File } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ChangeEvent, useState } from "react";
@@ -44,7 +45,7 @@ import {
   AccountImportCsvErrors,
   AccountImportReview
 } from "~/modules/accounting/ui/ChartOfAccounts";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -116,8 +117,9 @@ function readFile<Row>(
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, { update: "accounting" });
+  const { companyId, companyGroupId } = await requirePermissions(request, {
+    update: "accounting"
+  });
 
   const formData = await request.formData();
   const chart = readFile(formData.get("chart"), parseChartCsv);
@@ -135,42 +137,20 @@ export async function action({ request }: ActionFunctionArgs) {
   const resolutions = readResolutions(formData.get("resolutions"));
 
   if (formData.get("intent") === "apply") {
-    const result = await serverFns
-      .as({ client, db: getDatabaseClient(), companyId, userId })
-      .invoke("apply-account-import", {
-        chart: chart.rows,
-        defaults: defaults.rows,
-        resolutions
-      });
-    if (result.error) {
-      logger.error("Failed to import the chart of accounts", {
-        companyId,
-        error: result.error
-      });
-      // Stay on the page, files and picks kept, and say why.
-      return data(
-        { files, review: null },
-        await flash(
-          request,
-          error(
-            result.error,
-            getErrorMessage(
-              result.error,
-              "Failed to import the chart of accounts"
-            )
-          )
-        )
-      );
-    }
+    const api = await carbon(request);
+    const result = await api.accounting.importChartOfAccounts({
+      chart: chart.rows,
+      defaults: defaults.rows,
+      resolutions
+    });
+    // Refused: stay on the page, files and picks kept; the applier toasts why.
+    if (result.error) return { files, review: null, ...result };
     const { counts } = result.data;
-    throw redirect(
+    return respond(request, result).redirect(
       returnPath(new URL(request.url).searchParams),
-      await flash(
-        request,
-        success(
-          `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
-        )
-      )
+      {
+        message: `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
+      }
     );
   }
 
@@ -215,7 +195,8 @@ export default function ChartOfAccountsImportRoute() {
   const { t } = useLingui();
   const [searchParams] = useSearchParams();
   const planner = useFetcher<typeof action>();
-  const applier = useFetcher<typeof action>();
+  // A refused import is toasted by useAction; a finished one redirects.
+  const applier = useAction<typeof action>();
   const [chart, setChart] = useState<UploadedFile | null>(null);
   const [defaults, setDefaults] = useState<UploadedFile | null>(null);
   const [targets, setTargets] = useState<Record<string, number>>({});

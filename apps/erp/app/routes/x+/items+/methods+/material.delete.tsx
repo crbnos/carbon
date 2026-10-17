@@ -2,78 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-// Deletes one or more materials of ONE make method: the form carries an `id`
-// per material, so the bill of material's "Delete Selected" is a single request.
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "parts"
-  });
-
-  const formData = await request.formData();
-  const ids = formData.getAll("id").map(String).filter(Boolean);
-  if (ids.length === 0) {
-    throw new Error("id not found");
+// One `id` per material, so the bill of material's Delete Selected is one
+// request.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(
+    z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
+  ).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.items.deleteMethodMaterials({ ids: input.data.id });
+  if (result.data?.notice) {
+    return data(result, await flash(args.request, success(result.data.notice)));
   }
-
-  const materials = await client
-    .from("methodMaterial")
-    .select("makeMethodId")
-    .in("id", ids)
-    .eq("companyId", companyId);
-  const makeMethodIds = new Set(
-    (materials.data ?? []).map((m) => m.makeMethodId)
-  );
-  if (materials.error || makeMethodIds.size !== 1) {
-    return data(
-      { id: null },
-      await flash(
-        request,
-        error(materials.error, "Failed to delete method material")
-      )
-    );
-  }
-  const [makeMethodId] = makeMethodIds;
-
-  // Release-lock gate: block edits to a released (Production) revision unless a
-  // change notice is used. enforce -> block; warn -> proceed + flash; off -> no-op.
-  const lock = await checkRevisionLock(client, {
-    kind: "makeMethod",
-    id: makeMethodId,
-    companyId
-  });
-  if (!lock.ok) {
-    return data({ id: null }, await flash(request, error(null, lock.message)));
-  }
-
-  const deleteMaterials = await client
-    .from("methodMaterial")
-    .delete()
-    .in("id", ids)
-    .eq("makeMethodId", makeMethodId)
-    .eq("companyId", companyId);
-  if (deleteMaterials.error) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(deleteMaterials.error, "Failed to delete method material")
-      )
-    );
-  }
-
-  if (lock.warn) {
-    return data({}, await flash(request, success(lock.message)));
-  }
-
-  return {};
+  return result;
 }

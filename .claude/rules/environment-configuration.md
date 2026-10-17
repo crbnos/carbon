@@ -197,6 +197,13 @@ deprecated alias), `APP_ENV` (`production | preview | development`; alias
 `VERCEL_URL`. In dev, honor the `ERP_URL`/`MES_URL` that `crbn up` wrote into
 `.env.local` (portless `*.dev` hostnames), else `localhost:3000`/`3001`.
 
+MES posts to the ERP over HTTP (`erpPostingUrl`, `apps/mes/app/services/erp.ts`)
+and does not use `getAppUrl()` for it: on a preview that is MES itself. It takes
+`ERP_URL`; without it, `localhost:3000` in local dev and `app.carbon.ms` /
+`itar.carbon.ms` on Carbon Cloud production (`CARBON_EDITION=cloud`, not a
+preview). Anywhere else a posting fails with a configuration error, so a
+self-hosted or preview MES needs `ERP_URL`.
+
 ## Gotchas
 
 - Validation runs at **module load**. Missing `SUPABASE_SERVICE_ROLE_KEY`,

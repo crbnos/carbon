@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket } from "@carbon/files";
 import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -17,7 +18,6 @@ import { isGeneratedAvatar, newGeneratedAvatar } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
-import { useFetcher } from "react-router";
 import type { Account } from "../types";
 import AccountAvatar from "./AccountAvatar";
 import GeneratedAvatarPicker from "./GeneratedAvatarPicker";
@@ -41,7 +41,10 @@ const ProfilePhotoForm = ({
 }: ProfilePhotoFormProps) => {
   const { t } = useLingui();
   const { carbon } = useCarbon();
-  const fetcher = useFetcher();
+  // The action returns the result; a refusal is toasted by useAction.
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Updated avatar`)
+  });
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   // `avatarUrl` is either an uploaded photo's storage path or a generated avatar.
   const uploadedPhotoPath =

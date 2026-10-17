@@ -10,7 +10,10 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deletePricingRule, getPricingRule } from "~/modules/sales";
+import {
+  deletePricingRule,
+  getPricingRule
+} from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

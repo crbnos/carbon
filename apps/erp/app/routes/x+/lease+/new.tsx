@@ -14,12 +14,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import { insertLease, leaseValidator } from "~/modules/purchasing";
+import { leaseValidator } from "~/modules/purchasing/purchasing.models";
+import { insertLease } from "~/modules/purchasing/purchasing.service";
 import {
   LeaseDetailsForm,
   LeaseSetupSteps
 } from "~/modules/purchasing/ui/Leases";
-import { getCompanySettings, getNextSequence } from "~/modules/settings";
+import {
+  getCompanySettings,
+  getNextSequence
+} from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -11,7 +11,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { updateJobOperationBatch } from "~/modules/production";
+import { updateJobOperationBatch } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

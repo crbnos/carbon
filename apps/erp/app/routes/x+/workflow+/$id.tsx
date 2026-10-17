@@ -25,12 +25,6 @@ import type {
 } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
-import {
-  getWorkflow,
-  getWorkflowVersion,
-  getWorkflowVersions,
-  workflowCanvasStateSchema
-} from "~/modules/workflows";
 import { Autosave } from "~/modules/workflows/ui/Builder/Autosave";
 import { BuilderHeader } from "~/modules/workflows/ui/Builder/BuilderHeader";
 import { WorkflowBuilderProvider } from "~/modules/workflows/ui/Builder/context";
@@ -41,6 +35,12 @@ import { LiveValidation } from "~/modules/workflows/ui/Builder/LiveValidation";
 import { TestRunDialog } from "~/modules/workflows/ui/Builder/TestRun/TestRunDialog";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
 import WorkflowLockModal from "~/modules/workflows/ui/WorkflowLockModal";
+import { workflowCanvasStateSchema } from "~/modules/workflows/workflows.models";
+import {
+  getWorkflow,
+  getWorkflowVersion,
+  getWorkflowVersions
+} from "~/modules/workflows/workflows.service";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
 import { path } from "~/utils/path";

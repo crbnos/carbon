@@ -112,13 +112,13 @@ UI stays `.ee.tsx` in `apps/erp/app/modules/<module>/ui/` (coupled to `~/compone
    function.** Runtime functions that must degrade use `companyHasFeature` instead.
 4. Move the feature's validators/derived types with it; add the package exports.
 5. Repoint every call site from `~/modules/...` to `@carbon/ee/<feature>` / `.server`.
-   Remove the moved code from the community module + its barrel.
+   Remove the moved code from the community module's `.service.ts` / `.server.ts`.
 6. UI → `.ee.tsx`. Route → keep `requireFeature` for the UX redirect + catch
    `EntitlementError`.
 7. Verify: `pnpm --filter @carbon/ee typecheck`, `pnpm exec turbo run typecheck --filter=erp`,
-   Biome, and if service functions leave `*.service.ts` note the MCP digest changes
-   (`pnpm run generate:mcp`) — moving a function out of a scanned `*.service.ts` removes it
-   as an MCP tool, which is usually correct (an ungated MCP path would bypass the gate).
+   Biome, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
+   changes (`pnpm run generate:mcp`) — moving it out of the router removes it as an MCP
+   tool, which is usually correct (an ungated MCP path would bypass the gate).
 
 ## Rollout status (starter-only → new pattern)
 
@@ -142,7 +142,9 @@ Refactor one at a time; each PR should leave the tree green.
 - ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
 - ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
-  (`requireEntitlement("WEBHOOKS")`); delivery degrades at runtime via `companyHasFeature`.
+  (`requireEntitlement("WEBHOOKS")`, including `revealWebhookSigningSecret` /
+  `rotateWebhookSigningSecret`); delivery degrades at runtime via `companyHasFeature` and
+  signs with the ungated `getWebhookSigningSecret`.
 - ✅ **Two-factor** — the `requireMfa` company policy in `packages/ee/src/two-factor.server.ts`,
   `requireEntitlement("TWO_FACTOR")` scoped to ENABLING only (a downgrade can still disable).
 - ✅ **Forecast** — `upsert/deleteDemandForecasts` + `upsert/deleteDemandProjections` in
@@ -208,12 +210,12 @@ build does) pull the server file into the client:
    the client barrel transitively reaches `service.ts`. **Fix:** derive those types from
    `@carbon/database` directly (`Database["public"]["Tables"|"Views"][…]["Row"]`), so
    `types.ts` never imports `service.ts`.
-2. **A `.service.ts` importing `@carbon/ee/<feature>.server`.** Module `*.service.ts`
-   files are re-exported through the module barrel that client components import, so they
-   are browser-bundled — importing a `.server` module there reaches the client graph.
-   **Fix:** move that server-only helper into a `*.server.ts` (not barrel-exported) and
-   import it from the route directly. (Routes MAY import `.server` — RR strips it from the
-   client build; `*.service.ts` may NOT.)
+2. **A client file importing a module's `.service.ts` or `.server.ts`.** Both are
+   server-only, so they MAY import `@carbon/ee/<feature>.server`. A component, hook,
+   `ui/`, models, utils or types file that value-imports one pulls that graph into the
+   client. **Fix:** move the helper the component needs into `<module>.utils.ts`. The
+   `no-server-code-in-client` check (`@carbon/checks`) fails the import. (Routes MAY
+   import `.server` — RR strips it from the client build.)
 
 ## Anti-patterns
 

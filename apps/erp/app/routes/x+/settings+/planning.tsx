@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,29 +10,23 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { Heading, ScrollArea, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { parseTime } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { z } from "zod";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   forecastConsumptionValidator,
-  getCompanySettings,
-  getItemPostingGroupResponsibilities,
   mrpScheduleValidator,
   planningHorizonValidator,
   rescheduleToleranceValidator,
-  setDefaultPlanningHorizonDays,
-  setDefaultResponsibleEmployee,
-  setForecastConsumptionWindow,
-  setLocationResponsibleEmployee,
-  setRescheduleToleranceDays,
-  setSkipApprovalForPlanningPurchaseOrders,
-  updateMrpRunTimeSetting,
-  upsertItemPostingGroupResponsibility
-} from "~/modules/settings";
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import {
+  getCompanySettings,
+  getItemPostingGroupResponsibilities
+} from "~/modules/settings/settings.service";
 import {
   ForecastConsumptionCard,
   MrpScheduleCard,
@@ -40,7 +35,6 @@ import {
   RescheduleToleranceCard,
   ResponsibleEmployeeCard
 } from "~/modules/settings/ui/Planning";
-import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -118,282 +112,75 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-const employeeIdValidator = z.string().optional();
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.planning.update` it saves. A blank employee clears the rung.
+const employeeId = z
+  .string()
+  .optional()
+  .transform((id) => id || null);
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "setCompanyDefault": {
-      const parsedEmployeeId = employeeIdValidator.safeParse(
-        formData.get("employeeId") ?? undefined
-      );
-      if (!parsedEmployeeId.success) {
-        return data(
-          { success: false, message: "Invalid employee" },
-          { status: 400 }
-        );
-      }
-      const employeeId = parsedEmployeeId.data;
-      if (
-        employeeId &&
-        !(await isActiveCompanyEmployee(client, companyId, employeeId))
-      ) {
-        return {
-          success: false,
-          message: "Choose an employee of this company"
-        };
-      }
-      const result = await setDefaultResponsibleEmployee(client, {
-        companyId,
-        employeeId: employeeId || null
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return { success: false, message: "Failed to update company default" };
-      }
-      return { success: true, message: "Company default updated" };
-    }
-    case "setLocation": {
-      const locationId = formData.get("locationId");
-      if (typeof locationId !== "string" || !locationId) {
-        return { success: false, message: "Location is required" };
-      }
-      const parsedEmployeeId = employeeIdValidator.safeParse(
-        formData.get("employeeId") ?? undefined
-      );
-      if (!parsedEmployeeId.success) {
-        return data(
-          { success: false, message: "Invalid employee" },
-          { status: 400 }
-        );
-      }
-      const employeeId = parsedEmployeeId.data;
-      if (
-        employeeId &&
-        !(await isActiveCompanyEmployee(client, companyId, employeeId))
-      ) {
-        return {
-          success: false,
-          message: "Choose an employee of this company"
-        };
-      }
-      const result = await setLocationResponsibleEmployee(client, {
-        companyId,
+const planningSettingsForm = z.discriminatedUnion("intent", [
+  z
+    .object({ intent: z.literal("setCompanyDefault"), employeeId })
+    .transform(({ employeeId }) => ({
+      defaultResponsibleEmployee: employeeId
+    })),
+  z
+    .object({
+      intent: z.literal("setLocation"),
+      locationId: z.string().min(1, { message: "Location is required" }),
+      employeeId
+    })
+    .transform(({ locationId, employeeId }) => ({
+      locationResponsibleEmployee: {
         locationId,
-        employeeId: employeeId || null,
-        userId
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return {
-          success: false,
-          message: "Failed to update location ownership"
-        };
+        responsibleEmployee: employeeId
       }
-      // No row back: the location is not this company's, or the user lacks
-      // resources_update and row-level security matched nothing.
-      if ((result.data?.length ?? 0) === 0) {
-        return {
-          success: false,
-          message: "You do not have permission to change this location"
-        };
-      }
-      return { success: true, message: "Location ownership updated" };
-    }
-    case "setItemGroup": {
-      const locationId = formData.get("locationId");
-      const itemPostingGroupId = formData.get("itemPostingGroupId");
-      if (
-        typeof locationId !== "string" ||
-        !locationId ||
-        typeof itemPostingGroupId !== "string" ||
-        !itemPostingGroupId
-      ) {
-        return {
-          success: false,
-          message: "Location and item group are required"
-        };
-      }
-      const parsedEmployeeId = employeeIdValidator.safeParse(
-        formData.get("employeeId") ?? undefined
-      );
-      if (!parsedEmployeeId.success) {
-        return data(
-          { success: false, message: "Invalid employee" },
-          { status: 400 }
-        );
-      }
-      const employeeId = parsedEmployeeId.data;
-      if (
-        employeeId &&
-        !(await isActiveCompanyEmployee(client, companyId, employeeId))
-      ) {
-        return {
-          success: false,
-          message: "Choose an employee of this company"
-        };
-      }
-      const result = await upsertItemPostingGroupResponsibility(client, {
-        companyId,
+    })),
+  z
+    .object({
+      intent: z.literal("setItemGroup"),
+      locationId: z.string().min(1, { message: "Location is required" }),
+      itemPostingGroupId: z
+        .string()
+        .min(1, { message: "Item group is required" }),
+      employeeId
+    })
+    .transform(({ locationId, itemPostingGroupId, employeeId }) => ({
+      itemGroupResponsibleEmployee: {
         locationId,
         itemPostingGroupId,
-        employeeId: employeeId || null,
-        userId
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return {
-          success: false,
-          message: "Failed to update item group ownership"
-        };
+        responsibleEmployee: employeeId
       }
-      return { success: true, message: "Item group ownership updated" };
-    }
-    case "setPlanningPurchaseOrderApproval": {
-      const enabled = formData.get("enabled") === "true";
-      const result = await setSkipApprovalForPlanningPurchaseOrders(client, {
-        companyId,
-        enabled
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return { success: false, message: "Failed to update the setting" };
-      }
-      return {
-        success: true,
-        message: enabled
-          ? "Planning purchase orders skip approval"
-          : "Planning purchase orders need approval"
-      };
-    }
-    case "setTolerance": {
-      const validation = await validator(rescheduleToleranceValidator).validate(
-        formData
-      );
-      if (validation.error) {
-        return {
-          success: false,
-          message: "Tolerance must be between 0 and 365 days"
-        };
-      }
-      const result = await setRescheduleToleranceDays(client, {
-        companyId,
-        days: validation.data.days
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return { success: false, message: "Failed to update tolerance" };
-      }
-      return { success: true, message: "Reschedule tolerance updated" };
-    }
-    case "setPlanningHorizon": {
-      const validation = await validator(planningHorizonValidator).validate(
-        formData
-      );
-      if (validation.error) {
-        return {
-          success: false,
-          message: "Planning horizon must be a whole number of days"
-        };
-      }
-      const result = await setDefaultPlanningHorizonDays(client, {
-        companyId,
-        days: validation.data.days ?? null
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return { success: false, message: "Failed to update planning horizon" };
-      }
-      return { success: true, message: "Planning horizon updated" };
-    }
-    case "setForecastConsumption": {
-      const validation = await validator(forecastConsumptionValidator).validate(
-        formData
-      );
-      if (validation.error) {
-        return {
-          success: false,
-          message: "Consumption window must be between 0 and 52 weeks"
-        };
-      }
-      const result = await setForecastConsumptionWindow(client, {
-        companyId,
-        backwardPeriods: validation.data.backwardPeriods,
-        forwardPeriods: validation.data.forwardPeriods
-      });
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return {
-          success: false,
-          message: "Failed to update forecast consumption"
-        };
-      }
-      return { success: true, message: "Forecast consumption updated" };
-    }
-    case "setMrpSchedule": {
-      const validation =
-        await validator(mrpScheduleValidator).validate(formData);
-      if (validation.error) {
-        return {
-          success: false,
-          message: "Choose a time for the daily MRP run"
-        };
-      }
-      const { mrpSchedule, mrpRunTime } = validation.data;
-      const result = await updateMrpRunTimeSetting(
-        client,
-        companyId,
-        mrpSchedule === "Daily" && mrpRunTime
-          ? parseTime(mrpRunTime).toString()
-          : null
-      );
-      if (result.error) {
-        logger.error("Failed to save planning setting", {
-          companyId,
-          intent,
-          error: result.error
-        });
-        return { success: false, message: "Failed to update MRP schedule" };
-      }
-      return { success: true, message: "MRP schedule updated" };
-    }
-    default:
-      return { success: false, message: `Unknown intent '${String(intent)}'` };
-  }
+    })),
+  settingsToggle(
+    "setPlanningPurchaseOrderApproval",
+    "skipApprovalForPlanningPurchaseOrders"
+  ),
+  rescheduleToleranceValidator
+    .extend({ intent: z.literal("setTolerance") })
+    .transform(({ days }) => ({ rescheduleToleranceDays: days })),
+  planningHorizonValidator
+    .extend({ intent: z.literal("setPlanningHorizon") })
+    .transform(({ days }) => ({ defaultPlanningHorizonDays: days ?? null })),
+  forecastConsumptionValidator
+    .extend({ intent: z.literal("setForecastConsumption") })
+    .transform(({ backwardPeriods, forwardPeriods }) => ({
+      forecastConsumptionBackwardPeriods: backwardPeriods,
+      forecastConsumptionForwardPeriods: forwardPeriods
+    })),
+  mrpScheduleValidator
+    .safeExtend({ intent: z.literal("setMrpSchedule") })
+    .transform(({ mrpSchedule, mrpRunTime }) => ({
+      mrpRunTime: mrpSchedule === "Daily" && mrpRunTime ? mrpRunTime : null
+    }))
+]);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(planningSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updatePlanningSettings(input.data);
 }
 
 export default function PlanningSettingsRoute() {

@@ -17,9 +17,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // writes ran and through which client.
 const mocks = vi.hoisted(() => ({
   deactivateEmployee: vi.fn(),
+  deactivateUser: vi.fn(),
+  setEmployeePin: vi.fn(),
   deleteAuthAccount: vi.fn(),
-  getDatabaseClient: vi.fn(),
-  getPermissionsByEmployeeType: vi.fn(),
   getUserClaims: vi.fn(),
   insertEmployeeJob: vi.fn(),
   mergeInvitePermissions: vi.fn(() => ({})),
@@ -30,6 +30,8 @@ const mocks = vi.hoisted(() => ({
 // It is read from its source file because the package root pulls in Lingui
 // macros that only run inside the app build.
 vi.mock("@carbon/auth", async () => ({
+  ...(await vi.importActual<object>("@carbon/auth")),
+  CarbonEdition: "test",
   CONTROLLED_ENVIRONMENT: false,
   error: vi.fn(),
   success: vi.fn(),
@@ -90,7 +92,13 @@ vi.mock("@carbon/auth/users.server", () => ({
   deactivateCustomer: vi.fn(),
   deactivateEmployee: mocks.deactivateEmployee,
   deactivateSupplier: vi.fn(),
+  deactivateUser: mocks.deactivateUser,
   getUserClaims: mocks.getUserClaims
+}));
+
+vi.mock("@carbon/ee/console.server", () => ({
+  generateConsolePin: () => "4321",
+  setEmployeePin: mocks.setEmployeePin
 }));
 
 vi.mock("@carbon/kv", () => ({
@@ -116,20 +124,24 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
-vi.mock("~/modules/purchasing", () => ({ getSupplierContact: vi.fn() }));
-vi.mock("~/modules/sales", () => ({ getCustomerContact: vi.fn() }));
-vi.mock("~/modules/users", () => ({
-  getPermissionsByEmployeeType: mocks.getPermissionsByEmployeeType
+vi.mock("~/modules/purchasing/purchasing.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getSupplierContact: vi.fn()
 }));
-vi.mock("~/services/database.server", () => ({
-  getDatabaseClient: mocks.getDatabaseClient
+vi.mock("~/modules/sales/sales.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getCustomerContact: vi.fn()
 }));
 vi.mock("~/utils/path", () => ({ path: { to: {} } }));
-vi.mock("../people/people.service", () => ({
+vi.mock("../people/people.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   insertEmployeeJob: mocks.insertEmployeeJob
 }));
 
-const { acceptInvite, createEmployeeAccount } = await import("./users.server");
+const { certifyItarEntity, deactivateUsers, resetConsoleOperatorPin } =
+  await import("./users.server");
+const { acceptInvite, createEmployeeAccount } = await import("./users.service");
+const { createServiceContext } = await import("@carbon/api/service-fn.server");
 
 const USER = "usr_1";
 const COMPANY = "cmp_1";
@@ -200,11 +212,20 @@ function makeClient(
   readError: { message: string } | null = null
 ) {
   const writes: { table: string; op: string; payload: unknown }[] = [];
+  const permissionReads: string[] = [];
   const client = {
     from: (table: string) => {
       const chain: Record<string, unknown> = {
         select: () => chain,
-        eq: () => chain,
+        // An employee type's permissions: the one read that ends at `.eq`.
+        eq: (_column: string, value: string) => {
+          if (table !== "employeeTypePermission") return chain;
+          permissionReads.push(value);
+          return Promise.resolve({
+            data: EMPLOYEE_TYPE_PERMISSIONS,
+            error: null
+          });
+        },
         maybeSingle: () =>
           Promise.resolve(
             readError
@@ -220,7 +241,7 @@ function makeClient(
       return chain;
     }
   };
-  return { client: client as never, writes };
+  return { client: client as never, writes, permissionReads };
 }
 
 const deactivated = { id: USER, active: false };
@@ -232,21 +253,19 @@ function answer(lockedRow: { active: boolean } | null) {
       : [];
 }
 
+const EMPLOYEE_TYPE_PERMISSIONS = [
+  {
+    module: "Sales",
+    view: [COMPANY],
+    create: [COMPANY],
+    update: [],
+    delete: []
+  }
+];
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.serviceRoleWrites.length = 0;
-  mocks.getPermissionsByEmployeeType.mockResolvedValue({
-    data: [
-      {
-        module: "Sales",
-        view: [COMPANY],
-        create: [COMPANY],
-        update: [],
-        delete: []
-      }
-    ],
-    error: null
-  });
   mocks.insertEmployeeJob.mockResolvedValue({ data: {}, error: null });
   // The inviter may do everything a first-time add needs.
   mocks.getUserClaims.mockResolvedValue({
@@ -261,10 +280,9 @@ beforeEach(() => {
 describe("createEmployeeAccount — re-adding a deactivated employee", () => {
   it("writes the employee type, placement and invite in one committed transaction", async () => {
     const { db, statements, transactions } = makeDb(answer(deactivated));
-    mocks.getDatabaseClient.mockReturnValue(db);
-    const { client, writes } = makeClient(deactivated);
+    const { client, writes, permissionReads } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toMatchObject({ success: true, userId: USER });
     if (!result.success) throw new Error(result.message);
@@ -294,10 +312,7 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
       sales_delete: []
     });
     expect(invite.parameters).toContain(result.code);
-    expect(mocks.getPermissionsByEmployeeType).toHaveBeenCalledWith(
-      client,
-      NEW_TYPE
-    );
+    expect(permissionReads).toEqual([NEW_TYPE]);
 
     // Nothing went through the non-transactional clients.
     expect(writes).toEqual([]);
@@ -312,10 +327,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
       }
       return answer(deactivated)(statement);
     });
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({
       success: false,
@@ -342,10 +356,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
       }
       return answer(deactivated)(statement);
     });
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({ success: false, message: "invite write failed" });
     expect(statements).toHaveLength(4);
@@ -356,10 +369,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
 
   it("refuses under the lock when the employee was activated since the pre-read", async () => {
     const { db, statements, transactions } = makeDb(answer({ active: true }));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({
       success: false,
@@ -371,10 +383,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
 
   it("refuses rather than inserting when the row disappeared since the pre-read", async () => {
     const { db, statements, transactions } = makeDb(answer(null));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result.success).toBe(false);
     // Only the lock ran: a first-time employee insert never happens outside
@@ -387,10 +398,9 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
 describe("createEmployeeAccount — re-add guards", () => {
   it("restarts the reused invite's createdAt, which the controlled-environment expiry counts from", async () => {
     const { db, statements } = makeDb(answer(deactivated));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result.success).toBe(true);
     const invite = statements.find((s) =>
@@ -413,10 +423,9 @@ describe("createEmployeeAccount — re-add guards", () => {
       }
     });
     const { db, transactions } = makeDb(answer(deactivated));
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes } = makeClient(deactivated);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({
       success: false,
@@ -436,10 +445,9 @@ describe("createEmployeeAccount — re-add guards", () => {
 describe("createEmployeeAccount — the existing-employee read fails", () => {
   it("returns the error before any write path starts", async () => {
     const { db, transactions } = makeDb(() => []);
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes } = makeClient(null, { message: "read failed" });
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toEqual({ success: false, message: "read failed" });
     // Neither the re-invite transaction nor the first-time writes ran, so no
@@ -454,10 +462,9 @@ describe("createEmployeeAccount — the existing-employee read fails", () => {
 describe("createEmployeeAccount — first time in the company", () => {
   it("keeps writing through the caller's RLS client, outside any transaction", async () => {
     const { db, transactions } = makeDb(() => []);
-    mocks.getDatabaseClient.mockReturnValue(db);
     const { client, writes } = makeClient(null);
 
-    const result = await createEmployeeAccount(client, ACCOUNT);
+    const result = await createEmployeeAccount(client, db as never, ACCOUNT);
 
     expect(result).toMatchObject({ success: true, userId: USER });
     expect(transactions.begin).toBe(0);
@@ -526,9 +533,13 @@ describe("acceptInvite", () => {
 
   it("locks the user row before reading the permissions it merges into", async () => {
     const { db, statements, transactions } = makeDb(answerAccept(INVITE));
-    mocks.getDatabaseClient.mockReturnValue(db);
 
-    const result = await acceptInvite(makeInviteLookup(), INVITE.code, EMAIL);
+    const result = await acceptInvite(
+      makeInviteLookup(),
+      db as never,
+      INVITE.code,
+      EMAIL
+    );
 
     expect(result.error).toBeNull();
     expect(transactions).toEqual({ begin: 1, commit: 1, rollback: 0 });
@@ -545,9 +556,13 @@ describe("acceptInvite", () => {
 
   it("does not accept an invite revoked after it was looked up", async () => {
     const { db, statements, transactions } = makeDb(answerAccept(null));
-    mocks.getDatabaseClient.mockReturnValue(db);
 
-    const result = await acceptInvite(makeInviteLookup(), INVITE.code, EMAIL);
+    const result = await acceptInvite(
+      makeInviteLookup(),
+      db as never,
+      INVITE.code,
+      EMAIL
+    );
 
     expect(result).toEqual({
       data: null,
@@ -562,5 +577,115 @@ describe("acceptInvite", () => {
     expect(update?.sql).toMatch(
       /"companyId" = \$\d+ and "acceptedAt" is null and "revokedAt" is null/
     );
+  });
+});
+
+const unreachable = () => {
+  throw new Error("must not be reached");
+};
+
+/** An operation's context for a user holding `permissions` in COMPANY. */
+function operationContext(
+  permissions: Record<string, Record<string, string[]>>,
+  { user = null as Record<string, unknown> | null } = {}
+) {
+  const caller = {
+    from: () => {
+      const chain: Record<string, unknown> = {
+        select: () => chain,
+        eq: () => chain,
+        single: async () =>
+          user ? { data: user, error: null } : { data: null, error: {} }
+      };
+      return chain;
+    }
+  };
+  return createServiceContext({
+    actor: { type: "user", userId: "usr_admin", permissions },
+    company: { id: COMPANY, groupId: "grp_1" },
+    caller: caller as never,
+    system: unreachable as never,
+    pg: (() => ({})) as never,
+    kv: unreachable as never
+  });
+}
+
+describe("resetConsoleOperatorPin", () => {
+  beforeEach(() => mocks.setEmployeePin.mockReset());
+
+  const usersUpdate = { users: { update: [COMPANY] } };
+
+  it("resets a console operator's PIN with users update alone", async () => {
+    const result = await resetConsoleOperatorPin(
+      operationContext(usersUpdate, {
+        user: { id: USER, isConsoleOperator: true }
+      }),
+      { operatorId: USER }
+    );
+    expect(result.data).toEqual({ pin: "4321" });
+    expect(mocks.setEmployeePin).toHaveBeenCalledOnce();
+  });
+
+  // A PIN pins in as that person anywhere on the floor: for anyone who is
+  // not a console operator, it takes settings update too.
+  it("refuses another person's PIN without settings update", async () => {
+    const result = await resetConsoleOperatorPin(
+      operationContext(usersUpdate, {
+        user: { id: USER, isConsoleOperator: false }
+      }),
+      { operatorId: USER }
+    );
+    expect(result.error?.category).toBe("forbidden");
+    expect(mocks.setEmployeePin).not.toHaveBeenCalled();
+  });
+
+  it("resets another person's PIN with settings update", async () => {
+    const result = await resetConsoleOperatorPin(
+      operationContext(
+        { ...usersUpdate, settings: { update: [COMPANY] } },
+        { user: { id: USER, isConsoleOperator: false } }
+      ),
+      { operatorId: USER }
+    );
+    expect(result.data).toEqual({ pin: "4321" });
+  });
+});
+
+describe("deactivateUsers", () => {
+  it("refuses the caller's own account", async () => {
+    const result = await deactivateUsers(
+      operationContext({ users: { delete: [COMPANY] } }),
+      { userIds: [USER, "usr_admin"] }
+    );
+    expect(result.error?.category).toBe("rule");
+    expect(mocks.deactivateUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("certifyItarEntity", () => {
+  // An API key authenticates as the key, not a person: there is no signer.
+  it("refuses an API key", async () => {
+    const ctx = createServiceContext({
+      actor: {
+        type: "apiKey",
+        createdBy: "usr_admin",
+        scopes: {
+          users: { view: [], create: [], update: [COMPANY], delete: [] }
+        }
+      },
+      company: { id: COMPANY, groupId: "grp_1" },
+      caller: {} as never,
+      system: unreachable as never,
+      pg: unreachable as never,
+      kv: unreachable as never
+    });
+    const result = await certifyItarEntity(ctx, {
+      authorityToBind: true,
+      acceptRider: true,
+      fullLegalName: "Pat Doe",
+      title: "CEO",
+      complianceContact: "export@example.com"
+    });
+    expect(result.error?.category).toBe("forbidden");
   });
 });

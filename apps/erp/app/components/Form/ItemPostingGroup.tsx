@@ -7,7 +7,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import type { getItemPostingGroupsList } from "~/modules/items";
+import type { getItemPostingGroupsList } from "~/modules/items/items.service";
 import ItemPostingGroupForm from "~/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

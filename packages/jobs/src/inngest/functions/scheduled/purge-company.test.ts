@@ -58,13 +58,20 @@ function fakeStorage(
 }
 
 describe("removeCompanyFiles", () => {
-  it("drains the company bucket before deleting it, and the legacy folder", async () => {
+  it("drains the company bucket before deleting it, and the legacy folders", async () => {
     const { serviceRole, buckets } = fakeStorage({
       co1: ["parts/a.png", "job/j1/b.pdf"],
-      private: ["co1/docs/c.pdf", "co12/docs/keep.pdf"]
+      private: [
+        "co1/docs/c.pdf",
+        "co12/docs/keep.pdf",
+        "audit-logs/co1/2026/01/2026-01-31.jsonl.gz",
+        "audit-logs/co12/2026/01/keep.jsonl.gz"
+      ]
     });
     expect(await removeCompanyFiles(serviceRole, "co1")).toEqual([]);
-    expect(buckets).toEqual({ private: ["co12/docs/keep.pdf"] });
+    expect(buckets).toEqual({
+      private: ["co12/docs/keep.pdf", "audit-logs/co12/2026/01/keep.jsonl.gz"]
+    });
   });
 
   it("treats a bucket that is already gone as done", async () => {

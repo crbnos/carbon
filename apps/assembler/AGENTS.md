@@ -144,8 +144,14 @@ deploy time; `ci/src/assembler.ts` does not set any yet.
 Every action is an async job: POST returns 202 and the job runs in a background
 task. Callers pass signed upload URLs at submit (`X-Carbon-Upload-Urls`) and a
 `callback_url`; the job uploads its outputs and POSTs the terminal envelope the
-moment compute ends. `GET /v1/jobs/{id}?wait=<secs>` long-polls (capped at 25 s)
-and is the fallback when the callback is lost.
+moment compute ends. `GET /v1/jobs/{id}` is the fallback when the callback is
+lost. It accepts `?wait=<secs>` (a long poll, capped at 25 s), but
+`runAssemblerJob` never sends it: a long poll is an executing Inngest step, so
+it held a slot of the shared concurrency key for its whole wait. The runner
+polls once per wake and waits between polls in `waitForEvent`, which holds no
+slot. A 5xx poll counts as unreachable, not as a lost job. When the runner gives
+up on a job that is still queued or running, it calls
+`POST /v1/jobs/{id}/cancel` (best effort) so the job does not keep its memory.
 
 **Job status + pointers live in Redis** (`jobs.rs`): `asm:job:{jobId}` →
 `{status, result, stats, …}`. Redis is required, so a restart, a sibling replica
@@ -204,6 +210,17 @@ Built to sit as a small always-on pod beside other workloads.
   above the whole budget takes all of it and runs alone. Nothing is rejected.
   The reservation covers the compute only, not the download or the upload. CPU
   is bounded separately by the blocking pool (cores + 2).
+- **A waiting job is `pending` or `starting`, not `running`.** Each action sets
+  `running` only after `admission.acquire` returns. On Lambda the worker inlet
+  sets `starting` when it takes a `pending` job, before the download and the
+  admission wait, so a second delivery of the same job finds it taken and does
+  not run it again. The job API reports both `pending` and `starting` as
+  `queued`, and both count as active for cancel. A job cancelled while it
+  waited for memory is dropped right after admission, before any compute.
+  `runAssemblerJob` (`@carbon/jobs`, `tasks/assembler-client.ts`) starts an
+  action's time budget at `running`, so time spent queued behind other jobs never
+  fails a job. The optimize action's own deadline (`opts.deadline`) also starts
+  after admission, not at the download.
 - **The estimate is not a limit.** Nothing stops a job from using more than it
   was admitted for, and geometry can be far heavier than its file size: a
   5 MB plate with 1,200 drilled holes still peaks at 840 MB, thirteen times its
@@ -258,6 +275,23 @@ re-framed to fit the whole model, whatever the viewer's zoom or pan. The caller 
 lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
 page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex
 colours are ignored in favour of the material colour.
+
+## Ingest (optimize with compact and thumbnail)
+
+A new model is processed by ONE `/v1/optimize` job, which reads the raw once.
+Two optional request fields add outputs:
+
+| Field | Output | What it writes |
+|---|---|---|
+| `compact: { path? }` | `raw` (`application/zstd`) | A STEP is converted to BinXCAF once; the optimiser tessellates from that xbf, and the xbf is compressed (`.xbf.zst`). A mesh source is compressed as it is. An xbf source needs nothing. |
+| `thumbnail: { path?, size?, direction? }` | `thumbnail` (`image/png`) | Rendered from the optimised GLB in memory, with the camera of `/v1/thumbnail`. |
+
+Neither extra can fail the job: a failed compaction or render becomes a warning
+and the output is left out. The caller is `@carbon/jobs` `tasks/model-optimize.ts`.
+It asks for `compact` only while the raw is still in `temp-staging`; without a
+`raw` output it copies the raw out of staging as it is. `/v1/compact` and
+`/v1/thumbnail` stay for the cases outside ingest: a raw left in staging with the
+assembler off, and a thumbnail from a captured camera direction.
 
 ## meshopt / Draco compression
 

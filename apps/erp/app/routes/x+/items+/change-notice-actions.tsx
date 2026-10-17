@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getChangeNoticeRequiredActions } from "~/modules/items";
+import { getChangeNoticeRequiredActions } from "~/modules/items/items.service";
 import { ChangeNoticeRequiredActionsTable } from "~/modules/items/ui/ChangeNoticeActions";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

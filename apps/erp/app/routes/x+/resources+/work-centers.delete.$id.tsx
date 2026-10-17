@@ -2,48 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import { deleteWorkCenter } from "~/modules/resources";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.deactivateWorkCenter({
+    id: input.params.id
   });
-
-  const { id } = params;
-  if (!id) {
-    throw redirect(
-      path.to.workCenters,
-      await flash(request, error(params, "Failed to get a work center id"))
-    );
-  }
-
-  const deactivateWorkCenter = await deleteWorkCenter(client, id);
-  if (deactivateWorkCenter.error) {
-    throw redirect(
-      path.to.workCenters,
-      await flash(
-        request,
-        error(deactivateWorkCenter.error, deactivateWorkCenter.error.details)
-      )
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "work-center",
-    "Work center deactivated",
-    id
-  );
-
-  throw redirect(
-    path.to.workCenters,
-    await flash(request, success("Successfully deactivated work center"))
-  );
+  return respond(args.request, result).redirect(path.to.workCenters, {
+    message: "Successfully deactivated work center"
+  });
 }

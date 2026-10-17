@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { LuCircleAlert, LuCreditCard } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Hidden, InputControlled } from "~/components/Form";
-import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
+import type { StripeCustomerResolution } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 const CREATE_NEW = "__create_new__";

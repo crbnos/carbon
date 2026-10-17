@@ -18,7 +18,7 @@ import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Training } from "~/modules/resources";
+import type { Training } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 import TrainingStatus from "./TrainingStatus";
 

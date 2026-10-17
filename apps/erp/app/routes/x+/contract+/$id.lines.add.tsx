@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { customerContractLinesAddValidator } from "~/modules/sales/sales.models";
 import {
-  customerContractLinesAddValidator,
   getContract,
   insertContractLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path, requestReferrer } from "~/utils/path";
 
 /** Adds the chosen Service items to a Draft contract, each as a line with a

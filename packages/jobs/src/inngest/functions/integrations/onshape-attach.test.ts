@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { openAsBlob } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { attachOnshapeAssetsToItem } from "./onshape-attach";
 
@@ -166,7 +167,10 @@ const input = {
   }
 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(openAsBlob).mockResolvedValue(new Blob(["selected part geometry"]));
+});
 
 describe("immutable released-part attachments", () => {
   it("replaces a bad generation while keeping item data and the prior model intact", async () => {
@@ -357,18 +361,67 @@ describe("immutable released-part attachments", () => {
     expect(db.tables.item[0]!.modelUploadId).toBe("onshape-legacy");
   });
 
-  it("retains the existing no-source-ID attachment behavior", async () => {
+  it("names an export with no source by its bytes, and reuses it while they hold", async () => {
     const db = database();
     const { sourceId: _sourceId, ...model } = input.model;
+    const prior = structuredClone(db.tables.modelUpload[0]);
+    const first = await attachOnshapeAssetsToItem(db.client, {
+      ...input,
+      model
+    });
+    expect(first.modelUploadId).toMatch(/^onshape-[0-9a-f]{64}$/);
+    expect(db.tables.modelUpload[0]).toEqual(prior);
+    expect(db.tables.modelUpload[1]).toMatchObject({
+      id: first.modelUploadId,
+      modelPath: `company/models/${first.modelUploadId}.gltf`
+    });
+    expect(db.tables.item[0]!.modelUploadId).toBe(first.modelUploadId);
+    expect(db.tables.document).toEqual([]);
+
+    const again = await attachOnshapeAssetsToItem(db.client, {
+      ...input,
+      model
+    });
+    expect(again.modelUploadId).toBe(first.modelUploadId);
+    expect(db.tables.modelUpload).toHaveLength(2);
+    expect(db.uploads).toHaveLength(1);
+  });
+
+  it("gives changed bytes a new model, so no file keyed by the old one is reused", async () => {
+    const db = database();
+    const { sourceId: _sourceId, ...model } = input.model;
+    const first = await attachOnshapeAssetsToItem(db.client, {
+      ...input,
+      model
+    });
+    const firstRow = structuredClone(db.tables.modelUpload[1]);
+
+    vi.mocked(openAsBlob).mockResolvedValue(new Blob(["changed geometry"]));
+    const changed = await attachOnshapeAssetsToItem(db.client, {
+      ...input,
+      model
+    });
+    expect(changed.modelUploadId).not.toBe(first.modelUploadId);
+    expect(db.tables.modelUpload).toHaveLength(3);
+    expect(db.tables.modelUpload[1]).toEqual(firstRow);
+    expect(db.tables.item[0]!.modelUploadId).toBe(changed.modelUploadId);
+    // The prior Onshape generation is superseded, not kept as a document.
+    expect(db.tables.document).toEqual([]);
+  });
+
+  it("does not list a source-less export's earlier in-place sync as a document", async () => {
+    const db = database();
+    const { sourceId: _sourceId, ...model } = input.model;
+    // A row the in-place path wrote: a plain id, the export's own file name.
+    withManualPriorModel(db, model.fileName);
     const result = await attachOnshapeAssetsToItem(db.client, {
       ...input,
       model
     });
-    expect(result.modelUploadId).toBe("onshape-legacy");
-    expect(db.tables.modelUpload).toHaveLength(1);
-    expect(db.uploads).toEqual([
-      "temp-staging/company/models/onshape-legacy.gltf"
-    ]);
+    expect(result.preservedPriorModelAsDocument).toBe(false);
+    expect(db.tables.document).toEqual([]);
+    expect(db.tables.modelUpload[0]!.id).toBe("manual-model");
+    expect(db.tables.item[0]!.modelUploadId).toBe(result.modelUploadId);
   });
 
   it("keeps every item/model read and update company-scoped", async () => {

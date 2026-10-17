@@ -19,9 +19,9 @@ import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { CustomFieldsTableType } from "~/modules/settings";
-import { modulesType } from "~/modules/settings";
-import { tablesWithTags } from "~/modules/shared";
+import { modulesType } from "~/modules/settings/settings.models";
+import type { CustomFieldsTableType } from "~/modules/settings/types";
+import { tablesWithTags } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 type CustomFieldsTableProps = {

@@ -13,9 +13,9 @@ import { usePanels } from "~/components/Layout";
 import {
   getJobOperationsList,
   getProductionEvents
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
-import { getWorkCentersList } from "~/modules/resources";
+import { getWorkCentersList } from "~/modules/resources/resources.service";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

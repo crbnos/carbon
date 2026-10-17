@@ -67,8 +67,8 @@ import type {
   ConfigurationParameterGroup
 } from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType, methodType } from "~/modules/shared";
+import { itemType, methodType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/quote+/$quoteId.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

@@ -2180,6 +2180,9 @@ msgstr "업데이트"
 msgid "Updated {0}"
 msgstr "업데이트됨 {0}"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"
 

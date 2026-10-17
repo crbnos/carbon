@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   DropdownMenuIcon,
@@ -18,7 +19,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LuCircleCheck,
   LuCirclePlay,
@@ -27,18 +28,19 @@ import {
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
+import { isPickingListLocked } from "~/modules/inventory/inventory.models";
 import type {
   getPickingList,
   getPickingListLines,
   UnresolvedPickingListLine
-} from "~/modules/inventory";
-import { isPickingListLocked } from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
+import type { action as statusAction } from "~/routes/x+/picking-list+/$pickingListId.status";
 import { path } from "~/utils/path";
 import PickingListStatus from "./PickingListStatus";
 
@@ -65,22 +67,17 @@ const PickingListHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const statusFetcher = useFetcher<{
-    needsAcknowledgement?: boolean;
-    unresolvedLines?: UnresolvedPickingListLine[];
-  }>();
   const [acknowledgeLines, setAcknowledgeLines] = useState<
     UnresolvedPickingListLine[] | null
   >(null);
-
-  useEffect(() => {
-    if (
-      statusFetcher.data?.needsAcknowledgement &&
-      statusFetcher.data.unresolvedLines
-    ) {
-      setAcknowledgeLines(statusFetcher.data.unresolvedLines);
+  // A status change redirects; only lines left unpicked come back as data.
+  const statusFetcher = useAction<typeof statusAction>({
+    onSuccess: ({ data }) => {
+      if (data && "needsAcknowledgement" in data) {
+        setAcknowledgeLines(data.unresolvedLines ?? null);
+      }
     }
-  }, [statusFetcher.data]);
+  });
 
   const isClosed = isPickingListLocked(status);
   const isSubmitting = statusFetcher.state !== "idle";

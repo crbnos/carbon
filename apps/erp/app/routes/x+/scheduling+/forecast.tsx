@@ -27,12 +27,15 @@ import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
-import { getDepartmentsList, getShiftsWithTimes } from "~/modules/people";
+import {
+  getDepartmentsList,
+  getShiftsWithTimes
+} from "~/modules/people/people.service";
 import {
   getCapacityReservationsForResources,
+  getForecastNonWorkingIntervals,
   getMaintenanceDowntimeForResources
-} from "~/modules/production";
-import { getForecastNonWorkingIntervals } from "~/modules/production/forecast.server";
+} from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import type {
   ForecastRange,
@@ -51,9 +54,11 @@ import type {
   WorkCenterAvailability
 } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
 import { WorkCenterAvailabilityPopover } from "~/modules/production/ui/Schedule/WorkCenterAvailabilityPopover";
-import { getWorkCentersByLocation } from "~/modules/resources";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getWorkCentersByLocation } from "~/modules/resources/resources.service";
+import {
+  getLocationTimeZone,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

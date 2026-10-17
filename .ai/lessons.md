@@ -129,7 +129,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Resolve internal/control accounts by **id** via a column on `accountDefault` scoped to the `companyId` (the same pattern as `receivablesAccount`/`payablesAccount`). If no default column exists, add one to `accountDefault` (+ seed it in `seed.data.ts` and `seed-company`, + one-time backfill migration resolving the seeded number → id), then read `ad.<xxx>Account`. The only legitimate uses of `.where("number"/"eq("number")` on `account` are: building the chart at seed time, and mapping **external** codes in an integration (e.g. Xero AccountCodes) — never resolving an internal control account at posting time.
 
-**Applies to:** `packages/server-functions/src/post-*`, `close-job`, `issue`, anything posting to `journalLine`; `accountDefault` schema + `lib/seed.data.ts`.
+**Applies to:** the `post-*` postings (`apps/erp/app/modules/*/*.service.ts`), `close-job`, `issue`, anything posting to `journalLine`; `accountDefault` schema + `lib/seed.data.ts`.
 
 ## Chart-of-accounts group headers have no number — resolve parents by name/key
 
@@ -287,7 +287,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
 
-**Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
+**Applies to:** `issueMaterial` (`apps/erp/app/modules/inventory/inventory.service.ts`) and any posting inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
 ## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
 
@@ -295,7 +295,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** A document line's bin is a default for untracked stock. For a serial or batch the ledger already knows the bin, and ignoring it corrupts two bins at once. `resolveTrackedEntityBin` skips the unassigned bin (`null`), so a unit moved into "no storage unit" resolves back to the named bin it left. And `NULL` as a filter value cannot also mean "no filter".
 
-**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`server-functions/src/lib/storage-units.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
+**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`apps/erp/app/modules/shared/shared.service.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
 
 **Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
 
@@ -357,7 +357,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
 
-**Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `packages/server-functions/src/seed-company/index.ts`, `seed-dev.ts`.
+**Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `seedCompany` (`apps/erp/app/modules/settings/settings.service.ts`), `seed-dev.ts`.
 
 ## meshopt vertex codec requires a stride that is a multiple of 4 — i16 VEC3 normals break it
 
@@ -436,7 +436,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Before using a `documentType` string, check WHICH enum the target column uses (`\dT+` or grep the migration) — never assume the journal and ledger enums share values. When adding GL posting to an existing subledger flow, keep the subledger rows' shape unchanged (documentType stays whatever it was, usually NULL) and put the new linkage value on the journal lines only.
 
-**Applies to:** `packages/database/supabase/migrations/` enum additions; `packages/server-functions/src/lib/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
+**Applies to:** `packages/database/supabase/migrations/` enum additions; `bookAdjustment` / `valueMovement` (`apps/erp/app/modules/shared/shared.service.ts`); any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
 
 ## Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code
 
@@ -897,7 +897,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Book returns on `pickingListLine.quantityReturned` (added `20260804111631`) and leave `quantityPicked` as gross-picked; net staged at lineside = `quantityPicked − quantityReturned`. Only genuine unpicks (operator reversing work) may decrement `quantityPicked`. Any new writer of `pickingListLine.quantityPicked`/`status` must first check what `update_picking_list_status` will do with the change. `pickingListLineTrackedEntity` allocations are different — returns DO decrement those (availability RPCs net them out; no trigger watches that table).
 
-**Applies to:** `packages/server-functions/src/post-picking/index.ts` (all return/unpick cases), `update_picking_list_status` migrations, any code mutating `pickingListLine` quantities.
+**Applies to:** `postPicking` (`apps/erp/app/modules/inventory/inventory.service.ts`, all return/unpick cases), `update_picking_list_status` migrations, any code mutating `pickingListLine` quantities.
 
 ## Audit FK snapshots: constraint-less columns are invisible to schema discovery; junction targets need hops
 
@@ -937,7 +937,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** When applying a uniform transformation across N sibling branches, diff each branch against its own pre-change body — don't assume they were symmetric. A branch that posted no ledger, sent no email, fired no event before your change must still post/send/fire nothing after, unless the spec explicitly says otherwise. "It typechecks and the other four branches do it" is not evidence the fifth should. Preserve per-branch behavior; the flip's mandate was which id departs, not to newly introduce inventory movements.
 
-**Applies to:** `packages/server-functions/src/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
+**Applies to:** `apps/erp/app/modules/inventory/inventory.service.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
 
 ## Carbon journal amounts are natural-balance-signed, not debit-signed
 
@@ -1049,7 +1049,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
-**Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, or `packages/server-functions/src/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
+**Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
 
 ## The migration ledger must travel with the schema it describes
 
@@ -1107,7 +1107,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` (`@carbon/database/fetch-all`, source `packages/database/src/fetch-all.ts`) in server functions, `@carbon/planning` and edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
 
-**Applies to:** `packages/planning/src/mrp/mrp.ts`, `packages/database/src/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/server-functions/src/**`, `packages/planning/src/**` or `apps/erp/app/modules/**`.
+**Applies to:** `packages/planning/src/mrp/mrp.ts`, `packages/database/src/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/planning/src/**` or `apps/erp/app/modules/**`.
 
 ## `sum(DISTINCT expr)` is not a fan-out dedup — it collapses equal values from different rows
 
@@ -1147,7 +1147,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** In any service-role or Kysely path, confirm which column actually scopes the table before writing the predicate — `companyId` for most, `companyGroupId` for `account` and its children. A `LIMIT 1` with no tenancy predicate in RLS-bypassing code is a cross-tenant bug even when it "works" locally, because a single-tenant dev database cannot show it.
 
-**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `packages/server-functions/src/**`, or a Kysely transaction.
+**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `apps/erp/app/modules/**` postings, or a Kysely transaction.
 ## Appending SQL to an already-applied migration silently does nothing
 
 **Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
@@ -1216,7 +1216,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** In server functions (and edge functions), batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
 
-**Applies to:** `packages/server-functions/src/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
+**Applies to:** posting batch reads (`apps/erp/app/modules/*/*.service.ts`); any `.in(...)` over tree-collected or list-collected ids.
 
 ## Kysely writes in a server function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
 
@@ -1226,7 +1226,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** In a server function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
 
-**Applies to:** `packages/server-functions/src/**` (any service-role Kysely write), resumable multi-phase flows.
+**Applies to:** postings in `apps/erp/app/modules/*/*.service.ts` (any service-role Kysely write), resumable multi-phase flows.
 
 ## A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there
 
@@ -1255,7 +1255,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Any new row that reuses an existing readable id must qualify it (`Q000001-1`), and any insert into a table whose unique key can be orphaned by a delete needs `onConflict(...).doUpdateSet(...)` rather than a bare insert. When a user-facing action reports a generic failure, read the edge-runtime container log before theorising — the route's flash message hides the Postgres error code.
 
-**Applies to:** `packages/server-functions/src/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
+**Applies to:** `getMethod` in `apps/erp/app/modules/production/production.service.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
 ## A memo's `direction` means OPPOSITE things on AR and AP
 
@@ -1283,7 +1283,7 @@ entry balances.
 
 **Applies to:** `apps/erp/app/modules/purchasing/purchasing.service.ts`
 (`createPurchaseReturnOrderCredit`), `apps/erp/app/modules/sales/sales.service.ts`
-(`createSalesReturnOrderCredit`), `packages/server-functions/src/post-memo/*`,
+(`createSalesReturnOrderCredit`), `apps/erp/app/modules/invoicing/invoicing.service.ts`,
 any new `memo` writer.
 
 ## A bare FormLabel outside FormControl 500s the whole route
@@ -1401,7 +1401,7 @@ any new `memo` writer.
 
 **Rule:** A comparison is only meaningful when its two sides come from different points in time or different origins. When a check's input is derived from the thing it is checked against — at the same moment, by the same code — the check can only ever pass, and green tests won't catch it because tests construct the divergent inputs the call site never produces. Compute such verdicts at READ time (live schema vs stored artifact), and when reviewing, trace where each argument of a comparison actually comes from at the real call site.
 
-**Applies to:** `packages/jobs/src/backups/schema.ts` (`reportBackupCompatibility`), `getCompanyBackups` in `apps/erp/app/modules/settings/backups.server.ts`, and any future "is X still valid?" precomputation (schema drift, config validation, cache-freshness verdicts).
+**Applies to:** `packages/jobs/src/backups/schema.ts` (`reportBackupCompatibility`), `getCompanyBackups` in `apps/erp/app/modules/settings/settings.service.ts`, and any future "is X still valid?" precomputation (schema drift, config validation, cache-freshness verdicts).
 
 ## Bare-tsx scripts: isolate the import chain, never flip a shared package's `type`
 
@@ -1429,9 +1429,9 @@ any new `memo` writer.
 
 **Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role edge fn bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
 
-**Rule:** In a server function, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecords`, `@carbon/server-functions`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
+**Rule:** In a server function, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecords`, `apps/erp/app/modules/shared/shared.service.ts`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
 
-**Applies to:** `packages/server-functions/src/**` taking record ids in the input; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
+**Applies to:** postings (`apps/erp/app/modules/*/*.service.ts`) taking record ids in the input; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
 
 ## A "did my job finish?" baseline must include the rows a FAILED run left behind
 
@@ -1527,7 +1527,7 @@ full-screen ERP route.
 
 **Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
 
-**Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/server-functions/src/**` writers of the constrained column.
+**Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; posting writers (`apps/erp/app/modules/*/*.service.ts`) of the constrained column.
 
 ## A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter
 
@@ -1567,7 +1567,7 @@ full-screen ERP route.
 
 **Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getErrorMessage` fallback arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and a server function's `input` schema), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
 
-**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed server-function wrappers, `packages/server-functions/src/errors.ts`, `packages/utils/src/errors.ts`.
+**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed posting wrappers, `packages/api/src/errors.ts`, `packages/utils/src/errors.ts`.
 
 ## A creation-time swap must be keyed by its provenance column at every later lookup
 
@@ -1587,7 +1587,7 @@ full-screen ERP route.
 
 **Rule:** A fix-up pass that runs after inserts takes the inserted row ids (collect them at every insert site of every flow) and filters on them, plus a guard on any state that means "this row's units are already committed" (`quantityIssued > 0`). Never derive the candidate set from the parent entity when some caller rebuilds only part of it.
 
-**Applies to:** `packages/server-functions/src/get-method/index.ts` post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
+**Applies to:** `getMethod` (`apps/erp/app/modules/production/production.service.ts`) post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
 
 ## A provenance column that records both directions of a swap cannot be trusted first
 
@@ -1843,7 +1843,7 @@ full-screen ERP route.
 
 **Rule:** For an `authenticated` JWT, require a non-empty `sub`, require it to match the requested actor id, and use that subject for permission lookup. Treat body actor ids as attribution inputs only for trusted service-role/API-key flows; they are never authentication evidence.
 
-**Applies to:** server functions' `authorize` / `ServerFnContext.fromClient` and any endpoint that accepts a caller/actor id alongside a bearer token.
+**Applies to:** `postingCaller` / `authorizePostingCaller` (`apps/erp/app/modules/shared/shared.service.ts`) and any endpoint that accepts a caller/actor id alongside a bearer token.
 
 ## Header-only financial documents must reject persisted detail
 
@@ -1992,7 +1992,7 @@ full-screen ERP route.
 
 **Rule:** Two layers, both required. (1) Any `json`/`jsonb` value written through Kysely in a server function goes through `toJson()` (`@carbon/database/json`, source `packages/database/src/json.ts`), which pre-serialises every non-null shape so the wire value is valid JSON text. (2) A validator for a rich-text column is never `z.any()`; use the shared `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`, which turns text, a JSON-encoded doc, or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the transform or zod infers a required key. When an edge function fails opaquely, read the function's own log (Supabase management API `function_logs`), not the caller's.
 
-**Applies to:** `packages/server-functions/src/**` Kysely inserts of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
+**Applies to:** posting Kysely inserts (`apps/erp/app/modules/*/*.service.ts`) of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
 
 **Follow-up (found later):** The original fix only covered the `quote` header row's `internalNotes`/`externalNotes` in `quoteToQuote`. The per-line copy loop in the SAME function (`quoteToQuote`'s `sourceQuoteLines.data` insert into `quoteLine`) still spread the source row raw (`{...line, quoteId, companyId}`), leaving `additionalCharges`, `configuration`, `customFields`, `externalNotes`, `internalNotes`, and `priceTrace` unserialised — and `quoteOperation.workInstruction` (NOT NULL jsonb) was copied raw too. Any quote whose line ever picked up one of these as a non-object (a string/array) fails the copy deterministically with the same "invalid input syntax for type json" 500 — which the caller's `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`) then retries blindly up to 3 times, and because this failure lands inside the SAME transaction as the `quote`/`quoteLine`/`quoteLinePrice` inserts it rolls back cleanly (no duplicate). **Rule addendum:** when applying this fix, grep the whole function for every `{...row}` spread and every raw `column: source.column` assignment into a jsonb column, not just the columns already known to be trouble — a partial rollout re-creates the exact bug it fixed, just narrower.
 
@@ -2350,11 +2350,11 @@ touch — `post-charge` next to `post-reimbursement`. Identical failure counts i
 untouched code means the environment, not the diff.
 
 Vitest reads `SUPABASE_DB_URL` from the root `.env` too, so DB-backed vitest suites
-(`databaseTest` in `packages/server-functions`) connect to the stale port: they do not skip, because the host is still local. Export the
+(`databaseTest` in `apps/erp/test/database/fixtures/local-database.ts`) connect to the stale port: they do not skip, because the host is still local. Export the
 worktree's URL before you run them:
 `export SUPABASE_DB_URL="$(grep -h '^SUPABASE_DB_URL' .env.local | cut -d= -f2- | tr -d '"')"`.
 
-**Applies to:** DB-backed tests (`packages/server-functions/src/**` fixtures, vitest `databaseTest`); any `pnpm db:check:*` or psql work inside
+**Applies to:** DB-backed tests (`apps/erp/test/database/fixtures/`, vitest `databaseTest`); any `pnpm db:check:*` or psql work inside
 a Conductor worktree.
 
 ## The `@carbon/ee` barrel boots the server env — four places that breaks
@@ -2368,9 +2368,12 @@ Consumers across `@carbon/jobs`, `apps/erp` and tests needed the registry lookup
 the FULL server env at import time. So a plain `import … from "@carbon/ee"`
 fails in four distinct ways, each with a different symptom:
 
-1. **In a `*.service.ts`** — these are re-exported through the module barrel that
-   client components import, so they are browser-bundled. The build fails with
-   "server-only module referenced by client". (`accounting.service.ts` cannot use
+1. **In a `*.service.ts`** — these were re-exported through the module barrel that
+   client components import, so they were browser-bundled. The build fails with
+   "server-only module referenced by client". (The barrels are gone since
+   2026-10-16; a service file reaches the browser now only through a route
+   component that uses one of its values — see "A server-only value in a route
+   component, or a dropped side-effect import, fails only the production build".) (`accounting.service.ts` cannot use
    the registry at all; its id list stays hard-coded with a comment saying why.)
 2. **In a test** — `Error: INNGEST_SIGNING_KEY is not set` at import. Hit three
    times: a test importing the barrel directly, a test importing a module that
@@ -3142,7 +3145,7 @@ documents card crashed on `opportunity.id` (shown as "Couldn't load documents", 
 creates an opportunity for it in the same transaction. Nullable in the schema does not
 mean optional in the app.
 
-**Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
+**Applies to:** `apps/erp/app/modules/sales/sales.service.ts`, any Kysely/server-function writer
 of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backfill.sql`.
 
 ## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
@@ -3251,7 +3254,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Problem:** Every statement was its own PostgREST request (about 34 ms each), and a failure partway left quotes without lines or half a price list while the action still reported success. The checks that made the write safe (every line priced, the RFQ still Draft) lived in the route, so the API tool for the same operation skipped them.
 
-**Rule:** A write that spans tables is a server function (`packages/server-functions`) with one Kysely transaction. Its preconditions are checked inside it, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email.
+**Rule:** A write that spans tables is a posting (a building block in its module's `<module>.service.ts`) with one Kysely transaction. Its preconditions are checked inside it, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email.
 
 **Applies to:** any route action with more than one write; `finalize-purchasing-rfq`, `finalize-supplier-quote`.
 
@@ -3478,17 +3481,17 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 ## A value two layers must agree on lives once, in the client-safe pure module
 
-**Context:** The accounting enable wizard (ERP) and the `activate-accounting` server function both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
+**Context:** The accounting enable wizard (ERP) and `activateAccounting` (`accounting.service.ts`, ported from the `activate-accounting` server function) both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
 
 **Problem:** Until 2026-10-09 each layer kept its own copy. `MigrationClearingTable.tsx` defined `MIGRATION_CLEARING_TOLERANCE = 0.01` and `isMigrationClearingZero`. `activate-accounting/index.ts` defined a second `MIGRATION_CLEARING_TOLERANCE`. `accounting.server.ts` defined `ACTIVATION_CUTOVER_PARAM`. The copies matched, but nothing kept them matched. If one copy changes, the wizard offers an enable that the server refuses, or hides one that the server accepts. Typecheck cannot see a drift between two literals.
 
 **Rule:** Put a value that two layers must agree on in one place: the client-safe pure module that both layers already import. Export the predicate, not only the number, so every caller compares the same way. The accounting cutover keeps `MIGRATION_CLEARING_TOLERANCE`, `isMigrationClearingZero`, `MIGRATION_CLEARING_ACCOUNT_CLASS` and `ACTIVATION_CUTOVER_PARAM` in `@carbon/database/accounting-cutover` (commits 38602af774, b9f897608c, f1fe2b6c81). That module reads no database, so the browser can import it.
 
-**Applies to:** `packages/database/src/accounting-cutover.ts`; `apps/erp/app/modules/accounting/ui/Activation/MigrationClearingTable.tsx`; `apps/erp/app/routes/x+/accounting+/activation.enable.tsx`; `packages/server-functions/src/activate-accounting/index.ts`; any check that a wizard previews and a server function enforces.
+**Applies to:** `packages/database/src/accounting-cutover.ts`; `apps/erp/app/modules/accounting/ui/Activation/MigrationClearingTable.tsx`; `apps/erp/app/routes/x+/accounting+/activation.enable.tsx`; `apps/erp/app/modules/accounting/accounting.service.ts`; any check that a wizard previews and a posting enforces.
 
 ## A detector and the builder it feeds share one zero-value rule
 
-**Context:** The accounting enable, and the "Write missing journals" repair, find legacy documents: posted on or after the cutover with no journal (`packages/database/src/legacy-documents.ts`). A builder then writes each document's journal (`packages/server-functions/src/activate-accounting/legacy/`). After that, the enable's re-cost (`activate-accounting/recost.ts`) adjusts the inventory journal pair of each outbound movement whose cost changed.
+**Context:** The accounting enable, and the "Write missing journals" repair, find legacy documents: posted on or after the cutover with no journal (`packages/database/src/legacy-documents.ts`). A builder then writes each document's journal (`apps/erp/app/modules/accounting/accounting.service.ts`). After that, the enable's re-cost (`activate-accounting/recost.ts`) adjusts the inventory journal pair of each outbound movement whose cost changed.
 
 **Problem:** The detection and the builders used different zero rules, in both directions:
 
@@ -3497,9 +3500,9 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 Commit b9f897608c removed zero-value documents from the detection. Commits b9f897608c and 188a710e24 made every outbound cost row write its pair, at zero too.
 
-**Rule:** Write the zero rule once and apply it on both sides. If the builder writes no line for a document, the detection leaves the document out. If a later step adjusts a line, the builder writes that line even at zero. Pin the pair with a test that runs the detection, the builder, and the detection again: the second detection must find nothing (`activate-accounting/legacy/detection.test.ts`).
+**Rule:** Write the zero rule once and apply it on both sides. If the builder writes no line for a document, the detection leaves the document out. If a later step adjusts a line, the builder writes that line even at zero. Pin the pair with a test that runs the detection, the builder, and the detection again: the second detection must find nothing (`apps/erp/test/database/activate-accounting/legacy/detection.test.ts`).
 
-**Applies to:** `packages/database/src/legacy-documents.ts`; `packages/server-functions/src/activate-accounting/legacy/*`; `packages/server-functions/src/activate-accounting/recost.ts`; `valueMovement` in `packages/server-functions/src/lib/post-adjustment.ts`; any detect-then-repair pair.
+**Applies to:** `packages/database/src/legacy-documents.ts`; `apps/erp/app/modules/accounting/accounting.service.ts`; `apps/erp/app/modules/accounting/accounting.service.ts`; `valueMovement` in `apps/erp/app/modules/shared/shared.service.ts`; any detect-then-repair pair.
 
 ## A migration that re-scopes companies uses the company test of the migration it follows
 
@@ -3519,7 +3522,7 @@ Commit b9f897608c removed zero-value documents from the detection. Commits b9f89
 
 **Rule:** When you remove a flag, read every condition that used the flag. A null check that meant "feature off" becomes a silent error check when the flag goes. Turn a failed read into a throw before any write. Keep only business conditions, such as `cost > 0`, in the `if`.
 
-**Applies to:** `packages/server-functions/src/post-shipment/index.ts` (return shipments); `packages/server-functions/src/post-receipt/index.ts` (sales return receipt); any flag removal, such as `accountingEnabled` or a plan gate.
+**Applies to:** `apps/erp/app/modules/inventory/inventory.service.ts` (return shipments); `apps/erp/app/modules/inventory/inventory.service.ts` (sales return receipt); any flag removal, such as `accountingEnabled` or a plan gate.
 
 ## The pre-commit Lingui extract reads the working tree, not the commit
 
@@ -3615,7 +3618,7 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
 
-**Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `packages/server-functions/src/apply-account-import/`.
+**Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `applyAccountImport` (`apps/erp/app/modules/accounting/accounting.service.ts`) and its live test `apps/erp/test/database/apply-account-import.test.ts`.
 
 ## Committing with the hook off skips Biome too
 
@@ -3668,7 +3671,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Rule:** Leave an item out only when the sub-ledger can say it is closed: an invoice is marked Paid the day before the cutover by the enable. Refuse it when Carbon settles it on or after the cutover (`settledFromCutoverIds`). Any other item type (memo, payment, WIP, lease, inventory, fixed asset) has no such state and stays in the opening journal.
 
-**Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `packages/server-functions/src/activate-accounting/`.
+**Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `apps/erp/app/modules/accounting/accounting.service.ts`.
 
 ## A second foreign key between two tables breaks every PostgREST embed between them
 
@@ -3699,6 +3702,69 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## A text replace on a function name also renames its prefix siblings
+
+**Context:** The service-function migration (2026-10-16) renamed thousands of call sites with scripts.
+
+**Problem:** A string or regex replace of `getJob` also matched `getJobs`, `getJobOperation` and every other name that starts with it, and matched the name inside strings and comments. One pass also left a stray suffix on a public name (`createSupplierInteractionLineDocumentUploadUrlTool`), which renamed an MCP tool without anyone asking for it.
+
+**Rule:** Rename code through ts-morph references (`findReferencesAsNodes`, `rename`), never through text. After a mass rename, diff the published tool names against main (`tool-manifest.digest.json`) and explain every added and removed name.
+
+**Applies to:** codemods over `apps/erp/app/modules/**` and any script that renames exports.
+
+## A mock of a function in the same file does not intercept
+
+**Context:** The migration moved callers into the same module file as the functions they call (2026-10-16).
+
+**Problem:** `vi.mock` replaces a module's exports for importers in other files. A call from one function to another inside the same file goes to the real function, so tests that mocked the callee started calling the database, or passed while testing nothing.
+
+**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing-no-mock-theater.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
+
+**Applies to:** tests under `apps/erp/test/` and `apps/erp/app/modules/**`.
+
+## ts-morph re-resolves the whole program after every edit
+
+**Context:** The barrel-removal codemod (2026-10-16) resolved each import's target, edited it, then resolved the next one.
+
+**Problem:** Each edit invalidates the type checker, so the next symbol lookup rebuilt the program. The script took many minutes for what should take seconds.
+
+**Rule:** In a ts-morph codemod, resolve everything first (symbols, targets, references) into plain data, then make all the edits, then save once.
+
+**Applies to:** scratch codemods using ts-morph over the ERP project.
+
+## zsh does not split an unquoted variable into words
+
+**Context:** Running Biome on a list of changed files held in a shell variable (2026-10-16).
+
+**Problem:** In zsh, `biome check $files` passes the whole list as ONE argument. Biome reported "File name too long" and "No files were processed", which reads as a Biome bug, not a shell one.
+
+**Rule:** Pass file lists through `xargs` (`git diff --name-only | xargs biome check`) or use zsh's `${=files}`. Don't trust a tool error about a path until you have checked how the shell passed it.
+
+**Applies to:** every Bash call in this environment (the login shell is zsh).
+
+## A function redefinition forked from an old copy reverts every migration between
+
+**Context:** `20261014171619_receive-consumed-serial-units` (2026-10-15) changed one branch of `complete_job_to_inventory`. Its header says it was "forked from 20261006221601".
+
+**Problem:** two later migrations had redefined the function: `20261009010412` (every company posts job costing, Provisional before the cutover) and `20261014135003` (lock the production events a completion posts). The fork's `CREATE OR REPLACE` replaced the whole body, so both changes were silently undone: a company with no cutover got no Job Receipt journal, and a concurrent production-event post could double-post. The SQL tests that would have caught it either predated always-post or failed already and were not run.
+
+**Rule:** copy a function's body from its NEWEST definition (`grep -l "FUNCTION <name>" migrations | tail -1`), then diff your body against that one before writing the migration. The `function-redefinition-keeps-changes` check fails a redefinition that drops lines its predecessor added. Run the SQL tests that call the function (`scripts/run-local-accounting-check.ts psql -f …`).
+
+**Applies to:** any migration with `CREATE OR REPLACE FUNCTION` on a function defined more than once, especially the long posting functions (`complete_job_to_inventory`, `backflush_job_materials`).
+
+## A server-only value in a route component, or a dropped side-effect import, fails only the production build
+
+**Context:** The service-function migration (2026-10-16) made every `<module>.service.ts` server-only: it may import server-only packages (`@carbon/auth/auth.server`, `@carbon/ee/*.server`, `@carbon/jobs`).
+
+**Problem:** Two mistakes passed typecheck, the tests and the dev server, and broke only `react-router build`:
+
+1. A route component used a value from a `.service.ts` (`LOCK_PERIOD_TASK_NAME` in a close-period component). React Router strips a route's loader and action from the client build, not its component, so the service file and its server-only imports entered the browser graph and the build failed.
+2. A bare side-effect import (`import "./modules/carbon.server"`, `import "./zod.client"`) in a package whose `package.json` sets `"sideEffects": false`, or does not list the file. The production bundler dropped the import, so every `carbon()` call threw in production and `z.config({ jitless: true })` never ran. The dev server does not tree-shake, so nothing showed it locally.
+
+**Rule:** A value the browser uses goes in `<module>.utils.ts` (or `models.ts` / `types.ts`), never in `.service.ts` or `.server.ts`. A file imported only for its side effects is listed in its package's `sideEffects` array. The `no-server-code-in-client` check (ERP components, hooks, `ui/`, client-safe module files and the browser half of routes) and the `side-effect-import-declared` check enforce both. Run `pnpm --filter erp build` before you call a change to imports or module files done.
+
+**Applies to:** ERP and MES modules and routes; every `package.json` that sets `sideEffects`.
 
 ---
 
@@ -3763,3 +3829,93 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Keep a troubleshooting heading to one message. Use `…` for the part that varies and list the variants in the body. After you edit a long reference page, run `apps/erp/app/modules/agent/agent.kb.test.ts` as well as the docs checks.
 
 **Applies to:** `docs/content/docs/**`, `apps/erp/app/modules/agent/agent.kb.ts`.
+
+## A dynamic `.server` import fails the client build too
+
+**Context:** The MES services that call the ERP (`operations.service.ts`, `inventory.service.ts`) are also imported by client components, for their client-safe functions. The signing helper they need uses `node:crypto`.
+
+**Problem:** React Router's `react-router:dot-server` plugin checks every `resolveId` in the client build, static and dynamic. Moving a `.server` module behind `await import(…)` does not hide it. The production build still refuses it, and typecheck and the dev server do not show the error.
+
+**Rule:** A helper that a client-graph module must load is not named `.server`. Give it a plain name (`@carbon/api/internal-call`). Load it lazily with `await import(…)` inside the server function, so the browser never evaluates it. Prove it with the production build of the app.
+
+**Applies to:** `apps/mes/app/services/*.service.ts`, `apps/erp/app/modules/*/*.service.ts`, any package subpath they import.
+
+## `@carbon/kv` answers null for a miss and for an outage
+
+**Context:** The ERP's internal postings endpoint used `redis.set(key, "1", "PX", ttl, "NX")` to refuse a nonce it had seen.
+
+**Problem:** `withResilience` (`packages/kv/src/resilient.ts`) turns a Redis failure or a 2-second timeout into the command's fallback, `null`. `SET NX` also answers `null` for a key that exists. The two cases looked the same, so a Redis outage refused every MES posting as a replay.
+
+**Rule:** Never read a `null` from `@carbon/kv` as "the key is there". Read the key back to tell the cases apart. Decide on purpose whether the feature fails open or closed when Redis is down, and log it.
+
+**Applies to:** every `@carbon/kv` caller that branches on a command's result.
+
+## Type a cross-app call by what the receiver accepts
+
+**Context:** MES calls ERP postings over HTTP, and the ERP refuses any posting or `type` value that is not in `MES_POSTINGS`.
+
+**Problem:** The first allowlist came from a hand inventory of the MES call sites and missed `issue`/`trackedEntitiesToOperation`. Every check passed. The miss would have shown only in production, as a 404 when a user issued tracked entities to an operation.
+
+**Rule:** Derive the caller's input type from the receiver's allowlist (`ErpPostingInput`, `apps/mes/app/services/erp.ts`). Then a value that the receiver refuses fails the caller's typecheck. Keep casts out of those call sites, or check the values behind each cast by hand.
+
+**Applies to:** `apps/mes/app/services/erp.ts`, `packages/api/src/postings.ts`, any other server-to-server contract.
+
+## A module first loaded inside a `vi.mock` factory binds the unmocked module
+
+**Context:** ERP unit tests mock `shared.service` with `importOriginal` and override `invokePosting`. `shared.service.ts` imports other module services (`resources`, `sales`, `production`), and they import it back.
+
+**Problem:** `importOriginal` evaluates the real `shared.service`, and that evaluates its imports. A module whose first evaluation happens there binds the real `shared.service`, because the mock is not built yet. Its calls then skip the mock. A new import edge elsewhere (`inventory.service` → `production.service`) changed the load order and broke tests that had passed for weeks.
+
+**Rule:** Before the module under test, load the service that makes the mocked call: `await import("../app/modules/<module>/<module>.service")`, with a comment that says why. If a mock does not intercept, check the import order first.
+
+**Applies to:** `apps/erp/test/*.test.ts`, `apps/erp/app/modules/**/*.test.ts` that mock `shared.service`.
+
+## An Inngest wait holds no concurrency slot, and a retry replays memoized steps
+
+**Context:** `runAssemblerJob` (`packages/jobs/src/inngest/functions/tasks/assembler-client.ts`) used to poll the assembler inside one `step.run` and throw when its budget ran out.
+
+**Problem:** Two assumptions were wrong. A comment said a waiting run holds a slot of the function's `concurrency`; `step.waitForEvent`, `step.sleep` and `step.invoke` hold none. And a throw outside a step does not redo the work: the retry replays every memoized step from its stored output, so the same check throws again with the same input.
+
+**Rule:** Wait with `step.waitForEvent` in slices, and poll once per slice in its own step. To retry the external work, do it in a new step (a resubmit with a new step id), never by throwing. Charge an action's time budget from when the service starts it, not from the submit.
+
+**Applies to:** any Inngest function that waits on an external service.
+
+## Check a column's default before you filter on NULL
+
+**Context:** The `queue_model_pipeline` handler first selected new models `WHERE "optimizeStatus" IS NULL`.
+
+**Problem:** `modelUpload.optimizeStatus` is `NOT NULL DEFAULT 'Idle'`, so the filter matched no row and the handler queued nothing. The insert succeeded and nothing failed.
+
+**Rule:** Read the column definition in the newest migration (or `\d` on the local database) before you write `IS NULL` against it. Test a new handler in a rolled-back transaction and assert the queued `net.http_request_queue` body.
+
+**Applies to:** SQL handlers, sweepers and views that pick rows by a status column.
+
+## An event sent at commit races every write the caller makes after the insert
+
+**Context:** New `modelUpload` rows start `model-optimize` from a statement handler, and pg_net sends the event when the transaction commits.
+
+**Problem:** The part and tool forms inserted the row and uploaded the file at the same time (`Promise.all`). The quote drop inserted the row, then staged the file. In both, the optimise could start before its file existed and fail as "file not found".
+
+**Rule:** When an insert starts a job, finish everything that job reads before the insert: stage the file, then insert the row. Keep a backstop for an event that is lost (the reaper resends the start once).
+
+**Applies to:** any table whose statement handler or interceptor sends an Inngest event.
+
+## A service-role job must check that a stored path belongs to the row's company
+
+**Context:** The model jobs found a raw file by the company named in `modelUpload.modelPath` and read storage as the service role.
+
+**Problem:** The forms insert `modelUpload` under RLS, and RLS does not check `modelPath`. So a row in one company could name another company's staged upload in the shared `temp-staging` bucket, and the optimise would copy that file into the first company's bucket.
+
+**Rule:** A job that reads storage as the service role takes the company from the row, never from the path, and refuses a path outside `${companyId}/` (`resolveModelSourceBucket`). Test it with a real object and a positive control, so the test fails when the guard goes.
+
+**Applies to:** `packages/jobs` storage reads keyed by a path a user can write, and every copy that picks a bucket (`copyAssetsToBackup` took the source bucket from the first path segment until 2026-10-17).
+
+## A long poll inside an Inngest step holds a concurrency slot for its whole wait
+
+**Context:** `runAssemblerJob` polled the assembler with `GET /v1/jobs/{id}?wait=25` inside a `step.run`.
+
+**Problem:** Inngest counts an executing step against its function's concurrency key. Each poll held a slot of the shared assembler key for up to 35 seconds, so a burst of uploads filled the key with waits, not work.
+
+**Rule:** Inside a step, make the request short. Wait between requests with `step.waitForEvent` or `step.sleep`, which hold no slot. Treat a 5xx answer as "unreachable", not as a lost job.
+
+**Applies to:** every Inngest function that polls an external service.

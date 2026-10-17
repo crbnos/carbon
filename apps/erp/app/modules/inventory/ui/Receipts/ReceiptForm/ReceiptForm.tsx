@@ -14,14 +14,12 @@ import {
   Select
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type {
-  ReceiptSourceDocument,
-  receiptStatusType
-} from "~/modules/inventory";
+import type { receiptStatusType } from "~/modules/inventory/inventory.models";
 import {
   receiptSourceDocumentType,
   receiptValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
+import type { ReceiptSourceDocument } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import useReceiptForm from "./useReceiptForm";
 

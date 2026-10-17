@@ -36,7 +36,7 @@ import {
 const logger = getLogger("erp", "mcp");
 
 // The MCP protocol server — the commercial feature body. The app's dispatch,
-// tool manifest, blocked-tool predicate and generated catalog are INJECTED via
+// tool manifest and generated catalog are INJECTED via
 // `deps` (they derive from `apps/erp`'s `~/modules/*` and cannot move into a
 // package); the entitlement LOCK lives here so serving MCP requires executing
 // commercial code. `Ctx` is the caller's full auth context (the app's
@@ -52,7 +52,6 @@ export async function createMcpServer<Ctx extends McpContext>(
     callOperation,
     operationsByName,
     isListOperation,
-    isMcpBlockedTool,
     catalogSearch,
     toolMetadata
   } = deps;
@@ -131,20 +130,13 @@ export async function createMcpServer<Ctx extends McpContext>(
           missing.push(toolName);
           continue;
         }
-        // A deprecated alias resolves to its replacement's entry (the app's
-        // `OPERATION_ALIASES`), so the names differ — say so, once, up front.
-        const deprecation =
-          meta.name === toolName
-            ? ""
-            : `'${toolName}' is deprecated — it now runs '${meta.name}'. Call '${meta.name}' instead.\n\n`;
         sections.push(
-          deprecation +
-            formatToolDescription(meta, {
-              isList: isListOperation(meta),
-              sibling: meta.paginates
-                ? null
-                : paginatingSibling(meta.name, (n) => operationsByName.get(n))
-            })
+          formatToolDescription(meta, {
+            isList: isListOperation(meta),
+            sibling: meta.paginates
+              ? null
+              : paginatingSibling(meta.name, (n) => operationsByName.get(n))
+          })
         );
       }
 
@@ -199,18 +191,6 @@ export async function createMcpServer<Ctx extends McpContext>(
 
       logger.info("call_tool invoked", { name, arguments: args });
 
-      if (isMcpBlockedTool(name)) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Tool disabled: ${name} is not available via MCP.`
-            }
-          ],
-          isError: true
-        };
-      }
-
       // List reads apply no limit unless the caller passes one (the schema's
       // `default: 100` is documentation, not enforcement — an argless call
       // returned up to PostgREST's 1000-row cap). MCP-only; the other
@@ -233,21 +213,15 @@ export async function createMcpServer<Ctx extends McpContext>(
           args && typeof args === "object" && !Array.isArray(args)
             ? (args as Record<string, unknown>)
             : null;
-        const wrapped =
-          body?.args &&
-          typeof body.args === "object" &&
-          !Array.isArray(body.args)
-            ? (body.args as Record<string, unknown>)
-            : null;
         if (meta.paginates) {
           if (!body) {
             // The argless call is the worst offender — no limit at all.
             args = { limit: MCP_DEFAULT_LIMIT, offset: 0 };
           } else {
-            fillPagination(wrapped ?? body);
+            fillPagination(body);
           }
         } else {
-          const source = wrapped ?? body ?? {};
+          const source = body ?? {};
           const limit = source.limit;
           const offset = source.offset;
           mcpPaging = {
@@ -263,8 +237,8 @@ export async function createMcpServer<Ctx extends McpContext>(
         }
       }
 
-      // Runs through the canonical oRPC dispatch (gate middleware included); the
-      // Supabase envelope arrives already unwrapped to `data`/`count`.
+      // Runs the operation's oRPC procedure (gate included); a list arrives as
+      // `data` with its `count`.
       const start = performance.now();
       const result = await callOperation(name, ctx, args);
       const responseTime = performance.now() - start;
@@ -297,10 +271,7 @@ export async function createMcpServer<Ctx extends McpContext>(
         content: [
           {
             type: "text" as const,
-            text:
-              result.errorKind === "database"
-                ? result.error
-                : `Error: ${result.error}`
+            text: `Error: ${result.error}`
           }
         ],
         isError: true

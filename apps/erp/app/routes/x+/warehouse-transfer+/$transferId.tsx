@@ -15,7 +15,7 @@ import {
   getWarehouseTransfer,
   getWarehouseTransferLines,
   getWarehouseTransferRelatedItems
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import {
   WarehouseTransferDocuments,
   WarehouseTransferHeader

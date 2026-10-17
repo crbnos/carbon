@@ -15,15 +15,17 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { DeferredFiles, Documents } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { IssueAssociationNode } from "~/modules/quality";
+import {
+  isIssueLocked,
+  issueValidator
+} from "~/modules/quality/quality.models";
 import {
   getIssue,
   getIssueActionTasks,
   getIssueReviewers,
-  isIssueLocked,
-  issueValidator,
   updateIssue
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
+import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   ActionTasksList,
   AssociatedItemsList,
@@ -64,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -100,6 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = await updateIssue(client, {
     id,
+    companyId,
     nonConformanceId,
     name: validation.data.name,
     priority: validation.data.priority,

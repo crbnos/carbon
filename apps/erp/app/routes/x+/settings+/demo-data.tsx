@@ -15,18 +15,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import { SettingsPageHeading } from "~/components/SettingsPage";
-import type { CompanyTemplateRun } from "~/modules/settings";
-import { getCompanyTemplateRun } from "~/modules/settings";
-import { purgeCorruptedRows } from "~/modules/settings/backups.server";
+import type { CompanyTemplateRun } from "~/modules/settings/backups.service";
+import { getCompanyTemplateRun } from "~/modules/settings/backups.service";
 import {
   finalizeCompanyTemplate,
+  purgeCorruptedRows,
   revertCompanyTemplate,
   startCompanyTemplate
-} from "~/modules/settings/demoData.server";
+} from "~/modules/settings/settings.service";
 import {
   TemplateCards,
   TemplateReviewRow
 } from "~/modules/settings/ui/DemoData";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export const handle = {
@@ -166,7 +167,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // not one transaction, so the messages say WHICH half happened.
       let deleted: Array<{ table: string; rows: number }>;
       try {
-        ({ deleted } = await purgeCorruptedRows(companyId));
+        ({ deleted } = await purgeCorruptedRows(
+          getDatabaseClient(),
+          companyId
+        ));
       } catch (err) {
         return {
           success: false,

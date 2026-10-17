@@ -51,12 +51,9 @@ vi.mock("@carbon/lib/party-contact.server", () => ({
   checkPartyContactRequirement: (...args: unknown[]) =>
     contactRequirement(...args)
 }));
-vi.mock("@carbon/server-functions", () => ({
-  serverFns: {
-    system: () => ({
-      invoke: (_name: string, input: unknown) => postInvoice(input)
-    })
-  }
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, _handles: unknown, input: unknown) =>
+    postInvoice(input)
 }));
 vi.mock("@carbon/lib/workflows", () => ({
   raiseMoment: (...args: unknown[]) => raiseMoment(...args)

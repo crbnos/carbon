@@ -61,8 +61,7 @@ search_tools({ classification: "READ" }) // Find read-only tools
 KEY PATTERNS:
 - companyId/userId are auto-filled
 - call_tool.arguments is always a JSON object (never a stringified JSON blob)
-- Pass parameters flat in "arguments"; a legacy { args: {…} } envelope is still
-  accepted, but describe_tool shows the shape to send
+- Pass parameters flat in "arguments", exactly as describe_tool lists them
 - Responses: { data, error?, count? }
 - Results omit null fields — an absent field means null
 - List reads default to ${MCP_DEFAULT_LIMIT} rows; pass limit/offset to page

@@ -52,11 +52,11 @@ import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import {
-  type ConfigurationParameter,
-  type ConfigurationParameterGroup,
-  getConfigurationParameters
-} from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup
+} from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -71,11 +71,13 @@ const QuoteMakeMethodTools = () => {
   const { quoteId, lineId, methodId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
-  const fetcher = useAction<{ error: string | null }>({
+  // Get Method answers with a service result, Save Method with an error
+  // string.
+  const fetcher = useAction<{ error: string | { message: string } | null }>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error);
-      }
+      const error = data?.error;
+      const message = typeof error === "string" ? error : error?.message;
+      if (message) toast.error(message);
     }
   });
   const routeData = useRouteData<{

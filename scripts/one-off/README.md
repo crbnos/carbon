@@ -58,8 +58,7 @@ environment, which is why the runner spawns each script rather than importing it
    needs Postgres itself (a Kysely transaction, a server function) reads
    `SUPABASE_DB_URL` (see above). When it is absent, the script logs why and
    exits `75`, so the workspace runs it on a later deploy rather than failing
-   this one — `journal-legacy-documents.ts` is the example. Say so in the
-   script's header. Support `--dry-run` if the script writes anything.
+   this one. Say so in the script's header. Support `--dry-run` if the script writes anything.
 3. Ship it **alongside a migration**, or it will not deploy on its own — the
    workflow only triggers on `packages/database/supabase/**` changes. Without
    one, run the workflow manually (`workflow_dispatch`).

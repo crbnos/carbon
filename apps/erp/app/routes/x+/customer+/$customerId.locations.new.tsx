@@ -10,10 +10,8 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  customerLocationValidator,
-  insertCustomerLocation
-} from "~/modules/sales";
+import { customerLocationValidator } from "~/modules/sales/sales.models";
+import { insertCustomerLocation } from "~/modules/sales/sales.service";
 import { CustomerLocationForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

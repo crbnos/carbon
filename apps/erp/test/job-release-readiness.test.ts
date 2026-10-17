@@ -48,7 +48,16 @@ function cappedClient(tables: Record<string, Record<string, unknown>[]>) {
 describe("getJobReleaseReadiness", () => {
   it("reads materials and operations past the row cap", async () => {
     const { client } = cappedClient({
-      job: [{ id: "job-1", jobId: "J000001", status: "Planned", item: null }],
+      job: [
+        {
+          id: "job-1",
+          jobId: "J000001",
+          status: "Planned",
+          quantity: 5,
+          scrapQuantity: 0,
+          item: null
+        }
+      ],
       jobMakeMethod: [{ id: "root", jobId: "job-1" }],
       jobMaterialWithMakeMethodId: [
         ...Array.from({ length: ROW_CAP }, () => ({
@@ -111,6 +120,8 @@ describe("getJobReleaseReadiness", () => {
         jobId: "J000001",
         status: "Planned",
         manufacturingBlocked: false,
+        nothingToMake: false,
+        makeToAssetError: null,
         missingAssemblies: [
           { makeMethodId: "sub-late", description: "Late Bracket" }
         ],

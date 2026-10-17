@@ -6,6 +6,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -87,12 +88,12 @@ import {
 } from "~/components/SortableList";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { methodType, sourcingType } from "~/modules/shared/shared.models";
 import type {
   MethodItemType,
   MethodType,
   SourcingType
-} from "~/modules/shared";
-import { methodType, sourcingType } from "~/modules/shared";
+} from "~/modules/shared/types";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -202,6 +203,7 @@ const BillOfMaterial = ({
   const [items] = useItems();
   const itemName = getItemById(items, makeMethod.itemId)?.name;
   const fetcher = useFetcher<{}>();
+  const deleteMaterialFetcher = useAction();
   const [searchParams] = useSearchParams();
 
   const makeMethodId = makeMethod.id;
@@ -319,7 +321,7 @@ const BillOfMaterial = ({
     if (savedIds.length > 0) {
       const formData = new FormData();
       for (const id of savedIds) formData.append("id", id);
-      fetcher.submit(formData, {
+      deleteMaterialFetcher.submit(formData, {
         method: "post",
         action: path.to.deleteMethodMaterials
       });

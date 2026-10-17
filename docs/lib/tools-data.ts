@@ -15,6 +15,9 @@ export interface ToolItem {
   /** Response `data` shape, reflected from the service's return type. Absent when
    *  the return type yielded nothing usable (an `any`, a void, an opaque shape). */
   responseSchema?: unknown;
+  /** The HTTP path under /api/v1 when it is not `/{module}/{id}`: a service
+   *  function's router path (`/production/job/cancel`). */
+  path?: string;
 }
 export interface ToolModule {
   name: string;
@@ -35,6 +38,12 @@ export const toolModules: ToolModule[] = (raw as ToolData).modules;
  * an already-long identifier. The FULL name stays wherever it is callable (the
  * `call_tool` snippet, the page title) since that is the string you actually send.
  */
+/** An operation's name split for display: `getJobs` → `get` + `Jobs`. */
+export function splitOperationName(label: string): { verb: string; entity: string } {
+  const at = label.search(/[A-Z]/);
+  return at <= 0 ? { verb: label, entity: "" } : { verb: label.slice(0, at), entity: label.slice(at) };
+}
+
 export function operationLabel(name: string, moduleSlug: string): string {
   return name.startsWith(`${moduleSlug}_`)
     ? name.slice(moduleSlug.length + 1)
@@ -89,13 +98,19 @@ export interface ToolNavModule {
   slug: string;
   tools: ToolNavItem[];
 }
-// Modules and their tools are listed alphabetically in the nav.
+// Modules are listed alphabetically; a module's operations by the record they
+// act on, so `createJob`, `deleteJob` and `getJob` sit together.
+const byEntity = (moduleSlug: string) => (a: { name: string }, b: { name: string }) => {
+  const x = splitOperationName(operationLabel(a.name, moduleSlug));
+  const y = splitOperationName(operationLabel(b.name, moduleSlug));
+  return x.entity.localeCompare(y.entity) || x.verb.localeCompare(y.verb);
+};
 export const toolsNavTree: ToolNavModule[] = toolModules
   .map((m) => ({
     name: m.name,
     slug: m.slug,
     tools: m.tools
       .map((t) => ({ name: t.name, slug: t.slug, classification: t.classification }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort(byEntity(m.slug)),
   }))
   .sort((a, b) => a.name.localeCompare(b.name));

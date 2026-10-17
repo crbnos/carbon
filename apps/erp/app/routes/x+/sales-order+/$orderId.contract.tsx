@@ -8,9 +8,9 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { createContractFromSalesOrderValidator } from "~/modules/sales";
-import { createContractFromSalesOrder } from "~/modules/sales/sales.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { createContractFromSalesOrderValidator } from "~/modules/sales/sales.models";
+import { createContractFromSalesOrder } from "~/modules/sales/sales.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

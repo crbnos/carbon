@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { unitOfMeasureValidator } from "~/modules/items/items.models";
 import {
   getUnitOfMeasure,
-  unitOfMeasureValidator,
   upsertUnitOfMeasure
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";

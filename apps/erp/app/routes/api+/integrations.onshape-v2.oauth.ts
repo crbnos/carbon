@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
 import type { LoaderFunctionArgs } from "react-router";
-import { completeOnshapeAuthorization } from "~/modules/settings/onshape-oauth.server";
+import { completeOnshapeAuthorization } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

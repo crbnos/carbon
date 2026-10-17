@@ -1,6 +1,8 @@
 ---
 paths:
   - "apps/erp/app/modules/**/*.service.ts"
+  - "apps/erp/app/modules/**/*.server.ts"
+  - "apps/erp/app/modules/*.server.ts"
   - "apps/mes/app/services/**"
 ---
 
@@ -13,26 +15,81 @@ supabase-js, RPCs, generated types) lives in
 
 ## Where they live
 
-- **ERP**: `apps/erp/app/modules/{module}/{module}.service.ts`
-  (e.g. `apps/erp/app/modules/sales/sales.service.ts`,
-  `apps/erp/app/modules/inventory/inventory.service.ts`). Re-exported via the module
-  barrel `index.ts`; import from the module root (`~/modules/sales`), not the deep file.
+- **ERP**: every operation is a `defineServiceFn` const in
+  `apps/erp/app/modules/{module}/{module}.server.ts`. The queries and writes it
+  calls are building blocks in `{module}.service.ts`. File layout, naming and
+  the checks that enforce them: [module-files.md](module-files.md).
 - **MES**: flat under `apps/mes/app/services/{name}.service.ts`
-  (e.g. `apps/mes/app/services/people.service.ts`,
-  `apps/mes/app/services/inventory.service.ts`). **Not** under a `modules/` tree.
-  MES also has `{name}.server.ts` files in the same dir for server-only helpers —
-  hence the `apps/mes/app/services/**` glob rather than `*.service.ts`.
+  (e.g. `apps/mes/app/services/people.service.ts`). **Not** under a `modules/`
+  tree. MES also has `{name}.server.ts` files in the same dir for server-only
+  helpers, hence the `apps/mes/app/services/**` glob.
 
-ERP module layout for context:
+## Operations: `defineServiceFn`
 
+Each operation a route, the API, MCP or a workflow can run is one
+`defineServiceFn` const (`@carbon/api/service-fn.server`), so a tool does
+exactly what the button does. Plan:
+`.ai/plans/2026-10-15-service-function-migration.md`.
+
+```ts
+/**
+ * Cancel a job.                      ← the title (API, MCP)
+ *
+ * @remarks
+ * What it does, in order.            ← the description
+ *
+ * @mcp destructive                   ← published, labelled destructive
+ */
+export const cancelJob = defineServiceFn({
+  input: z.object({ jobId: z.string() }),
+  permission: { update: "production" },
+  async run(ctx, { jobId }) {
+    // ...
+    if (!update.updated) return ctx.error("conflict", "The job's status changed");
+    return { jobId };
+  }
+});
 ```
-apps/erp/app/modules/{module}/
-├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # data operations (this file's subject)
-├── {module}.server.ts    # server-only helpers (optional)
-├── index.ts              # barrel re-export
-└── ui/                   # components
-```
+
+- **Result**: callers get `{ data, error }`, never a throw. `run` returns its
+  value or `ctx.error(category, message, cause)`; a throw becomes `internal`
+  with the cause logged and withheld. The error union is inferred.
+- **Gate**: every ENTRY call is checked against `permission` for its actor
+  (`user` claims, `apiKey` scopes; `system` passes). `{}` means company
+  membership, `"system"` admits only the system actor, `{ by, rules }` keys
+  the rule on an input field. A call made from inside another function's
+  `run` is not checked again.
+- **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
+  `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
+  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required)` checks
+  a permission the data decides (a posting mode, reopening a completed
+  transfer). Before an RLS-bypassing write keyed on an id the caller sent,
+  `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
+  a refusal unless the row is the company's.
+- **Transactions**: `ctx.transaction(async (tx) => …)` on `asSystem.pg`. A
+  returned `CarbonError` rolls back; a nested call joins the open
+  transaction; `tx.asCaller` throws, because that client is outside it.
+- **Routes**: `const api = await carbon(request)` (`@carbon/api/carbon.server`)
+  authenticates the caller and returns the router: `api.production.cancelJob(input)`
+  resolves to the result, its error a plain `{ category, message, status }`.
+  A route that needs the auth result for more than the call (a role gate, a
+  stream) builds the context with `serviceContext(auth)`
+  (`modules/service-context.server.ts`); a caller with no session (a public
+  share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
+- **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
+  `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
+  the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
+  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp destructive`
+  forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
+  an operation only when it is safe with nothing but its input: the API runs
+  the gate and `run`, nothing the route does around the call.
+- **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
+  Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
+  anything but service functions in `{module}.server.ts`.
+
+## Building blocks: `{module}.service.ts`
+
+The rest of this file is about the building blocks an operation calls.
 
 ## The function shape
 
@@ -179,26 +236,20 @@ export async function updateQuoteLineOrder(
 Because Kysely bypasses RLS, a Kysely service **always** scopes by `companyId` — and by the
 parent document id when the row ids come from the request — in the SQL itself. Never a per-row
 query in a loop: `updateSortOrder` (`modules/shared/sort-order.ts`) is one
-`UPDATE … FROM (VALUES …)` that throws, rolling back, if any id falls outside that scope. Name
-the tenant params `companyId` / `userId` so the API dispatcher injects them from the auth
-context rather than the body.
+`UPDATE … FROM (VALUES …)` that throws, rolling back, if any id falls outside that scope. The
+operation passes `ctx.company.id` and `ctx.auditUserId`, never values from its input.
 
 A single write is already atomic — don't reach for a transaction.
 
 **Never construct the Kysely client (or a `pg` pool) inside the service.** The service
-takes `db: Kysely<KyselyDatabase>` as an argument and nothing more — importing
-`@carbon/database/client`'s `getPostgresConnectionPool`/`getPostgresClient` or `kysely`'s
-`PostgresDriver` here (even behind a dynamic `import()`) pulls server-only code into the
-browser bundle, because `{module}.service.ts` is re-exported through the module barrel that
-client components import. Build the handle once in a `.server` file — `getDatabaseClient()`
-from `~/services/database.server` — import it in the **route action**, and pass it in. This
-is enforced by the `no-db-client-in-service` conformance check (`@carbon/checks`); the
-route-wiring example is in [database-patterns.md](database-patterns.md#transactions-kysely).
+takes `db: Kysely<KyselyDatabase>` as an argument and nothing more. Inside an operation that
+handle is `ctx.asSystem.pg` (or the `tx` of `ctx.transaction`). Enforced by the
+`no-db-client-in-service` conformance check (`@carbon/checks`).
 
 ## Calling out to other helpers
 
 - **Sequence numbers**: `getNextSequence(client, table, companyId)`
-  (`~/modules/settings`) calls the `get_next_sequence` RPC and returns `{ data, error }`
+  (`~/modules/settings/settings.service`) calls the `get_next_sequence` RPC and returns `{ data, error }`
   like any other service call — await and check `error` before using `data`. Note the arg
   order: `(client, table, companyId)`.
   A caller-supplied number (custom ID, API, MCP) needs no counter code: the
@@ -206,40 +257,6 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
   in its format.
 - **RPCs**: heavy/aggregate logic is `client.rpc("fn_name", { ... })`; the function is
   defined in a migration. See database-patterns.md.
-
-## Exposing a service function as an API tool
-
-An exported function of an ERP `{module}.service.ts` becomes an MCP / v1-API
-tool only when its doc comment declares it (`pnpm run generate:mcp` reads the
-tags; the function's name decides nothing but the tool's name):
-
-```ts
-/**
- * Creates or updates a customer.
- * @mcp upsert
- */
-export async function upsertCustomer(…)
-```
-
-- **Verb**: `read`, `create`, `update`, `upsert`, `delete`, or `action` (a state
-  change that is not a row edit). It sets the permission the caller needs and the
-  audit fields the payload is handed. Add `destructive` after a write verb when
-  the call can remove rows the caller did not name.
-- Leave the tag off unless the function is safe to call with nothing but its
-  payload — whatever gate or orchestration its route performs does not run for
-  an API caller.
-- The first sentence of the doc comment is the tool's description. Write one.
-- An upsert that branches on `"createdBy" in payload` must let the API tell
-  create from update without being told: give the update shape an `id` the create
-  shape does not require, or declare the row it updates with
-  `@mcp key <table> <column>`.
-- Don't spread a payload into a write on a table the payload has extra keys for;
-  build the row. The dispatcher stamps `createdBy`/`updatedBy` onto the payload.
-- Generation fails, naming the function, when a declaration contradicts the body
-  (a `read` that writes, a delete without `destructive`).
-
-Full vocabulary: [mcp-tools-reference.md](mcp-tools-reference.md) and
-`apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts`.
 
 ## Naming conventions
 
@@ -255,13 +272,12 @@ Full vocabulary: [mcp-tools-reference.md](mcp-tools-reference.md) and
 
 ## Checklist
 
-- [ ] In the right place: ERP `modules/{module}/{module}.service.ts`, MES `services/*.service.ts`.
+- [ ] In the right place: an operation in `{module}.server.ts`, a building block in `{module}.service.ts`, MES `services/*.service.ts`.
 - [ ] First arg is `client: SupabaseClient<Database>` (or `db: Kysely<KyselyDatabase>` for transactions).
 - [ ] Returns the raw `{ data, error }` — does **not** throw, does **not** unwrap.
 - [ ] List queries scope `.eq("companyId", companyId)` and run `setGenericQueryFilters`.
 - [ ] `.select(...)` + `.single()`/`.maybeSingle()` after insert/update to return the row.
 - [ ] Update payloads wrapped in `sanitize(...)`.
 - [ ] Multi-row writes use a Kysely transaction (`db.transaction().execute`).
-- [ ] Exported from the module barrel (ERP).
 
 <!-- UNVERIFIED: exact set of tables wired into get_next_sequence (e.g. "salesOrder") not re-enumerated here — pass the live table/sequence name the caller uses. -->

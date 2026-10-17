@@ -394,6 +394,7 @@ for (const t of allTools) {
     description: t.description || "",
     schema: t.schema || {},
     responseSchema: t.responseSchema,
+    path: `/${t.serviceFn.path.join("/")}`,
   });
 }
 const toolModules = [...toolsByModule.entries()]

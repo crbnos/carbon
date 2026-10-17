@@ -39,9 +39,8 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
         let tracker = progress_store.start(&job_id);
-        eprintln!("[{job_id}] convert running");
+        eprintln!("[{job_id}] convert started");
         let started = Instant::now();
 
         // Declared-hash pre-check: a hit skips the source download entirely.
@@ -82,6 +81,14 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                 let _grant = admission
                     .acquire(admission::estimate_mb(http::file_len(&tmp).await))
                     .await;
+                // The wait may have been long: a job cancelled meanwhile is
+                // dropped before it takes the memory it was granted.
+                if jobs.is_canceled(&job_id).await {
+                    let _ = tokio::fs::remove_file(&tmp).await;
+                    return;
+                }
+                // Running from here on: the wait for memory is queue time, not work.
+                jobs.set_status(&job_id, "running").await;
                 let tmp_str = tmp.to_string_lossy().to_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);

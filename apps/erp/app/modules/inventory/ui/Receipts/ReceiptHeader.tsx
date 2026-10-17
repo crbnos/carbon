@@ -17,7 +17,11 @@ import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
+import type {
+  ItemTracking,
+  Receipt,
+  ReceiptLine
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import ReceiptPostModal from "./ReceiptPostModal";
 import ReceiptStatus from "./ReceiptStatus";

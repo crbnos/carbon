@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -16,7 +16,6 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
 import {
   LuCheck,
   LuHistory,
@@ -35,12 +34,13 @@ import type {
   InventoryCountLine,
   InventoryCount as InventoryCountType,
   StockMovement
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import {
   InventoryCountConfirmModal,
   InventoryCountLines,
   InventoryCountStatus
-} from "~/modules/inventory";
+} from "~/modules/inventory/ui";
+import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import InventoryCountHistory from "./InventoryCountHistory";
@@ -81,24 +81,19 @@ const InventoryCountDetails = ({
   const historyModal = useDisclosure();
   const revalidator = useRevalidator();
   const reopenFetcher = useFetcher();
-  const postFetcher = useFetcher<{
-    success: boolean;
-    message: string;
-    invalidLineIds?: string[];
-  }>();
+  // Post submits via a fetcher: a refusal is toasted (by default for an
+  // error), and lines that cannot post come back as data. Success redirects
+  // and flashes normally.
+  const postFetcher = useAction<typeof postAction>({
+    onSuccess: (data) => {
+      if ("invalidLineIds" in data) toast.error(data.message);
+    }
+  });
   // Rows the last post attempt rejected (an invalid serial quantity) —
   // highlighted red until the user fixes them and re-posts.
-  const invalidLineIds = postFetcher.data?.invalidLineIds;
-
-  // Post submits via a fetcher, so its action returns a validation failure (e.g.
-  // a serial line counted > 1) as data rather than a flash toast — surface it
-  // here. The fetcher still revalidates, so the count re-renders in place.
-  // Success redirects and flashes normally.
-  useEffect(() => {
-    if (postFetcher.data && postFetcher.data.success === false) {
-      toast.error(postFetcher.data.message);
-    }
-  }, [postFetcher.data]);
+  const posted = postFetcher.data;
+  const invalidLineIds =
+    posted && "invalidLineIds" in posted ? posted.invalidLineIds : undefined;
 
   const status = inventoryCount.status;
   // Counted quantities are entered while Draft; every later state is read-only.

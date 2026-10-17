@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getDocumentType } from "@carbon/files";
 import { Badge, cn, HStack } from "@carbon/react";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import type { ItemType } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import type { ItemFile } from "../../types";
 import { useItemDocuments } from "./ItemDocuments";
 

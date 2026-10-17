@@ -47,7 +47,6 @@ async function connect() {
         ["sales_getCustomer", { name: "sales_getCustomer", module: "sales" }]
       ]),
       isListOperation: () => false,
-      isMcpBlockedTool: () => false,
       catalogSearch: { search: async () => ({ matches: [], total: 0 }) },
       toolMetadata: { tools: [{ module: "sales" }], totalTools: 1, modules: 1 }
     } as never

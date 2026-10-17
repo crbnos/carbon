@@ -11,12 +11,12 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getExchangeRate } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import { rentalAgreementValidator } from "~/modules/sales/sales.models";
 import {
   getRentalAgreement,
-  rentalAgreementValidator,
   updateRentalAgreement
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import { RentalAgreementDetailsForm } from "~/modules/sales/ui/Rentals";
 import { getCustomFields, setCustomFields } from "~/utils/form";

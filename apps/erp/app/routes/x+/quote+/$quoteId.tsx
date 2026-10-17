@@ -15,28 +15,30 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getExchangeRate } from "~/modules/accounting";
-import { getSupplierPriceBreaksForItems } from "~/modules/items";
-import type { SalesOrderLine } from "~/modules/sales";
+import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import {
   getCustomer,
   getOpportunity,
   getOpportunityDocuments,
   getQuote,
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines,
   getQuoteMethodTrees,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import {
+  getQuoteLinePricesByQuoteId,
+  getQuoteLines
+} from "~/modules/sales/sales.utils";
+import type { SalesOrderLine } from "~/modules/sales/types";
 import {
   QuoteExplorer,
   QuoteHeader,
   QuoteProperties
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

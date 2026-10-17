@@ -2,111 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  RunReversalError,
-  resolveReversalPeriods,
-  reverseRevenueRecognitionRun
-} from "~/modules/accounting/accounting.server";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
-
-  const { runId } = params;
-  if (!runId) {
-    throw redirect(
-      path.to.revenueRecognitionRuns,
-      await flash(request, error(null, "Missing revenue recognition run ID"))
-    );
-  }
-
-  // Every journal the run posted, through the schedule rows it holds.
-  const lines = await client
-    .from("revenueRecognitionRunLine")
-    .select(
-      "schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(journal:journalId(postingDate))"
-    )
-    .eq("runId", runId)
-    .eq("companyId", companyId);
-  if (lines.error) {
-    throw redirect(
-      path.to.revenueRecognitionRun(runId),
-      await flash(
-        request,
-        error(lines.error, "Failed to load revenue recognition run")
-      )
-    );
-  }
-
-  // Each journal reverses on its own date, or today when that period is Closed.
-  const periods = await resolveReversalPeriods(client, {
-    companyId,
-    postingDates: lines.data.flatMap((line) =>
-      line.schedule?.journal?.postingDate
-        ? [line.schedule.journal.postingDate]
-        : []
-    )
-  });
-  if (!periods.data) {
-    throw redirect(
-      path.to.revenueRecognitionRun(runId),
-      await flash(
-        request,
-        error(periods.error, "Failed to get accounting period")
-      )
-    );
-  }
-
-  let reversed: { runId: string; deleted: boolean };
-  try {
-    reversed = await reverseRevenueRecognitionRun(getDatabaseClient(), {
-      runId,
-      periods: periods.data,
-      companyId,
-      userId
-    });
-  } catch (err) {
-    throw redirect(
-      path.to.revenueRecognitionRun(runId),
-      await flash(
-        request,
-        error(
-          err,
-          err instanceof RunReversalError
-            ? err.message
-            : "Failed to reverse revenue recognition run"
-        )
-      )
-    );
-  }
-
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["runId"] });
+  if ("invalid" in input) return input.invalid;
+  const { runId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.accounting.reverseRevenueRecognitionRun({ runId });
+  const run = result.data;
   // A revenue run that held only rental rows gives them to the lease run.
-  if (reversed.deleted) {
-    throw redirect(
-      path.to.leaseRuns,
-      await flash(
-        request,
-        success(
-          `Reversed ${reversed.runId}. Its rows now belong to the next lease run.`
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.revenueRecognitionRun(runId),
-    await flash(
-      request,
-      success(`Reversed ${reversed.runId}. It is a draft again.`)
-    )
+  return respond(args.request, result).redirect(
+    run?.deleted ? path.to.leaseRuns : path.to.revenueRecognitionRun(runId),
+    {
+      message: !run
+        ? undefined
+        : run.deleted
+          ? `Reversed ${run.readableId}. Its rows now belong to the next lease run.`
+          : `Reversed ${run.readableId}. It is a draft again.`
+    }
   );
 }

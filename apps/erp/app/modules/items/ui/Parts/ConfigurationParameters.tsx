@@ -78,12 +78,12 @@ import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { Enumerable } from "~/components/Enumerable";
 import { useShape } from "~/components/Form/Shape";
 import { ConfirmDelete } from "~/components/Modals";
-import type { ConfigurationParameter } from "~/modules/items";
 import {
   configurationParameterDataTypes,
   configurationParameterGroupValidator,
   configurationParameterValidator
-} from "~/modules/items";
+} from "~/modules/items/items.models";
+import type { ConfigurationParameter } from "~/modules/items/types";
 import type { action as configurationParameterAction } from "~/routes/x+/part+/$itemId.parameter";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";

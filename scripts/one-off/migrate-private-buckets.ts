@@ -11,10 +11,9 @@ import { readLocalScriptConfig } from "../lib/local-script-config";
 // Nothing is ever deleted. Re-running skips objects that already exist.
 //
 // COVERAGE: only objects under a LIVE company's `${companyId}/` prefix are
-// copied. Legacy objects under any other prefix — pre-migration audit
-// archives at `audit-logs/{companyId}/...`, prefixes of deleted companies —
-// are NOT copied and remain readable only via the legacy-bucket fallback.
-// Do not decommission the legacy bucket until those are handled explicitly.
+// copied. Pre-migration audit archives at `audit-logs/{companyId}/...` are moved
+// by `relocate-legacy-audit-archives.ts`; prefixes of deleted companies are not
+// read by anything.
 //
 // Usage:
 //   pnpm exec tsx scripts/one-off/migrate-private-buckets.ts            # migrate

@@ -53,13 +53,12 @@ UI:
 
 - **Devices tab** — `apps/erp/app/modules/settings/ui/Integrations/OeeDevices.ee.tsx`,
   rendered by `x+/settings+/integrations.$id.tsx` only for an active `oee`
-  integration. Its loader and action live in
-  `modules/settings/oee-devices.server.ts` (`getOeeDevicesTabData`,
-  `saveWorkCenterDeviceMapping`). The loader reads the provider's devices and
+  integration. Its loader reads `getOeeDevicesTabData` (`settings.service.ts`); its action
+  calls the service function `saveOeeDeviceMapping` (`settings.server.ts`). The loader reads the provider's devices and
   the mappings in parallel. The provider's device list (`listOeeDevices`) is
   cached in Redis for 60 s (`oeeDevicesCacheKey` in
   `modules/settings/oee-devices-cache.ts`: `oee-devices:<companyId>:<integrationId>`,
-  never an error); `clearCompanyIntegrationCache` (`settings.server.ts`)
+  never an error); `clearCompanyIntegrationCache` (`settings.service.ts`)
   deletes it on every integration save, so a new API key or environment never
   shows the old stations. A mapping save refuses a station that is not in the
   current list, and it stores that listed device's name, site and site
@@ -411,7 +410,7 @@ transaction commits:
 
 `postEndedMachineEvents` logs a failure and never throws, so the cursor
 still moves. Two catch-ups post what a failure left: operation finish (MES
-`finishJobOperation`, ERP `completeOperation`) and job completion
+`finishJobOperation`) and job completion
 (`complete_job_to_inventory`). Two callers can post one event at once (the
 sync and an operation finish): `post-production-event` locks the event row in
 its transaction and refuses with 409 (`PRODUCTION_EVENT_POSTED_CONCURRENTLY_ERROR`)

@@ -250,14 +250,15 @@ function useDateUpdateFailureToast() {
       }
 
       const data = fetcher.data as
-        | { success: boolean; message?: string }
+        | { error?: { message?: string } | null; fieldErrors?: unknown }
         | undefined;
+      const failed = !!data?.error || !!data?.fieldErrors;
 
-      if (data?.success === false && !toastedKeys.current.has(key)) {
+      if (failed && !toastedKeys.current.has(key)) {
         toastedKeys.current.add(key);
         // Surface a friendly, translated message; log the raw server detail.
-        if (data.message)
-          logger.error("Reschedule failed", { error: data.message });
+        if (data?.error?.message)
+          logger.error("Reschedule failed", { error: data.error.message });
         toast.error(t`Couldn't reschedule the job. Please try again.`);
       }
     }

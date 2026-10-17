@@ -145,15 +145,15 @@ inside a function designed never to throw.
 
 Three rules the raise sites follow:
 
-- **Raise in the service function, not the route, wherever a service function exists.** Every
-  `apps/erp/app/modules/*/*.service.ts` export is also callable over `POST /api/mcp` through
-  `apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts` (enforced by the Carbon API
-dispatch and the `gate()` middleware). A
-  route-level raise silently misses every MCP caller. After changing a service signature, run
-  `pnpm run generate:mcp` — the executor maps arguments by declared parameter name.
+- **Raise in the service function, not the route, wherever a service function exists.** Each
+  operation is one `defineServiceFn` const in `apps/erp/app/modules/<module>/<module>.server.ts`.
+  The route, the HTTP API, MCP and workflows all call that same const, so raise in it or in a
+  building block it calls (`<module>.service.ts`). A route-level raise silently misses every
+  API, MCP and workflow caller. After changing a published function's input, run
+  `pnpm run generate:mcp` to regenerate the tool metadata.
 - **Raise after the write commits, and only if it did.** For the four posting moments the write
-  happens inside a server function (`@carbon/server-functions`) that cannot import app code, so the
-  route raises once the call returns cleanly. Place the raise **below** the route's rollback `catch`, not inside the
+  happens inside a posting that commits its own transaction, so the
+  operation (`<module>.server.ts`) raises once the call returns cleanly. Place the raise **below** the operation's rollback `catch`, not inside the
   `try`: `raiseMoment` not throwing stops it from *causing* a rollback, but not from being
   reached before later code throws and reverts the document to Draft. Announcing a post that
   then got rolled back would fire workflows on a record the UI still shows as Draft.
@@ -168,10 +168,10 @@ The nine v1 moments and their sites:
 | `production.jobOperationCompleted` | `finishJobOperation`, `apps/mes/app/services/operations.service.ts` |
 | `sales.quoteSent` | `finalizeQuote`, `modules/sales/sales.service.ts` |
 | `sales.quoteAccepted` | `convertQuoteToOrder`, same file |
-| `inventory.receiptPosted` | `x+/receipt+/$receiptId.post.tsx`, below the rollback catch |
-| `inventory.shipmentPosted` | `x+/shipment+/$shipmentId.post.tsx`, below the rollback catch |
-| `invoicing.salesInvoicePosted` | `x+/sales-invoice+/$invoiceId.post.tsx`, below the tenant guard |
-| `invoicing.purchaseInvoicePosted` | `x+/purchase-invoice+/$invoiceId.post.tsx`, below the rollback catch |
+| `inventory.receiptPosted` | `postReceipt`, `modules/inventory/inventory.server.ts`, below the rollback to Draft |
+| `inventory.shipmentPosted` | `postShipment`, same file, below the rollback to Draft |
+| `invoicing.salesInvoicePosted` | `postSalesInvoice`, `modules/invoicing/invoicing.server.ts`, below the rollback to Draft |
+| `invoicing.purchaseInvoicePosted` | `postPurchaseInvoice`, same file, below the rollback to Draft |
 
 `packages/jobs/.../tasks/post-transaction.ts` posts the same three documents and looks like a
 second caller, but **nothing sends `carbon/post-transaction`** — it is dead code. Don't add a

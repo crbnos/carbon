@@ -13,22 +13,22 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
-import type { ConsumableSummary, ItemFile } from "~/modules/items";
 import {
   getConsumable,
   getItemFiles,
   getMaterialUsedIn,
   getPickMethods,
-  getSupplierParts
-} from "~/modules/items";
-import { streamItemSupersession } from "~/modules/items/items.server";
+  getSupplierParts,
+  streamItemSupersession
+} from "~/modules/items/items.service";
+import type { ConsumableSummary, ItemFile } from "~/modules/items/types";
 import {
   ConsumableHeader,
   ConsumableProperties
 } from "~/modules/items/ui/Consumables";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

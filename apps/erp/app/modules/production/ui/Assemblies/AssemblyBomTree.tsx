@@ -64,9 +64,12 @@ import {
 import { useFetcher, useParams } from "react-router";
 import { Empty } from "~/components";
 import { usePermissions } from "~/hooks";
+import type { action as matchBomAction } from "~/routes/x+/assembly+/$id.component-mappings.auto";
+import type { action as mapComponentAction } from "~/routes/x+/assembly+/$id.component-mappings.new";
+import type { action as reassignAction } from "~/routes/x+/assembly+/$id.steps.components.reassign";
 import { path } from "~/utils/path";
 import type { FlattenedBomMaterial } from "../../production.service";
-import { toViewerStep } from "../../production.service";
+import { toViewerStep } from "../../production.utils";
 import type {
   AssemblyComponentMapping,
   AssemblyInstructionStepRow,
@@ -190,7 +193,23 @@ export default function AssemblyBomTree({
     permissions.can("update", "production") &&
     Boolean(modelUploadId);
 
-  const autoMatchFetcher = useFetcher<{ success: boolean }>();
+  const autoMatchFetcher = useAction<typeof matchBomAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const unmatched = data.unmatchedBomItems;
+      const parts = [
+        t`Mapped ${data.mapped} of ${data.totalComponents} components to the bill of materials`
+      ];
+      if (unmatched.length > 0) {
+        const names = `${unmatched.slice(0, 3).join(", ")}${unmatched.length > 3 ? "…" : ""}`;
+        parts.push(t`${unmatched.length} BOM lines unmatched: ${names}`);
+      }
+      if (data.materialsCreated > 0) {
+        parts.push(t`added ${data.materialsCreated} step materials`);
+      }
+      toast.success(parts.join(" · "));
+    }
+  });
   const mappingsByHash = useMemo(
     () =>
       new Map(
@@ -390,7 +409,7 @@ export default function AssemblyBomTree({
   // Assign the current selection to an existing step. `move` strips it from the
   // steps it's already on; `duplicate` leaves those. When the selection is
   // already used elsewhere we ask which — otherwise assign straight away.
-  const reassignFetcher = useFetcher<{ success: boolean }>();
+  const reassignFetcher = useAction<typeof reassignAction>();
   const [assignPickerOpen, setAssignPickerOpen] = useState(false);
   const [pendingAssign, setPendingAssign] = useState<{
     targetStepId: string;
@@ -1870,7 +1889,7 @@ function ComponentDetails({
   instructionId: string;
   onSelectStep: (stepId: string) => void;
 }) {
-  const mapFetcher = useFetcher<{ success: boolean }>();
+  const mapFetcher = useAction<typeof mapComponentAction>();
   const size = [
     group.bbox.max[0] - group.bbox.min[0],
     group.bbox.max[1] - group.bbox.min[1],

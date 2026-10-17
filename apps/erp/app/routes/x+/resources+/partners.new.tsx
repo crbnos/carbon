@@ -9,11 +9,9 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useUrlParams } from "~/hooks";
-import {
-  PartnerForm,
-  partnerValidator,
-  upsertPartner
-} from "~/modules/resources";
+import { partnerValidator } from "~/modules/resources/resources.models";
+import { upsertPartner } from "~/modules/resources/resources.service";
+import { PartnerForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

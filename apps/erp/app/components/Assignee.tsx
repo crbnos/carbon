@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   buttonVariants,
   Command,
@@ -23,7 +24,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useState } from "react";
 import { LuSettings2, LuUser } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
-import { useFetcher, useFetchers } from "react-router";
+import { useFetchers } from "react-router";
 import { usePermissions, useUser } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -79,7 +80,8 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       onOpenChange?.(next);
     };
     const [people] = usePeople();
-    const fetcher = useFetcher<{}>();
+    // A refused assignment is toasted by `useAction`.
+    const fetcher = useAction();
     const user = useUser();
     const permissions = usePermissions();
 

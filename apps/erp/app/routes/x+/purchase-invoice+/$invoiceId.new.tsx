@@ -11,15 +11,17 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useUser } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
+import {
+  isPurchaseInvoiceLocked,
+  purchaseInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
-  isPurchaseInvoiceLocked,
-  PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine
-} from "~/modules/invoicing";
-import type { MethodItemType } from "~/modules/shared";
+} from "~/modules/invoicing/invoicing.service";
+import type { PurchaseInvoice } from "~/modules/invoicing/types";
+import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

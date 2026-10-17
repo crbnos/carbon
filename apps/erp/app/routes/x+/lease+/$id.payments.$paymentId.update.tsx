@@ -8,10 +8,8 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  leasePaymentValidator,
-  upsertLeasePayment
-} from "~/modules/purchasing";
+import { leasePaymentValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertLeasePayment } from "~/modules/purchasing/purchasing.service";
 
 const logger = getLogger("erp", "lease-payment-update");
 

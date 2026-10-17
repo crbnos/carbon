@@ -14,14 +14,16 @@ import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getActiveDimensionsWithValues,
   getDefaultAccounts
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   getOpenReimbursementsForEmployee,
   getReimbursement,
-  getReimbursementRelatedItems,
+  getReimbursementRelatedItems
+} from "~/modules/invoicing/invoicing.service";
+import {
   ReimbursementDocuments,
   ReimbursementHeader
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

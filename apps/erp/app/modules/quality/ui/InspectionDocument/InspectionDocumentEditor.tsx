@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { serviceErrorMessage, useAction } from "@carbon/query";
 import {
   Button,
   Combobox,
@@ -74,6 +75,7 @@ import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
 import { procedureStepType } from "~/modules/shared/shared.models";
+import type { action as saveAction } from "~/routes/x+/inspection-document+/$id.save";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import {
@@ -654,16 +656,8 @@ export default function InspectionDocumentEditor({
     part && part.type !== "Fixture"
       ? getLinkToItemDetails(part.type, part.id)
       : null;
-  const fetcher = useFetcher<{
-    success: boolean;
-    message?: string;
-    featureIdMap?: Record<string, string>;
-    balloonAnchorIdMap?: Record<string, string>;
-    features?: Array<Record<string, unknown>>;
-    anchors?: Array<Record<string, unknown>>;
-    balloons?: Array<Record<string, unknown>>;
-  }>();
-  const nameFetcher = useFetcher();
+  const fetcher = useFetcher<typeof saveAction>();
+  const nameFetcher = useAction();
   const [title, setTitle] = useState(name);
   const debouncedSaveName = useDebounce((value: string) => {
     nameFetcher.submit(
@@ -932,17 +926,21 @@ export default function InspectionDocumentEditor({
   // current rows, so it also runs on every edit; handledSaveDataRef makes each
   // response merge exactly once.
   useEffect(() => {
-    const data = fetcher.data;
-    if (!data || data === handledSaveDataRef.current) return;
-    handledSaveDataRef.current = data;
+    const result = fetcher.data;
+    if (!result || result === handledSaveDataRef.current) return;
+    handledSaveDataRef.current = result;
     const sent = inFlightSaveRef.current;
     inFlightSaveRef.current = null;
     if (!sent) return;
 
-    if (!data.success) {
+    // A refused save, or a payload the route could not read (field errors).
+    const data = "data" in result ? result.data : null;
+    if (!data?.success) {
       failedSaveRef.current = sent;
       pdfReplaceToastRef.current = false;
-      toast.error(data.message ?? t`Failed to save inspection plan`);
+      toast.error(
+        serviceErrorMessage(result) ?? t`Failed to save inspection plan`
+      );
       return;
     }
 

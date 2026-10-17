@@ -64,11 +64,11 @@ import type { z } from "zod";
 import { Empty } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Training, TrainingQuestion } from "~/modules/resources";
 import {
   trainingQuestionType,
   trainingQuestionValidator
-} from "~/modules/resources";
+} from "~/modules/resources/resources.models";
+import type { Training, TrainingQuestion } from "~/modules/resources/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 

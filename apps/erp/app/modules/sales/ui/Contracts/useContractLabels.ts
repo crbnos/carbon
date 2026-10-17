@@ -65,16 +65,3 @@ export function useContractLabels() {
     [t]
   );
 }
-
-/** The duration a stored contract was signed for: its term in months when
- *  that is one of the presets, open-ended with no end date, else custom. */
-export function contractDurationOf(contract: {
-  endDate: string | null;
-  termMonths: number | null;
-}): ContractDuration {
-  if (!contract.endDate) return "open";
-  const months = String(contract.termMonths ?? "");
-  return months === "6" || months === "12" || months === "24" || months === "36"
-    ? months
-    : "custom";
-}

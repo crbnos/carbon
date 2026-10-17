@@ -9,10 +9,8 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
-import {
-  requiredActionValidator,
-  upsertRequiredAction
-} from "~/modules/quality";
+import { requiredActionValidator } from "~/modules/quality/quality.models";
+import { upsertRequiredAction } from "~/modules/quality/quality.service";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 import { path } from "~/utils/path";
 

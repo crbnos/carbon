@@ -16,7 +16,7 @@ import {
   getAccountsList,
   getBaseCurrency,
   getCompaniesInGroup
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import AccountingBetaGate from "~/modules/accounting/ui/AccountingBetaGate";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";

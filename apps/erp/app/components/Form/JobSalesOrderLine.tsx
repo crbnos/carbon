@@ -18,7 +18,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import type { getOpenSalesOrderLinesForItem } from "~/modules/sales";
+import type { getOpenSalesOrderLinesForItem } from "~/modules/sales/sales.service";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 

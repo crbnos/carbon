@@ -4,7 +4,7 @@
 
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { ReimbursementSummary } from "~/modules/invoicing";
+import { ReimbursementSummary } from "~/modules/invoicing/ui";
 import type { loader } from "~/routes/x+/reimbursements+/$reimbursementId";
 import { path } from "~/utils/path";
 

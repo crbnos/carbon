@@ -10,6 +10,8 @@ import { verifyDownloadToken } from "@carbon/auth/download-token.server";
 import { storage } from "@carbon/files";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { recordDocumentDownload } from "~/modules/documents/documents.server";
+import { shareLinkContext } from "~/modules/service-context.server";
 import { path } from "~/utils/path";
 
 // Pure resource route (loader only, no default export): it always returns a
@@ -58,14 +60,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
     if (!file.data) return fail("unavailable");
 
     // Best-effort audit log mirroring useDocument's "Download" transaction, so
-    // history stays consistent. Never block the download on a logging failure.
-    try {
-      await userClient
-        .from("documentTransaction")
-        .insert({ documentId, type: "Download", companyId, userId });
-    } catch {
-      // ignore
-    }
+    // history stays consistent. A failure never blocks the download.
+    const ctx = await shareLinkContext({ companyId, createdBy: userId });
+    if (ctx) await recordDocumentDownload(ctx, { documentId });
 
     const filename = (doc.data.name ?? "download").replace(/["\r\n]/g, "");
     return new Response(file.data, {

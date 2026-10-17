@@ -54,7 +54,7 @@ vi.mock("~/modules/settings/integration-errors", () => ({
   integrationErrorSearch: (integration: string, error: string) =>
     `?integration=${integration}&error=${error}`
 }));
-vi.mock("~/modules/shared", () => ({
+vi.mock("~/modules/shared/shared.models", () => ({
   oAuthCallbackSchema: {
     safeParse(value: Record<string, unknown>) {
       return typeof value.code === "string" && typeof value.state === "string"
