@@ -60,7 +60,7 @@ decisions the user made on 2026-10-17. Built in commit `d956b0be11`.
   - [x] Run the MES flows in a browser (`agent-browser`; the browser pane blocks every script of `*.service-functions.dev`). Six flows pass; `.ai/playbooks/mes-postings-through-erp.md`.
   - [x] Run the MCP smoke test (results below).
   - [x] Measure the round trip (results below).
-- [ ] 10. Decide `scripts/one-off/journal-legacy-documents.ts` (see Open items).
+- [x] 10. Decide `scripts/one-off/journal-legacy-documents.ts` (see Open items): deleted on 2026-10-17. It had run on every workspace, and the repair stays in Settings → Accounting.
 
 ## Verified (2026-10-17, without the database stack)
 

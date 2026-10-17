@@ -1401,7 +1401,7 @@ any new `memo` writer.
 
 **Rule:** A comparison is only meaningful when its two sides come from different points in time or different origins. When a check's input is derived from the thing it is checked against — at the same moment, by the same code — the check can only ever pass, and green tests won't catch it because tests construct the divergent inputs the call site never produces. Compute such verdicts at READ time (live schema vs stored artifact), and when reviewing, trace where each argument of a comparison actually comes from at the real call site.
 
-**Applies to:** `packages/jobs/src/backups/schema.ts` (`reportBackupCompatibility`), `getCompanyBackups` in `apps/erp/app/modules/settings/backups.server.ts`, and any future "is X still valid?" precomputation (schema drift, config validation, cache-freshness verdicts).
+**Applies to:** `packages/jobs/src/backups/schema.ts` (`reportBackupCompatibility`), `getCompanyBackups` in `apps/erp/app/modules/settings/settings.service.ts`, and any future "is X still valid?" precomputation (schema drift, config validation, cache-freshness verdicts).
 
 ## Bare-tsx scripts: isolate the import chain, never flip a shared package's `type`
 
@@ -3908,4 +3908,14 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Rule:** A job that reads storage as the service role takes the company from the row, never from the path, and refuses a path outside `${companyId}/` (`resolveModelSourceBucket`). Test it with a real object and a positive control, so the test fails when the guard goes.
 
-**Applies to:** `packages/jobs` storage reads keyed by a path a user can write.
+**Applies to:** `packages/jobs` storage reads keyed by a path a user can write, and every copy that picks a bucket (`copyAssetsToBackup` took the source bucket from the first path segment until 2026-10-17).
+
+## A long poll inside an Inngest step holds a concurrency slot for its whole wait
+
+**Context:** `runAssemblerJob` polled the assembler with `GET /v1/jobs/{id}?wait=25` inside a `step.run`.
+
+**Problem:** Inngest counts an executing step against its function's concurrency key. Each poll held a slot of the shared assembler key for up to 35 seconds, so a burst of uploads filled the key with waits, not work.
+
+**Rule:** Inside a step, make the request short. Wait between requests with `step.waitForEvent` or `step.sleep`, which hold no slot. Treat a 5xx answer as "unreachable", not as a lost job.
+
+**Applies to:** every Inngest function that polls an external service.
