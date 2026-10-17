@@ -202,7 +202,8 @@ querying), and every route entry point checks it too — login buttons, the
   invite routes and jobs `user-admin.ts`) routes covered-domain invite emails to
   `/login?email=...` instead of `/invite/<code>`, so the IdP is never bypassed.
   Employee invites outside the covered domains are refused up front
-  (`getSsoInviteDomainError` in ERP `users.service.ts` → `uncoveredSsoDomainError`).
+  (`refuseEmailOutsideSso` in ERP `users.service.ts` → `uncoveredSsoDomainError`: a
+  `rule` refusal, or `unavailable` when the domains cannot be read).
 - **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
   see `.ai/lessons.md`).

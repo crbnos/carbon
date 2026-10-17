@@ -1031,7 +1031,7 @@ export async function insertSubsidiary(
   return client.from("company").insert(data).select("id").single();
 }
 
-/** Only the company fields: `settings.subsidiary.update` gates it and drops the cached time zone. */
+/** Only the company fields: `updateSubsidiaryDetails` gates it and drops the cached time zone. */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,

@@ -27,16 +27,10 @@ import {
   type Actor,
   type CarbonError,
   createServiceContext,
-  type ErrorCategory,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import { attempt } from "@carbon/api/service-tools.server";
-import {
-  error,
-  getAppUrl,
-  ITAR_RIDER_SHA256,
-  ITAR_RIDER_VERSION
-} from "@carbon/auth";
+import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
+import { error, getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -106,7 +100,6 @@ import {
   actionTaskEntities,
   actionTaskParentId
 } from "@carbon/ee/action-task-entity";
-import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   ERP_URL,
   SESSION_SECRET,
@@ -150,7 +143,6 @@ import {
 import {
   type CalendarDate,
   endOfMonth,
-  parseAbsolute,
   parseDate,
   startOfMonth,
   startOfWeek
@@ -382,29 +374,24 @@ export async function getTagsList(
 }
 
 /**
- * One table's CSV import. Not published: `shared.csvImport.run` is the
- * operation, and checks the table's permission and mappings first.
+ * One table's CSV import. Not published: `importCsvFile` is the operation,
+ * and checks the table's permission and mappings first.
  */
-export async function importCsv(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
+export function importCsv(
+  ctx: ServiceContext,
   args: {
     table: string;
     filePath: string;
     columnMappings: Record<string, string>;
-    enumMappings?: Record<string, string[]>;
-    companyId: string;
-    userId: string;
+    enumMappings?: Record<string, Record<string, string>>;
   }
 ) {
-  // The operation validates `table` and the enum mappings' real shape
-  // (field → { value → mapped }).
+  // `importCsvTable` refuses a table it does not import.
   return invokePosting(
-    { client, db, companyId: args.companyId, userId: args.userId },
+    ctx,
     "import-csv",
-    args as unknown as z.input<typeof importCsvInput>,
-    importCsvTable,
-    { as: importCsvTablePermission }
+    args as z.input<typeof importCsvInput>,
+    importCsvTable
   );
 }
 
@@ -543,6 +530,7 @@ export async function upsertSavedView(
         updatedBy: userId
       })
       .eq("id", view.id)
+      .eq("companyId", view.companyId)
       .select("id")
       .single();
   }
@@ -571,18 +559,34 @@ export async function upsertSavedView(
     .single();
 }
 
-export async function updateSavedViewOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    sortOrder: number;
-    updatedBy: string;
-  }[]
+/**
+ * Reorder the caller's own saved views in one statement, all or nothing: an
+ * id that is not one of their views in the company refuses the whole
+ * reorder. Not `updateSortOrder`: a view has no `updatedAt`, and it belongs
+ * to its creator rather than to a parent document.
+ */
+export async function reorderSavedViews(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  userId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
-    client.from("tableView").update({ sortOrder, updatedBy }).eq("id", id)
+  if (updates.length === 0) return;
+  const values = sql.join(
+    updates.map(
+      ({ id, sortOrder }) => sql`(${id}::text, ${sortOrder}::integer)`
+    )
   );
-  return Promise.all(updatePromises);
+  await db.transaction().execute(async (trx) => {
+    const { rows } = await sql<{
+      id: string;
+    }>`UPDATE "tableView" AS t SET "sortOrder" = v."sortOrder", "updatedBy" = ${userId} FROM (VALUES ${values}) AS v("id", "sortOrder") WHERE t."id" = v."id" AND t."companyId" = ${companyId} AND t."createdBy" = ${userId} RETURNING t."id"`.execute(
+      trx
+    );
+    if (rows.length !== updates.length) {
+      throw new NotFoundError("Saved view not found");
+    }
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -1477,8 +1481,6 @@ export function keptForADay<T extends { data: unknown[] | null }>(result: T) {
   );
 }
 
-// ── Operations ──────────────────────────────────────────────────────────────
-
 /** The notification an assignment on `table` sends its assignee, if any. */
 export function assignmentEvent(table: string): NotificationEvent | null {
   switch (table) {
@@ -1585,82 +1587,6 @@ export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
       error
     });
   }
-}
-
-/**
- * Record an ITAR certification with a 365-day expiry, and audit it.
- * Through the service role: a self-attesting user holds no settings_create.
- */
-async function _recordItarCertification(
-  ctx: ServiceContext,
-  certification: {
-    type: "entity" | "user";
-    fullLegalName: string;
-    title?: string;
-    complianceContact?: string;
-    ipAddress: string | null;
-    userAgent: string | null;
-  }
-) {
-  const serviceRole = ctx.asSystem.supabase;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-  const certifiedAt = datetime.timestamp();
-  const expiresAt = parseAbsolute(certifiedAt, "UTC")
-    .add({ days: 365 })
-    .toAbsoluteString();
-
-  const inserted = await serviceRole
-    .from("itarCertification")
-    .insert({
-      companyId,
-      userId,
-      type: certification.type,
-      docVersion: ITAR_RIDER_VERSION,
-      docHash: ITAR_RIDER_SHA256,
-      fullLegalName: certification.fullLegalName,
-      title: certification.title ?? null,
-      complianceContact: certification.complianceContact ?? null,
-      certifiedAt,
-      ipAddress: certification.ipAddress,
-      userAgent: certification.userAgent,
-      expiresAt,
-      createdBy: userId
-    })
-    .select("id")
-    .single();
-  if (inserted.error || !inserted.data) {
-    return ctx.error(
-      "internal",
-      "Failed to record certification",
-      inserted.error
-    );
-  }
-
-  // Best-effort: a company without audit logging has no audit table, and the
-  // certification row is the authoritative compliance record.
-  try {
-    await insertAuditLogEntries(serviceRole, companyId, [
-      {
-        tableName: "itarCertification",
-        entityType: "itarCertification",
-        entityId: inserted.data.id,
-        recordId: inserted.data.id,
-        operation: "INSERT",
-        actorId: userId,
-        metadata: {
-          ipAddress: certification.ipAddress ?? undefined,
-          userAgent: certification.userAgent ?? undefined
-        },
-        createdAt: certifiedAt
-      }
-    ]);
-  } catch (error) {
-    logger.warn(`ITAR ${certification.type} certification audit skipped`, {
-      error
-    });
-  }
-  return { id: inserted.data.id };
 }
 
 /**
@@ -1781,11 +1707,38 @@ type PostingBody<I, R> = (ctx: ServiceContext, input: I) => Promise<R>;
 type PostingResult<R> =
   | { data: R; error: null }
   | { data: null; error: ServerFnError };
-type PostingOptions<I> = { as?: PostingRule<I>; defaultStatus?: number };
+type PostingSchema = { parse(value: unknown): unknown };
+type PostingOptions<I> = {
+  as?: PostingRule<I>;
+  schema?: PostingSchema;
+  defaultStatus?: number;
+};
 /** Handles that carry the caller's client must name the permission to check. */
 type PostingOptionsFor<H, I> = H extends { client: SupabaseClient<Database> }
-  ? [options: { as: PostingRule<I>; defaultStatus?: number }]
+  ? [
+      options: {
+        as: PostingRule<I>;
+        schema?: PostingSchema;
+        defaultStatus?: number;
+      }
+    ]
   : [options?: PostingOptions<I>];
+
+/**
+ * What a posting asks of the runner beyond the defaults, by name, so that no
+ * caller can leave it out.
+ */
+const POSTING_DEFAULTS: Partial<
+  Record<string, { defaultStatus?: number; groupless?: true }>
+> = {
+  // Its engine refuses with plain `Error`s written for the operator (an
+  // unavailable or expired lot, a part already scrapped): a refusal, not a
+  // failure, as its server function's `defaultStatus: 400` read them.
+  issue: { defaultStatus: 400 },
+  // Runs on the company `insertCompany` just made, which has no group yet:
+  // the posting creates it.
+  "seed-company": { groupless: true }
+};
 
 /**
  * Run a posting body and read it as `{ data, error }`, with the
@@ -1796,7 +1749,9 @@ type PostingOptionsFor<H, I> = H extends { client: SupabaseClient<Database> }
  * - From handles that carry the caller's `client`, `as` is required (the
  *   body's permission rule, or what the input requires): the caller must hold
  *   it first — a user's claims, an API key's
- *   scopes, nothing for the service role. The body then runs as the system
+ *   scopes, nothing for the service role. With the body's input `schema`, the
+ *   input is parsed first and the rule reads it as the body will. The body
+ *   then runs as the system
  *   on the user's behalf, over that same `db` (a transaction stays one).
  * - From handles without a client, the body runs as the system.
  */
@@ -1866,10 +1821,12 @@ async function runPosting<I, R>(
   name: string,
   input: I,
   run: PostingBody<I, R>,
-  { as, defaultStatus }: PostingOptions<I>
+  { as, schema, defaultStatus }: PostingOptions<I>
 ): Promise<PostingResult<R>> {
+  const posting = POSTING_DEFAULTS[name];
+  const status = defaultStatus ?? posting?.defaultStatus;
   if ("actor" in from) {
-    return attempt(from, name, () => run(from, input), defaultStatus);
+    return attempt(from, name, () => run(from, input), status);
   }
   const handles = from;
   if (handles.client && !as) {
@@ -1883,20 +1840,18 @@ async function runPosting<I, R>(
     name,
     async (span) => {
       if (handles.client && as) {
+        const parsed = (schema ? schema.parse(input) : input) as I;
         const caller = postingCaller(handles.client, handles.userId);
         span.setAttribute("carbon.function.actor", caller.type);
         await authorizePostingCaller(
           handles,
           caller,
-          typeof as === "function" ? as(input) : resolvePermissions(as, input)
+          typeof as === "function" ? as(parsed) : resolvePermissions(as, parsed)
         );
       }
       const ctx = createServiceContext({
         actor,
-        company: {
-          id: handles.companyId,
-          groupId: handles.companyGroupId ?? (await companyGroupIdOf(handles))
-        },
+        company: await postingCompany(handles, posting?.groupless === true),
         caller: handles.client ?? getCarbonServiceRole(),
         system: getCarbonServiceRole,
         pg: () => handles.db,
@@ -1904,14 +1859,15 @@ async function runPosting<I, R>(
       });
       return run(ctx, input);
     },
-    defaultStatus
+    status
   );
 }
 
-async function companyGroupIdOf({
-  db,
-  companyId
-}: PostingHandles): Promise<string> {
+async function postingCompany(
+  { db, companyId, companyGroupId }: PostingHandles,
+  groupless: boolean
+): Promise<ServiceContext["company"]> {
+  if (companyGroupId) return { id: companyId, groupId: companyGroupId };
   const company = await db
     .selectFrom("company")
     .select("companyGroupId")
@@ -1919,10 +1875,21 @@ async function companyGroupIdOf({
     .executeTakeFirst();
   // An unknown company is the caller's mistake; a company with no group is ours.
   if (!company) throw new NotFoundError(`Company ${companyId} not found`);
-  if (!company.companyGroupId) {
-    throw new ServerFnError(`Company ${companyId} has no company group`, 500);
+  if (company.companyGroupId) {
+    return { id: companyId, groupId: company.companyGroupId };
   }
-  return company.companyGroupId;
+  const noGroup = new ServerFnError(
+    `Company ${companyId} has no company group`,
+    500
+  );
+  if (!groupless) throw noGroup;
+  // A body that reads the group anyway is refused when it does.
+  return {
+    id: companyId,
+    get groupId(): string {
+      throw noGroup;
+    }
+  };
 }
 
 // Rows per INSERT. Every multi-row insert is bound by Postgres' 65535 bind
@@ -4613,58 +4580,6 @@ const EXTERNAL_ID_KEY = "csv";
 
 type ImportTable = z.infer<typeof importCsvInput>["table"];
 
-// The module whose `update` permission each import needs — the same map the
-// ERP's import route checks (`importPermissions` in `imports.models.ts`).
-const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
-  customer: "sales",
-  customerContact: "sales",
-  supplier: "purchasing",
-  supplierContact: "purchasing",
-  part: "parts",
-  material: "parts",
-  bom: "parts",
-  operations: "parts",
-  partWithMethod: "parts",
-  tool: "parts",
-  fixture: "parts",
-  consumable: "parts",
-  workCenter: "production",
-  process: "production",
-  storageUnit: "inventory",
-  service: "parts",
-  unitOfMeasure: "parts",
-  itemPostingGroup: "accounting",
-  storageType: "parts",
-  scrapReason: "production",
-  department: "people",
-  materialSubstance: "parts",
-  materialForm: "parts",
-  materialFinish: "parts",
-  materialGrade: "parts",
-  materialType: "parts",
-  materialDimension: "parts",
-  inventoryQuantity: "inventory",
-  batchQuantity: "inventory",
-  serialQuantity: "inventory"
-};
-
-// Imports that post new records also need `create`, as the ERP's import route
-// demands (`importRequiresCreate` in `imports.models.ts`).
-const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
-  "inventoryQuantity",
-  "batchQuantity",
-  "serialQuantity"
-]);
-
-const IMPORT_PERMISSION_RULES = Object.fromEntries(
-  Object.entries(IMPORT_PERMISSIONS).map(([table, module]) => [
-    table,
-    IMPORT_REQUIRES_CREATE.has(table as ImportTable)
-      ? { update: module, create: module }
-      : { update: module }
-  ])
-) as Record<ImportTable, RequiredPermissions>;
-
 // The columns each importer may write from a CSV row. Kysely here runs as the
 // service role, so spreading a row into an INSERT/UPDATE would let a crafted
 // mapping write `id`, `createdBy`, `intercompanyCompanyId`, or any other
@@ -5777,12 +5692,11 @@ async function upsertTaxIdentifiers(
   );
 }
 
-export const importCsvTablePermission = {
-  by: "table",
-  rules: IMPORT_PERMISSION_RULES
-} satisfies PermissionRule<z.output<typeof importCsvInput>>;
-
-/** Imports an uploaded CSV into `table`, per the caller's column and enum mappings. */
+/**
+ * Imports an uploaded CSV into `table`, per the caller's column and enum
+ * mappings. Run under `importCsvFile`, whose gate holds the table's
+ * permission (`importPermissions` in `imports.models.ts`).
+ */
 export async function importCsvTable(
   ctx: ServiceContext,
   raw: z.input<typeof importCsvInput>
@@ -10032,26 +9946,14 @@ export async function convertDocument(
   return { convertedId };
 }
 
-/** A server function's refusal as this function's error: its status picks
- *  the category, and an empty message (a data-layer failure) is `fallback`. */
+/** A server function's refusal as this function's error, mapped as `settle`
+ *  maps it; an empty message (our own failure) is `fallback`. */
 export function fromServerFn(
   ctx: ServiceContext,
   error: { status: number; message: string },
   fallback: string
 ): CarbonError {
-  const category: ErrorCategory =
-    error.status === 400
-      ? "validation"
-      : error.status === 403
-        ? "forbidden"
-        : error.status === 404
-          ? "notFound"
-          : error.status === 409
-            ? "conflict"
-            : error.status < 500
-              ? "rule"
-              : "internal";
-  return ctx.error(category, error.message || fallback, error);
+  return serverFnRefusal(ctx, error, fallback);
 }
 const createDocumentLogger = getLogger("server-functions", "create");
 
@@ -16183,7 +16085,7 @@ export async function insertNegatedJournal(
 // their single-column FKs accept a row from any company, so nothing downstream
 // refuses a foreign id. Re-read them under companyId before writing.
 
-type _lib_companyRecordsCompanyScopedTable =
+type CompanyRecordTable =
   | "inspection"
   | "inspectionSample"
   | "jobOperationStep"
@@ -16203,7 +16105,7 @@ type _lib_companyRecordsCompanyScopedTable =
  */
 export async function assertCompanyRecords(
   db: Kysely<KyselyDatabase>,
-  table: _lib_companyRecordsCompanyScopedTable,
+  table: CompanyRecordTable,
   ids: Iterable<string | null | undefined>,
   companyId: string,
   label: string
@@ -16323,8 +16225,11 @@ export function postingCaller(
   return { type: "user" };
 }
 
-/** The `sub` of a `Bearer` JWT, unverified: the token is on a client this
- *  process built from its own session, not on request input. */
+/** The `sub` of a `Bearer` JWT, unverified. The token comes from this
+ *  process's own session, or from an MES internal call that forwards it under
+ *  its signature (caller mode). Either way the authority is the `userId` that
+ *  session or signature vouches for: this only checks that the token names the
+ *  same user. */
 function bearerSubject(authorization: string | undefined): string | undefined {
   const payload = authorization?.replace(/^Bearer\s+/i, "").split(".")[1];
   if (!payload) return undefined;

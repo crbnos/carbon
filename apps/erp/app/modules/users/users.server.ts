@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { accountProfileValidator } from "@carbon/account";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import {
   envelope,
@@ -37,6 +38,7 @@ import {
   employeeTypePermissionsValidator,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
+  US_PERSON_ATTESTATION_REQUIRED,
   userFlagValidator,
   userPermissionsValidator
 } from "./users.models";
@@ -67,8 +69,8 @@ const requestOrigin = {
  * the Admin employee type, whatever was asked for. In a controlled
  * environment the inviter must attest the person is a U.S. person (a
  * `validation` error otherwise). Once SSO is on, an email outside its
- * domains is refused (a `rule` error). A deactivated or still-invited person
- * is re-added (see `createEmployeeAccount`).
+ * domains is refused (a `rule` error, its only one). A deactivated or
+ * still-invited person is re-added (see `createEmployeeAccount`).
  */
 export const inviteEmployee = defineServiceFn({
   input: z.object({
@@ -101,18 +103,11 @@ export const inviteEmployee = defineServiceFn({
 
     // 22 CFR 120.62: the inviter attests the invitee is a U.S. person.
     if (CONTROLLED_ENVIRONMENT && !input.usPersonAttestation) {
-      return ctx.error(
-        "validation",
-        "You must confirm a reasonable basis that this individual is a U.S. person"
-      );
+      return ctx.error("validation", US_PERSON_ATTESTATION_REQUIRED);
     }
 
-    const ssoDomainError = await service.getSsoInviteDomainError(
-      ctx.asSystem.supabase,
-      companyId,
-      input.email
-    );
-    if (ssoDomainError) return ctx.error("rule", ssoDomainError);
+    const outsideSso = await service.refuseEmailOutsideSso(ctx, input.email);
+    if (outsideSso) return outsideSso;
 
     const created = await service.createEmployeeAccount(
       client,
@@ -1422,6 +1417,22 @@ export const getSuppliers = defineServiceFn({
 
 // The caller's own account: every operation acts on the signed-in user (an
 // API key's creator).
+
+/** Change the caller's name, phone and about text. */
+export const updateOwnProfile = defineServiceFn({
+  input: accountProfileValidator,
+  permission: {},
+  async run(ctx, profile) {
+    const saved = await service.updatePublicAccount(ctx.asCaller.supabase, {
+      id: ctx.auditUserId,
+      ...profile
+    });
+    if (saved.error) {
+      return ctx.error("internal", "Failed to update profile", saved.error);
+    }
+    return { id: ctx.auditUserId };
+  }
+});
 
 /**
  * Change the caller's avatar to a generated avatar or their own upload.

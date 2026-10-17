@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import {
   envelope,
-  envelopes,
   paged,
   plain,
   stamp
@@ -67,21 +67,6 @@ import * as service from "./shared.service";
 import { invokeCreate } from "./shared.service";
 
 const logger = getLogger("erp", "shared");
-// tzdata only changes when the Postgres image is upgraded — a day-long TTL
-// keeps the pg_timezone_names scan (~1ms but per-request) off the hot path
-// while still picking up a DB upgrade within 24h.
-// What `get_app_shell` returns: the rows the shell used to read with nine
-// requests. Each key holds what `select("*")` on that table returned.
-// A day, not forever: wiping a company's data (a demo template revert, a
-// restore) can make a signal false again, and this bounds how long the hub
-// would keep showing that step as done.
-// The readable identifier on each action task's parent, used for the Linear
-// attachment / Jira remote-link title.
-// Entity-aware action-task read: resolves the task plus its parent (NCR or change notice) — reads an action
-// task and its parent's readable id from whichever table the entity type names.
-// For a list that is the same for every company and changes only with a deploy
-// or the database's own reference data. `private`: the route still needs a
-// session, so no shared cache may hold it.
 // ── Operations ──────────────────────────────────────────────────────────────
 /**
  * Assign a record to a person, and tell them.
@@ -181,7 +166,7 @@ const importRules = Object.fromEntries(
  * `update` on the table's module, and `create` too for the stock imports.
  * Quotes go through the sales importer, so each gets its opportunity,
  * payment, shipment and share link as one made in the app does; every other
- * table goes through the import server function. Returns how many rows were
+ * table goes through the `import-csv` posting. Returns how many rows were
  * inserted and updated, and the rows that failed or were skipped, with why.
  */
 export const importCsvFile = defineServiceFn({
@@ -213,15 +198,11 @@ export const importCsvFile = defineServiceFn({
           companyGroupId: ctx.company.groupId,
           userId: ctx.auditUserId
         })
-      : await service.importCsv(ctx.asSystem.supabase, ctx.asSystem.pg, {
+      : await service.importCsv(ctx, {
           table,
           filePath,
           columnMappings,
-          // Typed loosely by the service; the server function reads the
-          // real shape (field → { value → mapped }).
-          enumMappings: enumMappings as unknown as Record<string, string[]>,
-          companyId: ctx.company.id,
-          userId: ctx.auditUserId
+          enumMappings
         });
     if (imported.error) {
       return ctx.error("internal", imported.error.message, imported.error);
@@ -601,11 +582,6 @@ export const startStripeConnectOnboarding = defineServiceFn({
   }
 });
 
-const _itarRequestMeta = {
-  /** Best-effort, from the request, for the compliance record. */
-  ipAddress: z.string().nullable(),
-  userAgent: z.string().nullable()
-};
 const actionTaskEntityTypes = Object.keys(actionTaskEntities) as [
   ActionTaskEntityType,
   ...ActionTaskEntityType[]
@@ -1212,35 +1188,48 @@ export const upsertSavedView = defineServiceFn({
       ctx,
       await service.upsertSavedView(
         ctx.asCaller.supabase,
-        stamp(ctx, input, [
-          "companyId",
-          "createdBy",
-          "updatedBy",
-          "userId"
-        ]) as never
+        // The view keeps its creator: an update stamps only who changed it.
+        stamp(
+          ctx,
+          input,
+          ["companyId", "userId"],
+          input.id ? "update" : "create"
+        ) as never
       )
     );
   }
 });
 
 /**
- * Update saved view order
+ * Reorder the caller's saved views.
+ *
+ * @remarks
+ * All or nothing: an id that is not one of the caller's views in the company
+ * refuses the whole reorder.
  *
  * @mcp
  */
 export const updateSavedViewOrder = defineServiceFn({
   input: z.looseObject({
-    updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
+    updates: z.array(
+      z.looseObject({ id: z.string(), sortOrder: z.number().int() })
+    )
   }),
   permission: {},
-  async run(ctx, input) {
-    return envelopes(
-      ctx,
-      await service.updateSavedViewOrder(
-        ctx.asCaller.supabase,
-        stamp(ctx, input.updates, ["companyId", "updatedBy"]) as never
-      )
-    );
+  async run(ctx, { updates }) {
+    try {
+      await service.reorderSavedViews(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        updates
+      );
+    } catch (err) {
+      return err instanceof NotFoundError
+        ? ctx.error("notFound", err.message)
+        : ctx.error("internal", "Failed to update the view order", err);
+    }
+    return { updated: updates.length };
   }
 });
 

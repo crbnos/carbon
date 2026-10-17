@@ -79,7 +79,7 @@ export type CompanyBackupSummary = {
   sizeBytes: number;
   /**
    * "Would this backup restore into TODAY's schema?" — computed live against
-   * the current schema by `getCompanyBackups` (backups.server.ts) on every
+   * the current schema by `getCompanyBackups` (settings.service.ts) on every
    * load, never stored. The hard refusal is still `assertBackupImportable`
    * inside the restore job; this is the same diff, disclosed upfront.
    *
@@ -102,7 +102,7 @@ export type CompanyBackupSummary = {
 /**
  * List a company's backup folders (`exports/<name>/`, snapshots excluded),
  * reading each manifest for its metadata. Storage layer only: `compatibility`
- * is a placeholder here — `getCompanyBackups` in backups.server.ts computes
+ * is a placeholder here — `getCompanyBackups` in settings.service.ts computes
  * the real verdict from the returned `manifest` (server-only, since it needs
  * `@carbon/jobs/backups` and a schema read) and strips it before the loader
  * returns.

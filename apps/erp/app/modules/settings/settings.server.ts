@@ -193,8 +193,8 @@ export const updateAccountingSettings = defineServiceFn({
  * @remarks
  * A company that enabled accounting before the enable wrote journals has
  * documents posted on or after its cutover with no journal. This runs the
- * `journal-legacy-documents` server function, which journals each of them,
- * and returns how many documents it journaled. Not published: it needs two
+ * `journal-legacy-documents` posting, which journals each of them, and
+ * returns how many documents it journaled. Not published: it needs two
  * modules' permissions, which the API gate cannot state yet.
  */
 export const writeMissingJournals = defineServiceFn({
@@ -202,16 +202,10 @@ export const writeMissingJournals = defineServiceFn({
   permission: { update: ["settings", "accounting"] },
   async run(ctx) {
     const result = await invokePosting(
-      {
-        client: ctx.asCaller.supabase,
-        db: ctx.asSystem.pg,
-        companyId: ctx.company.id,
-        userId: ctx.auditUserId
-      },
+      ctx,
       "journal-legacy-documents",
       {},
-      accountingPostings.repairLegacyJournals,
-      { as: accountingPostings.journalLegacyDocumentsPermission }
+      accountingPostings.repairLegacyJournals
     );
     if (result.error) {
       return fromServerFn(
@@ -1078,9 +1072,8 @@ export const updateSubsidiaryDetails = defineServiceFn({
  * labels or PDF documents), media size, URL and optional API key, location
  * and template. With an `id` the company's route is updated, without one a
  * route is created. The cached printer routing is dropped, so the change
- * applies to the next print.
- *
- * @mcp
+ * applies to the next print. Not published: the server POSTs to the URL it
+ * saves, so an API caller could aim it at any address.
  */
 export const savePrinterRoute = defineServiceFn({
   input: printerRouteValidator,
@@ -1305,9 +1298,8 @@ export const assignPrinter = defineServiceFn({
  * @remarks
  * Queues a new print job with the company's original job's content, to its
  * printer or to `printerUrl` when given, and starts its delivery. A job still
- * generating has no content and cannot be reprinted.
- *
- * @mcp
+ * generating has no content and cannot be reprinted. Not published: the
+ * server POSTs to `printerUrl`, so an API caller could aim it at any address.
  */
 export const reprintPrintJob = defineServiceFn({
   input: reprintValidator,
@@ -2397,7 +2389,7 @@ export const getAccountsReceivableBillingAddress = defineServiceFn({
 /**
  * Get api keys
  *
- * @mcp read
+ * @mcp
  */
 export const getApiKeys = defineServiceFn({
   input: z.looseObject({

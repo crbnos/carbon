@@ -39,6 +39,10 @@ export const createEmployeeValidator = z.object({
   usPersonAttestation: zfd.checkbox()
 });
 
+/** `inviteEmployee`'s refusal of an invite without the attestation above. */
+export const US_PERSON_ATTESTATION_REQUIRED =
+  "You must confirm a reasonable basis that this individual is a U.S. person";
+
 // ITAR certification — Screen 1 (entity Rider acceptance). The two checkboxes
 // must be checked; z.literal(true) rejects an unchecked/absent box server-side
 // even though the browser also enforces `required`.

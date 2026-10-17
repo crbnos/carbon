@@ -13,7 +13,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getAccount, updatePublicAccount } from "~/modules/users/users.service";
+import { getAccount } from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "account-profile");
 
@@ -39,29 +39,20 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const form = input.data;
 
+  const api = await carbon(args.request);
   if (form.intent === "photo") {
-    const api = await carbon(args.request);
     return api.users.updateOwnAvatar({ path: form.path });
   }
 
-  const { request } = args;
-  const { client, userId } = await requirePermissions(request, {});
-  const { firstName, lastName, about, phone } = form;
-  const updateAccount = await updatePublicAccount(client, {
-    id: userId,
-    firstName,
-    lastName,
-    about,
-    phone
-  });
-  if (updateAccount.error)
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateAccount.error, "Failed to update profile")
-      )
-    );
-
-  return data({}, await flash(request, success("Updated profile")));
+  const { intent: _, ...profile } = form;
+  const result = await api.users.updateOwnProfile(profile);
+  return data(
+    {},
+    await flash(
+      args.request,
+      result.error
+        ? error(null, result.error.message)
+        : success("Updated profile")
+    )
+  );
 }

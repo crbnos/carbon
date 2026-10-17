@@ -11,7 +11,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { CreateEmployeeModal } from "~/modules/users/ui";
-import { createEmployeeValidator } from "~/modules/users/users.models";
+import {
+  createEmployeeValidator,
+  US_PERSON_ATTESTATION_REQUIRED
+} from "~/modules/users/users.models";
 import { getInvitable, originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
@@ -42,11 +45,12 @@ export async function action(args: ActionFunctionArgs) {
   const { ip, city } = originOf(args.request);
   const api = await carbon(args.request);
   const result = await api.users.inviteEmployee({ ...input.data, ip, city });
-  if (result.error?.category === "validation") {
+  if (result.error?.message === US_PERSON_ATTESTATION_REQUIRED) {
     return validationError({
       fieldErrors: { usPersonAttestation: result.error.message }
     });
   }
+  // The SSO domain check, the operation's only rule refusal.
   if (result.error?.category === "rule") {
     return validationError({ fieldErrors: { email: result.error.message } });
   }

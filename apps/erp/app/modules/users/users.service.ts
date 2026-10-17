@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ServiceContext } from "@carbon/api/service-fn.server";
+import type {
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
 import {
   CONTROLLED_ENVIRONMENT,
   hasPermission,
@@ -675,10 +678,6 @@ export async function upsertGroupMembers(
 
   return client.from("membership").insert([...memberGroups, ...memberUsers]);
 }
-// Re-exported, not reimplemented: this module used to carry a near-identical
-// copy that (a) missed the canonical version's cache TTL and (b) bypassed its
-// per-request memoization.
-
 /**
  * Controlled environments (ITAR) expire invites 7 days after creation. Computed
  * at read time — no `expiresAt` column. Resend resets `createdAt`, restarting
@@ -704,23 +703,30 @@ export function isControlledInviteExpired(createdAt: string): boolean {
  * may proceed. A failed connection read refuses (fail closed) rather than
  * guessing.
  */
-export async function getSsoInviteDomainError(
-  serviceRole: SupabaseClient<Database>,
-  companyId: string,
+/**
+ * Refuses an invite to an email outside the company's single sign-on
+ * domains (a `rule` refusal: the email is wrong), or when the domains cannot
+ * be read (`unavailable`: try again). Null without SSO.
+ */
+export async function refuseEmailOutsideSso(
+  ctx: ServiceContext,
   email: string
-): Promise<string | null> {
-  const connection = await getSsoConnection(serviceRole, companyId);
+): Promise<CarbonError<"rule" | "unavailable"> | null> {
+  const companyId = ctx.company.id;
+  const connection = await getSsoConnection(ctx.asSystem.supabase, companyId);
   if (connection.error) {
     logger.error("Failed to read SSO connection for invite check", {
       companyId,
       error: connection.error
     });
-    return "Could not verify the company's single sign-on configuration. Try again.";
+    return ctx.error(
+      "unavailable",
+      "Could not verify the company's single sign-on configuration. Try again."
+    );
   }
-  if (!connection.data) {
-    return null;
-  }
-  return uncoveredSsoDomainError(connection.data.domains ?? [], email);
+  if (!connection.data) return null;
+  const refusal = uncoveredSsoDomainError(connection.data.domains ?? [], email);
+  return refusal ? ctx.error("rule", refusal) : null;
 }
 
 export async function acceptInvite(
@@ -2509,7 +2515,7 @@ export async function deletePushSubscription(
     .eq("endpoint", args.endpoint);
 }
 
-/** Values are removed through `account.attributeValue.delete`, which checks who may. */
+/** Values are removed through `deleteAttributeValue`, which checks who may. */
 export async function deleteUserAttributeValue(
   client: SupabaseClient<Database>,
   args: {
@@ -2666,7 +2672,7 @@ export async function updatePublicAccount(
   return client.from("user").update(sanitize(account)).eq("id", account.id);
 }
 
-/** Values are set through `account.attributeValue.upsert`, which checks who may. */
+/** Values are set through `upsertAttributeValue`, which checks who may. */
 export async function upsertUserAttributeValue(
   client: SupabaseClient<Database>,
   update: {

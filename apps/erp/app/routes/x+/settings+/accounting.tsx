@@ -147,8 +147,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 // One form per card, told apart by its intent: each becomes the fields of
-// `settings.accounting.update` it saves (the operation drops `intent`), or
-// the missing-journals repair.
+// `updateAccountingSettings` it saves (the operation drops `intent`), or the
+// missing-journals repair.
 const accountingSettingsForm = z.discriminatedUnion("intent", [
   z
     .object({ intent: z.literal(JOURNAL_LEGACY_INTENT) })

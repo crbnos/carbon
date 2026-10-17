@@ -164,9 +164,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 }
 
-// The metadata keys `parsePushDefaults` reads. No unit key when the unit is
-// left to the company's list.
-
 /** Replace the property map, the description modes and the push defaults. */
 export async function action({ request }: ActionFunctionArgs) {
   const api = carbonFor(

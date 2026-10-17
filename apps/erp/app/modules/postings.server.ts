@@ -6,8 +6,20 @@
 // the ERP (`@carbon/api/postings.server`; MES through
 // `api+/internal.postings.$name.ts`). Registered by `carbon.server.ts`. A
 // posting with a client checks the caller behind it against the posting's
-// permission first; without one it runs as the system.
+// permission first, on the input as its schema parses it; without a client it
+// runs as the system.
 
+import {
+  batchOperationsInput,
+  createInput,
+  issueInput,
+  postInventoryAdjustmentInput,
+  postMaintenanceEventInput,
+  postPickingInput,
+  postProductionEventInput,
+  recalculateInput,
+  triggerReworkInput
+} from "@carbon/api/postings";
 import type { Postings } from "@carbon/api/postings.server";
 import * as accounting from "./accounting/accounting.service";
 import * as inventory from "./inventory/inventory.service";
@@ -56,7 +68,8 @@ export const postings: Postings = {
       input,
       invoicing.postSalesInvoice,
       {
-        as: postingPermissions["post-sales-invoice"]
+        as: postingPermissions["post-sales-invoice"],
+        schema: invoicing.postSalesInvoiceInput
       }
     ),
   "post-purchase-invoice": (handles, input) =>
@@ -66,24 +79,29 @@ export const postings: Postings = {
       input,
       invoicing.postPurchaseInvoice,
       {
-        as: postingPermissions["post-purchase-invoice"]
+        as: postingPermissions["post-purchase-invoice"],
+        schema: invoicing.postPurchaseInvoiceInput
       }
     ),
   "post-receipt": (handles, input) =>
     invokePosting(handles, "post-receipt", input, inventory.postReceipt, {
-      as: postingPermissions["post-receipt"]
+      as: postingPermissions["post-receipt"],
+      schema: inventory.postReceiptInput
     }),
   "post-shipment": (handles, input) =>
     invokePosting(handles, "post-shipment", input, inventory.postShipment, {
-      as: postingPermissions["post-shipment"]
+      as: postingPermissions["post-shipment"],
+      schema: inventory.postShipmentInput
     }),
   "post-payment": (handles, input) =>
     invokePosting(handles, "post-payment", input, invoicing.postPayment, {
-      as: postingPermissions["post-payment"]
+      as: postingPermissions["post-payment"],
+      schema: invoicing.postPaymentInput
     }),
   "post-charge": (handles, input) =>
     invokePosting(handles, "post-charge", input, accounting.postCharge, {
-      as: postingPermissions["post-charge"]
+      as: postingPermissions["post-charge"],
+      schema: accounting.postChargeInput
     }),
   "update-purchased-prices": (handles, input) =>
     invokePosting(
@@ -92,7 +110,8 @@ export const postings: Postings = {
       input,
       purchasing.updatePurchasedPrices,
       {
-        as: postingPermissions["update-purchased-prices"]
+        as: postingPermissions["update-purchased-prices"],
+        schema: purchasing.updatePurchasedPricesInput
       }
     ),
   "kanban-replenish": (handles, input) =>
@@ -102,7 +121,8 @@ export const postings: Postings = {
       input,
       inventory.replenishKanban,
       {
-        as: postingPermissions["kanban-replenish"]
+        as: postingPermissions["kanban-replenish"],
+        schema: inventory.kanbanReplenishInput
       }
     ),
   "create-rental-invoices": (handles, input) =>
@@ -112,7 +132,8 @@ export const postings: Postings = {
       input,
       sales.createRentalInvoices,
       {
-        as: postingPermissions["create-rental-invoices"]
+        as: postingPermissions["create-rental-invoices"],
+        schema: sales.createRentalInvoicesInput
       }
     ),
   "create-contract-invoices": (handles, input) =>
@@ -122,7 +143,8 @@ export const postings: Postings = {
       input,
       sales.createContractInvoices,
       {
-        as: postingPermissions["create-contract-invoices"]
+        as: postingPermissions["create-contract-invoices"],
+        schema: sales.createContractInvoicesInput
       }
     ),
   "create-lease-invoices": (handles, input) =>
@@ -132,7 +154,8 @@ export const postings: Postings = {
       input,
       purchasing.createLeaseInvoices,
       {
-        as: postingPermissions["create-lease-invoices"]
+        as: postingPermissions["create-lease-invoices"],
+        schema: purchasing.createLeaseInvoicesInput
       }
     ),
   "propose-revenue-recognition-run": (handles, input) =>
@@ -142,16 +165,19 @@ export const postings: Postings = {
       input,
       accounting.proposeRevenueRecognitionRun,
       {
-        as: postingPermissions["propose-revenue-recognition-run"]
+        as: postingPermissions["propose-revenue-recognition-run"],
+        schema: accounting.proposeRevenueRecognitionRunInput
       }
     ),
   issue: (handles, input) =>
     invokePosting(handles, "issue", input, inventory.issueMaterial, {
-      as: postingPermissions.issue
+      as: postingPermissions.issue,
+      schema: issueInput
     }),
   "post-picking": (handles, input) =>
     invokePosting(handles, "post-picking", input, inventory.postPicking, {
-      as: postingPermissions["post-picking"]
+      as: postingPermissions["post-picking"],
+      schema: postPickingInput
     }),
   "post-production-event": (handles, input) =>
     invokePosting(
@@ -159,7 +185,10 @@ export const postings: Postings = {
       "post-production-event",
       input,
       production.postProductionEvent,
-      { as: postingPermissions["post-production-event"] }
+      {
+        as: postingPermissions["post-production-event"],
+        schema: postProductionEventInput
+      }
     ),
   "post-maintenance-event": (handles, input) =>
     invokePosting(
@@ -167,7 +196,10 @@ export const postings: Postings = {
       "post-maintenance-event",
       input,
       resources.postMaintenanceEvent,
-      { as: postingPermissions["post-maintenance-event"] }
+      {
+        as: postingPermissions["post-maintenance-event"],
+        schema: postMaintenanceEventInput
+      }
     ),
   "post-inventory-adjustment": (handles, input) =>
     invokePosting(
@@ -175,11 +207,15 @@ export const postings: Postings = {
       "post-inventory-adjustment",
       input,
       inventory.postInventoryAdjustment,
-      { as: postingPermissions["post-inventory-adjustment"] }
+      {
+        as: postingPermissions["post-inventory-adjustment"],
+        schema: postInventoryAdjustmentInput
+      }
     ),
   create: (handles, input) =>
     invokePosting(handles, "create", input, shared.createDocument, {
-      as: postingPermissions.create
+      as: postingPermissions.create,
+      schema: createInput
     }),
   "batch-operations": (handles, input) =>
     invokePosting(
@@ -187,7 +223,10 @@ export const postings: Postings = {
       "batch-operations",
       input,
       production.batchOperation,
-      { as: postingPermissions["batch-operations"] }
+      {
+        as: postingPermissions["batch-operations"],
+        schema: batchOperationsInput
+      }
     ),
   recalculate: (handles, input) =>
     invokePosting(
@@ -195,10 +234,11 @@ export const postings: Postings = {
       "recalculate",
       input,
       production.recalculateRequirements,
-      { as: postingPermissions.recalculate }
+      { as: postingPermissions.recalculate, schema: recalculateInput }
     ),
   "trigger-rework": (handles, input) =>
     invokePosting(handles, "trigger-rework", input, production.triggerRework, {
-      as: postingPermissions["trigger-rework"]
+      as: postingPermissions["trigger-rework"],
+      schema: triggerReworkInput
     })
 };

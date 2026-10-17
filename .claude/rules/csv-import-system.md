@@ -20,7 +20,7 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
 2. **Map** — `FieldMappings.tsx` lets the user map CSV columns → entity fields, plus per-field
    **enum mappings** (e.g. CSV `"B"` → `"Buy"`) and creatable lookups/forms.
 3. **Submit** — form POSTs to `/x/shared/import/$tableId`.
-4. **Route action** validates, then calls the `importCsv` service.
+4. **Route action** validates, then calls the `importCsvFile` service function.
 5. **`importCsvTable`** downloads the CSV, maps, classifies each row, and writes in a transaction.
 
 ## Frontend (`apps/erp/app/components/ImportCSVModal/`)
@@ -55,7 +55,7 @@ Three exported maps, all keyed by table name:
     };
   }
   ```
-- `importPermissions` — table → permission module. Used by the route to gate access.
+- `importPermissions` — table → permission module. The one map: `importCsvFile`'s gate reads it.
 - `importSchemas` — `Record<keyof fieldMappings, z.ZodObject>` for per-table validation.
 
 Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
@@ -262,7 +262,7 @@ every other field is a column mapping) and calls `importCsvFile` (`shared.server
    the single-record adjustment's `create: inventory` route gate and `update: inventory`
    Save button).
 3. Validates `columnMappings` against `importSchemas[table]` (required fields mapped).
-4. Calls `importCsv(serviceRole, db, { table, filePath, columnMappings, enumMappings, companyId, userId })`
+4. Calls `importCsv(ctx, { table, filePath, columnMappings, enumMappings })`
    (quote tables go through `importQuotes` instead).
 5. Returns `{ inserted, updated, skipped, errors }`; `ImportCSVModal` reads it from the
    result's `data`.
@@ -271,17 +271,16 @@ The lookup values an import creates on the fly (`api+/csv+/create-lookup.tsx`) a
 `createImportLookups` (`shared.server.ts`), gated on `create` of the lookup's module.
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
-it calls `invokePosting({ client, db, companyId, userId }, "import-csv", args,
-importCsvTable, { as: importCsvTablePermission })`.
+it calls `invokePosting(ctx, "import-csv", args, importCsvTable)`, so the import runs
+under `importCsvFile`'s gate. Step 2 is the only permission check.
 
 ## The import (`importCsvTable`, `shared.service.ts`)
 
 Ported from the `import-csv` server function. Its input is `importCsvInput` (table enum,
 `filePath`, `columnMappings`, optional `enumMappings`).
 
-- `importCsv` checks the caller against `importCsvTablePermission`, `{ by: "table", rules }`: `update` on
-  `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
-  models, so a new import type adds its table to both sides.
+- Checks no permission itself: it runs under `importCsvFile`'s gate. A new import type
+  adds its table to `importPermissions` and to `importCsvInput`'s `table` enum.
 - Refuses a `filePath` outside the `${companyId}/` prefix, then downloads it from the
   company bucket.
 - Parses with `parseCsv` (`@carbon/files/csv`, PapaParse), falling back to a custom
@@ -331,7 +330,7 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
   the stored file independently (with a permissive fallback) — don't assume identical behavior.
 - `enumMappings` crosses the route boundary as a JSON string; the service and `importCsvTable` expect
   the parsed object.
-- `importCsvTable`'s transaction uses Kysely and bypasses RLS; authorization is the route's
-  `requirePermissions` plus the `importCsvTablePermission` check on the same permissions.
+- `importCsvTable`'s transaction uses Kysely and bypasses RLS; authorization is
+  `importCsvFile`'s gate alone.
 - Row-level failures are returned in `errors[]` with `{ row, reason }`; only a thrown
   exception produces a 500.

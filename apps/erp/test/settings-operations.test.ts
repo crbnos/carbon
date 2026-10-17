@@ -53,7 +53,6 @@ import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
 const {
-  createSubsidiary,
   removePrinterRoute,
   setIntegrationSyncEnabled,
   updatePostingSync,
@@ -61,7 +60,6 @@ const {
   updateInvoicingSettings,
   updatePeopleSettings,
   updatePlanningSettings,
-  updateProductionSettings,
   transitionSyncOperations,
   updateSecuritySettings,
   updateSubsidiaryDetails
@@ -80,7 +78,9 @@ type Write = { table: string; method: string; values: unknown };
 
 /**
  * A Supabase client whose every query answers with the rows the test names
- * for its table. Every write is recorded with what it wrote.
+ * for its table. Every write is recorded with what it wrote. It ignores
+ * filters, so a company or id scope is tested against the database instead
+ * (`test/database/settings-scoping.test.ts`).
  */
 function client(rows: Record<string, unknown>) {
   const writes: Write[] = [];
@@ -206,49 +206,7 @@ describe("invoicing settings", () => {
   });
 });
 
-describe("production settings", () => {
-  it("refuses a location that is not the company's", async () => {
-    const { ctx } = contextWith({ location: [] });
-
-    const result = await updateProductionSettings(ctx, {
-      locationStaffing: { locationId: "loc-x", requiresStaffing: true }
-    });
-
-    expect(result.error?.category).toBe("notFound");
-  });
-});
-
 describe("planning settings", () => {
-  it("refuses an employee who is not an active employee of the company", async () => {
-    const { ctx, writes } = contextWith({ employee: null });
-
-    const result = await updatePlanningSettings(ctx, {
-      defaultResponsibleEmployee: "someone-else"
-    });
-
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Choose an employee of this company"
-    });
-    expect(writes).toEqual([]);
-  });
-
-  it("refuses a location row-level security hides from the caller", async () => {
-    const { ctx } = contextWith({ employee: { id: "user-2" }, location: [] });
-
-    const result = await updatePlanningSettings(ctx, {
-      locationResponsibleEmployee: {
-        locationId: "loc-1",
-        responsibleEmployee: "user-2"
-      }
-    });
-
-    expect(result.error).toMatchObject({
-      category: "forbidden",
-      message: "You do not have permission to change this location"
-    });
-  });
-
   it("stores the daily MRP time with its seconds, and clears it for the 3-hourly default", async () => {
     const { ctx, writes } = contextWith();
 
@@ -394,25 +352,6 @@ describe("managing the companies of a group", () => {
     const result = await updateSubsidiaryDetails(ctx, subsidiary);
 
     expect(result.error?.category).toBe("forbidden");
-    expect(writes).toEqual([]);
-  });
-
-  it("refuses a parent company from another company group", async () => {
-    const { ctx, writes } = contextWith({
-      user: { email: "someone@carbon.ms" },
-      company: null
-    });
-
-    const result = await createSubsidiary(ctx, {
-      ...subsidiary,
-      id: undefined,
-      parentCompanyId: "company-of-another-group"
-    });
-
-    expect(result.error).toMatchObject({
-      category: "notFound",
-      message: "Parent company not found"
-    });
     expect(writes).toEqual([]);
   });
 });
