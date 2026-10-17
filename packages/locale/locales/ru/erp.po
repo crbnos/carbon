@@ -459,6 +459,8 @@ msgstr "{count, plural, one {# актив} few {# актива} many {# акти
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# еще после {fenceLabel}} few {# еще после {fenceLabel}} many {# еще после {fenceLabel}} other {# еще после {fenceLabel}}}"
 
@@ -3840,6 +3842,8 @@ msgstr "Резервные копии"
 msgid "Balance"
 msgstr "Остаток"
 
+msgid "Balance Remaining:"
+msgstr "Остаток:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Остаток для {0}"
@@ -16048,12 +16052,14 @@ msgstr "Страница"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Страница {pdfViewPage} из {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Оплаченная сумма:"
+msgid "Paid"
+msgstr "Оплачено"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
 
+msgid "Paid:"
+msgstr "Оплачено:"
 msgid "Paid outside Carbon"
 msgstr "Оплачено вне Carbon"
 

@@ -1945,22 +1945,26 @@ export async function getSalesOrderLines(
 /** @mcp read */
 export async function getSalesOrderInvoiceLines(
   client: SupabaseClient<Database>,
-  salesOrderId: string
+  salesOrderId: string,
+  companyId: string
 ) {
   return client
     .from("salesInvoiceLine")
     .select("invoiceId")
-    .eq("salesOrderId", salesOrderId);
+    .eq("salesOrderId", salesOrderId)
+    .eq("companyId", companyId);
 }
 
 /** @mcp read */
 export async function getSalesOrderInvoicesByIds(
   client: SupabaseClient<Database>,
-  invoiceIds: string[]
+  invoiceIds: string[],
+  companyId: string
 ) {
   return client
     .from("salesInvoices")
     .select("id, invoiceTotal, balance, status, currencyCode, exchangeRate")
+    .eq("companyId", companyId)
     .in("id", invoiceIds);
 }
 

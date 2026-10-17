@@ -459,6 +459,8 @@ msgstr "{count, plural, one {# 자산} other {# 자산}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel} 이후 # 개}}"
 
@@ -3840,6 +3842,8 @@ msgstr "백업"
 msgid "Balance"
 msgstr "잔액"
 
+msgid "Balance Remaining:"
+msgstr "잔액:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0}의 잔액"
@@ -16048,12 +16052,14 @@ msgstr "페이지"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "{documentPageCount}페이지 중 {pdfViewPage}페이지"
 
-msgid "Paid Amount:"
-msgstr "지급액:"
+msgid "Paid"
+msgstr "지급 완료"
 
 msgid "Paid Date"
 msgstr "지급일"
 
+msgid "Paid:"
+msgstr "지급액:"
 msgid "Paid outside Carbon"
 msgstr "Carbon 외부에서 지불됨"
 
