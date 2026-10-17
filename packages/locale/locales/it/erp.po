@@ -486,6 +486,9 @@ msgstr "{count} unità"
 msgid "{created} created, {updated} updated."
 msgstr "{created} creati, {updated} aggiornati."
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -648,6 +651,9 @@ msgstr "{selectedCount} selezionati"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · sincronizzato {syncedAgo}"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mese} other {# mesi}}"
@@ -13714,6 +13720,9 @@ msgstr "Sposta in"
 
 msgid "Move to Group"
 msgstr "Sposta in Gruppo"
+
+msgid "Move to tax codes"
+msgstr ""
 
 msgid "Move to Trash"
 msgstr "Sposta nel Cestino"

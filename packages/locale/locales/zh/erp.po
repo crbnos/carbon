@@ -486,6 +486,9 @@ msgstr "{count} 件"
 msgid "{created} created, {updated} updated."
 msgstr "已创建 {created} 条，已更新 {updated} 条。"
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -648,6 +651,9 @@ msgstr "{selectedCount} 已选择"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} 已同步"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
@@ -13714,6 +13720,9 @@ msgstr "移动到"
 
 msgid "Move to Group"
 msgstr "移动到组"
+
+msgid "Move to tax codes"
+msgstr ""
 
 msgid "Move to Trash"
 msgstr "移动到垃圾箱"

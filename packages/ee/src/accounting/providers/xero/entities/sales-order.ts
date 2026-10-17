@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { applyRate } from "@carbon/utils";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -11,6 +12,12 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import {
+  loadXeroTaxContext,
+  needsXeroTaxContext,
+  resolveXeroTaxType,
+  type XeroTaxContext
+} from "../tax";
 
 // Note: This is a push-only syncer (Carbon -> Xero).
 // Carbon sales orders are pushed as Xero Quotes since Xero
@@ -38,6 +45,7 @@ type SalesOrderRow = {
   currencyCode: string;
   exchangeRate: number;
   customerReference: string | null;
+  currencyDecimalPlaces: number | null;
   updatedAt: string | null;
 };
 
@@ -51,9 +59,42 @@ type SalesOrderLineRow = {
   saleQuantity: number;
   unitPrice: number | null;
   setupPrice: number | null;
+  taxPercent: number | null;
+  taxCodeId: string | null;
   accountNumber: string | null;
   itemReadableIdWithRevision: string | null;
 };
+
+/** A sales order line with the tax it is quoted at. */
+export type XeroSalesOrderLine = Accounting.SalesOrderLine & {
+  /** 0..1 */
+  taxPercent: number;
+  taxCodeId: string | null;
+};
+
+/** The sales order a Xero Quote is built from. */
+export type XeroSalesOrder = Omit<Accounting.SalesOrder, "lines"> & {
+  lines: XeroSalesOrderLine[];
+  /** The order currency's decimals; the line tax is rounded to them. */
+  currencyDecimalPlaces: number | null;
+};
+
+/**
+ * The tax of one quote line: the line's rate on the amount the line is sent
+ * with, rounded at the currency's decimals. Untaxed lines need no decimals.
+ */
+export function xeroSalesOrderLineTax(
+  line: Pick<XeroSalesOrderLine, "id" | "lineAmount" | "taxPercent">,
+  decimalPlaces: number | null
+): number {
+  if (line.taxPercent === 0) return 0;
+  if (decimalPlaces === null) {
+    throw new Error(
+      `Sales order line ${line.id} is taxed but its currency has no decimal places`
+    );
+  }
+  return applyRate(line.lineAmount, line.taxPercent, decimalPlaces);
+}
 
 // Status mapping: Carbon -> Xero Quote
 const CARBON_TO_XERO_STATUS: Record<
@@ -85,12 +126,27 @@ const SYNCABLE_STATUSES: SalesOrderRow["status"][] = [
 ];
 
 export class SalesOrderSyncer extends BaseEntitySyncer<
-  Accounting.SalesOrder,
+  XeroSalesOrder,
   Xero.Quote,
   "UpdatedDateUTC"
 > {
+  private taxContextPromise?: Promise<XeroTaxContext>;
+
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
+  private getTaxContext(): Promise<XeroTaxContext> {
+    this.taxContextPromise ??= loadXeroTaxContext(
+      this.database,
+      { companyId: this.companyId, integration: this.provider.id },
+      this.xeroProvider
+    ).catch((error) => {
+      this.taxContextPromise = undefined;
+      throw error;
+    });
+    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -110,25 +166,31 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
   // 3. LOCAL FETCH (Single + Batch)
   // =================================================================
 
-  async fetchLocal(id: string): Promise<Accounting.SalesOrder | null> {
+  async fetchLocal(id: string): Promise<XeroSalesOrder | null> {
     const orders = await this.fetchOrdersByIds([id]);
     return orders.get(id) ?? null;
   }
 
   protected async fetchLocalBatch(
     ids: string[]
-  ): Promise<Map<string, Accounting.SalesOrder>> {
+  ): Promise<Map<string, XeroSalesOrder>> {
     return this.fetchOrdersByIds(ids);
   }
 
   private async fetchOrdersByIds(
     ids: string[]
-  ): Promise<Map<string, Accounting.SalesOrder>> {
+  ): Promise<Map<string, XeroSalesOrder>> {
     if (ids.length === 0) return new Map();
 
     // Fetch order headers
     const orderRows = await this.database
       .selectFrom("salesOrder")
+      .innerJoin("company", "company.id", "salesOrder.companyId")
+      .leftJoin("currency", (join) =>
+        join
+          .onRef("currency.code", "=", "salesOrder.currencyCode")
+          .onRef("currency.companyGroupId", "=", "company.companyGroupId")
+      )
       .select([
         "salesOrder.id",
         "salesOrder.salesOrderId",
@@ -139,7 +201,8 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         "salesOrder.currencyCode",
         "salesOrder.exchangeRate",
         "salesOrder.customerReference",
-        "salesOrder.updatedAt"
+        "salesOrder.updatedAt",
+        "currency.decimalPlaces as currencyDecimalPlaces"
       ])
       .where("salesOrder.id", "in", ids)
       .where("salesOrder.companyId", "=", this.companyId)
@@ -161,6 +224,8 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         "salesOrderLine.saleQuantity",
         "salesOrderLine.unitPrice",
         "salesOrderLine.setupPrice",
+        "salesOrderLine.taxPercent",
+        "salesOrderLine.taxCodeId",
         "item.readableIdWithRevision as itemReadableIdWithRevision",
         "account.number as accountNumber"
       ])
@@ -180,7 +245,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
     }
 
     // Transform to Accounting.SalesOrder
-    const result = new Map<string, Accounting.SalesOrder>();
+    const result = new Map<string, XeroSalesOrder>();
     for (const row of orderRows as unknown as SalesOrderRow[]) {
       const lines = linesByOrderId.get(row.id) ?? [];
 
@@ -195,6 +260,10 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         currencyCode: row.currencyCode,
         exchangeRate: Number(row.exchangeRate) || 1,
         customerReference: row.customerReference,
+        currencyDecimalPlaces:
+          row.currencyDecimalPlaces == null
+            ? null
+            : Number(row.currencyDecimalPlaces),
         lines: lines.map((line) => {
           const unitPrice = Number(line.unitPrice) || 0;
           const setupPrice = Number(line.setupPrice) || 0;
@@ -209,7 +278,9 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
             unitPrice,
             setupPrice,
             accountNumber: line.accountNumber,
-            lineAmount: quantity * unitPrice + setupPrice
+            lineAmount: quantity * unitPrice + setupPrice,
+            taxPercent: Number(line.taxPercent) || 0,
+            taxCodeId: line.taxCodeId
           };
         }),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
@@ -261,9 +332,34 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
   // =================================================================
 
   protected async mapToRemote(
-    local: Accounting.SalesOrder
+    local: XeroSalesOrder
   ): Promise<Omit<Xero.Quote, "UpdatedDateUTC">> {
     const existingRemoteId = await this.getRemoteId(local.id);
+
+    // Resolve every line's tax before any dependency write, so an
+    // UNMAPPED_TAX_CODES Warning provisions nothing in Xero.
+    const financialLines = local.lines.filter(
+      // Comment lines have no financial data
+      (line) => line.salesOrderLineType !== "Comment"
+    );
+    const lineTaxes = financialLines.map((line) => ({
+      taxCodeId: line.taxCodeId,
+      taxPercent: line.taxPercent,
+      taxAmount: xeroSalesOrderLineTax(line, local.currencyDecimalPlaces)
+    }));
+    const taxContext = needsXeroTaxContext(lineTaxes)
+      ? await this.getTaxContext()
+      : null;
+    const taxTypes = financialLines.map((line, index) =>
+      resolveXeroTaxType({
+        context: taxContext,
+        documentId: local.id,
+        direction: "sales",
+        ...lineTaxes[index]!,
+        netAmount: line.lineAmount,
+        decimalPlaces: local.currencyDecimalPlaces
+      })
+    );
 
     // Resolve customer dependency — ensure customer is synced to Xero
     const customerRemoteId = await this.ensureDependencySynced(
@@ -273,18 +369,15 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
 
     // Build line items, resolving item dependencies
     const lineItems: Xero.QuoteLineItem[] = [];
-    for (const line of local.lines) {
-      // Skip comment lines — they have no financial data
-      if (line.salesOrderLineType === "Comment") {
-        continue;
-      }
-
+    for (const [index, line] of financialLines.entries()) {
       const lineItem: Xero.QuoteLineItem = {
         Description: line.description ?? undefined,
         Quantity: line.quantity,
         UnitAmount: line.unitPrice,
         AccountCode: line.accountNumber ?? undefined,
-        LineAmount: line.lineAmount
+        LineAmount: line.lineAmount,
+        TaxType: taxTypes[index],
+        TaxAmount: lineTaxes[index]!.taxAmount
       };
 
       // If line has an item, ensure it's synced and set ItemCode
@@ -321,7 +414,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
 
   protected async mapToLocal(
     _remote: Xero.Quote
-  ): Promise<Partial<Accounting.SalesOrder>> {
+  ): Promise<Partial<XeroSalesOrder>> {
     throw new Error(
       "Sales orders are push-only. Cannot map from Xero to Carbon."
     );
@@ -333,7 +426,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
 
   protected async upsertLocal(
     _tx: KyselyTx,
-    _data: Partial<Accounting.SalesOrder>,
+    _data: Partial<XeroSalesOrder>,
     _remoteId: string
   ): Promise<string> {
     throw new Error(
@@ -433,7 +526,7 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
   // =================================================================
 
   protected shouldSync(
-    context: ShouldSyncContext<Accounting.SalesOrder, Xero.Quote>
+    context: ShouldSyncContext<XeroSalesOrder, Xero.Quote>
   ): boolean | string {
     if (context.direction === "push" && context.localEntity) {
       if (!SYNCABLE_STATUSES.includes(context.localEntity.status)) {

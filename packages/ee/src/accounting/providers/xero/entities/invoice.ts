@@ -15,6 +15,7 @@ import {
   assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
   hasRevenueComponent,
+  type SalesDocumentComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
@@ -31,6 +32,12 @@ import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
+import {
+  loadXeroTaxContext,
+  needsXeroTaxContext,
+  resolveXeroTaxType,
+  type XeroTaxContext
+} from "../tax";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
@@ -77,6 +84,8 @@ export function buildXeroSalesInvoiceLines(args: {
   document: SalesDocumentComponents;
   salesAccountCode: string;
   shippingAccountCode: string | null;
+  /** The component's Xero `TaxType` (`resolveXeroTaxType`). */
+  resolveTaxType: (component: SalesDocumentComponent) => string;
 }): Xero.InvoiceLineItem[] {
   assertXeroMoneyPrecision(
     args.document.subtotal,
@@ -118,7 +127,7 @@ export function buildXeroSalesInvoiceLines(args: {
       UnitAmount: component.netAmount,
       LineAmount: component.netAmount,
       TaxAmount: component.taxAmount,
-      TaxType: component.taxPercent !== 0 ? "OUTPUT" : "NONE",
+      TaxType: args.resolveTaxType(component),
       // No `ItemCode`. Xero lines are already account-coded, so the item was
       // pure subledger detail — and carrying it meant mirroring Carbon's whole
       // manufacturing parts catalog into Xero Items. The item name stays in
@@ -134,6 +143,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   "UpdatedDateUTC"
 > {
   private accountCodesPromise?: ReturnType<typeof loadAccountCodesById>;
+  private taxContextPromise?: Promise<XeroTaxContext>;
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
@@ -194,6 +204,19 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
       });
     return code;
+  }
+
+  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
+  private getTaxContext(): Promise<XeroTaxContext> {
+    this.taxContextPromise ??= loadXeroTaxContext(
+      this.database,
+      { companyId: this.companyId, integration: this.provider.id },
+      this.xeroProvider
+    ).catch((error) => {
+      this.taxContextPromise = undefined;
+      throw error;
+    });
+    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -313,12 +336,27 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const shippingAccountCode = hasShipping
       ? await this.getShippingAccountCode(local)
       : null;
+    const taxContext = needsXeroTaxContext(document.components)
+      ? await this.getTaxContext()
+      : null;
     const lineItems = buildXeroSalesInvoiceLines({
       document,
       salesAccountCode,
-      shippingAccountCode
+      shippingAccountCode,
+      resolveTaxType: (component) =>
+        resolveXeroTaxType({
+          context: taxContext,
+          documentId: local.id,
+          direction: "sales",
+          taxCodeId: component.taxCodeId,
+          taxPercent: component.taxPercent,
+          taxAmount: component.taxAmount,
+          netAmount: component.netAmount,
+          decimalPlaces: document.decimalPlaces
+        })
     });
-    // All currency/account/component requirements are checked before dependency writes.
+    // All currency/account/component/tax requirements are checked before
+    // dependency writes, so an UNMAPPED_TAX_CODES Warning provisions nothing.
     const existingRemoteId = await this.getRemoteId(local.id);
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",

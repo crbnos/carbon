@@ -2,11 +2,14 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describe, expect, it } from "vitest";
-import type { Accounting } from "../../../../core/types";
+import { describe, expect, it, vi } from "vitest";
 import type { Xero } from "../../models";
 import { xeroItemCode } from "../item";
-import { PurchaseOrderSyncer } from "../purchase-order";
+import {
+  PurchaseOrderSyncer,
+  type XeroPurchaseOrder,
+  type XeroPurchaseOrderLine
+} from "../purchase-order";
 
 /**
  * A PO line names its item by `ItemCode`, which Xero resolves against the
@@ -32,34 +35,63 @@ describe("xeroItemCode", () => {
   });
 });
 
-function makePurchaseOrderSyncer(itemRow: {
-  readableId: string;
-  readableIdWithRevision: string | null;
-}) {
+/** The organisation's tax rates, as GET /TaxRates returns them. */
+const XERO_TAX_RATES: Xero.TaxRate[] = [
+  {
+    TaxType: "OUTPUT2",
+    Name: "20% (VAT on Income)",
+    EffectiveRate: 20,
+    CanApplyToRevenue: true,
+    CanApplyToExpenses: false
+  },
+  {
+    TaxType: "INPUT2",
+    Name: "20% (VAT on Expenses)",
+    EffectiveRate: 20,
+    CanApplyToRevenue: false,
+    CanApplyToExpenses: true
+  },
+  { TaxType: "NONE", Name: "No VAT", EffectiveRate: 0 }
+];
+
+function makePurchaseOrderSyncer(
+  itemRow: {
+    readableId: string;
+    readableIdWithRevision: string | null;
+  },
+  taxMappings: Array<{
+    entityId: string;
+    externalId: string;
+    metadata: unknown;
+  }> = []
+) {
   const query = {
     selectFrom: () => query,
     select: () => query,
     where: () => query,
-    executeTakeFirst: async () => itemRow
+    executeTakeFirst: async () => itemRow,
+    // The tax-code mapping read.
+    execute: async () => taxMappings
   };
   const syncer = new PurchaseOrderSyncer({
     database: query as never,
     companyId: "company-1",
-    provider: { id: "xero" } as never,
+    provider: { id: "xero", listTaxRates: async () => XERO_TAX_RATES } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "purchaseOrder"
   });
   const internals = syncer as unknown as Record<string, unknown>;
   internals.getRemoteId = async () => null;
-  internals.ensureDependencySynced = async () => "xero-item-1";
+  internals.ensureDependencySynced = vi.fn(async () => "xero-item-1");
   return syncer as unknown as {
-    mapToRemote(local: Accounting.PurchaseOrder): Promise<Xero.PurchaseOrder>;
+    mapToRemote(local: XeroPurchaseOrder): Promise<Xero.PurchaseOrder>;
+    ensureDependencySynced: unknown;
   };
 }
 
 const purchaseOrder = (
-  line: Partial<Accounting.PurchaseOrder["lines"][number]>
-): Accounting.PurchaseOrder =>
+  line: Partial<XeroPurchaseOrderLine>
+): XeroPurchaseOrder =>
   ({
     id: "po-1",
     companyId: "company-1",
@@ -74,6 +106,7 @@ const purchaseOrder = (
     totalTax: 0,
     totalAmount: 10,
     supplierReference: null,
+    currencyDecimalPlaces: 2,
     lines: [
       {
         id: "line-1",
@@ -85,13 +118,15 @@ const purchaseOrder = (
         accountNumber: null,
         taxPercent: null,
         taxAmount: null,
+        taxCodeId: null,
+        shippingCost: 0,
         totalAmount: 10,
         quantityReceived: null,
         quantityInvoiced: null,
         ...line
       }
     ]
-  }) as unknown as Accounting.PurchaseOrder;
+  }) as unknown as XeroPurchaseOrder;
 
 describe("Xero PurchaseOrderSyncer.mapToRemote (line ItemCode)", () => {
   it("sends the code the item was pushed under, revision included", async () => {
@@ -110,5 +145,75 @@ describe("Xero PurchaseOrderSyncer.mapToRemote (line ItemCode)", () => {
     }).mapToRemote(purchaseOrder({ itemId: null }));
 
     expect(payload.LineItems?.[0]?.ItemCode).toBeUndefined();
+  });
+});
+
+describe("Xero PurchaseOrderSyncer.mapToRemote (TaxType)", () => {
+  const item = { readableId: "PRT-1", readableIdWithRevision: null };
+
+  it("sends NONE on an untaxed line", async () => {
+    const payload = await makePurchaseOrderSyncer(item).mapToRemote(
+      purchaseOrder({})
+    );
+    expect(payload.LineItems?.[0]?.TaxType).toBe("NONE");
+    expect(payload.LineAmountTypes).toBeUndefined();
+  });
+
+  it("sends the code's mapped purchase TaxType on a taxed line", async () => {
+    const payload = await makePurchaseOrderSyncer(item, [
+      {
+        entityId: "tc_uk20:purchase",
+        externalId: "INPUT2",
+        metadata: { externalName: "20% (VAT on Expenses)", externalRate: 0.2 }
+      }
+    ]).mapToRemote(
+      // £10 + £2 shipping, taxed at 20%: £2.40.
+      purchaseOrder({
+        taxCodeId: "tc_uk20",
+        taxPercent: 0.2,
+        taxAmount: 2.4,
+        shippingCost: 2
+      })
+    );
+    expect(payload.LineItems?.[0]).toMatchObject({
+      TaxType: "INPUT2",
+      TaxAmount: 2.4
+    });
+  });
+
+  it("sends a zero-rated line at its mapped rate, Exclusive", async () => {
+    const payload = await makePurchaseOrderSyncer(item, [
+      {
+        entityId: "tc_uk0:purchase",
+        externalId: "ZERORATEDINPUT",
+        metadata: { externalName: "Zero Rated Expenses", externalRate: 0 }
+      }
+    ]).mapToRemote(
+      purchaseOrder({ taxCodeId: "tc_uk0", taxPercent: 0, taxAmount: 0 })
+    );
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(payload.LineItems?.[0]).toMatchObject({
+      TaxType: "ZERORATEDINPUT",
+      TaxAmount: 0
+    });
+  });
+
+  it("matches a legacy 20% line to the one 20% expense rate", async () => {
+    const payload = await makePurchaseOrderSyncer(item).mapToRemote(
+      purchaseOrder({ taxPercent: 0.2, taxAmount: 2 })
+    );
+    expect(payload.LineItems?.[0]?.TaxType).toBe("INPUT2");
+  });
+
+  it("stops an unmapped code with the Warning before the item is provisioned", async () => {
+    const syncer = makePurchaseOrderSyncer(item);
+    await expect(
+      syncer.mapToRemote(
+        purchaseOrder({ taxCodeId: "tc_uk20", taxPercent: 0.2, taxAmount: 2 })
+      )
+    ).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_TAX_CODES", warning: true }
+    });
+    expect(syncer.ensureDependencySynced).not.toHaveBeenCalled();
   });
 });

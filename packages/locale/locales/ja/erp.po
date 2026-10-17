@@ -486,6 +486,9 @@ msgstr "{count} 個"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 件作成、{updated} 件更新されました。"
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -648,6 +651,9 @@ msgstr "{selectedCount} 件が選択されています"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} に同期"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ヶ月} other {# ヶ月}}"
@@ -13714,6 +13720,9 @@ msgstr "移動先"
 
 msgid "Move to Group"
 msgstr "グループに移動"
+
+msgid "Move to tax codes"
+msgstr ""
 
 msgid "Move to Trash"
 msgstr "ゴミ箱に移動"

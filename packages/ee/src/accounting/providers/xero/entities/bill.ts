@@ -3,13 +3,20 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { assertExchangeRate, toBaseAmount } from "@carbon/utils";
+import {
+  assertExchangeRate,
+  distributeRoundingResidual,
+  round,
+  toBaseAmount,
+  toDocumentAmount
+} from "@carbon/utils";
 import { sql } from "kysely";
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import {
   type CostingLine,
   costingLineItemLabel,
   loadBillCostingLines,
+  splitBillTaxLegs,
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
@@ -26,6 +33,13 @@ import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
 import { assertXeroMoneyPrecision } from "../serialize";
+import {
+  hasXeroMappedTax,
+  loadXeroTaxContext,
+  resolveXeroTaxType,
+  XERO_NO_TAX,
+  type XeroTaxContext
+} from "../tax";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -118,13 +132,75 @@ const SYNCABLE_STATUSES: Accounting.Bill["status"][] = [
 const PAID_STATUSES: Accounting.Bill["status"][] = ["Paid", "Partially Paid"];
 
 /**
+ * What a bill needs to send tax, for `buildXeroBillLineItems`: the tax
+ * context, and the converted Tax Paid legs (`splitBillTaxLegs`) that the
+ * provider books itself from each line's rate instead of as a line of its own.
+ */
+export type XeroBillTax = {
+  /** Σ of the Tax Paid legs in the bill's currency; null when it has none. */
+  recoverableTotal: number | null;
+  decimalPlaces: number;
+  context: XeroTaxContext;
+};
+
+/** A leg whose code is zero-rated or exempt on this line. */
+function isZeroRatedLeg(line: CostingLine): boolean {
+  return Boolean(line.tax?.taxCodeId) && line.tax?.taxPercent === 0;
+}
+
+/**
+ * One cost leg split by recoverability (grill 10). A leg's amount L is the
+ * net plus the non-recoverable tax, so its net is L / (1 + r·(1 − s)) for
+ * rate r and recoverable share s. Xero takes one rate per line, so:
+ * - `recoverableNet` (net × s) goes at the mapped purchase rate, carrying the
+ *   recoverable tax `exactTax` (net × s × r, before rounding);
+ * - the rest of L (the remaining net plus the non-recoverable tax) goes at
+ *   `NONE` on the same account.
+ * A leg with no recoverable tax has `exactTax` 0.
+ */
+type XeroBillLegSplit = {
+  line: CostingLine;
+  recoverableNet: number;
+  exactTax: number;
+};
+
+function splitXeroBillLeg(
+  line: CostingLine,
+  decimalPlaces: number
+): XeroBillLegSplit {
+  const tax = line.tax;
+  if (!tax || tax.taxPercent === 0 || tax.recoverableShare === 0) {
+    return { line, recoverableNet: 0, exactTax: 0 };
+  }
+  const net = line.amount / (1 + tax.taxPercent * (1 - tax.recoverableShare));
+  const recoverable = net * tax.recoverableShare;
+  return {
+    line,
+    recoverableNet: round(recoverable, decimalPlaces),
+    exactTax: recoverable * tax.taxPercent
+  };
+}
+
+/**
  * Build Xero ACCPAY line items as an account-costed replay of the bill's
  * posted "Purchase Invoice" journal: `AccountCode` = the journal line's
  * mapped account (GR-IR / PPV / clearing), NOT the item's account and NOT the
- * blunt `defaultPurchaseAccountCode`. Tax-neutral (`TaxType: "NONE"`, no
- * `TaxAmount`) — the purchase posting folds tax into cost, so the replay
- * amounts already embed it. Pure — exported for tests. Amounts are already in
- * the invoice's transaction currency (`toTransactionCurrencyLines`).
+ * blunt `defaultPurchaseAccountCode`. Pure — exported for tests. Amounts are
+ * already in the invoice's transaction currency (`toTransactionCurrencyLines`).
+ *
+ * Without `tax` the lines are tax-neutral (`TaxType: "NONE"`, no
+ * `TaxAmount`): the purchase posting folded all tax into cost, so the replay
+ * amounts already embed it. With it, each leg goes out by its tax:
+ * - recoverable tax: split by recoverability (`splitXeroBillLeg`), the
+ *   recoverable part at the mapped purchase rate with its share of the Tax
+ *   Paid legs, which `distributeRoundingResidual` makes sum to them exactly;
+ * - a code at 0% (zero-rated or exempt): the code's mapped purchase rate with
+ *   `TaxAmount` 0, so Xero counts the net on the return (box 7 in the UK);
+ * - anything else (a non-zero rate with nothing recoverable, which the
+ *   posting folded into cost, or no code at all): `NONE`, as before.
+ * On a bill with recoverable tax (`tax.recoverableTotal` set), `costingLines`
+ * exclude the Tax Paid legs, and a leg that cannot be tied to one tax code
+ * refuses the bill rather than guess its share.
  *
  * `ItemCode` is attached ONLY for items known non-tracked (`nonTrackedItemIds`)
  * — a tracked Xero item would make Xero override the AccountCode with the
@@ -138,6 +214,8 @@ export function buildXeroBillLineItems(args: {
   costingLines: CostingLine[];
   accountCodesById: ReadonlyMap<string, string>;
   nonTrackedItemIds?: ReadonlySet<string>;
+  /** Set when a leg carries tax Xero must see; absent keeps the tax-neutral replay. */
+  tax?: XeroBillTax;
 }): Xero.InvoiceLineItem[] {
   const { bill } = args;
 
@@ -192,19 +270,165 @@ export function buildXeroBillLineItems(args: {
 
   assertXeroMoneyPrecision(...args.costingLines.map((line) => line.amount));
   const nonTracked = args.nonTrackedItemIds;
-  return args.costingLines.map((line) => {
+  const lineItem = (
+    line: CostingLine,
+    amount: number,
+    tax: { TaxType: string; TaxAmount?: number }
+  ): Xero.InvoiceLineItem => {
     const attachItemCode =
       line.sourceItem && nonTracked?.has(line.sourceItem.id)
         ? line.sourceItem.code
         : null;
     return {
       Description: costingLineItemLabel(line) ?? line.description ?? undefined,
-      LineAmount: line.amount,
+      LineAmount: amount,
       AccountCode: args.accountCodesById.get(line.accountId!)!,
-      TaxType: "NONE",
+      ...tax,
       ...(attachItemCode ? { ItemCode: attachItemCode.slice(0, 30) } : {})
     };
+  };
+
+  const tax = args.tax;
+  if (!tax) {
+    return args.costingLines.map((line) =>
+      lineItem(line, line.amount, { TaxType: XERO_NO_TAX })
+    );
+  }
+  const { decimalPlaces, recoverableTotal } = tax;
+  const mappedTaxType = (
+    line: CostingLine,
+    netAmount: number,
+    taxAmount: number
+  ) =>
+    resolveXeroTaxType({
+      context: tax.context,
+      documentId: bill.id,
+      direction: "purchase",
+      taxCodeId: line.tax!.taxCodeId,
+      taxPercent: line.tax!.taxPercent,
+      netAmount,
+      taxAmount,
+      decimalPlaces
+    });
+
+  // The recoverable tax, spread over the legs that carry a share of it.
+  const taxByLine = new Map<string, number>();
+  const splits = args.costingLines.map((line) =>
+    splitXeroBillLeg(line, decimalPlaces)
+  );
+  if (recoverableTotal !== null) {
+    // A leg the posting could not tie to one invoice line's tax cannot be
+    // split by recoverability. Refuse rather than guess its rate.
+    const untied = args.costingLines.filter((line) => !line.tax);
+    if (untied.length > 0) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: `Cannot sync bill ${bill.invoiceId}: ${untied.length} posting journal line(s) cannot be tied to one tax code, so their recoverable tax cannot be sent to Xero.`,
+        metadata: {
+          billId: bill.id,
+          journalLineIds: untied.map((line) => line.id)
+        }
+      });
+    }
+    const taxed = splits.filter((split) => split.exactTax !== 0);
+    if (taxed.length === 0) {
+      throw new Error(
+        `Bill ${bill.invoiceId} has recoverable tax of ${recoverableTotal} but no line carries a recoverable share`
+      );
+    }
+    const taxAmounts = distributeRoundingResidual(
+      taxed.map((split) => split.exactTax),
+      recoverableTotal,
+      decimalPlaces
+    );
+    taxed.forEach((split, index) => {
+      taxByLine.set(split.line.id, taxAmounts[index]!);
+    });
+  }
+
+  return splits.flatMap((split) => {
+    const { line, recoverableNet } = split;
+    const taxAmount = taxByLine.get(line.id);
+    if (taxAmount !== undefined) {
+      const rest = round(line.amount - recoverableNet, decimalPlaces);
+      return [
+        lineItem(line, recoverableNet, {
+          TaxType: mappedTaxType(line, recoverableNet, taxAmount),
+          TaxAmount: taxAmount
+        }),
+        ...(rest !== 0 ? [lineItem(line, rest, { TaxType: XERO_NO_TAX })] : [])
+      ];
+    }
+    if (isZeroRatedLeg(line)) {
+      return [
+        lineItem(line, line.amount, {
+          TaxType: mappedTaxType(line, line.amount, 0),
+          TaxAmount: 0
+        })
+      ];
+    }
+    return [lineItem(line, line.amount, { TaxType: XERO_NO_TAX })];
   });
+}
+
+/**
+ * The bill's costing in its own currency, and the tax Xero must see. A bill
+ * with no Tax Paid leg and no zero-rated coded leg replays every leg
+ * tax-neutral, exactly as before the tax ledger existed, and never reads the
+ * tax rates. One with Tax Paid legs drops them from the lines and carries
+ * their converted total for the provider to book natively.
+ */
+export async function toXeroBillCosting(
+  costing: {
+    lines: CostingLine[];
+    exchangeRate: number;
+    documentTotal: number;
+    decimalPlaces: number;
+  },
+  getContext: () => Promise<XeroTaxContext>
+): Promise<{
+  lines: CostingLine[];
+  tax?: XeroBillTax;
+}> {
+  const { exchangeRate, documentTotal, decimalPlaces } = costing;
+  const { lines, taxLegs } = splitBillTaxLegs(costing.lines);
+  if (taxLegs.length === 0) {
+    const converted = toTransactionCurrencyLines(costing.lines, {
+      exchangeRate,
+      documentTotal,
+      decimalPlaces
+    });
+    if (!costing.lines.some(isZeroRatedLeg)) return { lines: converted };
+    return {
+      lines: converted,
+      tax: {
+        recoverableTotal: null,
+        decimalPlaces,
+        context: await getContext()
+      }
+    };
+  }
+  const converted = toTransactionCurrencyLines(lines, {
+    exchangeRate,
+    documentTotal,
+    decimalPlaces,
+    taxLegs
+  });
+  // The same per-leg conversion `toTransactionCurrencyLines` reconciles the
+  // lines against, so lines + tax equal the document total exactly.
+  const recoverableTotal = round(
+    taxLegs.reduce(
+      (sum, leg) =>
+        sum + toDocumentAmount(leg.amount, exchangeRate, decimalPlaces),
+      0
+    ),
+    decimalPlaces
+  );
+  return {
+    lines: converted,
+    tax: { recoverableTotal, decimalPlaces, context: await getContext() }
+  };
 }
 
 export class BillSyncer extends BaseEntitySyncer<
@@ -213,8 +437,22 @@ export class BillSyncer extends BaseEntitySyncer<
   "UpdatedDateUTC"
 > {
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
+  private taxContextPromise?: Promise<XeroTaxContext>;
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
+  }
+
+  /** The tax-code mappings and Xero tax rates, loaded once per syncer. */
+  private getTaxContext(): Promise<XeroTaxContext> {
+    this.taxContextPromise ??= loadXeroTaxContext(
+      this.database,
+      { companyId: this.companyId, integration: this.provider.id },
+      this.xeroProvider
+    ).catch((error) => {
+      this.taxContextPromise = undefined;
+      throw error;
+    });
+    return this.taxContextPromise;
   }
 
   // =================================================================
@@ -502,16 +740,17 @@ export class BillSyncer extends BaseEntitySyncer<
       billId: local.id
     });
 
-    const transactionLines = toTransactionCurrencyLines(costingLines, {
-      exchangeRate,
-      documentTotal,
-      decimalPlaces
-    });
+    const { lines: transactionLines, tax } = await toXeroBillCosting(
+      { lines: costingLines, exchangeRate, documentTotal, decimalPlaces },
+      () => this.getTaxContext()
+    );
 
+    // Every tax resolves here, before the supplier dependency is written.
     const lineItems = buildXeroBillLineItems({
       bill: local,
       costingLines: transactionLines,
       accountCodesById,
+      tax,
       // v1: no item gets ItemCode on a bill line — proving a Xero item is
       // non-tracked needs a live per-item fetch (env-gated); attaching
       // ItemCode for a tracked item would double-post inventory. The
@@ -557,8 +796,12 @@ export class BillSyncer extends BaseEntitySyncer<
       // Pin every foreign snapshot, including negotiated 1:1 rates.
       CurrencyRate:
         currencyCode !== baseCurrencyCode ? exchangeRate : undefined,
-      // Tax-neutral replay: lines embed tax; let Xero compute totals from the
-      // NONE-taxed line amounts (no SubTotal/TotalTax/Total conflict).
+      // Xero computes the totals from the lines (no SubTotal/TotalTax/Total
+      // conflict). Lines with a mapped rate state amounts net of the tax they
+      // carry; a tax-neutral replay sends no line tax and no LineAmountTypes.
+      ...(hasXeroMappedTax(lineItems)
+        ? { LineAmountTypes: "Exclusive" as const }
+        : {}),
       LineItems: lineItems
     };
   }

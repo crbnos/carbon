@@ -486,6 +486,9 @@ msgstr "{count} adet"
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -648,6 +651,9 @@ msgstr "{selectedCount} seçildi"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · {syncedAgo} eşitlendi"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -13714,6 +13720,9 @@ msgstr "Taşış"
 
 msgid "Move to Group"
 msgstr "Gruba Taşı"
+
+msgid "Move to tax codes"
+msgstr ""
 
 msgid "Move to Trash"
 msgstr "Çöp Sepetine Taşı"

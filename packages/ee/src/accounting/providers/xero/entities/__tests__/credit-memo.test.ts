@@ -35,6 +35,8 @@ const memo = (overrides: Partial<XeroMemoSource> = {}): XeroMemoSource => ({
   currencyCode: "USD",
   exchangeRate: 1,
   amount: 250,
+  taxCodeId: null,
+  taxAmount: 0,
   reasonAccount: "acct_reason",
   reference: "RMA-9",
   notes: "Returned goods",
@@ -42,6 +44,25 @@ const memo = (overrides: Partial<XeroMemoSource> = {}): XeroMemoSource => ({
   applications: [],
   ...overrides
 });
+
+/** "UK Standard 20%", mapped both ways. */
+const TAX_MAPPINGS = [
+  {
+    entityId: "tc_uk20:sales",
+    externalId: "OUTPUT2",
+    metadata: { externalName: "20% (VAT on Income)", externalRate: 0.2 }
+  },
+  {
+    entityId: "tc_uk20:purchase",
+    externalId: "INPUT2",
+    metadata: { externalName: "20% (VAT on Expenses)", externalRate: 0.2 }
+  },
+  {
+    entityId: "tc_uk0:purchase",
+    externalId: "ZERORATEDINPUT",
+    metadata: { externalName: "Zero Rated Expenses", externalRate: 0 }
+  }
+];
 
 // Table-dispatching Kysely fake for the mapToRemote drive (mirrors bill.test.ts).
 function makeCreditNoteDb(
@@ -74,11 +95,13 @@ function makeCreditNoteDb(
       orderBy: () => builder,
       async execute() {
         if (table === "externalIntegrationMapping as m") return accountMappings;
+        if (table === "externalIntegrationMapping") return TAX_MAPPINGS;
         return [];
       },
       async executeTakeFirst() {
         if (table === "company")
           return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+        if (table === "currency") return { decimalPlaces: 2 };
         return undefined;
       }
     };
@@ -105,7 +128,26 @@ function makeSyncer(
   const syncer = new Syncer({
     database: db,
     companyId: "company-1",
-    provider: { id: "xero", settings: {} } as never,
+    provider: {
+      id: "xero",
+      settings: {},
+      listTaxRates: async () => [
+        {
+          TaxType: "OUTPUT2",
+          Name: "20% (VAT on Income)",
+          EffectiveRate: 20,
+          CanApplyToRevenue: true,
+          CanApplyToExpenses: false
+        },
+        {
+          TaxType: "INPUT2",
+          Name: "20% (VAT on Expenses)",
+          EffectiveRate: 20,
+          CanApplyToRevenue: false,
+          CanApplyToExpenses: true
+        }
+      ]
+    } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType
   });
@@ -545,5 +587,81 @@ describe("VendorCreditSyncer.upsertRemote (create once, never duplicate)", () =>
       "cn-existing"
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Memo tax (grill 5): `amount` is the gross; the line sends the net
+ * (`amount − taxAmount`), the tax and the code's mapped rate — sales for a
+ * customer memo, purchase for a supplier memo — so the credit note totals
+ * the gross that hit AR or AP.
+ */
+describe("Xero credit notes with tax", () => {
+  const taxed = (overrides: Partial<XeroMemoSource> = {}) =>
+    memo({ amount: 1200, taxAmount: 200, taxCodeId: "tc_uk20", ...overrides });
+
+  it("sends a taxed customer credit note's net, tax and mapped sales rate", async () => {
+    const payload = await makeSyncer(
+      CreditMemoSyncer,
+      "creditMemo"
+    ).mapToRemote(
+      taxed({ direction: "Credit", customerId: "cus_1", supplierId: null })
+    );
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(payload.LineItems).toEqual([
+      {
+        Description: "Returned goods",
+        Quantity: 1,
+        UnitAmount: 1000,
+        AccountCode: "4400",
+        TaxType: "OUTPUT2",
+        TaxAmount: 200
+      }
+    ]);
+  });
+
+  it("sends a taxed supplier credit at the mapped purchase rate", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit"
+    ).mapToRemote(taxed());
+    expect(payload.LineItems[0]).toMatchObject({
+      UnitAmount: 1000,
+      TaxType: "INPUT2",
+      TaxAmount: 200
+    });
+  });
+
+  it("sends a zero-rated supplier credit at its mapped rate with TaxAmount 0", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit"
+    ).mapToRemote(memo({ taxCodeId: "tc_uk0", taxAmount: 0 }));
+    expect(payload.LineAmountTypes).toBe("Exclusive");
+    expect(payload.LineItems[0]).toMatchObject({
+      UnitAmount: 250,
+      TaxType: "ZERORATEDINPUT",
+      TaxAmount: 0
+    });
+  });
+
+  it("stops an unmapped code with the UNMAPPED_TAX_CODES Warning", async () => {
+    await expect(
+      makeSyncer(VendorCreditSyncer, "supplierCredit").mapToRemote(
+        taxed({ taxCodeId: "tc_unmapped" })
+      )
+    ).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_TAX_CODES", warning: true }
+    });
+  });
+
+  it("keeps an untaxed memo tax-neutral, with no LineAmountTypes", async () => {
+    const payload = await makeSyncer(
+      VendorCreditSyncer,
+      "supplierCredit"
+    ).mapToRemote(memo());
+    expect(payload.LineAmountTypes).toBeUndefined();
+    expect(payload.LineItems[0]?.TaxType).toBe("NONE");
+    expect(payload.LineItems[0]).not.toHaveProperty("TaxAmount");
   });
 });

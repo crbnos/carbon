@@ -486,6 +486,9 @@ msgstr "{count} единиц"
 msgid "{created} created, {updated} updated."
 msgstr "{created} создано, {updated} обновлено."
 
+msgid "{customersWithoutTaxCode, plural, one {# customer has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# customers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}д"
 
@@ -648,6 +651,9 @@ msgstr "{selectedCount} выбрано"
 
 msgid "{state} · synced {syncedAgo}"
 msgstr "{state} · синхронизировано {syncedAgo}"
+
+msgid "{suppliersWithoutTaxCode, plural, one {# supplier has a tax percent and no tax code. Select it and choose Assign Tax Code.} other {# suppliers have a tax percent and no tax code. Select them and choose Assign Tax Code.}}"
+msgstr ""
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# месяц} few {# месяца} many {# месяцев} other {# месяцев}}"
@@ -13714,6 +13720,9 @@ msgstr "Переместить в"
 
 msgid "Move to Group"
 msgstr "Переместить в группу"
+
+msgid "Move to tax codes"
+msgstr ""
 
 msgid "Move to Trash"
 msgstr "Переместить в корзину"
