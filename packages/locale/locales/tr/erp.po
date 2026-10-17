@@ -20230,6 +20230,9 @@ msgstr "Seçilen: {selectedSum} / bölünme sonrası kalan: {0}"
 msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
+msgid "Self-Assessed Tax"
+msgstr ""
+
 msgid "Self-hosted or managed"
 msgstr "Kendi barındırılan veya yönetilen"
 

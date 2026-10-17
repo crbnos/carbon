@@ -20230,6 +20230,9 @@ msgstr "Выбрано: {selectedSum} / осталось после раздел
 msgid "Self Managed"
 msgstr "Самоуправляемый"
 
+msgid "Self-Assessed Tax"
+msgstr ""
+
 msgid "Self-hosted or managed"
 msgstr "Локальная установка или облачная"
 

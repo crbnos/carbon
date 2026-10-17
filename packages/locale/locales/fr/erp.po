@@ -20230,6 +20230,9 @@ msgstr "Sélectionné : {selectedSum} / restant après division : {0}"
 msgid "Self Managed"
 msgstr "Autogéré"
 
+msgid "Self-Assessed Tax"
+msgstr ""
+
 msgid "Self-hosted or managed"
 msgstr "Auto-hébergé ou géré"
 

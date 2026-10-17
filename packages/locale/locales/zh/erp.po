@@ -20230,6 +20230,9 @@ msgstr "已选择：{selectedSum} / 拆分后剩余：{0}"
 msgid "Self Managed"
 msgstr "自我管理"
 
+msgid "Self-Assessed Tax"
+msgstr ""
+
 msgid "Self-hosted or managed"
 msgstr "自托管或托管"
 

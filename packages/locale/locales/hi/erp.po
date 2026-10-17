@@ -20230,6 +20230,9 @@ msgstr "चयनित: {selectedSum} / विभाजन के बाद श
 msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
+msgid "Self-Assessed Tax"
+msgstr ""
+
 msgid "Self-hosted or managed"
 msgstr "स्व-होस्टेड या प्रबंधित"
 

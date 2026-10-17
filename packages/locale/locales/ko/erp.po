@@ -20230,6 +20230,9 @@ msgstr "선택됨: {selectedSum} / 분할 후 남은 수량: {0}"
 msgid "Self Managed"
 msgstr "자체 관리"
 
+msgid "Self-Assessed Tax"
+msgstr ""
+
 msgid "Self-hosted or managed"
 msgstr "자체 호스팅 또는 관리형"
 

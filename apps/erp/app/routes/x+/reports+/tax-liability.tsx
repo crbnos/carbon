@@ -103,6 +103,7 @@ export default function TaxLiabilityRoute() {
       exemptSales: row.exemptSales,
       taxCollected: row.taxCollected,
       taxablePurchases: row.taxablePurchases,
+      selfAssessedTax: row.selfAssessedTax,
       recoverableTax: row.recoverableTax,
       netDue: row.netDue,
       isTotal: false
@@ -118,6 +119,7 @@ export default function TaxLiabilityRoute() {
         exemptSales: sum((row) => row.exemptSales),
         taxCollected: sum((row) => row.taxCollected),
         taxablePurchases: sum((row) => row.taxablePurchases),
+        selfAssessedTax: sum((row) => row.selfAssessedTax),
         recoverableTax: sum((row) => row.recoverableTax),
         netDue: sum((row) => row.netDue),
         isTotal: true
@@ -145,6 +147,7 @@ export default function TaxLiabilityRoute() {
         | "exemptSales"
         | "taxCollected"
         | "taxablePurchases"
+        | "selfAssessedTax"
         | "recoverableTax"
         | "netDue",
       header: string
@@ -176,6 +179,7 @@ export default function TaxLiabilityRoute() {
       amountColumn("exemptSales", t`Exempt Sales`),
       amountColumn("taxCollected", t`Tax Collected`),
       amountColumn("taxablePurchases", t`Taxable Purchases`),
+      amountColumn("selfAssessedTax", t`Self-Assessed Tax`),
       amountColumn("recoverableTax", t`Recoverable Tax`),
       amountColumn("netDue", t`Net Due`)
     ];
