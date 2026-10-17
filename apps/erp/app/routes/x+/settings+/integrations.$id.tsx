@@ -16,6 +16,7 @@ import {
 import {
   buildDimensionValueMappingEntityId,
   buildRilletFieldTarget,
+  buildTaxCodeMappingEntityId,
   buildXeroTrackingTarget,
   getAccountingIntegration,
   getAccountMappings,
@@ -24,14 +25,17 @@ import {
   getFullChartMappableAccounts,
   getProviderIntegration,
   getSyncOperations,
+  getTaxCodeMappings,
   getUnmappedPostingAccounts,
   getUnmappedRequiredAccounts,
   getUnmappedSlottedDimensionValues,
+  getUnmappedTaxCodes,
   isAccountingSyncEnabled,
   JOURNAL_ENTRY_SOURCE_TYPES,
   loadAccountDefaultAccountIds,
   matchAccountsByCode,
   matchDimensionValuesByName,
+  matchTaxCodesByRate,
   POSTING_POLICY,
   ProviderID,
   QBO_DIMENSION_TARGET_CLASS,
@@ -48,9 +52,13 @@ import {
   selectRequiredMappingAccountIds,
   selectUnmappedRequiredAccounts,
   suggestAccountMatchesWithAI,
+  type TaxCodeMapping,
+  type TaxRateOption,
+  toXeroTaxRateOptions,
   transitionOperation,
   upsertAccountMappings,
   upsertDimensionValueMapping,
+  upsertTaxCodeMappings,
   validateDimensionSlots,
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
@@ -87,7 +95,7 @@ import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
 } from "@carbon/stripe/connect.server";
-import { redirect, redirectExternal } from "@carbon/utils";
+import { datetime, redirect, redirectExternal } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -105,9 +113,14 @@ import { useSettings } from "~/hooks";
 // ~/modules/settings/ui/Integrations/index.ts.
 import {
   getAccountsList,
-  getActiveDimensionsWithValues
+  getActiveDimensionsWithValues,
+  getTaxCodesList
 } from "~/modules/accounting/accounting.service";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import {
+  hasAccountingCutover,
+  taxCodeRate,
+  toTaxCodeInput
+} from "~/modules/accounting/accounting.utils";
 import {
   getIntegration,
   IntegrationForm,
@@ -125,7 +138,9 @@ import {
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
   postingSyncSettingsValidator,
-  syncEnabledValidator
+  syncEnabledValidator,
+  taxCodeMappingBulkUpsertValidator,
+  taxCodeMappingUpsertValidator
 } from "~/modules/settings/settings.models";
 import {
   getSyncOperationReadableIds,
@@ -140,6 +155,8 @@ import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPu
 import { OeeDevices } from "~/modules/settings/ui/Integrations/OeeDevices.ee";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
+import { TaxRateMapping } from "~/modules/settings/ui/Integrations/TaxRateMapping";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -627,6 +644,118 @@ async function getDimensionSyncTabData(
   };
 }
 
+/** The providers that map Carbon tax codes to their own tax rates. */
+const TAX_RATE_MAPPING_PROVIDERS: ReadonlySet<string> = new Set([
+  ProviderID.XERO,
+  ProviderID.QUICKBOOKS
+]);
+
+/**
+ * The provider's tax rates as mapping-tab options, both directions. Xero's
+ * read returns [] on failure (an empty list then reads as "no rates"); a
+ * thrown read sets `optionsError` so the tab says the read failed. The
+ * settings drawer never blocks on a provider outage.
+ */
+async function getProviderTaxRateOptions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+): Promise<{ options: TaxRateOption[]; optionsError: boolean }> {
+  try {
+    const providerId =
+      integrationId === ProviderID.XERO
+        ? ProviderID.XERO
+        : ProviderID.QUICKBOOKS;
+    const accountingIntegration = await getAccountingIntegration(
+      client,
+      companyId,
+      providerId
+    );
+    const provider = getProviderIntegration(
+      client,
+      companyId,
+      providerId,
+      accountingIntegration.metadata
+    );
+    const options =
+      providerId === ProviderID.XERO
+        ? toXeroTaxRateOptions(await (provider as XeroProvider).listTaxRates())
+        : await (provider as QboProvider).listTaxRateOptions();
+    return { options, optionsError: false };
+  } catch (err) {
+    logger.error("Failed to load provider tax rates", {
+      companyId,
+      integrationId,
+      error: err
+    });
+    return { options: [], optionsError: true };
+  }
+}
+
+/**
+ * Tax-rate mapping data for the integration drawer's Tax Rates tab: every
+ * active tax code with its rate today, the provider's rates per direction,
+ * the stored mappings, the used-but-unmapped (code, direction) pairs that
+ * hold the sync switch off, and exact-rate proposals. Null for a provider
+ * that does not map tax codes (Rillet), so no tab renders. The mapping
+ * services are Kysely-based (RLS bypassed) — same auth stance as
+ * getDimensionSyncTabData.
+ */
+async function getTaxRateTabData(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; integrationId: string }
+) {
+  const { companyId, integrationId } = args;
+  if (!TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) return null;
+
+  const db = getDatabaseClient();
+  const [provider, codesResult, timeZone, mappingsResult, unmappedResult] =
+    await Promise.all([
+      getProviderTaxRateOptions(client, companyId, integrationId),
+      getTaxCodesList(client, companyId),
+      getCompanyTimeZone(client, companyId),
+      getTaxCodeMappings(db, { companyId, integration: integrationId }),
+      getUnmappedTaxCodes(db, { companyId, integration: integrationId })
+    ]);
+
+  // Don't block the settings drawer on a load failure — render what
+  // loaded and log the cause.
+  for (const result of [codesResult, mappingsResult, unmappedResult]) {
+    if (result.error) {
+      logger.error("Failed to load tax rate mapping data", {
+        companyId,
+        integrationId,
+        error: result.error
+      });
+    }
+  }
+
+  const today = datetime.today(timeZone).toString();
+  const codes = (codesResult.data ?? []).map((code) => ({
+    id: code.id,
+    name: code.name,
+    rate: taxCodeRate(toTaxCodeInput(code), today)
+  }));
+  const mappings = mappingsResult.data ?? [];
+
+  return {
+    codes,
+    options: provider.options,
+    optionsError: provider.optionsError,
+    mappings,
+    unmapped: unmappedResult.data ?? [],
+    proposals: matchTaxCodesByRate({
+      codes,
+      options: provider.options,
+      mapped: new Set(
+        mappings.map((mapping) =>
+          buildTaxCodeMappingEntityId(mapping.taxCodeId, mapping.direction)
+        )
+      )
+    })
+  };
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -691,6 +820,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountingSync: null,
       postingSync: null,
       dimensionSync: null,
+      taxRates: null,
       devices: null
     };
   }
@@ -1145,12 +1275,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     : null;
 
+  // Tax-rate mapping tab data — Xero and QuickBooks Online only (guarded
+  // inside the helper).
+  const taxRates = isAccountingInstalled
+    ? await getTaxRateTabData(client, { companyId, integrationId })
+    : null;
+
   // The header's sync switch: off on a new connection, and only switchable on
-  // once every required account is mapped.
+  // once every required account and every used tax code is mapped.
   const accountingSync = accountMapping
     ? {
         enabled: isAccountingSyncEnabled(metadata),
-        unmappedRequiredCount: accountMapping.unmappedRequiredCount
+        unmappedRequiredCount: accountMapping.unmappedRequiredCount,
+        unmappedTaxCodeCount: taxRates
+          ? new Set(taxRates.unmapped.map((code) => code.taxCodeId)).size
+          : 0
       }
     : null;
 
@@ -1165,6 +1304,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountingSync,
     postingSync,
     dimensionSync,
+    taxRates,
     devices
   };
 }
@@ -1522,6 +1662,136 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Save one tax code's provider rates (Tax Rates tab, Xero and QuickBooks
+  // Online). The mapping service is Kysely-based (RLS bypassed) —
+  // requirePermissions above + companyId scoping is the auth gate. Stays on
+  // the page so the tab revalidates in place.
+  if (formData.get("intent") === "upsert-tax-code-mapping") {
+    if (!TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(null, "This integration does not map tax codes")
+        )
+      );
+    }
+
+    const validation = await validator(taxCodeMappingUpsertValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { taxCodeId } = validation.data;
+    const mappings: TaxCodeMapping[] = [];
+    if (validation.data.salesExternalId) {
+      mappings.push({
+        taxCodeId,
+        direction: "sales",
+        externalId: validation.data.salesExternalId,
+        externalName: validation.data.salesExternalName ?? null,
+        externalRate: validation.data.salesExternalRate ?? null
+      });
+    }
+    if (validation.data.purchaseExternalId) {
+      mappings.push({
+        taxCodeId,
+        direction: "purchase",
+        externalId: validation.data.purchaseExternalId,
+        externalName: validation.data.purchaseExternalName ?? null,
+        externalRate: validation.data.purchaseExternalRate ?? null
+      });
+    }
+
+    const result = await upsertTaxCodeMappings(getDatabaseClient(), {
+      companyId,
+      integration: integrationId,
+      userId,
+      mappings
+    });
+
+    if (result.error) {
+      logger.error("Failed to save tax code mapping", {
+        companyId,
+        integrationId,
+        taxCodeId,
+        error: result.error
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          error(result.error, "Failed to save tax code mapping")
+        )
+      );
+    }
+
+    return data({}, await flash(request, success("Saved tax code mapping")));
+  }
+
+  // Confirm-all from the match-by-rate drawer: repeated JSON-encoded
+  // `mappings` fields, written all or none.
+  if (formData.get("intent") === "bulk-upsert-tax-code-mappings") {
+    if (!TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(null, "This integration does not map tax codes")
+        )
+      );
+    }
+
+    const validation = await validator(
+      taxCodeMappingBulkUpsertValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { mappings } = validation.data;
+    const result = await upsertTaxCodeMappings(getDatabaseClient(), {
+      companyId,
+      integration: integrationId,
+      userId,
+      mappings: mappings.map((mapping) => ({
+        taxCodeId: mapping.taxCodeId,
+        direction: mapping.direction,
+        externalId: mapping.externalId,
+        externalName: mapping.externalName ?? null,
+        externalRate: mapping.externalRate ?? null
+      }))
+    });
+
+    if (result.error) {
+      logger.error("Failed to save tax code mappings", {
+        companyId,
+        integrationId,
+        error: result.error
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          error(result.error, "Failed to save tax code mappings")
+        )
+      );
+    }
+
+    const taxCodeMappingNoun =
+      mappings.length === 1
+        ? "tax code mapping"
+        : `${mappings.length} tax code mappings`;
+    return data(
+      {},
+      await flash(request, success(`Saved ${taxCodeMappingNoun}`))
+    );
+  }
+
   // Turn an accounting integration's sync on or off (drawer header switch).
   // A new connection starts off; turning it on is refused until every
   // required account is mapped, so the first push cannot park a wall of
@@ -1578,6 +1848,50 @@ export async function action({ request, params }: ActionFunctionArgs) {
             )
           )
         );
+      }
+
+      // Xero and QuickBooks Online also need a provider rate for every tax
+      // code in each direction it is used in — a document whose code has no
+      // mapping parks with UNMAPPED_TAX_CODES. Rillet maps no tax codes.
+      if (TAX_RATE_MAPPING_PROVIDERS.has(integrationId)) {
+        const unmappedTaxCodes = await getUnmappedTaxCodes(
+          getDatabaseClient(),
+          { companyId, integration: integrationId }
+        );
+        if (unmappedTaxCodes.error || !unmappedTaxCodes.data) {
+          logger.error("Failed to load unmapped tax codes", {
+            companyId,
+            integrationId,
+            error: unmappedTaxCodes.error
+          });
+          return data(
+            {},
+            await flash(
+              request,
+              error(
+                unmappedTaxCodes.error,
+                "Failed to check the tax code mapping"
+              )
+            )
+          );
+        }
+        const unmappedTaxCodeCount = new Set(
+          unmappedTaxCodes.data.map((code) => code.taxCodeId)
+        ).size;
+        if (unmappedTaxCodeCount > 0) {
+          return data(
+            {},
+            await flash(
+              request,
+              error(
+                null,
+                `Map the remaining ${unmappedTaxCodeCount} tax code${
+                  unmappedTaxCodeCount === 1 ? "" : "s"
+                } before turning on sync`
+              )
+            )
+          );
+        }
       }
     }
 
@@ -2135,6 +2449,7 @@ export default function IntegrationRoute() {
     accountingSync,
     postingSync,
     dimensionSync,
+    taxRates,
     devices
   } = useLoaderData<typeof loader>();
 
@@ -2145,8 +2460,8 @@ export default function IntegrationRoute() {
   const collapseSettings = integrationId === "mount" && installed;
   const mountActions = useMountActionStates(metadata);
 
-  // Accounting-category integrations get Account Mapping, Posting, Dimensions
-  // and Sync Activity tabs next to the Settings form (deep-linkable via
+  // Accounting-category integrations get Account Mapping, Posting, Dimensions,
+  // Tax Rates (Xero and QuickBooks Online) and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
   if (devices) {
@@ -2207,6 +2522,23 @@ export default function IntegrationRoute() {
           mappings={dimensionSync.mappings}
           unmapped={dimensionSync.unmapped}
           proposals={dimensionSync.proposals}
+        />
+      )
+    });
+  }
+  if (taxRates) {
+    tabs.push({
+      value: "tax-rates",
+      label: <Trans>Tax Rates</Trans>,
+      content: (tabBar) => (
+        <TaxRateMapping
+          tabs={tabBar}
+          codes={taxRates.codes}
+          options={taxRates.options}
+          optionsError={taxRates.optionsError}
+          mappings={taxRates.mappings}
+          unmapped={taxRates.unmapped}
+          proposals={taxRates.proposals}
         />
       )
     });
@@ -2272,6 +2604,7 @@ export default function IntegrationRoute() {
             <AccountingSyncControl
               enabled={accountingSync.enabled}
               unmappedRequiredCount={accountingSync.unmappedRequiredCount}
+              unmappedTaxCodeCount={accountingSync.unmappedTaxCodeCount}
             />
           </div>
         ) : undefined
