@@ -50,7 +50,7 @@ pub struct CompactReq {
 
 /// zstd level for the retained artifact. Background job, so favour ratio, but
 /// not the glacial max — STEP/xbf/glTF text all compress well at this mid level.
-const ZSTD_LEVEL: i32 = 12;
+pub(crate) const ZSTD_LEVEL: i32 = 12;
 
 pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
     let jobs = state.jobs.clone();
@@ -179,7 +179,7 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
 
 /// Stream a file through zstd into an owned buffer (the compressed artifact is
 /// small — read is streaming, only the result is held).
-fn zstd_file(path: &str, level: i32) -> Result<Vec<u8>, String> {
+pub(crate) fn zstd_file(path: &str, level: i32) -> Result<Vec<u8>, String> {
     let file = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
     zstd::stream::encode_all(std::io::BufReader::new(file), level)
         .map_err(|e| format!("zstd encode: {e}"))

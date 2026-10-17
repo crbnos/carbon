@@ -82,6 +82,8 @@ export const onshapePanelSyncFunction = inngest.createFunction(
       })
     );
 
+    // model-optimize also renders the thumbnail (one ingest job), so a part
+    // whose Onshape thumbnail could not be fetched still gets one.
     if (result.modelUploadId) {
       await step.sendEvent("model-optimize", {
         name: "carbon/model-optimize" as const,
@@ -90,13 +92,6 @@ export const onshapePanelSyncFunction = inngest.createFunction(
           companyId: payload.companyId,
           userId: payload.userId
         }
-      });
-    }
-
-    if (result.modelUploadId && !result.thumbnailAttached) {
-      await step.sendEvent("model-thumbnail", {
-        name: "carbon/model-thumbnail" as const,
-        data: { companyId: payload.companyId, modelId: result.modelUploadId }
       });
     }
 
