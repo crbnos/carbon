@@ -40,19 +40,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     logger.warn("Refused an internal call with no valid signature", { name });
     return refuse(401, "Unauthorized");
   }
+  // `@carbon/kv` answers null both for a nonce already set and when Redis is
+  // down, so a null is read back. With Redis down the call is accepted: the
+  // signature and its window still bound it, and the shop floor keeps posting.
+  const nonceKey = `internal-call:${call.nonce}`;
   const fresh = await redis.set(
-    `internal-call:${call.nonce}`,
+    nonceKey,
     "1",
     "PX",
     INTERNAL_CALL_WINDOW_MS * 2,
     "NX"
   );
   if (fresh !== "OK") {
-    logger.warn("Refused a repeated internal call", {
+    if ((await redis.get(nonceKey)) !== null) {
+      logger.warn("Refused a repeated internal call", {
+        name,
+        companyId: call.companyId
+      });
+      return refuse(409, "This call was already made");
+    }
+    logger.warn("Accepted an internal call without a replay check", {
       name,
       companyId: call.companyId
     });
-    return refuse(409, "This call was already made");
   }
 
   let input: unknown;
