@@ -974,6 +974,11 @@ export async function deleteJournals(f: Fixture, sourceTypes: SourceType[]) {
       .where("companyId", "=", f.companyId)
       .where("journalId", "in", journalIds);
     await trx
+      .deleteFrom("taxLedger")
+      .where("companyId", "=", f.companyId)
+      .where("journalId", "in", journalIds)
+      .execute();
+    await trx
       .deleteFrom("journalLineDimension")
       .where("companyId", "=", f.companyId)
       .where("journalLineId", "in", lineIds)

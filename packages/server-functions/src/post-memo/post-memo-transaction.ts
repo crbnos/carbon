@@ -23,7 +23,6 @@ import { buildTaxLedgerRows } from "@carbon/database/tax-ledger";
 import {
   datetime,
   EPSILON,
-  effectiveTaxPercent,
   round,
   toBaseAmount,
   toDocumentAmount
@@ -46,7 +45,7 @@ import {
   supplierReturnCarriedCost,
   withReasonRole
 } from "./memo-accounts";
-import { planMemoTax } from "./memo-tax";
+import { memoTaxLedger, planMemoTax } from "./memo-tax";
 import { rebuildMemoJournal } from "./rebuild-journal";
 import { planRentalCredit, type RentalCreditPlan } from "./rental-credit";
 
@@ -608,34 +607,21 @@ export function postMemoTransaction(
       .execute();
     if (memoTax > 0) {
       const memoLedgerRows = buildTaxLedgerRows({
+        ...memoTaxLedger({
+          memo: { ...memo, taxCodeId: memo.taxCodeId ?? null },
+          isAR,
+          partyId,
+          exchangeRate,
+          netAmount,
+          taxAmount: memoTax,
+          parts: memoTaxParts,
+          taxCode: memoTaxCode
+        }),
         companyId,
         createdBy: userId,
-        source: isAR ? "Sales" : "Purchase",
-        documentType: "Memo",
-        documentId: memoId,
         journalId: journal.id,
         postingDate: today,
-        customerId: isAR ? partyId : null,
-        supplierId: isAR ? null : partyId,
-        currencyCode: memo.currencyCode,
-        exchangeRate,
-        currencyDecimals: currency.decimalPlaces,
-        // A customer credit and a supplier debit reverse tax the invoice
-        // recorded; the other two add to it.
-        sign: (memo.direction === "Credit") === isAR ? -1 : 1,
-        lines: [
-          {
-            documentLineId: null,
-            taxCodeId: memo.taxCodeId ?? null,
-            taxableBase: toBaseAmount(netAmount, exchangeRate),
-            components: memoTaxParts,
-            taxPercent: memoTaxCode
-              ? effectiveTaxPercent(memoTaxCode.components)
-              : 0,
-            taxAmount: toBaseAmount(memoTax, exchangeRate),
-            exempt: null
-          }
-        ]
+        currencyDecimals: currency.decimalPlaces
       });
       await trx.insertInto("taxLedger").values(memoLedgerRows).execute();
     }

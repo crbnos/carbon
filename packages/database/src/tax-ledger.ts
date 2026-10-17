@@ -62,6 +62,13 @@ export type BuildTaxLedgerRowsInput = {
   lines: TaxLedgerLine[];
 };
 
+/** A document's ledger input, less what the journal write supplies: the
+ *  journal, its date, the company, the user and the currency's precision. */
+export type TaxLedgerDocument = Omit<
+  BuildTaxLedgerRowsInput,
+  "companyId" | "createdBy" | "journalId" | "postingDate" | "currencyDecimals"
+>;
+
 export function buildTaxLedgerRows(
   input: BuildTaxLedgerRowsInput
 ): TaxLedgerRow[] {

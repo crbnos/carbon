@@ -29,12 +29,9 @@ import {
   calculateDueDate,
   classifyIntercompanyPostingLines,
   datetime,
-  effectiveTaxPercent,
   getBillableQuantity,
   getRemainingQuantityToInvoice,
-  round,
-  SCALE,
-  splitLineTax
+  round
 } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -50,6 +47,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { purchaseTaxLedgerLines, withPurchaseTax } from "../lib/purchase-tax";
 import { loadTaxCodes } from "../lib/tax-codes";
 import { negateDocumentTaxLedger } from "../lib/tax-ledger-writes";
 import { loadLeasePostingFacts, resolveLeasePostingLine } from "./lease-lines";
@@ -817,32 +815,7 @@ const postPurchaseInvoice = defineServerFn({
         purchaseInvoiceLines.data.map((line) => line.taxCodeId),
         today
       );
-      const linesWithTax = purchaseInvoiceLines.data.map((line) => {
-        const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
-        if (!code || code.components.length === 0) return line;
-        const base =
-          line.quantity * (line.unitPrice ?? 0) + (line.shippingCost ?? 0);
-        if (code.calculationType === "Reverse Charge") {
-          return {
-            ...line,
-            selfAssessedParts: splitLineTax({
-              base,
-              lineTax: round(base * effectiveTaxPercent(code.components)),
-              components: code.components,
-              scale: SCALE
-            })
-          };
-        }
-        return {
-          ...line,
-          taxParts: splitLineTax({
-            base,
-            lineTax: line.taxAmount ?? 0,
-            components: code.components,
-            scale: SCALE
-          })
-        };
-      });
+      const linesWithTax = withPurchaseTax(purchaseInvoiceLines.data, taxCodes);
 
       const amountsByLineId = new Map(
         calculatePurchasePostingAmounts({
@@ -1895,25 +1868,10 @@ const postPurchaseInvoice = defineServerFn({
               ledgerCurrencyCode
             ),
             sign: 1,
-            lines: purchaseInvoiceLines.data
-              .filter((line) => line.invoiceLineType !== "Comment")
-              .map((line) => {
-                const amounts = amountsByLineId.get(line.id);
-                const legs = amounts?.taxLegs ?? [];
-                const selfAssessed = legs.some((leg) => leg.selfAssessed);
-                return {
-                  documentLineId: line.id,
-                  taxCodeId: line.taxCodeId,
-                  taxableBase:
-                    (amounts?.nominalBaseCost ?? 0) + (line.shippingCost ?? 0),
-                  components: legs.map((leg) => leg.part),
-                  taxPercent: line.taxPercent ?? 0,
-                  taxAmount: selfAssessed
-                    ? (amounts?.selfAssessedTaxBase ?? 0)
-                    : (line.taxAmount ?? 0),
-                  exempt: null
-                };
-              })
+            lines: purchaseTaxLedgerLines(
+              purchaseInvoiceLines.data,
+              amountsByLineId
+            )
           });
           if (taxLedgerRows.length > 0) {
             await trx.insertInto("taxLedger").values(taxLedgerRows).execute();

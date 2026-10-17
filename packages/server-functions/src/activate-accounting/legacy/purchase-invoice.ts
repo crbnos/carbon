@@ -37,6 +37,11 @@ import { EPSILON } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError } from "../../errors";
 import {
+  purchaseTaxLedgerLines,
+  withPurchaseTax
+} from "../../lib/purchase-tax";
+import { loadTaxCodes, taxCodesOn } from "../../lib/tax-codes";
+import {
   loadLeasePostingFacts,
   resolveLeasePostingLine
 } from "../../post-purchase-invoice/lease-lines";
@@ -278,6 +283,18 @@ export async function buildLegacyPurchaseInvoiceJournals(
   );
 
   const linesByInvoice = Map.groupBy(lines, (line) => line.invoiceId);
+  // The codes as each invoice's posting split its tax, on its posting date.
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    lines.map((line) => line.taxCodeId),
+    null
+  );
+  const { baseCurrencyCode } = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
   const shippingByInvoice = new Map(
     deliveries.map((row) => [row.id, Number(row.supplierShippingCost ?? 0)])
   );
@@ -371,14 +388,14 @@ export async function buildLegacyPurchaseInvoiceJournals(
         )
       : { accountId: defaults.payablesAccount, accountDefaultRole: null };
     const invoiceLines = linesByInvoice.get(invoice.id) ?? [];
+    const postingDate = String(invoice.postingDate);
     const amountsByLine = new Map(
       calculatePurchasePostingAmounts({
-        lines: invoiceLines,
+        lines: withPurchaseTax(invoiceLines, taxCodesOn(taxCodes, postingDate)),
         exchangeRate: invoice.exchangeRate ?? 1,
         supplierShippingCost: shippingByInvoice.get(invoice.id) ?? 0
       }).map((amounts) => [amounts.id, amounts])
     );
-    const postingDate = String(invoice.postingDate);
     /** The receipts the posting saw: posted on or before the invoice. */
     const receiptsBefore = (purchaseOrderLineId: string) =>
       (receiptsByLine.get(purchaseOrderLineId) ?? []).filter(
@@ -545,7 +562,17 @@ export async function buildLegacyPurchaseInvoiceJournals(
       description: `Purchase Invoice ${invoice.invoiceId}`,
       postingDate,
       sourceType: "Purchase Invoice" as const,
-      lines: journalLines
+      lines: journalLines,
+      taxLedger: {
+        source: "Purchase" as const,
+        documentType: "Purchase Invoice" as const,
+        documentId: invoice.id,
+        supplierId: invoice.supplierId,
+        currencyCode: invoice.currencyCode ?? baseCurrencyCode,
+        exchangeRate: invoice.exchangeRate ?? 1,
+        sign: 1 as const,
+        lines: purchaseTaxLedgerLines(invoiceLines, amountsByLine)
+      }
     };
   });
 }

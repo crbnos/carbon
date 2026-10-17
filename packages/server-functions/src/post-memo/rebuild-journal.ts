@@ -10,6 +10,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import { buildMemoJournal } from "@carbon/database/posting";
+import type { TaxLedgerDocument } from "@carbon/database/tax-ledger";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { InvalidInputError, NotFoundError } from "../errors";
@@ -18,7 +19,7 @@ import {
   loadPartyDimensions,
   partyDimensionValuesFrom
 } from "../lib/party-dimensions";
-import { loadTaxCodes } from "../lib/tax-codes";
+import { loadTaxCodes, taxCodeOn } from "../lib/tax-codes";
 import {
   isContractOrRentalCredit,
   type MemoJournalLineWithRole,
@@ -27,7 +28,7 @@ import {
   supplierReturnCarriedCosts,
   withReasonRole
 } from "./memo-accounts";
-import { planMemoTax } from "./memo-tax";
+import { memoTaxLedger, planMemoTax } from "./memo-tax";
 
 export const MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR =
   "This credit memo is from before your accounting cutover and credits a contract or a rental agreement. Invoice the customer for the amount instead.";
@@ -37,6 +38,8 @@ export const MEMO_CREDIT_VOID_BEFORE_CUTOVER_ERROR =
 export type RebuiltMemoJournal = {
   lines: MemoJournalLineWithRole[];
   dimensions: { dimensionId: string; valueId: string }[];
+  /** The memo's tax-ledger input; null for a memo with no tax. */
+  taxLedger: TaxLedgerDocument | null;
 };
 
 /**
@@ -159,26 +162,11 @@ export async function rebuildMemoJournals(
   // Memo tax plans exactly as the posting did (planMemoTax): the codes on
   // each memo's posting date and each currency's precision, read once.
   const taxedMemos = memos.filter((memo) => Number(memo.taxAmount ?? 0) > 0);
-  const postingDates = [
-    ...new Set(taxedMemos.map((memo) => memo.postingDate ?? ""))
-  ];
-  const codesByDate = new Map(
-    await Promise.all(
-      postingDates.map(
-        async (date) =>
-          [
-            date,
-            await loadTaxCodes(
-              trx,
-              companyId,
-              taxedMemos
-                .filter((memo) => (memo.postingDate ?? "") === date)
-                .map((memo) => memo.taxCodeId),
-              date
-            )
-          ] as const
-      )
-    )
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    taxedMemos.map((memo) => memo.taxCodeId),
+    null
   );
   const currencyCodes = [
     ...new Set(taxedMemos.map((memo) => memo.currencyCode).filter(Boolean))
@@ -206,15 +194,16 @@ export async function rebuildMemoJournals(
       );
     }
     const memoTax = Number(memo.taxAmount ?? 0);
-    const { taxToAccount } = planMemoTax({
+    const taxCode = memo.taxCodeId
+      ? taxCodeOn(taxCodes.get(memo.taxCodeId), memo.postingDate ?? "")
+      : undefined;
+    const { netAmount, taxToAccount, parts } = planMemoTax({
       isAR,
       amount: Number(memo.amount),
       taxAmount: memoTax,
       exchangeRate: Number(memo.exchangeRate),
       decimals: decimalsByCurrency.get(memo.currencyCode ?? "") ?? 2,
-      taxCode: memo.taxCodeId
-        ? codesByDate.get(memo.postingDate ?? "")?.get(memo.taxCodeId)
-        : undefined
+      taxCode
     });
     const { lines } = buildMemoJournal({
       memoId: memo.id,
@@ -246,7 +235,20 @@ export async function rebuildMemoJournals(
         isAR,
         partyId,
         typeId: typeByParty.get(partyId) ?? null
-      })
+      }),
+      taxLedger:
+        memoTax > 0 && memo.currencyCode
+          ? memoTaxLedger({
+              memo: { ...memo, currencyCode: memo.currencyCode },
+              isAR,
+              partyId,
+              exchangeRate: Number(memo.exchangeRate),
+              netAmount,
+              taxAmount: memoTax,
+              parts,
+              taxCode
+            })
+          : null
     };
   });
 }

@@ -11,6 +11,10 @@ import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { getNextSequences } from "@carbon/database/sequence";
+import {
+  buildTaxLedgerRows,
+  type TaxLedgerDocument
+} from "@carbon/database/tax-ledger";
 import { getLogger } from "@carbon/logger";
 import { chunkArray, datetime, formatPeriodLabel } from "@carbon/utils";
 import { sql } from "kysely";
@@ -39,6 +43,8 @@ export type LegacyJournal = {
   postingDate: string;
   sourceType: Enums["journalEntrySourceType"];
   lines: LegacyJournalLine[];
+  /** Written beside the journal, as the document's posting writes it. */
+  taxLedger?: TaxLedgerDocument;
 };
 
 /** A legacy journal and the document whose `journalId` gets its id. */
@@ -297,7 +303,75 @@ export async function insertProvisionalJournals(
       sourceType: journal.sourceType
     }))
   });
+  await insertTaxLedgers(trx, {
+    companyId,
+    userId,
+    journals: writable.flatMap((journal) =>
+      journal.taxLedger
+        ? [
+            {
+              journalId: idByJournal.get(journal)!,
+              postingDate: journal.postingDate,
+              taxLedger: journal.taxLedger
+            }
+          ]
+        : []
+    )
+  });
   return journals.map((journal) => idByJournal.get(journal) ?? null);
+}
+
+/** The tax-ledger rows of the written journals, in base and document
+ *  currency at the group's precision for each currency. */
+async function insertTaxLedgers(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    journals
+  }: {
+    companyId: string;
+    userId: string;
+    journals: {
+      journalId: string;
+      postingDate: string;
+      taxLedger: TaxLedgerDocument;
+    }[];
+  }
+): Promise<void> {
+  if (journals.length === 0) return;
+  const codes = [
+    ...new Set(journals.map((journal) => journal.taxLedger.currencyCode))
+  ];
+  const currencies = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select(["currency.code", "currency.decimalPlaces"])
+    .where("company.id", "=", companyId)
+    .where("currency.code", "in", codes)
+    .execute();
+  const decimalsByCode = new Map(
+    currencies.map((currency) => [currency.code, currency.decimalPlaces])
+  );
+  const rows = journals.flatMap(({ journalId, postingDate, taxLedger }) => {
+    const decimals = decimalsByCode.get(taxLedger.currencyCode);
+    if (decimals === null || decimals === undefined) {
+      throw new InvalidInputError(
+        `Currency ${taxLedger.currencyCode} is not set up for this company`
+      );
+    }
+    return buildTaxLedgerRows({
+      ...taxLedger,
+      companyId,
+      createdBy: userId,
+      journalId,
+      postingDate,
+      currencyDecimals: decimals
+    });
+  });
+  for (const chunk of chunkArray(rows, ROWS_PER_STATEMENT)) {
+    await trx.insertInto("taxLedger").values(chunk).execute();
+  }
 }
 
 /** A document whose posting stores the journal it wrote. */

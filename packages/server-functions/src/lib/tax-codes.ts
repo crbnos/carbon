@@ -10,7 +10,8 @@ import {
 
 /**
  * The tax codes `ids` name, each with only the components in force on
- * `date` (YYYY-MM-DD), in two queries. Shared by every posting path that
+ * `date` (YYYY-MM-DD), in two queries. A null `date` keeps every component,
+ * for a caller that reads documents of many dates (`taxCodeOn`). Shared by every posting path that
  * splits a line's tax into components. A code of another company, or one
  * that no longer exists, is simply absent from the map.
  */
@@ -18,7 +19,7 @@ export async function loadTaxCodes(
   db: Kysely<KyselyDatabase> | KyselyTx,
   companyId: string,
   ids: ReadonlyArray<string | null | undefined>,
-  date: string
+  date: string | null
 ): Promise<Map<string, TaxCodeInput>> {
   const taxCodeIds = [...new Set(ids.filter((id): id is string => !!id))];
   if (taxCodeIds.length === 0) return new Map();
@@ -74,9 +75,32 @@ export async function loadTaxCodes(
           id: code.id,
           calculationType: code.calculationType,
           taxesShipping: code.taxesShipping,
-          components: effectiveComponents({ components: all }, date)
+          components:
+            date === null ? all : effectiveComponents({ components: all }, date)
         }
       ];
     })
+  );
+}
+
+/** A code loaded with every component (`loadTaxCodes` with a null date),
+ *  with only those in force on `date`. */
+export function taxCodeOn(
+  code: TaxCodeInput | undefined,
+  date: string
+): TaxCodeInput | undefined {
+  return code && { ...code, components: effectiveComponents(code, date) };
+}
+
+/** Every code of `codes` (loaded with a null date) on `date`. */
+export function taxCodesOn(
+  codes: ReadonlyMap<string, TaxCodeInput>,
+  date: string
+): Map<string, TaxCodeInput> {
+  return new Map(
+    [...codes].map(([id, code]) => [
+      id,
+      { ...code, components: effectiveComponents(code, date) }
+    ])
   );
 }

@@ -2,8 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { TaxLedgerDocument } from "@carbon/database/tax-ledger";
 import {
   type ComponentTax,
+  effectiveTaxPercent,
   recoverableTax,
   round,
   SCALE,
@@ -50,5 +52,52 @@ export function planMemoTax(args: {
         ? 0
         : round(taxAmount * (recoverableTax(parts) / total), decimals),
     parts
+  };
+}
+
+/**
+ * The tax-ledger input of a memo with tax: one line at its net. A customer
+ * credit and a supplier debit reverse tax the invoice recorded, so they
+ * write negative; the other two add to it. Shared by the posting and the
+ * cutover backfill.
+ */
+export function memoTaxLedger(args: {
+  memo: {
+    id: string;
+    direction: "Credit" | "Debit";
+    currencyCode: string;
+    taxCodeId: string | null;
+  };
+  isAR: boolean;
+  partyId: string;
+  exchangeRate: number;
+  netAmount: number;
+  taxAmount: number;
+  parts: ComponentTax[];
+  taxCode: TaxCodeInput | undefined;
+}): TaxLedgerDocument {
+  const { memo, isAR, partyId, exchangeRate } = args;
+  return {
+    source: isAR ? "Sales" : "Purchase",
+    documentType: "Memo",
+    documentId: memo.id,
+    customerId: isAR ? partyId : null,
+    supplierId: isAR ? null : partyId,
+    currencyCode: memo.currencyCode,
+    exchangeRate,
+    sign: (memo.direction === "Credit") === isAR ? -1 : 1,
+    lines: [
+      {
+        documentLineId: null,
+        taxCodeId: memo.taxCodeId,
+        taxableBase: toBaseAmount(args.netAmount, exchangeRate),
+        components: args.parts,
+        taxPercent: args.taxCode
+          ? effectiveTaxPercent(args.taxCode.components)
+          : 0,
+        taxAmount: toBaseAmount(args.taxAmount, exchangeRate),
+        exempt: null
+      }
+    ]
   };
 }

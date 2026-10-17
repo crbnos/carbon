@@ -37,6 +37,8 @@ import {
   type SalesPostingAccount
 } from "@carbon/utils";
 import { sql } from "kysely";
+import { salesTaxLedgerLines } from "../../lib/sales-tax-ledger";
+import { loadTaxCodes, taxCodesOn } from "../../lib/tax-codes";
 import {
   planSalesInvoiceAccounts,
   resolveSalesInvoiceAccounts
@@ -107,7 +109,7 @@ export async function buildLegacySalesInvoiceJournals(
   const items = await readByIds(itemIds, (ids) =>
     trx
       .selectFrom("item")
-      .select(["id", "itemTrackingType", "replenishmentSystem"])
+      .select(["id", "itemTrackingType", "replenishmentSystem", "taxable"])
       .where("companyId", "=", companyId)
       .where("id", "in", ids)
       .execute()
@@ -193,13 +195,49 @@ export async function buildLegacySalesInvoiceJournals(
     contract: false,
     accountIds: deferrals.map((row) => row.debitAccountId)
   });
-  const accountRows = await readByIds(plan.accountIds, (ids) =>
-    trx
-      .selectFrom("account")
-      .select(["id", "class", "active", "isGroup"])
-      .where("companyGroupId", "=", companyGroupId)
-      .where("id", "in", ids)
-      .execute()
+  // The codes as each invoice's posting split its tax, on its posting date,
+  // and what the tax ledger snapshots: each customer's exemption.
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    lines.map((line) => line.taxCodeId),
+    null
+  );
+  const taxAccountIds = [...taxCodes.values()].flatMap((code) =>
+    code.components.flatMap((component) =>
+      component.taxReceivedAccountId ? [component.taxReceivedAccountId] : []
+    )
+  );
+  const customerTaxes = await readByIds(
+    invoices.map((invoice) => invoice.customerId),
+    (ids) =>
+      trx
+        .selectFrom("customerTax")
+        .select([
+          "customerId",
+          "taxExempt",
+          "taxExemptionReason",
+          "taxExemptionCertificateNumber"
+        ])
+        .where("companyId", "=", companyId)
+        .where("customerId", "in", ids)
+        .execute()
+  );
+  const { baseCurrencyCode } = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+
+  const accountRows = await readByIds(
+    [...plan.accountIds, ...taxAccountIds],
+    (ids) =>
+      trx
+        .selectFrom("account")
+        .select(["id", "class", "active", "isGroup"])
+        .where("companyGroupId", "=", companyGroupId)
+        .where("id", "in", ids)
+        .execute()
   );
   const accounts = resolveSalesInvoiceAccounts(
     plan,
@@ -213,6 +251,12 @@ export async function buildLegacySalesInvoiceJournals(
     shipments.map((row) => [row.id, Number(row.shippingCost ?? 0)])
   );
   const customerById = new Map(customers.map((row) => [row.id, row]));
+  const customerTaxById = new Map(
+    customerTaxes.map((row) => [row.customerId, row])
+  );
+  const nonTaxableItemIds = new Set(
+    items.filter((item) => item.taxable === false).map((item) => item.id)
+  );
   const deferralsByLine = Map.groupBy(
     deferrals,
     (row) => row.salesInvoiceLineId
@@ -278,23 +322,30 @@ export async function buildLegacySalesInvoiceJournals(
       unusedCostRows.splice(unusedCostRows.indexOf(costRow), 1);
       return -Number(costRow.cost);
     };
+    const postingDate = String(invoice.postingDate);
+    const codesOnDate = taxCodesOn(taxCodes, postingDate);
+    const headerShipping = allocateSalesHeaderShipping(
+      invoiceLines,
+      shippingByInvoice.get(invoice.id) ?? 0
+    );
     const journal = buildSalesInvoiceJournal({
       ...facts,
+      taxCodes: codesOnDate,
       invoice,
       customerTypeId: customer?.customerTypeId ?? null,
       intercompanyPartnerId: customer?.intercompanyCompanyId ?? null,
       lines: invoiceLines,
-      headerShipping: allocateSalesHeaderShipping(
-        invoiceLines,
-        shippingByInvoice.get(invoice.id) ?? 0
-      ),
+      headerShipping,
       revenue,
       directCost
     });
+    const customerTax = invoice.customerId
+      ? customerTaxById.get(invoice.customerId)
+      : undefined;
 
     return {
       description: `Sales Invoice ${invoice.invoiceId}`,
-      postingDate: String(invoice.postingDate),
+      postingDate,
       sourceType: "Sales Invoice" as const,
       lines: journal.lines.map((line, index) => ({
         ...accounts.standIns.storedLine(line),
@@ -302,7 +353,28 @@ export async function buildLegacySalesInvoiceJournals(
           journal.metadata[index]!,
           invoice.customerId
         )
-      }))
+      })),
+      taxLedger: {
+        source: "Sales" as const,
+        documentType: "Sales Invoice" as const,
+        documentId: invoice.id,
+        customerId: invoice.customerId,
+        currencyCode: invoice.currencyCode ?? baseCurrencyCode,
+        exchangeRate: invoice.exchangeRate ?? 1,
+        sign: 1 as const,
+        lines: salesTaxLedgerLines({
+          lines: invoiceLines,
+          headerShipping,
+          taxCodes: codesOnDate,
+          nonTaxableItemIds,
+          exemption: customerTax?.taxExempt
+            ? {
+                reason: customerTax.taxExemptionReason,
+                certificateNumber: customerTax.taxExemptionCertificateNumber
+              }
+            : null
+        })
+      }
     };
   });
 }

@@ -32,7 +32,7 @@ export async function buildLegacyMemoJournals(
       postingStatus: "Provisional"
     });
     batch.forEach((memo, index) => {
-      const { lines, dimensions } = rebuilt[index]!;
+      const { lines, dimensions, taxLedger } = rebuilt[index]!;
       journals.push({
         documentId: memo.id,
         description: `${memo.direction} Memo ${memo.memoId}`,
@@ -42,7 +42,8 @@ export async function buildLegacyMemoJournals(
           ...line,
           dimensions: {},
           dimensionValues: dimensions
-        }))
+        })),
+        taxLedger: taxLedger ?? undefined
       });
     });
   }
