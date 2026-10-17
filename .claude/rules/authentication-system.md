@@ -247,7 +247,18 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
 - `createCookieSessionStorage`, cookie name **`carbon`**, `httpOnly`, `sameSite: "lax"`
   (`"none"` in Test edition, always with `Secure` — browsers drop `None` without it),
   `secure`/`domain` from `DOMAIN` in non-test. Payload stored
-  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`.
+  under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`. Every write of this
+  cookie passes `SESSION_MAX_AGE`, flash writes included: the toast shares the
+  cookie, and a write without it turned the session into one that ends when the
+  browser closes.
+- **Cookie names are per deployment.** `authCookieName` (`utils/cookie.ts`) appends
+  `AUTH_COOKIE_SUFFIX` to `carbon`, `companyId`, `carbon-push` and
+  `carbon-oauth-state`. US and EU production both set `DOMAIN` to `carbon.ms`, so
+  with one name each region overwrote the other's cookie and failed its signature
+  (EU has its own `SESSION_SECRET`), signing users out. EU sets the suffix (`eu`) on
+  its ERP and MES; unset keeps the plain names. Changing `DOMAIN` instead is not a
+  fix: the browser still sends the parent-domain cookie, and it changes the passkey
+  `RP_ID`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.

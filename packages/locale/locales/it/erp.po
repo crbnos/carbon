@@ -4022,6 +4022,9 @@ msgstr "Beta"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Cause principali di scarto per motivo, articolo o centro di lavoro"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Fatturare i mesi di calendario, con un mese parziale per primo. Disattivato, ogni periodo inizia il giorno del mese della data di inizio."
+
 msgid "Bill of Material"
 msgstr "Distinta Base"
 
@@ -4058,8 +4061,8 @@ msgstr "Fatturato:"
 msgid "Billing"
 msgstr "Fatturazione"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Fatturazione di un noleggio in periodi fissi, mesi di calendario o periodi consecutivi di 28 giorni, ciascuno Fatturato nel primo giorno (Anticipato) o nell'ultimo giorno (Posticipato)."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Fatturazione di un noleggio in periodi fissi, sia mesi dalla data di inizio, mesi del calendario, o periodi consecutivi di 28 giorni, ognuno fatturato il primo giorno (Anticipato) o l'ultimo giorno (Posticipato)."
 
 msgid "Billing Address"
 msgstr "Indirizzo di Fatturazione"
@@ -4317,9 +4320,6 @@ msgstr "Metodo di Calcolo"
 
 msgid "Calendar"
 msgstr "Calendario"
-
-msgid "Calendar Month"
-msgstr "Mese Calendario"
 
 msgid "Calibration"
 msgstr "Taratura"
@@ -5135,6 +5135,9 @@ msgstr "Registrazione di un'entrata merci, spedizione o fattura: le quantità si
 
 msgid "Community support"
 msgstr "Supporto della comunità"
+
+msgid "Compact"
+msgstr "Compatto"
 
 msgid "Companies"
 msgstr "Aziende"
@@ -7682,8 +7685,17 @@ msgstr "Descrizione della Modifica"
 msgid "Description of Issue"
 msgstr "Descrizione del Problema"
 
+msgid "Detach"
+msgstr "Scollega"
+
+msgid "Detach from Onshape?"
+msgstr "Scollega da Onshape?"
+
 msgid "Detail"
 msgstr "Dettagli"
+
+msgid "Detailed"
+msgstr "Dettagliato"
 
 msgid "Details"
 msgstr "Dettagli"
@@ -8277,9 +8289,6 @@ msgstr "Ogni pagamento è dovuto l'ultimo giorno del suo periodo."
 msgid "Each period is 28 days from the start date."
 msgstr "Ogni periodo è di 28 giorni dalla data di inizio."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Ogni periodo è un mese di calendario, con un mese parziale per primo."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Ogni periodo viene fatturato il primo giorno, prima che il servizio sia erogato."
 
@@ -8292,8 +8301,15 @@ msgstr "Ogni periodo viene fatturato l'ultimo giorno, dopo che il servizio è st
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "Ogni periodo viene fatturato l'ultimo giorno, dopo che le unità sono state utilizzate."
 
+msgid "Each period is one month, for the month rate."
+msgstr "Ogni periodo è un mese, per la tariffa mensile."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Ogni unità fisica ottiene la propria entità tracciata e numero univoco — un'entità, un'unità."
+
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Il venditore di ogni accordo di noleggio o contratto (o il suo creatore) riceve un riepilogo giornaliero delle sue fatture."
@@ -10876,8 +10892,8 @@ msgstr "Come una riga del contratto guadagna i suoi ricavi nel corso delle sue d
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Come un contratto o un emendamento viene classificato per la rendicontazione ricorrente dei ricavi: Nuove vendite, Esistente, Espansione, Riattivazione o Contrazione. Carbon lo suggerisce e puoi cambiarlo."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Come un contratto di noleggio divide i periodi di fatturazione dalla sua data di inizio: il mese di calendario divide i mesi di calendario, e 28 giorni divide periodi di 28 giorni consecutivi. Ogni unità fattura un tasso alla sua frequenza per i giorni, settimane o mesi interi che un periodo copre; un tasso mensile in un mese di calendario è ripartito per giorni."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Come un contratto di noleggio divide i periodi di fatturazione dalla sua data di inizio: Mensile divide un mese dal giorno della data di inizio (un inizio il 7 fattura dal 7 al 6), Mese di calendario (Mensile, allineato ai periodi del calendario) divide i mesi del calendario, e 28 giorni divide periodi consecutivi di 28 giorni. Ogni unità fattura un tasso alla sua frequenza propria per i giorni, le settimane, o i mesi interi che un periodo copre; un tasso mensile in un periodo parziale è ripartito per giorni."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Come viene rifornito complessivamente un articolo (Acquisto, Produzione, o Acquisto e produzione), impostato per articolo, diversamente dal tipo di fornitura per riga."
@@ -12240,6 +12256,9 @@ msgstr "Ultimo invio {when} non riuscito: {0}"
 msgid "Last push {when}:"
 msgstr "Ultimo push {when}:"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Ultimo invio {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Ultimo Trimestre"
 
@@ -12606,6 +12625,9 @@ msgstr "Collega questo cliente Carbon a uno di loro, oppure crea un cliente Stri
 
 msgid "Link to sales order line"
 msgstr "Collega alla riga dell'ordine di vendita"
+
+msgid "Linked"
+msgstr "Collegato"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -13536,6 +13558,9 @@ msgstr "Tariffa mensile"
 
 msgid "Monthly"
 msgstr "Mensile"
+
+msgid "Monthly (calendar)"
+msgstr "Mensile (calendario)"
 
 msgid "Monthly Depreciation"
 msgstr "Ammortamento mensile"
@@ -15508,6 +15533,9 @@ msgstr "Apri negli avvisi di modifica {ids}. Rilasciali per creare nuove version
 msgid "Open in MES"
 msgstr "Apri in MES"
 
+msgid "Open in Onshape"
+msgstr "Apri in Onshape"
+
 msgid "Open Issues"
 msgstr "Problemi Aperti"
 
@@ -17406,6 +17434,15 @@ msgstr "Registra la prima nota senza la dimensione"
 
 msgid "Push to accounting"
 msgstr "Invia alla contabilità"
+
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr ""
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Inserisci questo addebito su una propria fattura, in sospeso in attesa di revisione prima che sia registrata. Altrimenti verrà inclusa sulla prossima fattura dell'accordo."

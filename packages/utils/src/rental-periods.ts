@@ -2,6 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  addMonths,
+  leaseMonthEnd,
+  leaseMonthsAt
+} from "@carbon/database/lease-months";
 import { RoundingMode, round } from "@carbon/database/precision";
 import {
   addDays,
@@ -83,7 +88,10 @@ export function defaultRentalRates(args: {
 }
 
 export type RateUnit = "Day" | "Week" | "Month";
-export type RentalBillingCycle = "Calendar Month" | "28 Days";
+/** Calendar Month: calendar months, a part month first. Monthly: months
+ *  counted from the start date (a start on the 7th bills the 7th to the 6th).
+ *  28 Days: consecutive 28-day windows. */
+export type RentalBillingCycle = "Calendar Month" | "Monthly" | "28 Days";
 export type RentalBillingTiming = "Advance" | "Arrears";
 
 /** What one period bills: the frequency applied and how many whole units. */
@@ -200,40 +208,92 @@ export function calendarMonthCharge(
   return round((monthRate * days) / daysInMonth(year, month), decimals);
 }
 
+/** The last day of the `Monthly` period that `date` falls in, for an
+ *  agreement starting on `startDate`. Period k runs from `startDate + k
+ *  months` to the day before `startDate + (k + 1) months`, always added from
+ *  the start, so a start on the 31st clamps to 28 Feb and returns to 31 Mar
+ *  (the contract Anniversary grid). */
+export function monthlyPeriodEnd(startDate: string, date: string): string {
+  return leaseMonthEnd(startDate, leaseMonthsAt(startDate, date));
+}
+
+/** A month rate prorated by the days of the `Monthly` period the span sits
+ *  in: `monthRate × days ÷ days in that period`, so a whole period is exactly
+ *  the rate whatever its length. The span must sit inside one period.
+ *  Rounded to `decimals` (the currency's settlement precision). */
+export function monthlyCharge(
+  startDate: string,
+  periodStart: string,
+  periodEnd: string,
+  monthRate: number,
+  decimals: number
+): number {
+  if (!Number.isFinite(monthRate)) {
+    throw new Error(`Month rate must be finite, got ${monthRate}`);
+  }
+  // Validates both dates and refuses an end before the start.
+  const days = daysBetweenInclusive(periodStart, periodEnd);
+  const month = leaseMonthsAt(startDate, periodStart);
+  const fullEnd = leaseMonthEnd(startDate, month);
+  if (periodEnd > fullEnd) {
+    throw new Error(
+      `"${periodStart}" to "${periodEnd}" is not within one billing period`
+    );
+  }
+  const fullDays = daysBetweenInclusive(addMonths(startDate, month), fullEnd);
+  return round((monthRate * days) / fullDays, decimals);
+}
+
 /** How far ahead billing periods are cut: today plus one billing cycle, so an
  *  open-ended (or held-over) line always has its current period and the next
  *  one. Activation generates to it, and the daily billing pass rolls every
  *  live line forward to it before billing. Calendar Month runs to the end of
- *  next month; 28 Days to today + 28. */
+ *  next month; Monthly to today + 1 month; 28 Days to today + 28. */
 export function billingHorizon(
   cycle: RentalBillingCycle,
   today: string
 ): string {
-  return cycle === "Calendar Month"
-    ? monthEnd(addDays(monthEnd(today), 1))
-    : addDays(today, DAYS_PER_UNIT.Month);
+  switch (cycle) {
+    case "Calendar Month":
+      return monthEnd(addDays(monthEnd(today), 1));
+    case "Monthly":
+      return addMonths(today, 1);
+    case "28 Days":
+      return addDays(today, DAYS_PER_UNIT.Month);
+  }
 }
 
 /** What a unit bills for one period of its agreement's cycle. A Monthly unit
  *  on a Calendar Month agreement is its month rate prorated by calendar days
- *  (`calendarMonthCharge`); every other combination is whole units of the
+ *  (`calendarMonthCharge`), and on a Monthly agreement by the days of its
+ *  period (`monthlyCharge`); every other combination is whole units of the
  *  unit's frequency (`rateCharge`): a Daily unit bills the days, a Weekly
  *  unit the whole weeks the period covers. */
 export function periodCharge(args: {
   cycle: RentalBillingCycle;
   rateUnit: RateUnit;
   rate: number;
+  /** The agreement's start date: a Monthly cycle's periods count from it. */
+  startDate: string;
   periodStart: string;
   periodEnd: string;
   /** The agreement currency's `decimalPlaces`. */
   decimals: number;
 }): Pick<PeriodSpec, "days" | "amount" | "rateUnitApplied"> {
-  const { cycle, rateUnit, rate, periodStart, periodEnd, decimals } = args;
+  const { cycle, rateUnit, rate, startDate, periodStart, periodEnd, decimals } =
+    args;
   const days = daysBetweenInclusive(periodStart, periodEnd);
   if (cycle === "Calendar Month" && rateUnit === "Month") {
     return {
       days,
       amount: calendarMonthCharge(periodStart, periodEnd, rate, decimals),
+      rateUnitApplied: "Month"
+    };
+  }
+  if (cycle === "Monthly" && rateUnit === "Month") {
+    return {
+      days,
+      amount: monthlyCharge(startDate, periodStart, periodEnd, rate, decimals),
       rateUnitApplied: "Month"
     };
   }
@@ -250,7 +310,8 @@ export function periodCharge(args: {
  *  rows already persisted.
  *
  *  Periods follow the cycle from `startDate`: calendar months (the first and
- *  last partial) or consecutive 28-day windows, each priced by
+ *  last partial), months counted from the start date, or consecutive 28-day
+ *  windows, each priced by
  *  `periodCharge` from the unit's own frequency and rate. `endDate` is a hard cut and the
  *  last day of a fixed term, generated in full up front; a unit still out
  *  past it keeps billing at the same rate from the day after (holdover).
@@ -299,12 +360,30 @@ export function generateRentalBillingPeriods(args: {
   if (returnedAt !== null) daysBetweenInclusive(startDate, returnedAt);
 
   const price = (periodStart: string, periodEnd: string) =>
-    periodCharge({ cycle, rateUnit, rate, periodStart, periodEnd, decimals });
+    periodCharge({
+      cycle,
+      rateUnit,
+      rate,
+      startDate,
+      periodStart,
+      periodEnd,
+      decimals
+    });
 
-  const naturalEnd = (from: string): string =>
-    cycle === "Calendar Month"
-      ? monthEnd(from)
-      : addDays(from, DAYS_PER_UNIT.Month - 1);
+  // Calendar Month and Monthly snap to the cycle's grid, so a period that
+  // starts mid-grid (a holdover after a mid-period end date) runs only to the
+  // next boundary. 28 Days has no grid: every period is 28 days from its own
+  // start.
+  const naturalEnd = (from: string): string => {
+    switch (cycle) {
+      case "Calendar Month":
+        return monthEnd(from);
+      case "Monthly":
+        return monthlyPeriodEnd(startDate, from);
+      case "28 Days":
+        return addDays(from, DAYS_PER_UNIT.Month - 1);
+    }
+  };
 
   const cut = (periodStart: string): PeriodSpec => {
     let periodEnd = naturalEnd(periodStart);

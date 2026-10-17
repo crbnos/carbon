@@ -265,10 +265,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (partId && modelId) {
       updates.push(
         // @ts-expect-error
-        client
-          .from("item")
-          .update({ modelUploadId: modelId })
-          .eq("id", partId)
+        client.from("item").update({ modelUploadId: modelId }).eq("id", partId)
       );
     }
 

@@ -191,7 +191,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-export default function () {
+export default function NewEmployeeRoute() {
   const { invitable } = useLoaderData<typeof loader>();
 
   return <CreateEmployeeModal invitable={invitable} />;

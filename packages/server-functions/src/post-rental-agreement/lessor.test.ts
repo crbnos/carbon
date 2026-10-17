@@ -75,6 +75,42 @@ it("a Calendar Month line pays the month rate once per whole month at the agreem
   ).toEqual({ termMonths: 36, payment: 1000, periods: 36, annualRate: 6 });
 });
 
+it("a Monthly line pays the month rate once per whole month from its start", () => {
+  expect(
+    leasePaymentTerms({
+      decimals: DECIMALS,
+      cycle: "Monthly",
+      ...MONTHLY,
+      discountRate: 6,
+      startDate: "2027-01-15",
+      endDate: "2028-01-14"
+    })
+  ).toEqual({ termMonths: 12, payment: 1000, periods: 12, annualRate: 6 });
+  // A start on the 31st: its first period ends on 27 February, one month.
+  expect(
+    leasePaymentTerms({
+      decimals: DECIMALS,
+      cycle: "Monthly",
+      ...MONTHLY,
+      discountRate: 6,
+      startDate: "2027-01-31",
+      endDate: "2027-07-30"
+    })
+  ).toEqual({ termMonths: 6, payment: 1000, periods: 6, annualRate: 6 });
+  // A Daily unit is valued at its average month, as on Calendar Month.
+  expect(
+    leasePaymentTerms({
+      decimals: DECIMALS,
+      cycle: "Monthly",
+      rateUnit: "Day",
+      rate: 50,
+      discountRate: 6,
+      startDate: "2027-01-15",
+      endDate: "2028-01-14"
+    }).payment
+  ).toEqual(1520.83);
+});
+
 it("an open-ended or sub-month line is valued over one period", () => {
   const openEnded = leasePaymentTerms({
     decimals: DECIMALS,
@@ -390,6 +426,37 @@ it("a Calendar Month sales-type lease starts on the first and ends on a month en
   );
 });
 
+it("a Monthly sales-type lease runs whole months from its start, on any day", () => {
+  const base = {
+    name: "FA-1",
+    cycle: "Monthly" as const,
+    rateUnit: "Month" as const,
+    startDate: "2027-01-15",
+    endDate: "2028-01-14",
+    fairValue: 38000,
+    today: "2026-12-15"
+  };
+  expect(salesTypeRequirementError(base)).toEqual(null);
+  expect(
+    salesTypeRequirementError({
+      ...base,
+      startDate: "2027-01-31",
+      endDate: "2027-02-27"
+    })
+  ).toEqual(null);
+  // A day short of the twelfth month bills a part period at the end.
+  expect(salesTypeRequirementError({ ...base, endDate: "2028-01-13" })).toEqual(
+    "FA-1 is treated as a sale, which runs whole billing periods: end it the day before a monthly anniversary of its start date, such as 2028-01-14"
+  );
+  // Shorter than one month.
+  expect(salesTypeRequirementError({ ...base, endDate: "2027-01-20" })).toEqual(
+    "FA-1 is treated as a sale, which runs whole billing periods: end it the day before a monthly anniversary of its start date, such as 2027-02-14"
+  );
+  expect(salesTypeRequirementError({ ...base, rateUnit: "Day" })).toEqual(
+    "FA-1 is treated as a sale, which on a Monthly agreement needs a monthly rate"
+  );
+});
+
 it("a 28 Days sales-type lease runs a whole number of 28-day periods", () => {
   const base = {
     name: "FA-1",
@@ -500,6 +567,20 @@ it("a whole-period sales-type lease bills exactly payment × periods", () => {
       // Through two Februaries, one of them a leap year.
       startDate: "2027-02-01",
       endDate: "2028-03-31"
+    },
+    {
+      cycle: "Monthly" as const,
+      ...MONTHLY,
+      // Mid-month: twelve periods, where Calendar Month would cut thirteen.
+      startDate: "2027-01-15",
+      endDate: "2028-01-14"
+    },
+    {
+      cycle: "Monthly" as const,
+      ...MONTHLY,
+      // From the 31st, through short months.
+      startDate: "2027-01-31",
+      endDate: "2027-07-30"
     },
     {
       cycle: "28 Days" as const,

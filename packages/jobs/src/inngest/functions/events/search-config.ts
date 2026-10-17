@@ -251,7 +251,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
     entityType: "salesRfq",
     getTitle: (r) => r.rfqId,
     getDescription: (r) => r.customerName || "",
-    getLink: (r) => `/x/rfq/${r.id}`,
+    getLink: (r) => `/x/sales-rfq/${r.id}`,
     getTags: (r) => [r.status].filter(Boolean),
     getMetadata: (r) => ({
       customerId: r.customerId,

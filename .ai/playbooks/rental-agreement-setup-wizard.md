@@ -1,6 +1,6 @@
 # Rental Agreement Setup Wizard
 
-Last tested: 2026-10-07
+Last tested: 2026-10-16 (Monthly billing cycle)
 Routes: /x/rental-agreement/new, /x/rental-agreement/:id/setup/{details,units,billing,accounting,review},
 /x/part/:itemId/inventory, /x/fixed-asset/capitalize
 
@@ -13,7 +13,12 @@ Routes: /x/rental-agreement/new, /x/rental-agreement/:id/setup/{details,units,bi
   Storage Units card shows a building-icon link per serial
   (`a[href*="fixed-asset/capitalize"]`); its page "Capitalize as Fixed Asset"
   defaults the class to Rental Fleet — requestSubmit the form whose button
-  contains "Capitalize". RW-010 in the dev company works.
+  contains "Capitalize". RW-010 in the dev company works. In "Update
+  Inventory", requestSubmit the DIALOG's form (`[role=dialog] form`) — a
+  page-wide search for a "Save" submit button finds the wrong form. If the
+  Storage Units card shows no building-icon link, open
+  `/x/fixed-asset/capitalize?itemId=…&trackedEntityId=…&locationId=…&storageUnitId=…`
+  directly (ids from the serial's `itemLedger` row).
 - A customer (NovaSat Networks has no sales contact → no invoice email sent).
 - Isolated session: `export AGENT_BROWSER_SESSION=<workspace>`; set
   `agent-browser set viewport 1440 1000` (the sticky footer covers fields at the
@@ -38,6 +43,12 @@ menuitem "Remove Unit" → requestSubmit the dialog form ("Delete") → stays on
 /setup/units.
 
 ### 3. Billing
+Billing Cycle cards: "Monthly" and "28 Days", with the "Align to calendar
+periods" checkbox under them (enabled for Monthly only). A new agreement is
+Monthly + ticked (`billingCycle = 'Calendar Month'`); click the checkbox to
+untick it → `billingCycle = 'Monthly'` (each period from the start date's day).
+Picking "Monthly" from "28 Days" restores the alignment it had before 28 Days
+(ticked when the page has not seen one, e.g. after a reload).
 Click text "Arrears"; Deposit / Tax Percent textboxes (`8.25%`) fill + Tab. Each
 saves on its own (`rental-agreement/update`).
 
@@ -50,7 +61,11 @@ the unit's row (Fair Value) → textbox → fill → Tab.
 A unit at rate 0 is listed red ("… has no rate.") and Activate is disabled; a
 direct POST to `/activate` is refused too (status stays Draft). With every unit
 priced: footer "Activate" → dialog button "Activate MOD+ENTER" → lands on
-`/details`, status Active, billing periods cut.
+`/details`, status Active, billing periods cut. On a Monthly agreement from
+2026-10-07 to 2027-10-06 at 1,500 a month: 12 periods, 7th → 6th, each 1,500,
+due on the 7th; the header "Invoice" button → dialog "Invoice MOD+ENTER" bills
+the first one ("… · 31 days · Month rate"). Properties shows Billing Cycle
+"Monthly" ("Monthly (calendar)" for Calendar Month).
 
 ### 6. Redirects
 A Draft opened from the list or at `/details` lands on `/setup/units`; an Active

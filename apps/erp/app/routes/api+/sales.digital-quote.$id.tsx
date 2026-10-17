@@ -76,7 +76,11 @@ export async function action(args: ActionFunctionArgs) {
         formData.get("digitalQuoteAcceptedByEmail")
       );
       const selectedLinesRaw = formData.get("selectedLines") ?? "{}";
-      const file = formData.get("file");
+      // A file input left empty still submits a part — a File with no name
+      // and no bytes — so only a non-empty File is an upload.
+      const fileField = formData.get("file");
+      const file =
+        fileField instanceof File && fileField.size > 0 ? fileField : null;
 
       if (typeof selectedLinesRaw !== "string") {
         return { success: false, message: "Invalid selected lines data" };
@@ -103,9 +107,8 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       // Unauthenticated endpoint: the name becomes a storage key segment.
-      const uploadFileName =
-        file instanceof File ? safeStorageFileName(file.name) : null;
-      if (file instanceof File && !uploadFileName) {
+      const uploadFileName = file ? safeStorageFileName(file.name) : null;
+      if (file && !uploadFileName) {
         logger.error("Rejected digital quote upload file name", {
           quoteId: quote.data.id,
           companyId: quote.data.companyId,
@@ -116,7 +119,7 @@ export async function action(args: ActionFunctionArgs) {
 
       // Extract purchase order number from PDF filename if available
       let purchaseOrderNumber = "";
-      if (file instanceof File && file.name.toLowerCase().endsWith(".pdf")) {
+      if (file?.name.toLowerCase().endsWith(".pdf")) {
         purchaseOrderNumber = file.name.replace(/\.pdf$/i, "");
       }
 
@@ -261,7 +264,7 @@ export async function action(args: ActionFunctionArgs) {
         }
       }
 
-      if (file && file instanceof File && uploadFileName) {
+      if (file && uploadFileName) {
         const purchaseOrderDocumentPath = `${quote.data.companyId}/opportunity/${quote.data.opportunityId}/${uploadFileName}`;
 
         const fileUpload = await storage(serviceRole)

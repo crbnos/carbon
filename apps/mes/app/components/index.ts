@@ -19,7 +19,7 @@ export {
   FileIcon,
   FilePreview,
   Hyperlink,
-  OperationsList,
   OperationStatusIcon,
+  OperationsList,
   PrintButton
 };

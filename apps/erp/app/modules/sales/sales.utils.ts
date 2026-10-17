@@ -3,14 +3,19 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import type { LeasePaymentTerms, RateUnit, Timing } from "@carbon/utils";
+import type {
+  LeasePaymentTerms,
+  RateUnit,
+  RentalBillingCycle,
+  Timing
+} from "@carbon/utils";
 import {
   classifyLessorLease,
   classifyRentalLine,
   equals,
   leasePaymentTerms,
-  round,
-  wholeMonthsInTerm
+  rentalTermMonths,
+  round
 } from "@carbon/utils";
 import { z } from "zod";
 import type {
@@ -219,19 +224,21 @@ export type LeasePolicy = {
   substantiallyAllPercent: number;
 };
 
-/** Whole calendar months of the term; null when open-ended. */
+/** Whole months of the term, as activation counts them
+ *  (`rentalTermMonths`); null when open-ended. */
 export function leaseTermMonths(
+  cycle: RentalBillingCycle,
   startDate: string,
   endDate: string | null | undefined
 ): number | null {
-  return endDate ? wholeMonthsInTerm(startDate, endDate) : null;
+  return rentalTermMonths(cycle, startDate, endDate || null);
 }
 
 /** `leasePaymentTerms` from @carbon/utils — the same function activation
  *  prices a line with — or null when the line cannot be priced (a rate that
  *  is not a finite number). */
 export function draftLeasePaymentTerms(args: {
-  cycle: "Calendar Month" | "28 Days";
+  cycle: RentalBillingCycle;
   rateUnit: RateUnit;
   rate: number;
   discountRate: number;
@@ -256,7 +263,7 @@ export function previewLeaseClassification(args: {
   agreement: {
     startDate: string;
     endDate: string | null;
-    billingCycle: "Calendar Month" | "28 Days";
+    billingCycle: RentalBillingCycle;
     billingTiming: Timing;
     discountRate: number;
     ownershipTransfers: boolean;
@@ -308,7 +315,11 @@ export function previewLeaseClassification(args: {
   const inputs = {
     ownershipTransfers: agreement.ownershipTransfers,
     purchaseOptionReasonablyCertain: agreement.purchaseOptionReasonablyCertain,
-    termMonths: leaseTermMonths(agreement.startDate, agreement.endDate),
+    termMonths: leaseTermMonths(
+      agreement.billingCycle,
+      agreement.startDate,
+      agreement.endDate
+    ),
     economicLifeMonths: line.economicLifeMonths,
     pvPayments: 0,
     fairValue: line.fairValue,

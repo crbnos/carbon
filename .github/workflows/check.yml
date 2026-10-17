@@ -15,14 +15,14 @@ jobs:
     name: Install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -36,7 +36,7 @@ jobs:
       # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
@@ -51,14 +51,14 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -72,7 +72,7 @@ jobs:
       # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
@@ -94,14 +94,14 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -115,7 +115,7 @@ jobs:
       # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
@@ -133,14 +133,14 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -154,7 +154,7 @@ jobs:
       # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
@@ -171,14 +171,14 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -192,7 +192,7 @@ jobs:
       # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
@@ -209,14 +209,14 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -230,7 +230,7 @@ jobs:
       # (fonts), the MCP manifest, typecheck and test restore instead of re-running
       # for packages whose inputs did not change. Keyed per job so each job
       # saves its own tasks; it only ever grows, so bump the prefix to reset it.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-v1-${{ github.job }}-${{ github.sha }}
@@ -246,7 +246,7 @@ jobs:
     name: Edge Functions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # This job runs PR-authored code. actions/checkout otherwise leaves
           # GITHUB_TOKEN in .git/config, where a test could read and exfiltrate
@@ -272,8 +272,8 @@ jobs:
     name: Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22

@@ -90,20 +90,20 @@ describe("released model exports", () => {
     expect(result.thumbnailAttached).toBe(false);
   });
 
-  it.each([
-    undefined,
-    null,
-    "",
-    " ",
-    "part-one,part-two"
-  ])("refuses unsafe individual-part selection %s before any export or attach", async (partId) => {
-    const invalid = { ...input, partId } as unknown as SyncOnshapeElementInput;
-    await expect(
-      syncOnshapeElementAssetsToItem(carbon, invalid)
-    ).rejects.toThrow(/part/i);
-    expect(mocks.client.createPartStudioTranslation).not.toHaveBeenCalled();
-    expect(mocks.attach).not.toHaveBeenCalled();
-  });
+  it.each([undefined, null, "", " ", "part-one,part-two"])(
+    "refuses unsafe individual-part selection %s before any export or attach",
+    async (partId) => {
+      const invalid = {
+        ...input,
+        partId
+      } as unknown as SyncOnshapeElementInput;
+      await expect(
+        syncOnshapeElementAssetsToItem(carbon, invalid)
+      ).rejects.toThrow(/part/i);
+      expect(mocks.client.createPartStudioTranslation).not.toHaveBeenCalled();
+      expect(mocks.attach).not.toHaveBeenCalled();
+    }
+  );
 
   it("keeps whole-assembly exports and forwards their configuration", async () => {
     const assembly = {
@@ -148,5 +148,33 @@ describe("released model exports", () => {
     expect(ids[0]).toEqual(expect.any(String));
     expect(ids[0]).toBe(ids[1]);
     expect(new Set(ids).size).toBe(3);
+  });
+
+  it("gives a workspace export a new generation when the part changes", async () => {
+    const workspace = {
+      ...input,
+      sourceWvm: "w" as const,
+      versionId: "workspace-1"
+    };
+    for (const variation of [
+      { ...workspace, sourceMicroversionId: "mv-1" },
+      { ...workspace, sourceMicroversionId: "mv-1" },
+      { ...workspace, sourceMicroversionId: "mv-2" }
+    ]) {
+      await syncOnshapeElementAssetsToItem(carbon, variation);
+    }
+    const ids = mocks.attach.mock.calls.map(([, args]) => args.model.sourceId);
+    expect(ids[0]).toBe(ids[1]);
+    expect(ids[2]).not.toBe(ids[0]);
+  });
+
+  it("gives a workspace export with no microversion no fixed generation", async () => {
+    await syncOnshapeElementAssetsToItem(carbon, {
+      ...input,
+      sourceWvm: "w",
+      versionId: "workspace-1"
+    });
+    const ids = mocks.attach.mock.calls.map(([, args]) => args.model.sourceId);
+    expect(ids).toEqual([undefined]);
   });
 });

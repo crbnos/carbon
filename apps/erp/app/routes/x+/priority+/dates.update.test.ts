@@ -136,36 +136,38 @@ describe("Dates schedule update action", () => {
     expect(result).toEqual({ success: true });
   });
 
-  it.each([
-    "unscheduled",
-    "next-week",
-    "next-month"
-  ])("persists %s as a null due date", async (columnId) => {
-    await runAction({ ...baseFields, columnId });
-    expect(mocks.query.update).toHaveBeenCalledWith(
-      expect.objectContaining({ dueDate: null })
-    );
-    expect(mocks.events.at(-1)).toBe("scheduler");
-  });
+  it.each(["unscheduled", "next-week", "next-month"])(
+    "persists %s as a null due date",
+    async (columnId) => {
+      await runAction({ ...baseFields, columnId });
+      expect(mocks.query.update).toHaveBeenCalledWith(
+        expect.objectContaining({ dueDate: null })
+      );
+      expect(mocks.events.at(-1)).toBe("scheduler");
+    }
+  );
 
   it.each([
     ["missing", undefined],
     ["blank", "   "]
-  ])("rejects a %s location before writing or scheduling", async (_name, locationId) => {
-    const fields = { ...baseFields } as Record<string, string>;
-    if (locationId === undefined) {
-      delete fields.locationId;
-    } else {
-      fields.locationId = locationId;
+  ])(
+    "rejects a %s location before writing or scheduling",
+    async (_name, locationId) => {
+      const fields = { ...baseFields } as Record<string, string>;
+      if (locationId === undefined) {
+        delete fields.locationId;
+      } else {
+        fields.locationId = locationId;
+      }
+
+      const result = await runAction(fields);
+
+      expect(result).toEqual({ success: false, message: "Invalid form data" });
+      expect(mocks.client.from).not.toHaveBeenCalled();
+      expect(mocks.query.update).not.toHaveBeenCalled();
+      expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
     }
-
-    const result = await runAction(fields);
-
-    expect(result).toEqual({ success: false, message: "Invalid form data" });
-    expect(mocks.client.from).not.toHaveBeenCalled();
-    expect(mocks.query.update).not.toHaveBeenCalled();
-    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
-  });
+  );
 
   it("rejects an invalid date column without writing or scheduling", async () => {
     const result = await runAction({ ...baseFields, columnId: "2026-02-29" });
@@ -194,18 +196,17 @@ describe("Dates schedule update action", () => {
     );
   });
 
-  it.each([
-    " ",
-    "\t",
-    "\n"
-  ])("rejects whitespace-only priority %j before any database update", async (priority) => {
-    const result = await runAction({ ...baseFields, priority });
+  it.each([" ", "\t", "\n"])(
+    "rejects whitespace-only priority %j before any database update",
+    async (priority) => {
+      const result = await runAction({ ...baseFields, priority });
 
-    expect(result).toEqual({ success: false, message: "Invalid form data" });
-    expect(mocks.client.from).not.toHaveBeenCalled();
-    expect(mocks.query.update).not.toHaveBeenCalled();
-    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
-  });
+      expect(result).toEqual({ success: false, message: "Invalid form data" });
+      expect(mocks.client.from).not.toHaveBeenCalled();
+      expect(mocks.query.update).not.toHaveBeenCalled();
+      expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
+    }
+  );
 
   it("rejects missing priority before any database update", async () => {
     const { priority: _priority, ...fields } = baseFields;
@@ -224,17 +225,16 @@ describe("Dates schedule update action", () => {
     expect(mocks.query.update).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "Infinity",
-    "-Infinity",
-    "NaN"
-  ])("rejects non-finite priority %s", async (priority) => {
-    const result = await runAction({ ...baseFields, priority });
-    expect(result).toEqual({ success: false, message: "Invalid form data" });
-    expect(mocks.client.from).not.toHaveBeenCalled();
-    expect(mocks.query.update).not.toHaveBeenCalled();
-    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
-  });
+  it.each(["Infinity", "-Infinity", "NaN"])(
+    "rejects non-finite priority %s",
+    async (priority) => {
+      const result = await runAction({ ...baseFields, priority });
+      expect(result).toEqual({ success: false, message: "Invalid form data" });
+      expect(mocks.client.from).not.toHaveBeenCalled();
+      expect(mocks.query.update).not.toHaveBeenCalled();
+      expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
+    }
+  );
 
   it("treats a location mismatch as a failed zero-row update", async () => {
     mocks.result.data = null;

@@ -483,48 +483,51 @@ describe("Dates board drag lifecycle", () => {
   it.each([
     ["missing", undefined],
     ["invalid", "2026-02-29"]
-  ] as const)("does not submit an unknown pending persisted date (%s)", (_kind, columnId) => {
-    const active = {
-      ...dateItems[0],
-      columnId: "2026-08-15",
-      dueDate: "2026-08-16T15:30:00.000Z"
-    };
-    const target = {
-      ...dateItems[2],
-      id: "job-exact-target",
-      columnId: "2026-08-08"
-    };
-    fetchers.current = [
-      pendingDateFetcher({
-        columnId,
-        optimisticColumnId: "2026-08-08"
-      })
-    ];
-    const board = captureDatesBoard([active, target]);
+  ] as const)(
+    "does not submit an unknown pending persisted date (%s)",
+    (_kind, columnId) => {
+      const active = {
+        ...dateItems[0],
+        columnId: "2026-08-15",
+        dueDate: "2026-08-16T15:30:00.000Z"
+      };
+      const target = {
+        ...dateItems[2],
+        id: "job-exact-target",
+        columnId: "2026-08-08"
+      };
+      fetchers.current = [
+        pendingDateFetcher({
+          columnId,
+          optimisticColumnId: "2026-08-08"
+        })
+      ];
+      const board = captureDatesBoard([active, target]);
 
-    startItemDrag(board, active);
-    board.onDragOver({ active: itemActive(active), over: itemOver(target) });
-    expect(submit).not.toHaveBeenCalled();
+      startItemDrag(board, active);
+      board.onDragOver({ active: itemActive(active), over: itemOver(target) });
+      expect(submit).not.toHaveBeenCalled();
 
-    board.onDragEnd({ active: itemActive(active), over: itemOver(target) });
+      board.onDragEnd({ active: itemActive(active), over: itemOver(target) });
 
-    expect(submit).toHaveBeenCalledTimes(0);
-    expect(submit).not.toHaveBeenCalledWith(
-      expect.objectContaining({ columnId: "2026-08-16" }),
-      expect.anything()
-    );
-    for (const unsafeColumnId of [
-      "2026-08-08",
-      "unscheduled",
-      "next-week",
-      "next-month"
-    ]) {
+      expect(submit).toHaveBeenCalledTimes(0);
       expect(submit).not.toHaveBeenCalledWith(
-        expect.objectContaining({ columnId: unsafeColumnId }),
+        expect.objectContaining({ columnId: "2026-08-16" }),
         expect.anything()
       );
+      for (const unsafeColumnId of [
+        "2026-08-08",
+        "unscheduled",
+        "next-week",
+        "next-month"
+      ]) {
+        expect(submit).not.toHaveBeenCalledWith(
+          expect.objectContaining({ columnId: unsafeColumnId }),
+          expect.anything()
+        );
+      }
     }
-  });
+  );
 
   it("uses null for a pending sentinel during a chained same-bucket reorder", () => {
     const sentinelTarget = {

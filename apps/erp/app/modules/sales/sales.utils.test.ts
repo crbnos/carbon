@@ -200,15 +200,22 @@ describe("decideRecalcPricing", () => {
 describe("leaseTermMonths", () => {
   it("counts whole months with both ends inclusive", () => {
     // The same pins as post-rental-agreement's `wholeMonthsInTerm`.
-    expect(leaseTermMonths("2027-01-01", "2029-12-31")).toBe(36);
-    expect(leaseTermMonths("2027-01-15", "2028-01-14")).toBe(12);
-    expect(leaseTermMonths("2026-01-15", "2026-02-14")).toBe(1);
-    expect(leaseTermMonths("2026-01-15", "2026-02-13")).toBe(0);
-    expect(leaseTermMonths("2026-01-31", "2026-02-27")).toBe(0);
+    const cycle = "Calendar Month";
+    expect(leaseTermMonths(cycle, "2027-01-01", "2029-12-31")).toBe(36);
+    expect(leaseTermMonths(cycle, "2027-01-15", "2028-01-14")).toBe(12);
+    expect(leaseTermMonths(cycle, "2026-01-15", "2026-02-14")).toBe(1);
+    expect(leaseTermMonths(cycle, "2026-01-15", "2026-02-13")).toBe(0);
+    expect(leaseTermMonths(cycle, "2026-01-31", "2026-02-27")).toBe(0);
+  });
+
+  it("counts a Monthly term the way its billing cuts it", () => {
+    // 31 Jan + 1 month clamps to 28 Feb: 31 Jan – 27 Feb is one period.
+    expect(leaseTermMonths("Monthly", "2026-01-31", "2026-02-27")).toBe(1);
+    expect(leaseTermMonths("Monthly", "2027-01-15", "2028-01-14")).toBe(12);
   });
 
   it("is null when open-ended", () => {
-    expect(leaseTermMonths("2026-01-01", null)).toBeNull();
+    expect(leaseTermMonths("Calendar Month", "2026-01-01", null)).toBeNull();
   });
 });
 

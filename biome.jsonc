@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "ignoreUnknown": false,
@@ -24,7 +24,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": false,
+      "preset": "none",
       "a11y": {
         "noAccessKey": "warn",
         "noAriaUnsupportedElements": "warn",

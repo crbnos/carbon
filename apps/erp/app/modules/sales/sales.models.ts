@@ -1374,7 +1374,11 @@ export const rentalAgreementLineStatuses = [
   "Sold"
 ] as const;
 
-export const rentalBillingCycles = ["Calendar Month", "28 Days"] as const;
+export const rentalBillingCycles = [
+  "Calendar Month",
+  "Monthly",
+  "28 Days"
+] as const;
 
 export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 

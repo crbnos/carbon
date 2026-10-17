@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ChoiceCardGroup } from "@carbon/react";
+import { Checkbox, ChoiceCardGroup } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import {
   LuCalendarCheck,
   LuCalendarClock,
@@ -23,6 +24,9 @@ import { useRentalTermSave } from "./RentalSetupSteps";
 import type { RentalAgreement } from "./types";
 
 type BillingCycle = (typeof rentalBillingCycles)[number];
+/** The cycle card: Monthly covers both Calendar Month and Monthly, which the
+ *  "Align to calendar periods" box tells apart (as on a contract). */
+type CycleCard = Extract<BillingCycle, "Monthly" | "28 Days">;
 type BillingTiming = (typeof rentalBillingTimings)[number];
 
 /** The Select's value for "no override": Radix refuses an empty item value. */
@@ -51,6 +55,12 @@ const RentalAgreementBilling = ({
   const { save, saveInvoiceAutomation } = useRentalTermSave(id);
   const isDisabled =
     rentalAgreement.status !== "Draft" || !permissions.can("update", "sales");
+  const billingCycle: BillingCycle =
+    rentalAgreement.billingCycle ?? "Calendar Month";
+  // The Monthly alignment the user left behind by picking 28 Days, so picking
+  // Monthly again restores it rather than re-ticking the box.
+  const [monthlyCycle, setMonthlyCycle] =
+    useState<Exclude<BillingCycle, "28 Days">>();
 
   const onChange = (
     field: Parameters<typeof save>[0],
@@ -87,17 +97,24 @@ const RentalAgreementBilling = ({
         }
       >
         <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-          <ChoiceCardGroup<BillingCycle>
+          <ChoiceCardGroup<CycleCard>
             className="md:col-span-2"
             direction="row"
             label={t`Billing Cycle`}
-            value={rentalAgreement.billingCycle ?? "Calendar Month"}
-            onChange={(value) => onChange("billingCycle", value)}
+            value={billingCycle === "28 Days" ? "28 Days" : "Monthly"}
+            onChange={(value) => {
+              if (value === "28 Days") {
+                if (billingCycle !== "28 Days") setMonthlyCycle(billingCycle);
+                onChange("billingCycle", value);
+              } else {
+                onChange("billingCycle", monthlyCycle ?? "Calendar Month");
+              }
+            }}
             options={[
               {
-                value: "Calendar Month",
-                title: t`Calendar Month`,
-                description: t`Each period is a calendar month, with a part month first.`,
+                value: "Monthly",
+                title: t`Monthly`,
+                description: t`Each period is one month, for the month rate.`,
                 icon: <LuCalendarDays />,
                 disabled: isDisabled
               },
@@ -110,6 +127,33 @@ const RentalAgreementBilling = ({
               }
             ]}
           />
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="billingCycleAlignment"
+              isChecked={billingCycle === "Calendar Month"}
+              disabled={isDisabled || billingCycle === "28 Days"}
+              onCheckedChange={(checked) =>
+                onChange(
+                  "billingCycle",
+                  checked === true ? "Calendar Month" : "Monthly"
+                )
+              }
+            />
+            <label
+              htmlFor="billingCycleAlignment"
+              className="flex flex-col gap-1"
+            >
+              <span className="text-sm font-medium">
+                <Trans>Align to calendar periods</Trans>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>
+                  Bill calendar months, with a part month first. Off, each
+                  period starts on the start date's day of the month.
+                </Trans>
+              </span>
+            </label>
+          </div>
           <ChoiceCardGroup<BillingTiming>
             className="md:col-span-2"
             direction="row"

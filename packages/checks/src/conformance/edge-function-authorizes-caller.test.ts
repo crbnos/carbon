@@ -16,12 +16,12 @@ describe("edgeFunctionAuthorizesCaller", () => {
     expect(v[0]?.snippet).toBe("post-picking");
   });
 
-  it.each([
-    "await requireCaller(req);",
-    "requireServiceRole(req);"
-  ])("accepts %s", (ts) => {
-    expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(0);
-  });
+  it.each(["await requireCaller(req);", "requireServiceRole(req);"])(
+    "accepts %s",
+    (ts) => {
+      expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(0);
+    }
+  );
 
   it("does not accept a gate that is only declared", () => {
     const ts =

@@ -127,18 +127,21 @@ describe("release identity", () => {
     { partNumber: "wrong-number" },
     { elementType: 1 },
     { isObsolete: true }
-  ])("refuses a version-only fallback when identity differs: %j", async (mismatch) => {
-    mocks.getRevisions.mockResolvedValue({
-      items: [{ ...released, ...mismatch }]
-    });
-    expect(
-      await runOnshapeRevisionSync(database().client, input)
-    ).toMatchObject({
-      synced: false,
-      skippedReason: "revision-not-found"
-    });
-    expect(mocks.sync).not.toHaveBeenCalled();
-  });
+  ])(
+    "refuses a version-only fallback when identity differs: %j",
+    async (mismatch) => {
+      mocks.getRevisions.mockResolvedValue({
+        items: [{ ...released, ...mismatch }]
+      });
+      expect(
+        await runOnshapeRevisionSync(database().client, input)
+      ).toMatchObject({
+        synced: false,
+        skippedReason: "revision-not-found"
+      });
+      expect(mocks.sync).not.toHaveBeenCalled();
+    }
+  );
 
   it("refuses ambiguous revisions when the event has no revisionId", async () => {
     mocks.getRevisions.mockResolvedValue({

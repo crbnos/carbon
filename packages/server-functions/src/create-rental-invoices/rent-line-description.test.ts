@@ -37,3 +37,20 @@ it("does not repeat a serial number the asset's name already carries", () => {
     "2026-10-07 – 2026-10-31 · 25 days · 4 × Week rate — Reaction Wheel 0.010 Nm RW-SN-T2"
   );
 });
+
+it("a Monthly unit on a Monthly agreement names the month rate, not a unit count", () => {
+  expect(
+    rentLineDescription({
+      ...period,
+      cycle: "Monthly",
+      periodStart: "2026-10-07",
+      periodEnd: "2026-11-06",
+      days: 31,
+      rateUnitApplied: "Month",
+      assetName: "Skid Steer 4",
+      serialNumber: "SN-1001"
+    })
+  ).toBe(
+    "2026-10-07 – 2026-11-06 · 31 days · Month rate — Skid Steer 4 SN-1001"
+  );
+});
