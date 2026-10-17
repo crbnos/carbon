@@ -18088,6 +18088,9 @@ msgstr "Neu bewerten {0}"
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Registrieren"
 
@@ -24819,6 +24822,9 @@ msgstr "Verwenden Sie ..., um die nächste Teile-ID zu erhalten"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Verwenden Sie ..., um die nächste Werkzeug-ID zu erhalten"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Verwenden Sie ein anderes Konto"

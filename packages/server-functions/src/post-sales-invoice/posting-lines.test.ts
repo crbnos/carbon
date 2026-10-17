@@ -98,6 +98,7 @@ const invoiceLine = (
   overrides: Partial<SalesInvoiceLine> = {}
 ): SalesInvoiceLine => ({
   id: "line-1",
+  taxCodeId: null,
   invoiceLineType: "Part",
   itemId: "item-1",
   quantity: 2,

@@ -59,6 +59,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { loadTaxCodes } from "../lib/tax-codes";
 import {
   netInvestmentInLeasesAccount,
   planSalesInvoiceAccounts,
@@ -462,11 +463,28 @@ const postSalesInvoice = defineServerFn({
               )
             )
           );
+          // The lines' tax codes on the posting date, and their own Tax
+          // Received accounts, which load with the defaults.
+          const taxCodes = await loadTaxCodes(
+            db,
+            companyId,
+            salesInvoiceLines.data.map(
+              (line: InvoiceLineRecord) => line.taxCodeId
+            ),
+            today
+          );
+          const taxAccountIds = [...taxCodes.values()].flatMap((code) =>
+            code.components.flatMap((component) =>
+              component.taxReceivedAccountId
+                ? [component.taxReceivedAccountId]
+                : []
+            )
+          );
           const postingAccounts = await many(
             db,
             "account",
             {
-              id: accountPlan.accountIds,
+              id: [...accountPlan.accountIds, ...taxAccountIds],
               companyGroupId: companyGroupId!
             },
             {
@@ -698,6 +716,7 @@ const postSalesInvoice = defineServerFn({
             intercompanyPartnerId,
             lines: salesInvoiceLines.data,
             headerShipping: headerShippingAllocations,
+            taxCodes,
             items: new Map(items.data.map((item) => [item.id, item])),
             postingGroups: new Map(
               itemCosts.data.map((cost) => [

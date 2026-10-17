@@ -18088,6 +18088,9 @@ msgstr "Recalcular Custo de {0}"
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Registrar"
 
@@ -24819,6 +24822,9 @@ msgstr "Use ... to get the next part ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Use uma conta diferente"

@@ -18088,6 +18088,9 @@ msgstr "{0} की लागत पुनः निर्धारित कर�
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
 
@@ -24819,6 +24822,9 @@ msgstr "अगला पार्ट आईडी प्राप्त कर�
 
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"

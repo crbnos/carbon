@@ -18088,6 +18088,9 @@ msgstr "{0}の原価を再査定"
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "登録"
 
@@ -24819,6 +24822,9 @@ msgstr "「...」を使用して次のパートIDを取得します"
 
 msgid "Use ... to get the next tool ID"
 msgstr "「...」を使用して次のツールIDを取得します"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "別のアカウントを使用"

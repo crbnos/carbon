@@ -18088,6 +18088,9 @@ msgstr "Réévaluer le coût {0}"
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Enregistrer"
 
@@ -24819,6 +24822,9 @@ msgstr "Utilisez ... pour obtenir l'ID de pièce suivant"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Utilisez ... pour obtenir l'ID d'outil suivant"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Utiliser un compte différent"

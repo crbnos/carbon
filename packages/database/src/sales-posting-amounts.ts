@@ -3,8 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toBaseAmount, toDocumentAmount } from "./accounting-currency.ts";
+import { TAX_RECEIVED_POSTING_DESCRIPTION } from "./accounting-posting.ts";
 import { credit, debit } from "./ledger.ts";
 import { assertBalanced, EPSILON, round, SCALE } from "./precision.ts";
+import {
+  lineTaxBase,
+  splitLineTax,
+  type TaxComponentInput
+} from "./tax-components.ts";
 
 export type SalesPostingAmountsInput = {
   quantity: number;
@@ -17,6 +23,9 @@ export type SalesPostingAmountsInput = {
   nonTaxableAddOnCost?: number | null;
   taxPercent?: number | null;
   allocatedHeaderShipping?: number;
+  /** The line's tax code taxes delivery charges: its share of header
+   *  shipping joins its tax base (`taxCode.taxesShipping`). */
+  taxesShipping?: boolean;
 };
 
 export type SalesPostingAmounts = {
@@ -120,7 +129,13 @@ export type BuildSalesPostingLinesInput = {
     sales?: SalesPostingAccount | null;
     shipping?: SalesPostingAccount | null;
     tax?: SalesPostingAccount | null;
+    /** A component's own Tax Received account, by component id; a component
+     *  missing here posts to `tax`. */
+    componentTax?: ReadonlyMap<string, SalesPostingAccount>;
   };
+  /** The line's tax code components in force on the posting date. With
+   *  components the tax posts one leg per component; without, one leg. */
+  taxComponents?: TaxComponentInput[];
   metadata: SalesPostingMetadata;
   disposal?: SalesPostingDisposal;
   /** Revenue recognition: when set, the sales revenue leg is credited to this
@@ -152,6 +167,24 @@ function netMerchandise(line: SalesPostingAmountsInput): number {
   );
 }
 
+/** The line's tax base: discounted merchandise, line shipping and taxable
+ *  add-ons, plus its share of header shipping when its code taxes shipping. */
+export function salesTaxableBase(input: SalesPostingAmountsInput): number {
+  return finite(
+    lineTaxBase({
+      merchandise: netMerchandise(input),
+      addOnCost: finite(input.addOnCost ?? 0, "Taxable add-on"),
+      shippingCost: finite(input.shippingCost ?? 0, "Line shipping"),
+      allocatedHeaderShipping: finite(
+        input.allocatedHeaderShipping ?? 0,
+        "Header shipping"
+      ),
+      taxesShipping: input.taxesShipping ?? false
+    }),
+    "Tax base"
+  );
+}
+
 /** Raw arithmetic shared by ledger and provider boundaries; prices are already base. */
 export function calculateSalesPostingAmounts(
   input: SalesPostingAmountsInput
@@ -173,7 +206,7 @@ export function calculateSalesPostingAmounts(
     "Shipping revenue"
   );
   const salesTaxBase = finite(
-    (merchandise + shipping + addOn) * taxPercent,
+    salesTaxableBase(input) * taxPercent,
     "Sales tax"
   );
   return {
@@ -504,13 +537,34 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     amounts.shippingRevenueBase,
     "Shipping Revenue"
   );
-  push(
-    accounts.tax,
-    "Liability",
-    "credit",
-    amounts.salesTaxBase,
-    "Sales Tax Payable"
-  );
+  const taxParts =
+    input.taxComponents && input.taxComponents.length > 0
+      ? splitLineTax({
+          base: salesTaxableBase(line),
+          lineTax: amounts.salesTaxBase,
+          components: input.taxComponents,
+          scale: SCALE
+        })
+      : [];
+  if (taxParts.length > 0) {
+    for (const part of taxParts) {
+      push(
+        accounts.componentTax?.get(part.component.id) ?? accounts.tax,
+        "Liability",
+        "credit",
+        part.taxAmount,
+        TAX_RECEIVED_POSTING_DESCRIPTION
+      );
+    }
+  } else {
+    push(
+      accounts.tax,
+      "Liability",
+      "credit",
+      amounts.salesTaxBase,
+      TAX_RECEIVED_POSTING_DESCRIPTION
+    );
+  }
   push(
     accounts.receivables,
     "Asset",

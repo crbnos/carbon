@@ -18088,6 +18088,9 @@ msgstr "원가 재계산 {0}"
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "회수 기간"
 
@@ -24819,6 +24822,9 @@ msgstr "다음 품목 ID를 가져오려면 ...을(를) 사용하세요"
 
 msgid "Use ... to get the next tool ID"
 msgstr "다음 공구 ID를 가져오려면 ...을(를) 사용하세요"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "다른 계정 사용"

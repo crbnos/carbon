@@ -18088,6 +18088,9 @@ msgstr "Ricalcola il costo {0}"
 msgid "Recoverable"
 msgstr ""
 
+msgid "Recoverable: {amount}"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Registrare"
 
@@ -24819,6 +24822,9 @@ msgstr "Usa ... per ottenere l'ID parte successivo"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Usa ... per ottenere il prossimo ID strumento"
+
+msgid "Use {suggestedName}"
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Usa un account diverso"

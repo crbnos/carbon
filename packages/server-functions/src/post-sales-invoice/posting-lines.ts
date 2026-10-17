@@ -31,6 +31,7 @@ import {
   type ContractPosition,
   EMPTY_POSITION
 } from "@carbon/database/contract-position";
+import type { TaxCodeInput } from "@carbon/database/tax-components";
 import {
   buildSalesPostingLines,
   credit,
@@ -81,6 +82,7 @@ export type SalesInvoiceLine = Pick<
   | "addOnCost"
   | "nonTaxableAddOnCost"
   | "taxPercent"
+  | "taxCodeId"
   | "salesOrderLineId"
   | "methodType"
   | "locationId"
@@ -276,6 +278,9 @@ export type SalesInvoiceJournalFacts = {
   lines: readonly SalesInvoiceLine[];
   /** The header shipping of each line (`allocateSalesHeaderShipping`). */
   headerShipping: ReadonlyMap<string, number>;
+  /** The lines' tax codes, each with the components in force on the
+   *  posting date (`loadTaxCodes`). A line with no code posts one tax leg. */
+  taxCodes?: ReadonlyMap<string, TaxCodeInput>;
   items: ReadonlyMap<
     string,
     Pick<Tables["item"]["Row"], "itemTrackingType" | "replenishmentSystem">
@@ -514,9 +519,25 @@ export function buildSalesInvoiceJournal(
     if (line.invoiceLineType === "Comment") continue;
     const revenue = facts.revenue(line);
     const metadata = lineMetadata(facts, line);
+    const taxCode = line.taxCodeId
+      ? facts.taxCodes?.get(line.taxCodeId)
+      : undefined;
+    const taxComponents = taxCode?.components ?? [];
     const postingLine = {
       ...line,
-      allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0
+      allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0,
+      taxesShipping: taxCode?.taxesShipping ?? false
+    };
+    const lineCharges = {
+      ...charges,
+      componentTax: new Map(
+        taxComponents.flatMap((component) => {
+          const account = component.taxReceivedAccountId
+            ? accounts.account(component.taxReceivedAccountId)
+            : undefined;
+          return account ? [[component.id, account] as const] : [];
+        })
+      )
     };
     const context = {
       companyId,
@@ -545,7 +566,8 @@ export function buildSalesInvoiceJournal(
                 : line.invoiceLineType
           },
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           revenueLegs: revenue.book === "legs" ? revenue.legs : undefined,
           metadata
         });
@@ -562,7 +584,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           deferredRevenueAccount: deferredRevenue,
           metadata
         });
@@ -615,7 +638,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           revenueLegs: plan.revenueLegs,
           metadata
         });
@@ -682,7 +706,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           metadata,
           disposal:
             wasShipped && disposal
@@ -785,7 +810,8 @@ export function buildSalesInvoiceJournal(
         const built = buildSalesPostingLines({
           line: postingLine,
           context,
-          accounts: charges,
+          accounts: lineCharges,
+          taxComponents,
           revenueLegs: plan.revenueLegs,
           metadata
         });

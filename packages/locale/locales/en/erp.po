@@ -18088,6 +18088,9 @@ msgstr "Recost {0}"
 msgid "Recoverable"
 msgstr "Recoverable"
 
+msgid "Recoverable: {amount}"
+msgstr "Recoverable: {amount}"
+
 msgid "Recovery Period"
 msgstr "Recovery Period"
 
@@ -24819,6 +24822,9 @@ msgstr "Use ... to get the next part ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
+
+msgid "Use {suggestedName}"
+msgstr "Use {suggestedName}"
 
 msgid "Use a different account"
 msgstr "Use a different account"

@@ -37,7 +37,7 @@ Slice A — Foundation
 - [ ] Task 15: Seed tax codes in the demo datasets
 
 Slice B — Posting
-- [ ] Task 16: Post sales tax per component, with header-shipping tax
+- [x] Task 16: Post sales tax per component, with header-shipping tax
 - [ ] Task 17: Tax header shipping in the invoice view, provider components and PDF helpers
 - [ ] Task 18: Split purchase tax into recoverable and non-recoverable parts at invoice posting
 - [ ] Task 19: Leave recoverable tax out of the received unit cost
