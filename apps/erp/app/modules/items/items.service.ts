@@ -4609,19 +4609,77 @@ export async function upsertItemUnitSalePrice(
     .eq("itemId", itemUnitSalePrice.itemId);
 }
 
-/** @mcp upsert */
+// Undoes a version `upsertMakeMethodVersion` could not finish: deletes its
+// Draft and sets `activeVersionId` — the source it set Active, if any — back
+// to Draft.
+// Through `db`: the caller may hold create but not delete on parts, and this
+// touches only rows that call has just written. Not exported, so it never
+// becomes a tool of its own.
+async function undoMakeMethodVersion(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; draftId: string; activeVersionId?: string }
+) {
+  const { companyId, draftId, activeVersionId } = args;
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .deleteFrom("makeMethod")
+        .where("id", "=", draftId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .execute();
+      if (activeVersionId) {
+        await trx
+          .updateTable("makeMethod")
+          .set({ status: "Draft" })
+          .where("id", "=", activeVersionId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Active")
+          .execute();
+      }
+    });
+  } catch (undoError) {
+    logger.error("Failed to undo a make method version that was not copied", {
+      companyId,
+      draftId,
+      activeVersionId,
+      error: undoError
+    });
+  }
+}
+
+/**
+ * Creates a new Draft version of a make method with the source version's bill of materials and bill of process copied into it.
+ * `copyFromId` is the version to copy and `version` the new version number. Pass
+ * `activeVersionId` equal to `copyFromId` to set a Draft source Active, as the app
+ * does when the item has only one version. A failed copy leaves no new version behind.
+ * The copy runs as the caller, so it also needs production update permission.
+ * @mcp upsert
+ */
 export async function upsertMakeMethodVersion(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
     companyId: string;
     createdBy: string;
   }
 ) {
+  const { activeVersionId, companyId, createdBy } = makeMethodVersion;
+
+  // Only the version being copied may be set Active: any other id could be a
+  // version of another item, set Active beside that item's own Active one.
+  if (activeVersionId && activeVersionId !== makeMethodVersion.copyFromId) {
+    return {
+      data: null,
+      error: { message: "Only the version being copied can be set Active" }
+    };
+  }
+
   const currentMakeMethod = await client
     .from("makeMethod")
     .select("*")
     .eq("id", makeMethodVersion.copyFromId)
-    .eq("companyId", makeMethodVersion.companyId)
+    .eq("companyId", companyId)
     .single();
 
   if (currentMakeMethod.error) return currentMakeMethod;
@@ -4635,18 +4693,75 @@ export async function upsertMakeMethodVersion(
       ...data,
       status: "Draft",
       version: makeMethodVersion.version,
-      createdBy: makeMethodVersion.createdBy
+      createdBy
     })
     .select("id, ...item(itemId:id, type)")
     .single();
 
   if (insert.error) return insert;
+  const draftId = insert.data.id;
 
-  if (makeMethodVersion.activeVersionId) {
-    await client
+  // The copy runs in get-method's own transaction, so it cannot share one
+  // with the insert above: on any failure this undoes its own writes —
+  // deletes the Draft and, when it set the source Active, sets it back to
+  // Draft. Left behind, the empty Draft numbered above the source is what
+  // users open next and what `activeMakeMethods` falls back to. The source is
+  // set Active BEFORE the copy so the empty Draft never outranks it meanwhile.
+
+  // Only a Draft source is set Active. One already Active (or Archived) is left
+  // alone, and so is never set back to Draft below when the copy fails.
+  const activatedSourceId =
+    activeVersionId && currentMakeMethod.data.status === "Draft"
+      ? activeVersionId
+      : undefined;
+  if (activatedSourceId) {
+    // `.select` so an update that RLS lets reach no row fails here instead of
+    // leaving the empty Draft to outrank the source.
+    const activate = await client
       .from("makeMethod")
       .update({ status: "Active" })
-      .eq("id", makeMethodVersion.activeVersionId);
+      .eq("id", activatedSourceId)
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .select("id");
+    if (activate.error || activate.data.length === 0) {
+      logger.error("Failed to set the source make method version Active", {
+        companyId,
+        activeVersionId: activatedSourceId,
+        error: activate.error
+      });
+      await undoMakeMethodVersion(db, { companyId, draftId });
+      return {
+        data: null,
+        error: { message: "Failed to set the current version Active" }
+      };
+    }
+  }
+
+  // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
+  const copy = await copyMakeMethod(client, db, {
+    sourceId: makeMethodVersion.copyFromId,
+    targetId: draftId,
+    companyId,
+    userId: createdBy
+  });
+  if (copy.error) {
+    logger.error("Failed to copy make method into new version", {
+      companyId,
+      sourceId: makeMethodVersion.copyFromId,
+      draftId,
+      error: copy.error
+    });
+    await undoMakeMethodVersion(db, {
+      companyId,
+      draftId,
+      activeVersionId: activatedSourceId
+    });
+    return {
+      data: null,
+      // A database error reaches here with an empty message.
+      error: { message: copy.error.message || "Failed to copy make method" }
+    };
   }
 
   return insert;
@@ -7534,15 +7649,15 @@ export async function createChangeNoticeDraftMethod(
     // the CO's UNRELEASED edits to jobs/quotes. Freezing the base as Active keeps
     // production on the current method until the CO is released.
     const activeVersionId = base.status === "Draft" ? base.id : undefined;
-    // New Draft version on the same item, then copy the BoM/BoP rows (the
-    // canonical new-version flow: header insert + copyMakeMethod). Number it
+    // New Draft version on the same item with the BoM/BoP rows copied in (the
+    // canonical new-version flow: upsertMakeMethodVersion). Number it
     // above ALL existing versions (maxVersion + 1), not the Active one, so a
     // second CO on the same part doesn't collide on (itemId, version). Retry on
     // a concurrent unique-violation by recomputing the next free version.
     let draftId: string | null = null;
     let nextVersion = base.maxVersion + 1;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const res = await upsertMakeMethodVersion(client, {
+      const res = await upsertMakeMethodVersion(client, db, {
         copyFromId: base.id,
         activeVersionId,
         version: nextVersion,
@@ -7570,16 +7685,6 @@ export async function createChangeNoticeDraftMethod(
         data: null,
         error: { message: "Failed to create draft version" }
       };
-    }
-    // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
-    const copy = await copyMakeMethod(client, db, {
-      sourceId: base.id,
-      targetId: draftId,
-      companyId,
-      userId
-    });
-    if (copy.error) {
-      return { data: null, error: { message: "Failed to copy make method" } };
     }
     const stamp = await client
       .from("makeMethod")

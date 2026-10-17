@@ -113,6 +113,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   SlidePinOverlay,
   SlidesEditor,
+  slidePins,
   uploadStepSlideModel,
   useSlideModels
 } from "~/components/SlidesEditor";
@@ -3619,7 +3620,7 @@ function OperationPreview({
   // row may carry both; the panel renders the model then, and no pins are drawn — so
   // match that precedence here rather than listing labels for invisible pins.
   const pinLegend = (
-    slide?.imagePath && !slide.modelUploadId ? (slide.annotations ?? []) : []
+    slide?.imagePath && !slide.modelUploadId ? slidePins(slide.annotations) : []
   )
     .map((pin, index) => {
       const tool = pin.toolId
@@ -3702,7 +3703,7 @@ function OperationPreview({
               alt={slide.caption ?? ""}
               className="block max-h-[520px] w-auto max-w-full rounded-md"
             />
-            <SlidePinOverlay pins={slide.annotations ?? []} />
+            <SlidePinOverlay pins={slidePins(slide.annotations)} />
           </div>
         ) : (
           <span className="text-xs text-muted-foreground">

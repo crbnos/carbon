@@ -11,7 +11,6 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  copyMakeMethod,
   makeMethodVersionValidator,
   upsertMakeMethodVersion
 } from "~/modules/items";
@@ -20,7 +19,7 @@ import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -37,57 +36,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // spinning fresh method versions at Done and never stages/reserves a pending
   // revision, so there is nothing for an open CO to lock against.
 
-  const insertMethodOperation = await upsertMakeMethodVersion(client, {
-    ...validation.data,
-    companyId,
-    createdBy: userId
-  });
-  if (insertMethodOperation.error) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertMethodOperation.error, "Failed to insert new version")
-      )
-    );
+  // The service role runs the whole call: the copy is gated on
+  // `update: production`, which a parts user need not hold. RLS no longer
+  // checks setting the source Active, so check `update: parts` here instead.
+  if (validation.data.activeVersionId) {
+    await requirePermissions(request, { update: "parts" });
   }
 
-  const methodOperationId = insertMethodOperation.data?.id;
-  const itemId = insertMethodOperation.data?.itemId;
-  const itemType = insertMethodOperation.data?.type;
-  if (!methodOperationId || !itemType) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertMethodOperation, "Failed to insert new version")
-      )
-    );
-  }
-
-  const copy = await copyMakeMethod(
+  const version = await upsertMakeMethodVersion(
     getCarbonServiceRole(),
     getDatabaseClient(),
-    // @ts-expect-error TS2345 - TODO: fix type
-    {
-      sourceId: validation.data.copyFromId,
-      targetId: methodOperationId,
-      companyId,
-      userId
-    }
+    { ...validation.data, companyId, createdBy: userId }
   );
-
-  if (copy.error) {
-    return {
-      success: false,
-      message: "Failed to copy make method"
-    };
+  const methodId = version.data?.id;
+  const itemId = version.data?.itemId;
+  const itemType = version.data?.type;
+  if (version.error || !methodId || !itemType) {
+    // The service's own refusals carry no `code`; a database error's text is
+    // not written for users.
+    const message =
+      version.error && !("code" in version.error) && version.error.message
+        ? version.error.message
+        : "Failed to create new version";
+    return data(
+      { id: null },
+      await flash(request, error(version.error ?? version, message))
+    );
   }
 
   // @ts-expect-error
-  throw redirect(getPathToMakeMethod(itemType, itemId, methodOperationId));
+  throw redirect(getPathToMakeMethod(itemType, itemId, methodId));
 }

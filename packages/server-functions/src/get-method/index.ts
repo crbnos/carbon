@@ -54,6 +54,7 @@ import { NotFoundError } from "../errors";
 import { chunked } from "../import-csv/chunks";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
+import { stepSlideCopies } from "./step-slides";
 
 const logger = getLogger("server-functions", "get-method");
 
@@ -92,7 +93,7 @@ const normalizeOperationType = (value: unknown) =>
 // Copy an operation step's reference slides (grandchild) when a method/job/quote is
 // copied. Source slides are queried by their (old) step ids and remapped onto the freshly
 // inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
-// Guarded: a no-op when there are no slides, so it can never break step copying.
+// A no-op when there are no slides.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,
@@ -121,24 +122,13 @@ async function copyStepSlides(
     { stepId: sourceStepIds }
   );
 
-  const inserts = srcSlides.flatMap((sl) => {
-    const idx = sourceSteps.findIndex((s) => s.id === sl.stepId);
-    const newStepId = insertedStepIds[idx]?.id;
-    if (!newStepId) return [];
-    return [
-      {
-        stepId: newStepId,
-        imagePath: sl.imagePath,
-        modelUploadId: sl.modelUploadId,
-        caption: sl.caption,
-        sortOrder: sl.sortOrder,
-        size: sl.size,
-        annotations: sl.annotations,
-        companyId,
-        createdBy: userId
-      }
-    ];
-  });
+  const inserts = stepSlideCopies(
+    srcSlides,
+    sourceSteps,
+    insertedStepIds,
+    companyId,
+    userId
+  );
 
   if (inserts.length > 0) {
     await trx
@@ -395,16 +385,15 @@ const getMethod = defineServerFn({
                     methodOperationStep: _attributes,
                     ...operation
                   }) => {
-                    const insert = {
+                    return {
                       ...operation,
                       id: undefined, // Let the database generate a new ID
                       makeMethodId: targetMakeMethod.data.id!,
+                      workInstruction: toJson(
+                        parts.workInstructions ? operation.workInstruction : {}
+                      ),
                       createdBy: userId
                     };
-                    if (!parts.workInstructions) {
-                      insert.workInstruction = {};
-                    }
-                    return insert;
                   }
                 )
               )
@@ -5302,16 +5291,15 @@ const getMethod = defineServerFn({
                     methodOperationStep: _attributes,
                     ...operation
                   }) => {
-                    const insert = {
+                    return {
                       ...operation,
                       id: undefined, // Let the database generate a new ID
                       makeMethodId: targetMakeMethod.data.id,
+                      workInstruction: toJson(
+                        parts.workInstructions ? operation.workInstruction : {}
+                      ),
                       createdBy: userId
                     };
-                    if (!parts.workInstructions) {
-                      insert.workInstruction = {};
-                    }
-                    return insert;
                   }
                 )
               )

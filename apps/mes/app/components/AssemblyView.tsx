@@ -1160,9 +1160,11 @@ export function AssemblyView({
       ? (stepSlides[selected]?.caption ?? null)
       : null;
   // Annotation pins for the shown slide (empty for the finished-item view).
+  // Array.isArray: slides copied by get-method before the jsonb fix hold `{}`.
   const selectedAnnotations =
-    typeof selected === "number"
-      ? (stepSlides[selected]?.annotations ?? [])
+    typeof selected === "number" &&
+    Array.isArray(stepSlides[selected]?.annotations)
+      ? stepSlides[selected].annotations
       : [];
 
   // Smart hotspots: link a pin's toolId to the step's tools. `toolNameById` names a pin's

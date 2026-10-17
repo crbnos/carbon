@@ -3699,3 +3699,25 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Before adding a unique index, list every writer of the table, interceptors included, and give each one `ON CONFLICT … DO NOTHING` or a conflict-safe update in the same change. When a composite unique key includes a nullable column, assume it deduplicates nothing for rows where that column is NULL.
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
+
+## A copy that runs after its header insert must undo the header when it fails
+
+**Context:** New Version on a make method (`x+/items+/methods+/version.new.tsx`) inserted the
+`makeMethod` header through supabase-js, set the source version Active, then ran get-method's
+copy in its own Kysely transaction. The copy failed on a raw jsonb array (`copyStepSlides`
+`annotations`, see the lesson above) and rolled back.
+
+**Problem:** Nothing undid the writes before it: users were left on an empty Draft numbered above
+a source that was now Active and read-only. The route returned `{ success: false, message }`,
+and `useAction` toasts only `error`, so nobody saw a failure — it was reported as "the new
+version comes through empty". The symptom had already been patched once in the MES
+(`Step.tsx` normalises `{}` annotations) without anyone finding the cause.
+
+**Rule:** When a write and a server-function copy cannot share a transaction, the caller owns
+the undo: on failure, delete what it inserted and restore what it changed, scoped to the rows it
+wrote (`upsertMakeMethodVersion`). Surface the failure as `error` (or a flash), never a bare
+`message`. A `ServerFnError` from a database error has `message: ""` — fall back with `||`, not
+`??`. When a reader has to defend against malformed data, find the writer.
+
+**Applies to:** `upsertMakeMethodVersion`, any header-insert + `get-method` copy pair (quote and
+job duplication, revisions), route actions consumed by `useAction`.

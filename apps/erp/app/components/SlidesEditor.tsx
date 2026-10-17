@@ -139,6 +139,12 @@ export function useSlideModels(slides: EditorSlide[]) {
   return models;
 }
 
+// A slide's pins as a list. Copies made by get-method before its jsonb fix
+// stored `{}` for a slide with no pins, and `.map` on that throws.
+export function slidePins(annotations: unknown): SlideAnnotation[] {
+  return Array.isArray(annotations) ? annotations : [];
+}
+
 // Read-only numbered pin overlay for an annotated image slide. Absolutely
 // positioned, so the caller must be a `relative` container sized to the image.
 // Shared by the slide cards below and the Bill of Process preview.
@@ -269,7 +275,7 @@ export function SlidesEditor({
       ) : (
         <div className="flex w-full flex-wrap items-start gap-3">
           {slides.map((slide, index) => {
-            const pins = slide.annotations ?? [];
+            const pins = slidePins(slide.annotations);
             const model = slide.modelUploadId
               ? models[slide.modelUploadId]
               : undefined;
@@ -377,7 +383,7 @@ export function SlidesEditor({
         <SlideAnnotator
           open
           imageUrl={getPrivateUrl(annotating.imagePath)}
-          initial={annotating.annotations ?? []}
+          initial={slidePins(annotating.annotations)}
           onSave={(next) => {
             onAnnotationsChange(annotatingIndex, next);
             setAnnotatingIndex(null);
