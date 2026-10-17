@@ -124,11 +124,26 @@ queued job, so a 2-hour reaper would fail live jobs.
       `.claude/rules/{company-backup-restore,audit-log-system,csv-import-system,event-system,mcp-tools-reference}.md`,
       `.ai/lessons.md`.
 
-### Found, not fixed here
+### I. Onshape models refreshed in place (found during this work)
 
-- An Onshape model that refreshes in place (assemblies, workspace parts) keeps
-  `optimizeStatus = 'Success'`, so `model-optimize` skips it and the preview keeps the
-  old geometry. Main behaves the same. Filed as a separate task.
+An Onshape export with no immutable source (an assembly, or a workspace part with no
+microversion) refreshed its `modelUpload` row in place. Main behaves the same. The
+row kept `optimizeStatus = 'Success'`, so `model-optimize` skipped it. A forced run
+would not help either: the compacted raw, the preview and the assembly graph are keyed
+by the model id, and `copyRawToDurable` never overwrites a durable copy.
+
+- [x] `attachOnshapeAssetsToItem` names such an export by its bytes
+      (`contentSourceId`: company, item, file name and content). Unchanged bytes reuse
+      the row. Changed bytes get a new row, and the item is repointed to it. The
+      in-place branch is gone.
+- [x] The panel sync, revision sync and backfill no longer send `model-optimize` or
+      `model-thumbnail`. The new row starts the optimise, which renders the thumbnail.
+- [x] Tests: unchanged bytes reuse the model; changed bytes get a new one. Both fail
+      on the old attach.
+
+Effect on existing data: the first re-sync of an item that the in-place path synced
+before keeps that older row as a document on the item. Its id has no `onshape-`
+prefix, so the attach cannot tell it from a manual upload, and it preserves it.
 
 ## Deploy order
 

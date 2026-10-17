@@ -82,19 +82,8 @@ export const onshapePanelSyncFunction = inngest.createFunction(
       })
     );
 
-    // model-optimize also renders the thumbnail (one ingest job), so a part
-    // whose Onshape thumbnail could not be fetched still gets one.
-    if (result.modelUploadId) {
-      await step.sendEvent("model-optimize", {
-        name: "carbon/model-optimize" as const,
-        data: {
-          modelUploadId: result.modelUploadId,
-          companyId: payload.companyId,
-          userId: payload.userId
-        }
-      });
-    }
-
+    // A new model row starts its own optimise, which also renders the
+    // thumbnail; an unchanged export reuses its model.
     return result;
   }
 );

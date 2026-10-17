@@ -311,20 +311,8 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
       )
     );
 
-    if (result.synced && result.modelUploadId) {
-      // The sync stores the RAW Onshape export; the assembler turns it into
-      // the meshopt-compressed viewer GLB and the thumbnail (same event the
-      // manual upload route fires).
-      await step.sendEvent("model-optimize", {
-        name: "carbon/model-optimize" as const,
-        data: {
-          modelUploadId: result.modelUploadId,
-          companyId: payload.companyId,
-          userId: payload.userId
-        }
-      });
-    }
-
+    // The sync stores the RAW Onshape export. A new model row starts the
+    // optimise that builds the viewer GLB and the thumbnail.
     return result;
   }
 );
