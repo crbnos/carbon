@@ -532,10 +532,17 @@ export function buildSalesInvoiceJournal(
       ...charges,
       componentTax: new Map(
         taxComponents.flatMap((component) => {
-          const account = component.taxReceivedAccountId
-            ? accounts.account(component.taxReceivedAccountId)
-            : undefined;
-          return account ? [[component.id, account] as const] : [];
+          if (!component.taxReceivedAccountId) return [];
+          // The accounts were read by the company group, so a named account
+          // that is missing belongs to another group. Falling back to the
+          // default would split the GL from the tax ledger.
+          const account = accounts.account(component.taxReceivedAccountId);
+          if (!account) {
+            throw new Error(
+              `Tax component ${component.name} names a Tax Received account outside this company group`
+            );
+          }
+          return [[component.id, account] as const];
         })
       )
     };

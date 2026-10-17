@@ -9561,8 +9561,24 @@ export async function upsertTaxCode(
         effectiveDate: c.effectiveDate || null,
         expirationDate: c.expirationDate || null
       });
-      const kept = components.filter((c) => !!c.id);
-      const added = components.filter((c) => !c.id);
+      // Only an id this code already has is an update. The upsert conflicts on
+      // (id, companyId) alone, so any other id (another code's component, or
+      // one deleted since) would rewrite that row: it is inserted as new.
+      const ownedIds = new Set(
+        taxCode.id
+          ? (
+              await trx
+                .selectFrom("taxCodeComponent")
+                .select("id")
+                .where("taxCodeId", "=", taxCodeId)
+                .where("companyId", "=", companyId)
+                .execute()
+            ).map((c) => c.id)
+          : []
+      );
+      const kept = components.filter((c) => !!c.id && ownedIds.has(c.id));
+      // `row` carries no id, so these take a new one.
+      const added = components.filter((c) => !c.id || !ownedIds.has(c.id));
 
       let removal = trx
         .deleteFrom("taxCodeComponent")
