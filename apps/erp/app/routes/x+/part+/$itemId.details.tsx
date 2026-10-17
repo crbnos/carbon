@@ -15,6 +15,7 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { CadModel, DeferredFiles } from "~/components";
+import { ExternalSourceCard } from "~/components/ExternalSource";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   itemManufacturingValidator,
@@ -371,6 +372,10 @@ export default function PartDetailsRoute() {
             modelUpload={partData?.partSummary ?? null}
             title={t`CAD Model`}
             titleExtras={lockHint}
+          />
+          <ExternalSourceCard
+            itemId={itemId}
+            canDetach={permissions.can("update", "parts")}
           />
           <ItemRiskRegister itemId={itemId} />
           <ItemChangeNotices

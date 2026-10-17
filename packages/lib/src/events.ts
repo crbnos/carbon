@@ -666,6 +666,26 @@ export type Events = {
     };
   };
 
+  // Panel push: export one element's assets onto the item the push linked.
+  "carbon/onshape-panel-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      wvm: "w" | "v";
+      wvmId: string;
+      elementId: string;
+      elementKind: "partstudio" | "assembly" | "drawing";
+      partId?: string;
+      /** Non-default configuration to export; absent = default. */
+      configuration?: string;
+      assetBaseName?: string;
+      /** Workspace pushes: the part microversion the review saw. */
+      microversionId?: string;
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {

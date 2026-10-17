@@ -5995,6 +5995,9 @@ msgstr "Copy service number"
 msgid "Copy service unique identifier"
 msgstr "Copy service unique identifier"
 
+msgid "Copy signing secret"
+msgstr "Copy signing secret"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Copy supplier quote unique identifier"
 
@@ -7667,6 +7670,9 @@ msgstr "Delivered"
 msgid "Delivered on"
 msgstr "Delivered on"
 
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Deliveries are signed with the new secret at once. Update your endpoint with it."
+
 msgid "Delivery Date"
 msgstr "Delivery Date"
 
@@ -7801,6 +7807,12 @@ msgstr "Description of Change"
 
 msgid "Description of Issue"
 msgstr "Description of Issue"
+
+msgid "Detach"
+msgstr "Detach"
+
+msgid "Detach from Onshape?"
+msgstr "Detach from Onshape?"
 
 msgid "Detail"
 msgstr "Detail"
@@ -8426,6 +8438,10 @@ msgstr "Each period is one month, for the month rate."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
+
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr "Each push replaces: {0}. Other edits stay."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -9348,6 +9364,9 @@ msgstr "Every company-scoped record. Credentials, integration tokens and webhook
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
 
@@ -9964,6 +9983,12 @@ msgstr "Failed to resize image: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "Failed to retrieve CSV column data."
+
+msgid "Failed to reveal the secret"
+msgstr "Failed to reveal the secret"
+
+msgid "Failed to roll the secret"
+msgstr "Failed to roll the secret"
 
 msgid "Failed to save configuration rule"
 msgstr "Failed to save configuration rule"
@@ -12427,6 +12452,9 @@ msgstr "Last push {when} failed: {0}"
 msgid "Last push {when}:"
 msgstr "Last push {when}:"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Last pushed {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Last Quarter"
 
@@ -12805,6 +12833,9 @@ msgstr "Link this Carbon customer to one of them, or create a separate Stripe cu
 
 msgid "Link to sales order line"
 msgstr "Link to sales order line"
+
+msgid "Linked"
+msgstr "Linked"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -15767,6 +15798,9 @@ msgstr "Open in change notices {ids}. Release them to create new versions or rev
 msgid "Open in MES"
 msgstr "Open in MES"
 
+msgid "Open in Onshape"
+msgstr "Open in Onshape"
+
 msgid "Open Issues"
 msgstr "Open Issues"
 
@@ -17718,6 +17752,15 @@ msgstr "Push the journal without the dimension"
 msgid "Push to accounting"
 msgstr "Push to accounting"
 
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr "Pushes don't change this item's fields, so edits made here stay."
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 
@@ -19233,6 +19276,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
+msgid "Reveal"
+msgstr "Reveal"
+
 msgid "Reveal account number"
 msgstr "Reveal account number"
 
@@ -19501,6 +19547,12 @@ msgstr "Roles and Responsibilities"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Roles that set default permissions for new employees"
+
+msgid "Roll secret"
+msgstr "Roll secret"
+
+msgid "Rolled the signing secret"
+msgstr "Rolled the signing secret"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Room to grow without bolting on more tools"
@@ -21160,6 +21212,9 @@ msgstr "Signing in also requires a one-time code from your authenticator app"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+
+msgid "Signing secret"
+msgstr "Signing secret"
 
 msgid "Simultaneous"
 msgstr "Simultaneous"

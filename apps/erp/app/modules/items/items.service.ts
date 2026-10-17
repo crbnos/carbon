@@ -23,7 +23,12 @@ import type {
 } from "@carbon/database/client";
 import { insertRows, many, maybeSingle } from "@carbon/database/rows";
 import { hasPendingApproval } from "@carbon/ee/approvals.server";
-import { storage } from "@carbon/files";
+import {
+  isUnsafeStoragePath,
+  storage,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -36,6 +41,7 @@ import {
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Transaction } from "kysely";
+import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
@@ -7013,7 +7019,7 @@ export async function mintPlaceholderPart(
 //   Revision → new inactive revision item + its Draft method (attrs/docs).
 //   New Part → new inactive part number (new readableId) + copied Draft method.
 // All three keep the user client (the release path uses the same client for the
-// same privileged method helpers — see applyChangeNotice / items.server).
+// same privileged method helpers — see applyChangeNotice).
 // =============================================================================
 
 // Mint the next readableId for a CO-derived New Part, following the SAME numbering
@@ -9187,6 +9193,277 @@ export async function getChangeNoticeDiff(
   }
 
   return { data: { items }, error: null };
+}
+
+/**
+ * Create a presigned upload URL for a CAD model (STEP or another supported
+ * format). First step of the two-step model upload: PUT the file bytes to the
+ * returned `signedUrl`, then call `insertModelUpload` with the returned `modelId`,
+ * `path` and the file's size in bytes. The file is staged in the `temp-staging`
+ * bucket, as the browser upload does, so models up to 2.5 GB are accepted.
+ * @mcp create — the non-browser counterpart of the CAD model dropzone
+ */
+export async function createModelUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; name: string }
+) {
+  const extension = args.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!supportedModelTypes.includes(extension)) {
+    return {
+      data: null,
+      error: {
+        message: `Unsupported model file "${args.name}": use ${supportedModelTypes.join(", ")}`
+      }
+    };
+  }
+  const modelId = nanoid();
+  const path = `${args.companyId}/models/${modelId}.${extension}`;
+  const signed = await storage(client)
+    .from(TEMP_STAGING_BUCKET)
+    .createSignedUploadUrl(path, { upsert: true });
+  if (signed.error) return { data: null, error: signed.error };
+  return { data: { ...signed.data, modelId, path }, error: null };
+}
+
+const modelUploadTargets = [
+  "item",
+  "job",
+  "salesRfqLine",
+  "quoteLine",
+  "salesOrderLine"
+] as const;
+
+/**
+ * Record a CAD model uploaded with `createModelUploadUrl`, as the CAD model
+ * dropzone does, and make it the model of the records named: an item, a job, a
+ * sales RFQ line, a quote line and/or a sales order line (a line and its item
+ * together, as the dropzone does). With none the model is only recorded; pass
+ * its id as `modelUploadId` to `upsertPart` or `upsertJob` later. Starts the optimisation job, which also renders the thumbnail. Set
+ * `convert` for a STEP file whose assembly structure is needed (assembly
+ * instructions, step slides).
+ * @mcp create — second step of the model upload
+ */
+/** Whether `path` is the one `createModelUploadUrl` minted for this model. */
+export function isModelUploadPath(
+  companyId: string,
+  modelId: string,
+  path: string
+) {
+  return (
+    path.startsWith(`${companyId}/models/${modelId}.`) &&
+    !isUnsafeStoragePath(path)
+  );
+}
+
+export async function insertModelUpload(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    createdBy: string;
+    modelId: string;
+    /** The `path` returned by `createModelUploadUrl`. */
+    path: string;
+    /** The file name, shown in the viewer. */
+    name: string;
+    /** The file's size in bytes. */
+    size: number;
+    itemId?: string;
+    jobId?: string;
+    salesRfqLineId?: string;
+    quoteLineId?: string;
+    salesOrderLineId?: string;
+    /** Convert a STEP file into an assembly (GLB + graph) now, not on first use. */
+    convert?: boolean;
+  }
+) {
+  const { companyId, createdBy, modelId, path, name, size } = args;
+  // The path comes from the caller: it must be the one minted for this model,
+  // inside this tenant's storage prefix.
+  if (!isModelUploadPath(companyId, modelId, path)) {
+    return { data: null, error: { message: "Invalid model path" } };
+  }
+
+  const ids = {
+    item: args.itemId,
+    job: args.jobId,
+    salesRfqLine: args.salesRfqLineId,
+    quoteLine: args.quoteLineId,
+    salesOrderLine: args.salesOrderLineId
+  };
+  const targets = modelUploadTargets.flatMap((table) => {
+    const id = ids[table];
+    return id ? [{ table, id }] : [];
+  });
+
+  // Check the records first, so a wrong id does not leave an unattached model.
+  const found = await Promise.all(
+    targets.map(({ table, id }) =>
+      client
+        .from(table)
+        .select("id")
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    )
+  );
+  for (const [index, result] of found.entries()) {
+    if (result.error) return { data: null, error: result.error };
+    if (!result.data) {
+      return {
+        data: null,
+        error: { message: `${targets[index]!.table} not found` }
+      };
+    }
+  }
+
+  const inserted = await client.from("modelUpload").insert({
+    id: modelId,
+    modelPath: path,
+    name,
+    size,
+    // Frozen as-uploaded bytes: `size` is later overwritten with the compacted
+    // (.zst) stored size, but the viewer's reduction badge compares the original.
+    originalSize: size,
+    // Frozen as-uploaded path: `modelPath` is later repointed at the compacted
+    // artifact (STEP → `.xbf.zst`), but downloads must serve the original bytes.
+    // Mesh compaction nulls this again (its `.zst` decompresses to the original).
+    originalPath: path,
+    companyId,
+    createdBy
+  });
+  if (inserted.error) return { data: null, error: inserted.error };
+
+  const linked = await Promise.all(
+    targets.map(({ table, id }) =>
+      client
+        .from(table)
+        .update({ modelUploadId: modelId })
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+        .maybeSingle()
+    )
+  );
+  const failed = linked.findIndex((result) => result.error || !result.data);
+  const failedTable = failed === -1 ? null : targets[failed]!.table;
+  if (failedTable) {
+    logger.error("Failed to attach a model upload", {
+      companyId,
+      modelUploadId: modelId,
+      table: failedTable,
+      error: linked[failed]!.error
+    });
+  }
+
+  const { trigger } = await import("@carbon/jobs");
+  const isStep = [".step", ".stp"].some((ext) =>
+    path.toLowerCase().endsWith(ext)
+  );
+  if (args.convert && isStep) {
+    // Skipped by the job when no assembler is configured; the viewer then
+    // parses the raw model.
+    try {
+      await trigger("assembly-convert", {
+        companyId,
+        modelUploadId: modelId,
+        userId: createdBy
+      });
+    } catch (e) {
+      logger.error("Failed to start model conversion", {
+        companyId,
+        modelUploadId: modelId,
+        error: e
+      });
+    }
+  }
+  // Optimises a mesh model into a compact GLB and renders the thumbnail. The
+  // job derives the format from the stored file and skips other inputs.
+  try {
+    await trigger("model-optimize", {
+      modelUploadId: modelId,
+      companyId,
+      userId: createdBy
+    });
+  } catch (e) {
+    logger.error("Failed to start model optimisation", {
+      companyId,
+      modelUploadId: modelId,
+      error: e
+    });
+  }
+
+  if (failedTable) {
+    // The model row stands (and is processed); only the link is missing.
+    return {
+      data: null,
+      error: linked[failed]!.error ?? {
+        message: `The model ${modelId} was saved but could not be attached to the ${failedTable}`
+      }
+    };
+  }
+  return { data: { modelUploadId: modelId }, error: null };
+}
+
+const thumbnailExtensions = ["png", "jpg", "jpeg", "webp"];
+
+/**
+ * Create a presigned upload URL for an item's own thumbnail image (PNG, JPEG or
+ * WebP). PUT the bytes to `signedUrl`, then call `updateItemThumbnail` with the
+ * returned `path`. An item thumbnail is shown in place of the one rendered from
+ * its model.
+ * @mcp create — the non-browser counterpart of the thumbnail upload
+ */
+export async function createItemThumbnailUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; name: string }
+) {
+  const extension = args.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!thumbnailExtensions.includes(extension)) {
+    return {
+      data: null,
+      error: {
+        message: `Unsupported thumbnail "${args.name}": use ${thumbnailExtensions.join(", ")}`
+      }
+    };
+  }
+  const path = `${args.companyId}/thumbnails/${args.itemId}/${nanoid()}.${extension}`;
+  const signed = await storage(client)
+    .company(args.companyId)
+    .createSignedUploadUrl(path, { upsert: true });
+  if (signed.error) return { data: null, error: signed.error };
+  return { data: { ...signed.data, path }, error: null };
+}
+
+/**
+ * Set an item's thumbnail to an image uploaded with
+ * `createItemThumbnailUploadUrl`, or clear it (`thumbnailPath: null`) to show
+ * the one rendered from its model.
+ * @mcp update
+ */
+export async function updateItemThumbnail(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemId: string;
+    thumbnailPath: string | null;
+    updatedBy: string;
+  }
+) {
+  const { companyId, itemId, thumbnailPath, updatedBy } = args;
+  if (
+    thumbnailPath !== null &&
+    (!thumbnailPath.startsWith(`${companyId}/thumbnails/${itemId}/`) ||
+      isUnsafeStoragePath(thumbnailPath))
+  ) {
+    return { data: null, error: { message: "Invalid thumbnail path" } };
+  }
+  return client
+    .from("item")
+    .update({ thumbnailPath, updatedBy })
+    .eq("id", itemId)
+    .eq("companyId", companyId)
+    .select("id, thumbnailPath")
+    .single();
 }
 
 /**

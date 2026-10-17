@@ -75,6 +75,7 @@ pnpm --filter erp test
 - `upsertPickMethodWithShelfLife` — pick method with shelf life configuration
 - `getConfigurationParameters` / `getConfigurationRules` — product configurator
 - `createItemDocumentUploadUrl` — MCP file upload (step 1): presigned URL for an item document (`parts/{itemId}` folder); pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
+- `createModelUploadUrl` / `insertModelUpload` — the API/MCP CAD model upload, and the one path the browser's `api+/model.upload.ts` shares: step 1 signs an upload into `temp-staging` (2.5 GB, where the dropzone stages raw CAD) at `${companyId}/models/${modelId}.${ext}`; step 2 records the `modelUpload` row, links it to any of `itemId` / `jobId` / `salesRfqLineId` / `quoteLineId` / `salesOrderLineId` (each checked first, all scoped by `companyId`), and starts `model-optimize` (plus `assembly-convert` for a STEP file with `convert`). No transaction spans the row and the links: a failed link returns an error, the model row stands and is still processed
 
 ## Operations (`items.server.ts`)
 

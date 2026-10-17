@@ -1,5 +1,5 @@
 {
-  "totalTools": 1610,
+  "totalTools": 1614,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -395,6 +395,7 @@
     {"name":"items_createConsumable","classification":"WRITE","schema":"433b52bae6a3","response":"none","permission":"parts:create","paginates":false},
     {"name":"items_createItemDocumentUploadUrl","classification":"WRITE","schema":"c99d2620a4f0","response":"4ad76afe0777","permission":"parts:create","paginates":false},
     {"name":"items_createItemPostingGroup","classification":"WRITE","schema":"84e2df529d4e","response":"3797626bd17e","permission":"parts:create","paginates":false},
+    {"name":"items_createItemThumbnailUploadUrl","classification":"WRITE","schema":"6dcd390c3681","response":"e7dd9ea63165","permission":"parts:update","paginates":false},
     {"name":"items_createMaterial","classification":"WRITE","schema":"589547ce04ca","response":"none","permission":"parts:create","paginates":false},
     {"name":"items_createMaterialForm","classification":"WRITE","schema":"860d7b0dca51","response":"3797626bd17e","permission":"parts:create","paginates":false},
     {"name":"items_createMaterialSubstance","classification":"WRITE","schema":"860d7b0dca51","response":"3797626bd17e","permission":"parts:create","paginates":false},
@@ -405,6 +406,7 @@
     {"name":"items_createMethodOperationStepSlide","classification":"WRITE","schema":"4c0b7fbb41fe","response":"3797626bd17e","permission":"parts:create","paginates":false},
     {"name":"items_createMethodOperationTool","classification":"WRITE","schema":"b4ca2f2a0605","response":"3797626bd17e","permission":"parts:create","paginates":false},
     {"name":"items_createMethodVersion","classification":"WRITE","schema":"cd53dc57847a","response":"e83987f24b08","permission":"parts:create","paginates":false},
+    {"name":"items_createModelUploadUrl","classification":"WRITE","schema":"098974972159","response":"56f546fd3bc7","permission":"parts:update","paginates":false},
     {"name":"items_createPart","classification":"WRITE","schema":"4206b71c74bb","response":"baa524ddff70","permission":"parts:create","paginates":false},
     {"name":"items_createPickMethod","classification":"WRITE","schema":"17f3be4ef104","response":"bcde375ebd4c","permission":"parts:create","paginates":false},
     {"name":"items_createRevision","classification":"WRITE","schema":"3488d3b3792b","response":"3797626bd17e","permission":"parts:create","paginates":false},
@@ -530,6 +532,7 @@
     {"name":"items_getUnitOfMeasures","classification":"READ","schema":"e2389bb135b5","response":"52562a2400a4","permission":"parts:view","paginates":true},
     {"name":"items_getUnitOfMeasuresList","classification":"READ","schema":"31b84d65b2ac","response":"1333b6f93ca5","permission":"parts:view","paginates":false},
     {"name":"items_getUnitOfMeasureUsage","classification":"READ","schema":"7f8214d1083f","response":"bf91be568e5a","permission":"parts:view","paginates":false},
+    {"name":"items_insertModelUpload","classification":"WRITE","schema":"22ea49929c8c","response":"277f7d872d8c","permission":"parts:update","paginates":false},
     {"name":"items_recalculateItemCost","classification":"WRITE","schema":"623ca47a6c74","response":"c7c3dd8e466d","permission":"parts:update","paginates":false},
     {"name":"items_removeChangeNoticeAffectedItem","classification":"DESTRUCTIVE","schema":"7f8214d1083f","response":"bcde375ebd4c","permission":"parts:update","paginates":false},
     {"name":"items_renameService","classification":"WRITE","schema":"6dcd390c3681","response":"6680d0e1a37f","permission":"parts:update","paginates":false},
@@ -561,6 +564,7 @@
     {"name":"items_updateItemManufacturing","classification":"WRITE","schema":"8f541b0237ee","response":"623ca47a6c74","permission":"parts:update","paginates":false},
     {"name":"items_updateItemPlanning","classification":"WRITE","schema":"45e5182283f4","response":"ade4704d7338","permission":"parts:update","paginates":false},
     {"name":"items_updateItemPostingGroup","classification":"WRITE","schema":"cba659cc6c3c","response":"3797626bd17e","permission":"parts:update","paginates":false},
+    {"name":"items_updateItemThumbnail","classification":"WRITE","schema":"023aafe5b1be","response":"f806de8159c8","permission":"parts:update","paginates":false},
     {"name":"items_updateMaterial","classification":"WRITE","schema":"589547ce04ca","response":"none","permission":"parts:update","paginates":false},
     {"name":"items_updateMaterialForm","classification":"WRITE","schema":"2bdaab28eafc","response":"3797626bd17e","permission":"parts:update","paginates":false},
     {"name":"items_updateMaterialOrder","classification":"WRITE","schema":"60a7bcc6c0a3","response":"646de62ab761","permission":"parts:update","paginates":false},

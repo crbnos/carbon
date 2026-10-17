@@ -18,7 +18,7 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
 }));
 
 import type { ModulePermissions } from "@carbon/api/permissions";
-import { uploadModel } from "../app/modules/documents/documents.server";
+import { insertModelUpload } from "../app/modules/items/items.server";
 import {
   type Actor,
   createServiceContext
@@ -75,9 +75,9 @@ describe("uploading a model", () => {
   const ctx = contextFor(user(grants(["parts", "update"])));
 
   it("refuses a path under another company's prefix", async () => {
-    const result = await uploadModel(ctx, {
+    const result = await insertModelUpload(ctx, {
       ...upload,
-      modelPath: "company-2/models/model-1.step"
+      path: "company-2/models/model-1.step"
     });
     expect(result.error).toMatchObject({
       category: "validation",
@@ -86,9 +86,9 @@ describe("uploading a model", () => {
   });
 
   it("refuses a path that climbs out of the company's prefix", async () => {
-    const result = await uploadModel(ctx, {
+    const result = await insertModelUpload(ctx, {
       ...upload,
-      modelPath: "company-1/../company-2/models/model-1.step"
+      path: "company-1/../company-2/models/model-1.step"
     });
     expect(result.error).toMatchObject({ category: "validation" });
   });

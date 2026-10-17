@@ -36,6 +36,7 @@ import {
   resolveOperationRates,
   type WorkCenterRate
 } from "~/utils/bom";
+import { isAssemblerServiceHealthy } from "../production/production.service";
 import { invokePosting } from "../shared/shared.service";
 import {
   applyStorageAndShelfLifeRefines,
@@ -6858,6 +6859,134 @@ export const createItemDocumentUploadUrl = defineServiceFn({
         ctx.asCaller.supabase,
         stamp(ctx, input, ["companyId", "createdBy", "updatedBy"]) as never
       )
+    );
+  }
+});
+
+/**
+ * Create a presigned upload URL for a CAD model
+ *
+ * @remarks
+ * First step of the two-step model upload: PUT the file bytes (STEP or another
+ * supported format) to the returned `signedUrl`, then call `insertModelUpload`
+ * with the returned `modelId`, `path` and the file's size in bytes. The file is
+ * staged in the `temp-staging` bucket, as the browser upload does, so models up
+ * to 2.5 GB are accepted.
+ *
+ * @mcp
+ */
+export const createModelUploadUrl = defineServiceFn({
+  input: z.object({ name: z.string().min(1) }),
+  permission: { update: "parts" },
+  async run(ctx, { name }) {
+    return envelope(
+      ctx,
+      await service.createModelUploadUrl(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        name
+      })
+    );
+  }
+});
+
+/**
+ * Record an uploaded CAD model and attach it
+ *
+ * @remarks
+ * Second step of the model upload, and what the browser's model dropzone calls.
+ * Records the model staged at `path` (from `createModelUploadUrl`) and makes it
+ * the model of each record named: an item, a job, a sales RFQ line, a quote line
+ * and a sales order line. Every record is checked first, so a wrong id leaves no
+ * model behind. With none, the model is only recorded; pass its id as
+ * `modelUploadId` to a part or a job later. Starts the optimisation, which also
+ * renders the thumbnail. Set `convert` for a STEP file whose assembly structure
+ * is needed (assembly instructions, step slides); it runs only while the
+ * assembler is up.
+ *
+ * @mcp
+ */
+export const insertModelUpload = defineServiceFn({
+  input: z.object({
+    modelId: z.string().min(1),
+    path: z.string().min(1),
+    name: z.string().min(1),
+    size: z.number().nonnegative(),
+    itemId: z.string().optional(),
+    jobId: z.string().optional(),
+    salesRfqLineId: z.string().optional(),
+    quoteLineId: z.string().optional(),
+    salesOrderLineId: z.string().optional(),
+    convert: z.boolean().optional()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    if (!service.isModelUploadPath(ctx.company.id, input.modelId, input.path)) {
+      return ctx.error("validation", "Invalid model path");
+    }
+    // Conversion is lazy by default: most models never become assemblies.
+    const convert = !!input.convert && (await isAssemblerServiceHealthy());
+    return envelope(
+      ctx,
+      await service.insertModelUpload(ctx.asCaller.supabase, {
+        ...input,
+        convert,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Create a presigned upload URL for an item's thumbnail
+ *
+ * @remarks
+ * PUT the image (PNG, JPEG or WebP) to the returned `signedUrl`, then call
+ * `updateItemThumbnail` with the returned `path`. An item's own thumbnail is
+ * shown in place of the one rendered from its model.
+ *
+ * @mcp
+ */
+export const createItemThumbnailUploadUrl = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    const owned = await refuseUnlessOwned(ctx, "item", { id: input.itemId });
+    if (owned) return owned;
+    return envelope(
+      ctx,
+      await service.createItemThumbnailUploadUrl(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id
+      })
+    );
+  }
+});
+
+/**
+ * Set or clear an item's thumbnail
+ *
+ * @remarks
+ * Sets the thumbnail to an image uploaded with `createItemThumbnailUploadUrl`,
+ * or clears it (`thumbnailPath: null`) to show the one rendered from the item's
+ * model.
+ *
+ * @mcp
+ */
+export const updateItemThumbnail = defineServiceFn({
+  input: z.object({
+    itemId: z.string().min(1),
+    thumbnailPath: z.string().min(1).nullable()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    return envelope(
+      ctx,
+      await service.updateItemThumbnail(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
     );
   }
 });

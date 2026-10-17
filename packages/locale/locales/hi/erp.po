@@ -5995,6 +5995,9 @@ msgstr "सेवा संख्या कॉपी करें"
 msgid "Copy service unique identifier"
 msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
 
+msgid "Copy signing secret"
+msgstr "हस्ताक्षर रहस्य की प्रतिलिपि बनाएं"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "आपूर्तिकर्ता कोटेशन की विशिष्ट पहचान नकल करें"
 
@@ -7667,6 +7670,9 @@ msgstr "डिलीवर किया गया"
 msgid "Delivered on"
 msgstr "को डिलीवर किया गया"
 
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "डिलीवरीज़ नए रहस्य के साथ तुरंत हस्ताक्षरित की जाती हैं। अपना एंडपॉइंट इससे अपडेट करें।"
+
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
 
@@ -7801,6 +7807,12 @@ msgstr "परिवर्तन का विवरण"
 
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
+
+msgid "Detach"
+msgstr "अलग करें"
+
+msgid "Detach from Onshape?"
+msgstr "Onshape से अलग करें?"
 
 msgid "Detail"
 msgstr "विवरण"
@@ -8426,6 +8438,10 @@ msgstr "प्रत्येक अवधि एक महीना है, म
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
+
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "प्रत्येक किराये की समझौते या अनुबंध के विक्रय प्रतिनिधि (या इसके निर्माता) को इसके चालानों का दैनिक सारांश मिलता है।"
@@ -9348,6 +9364,9 @@ msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। �
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "प्रत्येक डिलीवरी इस रहस्य के साथ हस्ताक्षरित एक Carbon-Signature हेडर ले जाती है। यह सत्यापित करें कि अनुरोध Carbon से आया है।"
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
@@ -9964,6 +9983,12 @@ msgstr "छवि को पुनः आकार देने में वि
 
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV कॉलम डेटा प्राप्त करने में विफल।"
+
+msgid "Failed to reveal the secret"
+msgstr "रहस्य को प्रकट करने में विफल"
+
+msgid "Failed to roll the secret"
+msgstr "रहस्य को रोल करने में विफल"
 
 msgid "Failed to save configuration rule"
 msgstr "कॉन्फ़िगरेशन नियम सहेजने में विफल"
@@ -12427,6 +12452,9 @@ msgstr "अंतिम पुश ({when}) विफल हुआ: {0}"
 msgid "Last push {when}:"
 msgstr "अंतिम पुश {when}:"
 
+msgid "Last pushed {lastPushed}."
+msgstr "अंतिम बार {lastPushed} को पुश किया गया।"
+
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
 
@@ -12805,6 +12833,9 @@ msgstr "इस Carbon ग्राहक को इनमें से किस
 
 msgid "Link to sales order line"
 msgstr "विक्रय आदेश पंक्ति से जोड़ें"
+
+msgid "Linked"
+msgstr "जुड़ा हुआ"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -15767,6 +15798,9 @@ msgstr "परिवर्तन सूचनाओं {ids} में खुल
 msgid "Open in MES"
 msgstr "MES में खोलें"
 
+msgid "Open in Onshape"
+msgstr "Onshape में खोलें"
+
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
@@ -17718,6 +17752,15 @@ msgstr "आयाम के बिना जर्नल पुश करें"
 msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
 
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr ""
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "इस शुल्क को अपने चालान पर रखें, जिसे पोस्ट होने से पहले समीक्षा के लिए रोका जाता है। अन्यथा यह समझौते के अगले चालान पर जाता है।"
 
@@ -19233,6 +19276,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "संस्करण {revisionId}"
 
+msgid "Reveal"
+msgstr "प्रकट करें"
+
 msgid "Reveal account number"
 msgstr "खाता संख्या दिखाएँ"
 
@@ -19501,6 +19547,12 @@ msgstr "भूमिकाएं और जिम्मेदारियां"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "नई कर्मचारियों के लिए डिफ़ॉल्ट अनुमतियां सेट करने वाली भूमिकाएं"
+
+msgid "Roll secret"
+msgstr "रहस्य को रोल करें"
+
+msgid "Rolled the signing secret"
+msgstr "हस्ताक्षर रहस्य को रोल कर दिया"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
@@ -21160,6 +21212,9 @@ msgstr "साइन इन करने के लिए आपके प्र
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
+
+msgid "Signing secret"
+msgstr "हस्ताक्षर रहस्य"
 
 msgid "Simultaneous"
 msgstr "समवर्ती"

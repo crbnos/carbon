@@ -63,13 +63,21 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
+import type {
+  ItemEdit,
+  ItemFieldSnapshot,
+  OwnedFieldChange,
+  StandardFieldWriter
+} from "@carbon/ee";
 import {
   getIntegrationConfigById,
   getIntegrationIdsByRole,
   type IntegrationHealthcheckResult,
   type IntegrationID,
+  mergeExistingItemEdits,
   resolveIntegrationSecrets,
-  splitSecrets
+  splitSecrets,
+  standardField
 } from "@carbon/ee";
 import {
   buildRilletFieldTarget,
@@ -97,13 +105,25 @@ import {
 } from "@carbon/ee/hooks.server";
 import type { OeeDevice } from "@carbon/ee/oee";
 import { getOeeProvider } from "@carbon/ee/oee.server";
+import type { DraftCandidate } from "@carbon/ee/onshape";
 import {
+  DRAFT_MARKER_ENTITY_TYPE,
   exchangeOnshapeAuthorizationCode,
   getConflictingOnshapeIntegration,
+  isOnshapeIntegrationId,
+  loadReusableDrafts,
   ONSHAPE_OAUTH_SCOPES,
-  type OnshapeIntegrationId
+  type OnshapeOAuthIntegrationId,
+  pairOwnedCopiedLines,
+  selectInBatches
 } from "@carbon/ee/onshape";
-import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
+import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import {
+  isOnshapeOAuthIntegrationId,
+  loadOnshapeOAuthConfig,
+  patchOnshapeOAuthGrant,
+  patchOnshapeSettings
+} from "@carbon/ee/onshape.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
@@ -118,12 +138,8 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import {
-  datetime,
-  isInternalEmail,
-  labelSizes,
-  redirectExternal
-} from "@carbon/utils";
+import { datetime, isInternalEmail, labelSizes } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -141,6 +157,15 @@ import {
   getSalesInvoiceLines,
   getSalesInvoiceShipment
 } from "~/modules/invoicing/invoicing.service";
+import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
+import {
+  cascadeItemTrackingType,
+  copyMakeMethod,
+  getLockVerdict,
+  type ReleaseControl,
+  updateItemMethodAndSourcing,
+  upsertMakeMethodVersion
+} from "~/modules/items/items.service";
 import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
   getPurchaseOrder,
@@ -178,6 +203,8 @@ import {
 } from "./backups.service";
 import type { IntegrationErrorCode } from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
+import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
+import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
 import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import type {
   itemSerialSequenceValidator,
@@ -1930,202 +1957,7 @@ export async function getOeeDevicesTabData(
     error: providerError
   };
 }
-/** Absolute integrations-page URL on this request's origin. */
-function integrationsUrl(request: Request) {
-  const requestUrl = new URL(request.url);
 
-  if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-    requestUrl.protocol = "http";
-  }
-
-  return `${requestUrl.origin}${path.to.integrations}`;
-}
-
-/**
- * The OAuth callback for both Onshape integrations — the public app
- * (`/api/integrations/onshape/oauth`) and a Government customer's private app
- * (`/api/integrations/onshape-government/oauth`). Only where the client comes
- * from differs, and `loadOnshapeOAuthConfig` owns that.
- *
- * Onshape reaches this by redirecting the user's browser, so a failure has to
- * render as something they can act on: send them back to the integrations
- * page, which turns the code into a toast. Only a code crosses the URL;
- * `integrationErrors` owns the copy.
- */
-export async function completeOnshapeAuthorization({
-  request,
-  integrationId,
-  userId,
-  companyId
-}: {
-  request: Request;
-  integrationId: OnshapeIntegrationId;
-  userId: string;
-  companyId: string;
-}) {
-  const url = new URL(request.url);
-  const searchParams = Object.fromEntries(url.searchParams.entries());
-
-  // The state must be the one issued to THIS browser for this user, company and
-  // integration. Without the check anyone could send a victim a callback URL
-  // carrying the attacker's own Onshape code, linking the victim's company to
-  // the attacker's Onshape account. Single-use: consumed whether it matches or
-  // not.
-  const consumedState = await consumeOAuthState(
-    request,
-    url.searchParams.get("state") ?? "",
-    { integrationId, userId, companyId }
-  );
-
-  // Both integrations declare the same codes, each with its own copy.
-  const connectionFailed = (
-    reason: IntegrationErrorCode<OnshapeIntegrationId>
-  ) =>
-    redirectExternal(
-      `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(integrationId, reason)}`,
-      { headers: { "Set-Cookie": consumedState.cookie } }
-    );
-
-  if (!consumedState.valid) {
-    logger.error("Invalid Onshape OAuth state", { integrationId, companyId });
-    return connectionFailed("invalid-state");
-  }
-
-  // Onshape reports a refused authorization by redirecting here with `error`
-  // (and usually `error_description`) in place of `code`. `invalid_scope`
-  // means the OAuth application isn't granted a scope we asked for — in
-  // practice `OAuth2Write` ("Application can write to your documents"), so the
-  // UI can name the exact fix instead of echoing Onshape's wording.
-  if (searchParams.error) {
-    logger.error("Onshape authorization refused", {
-      integrationId,
-      error: searchParams.error,
-      errorDescription: searchParams.error_description
-    });
-    return connectionFailed(
-      searchParams.error === "invalid_scope" ? "write-permission" : "denied"
-    );
-  }
-
-  const authResponse = oAuthCallbackSchema.safeParse(searchParams);
-  if (!authResponse.success) {
-    // Log the parameter names (never the values — `code` is a live credential).
-    logger.error("Invalid Onshape auth response", {
-      integrationId,
-      params: Object.keys(searchParams)
-    });
-    return connectionFailed("invalid-response");
-  }
-
-  const serviceRole = getCarbonServiceRole();
-
-  // A company holds one Onshape connection at a time; two would leave every
-  // background job guessing which tenant to talk to.
-  if (
-    await getConflictingOnshapeIntegration(
-      serviceRole,
-      companyId,
-      integrationId
-    )
-  ) {
-    return connectionFailed("connection-conflict");
-  }
-
-  const oauth = await loadOnshapeOAuthConfig(companyId, integrationId);
-  if (!oauth) return connectionFailed("not-configured");
-
-  try {
-    let tokenData: Awaited<ReturnType<typeof exchangeOnshapeAuthorizationCode>>;
-    try {
-      tokenData = await exchangeOnshapeAuthorizationCode(
-        oauth,
-        authResponse.data.code
-      );
-    } catch (error) {
-      logger.error("Onshape token exchange failed", { integrationId, error });
-      return connectionFailed("token-exchange");
-    }
-
-    if (!tokenData.access_token) {
-      logger.error("Onshape token response had no access token", {
-        integrationId
-      });
-      return connectionFailed("token-exchange");
-    }
-
-    const existing = await serviceRole
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", integrationId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    const existingMetadata = (existing.data?.metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
-
-    // The scope actually granted by this authorization. Onshape returns it on
-    // the token response; fall back to what we requested. A token minted
-    // without write can't export assets or manage the release webhook, and a
-    // refresh can't widen it — so asset sync is switched off rather than left
-    // on-but-broken.
-    const scope = tokenData.scope ?? ONSHAPE_OAUTH_SCOPES.join(" ");
-    const metadata: Record<string, unknown> = {
-      ...existingMetadata,
-      credentials: {
-        type: "oauth2",
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
-        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
-      },
-      scope,
-      baseUrl: oauth.baseUrl
-    };
-    // Settings survive a reconnect (a Government app's client and tenant, the
-    // asset-sync toggle), but the Onshape company is re-resolved from the new
-    // token: it may belong to a different account or tenant.
-    delete metadata.onshapeCompanyId;
-    const canWrite = onshapeConnectionHasWriteScope(metadata);
-    if (!canWrite) metadata.assetSyncEnabled = false;
-
-    const saved = await upsertCompanyIntegration(serviceRole, {
-      id: integrationId,
-      active: true,
-      // @ts-expect-error TS2322 - metadata is a JSON object
-      metadata,
-      updatedBy: userId,
-      companyId
-    });
-
-    if (saved.error || !saved.data?.metadata) {
-      logger.error("Failed to save Onshape integration", {
-        integrationId,
-        error: saved.error
-      });
-      return connectionFailed("save-failed");
-    }
-
-    // A Government connection is configured BEFORE it is authorized, so asset
-    // sync may already be on: subscribe to releases now that there is a token.
-    // Best-effort — the settings save retries it and reports a failure there.
-    if (metadata.assetSyncEnabled === true) {
-      const webhook = await ensureOnshapeReleaseWebhook(companyId, true);
-      if (!webhook.ok) {
-        logger.error("Onshape release webhook registration failed", {
-          integrationId,
-          error: webhook.error
-        });
-      }
-    }
-
-    return redirectExternal(integrationsUrl(request), {
-      headers: { "Set-Cookie": consumedState.cookie }
-    });
-  } catch (error) {
-    logger.error("Onshape OAuth Error", { integrationId, error });
-    return connectionFailed("unexpected");
-  }
-}
 const INTEGRATION_CACHE_TTL = 3600;
 
 /**
@@ -2536,6 +2368,32 @@ export async function upsertCompanyIntegration(
     }
   }
 
+  // The Onshape rows are shared with the token refresh, the OAuth callback and
+  // the panel's property map, so a settings save patches only its own keys.
+  if (isOnshapeOAuthIntegrationId(update.id)) {
+    try {
+      const data = await patchOnshapeSettings(
+        getCarbonServiceRole(),
+        update.companyId,
+        update.id,
+        {
+          metadata: update.metadata as Record<string, unknown>,
+          active: update.active,
+          updatedBy: update.updatedBy
+        }
+      );
+      await clearCompanyIntegrationCache(update.companyId);
+      return { data, error: null };
+    } catch (error) {
+      logger.error("Failed to patch Onshape settings", {
+        error,
+        companyId: update.companyId,
+        integrationId: update.id
+      });
+      return { data: null, error };
+    }
+  }
+
   // Split secret material out of the metadata: only the non-secret config is
   // written to the column; the secrets go to Supabase Vault. The row is upserted
   // FIRST (so it exists), then the vault RPC stamps `secretRef` onto it.
@@ -2804,6 +2662,21 @@ export async function updateIntegrationMetadata(
         metadata: metadata as Record<string, unknown>,
         updatedBy
       });
+      await clearCompanyIntegrationCache(companyId);
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
+  if (isOnshapeOAuthIntegrationId(integrationId)) {
+    try {
+      const data = await patchOnshapeSettings(
+        getCarbonServiceRole(),
+        companyId,
+        integrationId,
+        { metadata: metadata as Record<string, unknown>, updatedBy }
+      );
       await clearCompanyIntegrationCache(companyId);
       return { data, error: null };
     } catch (error) {
@@ -4037,4 +3910,1178 @@ export async function seedCompany(
   });
 
   return { success: true };
+}
+/**
+ * OAuth callback page: posts the outcome to the popup's opener and closes, or
+ * goes to `fallbackUrl` when there is no opener (popup blocked, callback opened
+ * directly). Only Carbon-authored values reach the page, never provider text.
+ */
+export function oauthPopupResponse(
+  outcome: OAuthPopupOutcome,
+  fallbackUrl: string
+) {
+  const message: OAuthPopupResult = { type: OAUTH_POPUP_MESSAGE, ...outcome };
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Carbon</title>
+</head>
+<body>
+<script>
+(function () {
+  var message = ${embed(message)};
+  var fallback = ${embed(fallbackUrl)};
+  var opener = window.opener;
+  var delivered = false;
+  try {
+    if (opener && !opener.closed) {
+      opener.postMessage(message, window.location.origin);
+      delivered = true;
+    }
+  } catch (_) {}
+  if (delivered) {
+    window.close();
+  }
+  // Still here: no opener, or the browser refused to close the window. Land
+  // where a plain redirect would have.
+  window.setTimeout(function () {
+    window.location.replace(fallback);
+  }, delivered ? 500 : 0);
+})();
+</script>
+<noscript><a href="${escapeAttribute(fallbackUrl)}">Continue</a></noscript>
+</body>
+</html>
+`;
+
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store"
+    }
+  });
+}
+
+/** JSON that is safe inside a <script> element. */
+function embed(value: unknown) {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
+function escapeAttribute(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+type ItemRevisionStatus = Database["public"]["Enums"]["itemRevisionStatus"];
+const onshapeDraftMethodLogger = getLogger("erp", "onshape", "draft-method");
+
+/**
+ * Why the assembly push must not write a parent's BOM, per item id. A Draft a
+ * change notice holds is the notice's to change, whatever its stage. A
+ * released (Production) revision follows `plmReleaseControl` through
+ * `getLockVerdict`, as the BOM editor's `checkRevisionLock` does: `enforce`
+ * refuses, `warn` and `off` write. Two reads in all, not one per method.
+ */
+export async function loadMethodWriteRefusals(
+  client: Client,
+  companyId: string,
+  targets: Array<{
+    itemId: string;
+    method: { changeOrderId?: string | null };
+    revisionStatus: ItemRevisionStatus | null | undefined;
+  }>
+): Promise<Map<string, string>> {
+  const reasons = new Map<string, string>();
+  const changeOrderIds = [
+    ...new Set(
+      targets
+        .map((target) => target.method.changeOrderId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const anyProduction = targets.some(
+    (target) =>
+      !target.method.changeOrderId && target.revisionStatus === "Production"
+  );
+  const [notices, settings] = await Promise.all([
+    selectInBatches(changeOrderIds, (batch) =>
+      client
+        .from("changeOrder")
+        .select("id, changeOrderId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+    ),
+    anyProduction ? getCompanySettings(client, companyId) : null
+  ]);
+  // The notice's number is for the message only; the refusal stands without it.
+  const noticeNumber = new Map(
+    (notices.data ?? []).map((notice) => [notice.id, notice.changeOrderId])
+  );
+  const releaseControl = (settings?.data?.plmReleaseControl ??
+    "enforce") as ReleaseControl;
+  for (const target of targets) {
+    const changeOrderId = target.method.changeOrderId;
+    if (changeOrderId) {
+      const number = noticeNumber.get(changeOrderId);
+      reasons.set(
+        target.itemId,
+        `its make method is a Draft on ${number ? `change notice ${number}` : "a change notice"}. Change the BOM there.`
+      );
+      continue;
+    }
+    const verdict = getLockVerdict({
+      isLocked: target.revisionStatus === "Production",
+      releaseControl
+    });
+    if (!verdict.ok) reasons.set(target.itemId, verdict.message);
+  }
+  return reasons;
+}
+
+/**
+ * The Draft a push writes into when the item's method is Active: the one this
+ * integration made from that method (`pickReusableDraft`), else a new copy. The
+ * reusable marker is written last; a failure before it deletes the new Draft.
+ */
+export async function ensureDraftMakeMethod(
+  client: Client,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemId: string;
+    activeMethodId: string;
+    companyId: string;
+    userId: string;
+    /** Preloaded with `loadReusableDrafts`; null when none, omitted to read it here. */
+    reusableDraft?: DraftCandidate | null;
+  }
+): Promise<
+  | { ok: true; id: string; created: boolean; version: number | null }
+  | { ok: false; error: string }
+> {
+  const { itemId, activeMethodId, companyId, userId } = args;
+  const serviceRole = getCarbonServiceRole();
+
+  let existing = args.reusableDraft;
+  if (existing === undefined) {
+    try {
+      const reusable = await loadReusableDrafts(
+        client,
+        serviceRole,
+        companyId,
+        new Map([[itemId, activeMethodId]])
+      );
+      existing = reusable.get(itemId) ?? null;
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "could not read Drafts"
+      };
+    }
+  }
+  if (existing) {
+    return {
+      ok: true,
+      id: existing.id,
+      created: false,
+      version: existing.version
+    };
+  }
+
+  // max(version) + 1, not Active + 1: parallel Drafts collide on (itemId, version).
+  const highest = await client
+    .from("makeMethod")
+    .select("version")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (highest.error) {
+    return { ok: false, error: highest.error.message };
+  }
+  const version = (highest.data?.version ?? 0) + 1;
+
+  const draft = await upsertMakeMethodVersion(client, {
+    copyFromId: activeMethodId,
+    // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
+    version,
+    companyId,
+    createdBy: userId
+  });
+  if (draft.error || !draft.data?.id) {
+    return {
+      ok: false,
+      error: draft.error?.message ?? "could not create a draft version"
+    };
+  }
+  const draftId = draft.data.id;
+
+  // `upsertMakeMethodVersion` copies only the method row; the BOM and routing come here.
+  const copied = await copyMakeMethod(client, db, {
+    sourceId: activeMethodId,
+    targetId: draftId,
+    companyId,
+    userId,
+    billOfMaterial: true,
+    billOfProcess: true,
+    parameters: true,
+    tools: true,
+    steps: true,
+    workInstructions: true
+  });
+  const failure = copied.error
+    ? `its method could not be copied (${copied.error.message})`
+    : await carryLineOwnership(client, serviceRole, {
+        sourceMethodId: activeMethodId,
+        targetMethodId: draftId,
+        companyId,
+        userId
+      });
+  const marked = failure
+    ? null
+    : await client.from("externalIntegrationMapping").insert({
+        entityType: DRAFT_MARKER_ENTITY_TYPE,
+        entityId: draftId,
+        integration: ONSHAPE_V2_INTEGRATION_ID,
+        // Not the source id: two Drafts of one method would collide on the unique index.
+        externalId: draftId,
+        metadata: { sourceMethodId: activeMethodId, itemId } as Json,
+        lastSyncedAt: datetime.timestamp(),
+        companyId,
+        createdBy: userId
+      });
+  const problem =
+    failure ??
+    (marked?.error
+      ? `it could not be marked as Onshape's (${marked.error.message})`
+      : null);
+  if (!problem) {
+    return { ok: true, id: draftId, created: true, version };
+  }
+
+  // A half-built Draft, released, would ship without what failed to copy. Service
+  // role: line mappings have no user DELETE policy. The lines cascade.
+  const discarded = await discardDraft(serviceRole, {
+    draftId,
+    companyId
+  });
+  return {
+    ok: false,
+    error: discarded
+      ? `a draft version was created but ${problem}, so it was removed; push again`
+      : `a draft version was created but ${problem}, and it could not be removed — delete version ${version} before pushing again`
+  };
+}
+
+async function discardDraft(
+  serviceRole: Client,
+  args: { draftId: string; companyId: string }
+): Promise<boolean> {
+  const { draftId, companyId } = args;
+  const mappings = await serviceRole
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("companyId", companyId)
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("entityType", "methodMaterial")
+    .eq("metadata->>makeMethodId", draftId);
+  const removed = await serviceRole
+    .from("makeMethod")
+    .delete()
+    .eq("id", draftId)
+    .eq("companyId", companyId);
+  const error = mappings.error ?? removed.error;
+  if (error) {
+    onshapeDraftMethodLogger.error(
+      "Failed to discard a half-built Onshape Draft",
+      {
+        companyId,
+        draftId,
+        error
+      }
+    );
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Copy this integration's line mappings onto the copied lines: ownership is
+ * keyed on line id, and unmapped copies would read as manual and be duplicated.
+ */
+async function carryLineOwnership(
+  client: Client,
+  serviceRole: Client,
+  args: {
+    sourceMethodId: string;
+    targetMethodId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<string | null> {
+  const { sourceMethodId, targetMethodId, companyId, userId } = args;
+
+  const mappings = await serviceRole
+    .from("externalIntegrationMapping")
+    .select("entityId, externalId, metadata, lastSyncedAt")
+    .eq("companyId", companyId)
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("entityType", "methodMaterial")
+    .eq("metadata->>makeMethodId", sourceMethodId);
+  if (mappings.error) return mappings.error.message;
+  if ((mappings.data ?? []).length === 0) return null;
+
+  const [sourceLines, targetLines] = await Promise.all([
+    client
+      .from("methodMaterial")
+      .select("id, itemId, order, quantity")
+      .eq("makeMethodId", sourceMethodId)
+      .eq("companyId", companyId),
+    client
+      .from("methodMaterial")
+      .select("id, itemId, order")
+      .eq("makeMethodId", targetMethodId)
+      .eq("companyId", companyId)
+  ]);
+  if (sourceLines.error) return sourceLines.error.message;
+  if (targetLines.error) return targetLines.error.message;
+
+  const owned = new Set((mappings.data ?? []).map((row) => row.entityId));
+  const paired = pairOwnedCopiedLines(
+    sourceLines.data ?? [],
+    targetLines.data ?? [],
+    owned
+  );
+
+  const inserts = [];
+  for (const mapping of mappings.data ?? []) {
+    const targetLineId = paired.get(mapping.entityId);
+    // Unpaired: left unmapped, so it reads as manual and is kept, not duplicated.
+    if (!targetLineId) continue;
+    const metadata = {
+      ...((mapping.metadata as Record<string, unknown> | null) ?? {}),
+      makeMethodId: targetMethodId
+    };
+    inserts.push({
+      entityType: "methodMaterial",
+      entityId: targetLineId,
+      integration: ONSHAPE_V2_INTEGRATION_ID,
+      externalId: mapping.externalId,
+      metadata: metadata as Json,
+      lastSyncedAt: mapping.lastSyncedAt,
+      companyId,
+      createdBy: userId
+    });
+  }
+  if (inserts.length === 0) return null;
+
+  const written = await client
+    .from("externalIntegrationMapping")
+    .insert(inserts);
+  if (written.error) {
+    return `${inserts.length} of its lines could not be linked to Onshape (${written.error.message})`;
+  }
+  return null;
+}
+
+type MethodMaterialInsert =
+  Database["public"]["Tables"]["methodMaterial"]["Insert"];
+
+export type OwnedMethodLine = {
+  row: Omit<MethodMaterialInsert, "companyId" | "createdBy">;
+  /** Ownership row metadata; `makeMethodId` names the line's method. */
+  metadata: Record<string, unknown>;
+};
+const onshapePushLogger = getLogger("erp", "onshape", "push");
+
+/**
+ * Replace an item's Onshape link in one transaction: delete any row for this
+ * item or this externalId, then insert. Both unique indexes need the deletes first.
+ */
+export async function swapItemMapping(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    itemId: string;
+    externalId: string;
+    metadata: Record<string, unknown>;
+  }
+): Promise<{ id: string; error: null } | { id: null; error: string }> {
+  const { companyId, userId, itemId, externalId } = args;
+  const now = datetime.timestamp();
+  try {
+    const inserted = await db.transaction().execute(async (trx) => {
+      await trx
+        .deleteFrom("externalIntegrationMapping")
+        .where("companyId", "=", companyId)
+        .where("integration", "=", ONSHAPE_V2_INTEGRATION_ID)
+        .where("entityType", "=", "item")
+        .where((eb) =>
+          eb.or([
+            eb("entityId", "=", itemId),
+            eb("externalId", "=", externalId)
+          ])
+        )
+        .execute();
+      return trx
+        .insertInto("externalIntegrationMapping")
+        .values({
+          entityType: "item",
+          entityId: itemId,
+          integration: ONSHAPE_V2_INTEGRATION_ID,
+          externalId,
+          metadata: args.metadata as Json,
+          lastSyncedAt: now,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+    });
+    return { id: inserted.id, error: null };
+  } catch (error) {
+    onshapePushLogger.error("Failed to link an item to Onshape", {
+      companyId,
+      itemId,
+      error
+    });
+    return {
+      id: null,
+      error: error instanceof Error ? error.message : "link failed"
+    };
+  }
+}
+
+/**
+ * Insert BOM lines and their ownership rows in one transaction. A line without
+ * its ownership row reads as manual, so the next push keeps it and adds a copy.
+ */
+export async function insertOwnedMethodLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    lines: OwnedMethodLine[];
+  }
+): Promise<
+  { mappingIds: string[]; error: null } | { mappingIds: null; error: string }
+> {
+  const { companyId, userId, lines } = args;
+  if (lines.length === 0) return { mappingIds: [], error: null };
+  const now = datetime.timestamp();
+  try {
+    const mappingIds = await db.transaction().execute(async (trx) => {
+      const inserted = await trx
+        .insertInto("methodMaterial")
+        .values(
+          lines.map((line) => ({
+            ...line.row,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId
+          }))
+        )
+        .returning("id")
+        .execute();
+      // Mappings pair with lines by index (RETURNING follows VALUES order).
+      if (inserted.length !== lines.length) {
+        throw new Error(
+          `wrote ${inserted.length} of ${lines.length} lines; nothing was kept`
+        );
+      }
+      const mappings = await trx
+        .insertInto("externalIntegrationMapping")
+        .values(
+          lines.map((line, index) => ({
+            entityType: "methodMaterial",
+            entityId: inserted[index]!.id,
+            integration: ONSHAPE_V2_INTEGRATION_ID,
+            metadata: line.metadata as Json,
+            lastSyncedAt: now,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId
+          }))
+        )
+        .returning("id")
+        .execute();
+      return mappings.map((mapping) => mapping.id);
+    });
+    return { mappingIds, error: null };
+  } catch (error) {
+    onshapePushLogger.error("Failed to write Onshape BOM lines", {
+      companyId,
+      count: lines.length,
+      error
+    });
+    return {
+      mappingIds: null,
+      error: error instanceof Error ? error.message : "line insert failed"
+    };
+  }
+}
+
+/**
+ * Take over a manual line in one transaction: set the Onshape-owned columns and
+ * write its ownership row. Operation, scrap, tags and kit are kept.
+ */
+export async function claimManualMethodLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    lineId: string;
+    update: {
+      itemId: string;
+      quantity: number;
+      order: number;
+      materialMakeMethodId: string | null;
+    };
+    metadata: Record<string, unknown>;
+  }
+): Promise<
+  { mappingId: string; error: null } | { mappingId: null; error: string }
+> {
+  const { companyId, userId, lineId } = args;
+  const now = datetime.timestamp();
+  try {
+    const mappingId = await db.transaction().execute(async (trx) => {
+      const updated = await trx
+        .updateTable("methodMaterial")
+        .set({ ...args.update, updatedBy: userId, updatedAt: now })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .returning("id")
+        .executeTakeFirst();
+      if (!updated) throw new Error("the line no longer exists");
+      const mapping = await trx
+        .insertInto("externalIntegrationMapping")
+        .values({
+          entityType: "methodMaterial",
+          entityId: lineId,
+          integration: ONSHAPE_V2_INTEGRATION_ID,
+          metadata: args.metadata as Json,
+          lastSyncedAt: now,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return mapping.id;
+    });
+    return { mappingId, error: null };
+  } catch (error) {
+    onshapePushLogger.error("Failed to take over a BOM line for Onshape", {
+      companyId,
+      lineId,
+      error
+    });
+    return {
+      mappingId: null,
+      error: error instanceof Error ? error.message : "line takeover failed"
+    };
+  }
+}
+
+export type OpenReleaseNotice = {
+  id: string;
+  changeNoticeId: string;
+  affectedCount: number;
+};
+
+/**
+ * The notice an earlier push of this release made, while it still takes items:
+ * a release spanning two documents is pushed once per document into one notice.
+ * Fails closed: a read that fails is an error, never "no open notice", which
+ * would open a second notice for the release.
+ */
+export async function findOpenReleaseNotice(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  releaseId: string
+): Promise<
+  | { data: OpenReleaseNotice | null; error: null }
+  | { data: null; error: string }
+> {
+  const failed = (what: string, error: unknown) => {
+    onshapePushLogger.error("Could not read a release's earlier push", {
+      companyId,
+      releaseId,
+      read: what,
+      error
+    });
+    return {
+      data: null,
+      error: `Carbon couldn't read this release's earlier ${what}`
+    };
+  };
+
+  // Matched on the release id the link's metadata carries, not a LIKE on the
+  // key: a synthetic release id holds a part number, which may contain % or _.
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("entityId")
+    .eq("companyId", companyId)
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("entityType", "item")
+    .like("externalId", "release:%")
+    .eq("metadata->>releaseId", releaseId);
+  if (links.error) return failed("links", links.error);
+  if (!links.data?.length) return { data: null, error: null };
+
+  const items = await selectInBatches(
+    links.data.map((link) => link.entityId),
+    (batch) =>
+      client
+        .from("item")
+        .select("changeOrderId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .not("changeOrderId", "is", null)
+  );
+  if (items.error) return failed("items", items.error);
+  const noticeIds = [
+    ...new Set(
+      items.data
+        .map((item) => item.changeOrderId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  if (noticeIds.length === 0) return { data: null, error: null };
+
+  const notices = await selectInBatches(noticeIds, (batch) =>
+    client
+      .from("changeOrder")
+      .select(
+        "id, changeOrderId, status, createdAt, changeOrderAffectedItem(id)"
+      )
+      .eq("companyId", companyId)
+      .in("id", batch)
+  );
+  if (notices.error) return failed("change notices", notices.error);
+  // Batches arrive in batch order: the oldest open notice wins.
+  const editable = notices.data
+    .filter((notice) => canEditChangeNoticeEngineering(notice.status))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  // A pending approval freezes the notice's engineering content; one can be
+  // pending only at Engineering Complete. approvalRequest is service-role only.
+  const awaitingIds = editable
+    .filter((notice) => notice.status === "Engineering Complete")
+    .map((notice) => notice.id);
+  const awaiting = new Set<string>();
+  if (awaitingIds.length > 0) {
+    const pending = await selectInBatches(awaitingIds, (batch) =>
+      getCarbonServiceRole()
+        .from("approvalRequest")
+        .select("documentId")
+        .eq("companyId", companyId)
+        .eq("documentType", "changeOrder")
+        .eq("status", "Pending")
+        .in("documentId", batch)
+    );
+    if (pending.error) return failed("change notice approvals", pending.error);
+    for (const row of pending.data) awaiting.add(row.documentId);
+  }
+  const open = editable.find((notice) => !awaiting.has(notice.id));
+  return {
+    data: open
+      ? {
+          id: open.id,
+          changeNoticeId: open.changeOrderId,
+          affectedCount: open.changeOrderAffectedItem?.length ?? 0
+        }
+      : null,
+    error: null
+  };
+}
+
+/**
+ * Stage a created item under a change notice as `createChangeNoticeDraftMethod`
+ * does: item inactive, item and Draft method stamped, one affected-item row.
+ */
+export async function stageChangeNoticeItem(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    /** `changeOrder.id`, not its readable id. */
+    changeOrderId: string;
+    companyId: string;
+    userId: string;
+    itemId: string;
+    /** The revision this one replaces; null for a New Part. */
+    baseItemId: string | null;
+    sortOrder: number;
+  }
+): Promise<{ error: string | null }> {
+  const { changeOrderId, companyId, userId, itemId, baseItemId } = args;
+  const now = datetime.timestamp();
+  try {
+    await db.transaction().execute(async (trx) => {
+      const draft = await trx
+        .selectFrom("makeMethod")
+        .select("id")
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Draft")
+        .orderBy("version", "desc")
+        .executeTakeFirst();
+      // Release refuses an affected item with no Draft to activate.
+      if (!draft) throw new Error("the item has no Draft make method");
+      const base = baseItemId
+        ? await trx
+            .selectFrom("activeMakeMethods")
+            .select("id")
+            .where("itemId", "=", baseItemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+
+      await trx
+        .updateTable("item")
+        .set({
+          active: false,
+          changeOrderId,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .updateTable("makeMethod")
+        .set({ changeOrderId, updatedBy: userId, updatedAt: now })
+        .where("id", "=", draft.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .insertInto("changeOrderAffectedItem")
+        .values({
+          changeOrderId,
+          itemId: baseItemId ?? itemId,
+          changeType: baseItemId ? "Revision" : "New Part",
+          sortOrder: args.sortOrder,
+          draftMakeMethodId: draft.id,
+          baseMakeMethodId: base?.id ?? null,
+          newItemId: itemId,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    });
+    return { error: null };
+  } catch (error) {
+    onshapePushLogger.error("Failed to stage an item under a change notice", {
+      companyId,
+      changeOrderId,
+      itemId,
+      error
+    });
+    return {
+      error: error instanceof Error ? error.message : "staging failed"
+    };
+  }
+}
+
+type ItemEnums = Database["public"]["Enums"];
+
+/** Item field values a push writes; an absent key is not written. */
+export type ItemFieldWrite = {
+  replenishmentSystem?: ItemEnums["itemReplenishmentSystem"];
+  defaultMethodType?: ItemEnums["methodType"];
+  sourcingType?: ItemEnums["sourcingType"];
+  itemTrackingType?: ItemEnums["itemTrackingType"];
+  unitOfMeasureCode?: string;
+  mpn?: string | null;
+};
+
+type WriterContext = {
+  client: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  itemId: string;
+  companyId: string;
+  userId: string;
+};
+
+export async function updateItemColumns(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    values: Pick<ItemFieldWrite, "mpn" | "unitOfMeasureCode">;
+  }
+) {
+  return client
+    .from("item")
+    .update({
+      ...(args.values.mpn !== undefined ? { mpn: args.values.mpn } : {}),
+      ...(args.values.unitOfMeasureCode !== undefined
+        ? { unitOfMeasureCode: args.values.unitOfMeasureCode }
+        : {}),
+      updatedBy: args.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.itemId)
+    .eq("companyId", args.companyId);
+}
+
+/**
+ * One writer per `StandardFieldWriter` key. Each writes as the item page does,
+ * so the cascades onto Draft method lines and open documents follow.
+ */
+const STANDARD_FIELD_WRITERS: Record<
+  StandardFieldWriter,
+  (ctx: WriterContext, write: ItemFieldWrite) => Promise<string | null>
+> = {
+  itemMethod: async (ctx, write) => {
+    const { replenishmentSystem, defaultMethodType, sourcingType } = write;
+    await updateItemMethodAndSourcing(ctx.db, {
+      itemIds: [ctx.itemId],
+      companyId: ctx.companyId,
+      userId: ctx.userId,
+      itemUpdate: { replenishmentSystem, defaultMethodType, sourcingType },
+      cascade: {
+        ...(defaultMethodType !== undefined
+          ? { methodType: defaultMethodType }
+          : {}),
+        ...(sourcingType !== undefined ? { sourcingType } : {})
+      }
+    });
+    return null;
+  },
+  itemTracking: async (ctx, write) => {
+    if (write.itemTrackingType === undefined) return null;
+    const updated = await ctx.client
+      .from("item")
+      .update({
+        itemTrackingType: write.itemTrackingType,
+        updatedBy: ctx.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", ctx.itemId)
+      .eq("companyId", ctx.companyId);
+    if (updated.error) return updated.error.message;
+    await cascadeItemTrackingType(ctx.db, {
+      itemIds: [ctx.itemId],
+      companyId: ctx.companyId,
+      newType: write.itemTrackingType,
+      userId: ctx.userId
+    });
+    return null;
+  },
+  itemColumn: async (ctx, write) => {
+    const updated = await updateItemColumns(ctx.client, {
+      itemId: ctx.itemId,
+      companyId: ctx.companyId,
+      userId: ctx.userId,
+      values: write
+    });
+    return updated.error ? updated.error.message : null;
+  }
+};
+
+const WRITER_ORDER: StandardFieldWriter[] = [
+  "itemMethod",
+  "itemTracking",
+  "itemColumn"
+];
+
+/** Values must be final: this applies no interlock. Returns an error message, or null. */
+export async function applyItemFieldWrites(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    changed: ItemFieldWrite;
+  }
+): Promise<string | null> {
+  const { itemId, companyId, userId } = args;
+  const ctx: WriterContext = { client, db, itemId, companyId, userId };
+  try {
+    for (const writer of WRITER_ORDER) {
+      const write: ItemFieldWrite = {};
+      for (const [field, value] of Object.entries(args.changed)) {
+        if (value === undefined) continue;
+        if (standardField(field)?.writer !== writer) continue;
+        (write as Record<string, unknown>)[field] = value;
+      }
+      if (Object.keys(write).length === 0) continue;
+      const error = await STANDARD_FIELD_WRITERS[writer](ctx, write);
+      if (error) return error;
+    }
+    return null;
+  } catch (error) {
+    onshapePushLogger.error("Failed to write item fields from Onshape", {
+      companyId,
+      itemId,
+      error
+    });
+    return error instanceof Error ? error.message : "Failed to update the item";
+  }
+}
+
+/**
+ * Write to an item the push did not create: the "everyPush" descriptions, then
+ * the plan's target with the reviewer's edits on top. Returns the fields after
+ * the write, which a BOM line written later copies its method and unit from.
+ */
+export async function applyExistingItemFields(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    itemId: string;
+    companyId: string;
+    userId: string;
+    current: ItemFieldSnapshot | null | undefined;
+    target?: ItemFieldSnapshot;
+    edit?: ItemEdit;
+    descriptions?: OwnedFieldChange[];
+  }
+): Promise<{ values: ItemFieldSnapshot | null; error: string | null }> {
+  const { itemId, companyId, userId } = args;
+  const merged = args.current
+    ? mergeExistingItemEdits(args.current, args.edit, args.target)
+    : null;
+  if (merged && !merged.ok) {
+    return { values: null, error: merged.errors.join("; ") };
+  }
+
+  const text: { name?: string; description?: string } = {};
+  for (const change of args.descriptions ?? []) {
+    if (change.to !== null) text[change.field] = change.to;
+  }
+  if (Object.keys(text).length > 0) {
+    const updated = await client
+      .from("item")
+      .update({ ...text, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .eq("id", itemId)
+      .eq("companyId", companyId);
+    if (updated.error) {
+      return { values: null, error: updated.error.message };
+    }
+  }
+
+  if (merged?.ok && Object.keys(merged.changed).length > 0) {
+    const error = await applyItemFieldWrites(client, db, {
+      itemId,
+      companyId,
+      userId,
+      changed: merged.changed
+    });
+    if (error) return { values: null, error };
+  }
+  return { values: merged?.ok ? merged.values : null, error: null };
+}
+const onshapeOauthLogger = getLogger("erp", "onshape", "oauth");
+
+/** Absolute integrations-page URL on this request's origin. */
+function integrationsUrl(request: Request) {
+  const requestUrl = new URL(request.url);
+
+  if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
+    requestUrl.protocol = "http";
+  }
+
+  return `${requestUrl.origin}${path.to.integrations}`;
+}
+
+/**
+ * The OAuth callback for every Onshape grant (`onshape`, `onshape-government`,
+ * `onshape-v2`); `loadOnshapeOAuthConfig` picks the client. Onshape redirects
+ * the browser here, in the install popup or the whole tab, so the outcome
+ * renders through `oauthPopupResponse`. Only an error code crosses;
+ * `integrationErrors` owns the copy.
+ */
+export async function completeOnshapeAuthorization({
+  request,
+  integrationId,
+  userId,
+  companyId
+}: {
+  request: Request;
+  integrationId: OnshapeOAuthIntegrationId;
+  userId: string;
+  companyId: string;
+}) {
+  const url = new URL(request.url);
+  const searchParams = Object.fromEntries(url.searchParams.entries());
+
+  // The state must be the one issued to THIS browser for this user, company and
+  // integration. Without the check anyone could send a victim a callback URL
+  // carrying the attacker's own Onshape code, linking the victim's company to
+  // the attacker's Onshape account. Single-use: consumed whether it matches or
+  // not.
+  const consumedState = await consumeOAuthState(
+    request,
+    url.searchParams.get("state") ?? "",
+    { integrationId, userId, companyId }
+  );
+
+  // Every Onshape integration declares the same codes, each with its copy.
+  const connectionFailed = (
+    reason: IntegrationErrorCode<OnshapeOAuthIntegrationId>
+  ) =>
+    withCookie(
+      oauthPopupResponse(
+        { integration: integrationId, ok: false, error: reason },
+        `${integrationsUrl(request)}${integrationErrorSearch<OnshapeOAuthIntegrationId>(integrationId, reason)}`
+      ),
+      consumedState.cookie
+    );
+
+  if (!consumedState.valid) {
+    onshapeOauthLogger.error("Invalid Onshape OAuth state", {
+      integrationId,
+      companyId
+    });
+    return connectionFailed("invalid-state");
+  }
+
+  // Onshape reports a refused authorization by redirecting here with `error`
+  // (and usually `error_description`) in place of `code`. `invalid_scope`
+  // means the OAuth application isn't granted a scope we asked for — in
+  // practice `OAuth2Write` ("Application can write to your documents"), so the
+  // UI can name the exact fix instead of echoing Onshape's wording.
+  if (searchParams.error) {
+    onshapeOauthLogger.error("Onshape authorization refused", {
+      integrationId,
+      error: searchParams.error,
+      errorDescription: searchParams.error_description
+    });
+    return connectionFailed(
+      searchParams.error === "invalid_scope" ? "write-permission" : "denied"
+    );
+  }
+
+  const authResponse = oAuthCallbackSchema.safeParse(searchParams);
+  if (!authResponse.success) {
+    // Log the parameter names (never the values — `code` is a live credential).
+    onshapeOauthLogger.error("Invalid Onshape auth response", {
+      integrationId,
+      params: Object.keys(searchParams)
+    });
+    return connectionFailed("invalid-response");
+  }
+
+  const serviceRole = getCarbonServiceRole();
+
+  // A company holds one Onshape sync connection at a time; two would leave
+  // every background job guessing which tenant to talk to. The panel's grant
+  // is outside that rule.
+  if (
+    isOnshapeIntegrationId(integrationId) &&
+    (await getConflictingOnshapeIntegration(
+      serviceRole,
+      companyId,
+      integrationId
+    ))
+  ) {
+    return connectionFailed("connection-conflict");
+  }
+
+  const oauth = await loadOnshapeOAuthConfig(companyId, integrationId);
+  if (!oauth) return connectionFailed("not-configured");
+
+  try {
+    let tokenData: Awaited<ReturnType<typeof exchangeOnshapeAuthorizationCode>>;
+    try {
+      tokenData = await exchangeOnshapeAuthorizationCode(
+        oauth,
+        authResponse.data.code
+      );
+    } catch (error) {
+      onshapeOauthLogger.error("Onshape token exchange failed", {
+        integrationId,
+        error
+      });
+      return connectionFailed("token-exchange");
+    }
+
+    if (!tokenData.access_token) {
+      onshapeOauthLogger.error("Onshape token response had no access token", {
+        integrationId
+      });
+      return connectionFailed("token-exchange");
+    }
+
+    // The scope actually granted by this authorization. Onshape returns it on
+    // the token response; fall back to what we requested. A token minted
+    // without write can't export assets or manage the release webhook, and a
+    // refresh can't widen it, so the grant patch turns asset sync off. The
+    // patch writes only the grant's keys, so settings survive a reconnect.
+    const scope = tokenData.scope ?? ONSHAPE_OAUTH_SCOPES.join(" ");
+    let saved: Awaited<ReturnType<typeof patchOnshapeOAuthGrant>>;
+    try {
+      saved = await patchOnshapeOAuthGrant(
+        serviceRole,
+        companyId,
+        integrationId,
+        {
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: parseAbsolute(datetime.timestamp(), "UTC")
+            .add({ seconds: tokenData.expires_in ?? 3600 })
+            .toAbsoluteString(),
+          scope,
+          baseUrl: oauth.baseUrl,
+          canWrite: onshapeConnectionHasWriteScope({ scope }),
+          updatedBy: userId
+        }
+      );
+    } catch (error) {
+      onshapeOauthLogger.error("Failed to save Onshape integration", {
+        integrationId,
+        error
+      });
+      return connectionFailed("save-failed");
+    }
+    await clearCompanyIntegrationCache(companyId);
+    const metadata = (saved.metadata ?? {}) as Record<string, unknown>;
+
+    // A Government connection is configured BEFORE it is authorized, so asset
+    // sync may already be on: subscribe to releases now that there is a token.
+    // Best-effort — the settings save retries it and reports a failure there.
+    if (metadata.assetSyncEnabled === true) {
+      const webhook = await ensureOnshapeReleaseWebhook(companyId, true);
+      if (!webhook.ok) {
+        onshapeOauthLogger.error(
+          "Onshape release webhook registration failed",
+          {
+            integrationId,
+            error: webhook.error
+          }
+        );
+      }
+    }
+
+    return withCookie(
+      oauthPopupResponse(
+        { integration: integrationId, ok: true },
+        integrationsUrl(request)
+      ),
+      consumedState.cookie
+    );
+  } catch (error) {
+    onshapeOauthLogger.error("Onshape OAuth Error", { integrationId, error });
+    return connectionFailed("unexpected");
+  }
+}
+
+function withCookie(response: Response, cookie: string) {
+  response.headers.append("Set-Cookie", cookie);
+  return response;
 }

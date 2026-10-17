@@ -21,10 +21,14 @@ const modelUploadForm = z.object({
   jobId: zfd.text(z.string().optional())
 });
 
+// The browser's second step after it has staged the file. API callers use the
+// `items_createModelUploadUrl` + `items_insertModelUpload` tools: the same
+// operation.
 export async function action(args: ActionFunctionArgs) {
   // Authenticate before the multipart body is read.
   const api = await carbon(args.request);
   const input = await validator(modelUploadForm).request(args);
   if ("invalid" in input) return input.invalid;
-  return api.documents.uploadModel(input.data);
+  const { modelPath, ...rest } = input.data;
+  return api.items.insertModelUpload({ ...rest, path: modelPath });
 }
