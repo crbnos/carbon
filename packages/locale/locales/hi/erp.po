@@ -21877,6 +21877,12 @@ msgstr "कर राशि"
 msgid "Tax Book Value"
 msgstr "कर बही मूल्य"
 
+msgid "tax code"
+msgstr ""
+
+msgid "tax codes"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "कर कोड, दरें"
 

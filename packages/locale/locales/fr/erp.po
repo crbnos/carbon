@@ -21877,6 +21877,12 @@ msgstr "Montant de la taxe"
 msgid "Tax Book Value"
 msgstr "Valeur comptable fiscale"
 
+msgid "tax code"
+msgstr ""
+
+msgid "tax codes"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "Codes fiscaux, taux"
 

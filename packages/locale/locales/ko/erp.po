@@ -21877,6 +21877,12 @@ msgstr "세금 금액"
 msgid "Tax Book Value"
 msgstr "세금 장부가액"
 
+msgid "tax code"
+msgstr ""
+
+msgid "tax codes"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "세금 코드, 세율"
 

@@ -21877,6 +21877,12 @@ msgstr "Importo Imposta"
 msgid "Tax Book Value"
 msgstr "Valore contabile fiscale"
 
+msgid "tax code"
+msgstr ""
+
+msgid "tax codes"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "Codici imposta, aliquote"
 

@@ -21877,6 +21877,12 @@ msgstr "Kwota podatku"
 msgid "Tax Book Value"
 msgstr "Podatkowa wartość księgowa"
 
+msgid "tax code"
+msgstr ""
+
+msgid "tax codes"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "Kody podatkowe, stawki"
 

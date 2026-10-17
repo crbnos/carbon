@@ -21877,6 +21877,12 @@ msgstr "税額"
 msgid "Tax Book Value"
 msgstr "税務帳簿価額"
 
+msgid "tax code"
+msgstr ""
+
+msgid "tax codes"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "税コード、レート"
 

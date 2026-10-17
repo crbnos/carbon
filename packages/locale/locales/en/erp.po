@@ -21877,6 +21877,12 @@ msgstr "Tax Amount"
 msgid "Tax Book Value"
 msgstr "Tax Book Value"
 
+msgid "tax code"
+msgstr "tax code"
+
+msgid "tax codes"
+msgstr "tax codes"
+
 msgid "Tax codes, rates"
 msgstr "Tax codes, rates"
 

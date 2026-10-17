@@ -41,7 +41,7 @@ Slice B — Posting
 - [ ] Task 17: Tax header shipping in the invoice view, provider components and PDF helpers
 - [ ] Task 18: Split purchase tax into recoverable and non-recoverable parts at invoice posting
 - [ ] Task 19: Leave recoverable tax out of the received unit cost
-- [ ] Task 20: Write the pure tax-ledger row builder with tests
+- [x] Task 20: Write the pure tax-ledger row builder with tests
 - [ ] Task 21: Write `taxLedger` rows when sales and purchase invoices post and void
 - [ ] Task 22: Post memo tax
 - [ ] Task 23: Enter memo tax in the memo form and in memos made from a source
