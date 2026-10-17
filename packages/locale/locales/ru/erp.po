@@ -4097,6 +4097,9 @@ msgstr "Бета"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Основные причины брака по типу, номенклатуре или рабочему центру"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Выставлять счета по календарным месяцам с неполным месяцем в начале. Отключено: каждый период начинается в число даты начала."
+
 msgid "Bill of Material"
 msgstr "Спецификация материалов"
 
@@ -4133,8 +4136,8 @@ msgstr "Счет выставлен:"
 msgid "Billing"
 msgstr "Выставление счетов"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Выставление счетов за аренду в фиксированные периоды (календарные месяцы или последовательные 28-дневные периоды), каждый счет выставляется в его первый день (Авансово) или его последний день (По факту)."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Выставление счета за аренду в фиксированные периоды: либо месяцы от даты начала, либо календарные месяцы, либо последовательные 28-дневные периоды, каждый счет выставлен в первый день (авансово) или в последний день (постфактум)."
 
 msgid "Billing Address"
 msgstr "Адрес выставления счета"
@@ -4395,9 +4398,6 @@ msgstr "Метод расчета"
 
 msgid "Calendar"
 msgstr "Календарь"
-
-msgid "Calendar Month"
-msgstr "Календарный месяц"
 
 msgid "Calibration"
 msgstr "Калибровка"
@@ -5216,6 +5216,9 @@ msgstr "Проведение поступления, отгрузки или с�
 
 msgid "Community support"
 msgstr "Поддержка сообщества"
+
+msgid "Compact"
+msgstr "Компактный"
 
 msgid "Companies"
 msgstr "Компании"
@@ -7802,6 +7805,9 @@ msgstr "Описание проблемы"
 msgid "Detail"
 msgstr "Подробности"
 
+msgid "Detailed"
+msgstr "Подробный"
+
 msgid "Details"
 msgstr "Детали"
 
@@ -8403,9 +8409,6 @@ msgstr "Каждый платеж подлежит оплате в послед�
 msgid "Each period is 28 days from the start date."
 msgstr "Каждый период составляет 28 дней от даты начала."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Каждый период — это календарный месяц с частичным месяцем вначале."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Каждый период выставляется в счёт в первый день, до оказания услуги."
 
@@ -8417,6 +8420,9 @@ msgstr "Каждый период выставляется в счёт в пос
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "На каждый период выставляется счет в его последний день, после того как единицы используются."
+
+msgid "Each period is one month, for the month rate."
+msgstr "Каждый период — один месяц, по месячной ставке."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
@@ -11033,8 +11039,8 @@ msgstr "Как строка контракта генерирует выручк
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Как контракт или поправка классифицируются для отчетности по повторяющейся выручке: Новые продажи, Существующий, Расширение, Реактивация или Сокращение. Carbon предлагает это, и вы можете это изменить."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Как договор аренды разделяет периоды выставления счетов с даты начала: календарный месяц разделяет периоды по календарным месяцам, а 28 дней разделяет последовательные 28-дневные периоды. Каждая единица выставляет счет по одной ставке с собственной периодичностью за все дни, недели или месяцы, охватываемые периодом; месячная ставка за календарный месяц рассчитывается пропорционально дням."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Как договор аренды отсчитывает периоды выставления счетов от своей даты начала: ежемесячно отсчитывает один месяц, начиная с дня даты начала (начало 7-го числа означает выставление счета с 7-го по 6-е число), календарный месяц (ежемесячно, согласованный с календарными периодами) отсчитывает календарные месяцы, и 28 дней отсчитывает последовательные 28-дневные периоды. Каждый период выставляет счет по одной ставке в своей периодичности за полные дни, недели или месяцы, охватываемые периодом; месячная ставка в частичном периоде рассчитывается пропорционально дням."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
@@ -13780,6 +13786,9 @@ msgstr "Месячный тариф"
 
 msgid "Monthly"
 msgstr "Ежемесячно"
+
+msgid "Monthly (calendar)"
+msgstr "Ежемесячно (календарный)"
 
 msgid "Monthly Depreciation"
 msgstr "Ежемесячная амортизация"

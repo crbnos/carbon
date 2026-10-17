@@ -3765,3 +3765,13 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** A value the browser uses goes in `<module>.utils.ts` (or `models.ts` / `types.ts`), never in `.service.ts` or `.server.ts`. A file imported only for its side effects is listed in its package's `sideEffects` array. The `no-server-code-in-client` check (ERP components, hooks, `ui/`, client-safe module files and the browser half of routes) and the `side-effect-import-declared` check enforce both. Run `pnpm --filter erp build` before you call a change to imports or module files done.
 
 **Applies to:** ERP and MES modules and routes; every `package.json` that sets `sideEffects`.
+
+## A docs heading is read by the in-app agent, and its length counts against a budget
+
+**Context:** Adding a billing cycle to rental agreements lengthened two troubleshooting headings in `docs/content/docs/reference/rental-agreements.mdx`, each quoting every variant of an error message.
+
+**Problem:** The in-app agent's `read_doc` returns a long page as its intro plus a link per section, and `agent.kb.test.ts` caps every page and section read at `READ_BUDGET` (16,000 characters). Each heading appears twice in that list, as text and inside its anchor URL. About 1,400 characters of heading growth pushed the page over the cap and failed the ERP test suite, far from the docs package.
+
+**Rule:** Keep a troubleshooting heading to one message. Use `…` for the part that varies and list the variants in the body. After you edit a long reference page, run `apps/erp/app/modules/agent/agent.kb.test.ts` as well as the docs checks.
+
+**Applies to:** `docs/content/docs/**`, `apps/erp/app/modules/agent/agent.kb.ts`.

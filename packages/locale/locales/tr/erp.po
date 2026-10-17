@@ -4097,6 +4097,9 @@ msgstr "Beta"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Fire'in nedene, stok kartına veya iş merkezine göre en büyük nedenleri"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Takvim aylarını faturalandır, kısmi aydan başlayarak. Kapalı, her dönem başlangıç tarihinin ayın gününde başlar."
+
 msgid "Bill of Material"
 msgstr "Malzeme Listesi"
 
@@ -4133,8 +4136,8 @@ msgstr "Faturalandı:"
 msgid "Billing"
 msgstr "Faturalandırma"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Kiralamayı sabit dönemlerde, takvim ayları veya ardışık 28 günlük dönemler olarak, her birinin ilk gününde (Avans) veya son gününde (Ödeme vadeli) faturalandırılması."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Bir kiralama işleminin sabit dönemlerle faturalandırılması: başlangıç tarihinden itibaren aylar, takvim ayları veya ardışık 28 günlük dönemler halinde, her biri ilk gününde (Peşin) veya son gününde (Sonradan) faturalandırılır."
 
 msgid "Billing Address"
 msgstr "Faturalama Adresi"
@@ -4395,9 +4398,6 @@ msgstr "Hesaplama Yöntemi"
 
 msgid "Calendar"
 msgstr "Takvim"
-
-msgid "Calendar Month"
-msgstr "Takvim Ayı"
 
 msgid "Calibration"
 msgstr "Kalibrasyon"
@@ -5216,6 +5216,9 @@ msgstr "Mal kabul, Sevkiyat veya Fatura muhasebeleştirildiğinde: miktarlar har
 
 msgid "Community support"
 msgstr "Topluluk desteği"
+
+msgid "Compact"
+msgstr "Kompakt"
 
 msgid "Companies"
 msgstr "Şirketler"
@@ -7802,6 +7805,9 @@ msgstr "Sorun Açıklaması"
 msgid "Detail"
 msgstr "Detay"
 
+msgid "Detailed"
+msgstr "Ayrıntılı"
+
 msgid "Details"
 msgstr "Detaylar"
 
@@ -8403,9 +8409,6 @@ msgstr "Her ödeme, döneminin son gününde vadesi gelir."
 msgid "Each period is 28 days from the start date."
 msgstr "Her dönem başlangıç tarihinden itibaren 28 gündür."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Her dönem bir takvim ayı olup, ilk olarak kısmi bir ay vardır."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Her dönem, hizmet verilmeden önce ilk gününde faturalandırılır."
 
@@ -8417,6 +8420,9 @@ msgstr "Her dönem, hizmet verildikten sonra son gününde faturalandırılır."
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "Her dönem son gününde faturalandırılır, adetler kullanıldıktan sonra."
+
+msgid "Each period is one month, for the month rate."
+msgstr "Her dönem bir aydır, aylık oran için."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
@@ -11033,8 +11039,8 @@ msgstr "Bir sözleşme satırının hasılatını gelir tarihlerine göre nasıl
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Bir sözleşme veya değişikliğin yinelenen gelir raporlaması için nasıl sınıflandırıldığı: Yeni Satış, Mevcut, Genişleme, Reaktivasyon veya Daralma. Carbon bunu önerir ve siz bunu değiştirebilirsiniz."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Bir kira sözleşmesinin başlangıç tarihinden faturalama dönemlerini nasıl kestiği: Takvim Ayı takvim aylarını keser ve 28 Gün ardışık 28 günlük dönemleri keser. Her adet, bir dönemin kapsadığı tüm gün, hafta veya ay için kendi frekansında bir tarife faturalandırır; takvim ayında aylık tarife gün sayısı oranında hesaplanır."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Bir kiralama anlaşmasının başlangıç tarihinden faturalandırma dönemlerini nasıl kestiği: Aylık, başlangıç tarihinin gününden bir ayı keser (7. gün başlangıçlı bir anlaşma 7'den 6'sına kadarını faturalandırır), Takvim Ayı (Aylık, takvim dönemleriyle uyumlu) takvim aylarını keser, ve 28 Gün ardışık 28 günlük dönemleri keser. Her dönem, kendi frekansıyla bir oranı, dönemin kapsadığı tamamlanmış gün, hafta veya aylar için faturalandırır; kısmi bir dönemde aylık oran güne orantılı olarak hesaplanır."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Bir stok kartının genel olarak nasıl tamamlandığı (Satın alma, Üretim veya Satın alma ve üretim), stok kartı başına ayarlanır, satır başına tedarik şeklinden farklı."
@@ -13780,6 +13786,9 @@ msgstr "Aylık Oran"
 
 msgid "Monthly"
 msgstr "Aylık"
+
+msgid "Monthly (calendar)"
+msgstr "Aylık (takvim)"
 
 msgid "Monthly Depreciation"
 msgstr "Aylık Amortisman"

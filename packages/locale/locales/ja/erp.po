@@ -4097,6 +4097,9 @@ msgstr "ベータ"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "理由、品目、または作業区別の最大スクラップ原因"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "暦月で請求し、最初は端数月。オフの場合、各期間は開始日の月の日から始まります。"
+
 msgid "Bill of Material"
 msgstr "材料表"
 
@@ -4133,8 +4136,8 @@ msgstr "請求済み："
 msgid "Billing"
 msgstr "請求"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "固定期間でのレンタル請求。カレンダー月または連続する28日間の各期間が、最初の日（前払い）または最後の日（後払い）に請求済となります。"
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "レンタル請求は固定期間で行われ、開始日からの月、カレンダー月、または連続する28日間のいずれかを期間とします。各期間は最初の日（前払い）または最後の日（後払い）に請求済です。"
 
 msgid "Billing Address"
 msgstr "請求先住所"
@@ -4395,9 +4398,6 @@ msgstr "計算方法"
 
 msgid "Calendar"
 msgstr "カレンダー"
-
-msgid "Calendar Month"
-msgstr "暦月"
 
 msgid "Calibration"
 msgstr "校正"
@@ -5216,6 +5216,9 @@ msgstr "領収書、出荷、または請求書のコミット: 数量が移動�
 
 msgid "Community support"
 msgstr "コミュニティサポート"
+
+msgid "Compact"
+msgstr "コンパクト"
 
 msgid "Companies"
 msgstr "企業"
@@ -7802,6 +7805,9 @@ msgstr "問題の説明"
 msgid "Detail"
 msgstr "詳細"
 
+msgid "Detailed"
+msgstr "詳細"
+
 msgid "Details"
 msgstr "詳細"
 
@@ -8403,9 +8409,6 @@ msgstr "各支払は期間の末日に支払期日になります。"
 msgid "Each period is 28 days from the start date."
 msgstr "各期間は開始日から28日間です。"
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "各期間はカレンダー月であり、最初は一部月です。"
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "各期間はサービス提供前の初日に請求されます。"
 
@@ -8417,6 +8420,9 @@ msgstr "各期間はサービス提供後の最終日に請求されます。"
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "各期間は最後の日に請求され、個が使用された後です。"
+
+msgid "Each period is one month, for the month rate."
+msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
@@ -11033,8 +11039,8 @@ msgstr "契約明細が売上高日にわたって売上高を獲得する方法
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "契約または修正が継続売上高レポート用にどのように分類されるか：新規販売、既存、拡張、再開始、または縮小。Carbonが提案し、変更できます。"
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "レンタル契約が開始日から請求期間をどのように切り分けるかです。カレンダー月はカレンダー月を、28日は連続する28日周期を切り分けます。各個はその頻度で1つのレートで請求され、期間がカバーする全日数、週数、または月数に対して請求されます。カレンダー月内の月次レートは日割計算されます。"
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "レンタル契約がその開始日から請求期間をどのように区切るかについて：毎月は開始日からの1か月を期間とします（例：開始日が7日の場合は毎月7日から翌月6日まで）。カレンダー月（毎月をカレンダー期間に合わせたもの）はカレンダー月ごとに期間を区切ります。28日は連続した28日間の期間に区切ります。各期間は、独自の頻度で、全体の日、週、または月に対して1つのレートを請求します。一部期間での月額レートは日数で按分されます。"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "品目全体がどのように補充されるか(購入、内製、または購入・内製)。品目ごとに設定され、行ごとの供給方式とは異なります"
@@ -13780,6 +13786,9 @@ msgstr "月額レート"
 
 msgid "Monthly"
 msgstr "月次"
+
+msgid "Monthly (calendar)"
+msgstr "毎月（暦月）"
 
 msgid "Monthly Depreciation"
 msgstr "毎月減価償却"

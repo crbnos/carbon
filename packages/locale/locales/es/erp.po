@@ -4097,6 +4097,9 @@ msgstr "Beta"
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Las principales causas de desperdicio por motivo, artículo o centro de trabajo"
 
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Facturar en meses de calendario, con un mes parcial primero. Desactivado, cada período comienza el día del mes de la fecha de inicio."
+
 msgid "Bill of Material"
 msgstr "Lista de Materiales"
 
@@ -4133,8 +4136,8 @@ msgstr "Facturado:"
 msgid "Billing"
 msgstr "Facturación"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Facturación de alquiler en períodos fijos, ya sean meses calendario o períodos consecutivos de 28 días, cada uno facturado en su primer día (Anticipado) o su último día (Vencido)."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Facturación de un alquiler en períodos fijos, ya sean meses desde la fecha de inicio, meses naturales o períodos consecutivos de 28 días, cada uno facturado en su primer día (Por adelantado) o su último día (Al vencimiento)."
 
 msgid "Billing Address"
 msgstr "Dirección de Facturación"
@@ -4395,9 +4398,6 @@ msgstr "Método de Cálculo"
 
 msgid "Calendar"
 msgstr "Calendario"
-
-msgid "Calendar Month"
-msgstr "Mes de Calendario"
 
 msgid "Calibration"
 msgstr "Calibración"
@@ -5216,6 +5216,9 @@ msgstr "Confirmar un recibo, envío o factura: las cantidades se mueven, los asi
 
 msgid "Community support"
 msgstr "Soporte comunitario"
+
+msgid "Compact"
+msgstr "Compacto"
 
 msgid "Companies"
 msgstr "Empresas"
@@ -7802,6 +7805,9 @@ msgstr "Descripción del Problema"
 msgid "Detail"
 msgstr "Detalle"
 
+msgid "Detailed"
+msgstr "Detallado"
+
 msgid "Details"
 msgstr "Detalles"
 
@@ -8403,9 +8409,6 @@ msgstr "Cada pago vence el último día de su período."
 msgid "Each period is 28 days from the start date."
 msgstr "Cada período es 28 días desde la fecha de inicio."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Cada período es un mes calendario, con un mes parcial primero."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Cada período se factura el primer día, antes de prestar el servicio."
 
@@ -8417,6 +8420,9 @@ msgstr "Cada período se factura el último día, después de prestar el servici
 
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "Cada período se factura el último día, después de que se usen las unidades."
+
+msgid "Each period is one month, for the month rate."
+msgstr "Cada período es un mes, para la tarifa mensual."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidad física obtiene su propia entidad rastreada y número único — una entidad, una unidad."
@@ -11033,8 +11039,8 @@ msgstr "Cómo una línea de contrato genera sus ingresos por ventas durante sus 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Cómo se clasifica un contrato o una enmienda para la presentación de ingresos recurrentes: Nuevas Ventas, Existente, Expansión, Reactivación o Contracción. Carbon lo sugiere y puedes cambiarlo."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Cómo un acuerdo de arrendamiento corta períodos de facturación desde su fecha de inicio: Mes de calendario corta meses de calendario, y 28 Días corta períodos consecutivos de 28 días. Cada unidad factura una tarifa a su propia frecuencia para los días, semanas o meses completos que cubre un período; una tarifa mensual en un mes de calendario se prorratea por días."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Cómo un acuerdo de alquiler divide períodos de facturación desde su fecha de inicio: Mensual divide un mes desde el día de la fecha de inicio (un inicio el 7 factura del 7 al 6), Mes Natural (Mensual, alineado a períodos de calendario) divide meses naturales, y 28 Días divide períodos consecutivos de 28 días. Cada unidad factura una tarifa a su propia frecuencia por todos los días, semanas o meses que cubre un período; una tarifa mensual en un período parcial se prorratea por días."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Cómo se repone un Artículo en general (Compra, Fabricación, o Compra y fabricación), establecido por Artículo, a diferencia del Tipo de suministro por Línea."
@@ -13780,6 +13786,9 @@ msgstr "Tarifa mensual"
 
 msgid "Monthly"
 msgstr "Mensual"
+
+msgid "Monthly (calendar)"
+msgstr "Mensual (calendario)"
 
 msgid "Monthly Depreciation"
 msgstr "Depreciación Mensual"
