@@ -272,7 +272,10 @@ export function buildSalesDocumentComponents(
         netAmount: toDocumentAmount(baseNet, rate, decimals),
         taxPercent,
         taxAmount: toDocumentAmount(baseTax, rate, decimals),
-        taxCodeId: args.taxCodeId ?? line?.taxCodeId ?? null
+        taxCodeId:
+          args.taxCodeId !== undefined
+            ? args.taxCodeId
+            : (line?.taxCodeId ?? null)
       }
     });
   };
@@ -299,6 +302,9 @@ export function buildSalesDocumentComponents(
       line,
       baseNet: line.nonTaxableAddOnCost ?? 0,
       taxPercent: 0,
+      // Untaxed whatever the line's code: it goes out at the provider's
+      // no-tax rate, not the code's.
+      taxCodeId: null,
       description: `Non-taxable add-on — ${line.description ?? line.itemCode ?? "Invoice line"}`
     });
     push({

@@ -270,6 +270,18 @@ describe("buildSalesDocumentComponents", () => {
     ).toBe(10.8);
   });
 
+  it("sends a non-taxable add-on with no tax code, whatever the line's", () => {
+    const source = fixture();
+    source.lines[0] = { ...source.lines[0]!, taxCodeId: "uk20" };
+    const components = build(source).components;
+    expect(
+      components.find((c) => c.kind === "NonTaxableAddOn")?.taxCodeId
+    ).toBeNull();
+    expect(components.find((c) => c.kind === "Merchandise")?.taxCodeId).toBe(
+      "uk20"
+    );
+  });
+
   it("splits header shipping into a taxed and an untaxed share by line", () => {
     const source = fixture();
     source.currencyCode = "USD";
