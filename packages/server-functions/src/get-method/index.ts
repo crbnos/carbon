@@ -53,6 +53,7 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { chunked } from "../import-csv/chunks";
 import { getStorageUnitId } from "../lib/storage-units";
+import { remapRuleField, ruleFieldReferences } from "./configuration-rules";
 import { importTypeScript } from "./sandbox";
 
 const logger = getLogger("server-functions", "get-method");
@@ -94,6 +95,78 @@ const normalizeOperationType = (value: unknown) =>
 // inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
 // Guarded: a no-op when there are no slides, so it can never break step copying.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
+// A method copy re-keys the rules of the copied rows onto their new ids (`idMap`:
+// source line, operation and method ids → target ids; see configuration-rules.ts),
+// and drops the target's rules for the rows it replaced. Otherwise a new version's
+// lines carry no rules and the old rules point at deleted rows.
+async function copyConfigurationRules(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    sourceItemId: string;
+    targetItemId: string;
+    replacedIds: string[];
+    idMap: Map<string, string>;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { sourceItemId, targetItemId, idMap, companyId, userId } = args;
+  const replaced = new Set(args.replacedIds);
+
+  if (replaced.size > 0) {
+    const targetRules = await trx
+      .selectFrom("configurationRule")
+      .select("field")
+      .where("itemId", "=", targetItemId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const stale = targetRules
+      .map((rule) => rule.field)
+      .filter((field) => ruleFieldReferences(field, replaced));
+    if (stale.length > 0) {
+      await trx
+        .deleteFrom("configurationRule")
+        .where("itemId", "=", targetItemId)
+        .where("companyId", "=", companyId)
+        .where("field", "in", stale)
+        .execute();
+    }
+  }
+
+  if (idMap.size === 0) return;
+  const sourceRules = await trx
+    .selectFrom("configurationRule")
+    .select(["field", "code"])
+    .where("itemId", "=", sourceItemId)
+    .where("companyId", "=", companyId)
+    .execute();
+  const copies = sourceRules.flatMap((rule) => {
+    const field = remapRuleField(rule.field, idMap);
+    return field
+      ? [
+          {
+            itemId: targetItemId,
+            field,
+            code: rule.code,
+            companyId,
+            updatedBy: userId
+          }
+        ]
+      : [];
+  });
+  if (copies.length === 0) return;
+  await trx
+    .insertInto("configurationRule")
+    .values(copies)
+    .onConflict((oc) =>
+      oc.columns(["itemId", "field"]).doUpdateSet((eb) => ({
+        code: eb.ref("excluded.code"),
+        updatedBy: eb.ref("excluded.updatedBy")
+      }))
+    )
+    .execute();
+}
+
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,
   sourceSteps: Array<{ id?: string | null }>,
@@ -358,28 +431,9 @@ const getMethod = defineServerFn({
               : Promise.resolve()
           ]);
 
-          // Copy materials from source to target, dropping any zero-quantity
-          // BOM lines.
-          const materialsToCopy = (
-            (sourceMaterials.data ??
-              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
-          ).filter((material) => !isZeroQuantity(material.quantity));
-          if (parts.billOfMaterial && materialsToCopy.length > 0) {
-            await trx
-              .insertInto("methodMaterial")
-              .values(
-                materialsToCopy.map((material) => ({
-                  ...material,
-                  productionQuantity: undefined,
-                  id: undefined, // Let the database generate a new ID
-                  makeMethodId: targetMakeMethod.data.id!,
-                  createdBy: userId
-                }))
-              )
-              .execute();
-          }
-
-          // Copy operations from source to target
+          // Operations first, so each copied BOM line can point at the copied
+          // operation that consumes it, not at the source method's operation.
+          const operationIdMap = new Map<string, string>();
           if (
             parts.billOfProcess &&
             sourceOperations.data &&
@@ -410,6 +464,10 @@ const getMethod = defineServerFn({
               )
               .returning(["id"])
               .execute();
+            sourceOperations.data.forEach((operation, index) => {
+              const id = operationIds[index]?.id;
+              if (operation.id && id) operationIdMap.set(operation.id, id);
+            });
 
             for await (const [
               index,
@@ -497,6 +555,31 @@ const getMethod = defineServerFn({
                 }
               }
             }
+          }
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                materialsToCopy.map((material) => ({
+                  ...material,
+                  productionQuantity: undefined,
+                  id: undefined, // Let the database generate a new ID
+                  makeMethodId: targetMakeMethod.data.id!,
+                  // Without the bill of process the source's operations were not
+                  // copied, so no operation on the target is known to consume it.
+                  methodOperationId: material.methodOperationId
+                    ? (operationIdMap.get(material.methodOperationId) ?? null)
+                    : null,
+                  createdBy: userId
+                }))
+              )
+              .execute();
           }
         });
 
@@ -5247,6 +5330,24 @@ const getMethod = defineServerFn({
         }
 
         await db.transaction().execute(async (trx) => {
+          // The lines about to be replaced, whose configuration rules go with them.
+          const [targetMaterialIds, targetOperationIds] = await Promise.all([
+            trx
+              .selectFrom("methodMaterial")
+              .select("id")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .where("companyId", "=", companyId)
+              .execute()
+              .then((rows) => rows.map((row) => row.id)),
+            trx
+              .selectFrom("methodOperation")
+              .select("id")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .where("companyId", "=", companyId)
+              .execute()
+              .then((rows) => rows.map((row) => row.id))
+          ]);
+
           // Delete existing materials and operations from target method
           await Promise.all([
             parts.billOfMaterial
@@ -5265,28 +5366,9 @@ const getMethod = defineServerFn({
               : Promise.resolve()
           ]);
 
-          // Copy materials from source to target, dropping any zero-quantity
-          // BOM lines.
-          const materialsToCopy = (
-            (sourceMaterials.data ??
-              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
-          ).filter((material) => !isZeroQuantity(material.quantity));
-          if (parts.billOfMaterial && materialsToCopy.length > 0) {
-            await trx
-              .insertInto("methodMaterial")
-              .values(
-                materialsToCopy.map((material) => ({
-                  ...material,
-                  productionQuantity: undefined,
-                  id: undefined, // Let the database generate a new ID
-                  makeMethodId: targetMakeMethod.data.id,
-                  createdBy: userId
-                }))
-              )
-              .execute();
-          }
-
-          // Copy operations from source to target
+          // Operations first, so each copied BOM line can point at the copied
+          // operation that consumes it, not at the source method's operation.
+          const operationIdMap = new Map<string, string>();
           if (
             parts.billOfProcess &&
             sourceOperations.data &&
@@ -5317,6 +5399,10 @@ const getMethod = defineServerFn({
               )
               .returning(["id"])
               .execute();
+            sourceOperations.data.forEach((operation, index) => {
+              const id = operationIds[index]?.id;
+              if (operation.id && id) operationIdMap.set(operation.id, id);
+            });
 
             for await (const [
               index,
@@ -5405,6 +5491,55 @@ const getMethod = defineServerFn({
               }
             }
           }
+          // Copy materials from source to target, dropping any zero-quantity
+          // BOM lines.
+          const materialsToCopy = (
+            (sourceMaterials.data ??
+              []) as Database["public"]["Tables"]["methodMaterial"]["Row"][]
+          ).filter((material) => !isZeroQuantity(material.quantity));
+          const materialIdMap = new Map<string, string>();
+          if (parts.billOfMaterial && materialsToCopy.length > 0) {
+            const materialIds = await trx
+              .insertInto("methodMaterial")
+              .values(
+                materialsToCopy.map((material) => ({
+                  ...material,
+                  productionQuantity: undefined,
+                  id: undefined, // Let the database generate a new ID
+                  makeMethodId: targetMakeMethod.data.id,
+                  // Without the bill of process the source's operations were not
+                  // copied, so no operation on the target is known to consume it.
+                  methodOperationId: material.methodOperationId
+                    ? (operationIdMap.get(material.methodOperationId) ?? null)
+                    : null,
+                  createdBy: userId
+                }))
+              )
+              .returning(["id"])
+              .execute();
+            materialsToCopy.forEach((material, index) => {
+              const id = materialIds[index]?.id;
+              if (id) materialIdMap.set(material.id, id);
+            });
+          }
+
+          // Configuration rules are keyed by method line and operation ids:
+          // follow the copied lines, and drop the rules of the lines replaced.
+          await copyConfigurationRules(trx, {
+            sourceItemId: sourceMakeMethod.data.itemId,
+            targetItemId: targetMakeMethod.data.itemId,
+            replacedIds: [
+              ...(parts.billOfMaterial ? targetMaterialIds : []),
+              ...(parts.billOfProcess ? targetOperationIds : [])
+            ],
+            idMap: new Map([
+              [sourceMakeMethod.data.id, targetMakeMethod.data.id],
+              ...materialIdMap,
+              ...operationIdMap
+            ]),
+            companyId,
+            userId
+          });
         });
         break;
       }
