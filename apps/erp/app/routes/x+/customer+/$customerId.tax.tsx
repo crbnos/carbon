@@ -9,8 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { suggestTaxCodes } from "~/modules/accounting";
 import {
   customerTaxValidator,
+  getCustomerLocation,
+  getCustomerLocations,
+  getCustomerShipping,
   getCustomerTax,
   updateCustomerTax
 } from "~/modules/sales";
@@ -18,14 +22,17 @@ import { CustomerTaxForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales"
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const customerTax = await getCustomerTax(client, customerId);
+  const [customerTax, suggestedTaxCode] = await Promise.all([
+    getCustomerTax(client, customerId),
+    getSuggestedTaxCode(client, companyId, customerId)
+  ]);
 
   if (customerTax.error || !customerTax.data) {
     throw redirect(
@@ -38,8 +45,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    customerTax: customerTax.data
+    customerTax: customerTax.data,
+    suggestedTaxCode
   };
+}
+
+/**
+ * The first active tax code that matches the customer's address: the default
+ * ship-to location, else the customer's first location. A suggestion only —
+ * the user confirms it.
+ */
+async function getSuggestedTaxCode(
+  client: Parameters<typeof getCustomerTax>[0],
+  companyId: string,
+  customerId: string
+) {
+  const shipping = await getCustomerShipping(client, customerId, companyId);
+  const shippingLocationId = shipping.data?.shippingCustomerLocationId;
+  const address = shippingLocationId
+    ? (await getCustomerLocation(client, shippingLocationId, companyId)).data
+        ?.address
+    : ((await getCustomerLocations(client, customerId, companyId)).data?.[0]
+        ?.address ?? null);
+  const countryCode = address?.country?.alpha2 ?? null;
+  if (!countryCode) return null;
+
+  const suggestions = await suggestTaxCodes(client, companyId, {
+    countryCode,
+    state: address?.stateProvince || null
+  });
+  return suggestions.data?.[0] ?? null;
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -84,7 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function CustomerTaxRoute() {
-  const { customerTax } = useLoaderData<typeof loader>();
+  const { customerTax, suggestedTaxCode } = useLoaderData<typeof loader>();
   const initialValues = {
     customerId: customerTax?.customerId ?? "",
     taxId: customerTax?.taxId ?? "",
@@ -95,8 +130,14 @@ export default function CustomerTaxRoute() {
     taxExemptionCertificateNumber:
       customerTax?.taxExemptionCertificateNumber ?? "",
     taxExemptionCertificatePath:
-      customerTax?.taxExemptionCertificatePath ?? null
+      customerTax?.taxExemptionCertificatePath ?? null,
+    taxCodeId: customerTax?.taxCodeId ?? undefined
   };
 
-  return <CustomerTaxForm initialValues={initialValues} />;
+  return (
+    <CustomerTaxForm
+      initialValues={initialValues}
+      suggestedTaxCode={suggestedTaxCode}
+    />
+  );
 }

@@ -79,7 +79,8 @@ export const customerContactValidator = z.object({
 export const customerLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string()),
-  ...address
+  ...address,
+  taxCodeId: zfd.text(z.string().optional())
 });
 
 export const customerValidator = z.object({
@@ -109,7 +110,8 @@ export const customerTaxValidator = z
       (val) => (val === "" ? undefined : val),
       z.enum(taxExemptionReasons).optional().nullable()
     ),
-    taxExemptionCertificateNumber: zfd.text(z.string().optional())
+    taxExemptionCertificateNumber: zfd.text(z.string().optional()),
+    taxCodeId: zfd.text(z.string().optional())
   })
   .refine(
     (data) => !data.taxExempt || (data.taxExempt && data.taxExemptionReason),
@@ -514,6 +516,7 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  taxCodeId: zfd.text(z.string().optional()),
   internalNotes: z.any().optional(),
   externalNotes: z.any().optional(),
   configuration: z.any().optional()
@@ -997,6 +1000,7 @@ export const salesOrderLineValidator = z
         .min(0)
         .max(1, { message: "Tax percent must be between 0 and 1" })
     ),
+    taxCodeId: zfd.text(z.string().optional()),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -1442,6 +1446,7 @@ export const rentalAgreementValidator = z
         .min(0)
         .max(1, { message: "Tax percent must be between 0 and 1" })
     ),
+    taxCodeId: zfd.text(z.string().optional()),
     discountRate: zfd.numeric(
       z.number().min(0, { message: "Discount rate cannot be negative" })
     ),
@@ -1519,6 +1524,7 @@ export const rentalAgreementChargeValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  taxCodeId: zfd.text(z.string().optional()),
   /** Drafted on its own invoice, held for review, instead of with the rent. */
   invoiceSeparately: zfd.checkbox()
 });
@@ -1862,6 +1868,7 @@ const contractLineFields = {
   discountPercent: percentPoints("Discount"),
   discountEndsOn: zfd.text(z.string().optional()),
   taxPercent: percentPoints("Tax"),
+  taxCodeId: zfd.text(z.string().optional()),
   startDate: z.string().min(1, { message: "Start date is required" }),
   endDate: zfd.text(z.string().optional()),
   goLiveDate: zfd.text(z.string().optional()),
@@ -2052,6 +2059,8 @@ export const contractAmendmentChangeValidator = z.discriminatedUnion("op", [
     rateUnit: z.enum(contractRateUnits).optional(),
     discountPercent: z.number().min(0).max(100).optional(),
     taxPercent: z.number().min(0).max(100).optional(),
+    /** The line's new tax code; "" clears it. */
+    taxCodeId: z.string().optional(),
     description: z.string().optional(),
     revenueMethod: z.enum(contractRevenueMethods).optional(),
     projectId: z.string().optional()

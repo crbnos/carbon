@@ -13,6 +13,10 @@ import { toBaseAmount } from "@carbon/database/accounting-currency";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
+  effectiveComponents,
+  effectiveTaxPercent
+} from "@carbon/database/tax-components";
+import {
   billingHorizon,
   effectiveInvoiceAutomation,
   generateRentalBillingPeriods,
@@ -24,6 +28,7 @@ import {
 import { type Selectable, sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
+import { loadTaxCodes } from "../lib/tax-codes";
 
 type RateUnit = Database["public"]["Enums"]["rentalRateUnit"];
 
@@ -211,6 +216,7 @@ type LineValues = {
   description: string;
   unitPrice: number;
   taxPercent: number;
+  taxCodeId: string | null;
   serviceStartDate: string | null;
   serviceEndDate: string | null;
 };
@@ -321,7 +327,9 @@ async function draftAgreementInvoices(
       "c.chargeType",
       "c.description",
       "c.amount",
+      "c.chargeDate",
       "c.taxPercent",
+      "c.taxCodeId",
       "c.invoiceSeparately",
       "c.voidedSalesInvoiceId"
     ])
@@ -383,6 +391,29 @@ async function draftAgreementInvoices(
   // unitPrice × exchangeRate is what the customer sees), as on every sales
   // document.
   const exchangeRate = Number(agreement.exchangeRate);
+
+  // A line with a tax code takes the code's rate on its own date — a rent
+  // period's start, a charge's date — so a component that starts or ends
+  // mid-term bills at the rate posting splits by. Loaded once, with every
+  // component. A line with no code (or a code since deleted) keeps its
+  // stored percent.
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    [agreement.taxCodeId, ...charges.map((charge) => charge.taxCodeId)],
+    null
+  );
+  const taxPercentOn = (
+    taxCodeId: string | null,
+    storedPercent: number | string,
+    date: string
+  ) => {
+    const code = taxCodeId ? taxCodes.get(taxCodeId) : undefined;
+    return code
+      ? round(effectiveTaxPercent(effectiveComponents(code, date)))
+      : Number(storedPercent);
+  };
+
   const lines: {
     values: LineValues;
     isAdjustment: boolean;
@@ -400,7 +431,12 @@ async function draftAgreementInvoices(
           cycle: agreement.billingCycle
         }),
         unitPrice: toBaseAmount(Number(period.amount), exchangeRate),
-        taxPercent: Number(agreement.taxPercent),
+        taxPercent: taxPercentOn(
+          agreement.taxCodeId,
+          agreement.taxPercent,
+          period.periodStart
+        ),
+        taxCodeId: agreement.taxCodeId,
         serviceStartDate: period.periodStart,
         serviceEndDate: period.periodEnd
       },
@@ -416,7 +452,12 @@ async function draftAgreementInvoices(
         rentalLineType: charge.chargeType,
         description: charge.description,
         unitPrice: toBaseAmount(Number(charge.amount), exchangeRate),
-        taxPercent: Number(charge.taxPercent),
+        taxPercent: taxPercentOn(
+          charge.taxCodeId,
+          charge.taxPercent,
+          charge.chargeDate
+        ),
+        taxCodeId: charge.taxCodeId,
         serviceStartDate: null,
         serviceEndDate: null
       },

@@ -7,9 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import { resolvePurchaseLineTax } from "~/modules/accounting/accounting.server";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import {
   getPurchaseOrder,
@@ -52,9 +55,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "purchasing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "purchasing"
+    });
 
   const formData = await request.formData();
   const validation = await validator(purchaseOrderLineValidator).validate(
@@ -81,6 +85,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
         fieldErrors: { itemId: `${unreleasedIssue} It cannot be purchased.` }
       });
     }
+  }
+
+  // A request that names no tax code (the API, MCP) takes the line's
+  // resolved tax. The form always sends the field, so its pick stands.
+  if (!formData.has("taxCodeId")) {
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId,
+      companyGroupId,
+      supplierId: purchaseOrder.data?.supplierId,
+      itemId: d.itemId,
+      documentDate: purchaseOrder.data?.orderDate,
+      currencyCode: purchaseOrder.data?.currencyCode,
+      unitPrice: d.supplierUnitPrice ?? 0,
+      quantity: d.purchaseQuantity ?? 0,
+      shippingCost: d.supplierShippingCost ?? 0
+    });
+    if (tax) Object.assign(d, tax);
   }
 
   const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
@@ -110,6 +131,9 @@ export default function NewPurchaseOrderLineRoute() {
   const { orderId } = useParams();
 
   if (!orderId) throw new Error("Could not find purchase order id");
+  const routeData = useRouteData<{ resolvedTax: LineTaxDecision | null }>(
+    path.to.purchaseOrder(orderId)
+  );
 
   const initialValues = {
     conversionFactor: 1,
@@ -128,7 +152,9 @@ export default function NewPurchaseOrderLineRoute() {
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
     supplierUnitPrice: 0,
-    taxPercent: 0
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: routeData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(routeData?.resolvedTax?.taxPercent ?? 0)
   };
 
   return <PurchaseOrderLineForm initialValues={initialValues} />;

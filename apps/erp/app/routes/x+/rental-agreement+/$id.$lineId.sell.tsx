@@ -133,6 +133,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     chargeDate: today,
     description: "Purchase option exercised",
     taxPercent: agreement.data.taxPercent ?? 0,
+    taxCodeId: agreement.data.taxCodeId,
     companyId,
     createdBy: userId
   });

@@ -7,8 +7,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getExchangeRate } from "~/modules/accounting";
+import { getExchangeRate, getTaxCode } from "~/modules/accounting";
+import {
+  taxCodeRate,
+  toTaxCodeInput
+} from "~/modules/accounting/accounting.utils";
 import {
   getRentalAgreement,
   rentalAgreementInvoiceAutomationValidator,
@@ -16,6 +21,7 @@ import {
   updateRentalAgreement,
   updateRentalAgreementInvoiceAutomation
 } from "~/modules/sales";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 
 const logger = getLogger("erp", "rental-agreement-update");
 
@@ -34,6 +40,7 @@ const TERM_FIELDS = [
   "currencyCode",
   "depositAmount",
   "taxPercent",
+  "taxCodeId",
   "discountRate",
   "ownershipTransfers",
   "specializedAsset",
@@ -160,6 +167,7 @@ export async function action({ request }: ActionFunctionArgs) {
     currencyCode: agreement.currencyCode,
     depositAmount: agreement.depositAmount,
     taxPercent: agreement.taxPercent,
+    taxCodeId: agreement.taxCodeId,
     discountRate: agreement.discountRate,
     ownershipTransfers: agreement.ownershipTransfers,
     specializedAsset: agreement.specializedAsset,
@@ -171,6 +179,28 @@ export async function action({ request }: ActionFunctionArgs) {
   terms[field] = BOOLEAN_FIELDS.has(field)
     ? value === "on" || value === "true"
     : value || null;
+  // Picking a code sets the rent lines' rate to the code's rate today.
+  // Clearing it keeps the rate, which stays editable on its own.
+  if (field === "taxCodeId" && value) {
+    const [taxCode, timeZone] = await Promise.all([
+      getTaxCode(client, value),
+      getCompanyTimeZone(client, companyId)
+    ]);
+    if (taxCode.error || taxCode.data?.companyId !== companyId) {
+      logger.error("tax code not found for rental agreement update", {
+        companyId,
+        id,
+        taxCodeId: value,
+        error: taxCode.error
+      });
+      return { error: { message: "Tax code not found" }, data: null };
+    }
+    terms.taxPercent = taxCodeRate(
+      toTaxCodeInput(taxCode.data),
+      datetime.today(timeZone).toString()
+    );
+  }
+
   // A site and contact belong to one customer.
   if (field === "customerId" && value !== agreement.customerId) {
     terms.customerLocationId = null;
@@ -213,6 +243,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const update = await updateRentalAgreement(client, {
     ...data,
+    // Stated, so clearing the code (an empty value) writes null.
+    taxCodeId: (terms.taxCodeId as string | null) ?? null,
     id,
     companyId,
     updatedBy: userId,

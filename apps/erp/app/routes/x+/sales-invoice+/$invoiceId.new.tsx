@@ -26,7 +26,10 @@ import {
   upsertSalesInvoiceLine
 } from "~/modules/invoicing";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+import {
+  recordSalesRuleOutcome,
+  resolveCreatedLineTax
+} from "~/modules/sales/sales.server";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -135,8 +138,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  const tax = await resolveCreatedLineTax(client, companyId, {
+    document: "salesInvoice",
+    documentId: invoiceId,
+    itemId: d.itemId,
+    sentTaxCode: formData.has("taxCodeId"),
+    taxCodeId: d.taxCodeId,
+    taxPercent: d.taxPercent
+  });
+
   const createSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
     ...d,
+    ...tax,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData)
@@ -181,6 +194,7 @@ export default function NewSalesInvoiceLineRoute() {
   if (!invoiceId) throw new Error("Could not find sales invoice id");
   const salesInvoiceData = useRouteData<{
     salesInvoice: SalesInvoice;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesInvoice(invoiceId));
 
   if (!invoiceId) throw new Error("Could not find sales invoice id");
@@ -199,7 +213,8 @@ export default function NewSalesInvoiceLineRoute() {
     shippingCost: 0,
     addOnCost: 0,
     nonTaxableAddOnCost: 0,
-    taxPercent: 0,
+    taxPercent: salesInvoiceData?.resolvedTax?.taxPercent ?? 0,
+    taxCodeId: salesInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
     exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
     serviceStartDate: "",
     serviceEndDate: ""

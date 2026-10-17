@@ -129,6 +129,7 @@ const PartProperties = ({
   // When `data` is injected (subassembly context), this hook won't match a
   // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
+    taxable?: boolean;
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -193,6 +194,7 @@ const PartProperties = ({
     (
       field:
         | "active"
+        | "taxable"
         | "defaultMethodType"
         | "sourcingType"
         | "itemTrackingType"
@@ -788,6 +790,24 @@ const PartProperties = ({
             />
           </ValidatedForm>
         </ItemChangeNoticeLock>
+      )}
+      {!embedded && routeDataFromRoute?.taxable !== undefined && (
+        <ValidatedForm
+          key={itemId}
+          defaultValues={{ taxable: routeDataFromRoute.taxable }}
+          validator={z.object({ taxable: zfd.checkbox() })}
+          className="w-full"
+          isReadOnly={isReadOnly}
+        >
+          <Boolean
+            label={t`Taxable`}
+            name="taxable"
+            variant="small"
+            onChange={(value) => {
+              onUpdate("taxable", value ? "on" : "off");
+            }}
+          />
+        </ValidatedForm>
       )}
       {/* Manufacturer Part Number is a purchasing attribute — hidden on the CO
           affected-item card; it stays editable on the part page (non-embedded),

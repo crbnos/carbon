@@ -11,10 +11,14 @@ import {
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
 import { getLogger } from "@carbon/logger";
-import { applyRate, datetime, SCALE, taxableBase } from "@carbon/utils";
+import { applyRate, datetime, round, SCALE, taxableBase } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import {
+  decideLineTax,
+  toTaxCodeInput
+} from "~/modules/accounting/accounting.utils";
 import {
   assignPlanningActions,
   dismissPlanningActions,
@@ -291,7 +295,7 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         const ownedItems = await client
           .from("item")
-          .select("id")
+          .select("id, taxable")
           .in("id", Array.from(itemIds))
           .eq("companyId", companyId);
         if (
@@ -410,6 +414,61 @@ export async function action({ request }: ActionFunctionArgs) {
         // grid's are.
         const asOf = datetime.today(
           await getLocationTimeZone(client, locationId, companyId)
+        );
+
+        // The tax a new line takes, by the resolver's own rule
+        // (`decideLineTax`): the supplier's tax code, else its bare percent,
+        // and none for a non-taxable item. Read once for the whole batch.
+        const taxDate = asOf.toString();
+        const itemTaxable = new Map(
+          (ownedItems.data ?? []).map((item) => [item.id, item.taxable])
+        );
+        const supplierTaxes = await client
+          .from("supplierTax")
+          .select("supplierId, taxCodeId")
+          .in("supplierId", Array.from(supplierIds))
+          .eq("companyId", companyId);
+        const taxCodeIds = Array.from(
+          new Set(
+            (supplierTaxes.data ?? [])
+              .map((row) => row.taxCodeId)
+              .filter((id): id is string => !!id)
+          )
+        );
+        const taxCodes =
+          taxCodeIds.length > 0
+            ? await client
+                .from("taxCode")
+                .select(
+                  "id, calculationType, taxesShipping, taxCodeComponent(id, name, taxAuthorityId, taxPercent, recoverablePercent, sequence, isCompound, taxReceivedAccountId, taxPaidAccountId, effectiveDate, expirationDate)"
+                )
+                .in("id", taxCodeIds)
+                .eq("companyId", companyId)
+                .eq("active", true)
+            : null;
+        if (supplierTaxes.error || taxCodes?.error) {
+          logger.error("Failed to fetch supplier tax codes", {
+            companyId,
+            userId,
+            locationId,
+            error: supplierTaxes.error ?? taxCodes?.error
+          });
+          return data(
+            {
+              success: false,
+              message: "Failed to retrieve supplier tax codes from database"
+            },
+            { status: 500 }
+          );
+        }
+        const taxCodeById = new Map(
+          (taxCodes?.data ?? []).map((code) => [code.id, toTaxCodeInput(code)])
+        );
+        const supplierTaxCode = new Map(
+          (supplierTaxes.data ?? []).map((row) => [
+            row.supplierId,
+            row.taxCodeId ? (taxCodeById.get(row.taxCodeId) ?? null) : null
+          ])
         );
 
         // Every open PO an order may join, with its lines, in one read: the
@@ -722,9 +781,19 @@ export async function action({ request }: ActionFunctionArgs) {
                         }
                       )
                     : 0;
-                const taxPercent = supplier.taxPercent ?? 0;
-                // supplier.taxPercent is a 0..1 fraction; the amount follows
-                // the canonical denominator. Shipping is hardcoded 0 on this
+                const tax = decideLineTax({
+                  source: "purchase",
+                  taxExempt: false,
+                  taxExemptionReason: null,
+                  itemTaxable: itemTaxable.get(itemId) ?? true,
+                  locationTaxCode: null,
+                  partyTaxCode: supplierTaxCode.get(supplierId) ?? null,
+                  fallbackTaxPercent: Number(supplier.taxPercent ?? 0),
+                  date: taxDate
+                });
+                const taxPercent = round(tax.taxPercent);
+                // taxPercent is a 0..1 fraction; the amount follows the
+                // canonical denominator. Shipping is hardcoded 0 on this
                 // path, so it is passed explicitly rather than omitted.
                 const supplierTaxAmount = applyRate(
                   taxableBase(supplierUnitPrice, adjustedQuantity, 0),
@@ -744,6 +813,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   conversionFactor: supplierPart?.conversionFactor ?? 1,
                   supplierUnitPrice,
                   exchangeRate: purchaseOrder.exchangeRate,
+                  taxCodeId: tax.taxCodeId ?? undefined,
                   taxPercent,
                   supplierTaxAmount,
                   supplierShippingCost: 0,

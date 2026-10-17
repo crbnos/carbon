@@ -18,11 +18,14 @@ import type {
   DraftedRentalInvoice
 } from "@carbon/server-functions/create-rental-invoices";
 import type { Violation } from "@carbon/utils";
-import { round, suggestContractType } from "@carbon/utils";
+import { datetime, round, suggestContractType } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
+import { resolveLineTaxes } from "~/modules/accounting";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import {
@@ -31,6 +34,329 @@ import {
 } from "./sales.models";
 
 const logger = getLogger("erp", "sales-server");
+
+export type SalesTaxDocument = "quote" | "salesOrder" | "salesInvoice";
+
+/**
+ * The tax lines of a quote, sales order or sales invoice take. `document` is
+ * the decision with no item — the default a new line opens with — and
+ * `byItem` the decision for each item in `itemIds`, which is zero for an item
+ * that is not taxable.
+ *
+ * The ship-to is the quote's or order's customer location (a drop shipment's
+ * own location) or the invoice shipment's. The date is the order date or the
+ * issue date, else today in the company's timezone.
+ */
+export async function resolveSalesDocumentTaxes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    document: SalesTaxDocument;
+    documentId: string;
+    itemIds?: ReadonlyArray<string | null | undefined>;
+  }
+): Promise<{
+  data: {
+    document: LineTaxDecision;
+    byItem: Map<string, LineTaxDecision>;
+    /** The date the codes were read on, YYYY-MM-DD. */
+    date: string;
+  } | null;
+  error: string | null;
+}> {
+  const party = await getSalesDocumentTaxParty(client, companyId, args);
+  if (party.error !== null) return { data: null, error: party.error };
+
+  const itemIds = [
+    ...new Set((args.itemIds ?? []).filter((id): id is string => !!id))
+  ];
+  const [date, items] = await Promise.all([
+    party.date ??
+      getCompanyTimeZone(client, companyId).then((tz) =>
+        datetime.today(tz).toString()
+      ),
+    itemIds.length > 0
+      ? client
+          .from("item")
+          .select("id, taxable")
+          .in("id", itemIds)
+          .eq("companyId", companyId)
+      : null
+  ]);
+  if (items?.error) return { data: null, error: items.error.message };
+
+  const resolved = await resolveLineTaxes(client, companyId, {
+    source: "sales",
+    customerId: party.customerId,
+    customerLocationId: party.customerLocationId,
+    date
+  });
+  if (resolved.error || !resolved.data) {
+    return { data: null, error: resolved.error ?? "Tax was not resolved" };
+  }
+
+  const document = resolved.data;
+  const byItem = new Map<string, LineTaxDecision>();
+  for (const item of items?.data ?? []) {
+    // Same order as decideLineTax: an exempt customer first, then the item.
+    byItem.set(
+      item.id,
+      document.exempt || item.taxable
+        ? document
+        : {
+            taxCodeId: null,
+            taxPercent: 0,
+            components: [],
+            exempt: true,
+            exemptionReason: null
+          }
+    );
+  }
+  return { data: { document, byItem, date }, error: null };
+}
+
+/**
+ * The tax a line created on a sales document keeps.
+ *
+ * - A form that posts the field decides. A code it sends is kept, unless it
+ *   is the document's default the form opened with and the line's item is
+ *   not taxable, which zeroes the line. An empty field means the user cleared
+ *   the code: the form's own percent stands.
+ * - A caller that does not post the field (the API, an MCP tool) gets the
+ *   resolver's decision for the line's item. A decision with no code that
+ *   does not zero the line is only the customer's bare percent, so the
+ *   caller's percent stands — the behavior from before tax codes.
+ *
+ * A read failure keeps what was sent.
+ */
+export async function resolveCreatedLineTax(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    document: SalesTaxDocument;
+    documentId: string;
+    itemId?: string | null;
+    /** `formData.has("taxCodeId")`: the form posted the field. */
+    sentTaxCode: boolean;
+    taxCodeId?: string | null;
+    taxPercent: number;
+  }
+): Promise<{ taxCodeId: string | undefined; taxPercent: number }> {
+  const submitted = {
+    taxCodeId: args.taxCodeId || undefined,
+    taxPercent: args.taxPercent
+  };
+  if (args.sentTaxCode && !submitted.taxCodeId) return submitted;
+
+  const tax = await resolveSalesDocumentTaxes(client, companyId, {
+    document: args.document,
+    documentId: args.documentId,
+    itemIds: [args.itemId]
+  });
+  if (!tax.data) return submitted;
+  const decision =
+    (args.itemId ? tax.data.byItem.get(args.itemId) : undefined) ??
+    tax.data.document;
+
+  if (submitted.taxCodeId) {
+    const isDocumentDefault =
+      submitted.taxCodeId === tax.data.document.taxCodeId;
+    return isDocumentDefault && decision.exempt
+      ? { taxCodeId: undefined, taxPercent: decision.taxPercent }
+      : submitted;
+  }
+  if (!decision.taxCodeId && !decision.exempt) return submitted;
+  return {
+    taxCodeId: decision.taxCodeId ?? undefined,
+    taxPercent: decision.taxPercent
+  };
+}
+
+/**
+ * Re-resolve the tax of every line on a sales order or sales invoice — after
+ * its ship-to or the customer's tax code changed. A line is written only when
+ * the decision names a code or zeroes it (an exempt customer, a non-taxable
+ * item); with no code, a typed percent stands. Comment lines carry no tax;
+ * rental and contract invoice lines take theirs from the agreement or the
+ * contract, so they are left alone. Lines that land on the same decision are
+ * written together, in one transaction.
+ */
+export async function recalculateSalesDocumentTaxes(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    document: "salesOrder" | "salesInvoice";
+    documentId: string;
+  }
+): Promise<{ data: { updated: number } | null; error: string | null }> {
+  const { companyId, document, documentId } = args;
+
+  const lines =
+    document === "salesOrder"
+      ? await client
+          .from("salesOrderLine")
+          .select("id, itemId")
+          .eq("salesOrderId", documentId)
+          .eq("companyId", companyId)
+          .neq("salesOrderLineType", "Comment")
+      : await client
+          .from("salesInvoiceLine")
+          .select("id, itemId")
+          .eq("invoiceId", documentId)
+          .eq("companyId", companyId)
+          .neq("invoiceLineType", "Comment")
+          .neq("invoiceLineType", "Rental")
+          .is("customerContractLineId", null);
+  if (lines.error) return { data: null, error: lines.error.message };
+  if (lines.data.length === 0) return { data: { updated: 0 }, error: null };
+
+  const tax = await resolveSalesDocumentTaxes(client, companyId, {
+    document,
+    documentId,
+    itemIds: lines.data.map((line) => line.itemId)
+  });
+  if (!tax.data) return { data: null, error: tax.error };
+
+  const groups = new Map<
+    string,
+    { taxCodeId: string | null; taxPercent: number; ids: string[] }
+  >();
+  for (const line of lines.data) {
+    const decision =
+      (line.itemId ? tax.data.byItem.get(line.itemId) : undefined) ??
+      tax.data.document;
+    // No code and nothing exempt: the decision is only the customer's bare
+    // percent, so a percent typed on the line stands.
+    if (!decision.taxCodeId && !decision.exempt) continue;
+    const key = `${decision.taxCodeId ?? ""}|${decision.taxPercent}`;
+    const group = groups.get(key) ?? {
+      taxCodeId: decision.taxCodeId,
+      taxPercent: decision.taxPercent,
+      ids: []
+    };
+    group.ids.push(line.id);
+    groups.set(key, group);
+  }
+
+  const updated = [...groups.values()].reduce(
+    (count, group) => count + group.ids.length,
+    0
+  );
+  if (updated === 0) return { data: { updated: 0 }, error: null };
+
+  const updatedAt = datetime.timestamp();
+  try {
+    await db.transaction().execute(async (trx) => {
+      const table =
+        document === "salesOrder" ? "salesOrderLine" : "salesInvoiceLine";
+      await Promise.all(
+        [...groups.values()].map((group) =>
+          trx
+            .updateTable(table)
+            .set({
+              taxCodeId: group.taxCodeId,
+              taxPercent: group.taxPercent,
+              updatedBy: args.userId,
+              updatedAt
+            })
+            .where("id", "in", group.ids)
+            .where("companyId", "=", companyId)
+            .execute()
+        )
+      );
+    });
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err.message : String(err)
+    };
+  }
+  return { data: { updated }, error: null };
+}
+
+async function getSalesDocumentTaxParty(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { document: SalesTaxDocument; documentId: string }
+): Promise<
+  | {
+      customerId: string | null;
+      customerLocationId: string | null;
+      date: string | null;
+      error: null;
+    }
+  | { error: string }
+> {
+  switch (args.document) {
+    case "quote": {
+      const quote = await client
+        .from("quote")
+        .select("customerId, customerLocationId")
+        .eq("id", args.documentId)
+        .eq("companyId", companyId)
+        .single();
+      if (quote.error) return { error: quote.error.message };
+      return {
+        customerId: quote.data.customerId,
+        customerLocationId: quote.data.customerLocationId,
+        date: null,
+        error: null
+      };
+    }
+    case "salesOrder": {
+      const [order, shipment] = await Promise.all([
+        client
+          .from("salesOrder")
+          .select("customerId, customerLocationId, orderDate")
+          .eq("id", args.documentId)
+          .eq("companyId", companyId)
+          .single(),
+        client
+          .from("salesOrderShipment")
+          .select("dropShipment, customerLocationId")
+          .eq("id", args.documentId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      ]);
+      if (order.error) return { error: order.error.message };
+      if (shipment.error) return { error: shipment.error.message };
+      return {
+        customerId: order.data.customerId,
+        customerLocationId: shipment.data?.dropShipment
+          ? shipment.data.customerLocationId
+          : order.data.customerLocationId,
+        date: order.data.orderDate,
+        error: null
+      };
+    }
+    case "salesInvoice": {
+      const [invoice, shipment] = await Promise.all([
+        client
+          .from("salesInvoice")
+          .select("customerId, dateIssued")
+          .eq("id", args.documentId)
+          .eq("companyId", companyId)
+          .single(),
+        client
+          .from("salesInvoiceShipment")
+          .select("customerLocationId")
+          .eq("id", args.documentId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      ]);
+      if (invoice.error) return { error: invoice.error.message };
+      if (shipment.error) return { error: shipment.error.message };
+      return {
+        customerId: invoice.data.customerId,
+        customerLocationId: shipment.data?.customerLocationId ?? null,
+        date: invoice.data.dateIssued,
+        error: null
+      };
+    }
+  }
+}
 
 type BreakRow = { quantity: number; overridePrice: number; active: boolean };
 
@@ -383,6 +709,7 @@ export async function insertRentalPurchaseOptionCharge(
     description: string;
     amount: number;
     taxPercent: number;
+    taxCodeId: string | null;
     companyId: string;
     createdBy: string;
   }
@@ -907,6 +1234,7 @@ export async function createContractFromSalesOrder(
         "unitPrice",
         "convertedUnitPrice",
         "taxPercent",
+        "taxCodeId",
         "invoicedComplete",
         "quantityInvoiced",
         "sentComplete"
@@ -1009,6 +1337,7 @@ export async function createContractFromSalesOrder(
               ? (choice.rateUnit ?? null)
               : null,
           taxPercent: line.taxPercent,
+          taxCodeId: line.taxCodeId,
           startDate: input.startDate,
           salesOrderLineId: line.id,
           createdBy: userId

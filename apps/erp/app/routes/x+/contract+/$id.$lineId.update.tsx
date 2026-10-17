@@ -91,6 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     discountPercent: round(Number(line.discountPercent) * 100),
     discountEndsOn: line.discountEndsOn,
     taxPercent: round(Number(line.taxPercent) * 100),
+    taxCodeId: line.taxCodeId,
     startDate: line.startDate,
     endDate: line.endDate,
     goLiveDate: line.goLiveDate,

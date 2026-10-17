@@ -25,6 +25,7 @@ import { Customer, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { getFixedAsset } from "~/modules/accounting";
 import { insertSalesOrder } from "~/modules/sales";
+import { resolveSalesDocumentTaxes } from "~/modules/sales/sales.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -113,6 +114,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     Number(asset.data.acquisitionCost) -
     Number(asset.data.accumulatedDepreciation);
 
+  // The order's customer and ship-to decide the tax; an asset has no item.
+  const tax = await resolveSalesDocumentTaxes(client, companyId, {
+    document: "salesOrder",
+    documentId: salesOrderId
+  });
+
   await client.from("salesOrderLine").insert({
     salesOrderId,
     salesOrderLineType: "Fixed Asset",
@@ -121,7 +128,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     saleQuantity: 1,
     unitPrice: nbv,
     locationId: asset.data.locationId ?? "",
-    taxPercent: 0,
+    taxPercent: tax.data?.document.taxPercent ?? 0,
+    taxCodeId: tax.data?.document.taxCodeId ?? null,
     exchangeRate: 1,
     companyId,
     createdBy: userId

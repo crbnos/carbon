@@ -25,7 +25,10 @@ import {
   salesOrderLineValidator,
   upsertSalesOrderLine
 } from "~/modules/sales";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+import {
+  recordSalesRuleOutcome,
+  resolveCreatedLineTax
+} from "~/modules/sales/sales.server";
 import { SalesOrderLineForm } from "~/modules/sales/ui/SalesOrder";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -141,8 +144,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  const tax = await resolveCreatedLineTax(client, companyId, {
+    document: "salesOrder",
+    documentId: orderId,
+    itemId: d.itemId,
+    sentTaxCode: formData.has("taxCodeId"),
+    taxCodeId: d.taxCodeId,
+    taxPercent: d.taxPercent
+  });
+
   const createSalesOrderLine = await upsertSalesOrderLine(client, {
     ...d,
+    ...tax,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData)
@@ -185,6 +198,7 @@ export default function NewSalesOrderLineRoute() {
   const salesOrderData = useRouteData<{
     salesOrder: SalesOrder;
     customer: Customer;
+    resolvedTax: { taxCodeId: string | null; taxPercent: number } | null;
   }>(path.to.salesOrder(orderId));
 
   const initialValues = {
@@ -200,7 +214,11 @@ export default function NewSalesOrderLineRoute() {
     nonTaxableAddOnCost: 0,
     locationId:
       salesOrderData?.salesOrder?.locationId ?? defaults.locationId ?? "",
-    taxPercent: salesOrderData?.customer?.taxPercent ?? 0,
+    taxPercent:
+      salesOrderData?.resolvedTax?.taxPercent ??
+      salesOrderData?.customer?.taxPercent ??
+      0,
+    taxCodeId: salesOrderData?.resolvedTax?.taxCodeId ?? undefined,
     promisedDate:
       salesOrderData?.salesOrder?.receiptPromisedDate ??
       salesOrderData?.salesOrder?.receiptRequestedDate ??

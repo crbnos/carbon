@@ -60,6 +60,7 @@ export type RentalTerm =
   | "paymentTermId"
   | "depositAmount"
   | "taxPercent"
+  | "taxCodeId"
   | "discountRate"
   | "ownershipTransfers"
   | "specializedAsset"

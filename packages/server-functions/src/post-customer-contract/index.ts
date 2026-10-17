@@ -252,6 +252,7 @@ const amendmentLine = z
     discountPercent: percentPoints,
     discountEndsOn: isoDate.optional(),
     taxPercent: percentPoints,
+    taxCodeId: z.string().optional(),
     startDate: isoDate,
     endDate: isoDate.optional(),
     goLiveDate: isoDate.optional(),
@@ -274,6 +275,8 @@ const amendmentChange = z.discriminatedUnion("op", [
     rateUnit: z.enum(contractRateUnits).optional(),
     discountPercent: percentPoints.optional(),
     taxPercent: percentPoints.optional(),
+    /** The line's new tax code; "" clears it. */
+    taxCodeId: z.string().optional(),
     description: z.string().optional(),
     revenueMethod: z.enum(contractRevenueMethods).optional(),
     projectId: z.string().optional()
@@ -1355,6 +1358,17 @@ async function amend(
               ...(change.taxPercent !== undefined && {
                 taxPercent: fraction(change.taxPercent)
               }),
+              // A new percent with no code of its own no longer is the old
+              // code's rate, so the code goes rather than mislabel the line.
+              ...(change.taxCodeId !== undefined
+                ? { taxCodeId: change.taxCodeId || null }
+                : change.taxPercent !== undefined &&
+                    !equals(
+                      fraction(change.taxPercent),
+                      Number(line.taxPercent)
+                    )
+                  ? { taxCodeId: null }
+                  : {}),
               ...(change.description !== undefined && {
                 description: change.description || null
               }),
@@ -1408,7 +1422,7 @@ async function amend(
               discountPercent: fraction(line.discountPercent),
               discountEndsOn: line.discountEndsOn ?? null,
               taxPercent: fraction(line.taxPercent),
-              taxCodeId: null,
+              taxCodeId: line.taxCodeId || null,
               startDate,
               endDate: line.endDate ?? null,
               goLiveDate: line.goLiveDate ?? null,

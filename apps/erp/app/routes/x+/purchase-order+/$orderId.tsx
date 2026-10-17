@@ -23,7 +23,7 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
@@ -31,7 +31,11 @@ import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
+import {
+  getCurrencyByCode,
+  getPaymentTermsList,
+  resolveLineTaxes
+} from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   getDefaultAttachmentsForPO,
@@ -51,6 +55,7 @@ import {
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompany, getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
@@ -475,7 +480,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [supplier, interaction, approvalRequest, companySettings] =
+  // The tax a new line takes: the supplier's code (or bare percent), on the
+  // order's date.
+  const taxDate =
+    purchaseOrder.data?.orderDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  const [supplier, interaction, approvalRequest, companySettings, resolvedTax] =
     await Promise.all([
       purchaseOrder.data?.supplierId
         ? getSupplier(client, purchaseOrder.data.supplierId)
@@ -489,7 +499,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             orderId
           )
         : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId)
+      getCompanySettings(serviceRole, companyId),
+      resolveLineTaxes(client, companyId, {
+        source: "purchase",
+        supplierId: purchaseOrder.data?.supplierId,
+        date: taxDate
+      })
     ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -595,7 +610,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canReopen,
     canDelete,
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    resolvedTax: resolvedTax.data,
+    taxDate
   };
 }
 

@@ -25,6 +25,11 @@ import {
 import { round } from "@carbon/database/precision";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
+  effectiveComponents,
+  effectiveTaxPercent,
+  type TaxCodeInput
+} from "@carbon/database/tax-components";
+import {
   contractInvoiceHold,
   datetime,
   effectiveInvoiceAutomation,
@@ -37,6 +42,7 @@ import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
+import { loadTaxCodes } from "../lib/tax-codes";
 import {
   billedTotals,
   changedRevenueLines,
@@ -570,6 +576,14 @@ async function draftDueInvoices(
   }
 
   const lineById = new Map(lines.map((line) => [line.id, line]));
+  // The lines' tax codes with every component, once: each schedule row takes
+  // its code's rate on the row's own date (invoiceLineValues).
+  const taxCodes = await loadTaxCodes(
+    trx,
+    companyId,
+    lines.map((line) => line.taxCodeId),
+    null
+  );
   const drafted: DraftedContractInvoice[] = [];
   for (const [plannedInvoiceId, group] of byInvoice) {
     group.sort(
@@ -605,7 +619,8 @@ async function draftDueInvoices(
         }
         return invoiceLineValues(row, line, itemById.get(line.itemId), {
           contract,
-          locationId
+          locationId,
+          taxCodes
         });
       })
     });
@@ -656,6 +671,7 @@ type InvoiceLineValues = {
   unitPrice: number;
   discountPercent: number;
   taxPercent: number;
+  taxCodeId: string | null;
   serviceStartDate: string | null;
   serviceEndDate: string | null;
   customerContractId: string;
@@ -665,6 +681,21 @@ type InvoiceLineValues = {
   methodType: Enums["methodType"];
   unitOfMeasureCode: string;
 };
+
+/** A line with a tax code bills at the code's rate on `date` — the schedule
+ *  row's period start — so a component that starts or ends mid-term bills at
+ *  the rate posting splits by. A line with no code (or a code since deleted)
+ *  keeps its stored percent. */
+function taxPercentOn(
+  line: ContractLineRow,
+  taxCodes: Map<string, TaxCodeInput>,
+  date: string
+): number {
+  const code = line.taxCodeId ? taxCodes.get(line.taxCodeId) : undefined;
+  return code
+    ? round(effectiveTaxPercent(effectiveComponents(code, date)))
+    : Number(line.taxPercent);
+}
 
 /** One schedule row as a Service sales-invoice line (plan decision 10). */
 function invoiceLineValues(
@@ -677,7 +708,11 @@ function invoiceLineValues(
         defaultMethodType: Enums["methodType"] | null;
       }
     | undefined,
-  context: { contract: ContractRow; locationId: string }
+  context: {
+    contract: ContractRow;
+    locationId: string;
+    taxCodes: Map<string, TaxCodeInput>;
+  }
 ): InvoiceLineValues {
   const quantity = Number(line.quantity);
   const discountPercent = Number(line.discountPercent);
@@ -717,7 +752,8 @@ function invoiceLineValues(
       Number(context.contract.exchangeRate)
     ),
     discountPercent: pricing.discountPercent,
-    taxPercent: Number(line.taxPercent),
+    taxPercent: taxPercentOn(line, context.taxCodes, row.periodStart),
+    taxCodeId: line.taxCodeId,
     serviceStartDate,
     serviceEndDate,
     customerContractId: context.contract.id,

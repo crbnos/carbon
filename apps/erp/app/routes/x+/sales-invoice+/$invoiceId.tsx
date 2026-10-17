@@ -24,6 +24,7 @@ import { STRIPE_CONNECT_INTEGRATION } from "~/modules/invoicing/stripe-customer.
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
+import { resolveSalesDocumentTaxes } from "~/modules/sales/sales.server";
 import {
   getCustomer,
   getOpportunity,
@@ -83,7 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [customer, opportunity, companySettings, orgHasCredits, currency] =
+  const [customer, opportunity, companySettings, orgHasCredits, currency, tax] =
     await Promise.all([
       salesInvoice.data?.customerId
         ? getCustomer(client, salesInvoice.data.customerId)
@@ -99,7 +100,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             companyGroupId,
             salesInvoice.data.currencyCode
           )
-        : null
+        : null,
+      resolveSalesDocumentTaxes(client, companyId, {
+        document: "salesInvoice",
+        documentId: invoiceId
+      })
     ]);
 
   const defaultCc = customer?.data?.defaultCc?.length
@@ -138,7 +143,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer?.data ?? null,
     defaultCc,
     orgHasCredits,
-    stripeInvoiceUrl
+    stripeInvoiceUrl,
+    // The tax a new line opens with (customer, ship-to, no item).
+    resolvedTax: tax.data
+      ? {
+          taxCodeId: tax.data.document.taxCodeId,
+          taxPercent: tax.data.document.taxPercent
+        }
+      : null,
+    // The date the line forms read a picked code's rate on.
+    taxDate: tax.data?.date ?? null
   };
 }
 

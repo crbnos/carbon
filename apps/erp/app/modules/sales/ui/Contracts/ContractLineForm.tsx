@@ -16,7 +16,7 @@ import {
   ModalCardTitle,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
@@ -29,11 +29,14 @@ import {
   Input,
   Item,
   Number,
+  NumberControlled,
   Select,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { useCompanyToday, useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   contractRateUnits,
@@ -77,6 +80,11 @@ const ContractLineForm = ({
   const isEditing = initialValues.id !== undefined;
   const [revenueType, setRevenueType] = useState(initialValues.revenueType);
   const [startDate, setStartDate] = useState(initialValues.startDate);
+  // Percent points (0–100), as the field types it.
+  const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
+  // A picked code's rate on the line's start date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(startDate || companyToday);
   const [showRevenue, setShowRevenue] = useState(
     initialValues.revenueMethod !== "Daily" ||
       !!initialValues.revenueStartDate ||
@@ -234,9 +242,25 @@ const ContractLineForm = ({
                     label={t`Discount Ends On`}
                     minValue={minDate}
                   />
-                  <Number
+                  <TaxCode
+                    name="taxCodeId"
+                    label={t`Tax Code`}
+                    onChange={(option) => {
+                      // A code's rate is a 0–1 fraction; this field types
+                      // percent points.
+                      if (option)
+                        setTaxPercent(
+                          round(
+                            (taxCodeRateOn(option.value) ?? option.rate) * 100
+                          )
+                        );
+                    }}
+                  />
+                  <NumberControlled
                     name="taxPercent"
                     label={t`Tax (%)`}
+                    value={taxPercent}
+                    onChange={setTaxPercent}
                     minValue={0}
                     maxValue={100}
                     step={INPUT_STEP.percent}

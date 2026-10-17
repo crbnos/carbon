@@ -435,6 +435,7 @@ const convert = defineServerFn({
                 (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
               // The rate is invariant under proration; only the amount scales
               taxPercent: line.taxPercent ?? 0,
+              taxCodeId: line.taxCodeId,
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
               conversionFactor: line.conversionFactor,
@@ -731,6 +732,7 @@ const convert = defineServerFn({
                 companyId,
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 taxPercent: line.taxPercent,
+                taxCodeId: line.taxCodeId,
                 shippingCost: price.shippingCost ?? 0,
                 sortOrder: line.sortOrder ?? 1,
                 configuration: toJson(line.configuration)
@@ -1012,6 +1014,7 @@ const convert = defineServerFn({
                 nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
                 shippingCost: line.shippingCost ?? 0,
                 taxPercent: line.taxPercent ?? 0,
+                taxCodeId: line.taxCodeId,
                 unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
                 exchangeRate: line.exchangeRate ?? 1,
                 serviceStartDate: line.serviceStartDate ?? null,
@@ -1635,6 +1638,7 @@ const convert = defineServerFn({
                 nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
                 shippingCost: line.shippingCost ?? 0,
                 taxPercent: line.taxPercent ?? 0,
+                taxCodeId: line.taxCodeId,
                 unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
                 exchangeRate: line.exchangeRate ?? 1,
                 serviceStartDate: line.serviceStartDate ?? null,
@@ -1660,27 +1664,41 @@ const convert = defineServerFn({
       case "supplierQuoteToPurchaseOrder": {
         const { selectedLines } = payload;
 
-        const [quote, quoteLines, company, employeeJob] = await inOrder([
-          () => single(db, "supplierQuote", { id, companyId }),
-          () =>
-            many<
-              "supplierQuoteLine",
-              Tables["supplierQuoteLine"]["Row"] & {
-                item: Pick<Tables["item"]["Row"], "type"> | null;
-              }
-            >(
-              db,
-              "supplierQuoteLine",
-              { supplierQuoteId: id, companyId },
-              {
-                embed: {
-                  item: { table: "item", via: "itemId", columns: ["type"] }
+        const [quote, quoteLines, quoteLinePrices, company, employeeJob] =
+          await inOrder([
+            () => single(db, "supplierQuote", { id, companyId }),
+            () =>
+              many<
+                "supplierQuoteLine",
+                Tables["supplierQuoteLine"]["Row"] & {
+                  item: Pick<Tables["item"]["Row"], "type"> | null;
                 }
-              }
-            ),
-          () => single(db, "company", { id: companyId }),
-          () => single(db, "employeeJob", { id: userId, companyId })
-        ]);
+              >(
+                db,
+                "supplierQuoteLine",
+                { supplierQuoteId: id, companyId },
+                {
+                  embed: {
+                    item: { table: "item", via: "itemId", columns: ["type"] }
+                  }
+                }
+              ),
+            // The tax code of the price break each selected quantity bought.
+            () =>
+              many(db, "supplierQuoteLinePrice", {
+                supplierQuoteId: id,
+                companyId
+              }),
+            () => single(db, "company", { id: companyId }),
+            () => single(db, "employeeJob", { id: userId, companyId })
+          ]);
+        if (quoteLinePrices.error) throw quoteLinePrices.error;
+        const priceTaxCodeIds = new Map(
+          (quoteLinePrices.data ?? []).map((price) => [
+            `${price.supplierQuoteLineId}:${price.quantity}`,
+            price.taxCodeId
+          ])
+        );
 
         if (quote.error)
           throw new NotFoundError(`Quote with id ${id} not found`);
@@ -1820,6 +1838,10 @@ const convert = defineServerFn({
                   supplierTaxAmount:
                     selectedLines![line.id!]!.supplierTaxAmount,
                   taxPercent: resolveTaxPercent(selectedLines![line.id!]!),
+                  taxCodeId:
+                    priceTaxCodeIds.get(
+                      `${line.id}:${selectedLines![line.id!]!.quantity}`
+                    ) ?? null,
                   sortOrder: line.sortOrder ?? 1,
                   createdBy: userId,
                   companyId

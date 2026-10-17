@@ -23,7 +23,14 @@ import { LuPaperclip } from "react-icons/lu";
 import type { z } from "zod";
 import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
+import {
+  Boolean,
+  Hidden,
+  Input,
+  Select,
+  Submit,
+  TaxCode
+} from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { taxExemptionReasons } from "~/modules/shared";
 import { customerTaxValidator } from "../../sales.models";
@@ -32,9 +39,14 @@ type CustomerTaxFormProps = {
   initialValues: z.infer<typeof customerTaxValidator> & {
     taxExemptionCertificatePath?: string | null;
   };
+  /** The first tax code whose country and state match the customer's address. */
+  suggestedTaxCode?: { id: string; name: string } | null;
 };
 
-const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
+const CustomerTaxForm = ({
+  initialValues,
+  suggestedTaxCode
+}: CustomerTaxFormProps) => {
   const { t } = useLingui();
   const taxExemptionReasonOptions = taxExemptionReasons.map((reason) => ({
     label: <Enumerable value={reason} />,
@@ -48,6 +60,8 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
     initialValues.taxExemptionCertificatePath ?? ""
   );
   const [taxExempt, setTaxExempt] = useState(initialValues.taxExempt ?? false);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId);
+  const suggestedName = suggestedTaxCode?.name;
 
   const isDisabled = !permissions.can("update", "sales");
 
@@ -100,6 +114,27 @@ const CustomerTaxForm = ({ initialValues }: CustomerTaxFormProps) => {
             ) : (
               <div />
             )}
+            <div className="flex flex-col gap-2">
+              <TaxCode
+                name="taxCodeId"
+                label={t`Tax Code`}
+                value={taxCodeId}
+                onChange={(option) => setTaxCodeId(option?.value)}
+              />
+              {suggestedTaxCode && suggestedTaxCode.id !== taxCodeId && (
+                <div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    isDisabled={isDisabled}
+                    onClick={() => setTaxCodeId(suggestedTaxCode.id)}
+                  >
+                    <Trans>Use {suggestedName}</Trans>
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="col-span-2 max-md:hidden" />
             <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"

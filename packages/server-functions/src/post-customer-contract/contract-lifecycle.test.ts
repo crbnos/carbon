@@ -785,6 +785,128 @@ databaseTest(
   }
 );
 
+databaseTest(
+  "a line with a tax code bills each schedule row at the code's rate on the row's date",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "taxed",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      // 10% throughout, plus 5% from February.
+      const taxCodeId = `${contractId}-taxcode`;
+      await db
+        .insertInto("taxCode")
+        .values({
+          id: taxCodeId,
+          name: "Service VAT",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await db
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId,
+            name: "State",
+            taxPercent: 0.1,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId,
+            name: "City",
+            taxPercent: 0.05,
+            sequence: 2,
+            effectiveDate: "2026-02-01",
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+      // The stored percent is the rate frozen when the code was picked.
+      await db
+        .updateTable("customerContractLine")
+        .set({ taxCodeId, taxPercent: 0.02 })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+      const run = await createContractInvoices(ctx, {
+        asOf: "2026-03-01",
+        customerContractId: contractId
+      });
+      expect(run.error).toBeNull();
+      expect(run.data!.invoiceIds).toHaveLength(3);
+
+      const lines = await db
+        .selectFrom("salesInvoiceLine")
+        .innerJoin(
+          "salesInvoice",
+          "salesInvoice.id",
+          "salesInvoiceLine.invoiceId"
+        )
+        .select([
+          sql<string>`"salesInvoiceLine"."serviceStartDate"::text`.as(
+            "serviceStartDate"
+          ),
+          "salesInvoiceLine.taxCodeId",
+          "salesInvoiceLine.taxPercent",
+          "salesInvoice.totalTax",
+          "salesInvoice.totalAmount"
+        ])
+        .where("salesInvoiceLine.customerContractId", "=", contractId)
+        .where("salesInvoiceLine.companyId", "=", companyId)
+        .orderBy("salesInvoiceLine.serviceStartDate")
+        .execute();
+      expect(
+        lines.map((line) => ({
+          serviceStartDate: line.serviceStartDate,
+          taxCodeId: line.taxCodeId,
+          taxPercent: Number(line.taxPercent),
+          totalTax: Number(line.totalTax),
+          totalAmount: Number(line.totalAmount)
+        }))
+      ).toEqual([
+        {
+          serviceStartDate: "2026-01-01",
+          taxCodeId,
+          taxPercent: 0.1,
+          totalTax: 10,
+          totalAmount: 110
+        },
+        {
+          serviceStartDate: "2026-02-01",
+          taxCodeId,
+          taxPercent: 0.15,
+          totalTax: 15,
+          totalAmount: 115
+        },
+        {
+          serviceStartDate: "2026-03-01",
+          taxCodeId,
+          taxPercent: 0.15,
+          totalTax: 15,
+          totalAmount: 115
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
 /** Contract lines, oldest first, with their dates as text. */
 async function contractLines(
   db: Kysely<KyselyDatabase>,

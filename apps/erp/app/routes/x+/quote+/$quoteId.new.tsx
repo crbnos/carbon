@@ -25,7 +25,10 @@ import {
   upsertQuoteLine,
   upsertQuoteLineMethod
 } from "~/modules/sales";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+import {
+  recordSalesRuleOutcome,
+  resolveCreatedLineTax
+} from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -118,8 +121,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: null, data: null, violations: deduped, ruleNames };
   }
 
+  const tax = await resolveCreatedLineTax(viewClient, companyId, {
+    document: "quote",
+    documentId: quoteId,
+    itemId: d.itemId,
+    sentTaxCode: formData.has("taxCodeId"),
+    taxCodeId: d.taxCodeId,
+    taxPercent: d.taxPercent
+  });
+
   const createQuotationLine = await upsertQuoteLine(serviceRole, {
     ...d,
+    ...tax,
     // The URL quote was verified above; the form's copy was not.
     quoteId,
     companyId,

@@ -2177,6 +2177,7 @@ export async function insertCustomerLocation(
       countryCode?: string;
       postalCode?: string;
     };
+    taxCodeId?: string | null;
     customFields?: Json;
   }
 ) {
@@ -2204,6 +2205,7 @@ export async function insertCustomerLocation(
         addressId,
         name: customerLocation.name,
         companyId: customerLocation.companyId,
+        taxCodeId: customerLocation.taxCodeId ?? null,
         customFields: customerLocation.customFields
       }
     ])
@@ -3325,20 +3327,26 @@ export async function updateCustomerLocation(
       countryCode?: string;
       postalCode?: string;
     };
+    /** Omit to leave the location's tax code as it is; null clears it. */
+    taxCodeId?: string | null;
     customFields?: Json;
   }
 ) {
-  if (customerLocation.customFields) {
-    const customFieldUpdate = await client
+  const writesTaxCode = customerLocation.taxCodeId !== undefined;
+  if (customerLocation.customFields || writesTaxCode) {
+    const locationUpdate = await client
       .from("customerLocation")
       .update({
         name: customerLocation.name,
-        customFields: customerLocation.customFields
+        ...(customerLocation.customFields
+          ? { customFields: customerLocation.customFields }
+          : {}),
+        ...(writesTaxCode ? { taxCodeId: customerLocation.taxCodeId } : {})
       })
       .eq("addressId", customerLocation.addressId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+    if (locationUpdate.error) {
+      return locationUpdate;
     }
   }
   return client
@@ -8688,8 +8696,11 @@ export async function getRentalAgreement(
 function rentalAgreementTerms(
   terms: Omit<
     z.infer<typeof rentalAgreementValidator>,
-    "id" | "rentalAgreementId"
-  >
+    "id" | "rentalAgreementId" | "taxCodeId"
+  > & {
+    /** Omit to leave the agreement's code as it is; null clears it. */
+    taxCodeId?: string | null;
+  }
 ) {
   return {
     customerId: terms.customerId,
@@ -8711,6 +8722,9 @@ function rentalAgreementTerms(
       : {}),
     depositAmount: terms.depositAmount,
     taxPercent: terms.taxPercent,
+    // Only a caller that sends a code (or null) writes one, so a caller that
+    // does not know about tax codes never clears the agreement's.
+    ...(terms.taxCodeId !== undefined ? { taxCodeId: terms.taxCodeId } : {}),
     discountRate: terms.discountRate,
     ownershipTransfers: terms.ownershipTransfers,
     specializedAsset: terms.specializedAsset,
@@ -8762,8 +8776,10 @@ export async function updateRentalAgreement(
   client: SupabaseClient<Database>,
   rentalAgreement: Omit<
     z.infer<typeof rentalAgreementValidator>,
-    "id" | "rentalAgreementId"
+    "id" | "rentalAgreementId" | "taxCodeId"
   > & {
+    /** Omit to leave the agreement's code as it is; null clears it. */
+    taxCodeId?: string | null;
     id: string;
     companyId: string;
     updatedBy: string;
@@ -9173,11 +9189,20 @@ export async function getRentalAgreementCharges(
 export async function upsertRentalAgreementCharge(
   client: SupabaseClient<Database>,
   charge:
-    | (Omit<z.infer<typeof rentalAgreementChargeValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof rentalAgreementChargeValidator>,
+        "id" | "taxCodeId"
+      > & {
+        /** Omit to leave the charge's code as it is; null clears it. */
+        taxCodeId?: string | null;
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof rentalAgreementChargeValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof rentalAgreementChargeValidator>,
+        "id" | "taxCodeId"
+      > & {
+        taxCodeId?: string | null;
         id: string;
         companyId: string;
         updatedBy: string;
@@ -9189,6 +9214,9 @@ export async function upsertRentalAgreementCharge(
     description: charge.description,
     amount: charge.amount,
     taxPercent: charge.taxPercent,
+    // Only a caller that sends a code (or null) writes one, so an update that
+    // does not know about tax codes never clears the charge's.
+    ...(charge.taxCodeId !== undefined ? { taxCodeId: charge.taxCodeId } : {}),
     invoiceSeparately: charge.invoiceSeparately
   };
 
@@ -10069,11 +10097,20 @@ export async function updateContractInvoiceAutomation(
 export async function upsertContractLine(
   client: SupabaseClient<Database>,
   line:
-    | (Omit<z.infer<typeof customerContractLineValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof customerContractLineValidator>,
+        "id" | "taxCodeId"
+      > & {
+        /** Omit to leave the line's code as it is; null clears it. */
+        taxCodeId?: string | null;
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof customerContractLineValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof customerContractLineValidator>,
+        "id" | "taxCodeId"
+      > & {
+        taxCodeId?: string | null;
         id: string;
         updatedBy: string;
       })
@@ -10138,6 +10175,9 @@ export async function upsertContractLine(
     discountPercent: percentToFraction(line.discountPercent),
     discountEndsOn: line.discountEndsOn || null,
     taxPercent: percentToFraction(line.taxPercent),
+    // Only a caller that sends a code (or null) writes one, so an update that
+    // does not know about tax codes never clears the line's.
+    ...(line.taxCodeId !== undefined ? { taxCodeId: line.taxCodeId } : {}),
     startDate: line.startDate,
     endDate: line.endDate || null,
     goLiveDate: line.goLiveDate || null,

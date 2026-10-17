@@ -17,6 +17,7 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -24,9 +25,12 @@ import {
   DatePicker,
   Input,
   Number,
+  NumberControlled,
   Select,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { rentalAgreementChargeValidator } from "../../sales.models";
 
@@ -52,6 +56,10 @@ const RentalAgreementChargeForm = ({
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
+  const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
+  // A picked code's rate on the charge's date, not today's.
+  const [chargeDate, setChargeDate] = useState(initialValues.chargeDate);
+  const taxCodeRateOn = useTaxCodeRateOn(chargeDate);
 
   return (
     <ModalDrawerProvider type="modal">
@@ -89,7 +97,13 @@ const RentalAgreementChargeForm = ({
                   label={t`Unit`}
                   options={lineOptions}
                 />
-                <DatePicker name="chargeDate" label={t`Charge Date`} />
+                <DatePicker
+                  name="chargeDate"
+                  label={t`Charge Date`}
+                  onChange={(date) => {
+                    if (date) setChargeDate(date);
+                  }}
+                />
                 <Input name="description" label={t`Description`} />
                 <Number
                   name="amount"
@@ -100,9 +114,19 @@ const RentalAgreementChargeForm = ({
                     currencyDecimals
                   )}
                 />
-                <Number
+                <TaxCode
+                  name="taxCodeId"
+                  label={t`Tax Code`}
+                  onChange={(option) => {
+                    if (option)
+                      setTaxPercent(taxCodeRateOn(option.value) ?? option.rate);
+                  }}
+                />
+                <NumberControlled
                   name="taxPercent"
                   label={t`Tax Percent`}
+                  value={taxPercent}
+                  onChange={setTaxPercent}
                   minValue={0}
                   maxValue={1}
                   step={INPUT_STEP.percent}

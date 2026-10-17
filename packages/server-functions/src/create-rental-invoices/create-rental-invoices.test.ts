@@ -20,7 +20,10 @@ import createRentalInvoices from "./index";
 
 const USER = "system";
 
-async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
+async function closedAgreementFixture({
+  invoiceSeparately = false,
+  withTaxCode = false
+} = {}) {
   const db = await connectLocalTestDatabase();
   const prefix = `rentest-${crypto
     .randomUUID()
@@ -35,6 +38,8 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
   const lineId = `${prefix}-line`;
   const periodId = `${prefix}-period`;
   const chargeId = `${prefix}-charge`;
+  const taxCodeId = `${prefix}-taxcode`;
+  const octoberPeriodId = `${prefix}-period-oct`;
 
   await db.transaction().execute(async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -104,6 +109,41 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
         createdBy: USER
       })
       .execute();
+    // 10% throughout, plus 5% from October: a September line bills 10% and
+    // an October line 15%, whatever the agreement's stored percent says.
+    if (withTaxCode) {
+      await trx
+        .insertInto("taxCode")
+        .values({
+          id: taxCodeId,
+          name: "Rental VAT",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId,
+            name: "State",
+            taxPercent: 0.1,
+            sequence: 1,
+            companyId,
+            createdBy: USER
+          },
+          {
+            taxCodeId,
+            name: "City",
+            taxPercent: 0.05,
+            sequence: 2,
+            effectiveDate: "2026-10-01",
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+    }
     // Closed with nothing unbilled, then a void returned one period and one
     // charge to unbilled. Priced at 2 agreement units per base unit.
     await trx
@@ -119,6 +159,9 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
         startDate: "2026-09-01",
         endDate: "2026-09-30",
         status: "Closed",
+        // The rate frozen when the code was picked; the code's dated
+        // components decide what each line bills.
+        ...(withTaxCode ? { taxCodeId, taxPercent: 0.02 } : {}),
         companyId,
         createdBy: USER
       })
@@ -159,10 +202,28 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
         amount: 50,
         chargeDate: "2026-09-01",
         invoiceSeparately,
+        ...(withTaxCode ? { taxCodeId, taxPercent: 0.02 } : {}),
         companyId,
         createdBy: USER
       })
       .execute();
+    if (withTaxCode) {
+      await trx
+        .insertInto("rentalBillingPeriod")
+        .values({
+          id: octoberPeriodId,
+          rentalAgreementLineId: lineId,
+          periodStart: "2026-10-01",
+          periodEnd: "2026-10-31",
+          days: 31,
+          amount: 300,
+          dueOn: "2026-10-01",
+          status: "Pending",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+    }
   });
 
   const ctx = ServerFnContext.system({ db, companyId, userId: USER });
@@ -173,7 +234,9 @@ async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
     companyId,
     agreementId,
     periodId,
+    octoberPeriodId,
     chargeId,
+    taxCodeId,
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
@@ -274,6 +337,59 @@ databaseTest(
         (invoice) => invoice.invoiceId === byLine.charge
       );
       expect(held?.holdReason).toBe(RENTAL_HOLD_CHARGES);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a line with a tax code bills at the code's rate on its own date",
+  async () => {
+    const f = await closedAgreementFixture({ withTaxCode: true });
+    try {
+      const result = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      expect(result.data!.invoices).toHaveLength(1);
+
+      const lines = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select([
+          "rentalBillingPeriodId",
+          "rentalAgreementChargeId",
+          "taxCodeId",
+          "taxPercent",
+          "unitPrice"
+        ])
+        .where("companyId", "=", f.companyId)
+        .where("rentalAgreementId", "=", f.agreementId)
+        .execute();
+      const rate = (line: (typeof lines)[number] | undefined) => ({
+        taxCodeId: line?.taxCodeId,
+        taxPercent: Number(line?.taxPercent)
+      });
+      expect(
+        rate(lines.find((l) => l.rentalBillingPeriodId === f.periodId))
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.1 });
+      expect(
+        rate(lines.find((l) => l.rentalBillingPeriodId === f.octoberPeriodId))
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.15 });
+      expect(
+        rate(lines.find((l) => l.rentalAgreementChargeId === f.chargeId))
+      ).toEqual({ taxCodeId: f.taxCodeId, taxPercent: 0.1 });
+
+      // The header totals are the lines': 150 × 10% + 150 × 15% + 25 × 10%.
+      const invoice = await f.db
+        .selectFrom("salesInvoice")
+        .select(["subtotal", "totalTax", "totalAmount"])
+        .where("id", "=", result.data!.invoices[0]!.invoiceId)
+        .executeTakeFirstOrThrow();
+      expect({
+        subtotal: Number(invoice.subtotal),
+        totalTax: Number(invoice.totalTax),
+        totalAmount: Number(invoice.totalAmount)
+      }).toEqual({ subtotal: 325, totalTax: 40, totalAmount: 365 });
     } finally {
       await f.cleanup();
     }

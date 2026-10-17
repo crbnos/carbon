@@ -435,6 +435,7 @@ export default function QuoteLine() {
     quantity: line.quantity ?? [1],
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",
     taxPercent: line.taxPercent ?? 0,
+    taxCodeId: line.taxCodeId ?? undefined,
     ...getCustomFields(line.customFields)
   };
 

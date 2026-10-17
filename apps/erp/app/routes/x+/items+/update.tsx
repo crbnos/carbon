@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { unchecked } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import type { InventoryItemType } from "~/modules/items";
 import { deriveItemMethodUpdate } from "~/modules/items";
@@ -194,6 +194,17 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("id", items as string[])
         .eq("companyId", companyId);
     }
+
+    case "taxable":
+      return await client
+        .from("item")
+        .update({
+          taxable: value === "on",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .in("id", items as string[])
+        .eq("companyId", companyId);
 
     case "itemPostingGroupId":
       // Update itemCost table for all selected items

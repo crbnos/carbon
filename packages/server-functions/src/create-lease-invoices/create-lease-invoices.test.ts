@@ -188,3 +188,116 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a supplier with a tax code taxes each line at the rate of its due date",
+  async () => {
+    const f = await leaseFixture();
+    try {
+      // 10% throughout, plus 5% from March: Jan and Feb at 10%, March at 15%.
+      const taxCode = await f.db
+        .insertInto("taxCode")
+        .values({
+          name: "Lease VAT",
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await f.db
+        .insertInto("taxCodeComponent")
+        .values([
+          {
+            taxCodeId: taxCode.id,
+            name: "State",
+            taxPercent: 0.1,
+            sequence: 1,
+            companyId: f.companyId,
+            createdBy: "system"
+          },
+          {
+            taxCodeId: taxCode.id,
+            name: "City",
+            taxPercent: 0.05,
+            sequence: 2,
+            effectiveDate: "2027-03-01",
+            companyId: f.companyId,
+            createdBy: "system"
+          }
+        ])
+        .execute();
+      await f.db
+        .insertInto("supplierTax")
+        .values({
+          supplierId: f.supplierId,
+          companyId: f.companyId,
+          taxCodeId: taxCode.id
+        })
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet({ taxCodeId: taxCode.id })
+        )
+        .execute();
+
+      await postLease(f.ctx, { type: "activate", leaseId: f.leaseId });
+      const result = await draft(f, "2027-03-31");
+      expect(result.failures).toEqual([]);
+      expect(result.invoices).toHaveLength(3);
+
+      const lines = await f.db
+        .selectFrom("purchaseInvoiceLine")
+        .innerJoin(
+          "purchaseInvoice",
+          "purchaseInvoice.id",
+          "purchaseInvoiceLine.invoiceId"
+        )
+        .select([
+          "purchaseInvoice.dateIssued",
+          "purchaseInvoice.totalTax",
+          "purchaseInvoice.totalAmount",
+          "purchaseInvoiceLine.taxCodeId",
+          "purchaseInvoiceLine.taxPercent",
+          "purchaseInvoiceLine.supplierTaxAmount"
+        ])
+        .where("purchaseInvoiceLine.companyId", "=", f.companyId)
+        .orderBy("purchaseInvoice.dateIssued")
+        .execute();
+      expect(
+        lines.map((line) => ({
+          dateIssued: line.dateIssued,
+          taxCodeId: line.taxCodeId,
+          taxPercent: Number(line.taxPercent),
+          supplierTaxAmount: Number(line.supplierTaxAmount),
+          totalTax: Number(line.totalTax),
+          totalAmount: Number(line.totalAmount)
+        }))
+      ).toEqual([
+        {
+          dateIssued: "2027-01-31",
+          taxCodeId: taxCode.id,
+          taxPercent: 0.1,
+          supplierTaxAmount: 1000,
+          totalTax: 1000,
+          totalAmount: 11000
+        },
+        {
+          dateIssued: "2027-02-28",
+          taxCodeId: taxCode.id,
+          taxPercent: 0.1,
+          supplierTaxAmount: 1000,
+          totalTax: 1000,
+          totalAmount: 11000
+        },
+        {
+          dateIssued: "2027-03-31",
+          taxCodeId: taxCode.id,
+          taxPercent: 0.15,
+          supplierTaxAmount: 1500,
+          totalTax: 1500,
+          totalAmount: 11500
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

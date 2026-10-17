@@ -193,6 +193,7 @@ export default function EditPurchaseOrderLineRoute() {
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,
     costCenterId: line?.costCenterId ?? "",
+    taxCodeId: line?.taxCodeId ?? undefined,
     taxPercent: line?.taxPercent ?? 0,
     assetReadableId: (line as any)?.assetReadableId ?? "",
     assetName: (line as any)?.assetName ?? "",

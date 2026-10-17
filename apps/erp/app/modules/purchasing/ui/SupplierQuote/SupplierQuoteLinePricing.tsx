@@ -9,6 +9,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Combobox,
   HStack,
   Table,
   Tbody,
@@ -22,6 +23,7 @@ import {
 import type { TaxPair } from "@carbon/utils";
 import {
   INPUT_FORMAT,
+  round,
   taxableBase,
   taxPairFromAmount,
   taxPairFromPercent
@@ -31,6 +33,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import EditableNumberCell from "~/components/EditableNumberCell";
 import { Enumerable } from "~/components/Enumerable";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
+import { useTaxCodes } from "~/components/Form/TaxCode";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyDecimals,
@@ -39,6 +43,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 import type {
   SupplierQuote,
@@ -81,7 +86,16 @@ const SupplierQuoteLinePricing = ({
   const routeData = useRouteData<{
     quote: SupplierQuote;
     presentationCurrency: { decimalPlaces: number } | null;
+    resolvedTax: LineTaxDecision | null;
+    taxDate: string;
   }>(path.to.supplierQuote(id));
+  // A new break takes the supplier's tax code, else its bare percent.
+  const defaultTaxCodeId = routeData?.resolvedTax?.taxCodeId ?? null;
+  const defaultTaxPercent = round(routeData?.resolvedTax?.taxPercent ?? 0);
+  const taxCodeOptions = useTaxCodes();
+  const taxCodeRateOn = useTaxCodeRateOn(
+    routeData?.taxDate ?? routeData?.quote?.quotedDate ?? ""
+  );
   const isEditable =
     permissions.can("update", "purchasing") &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
@@ -125,11 +139,28 @@ const SupplierQuoteLinePricing = ({
           supplierUnitPrice: 0,
           supplierShippingCost: 0,
           supplierTaxAmount: 0,
-          taxPercent: 0,
+          taxCodeId: defaultTaxCodeId,
+          taxPercent: defaultTaxPercent,
           createdBy: userId
         } as unknown as SupplierQuoteLinePrice;
       }
       newPrices[quantity] = { ...newPrices[quantity], ...patch };
+      if (!hasPrice && !("supplierTaxAmount" in patch)) {
+        // The new break's amount follows its rate, so the pair agrees.
+        const created = newPrices[quantity];
+        newPrices[quantity] = {
+          ...created,
+          supplierTaxAmount: taxPairFromPercent(
+            taxableBase(
+              created.supplierUnitPrice ?? 0,
+              quantity,
+              created.supplierShippingCost ?? 0
+            ),
+            created.taxPercent ?? 0,
+            currencyDecimals
+          ).amount
+        };
+      }
 
       setEditableFields((prev) => ({
         ...prev,
@@ -167,7 +198,18 @@ const SupplierQuoteLinePricing = ({
         }
       }
     },
-    [editableFields.prices, id, lineId, exchangeRate, userId, carbon, t]
+    [
+      editableFields.prices,
+      id,
+      lineId,
+      exchangeRate,
+      userId,
+      carbon,
+      t,
+      defaultTaxCodeId,
+      defaultTaxPercent,
+      currencyDecimals
+    ]
   );
 
   const onUpdatePrice = useCallback(
@@ -194,6 +236,44 @@ const SupplierQuoteLinePricing = ({
         supplierTaxAmount: pair.amount
       }),
     [onUpdateFields]
+  );
+
+  // Picking a code sets the break's rate, and the amount follows it.
+  // Clearing it keeps the rate.
+  const onUpdateTaxCode = useCallback(
+    (quantity: number, taxCodeId: string) => {
+      if (!taxCodeId) {
+        onUpdateFields(quantity, { taxCodeId: null });
+        return;
+      }
+      const price = editableFields.prices[quantity];
+      const rate =
+        taxCodeRateOn(taxCodeId) ??
+        round(
+          taxCodeOptions.find((option) => option.value === taxCodeId)?.rate ?? 0
+        );
+      const pair = taxPairFromPercent(
+        taxableBase(
+          price?.supplierUnitPrice ?? 0,
+          quantity,
+          price?.supplierShippingCost ?? 0
+        ),
+        rate,
+        currencyDecimals
+      );
+      onUpdateFields(quantity, {
+        taxCodeId,
+        taxPercent: pair.percent,
+        supplierTaxAmount: pair.amount
+      });
+    },
+    [
+      editableFields.prices,
+      onUpdateFields,
+      taxCodeRateOn,
+      taxCodeOptions,
+      currencyDecimals
+    ]
   );
 
   const unitOfMeasures = useUnitOfMeasure();
@@ -339,6 +419,31 @@ const SupplierQuoteLinePricing = ({
                   </Td>
                 );
               })}
+            </Tr>
+
+            <Tr>
+              <Td className="border-r border-border group-hover:bg-muted/50">
+                <HStack className="w-full justify-between ">
+                  <span>
+                    <Trans>Tax Code</Trans>
+                  </span>
+                </HStack>
+              </Td>
+              {quantities.map((quantity, index) => (
+                <Td key={index} className="group-hover:bg-muted/50">
+                  <Combobox
+                    size="sm"
+                    options={taxCodeOptions}
+                    value={editableFields.prices[quantity]?.taxCodeId ?? ""}
+                    isClearable
+                    isReadOnly={!isEditable}
+                    placeholder={t`None`}
+                    onChange={(taxCodeId) =>
+                      onUpdateTaxCode(quantity, taxCodeId)
+                    }
+                  />
+                </Td>
+              ))}
             </Tr>
 
             <Tr>

@@ -942,6 +942,20 @@ export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
 }
 
+/** Whether sales and purchase lines for the item take tax (`item.taxable`). */
+export async function getItemTaxable(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("item")
+    .select("taxable")
+    .eq("id", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
 /** @mcp read */
 export async function getItemCost(
   client: SupabaseClient<Database>,

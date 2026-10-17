@@ -18,16 +18,17 @@ import {
   useCloseRoute,
   VStack
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { Submit, Supplier } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { getFixedAsset } from "~/modules/accounting";
+import { getFixedAsset, resolveLineTaxes } from "~/modules/accounting";
 import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -124,6 +125,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const purchaseOrderId = newPO.data.id;
 
+  // The line takes the supplier's tax code (or bare percent). Its price is
+  // entered later, so the amount stays 0 until then.
+  const resolvedTax = await resolveLineTaxes(client, companyId, {
+    source: "purchase",
+    supplierId,
+    date: datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+  });
+
   await upsertPurchaseOrderLine(client, {
     purchaseOrderId,
     purchaseOrderLineType: "Fixed Asset",
@@ -134,7 +143,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    taxCodeId: resolvedTax.data?.taxCodeId ?? undefined,
+    taxPercent: round(resolvedTax.data?.taxPercent ?? 0),
     exchangeRate: 1,
     purchaseUnitOfMeasureCode: "EA",
     inventoryUnitOfMeasureCode: "EA",

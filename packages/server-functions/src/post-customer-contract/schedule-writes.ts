@@ -89,6 +89,7 @@ export function copyLineValues(
     discountPercent: merged.discountPercent,
     discountEndsOn: merged.discountEndsOn,
     taxPercent: merged.taxPercent,
+    taxCodeId: merged.taxCodeId,
     startDate: merged.startDate,
     endDate: merged.endDate,
     goLiveDate: merged.goLiveDate,

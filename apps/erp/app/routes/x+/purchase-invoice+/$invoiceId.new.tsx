@@ -7,10 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useUser } from "~/hooks";
+import { resolvePurchaseLineTax } from "~/modules/accounting/accounting.server";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
   getPurchaseInvoice,
@@ -53,9 +55,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "invoicing"
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      create: "invoicing"
+    });
 
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceLineValidator).validate(
@@ -68,6 +71,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
+
+  // A request that names no tax code (the API, MCP) takes the line's
+  // resolved tax. The form always sends the field, so its pick stands.
+  if (!formData.has("taxCodeId")) {
+    const tax = await resolvePurchaseLineTax(client, {
+      companyId,
+      companyGroupId,
+      supplierId: purchaseInvoice.data?.supplierId,
+      itemId: d.itemId,
+      documentDate: purchaseInvoice.data?.dateIssued,
+      currencyCode: purchaseInvoice.data?.currencyCode,
+      unitPrice: d.supplierUnitPrice ?? 0,
+      quantity: d.quantity ?? 0,
+      shippingCost: d.supplierShippingCost ?? 0
+    });
+    if (tax) Object.assign(d, tax);
+  }
 
   const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     ...d,
@@ -98,6 +118,7 @@ export default function NewPurchaseInvoiceLineRoute() {
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
   const purchaseInvoiceData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseInvoice(invoiceId));
 
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
@@ -115,7 +136,9 @@ export default function NewPurchaseInvoiceLineRoute() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseInvoiceData?.resolvedTax?.taxPercent ?? 0),
     exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
   };
 

@@ -49,14 +49,17 @@ import {
   Hidden,
   InputControlled,
   Item,
-  Number,
+  NumberControlled,
   Select,
   SelectControlled,
-  Submit
+  Submit,
+  TaxCode
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
+import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { QuoteLineStatusIcon } from "~/components/Icons";
 import {
+  useCompanyToday,
   usePercentFormatter,
   usePermissions,
   useRouteData,
@@ -117,7 +120,11 @@ const QuoteLineForm = ({
   const [items] = useItems();
   const routeData = useRouteData<{
     quote: Quotation;
+    taxDate: string | null;
   }>(path.to.quote(quoteId));
+  // A picked code's rate on the document's date, not today's.
+  const companyToday = useCompanyToday();
+  const taxCodeRateOn = useTaxCodeRateOn(routeData?.taxDate ?? companyToday);
 
   const isLocked = isQuoteLocked(routeData?.quote?.status);
   const isEditable = !isLocked;
@@ -129,6 +136,8 @@ const QuoteLineForm = ({
   const sortedQuantity = [...(initialValues.quantity ?? [])].sort(
     (a, b) => a - b
   );
+
+  const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
 
   const [itemData, setItemData] = useState<{
     customerPartId: string;
@@ -544,9 +553,21 @@ const QuoteLineForm = ({
                           onCustomerPartRevisionChange(e.target.value)
                         }
                       />
-                      <Number
+                      <TaxCode
+                        name="taxCodeId"
+                        label={t`Tax Code`}
+                        onChange={(option) => {
+                          if (option)
+                            setTaxPercent(
+                              taxCodeRateOn(option.value) ?? option.rate
+                            );
+                        }}
+                      />
+                      <NumberControlled
                         name="taxPercent"
                         label={t`Tax Percent`}
+                        value={taxPercent}
+                        onChange={setTaxPercent}
                         minValue={0}
                         maxValue={1}
                         step={INPUT_STEP.percent}

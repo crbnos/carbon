@@ -243,6 +243,7 @@ export default function EditSalesInvoiceLineRoute() {
     discountPercent: round((salesInvoiceLine?.discountPercent ?? 0) * 100),
     shippingCost: salesInvoiceLine?.shippingCost ?? 0,
     taxPercent: salesInvoiceLine?.taxPercent ?? 0,
+    taxCodeId: salesInvoiceLine?.taxCodeId ?? undefined,
     exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,
     unitOfMeasureCode: salesInvoiceLine?.unitOfMeasureCode ?? "",
     storageUnitId: salesInvoiceLine?.storageUnitId ?? "",

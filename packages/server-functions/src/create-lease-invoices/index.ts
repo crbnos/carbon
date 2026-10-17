@@ -11,7 +11,14 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
-import { openEndedLeaseHorizon, round } from "@carbon/utils";
+import {
+  applyRate,
+  effectiveComponents,
+  effectiveTaxPercent,
+  openEndedLeaseHorizon,
+  round,
+  type TaxCodeInput
+} from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -193,6 +200,13 @@ async function draftLeaseInvoices(
     .where("companyId", "=", companyId)
     .executeTakeFirst();
 
+  // The supplier's tax code taxes each line at the rate in force on its due
+  // date. A supplier with no code bills no tax, as before tax codes.
+  const taxCode = await readSupplierTaxCode(trx, companyId, lease.supplierId);
+  const decimals = taxCode
+    ? await currencyDecimals(trx, companyId, lease.currencyCode)
+    : null;
+
   const byDueDate = new Map<string, typeof rows>();
   for (const row of rows) {
     const group = byDueDate.get(row.dueDate) ?? [];
@@ -204,6 +218,14 @@ async function draftLeaseInvoices(
   for (const [dueDate, group] of byDueDate) {
     const subtotal = round(
       group.reduce((sum, row) => sum + Number(row.amount), 0)
+    );
+    const taxPercent = taxCode
+      ? round(effectiveTaxPercent(effectiveComponents(taxCode, dueDate)))
+      : 0;
+    const lineTax = (amount: number) =>
+      decimals === null ? 0 : applyRate(amount, taxPercent, decimals);
+    const totalTax = round(
+      group.reduce((sum, row) => sum + lineTax(Number(row.amount)), 0)
     );
     const invoiceId = await getNextSequence(trx, "purchaseInvoice", companyId);
     // Every purchase invoice hangs off a supplier interaction, as the ERP's
@@ -233,8 +255,8 @@ async function draftLeaseInvoices(
         dateIssued: dueDate,
         subtotal,
         totalDiscount: 0,
-        totalAmount: subtotal,
-        totalTax: 0,
+        totalAmount: round(subtotal + totalTax),
+        totalTax,
         companyId,
         createdBy: userId
       })
@@ -265,8 +287,9 @@ async function draftLeaseInvoices(
           quantity: 1,
           supplierUnitPrice: Number(row.amount),
           supplierShippingCost: 0,
-          supplierTaxAmount: 0,
-          taxPercent: 0,
+          supplierTaxAmount: lineTax(Number(row.amount)),
+          taxPercent,
+          taxCodeId: taxCode?.id ?? null,
           exchangeRate: 1,
           sortOrder: index + 1,
           companyId,
@@ -303,6 +326,76 @@ async function draftLeaseInvoices(
     drafted.push({ invoiceId: invoice.id, leaseId });
   }
   return drafted;
+}
+
+/**
+ * The lease supplier's tax code (`supplierTax.taxCodeId`) with all its
+ * components, in one query; null when the supplier has no active code.
+ */
+async function readSupplierTaxCode(
+  trx: KyselyTx,
+  companyId: string,
+  supplierId: string
+): Promise<TaxCodeInput | null> {
+  const rows = await trx
+    .selectFrom("supplierTax as st")
+    .innerJoin("taxCode as tc", (join) =>
+      join
+        .onRef("tc.id", "=", "st.taxCodeId")
+        .onRef("tc.companyId", "=", "st.companyId")
+    )
+    .leftJoin("taxCodeComponent as c", (join) =>
+      join
+        .onRef("c.taxCodeId", "=", "tc.id")
+        .onRef("c.companyId", "=", "tc.companyId")
+    )
+    .select([
+      "tc.id as taxCodeId",
+      "tc.calculationType",
+      "tc.taxesShipping",
+      "c.id",
+      "c.name",
+      "c.taxAuthorityId",
+      "c.taxPercent",
+      "c.recoverablePercent",
+      "c.sequence",
+      "c.isCompound",
+      "c.taxReceivedAccountId",
+      "c.taxPaidAccountId",
+      sql<string | null>`c."effectiveDate"::text`.as("effectiveDate"),
+      sql<string | null>`c."expirationDate"::text`.as("expirationDate")
+    ])
+    .where("st.supplierId", "=", supplierId)
+    .where("st.companyId", "=", companyId)
+    .where("tc.active", "=", true)
+    .execute();
+  const first = rows[0];
+  if (!first) return null;
+
+  return {
+    id: first.taxCodeId,
+    calculationType: first.calculationType,
+    taxesShipping: first.taxesShipping,
+    components: rows.flatMap((row) =>
+      row.id === null
+        ? []
+        : [
+            {
+              id: row.id,
+              name: row.name ?? "",
+              taxAuthorityId: row.taxAuthorityId,
+              taxPercent: Number(row.taxPercent ?? 0),
+              recoverablePercent: Number(row.recoverablePercent ?? 0),
+              sequence: row.sequence ?? 0,
+              isCompound: row.isCompound ?? false,
+              taxReceivedAccountId: row.taxReceivedAccountId,
+              taxPaidAccountId: row.taxPaidAccountId,
+              effectiveDate: row.effectiveDate,
+              expirationDate: row.expirationDate
+            }
+          ]
+    )
+  };
 }
 
 /**

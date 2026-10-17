@@ -20,7 +20,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
@@ -44,6 +44,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Supplier } from "~/modules/purchasing/types";
 import type { ItemType } from "~/modules/shared";
@@ -64,6 +65,7 @@ export default function PurchaseInvoiceExplorer() {
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
     supplier: Supplier;
+    resolvedTax: LineTaxDecision | null;
   }>(path.to.purchaseInvoice(invoiceId));
   const permissions = usePermissions();
 
@@ -80,7 +82,9 @@ export default function PurchaseInvoiceExplorer() {
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     supplierTaxAmount: 0,
-    taxPercent: 0,
+    // The supplier's tax code, else its bare percent.
+    taxCodeId: purchaseInvoiceData?.resolvedTax?.taxCodeId ?? undefined,
+    taxPercent: round(purchaseInvoiceData?.resolvedTax?.taxPercent ?? 0),
     exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1
   };
 

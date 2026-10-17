@@ -28,8 +28,16 @@ import {
   runTypeOfScheduleRow
 } from "@carbon/database/run-type";
 import { getNextSequence } from "@carbon/database/sequence";
+import { getLogger } from "@carbon/logger";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { datetime, equals, formatDate, round } from "@carbon/utils";
+import {
+  datetime,
+  equals,
+  formatDate,
+  round,
+  taxableBase,
+  taxPairFromPercent
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -39,7 +47,9 @@ import {
   getAccountLedgerSummary,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
-  getOrCreateAccountingPeriod
+  getCurrencyByCode,
+  getOrCreateAccountingPeriod,
+  resolveLineTaxes
 } from "./accounting.service";
 import {
   type ActivationCutoverDates,
@@ -51,6 +61,8 @@ import {
   monthEndOf,
   runPostingTargets
 } from "./accounting.utils";
+
+const logger = getLogger("erp", "accounting");
 
 /**
  * The cutover date the enable wizard works against, with the earliest and the
@@ -2182,4 +2194,100 @@ export async function deleteRevenueRecognitionRun(
       .where("companyId", "=", companyId)
       .execute();
   });
+}
+
+/**
+ * The tax a new purchase order or invoice line takes when the request names
+ * no tax code at all — an API or MCP caller. The line forms always send the
+ * field (the user's pick, or the supplier's code they were given), so they
+ * never reach this.
+ *
+ * Returns null when the resolver decides nothing beyond the supplier's bare
+ * percent: the request's own tax pair then stands, as it did before tax
+ * codes. Otherwise the line takes the code (or the non-taxable item's zero)
+ * and its amount is restated from the rate.
+ */
+export async function resolvePurchaseLineTax(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    supplierId: string | null | undefined;
+    itemId: string | null | undefined;
+    /** The document's date; the company's today when it has none. */
+    documentDate: string | null | undefined;
+    currencyCode: string | null | undefined;
+    unitPrice: number;
+    quantity: number;
+    shippingCost: number;
+  }
+): Promise<{
+  taxCodeId: string | undefined;
+  taxPercent: number;
+  supplierTaxAmount: number;
+} | null> {
+  const { companyId, companyGroupId, supplierId } = args;
+  if (!supplierId) return null;
+
+  const date =
+    args.documentDate ??
+    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+  // The tax amount settles at the document currency's decimals, else the
+  // company base currency's. Read alongside the resolver, never a literal.
+  const settlementCurrency = async () => {
+    const currencyCode =
+      args.currencyCode ??
+      (
+        await client
+          .from("company")
+          .select("baseCurrencyCode")
+          .eq("id", companyId)
+          .single()
+      ).data?.baseCurrencyCode;
+    return currencyCode
+      ? getCurrencyByCode(client, companyGroupId, currencyCode)
+      : null;
+  };
+  const [resolved, currency] = await Promise.all([
+    resolveLineTaxes(client, companyId, {
+      source: "purchase",
+      supplierId,
+      itemId: args.itemId,
+      date
+    }),
+    settlementCurrency()
+  ]);
+  if (resolved.error) {
+    // Best effort: the line keeps the tax the request sent.
+    logger.error("Failed to resolve purchase line tax", {
+      companyId,
+      supplierId,
+      itemId: args.itemId,
+      error: resolved.error
+    });
+    return null;
+  }
+  if (!resolved.data) return null;
+  if (!resolved.data.taxCodeId && !resolved.data.exempt) return null;
+
+  const decimalPlaces = currency?.data?.decimalPlaces;
+  if (decimalPlaces === undefined || decimalPlaces === null) {
+    // No currency row to settle in: the line keeps the tax the request sent.
+    logger.error("No currency to settle purchase line tax in", {
+      companyId,
+      currencyCode: args.currencyCode,
+      error: currency?.error
+    });
+    return null;
+  }
+  const pair = taxPairFromPercent(
+    taxableBase(args.unitPrice, args.quantity, args.shippingCost),
+    round(resolved.data.taxPercent),
+    decimalPlaces
+  );
+  return {
+    taxCodeId: resolved.data.taxCodeId ?? undefined,
+    taxPercent: pair.percent,
+    supplierTaxAmount: pair.amount
+  };
 }

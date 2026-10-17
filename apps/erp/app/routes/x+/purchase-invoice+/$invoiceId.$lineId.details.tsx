@@ -164,6 +164,7 @@ export default function EditPurchaseInvoiceLineRoute() {
     conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
     storageUnitId: purchaseInvoiceLine?.storageUnitId ?? "",
     costCenterId: purchaseInvoiceLine?.costCenterId ?? "",
+    taxCodeId: purchaseInvoiceLine?.taxCodeId ?? undefined,
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",

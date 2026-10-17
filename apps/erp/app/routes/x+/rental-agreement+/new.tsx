@@ -13,6 +13,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
+import { resolveLineTaxes } from "~/modules/accounting";
 import {
   insertRentalAgreement,
   rentalAgreementValidator,
@@ -75,6 +76,23 @@ export async function action({ request }: ActionFunctionArgs) {
         error(sequence.error, "Failed to get the next rental agreement number")
       )
     );
+  }
+
+  // The rent lines' tax: the customer's or the rental site's code, when the
+  // caller did not post the field (the details form does not; an empty one
+  // is a cleared code). With no code the terms' own percent stands, as
+  // before tax codes.
+  if (!formData.has("taxCodeId")) {
+    const tax = await resolveLineTaxes(client, companyId, {
+      source: "sales",
+      customerId: data.customerId,
+      customerLocationId: data.customerLocationId,
+      date: data.startDate
+    });
+    if (tax.data && (tax.data.taxCodeId || tax.data.exempt)) {
+      data.taxCodeId = tax.data.taxCodeId ?? undefined;
+      data.taxPercent = tax.data.taxPercent;
+    }
   }
 
   const agreement = await insertRentalAgreement(client, {
