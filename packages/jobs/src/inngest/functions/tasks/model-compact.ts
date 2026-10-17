@@ -210,7 +210,7 @@ export const modelCompactFunction = inngest.createFunction(
       }
       return {
         model,
-        sourceBucket: await resolveModelSourceBucket(model.modelPath)
+        sourceBucket: await resolveModelSourceBucket(companyId, model.modelPath)
       };
     });
     const model = resolved.model as ModelUploadRow;

@@ -116,7 +116,10 @@ export const modelOptimizeFunction = inngest.createFunction(
       const format = modelPathOptimizeFormat(model.modelPath);
       if (!format) return { kind: "notOptimizable" as const };
 
-      const sourceBucket = await requireModelSourceBucket(model.modelPath);
+      const sourceBucket = await requireModelSourceBucket(
+        companyId,
+        model.modelPath
+      );
       await updateModelUpload(companyId, modelUploadId, {
         optimizeStatus: "Processing",
         optimizeError: null

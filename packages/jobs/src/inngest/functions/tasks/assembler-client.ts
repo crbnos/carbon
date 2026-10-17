@@ -15,7 +15,11 @@ import {
   SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
-import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  isUnsafeStoragePath,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError, RetryAfterError } from "inngest";
 import { getJobDatabaseClient } from "../../../db";
@@ -141,24 +145,36 @@ export async function signSourceUrl(
  * Which bucket holds a model's raw source: the company's own bucket once it
  * is durable, else `temp-staging`. Null when it is in neither, so the caller
  * can fail the job for good instead of signing a path that does not exist.
+ *
+ * Null too for a path outside the row's company. Any insert path can name a
+ * file (the forms insert under RLS, which does not check `modelPath`), and
+ * these jobs read storage as the service role: `temp-staging` is shared, so
+ * without this check one company could have another's upload processed into
+ * its own bucket.
  */
 export async function resolveModelSourceBucket(
+  companyId: string,
   modelPath: string
 ): Promise<string | null> {
-  const companySegment = modelPath.split("/")[0] ?? "";
-  if (!companySegment) return null;
+  if (
+    !modelPath.startsWith(`${companyId}/`) ||
+    isUnsafeStoragePath(modelPath)
+  ) {
+    return null;
+  }
   const buckets = await findStorageObjectBuckets(getJobDatabaseClient(), {
     names: [modelPath],
-    buckets: [getCompanyPrivateBucket(companySegment), TEMP_STAGING_BUCKET]
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
   });
   return buckets.get(modelPath) ?? null;
 }
 
 /** The source bucket, or a non-retriable failure when the file is gone. */
 export async function requireModelSourceBucket(
+  companyId: string,
   modelPath: string
 ): Promise<string> {
-  const bucket = await resolveModelSourceBucket(modelPath);
+  const bucket = await resolveModelSourceBucket(companyId, modelPath);
   if (!bucket) {
     throw new NonRetriableError(
       `Source file no longer exists in storage: ${modelPath}`

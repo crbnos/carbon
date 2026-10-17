@@ -457,6 +457,7 @@ export async function attachOnshapeAssetsToItem(
         // temp-staging. Copy it into the company bucket so the preserved file
         // sits with the item's documents.
         const priorBucket = await resolveModelSourceBucket(
+          companyId,
           priorModel.modelPath
         );
         const copied = priorBucket

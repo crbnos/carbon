@@ -162,7 +162,10 @@ export const assemblyPlanFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        const sourceBucket = await requireModelSourceBucket(job.modelPath);
+        const sourceBucket = await requireModelSourceBucket(
+          companyId,
+          job.modelPath
+        );
         const signedUrl = await signSourceUrl(
           client,
           sourceBucket,
