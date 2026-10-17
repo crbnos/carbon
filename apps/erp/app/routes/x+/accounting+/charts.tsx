@@ -11,14 +11,14 @@ import { msg } from "@lingui/core/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { Chart } from "~/modules/accounting";
 import {
   getChartOfAccounts,
   getFiscalYearSettings
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type { Chart } from "~/modules/accounting/types";
 import { ChartOfAccountsTree } from "~/modules/accounting/ui/ChartOfAccounts";
 import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters";
-import { months } from "~/modules/shared";
+import { months } from "~/modules/shared/shared.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";

@@ -20,8 +20,10 @@ export function stripCsvFormulaPrefix(value: string): string {
   return value.replace(/^[ \t\r]*[=+\-@\t\r]+/g, "");
 }
 
-function sanitizeCell(value: unknown): unknown {
-  if (typeof value === "string") return stripCsvFormulaPrefix(value);
+function sanitizeCell(value: unknown, formulaSafe = true): unknown {
+  if (typeof value === "string") {
+    return formulaSafe ? stripCsvFormulaPrefix(value) : value;
+  }
   if (value instanceof Date) return value.toISOString();
   // Never ship `[object Object]` or explode a nested object into stray columns.
   if (value != null && typeof value === "object" && !Array.isArray(value)) {
@@ -40,6 +42,13 @@ export type EncodeCsvOptions = {
    * first when streaming one file in pages; the pages join with "\r\n".
    */
   header?: boolean;
+  /**
+   * Strip formula-leading characters from string cells (`stripCsvFormulaPrefix`).
+   * Default true. Pass false only when the CSV is read by a program, never
+   * opened in a spreadsheet: the MCP server's tool results, where stripping
+   * would change the data an agent reads ("+1 555 0100" → "1 555 0100").
+   */
+  formulaSafe?: boolean;
 };
 
 /**
@@ -55,15 +64,19 @@ export function encodeCsv(
     ...new Set(rows.flatMap((row) => Object.keys(row)))
   ];
   const empty = options.emptyFieldValue ?? "";
+  const formulaSafe = options.formulaSafe ?? true;
   const data = rows.map((row) =>
     fields.map((field) => {
       const value = row[field];
-      return value == null ? empty : sanitizeCell(value);
+      return value == null ? empty : sanitizeCell(value, formulaSafe);
     })
   );
   // Headers are cells too — import-error re-exports echo uploaded headers.
   return Papa.unparse(
-    { fields: fields.map(stripCsvFormulaPrefix), data },
+    {
+      fields: formulaSafe ? fields.map(stripCsvFormulaPrefix) : fields,
+      data
+    },
     { header: options.header ?? true }
   );
 }
@@ -72,7 +85,7 @@ export function encodeCsv(
 export function encodeCsvTable(fields: string[], data: unknown[][]): string {
   return Papa.unparse({
     fields: fields.map(stripCsvFormulaPrefix),
-    data: data.map((row) => row.map(sanitizeCell))
+    data: data.map((row) => row.map((cell) => sanitizeCell(cell)))
   });
 }
 

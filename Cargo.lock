@@ -69,6 +69,7 @@ dependencies = [
  "hmac",
  "lru",
  "memmap2",
+ "occt-bridge",
  "opentelemetry",
  "opentelemetry-http",
  "opentelemetry-otlp",

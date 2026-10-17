@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
@@ -13,7 +14,6 @@
     "@carbon/notifications": "workspace:*",
     "@carbon/planning": "workspace:*",
     "@carbon/printing": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",

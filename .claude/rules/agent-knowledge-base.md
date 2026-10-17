@@ -36,7 +36,7 @@ All three machine-readable consumers strip MDX through the one `stripComponents`
 - Never import `@carbon/content/agent-kb` outside a Vite build (the docs app, Node scripts) —
   `import.meta.glob` is Vite-only. Feed raw MDX from your own source into `./corpus`'s `parsePage`.
 - Never add `fs` or any Node-only import to the package — it is isomorphic on purpose;
-  `agent-kb` is re-exported from a barrel client code can reach.
+  browser components import `@carbon/content/glossary` from it.
 - Never hardcode a docs page URL without keeping `links.test.ts` green; it fails on any link to
   a missing page or heading.
 
@@ -91,10 +91,11 @@ server; the panel keeps it and Retry resends it. Threads are purged 7 days after
 from the daily `cleanup` cron), which tests activity inside its query so every batch
 advances, and deletes each batch in one statement on `(companyId, id)`.
 
-`agent.service.ts` is data access only (threads, messages, feedback, the two Kysely
-writes). The turn itself (`streamChat`, titling, the rate limit) is `agent.server.ts`,
-server-only and outside the module barrel. The system prompt takes today's date in the
-company's timezone.
+`agent.service.ts` holds the building blocks: data access (threads, messages, feedback,
+the two Kysely writes) and the model call (`streamChat`, titling). `agent.server.ts` holds
+the service functions (`createAgentThread`, `deleteAgentThread`, `startAgentTurn`).
+`startAgentTurn` checks the plan and the rate limit, checks the thread, and saves the
+question. The system prompt takes today's date in the company's timezone.
 
 The model is `agentChatModel` in `packages/utils/src/llm.ts` (`gpt-4.1-mini`). It was plain
 `gpt-4` — an 8k-token window — and a single long page overflowed it

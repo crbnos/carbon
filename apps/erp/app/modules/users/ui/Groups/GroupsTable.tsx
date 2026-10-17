@@ -17,7 +17,7 @@ import { LuBookMarked, LuPencil, LuTrash, LuUsers } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Avatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Group } from "~/modules/users";
+import type { Group } from "~/modules/users/types";
 import { path } from "~/utils/path";
 
 type GroupsTableProps = {

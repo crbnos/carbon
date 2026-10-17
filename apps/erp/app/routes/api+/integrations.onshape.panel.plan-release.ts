@@ -37,7 +37,7 @@ import { readPartProperties } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { findOpenReleaseNotice } from "~/modules/settings/onshape-push.server";
+import { findOpenReleaseNotice } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

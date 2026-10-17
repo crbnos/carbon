@@ -12,12 +12,12 @@ import type {
   ExtractedDocumentData,
   SalesRfqExtraction,
   SalesRfqLineItem
-} from "~/modules/documents";
+} from "~/modules/documents/documents.models";
 import {
   findMatchingContactId,
   findMatchingLocationId,
   getExtractionMatchCandidates
-} from "~/modules/documents";
+} from "~/modules/documents/documents.models";
 import type { salesRfqValidator } from "../../sales.models";
 
 type SalesRFQFormValues = z.infer<typeof salesRfqValidator>;

@@ -312,7 +312,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
     for (const row of setupAndLabor.data ?? []) ended.push(row.id);
   }
-  await postEndedProductionEvents(serviceRole, db, {
+  await postEndedProductionEvents(serviceRole, {
     companyId,
     userId,
     ids: ended

@@ -24,7 +24,7 @@ import {
   RelatedDocumentSkeleton
 } from "~/components/DocumentPage";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Shipment } from "~/modules/inventory";
+import type { Shipment } from "~/modules/inventory/types";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import { useCustomers, useSuppliers } from "~/stores";

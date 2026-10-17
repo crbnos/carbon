@@ -23,7 +23,6 @@ vi.mock("@carbon/content/glossary", () => ({
   termSlug: vi.fn(),
   glossaryEntries: () => []
 }));
-vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
     Array.isArray(strings)

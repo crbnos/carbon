@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { updateConsoleSetting } from "@carbon/ee/console.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
+import { validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -31,15 +32,16 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getCompanySettings, updateTimeCardSetting } from "~/modules/settings";
-import { getDatabaseClient } from "~/services/database.server";
+import { settingsToggle } from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -66,92 +68,46 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One switch per setting, told apart by its intent.
+const peopleSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle("timeCard", "timeCardEnabled"),
+  settingsToggle("console", "consoleEnabled")
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-  const enabled = formData.get("enabled") === "true";
-
-  if (intent === "timeCard") {
-    const update = await updateTimeCardSetting(client, companyId, enabled);
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Timecard settings updated" };
-  }
-
-  if (intent === "console") {
-    // Enterprise: console (kiosk) mode is gated. `companyHasFeature` blocks the
-    // Community edition outright and applies the plan check on Cloud.
-    const hasConsole = await companyHasFeature(client, companyId, {
-      feature: "PERMISSIONS"
-    });
-    if (!hasConsole) {
-      return {
-        success: false,
-        message: "Console mode requires the Business plan"
-      };
-    }
-
-    const update = await updateConsoleSetting(
-      client,
-      getDatabaseClient(),
-      companyId,
-      enabled,
-      userId
-    );
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    // A PIN generated for the enabling user is returned ONCE here — it is
-    // stored hashed and can never be read back.
-    if (update.pin) {
-      return {
-        success: true,
-        message: "Console mode enabled",
-        pin: update.pin
-      };
-    }
-
-    // Console mode is on; only the enabling user's PIN is missing.
-    if (update.pinError) {
-      return {
-        success: false,
-        message: `Console mode enabled, but ${update.pinError.toLowerCase()}. Set one from Users → Employees → Set Console PIN.`
-      };
-    }
-
-    return { success: true, message: "Console mode settings updated" };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(peopleSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updatePeopleSettings(input.data);
 }
 
 export default function PeopleSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const { t } = useLingui();
   // Enterprise: console (kiosk) mode is gated to the Business plan.
   const { isGated: consoleGated } = usePlanGate({ feature: "PERMISSIONS" });
   const [showPinModal, setShowPinModal] = useState(false);
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
-
-  const isToggling = fetcher.state !== "idle";
-
-  useEffect(() => {
-    if (fetcher.data?.success === true) {
-      if ((fetcher.data as any)?.pin) {
-        setGeneratedPin((fetcher.data as any).pin);
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.pin) {
+        // Shown once: the PIN is stored hashed and can never be read back.
+        setGeneratedPin(data.pin);
         setShowPinModal(true);
-      } else if (fetcher.data?.message) {
-        toast.success(fetcher.data.message);
+      } else if (data.pinError) {
+        toast.error(
+          t`Console mode enabled, but ${data.pinError.toLowerCase()}. Set one from Users → Employees → Set Console PIN.`
+        );
+      } else if (data.consoleEnabled !== undefined) {
+        toast.success(t`Console mode settings updated`);
+      } else {
+        toast.success(t`Timecard settings updated`);
       }
     }
+  });
 
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data]);
+  const isToggling = fetcher.state !== "idle";
 
   const handleConsoleToggle = useCallback(
     (checked: boolean) => {

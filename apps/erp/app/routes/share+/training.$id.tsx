@@ -55,10 +55,10 @@ import {
 } from "react-router";
 import {
   getTrainingAssignmentForCompletion,
-  TrainingGuideViewer
-} from "~/modules/resources";
-import { recordTrainingCompletion } from "~/modules/resources/resources.server";
+  recordTrainingCompletion
+} from "~/modules/resources/resources.service";
 import type { TrainingQuestion } from "~/modules/resources/types";
+import { TrainingGuideViewer } from "~/modules/resources/ui";
 
 const logger = getLogger("erp", "share", "training");
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import {
   addMonths,
   type LeasePaymentType,
@@ -906,4 +907,27 @@ export function lesseePurchaseLegs(args: {
       }
     ]
   };
+}
+
+type LeaseStatus = Database["public"]["Enums"]["leaseStatus"];
+
+/** A lease that has run its course but may still owe a payment: a
+ *  termination penalty, a purchase price, or a row a voided invoice
+ *  returned to Pending. */
+export const ENDED_LEASE_STATUSES = [
+  "Expired",
+  "Terminated",
+  "Purchased"
+] as const satisfies readonly LeaseStatus[];
+
+/** The statuses a lease can be invoiced in: Active, or ended. A Draft lease
+ *  is not yet a lease, and a Cancelled one never was. Drafting
+ *  (the daily job) and posting agree on this list. */
+export const BILLABLE_LEASE_STATUSES = [
+  "Active",
+  ...ENDED_LEASE_STATUSES
+] as const satisfies readonly LeaseStatus[];
+
+export function isBillableLeaseStatus(status: LeaseStatus): boolean {
+  return (BILLABLE_LEASE_STATUSES as readonly LeaseStatus[]).includes(status);
 }

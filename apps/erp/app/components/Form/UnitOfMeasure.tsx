@@ -8,10 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useRouteData } from "~/hooks";
-import type {
-  getUnitOfMeasuresList,
-  UnitOfMeasureListItem
-} from "~/modules/items";
+import type { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import type { UnitOfMeasureListItem } from "~/modules/items/types";
 import UnitOfMeasureForm from "~/modules/items/ui/UnitOfMeasure/UnitOfMeasureForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

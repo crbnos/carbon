@@ -112,8 +112,7 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
         Service: "/x/service/",
         Tool: "/x/tool/",
         Consumable: "/x/consumable/",
-        Material: "/x/material/",
-        Fixture: "/x/fixture/"
+        Material: "/x/material/"
       };
       return (typeLinks[r.type] || "/x/part/") + r.id;
     },

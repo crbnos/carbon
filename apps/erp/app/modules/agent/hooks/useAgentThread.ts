@@ -101,10 +101,10 @@ export function useAgentThread() {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Thread create failed: ${res.status}`);
-          return res.json() as Promise<{ threadId?: string }>;
+          return res.json() as Promise<{ data: { threadId: string } | null }>;
         })
-        .then((data) => {
-          const id = data.threadId ?? null;
+        .then((result) => {
+          const id = result.data?.threadId ?? null;
           // Don't clobber a thread that loadThread/newThread selected while this
           // create was in flight — only adopt the new id if nothing was set meanwhile.
           if (id && !threadIdRef.current) {

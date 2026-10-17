@@ -2,26 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import type { Json } from "@carbon/database";
-import { validationError, validator } from "@carbon/form";
-import { datetime, redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
-import {
-  addChangeNoticeAffectedItem,
-  changeNoticeValidator,
-  getChangeNoticeTypesList,
-  insertChangeNotice
-} from "~/modules/items";
+import { changeNoticeValidator } from "~/modules/items/items.models";
+import { getChangeNoticeTypesList } from "~/modules/items/items.service";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -31,17 +22,6 @@ export const handle: Handle = {
   to: path.to.changeNotices,
   module: "items"
 };
-
-// The reason/description form fields arrive as plain text; the columns are
-// tiptap JSON, so wrap non-empty text into a minimal doc (the inline Editor on
-// the detail page then edits it as rich text). Empty stays undefined.
-function toRichText(value: string | undefined): Json | undefined {
-  if (!value) return undefined;
-  return {
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: value }] }]
-  } as unknown as Json;
-}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -68,99 +48,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(changeNoticeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.items.createChangeNotice({
+    ...input.data,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const validation = await validator(changeNoticeValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.changeNotices);
   }
-
-  const d = validation.data;
-
-  const createResult = await insertChangeNotice(client, {
-    changeNoticeId: d.changeOrderId || undefined,
-    name: d.name,
-    reasonForChange: toRichText(d.reasonForChange),
-    description: toRichText(d.description),
-    priority: d.priority,
-    changeNoticeTypeId: d.changeOrderTypeId || undefined,
-    nonConformanceId: d.nonConformanceId || undefined,
-    openDate:
-      d.openDate ||
-      datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
-    dueDate: d.dueDate || undefined,
-    assignee: d.assignee || undefined,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (createResult.error || !createResult.data) {
-    throw redirect(
-      path.to.changeNotices,
-      await flash(
-        request,
-        error(createResult.error, "Failed to create change notice")
-      )
-    );
-  }
-
-  // Attach any affected Parts picked at create time. Each is added as a Version
-  // change (the service coerces Buy items to Revision). Best-effort: the CO
-  // already exists, so a per-item failure lands the user on the detail page with
-  // a warning rather than losing the CO.
-  const submittedItemIds = [...new Set(d.affectedItemIds ?? [])];
-
-  // Change notices operate on Parts only — the create modal is reachable from
-  // Tool pages, so filter out anything that isn't a Part.
-  const submittedItems = submittedItemIds.length
-    ? await client
-        .from("item")
-        .select("id, type")
-        .in("id", submittedItemIds)
-        .eq("companyId", companyId)
-    : null;
-
-  const affectedItemIds = (submittedItems?.data ?? [])
-    .filter((item) => item.type === "Part")
-    .map((item) => item.id);
-  const skippedNonParts = submittedItemIds.length - affectedItemIds.length;
-
-  let affectedError: Parameters<typeof error>[0] =
-    submittedItems?.error ?? null;
-  for (const itemId of affectedItemIds) {
-    const add = await addChangeNoticeAffectedItem(client, getDatabaseClient(), {
-      changeNoticeId: createResult.data.id,
-      itemId,
-      changeType: "Version",
-      companyId,
-      userId
-    });
-    if (add.error) affectedError = add.error;
-  }
-
-  if (affectedError || skippedNonParts > 0) {
-    throw redirect(
-      path.to.changeNoticeDetails(createResult.data.id),
-      await flash(
-        request,
-        error(
-          affectedError,
-          affectedError
-            ? "Change notice created, but some items could not be added"
-            : "Change notice created. Change notices support Parts only, so non-Part items were skipped"
-        )
-      )
-    );
-  }
-
-  throw redirect(path.to.changeNoticeDetails(createResult.data.id));
+  const { id, warning } = result.data;
+  return respond(
+    args.request,
+    warning ? { error: { message: warning } } : result
+  ).redirect(path.to.changeNoticeDetails(id));
 }
 
 export default function ChangeNoticeNewRoute() {

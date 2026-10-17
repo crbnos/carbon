@@ -14,7 +14,7 @@ Platform-wide behavior and edition.
 <EnvVar name="CONTROLLED_ENVIRONMENT" type="boolean">Enables ITAR / controlled-environment restrictions: the US-Person certification gate, ITAR hostnames and branding, Slack and analytics disabled, and mandatory [two-factor authentication](/docs/reference/two-factor) that a company admin cannot turn off.</EnvVar>
 <EnvVar name="AUTH_PROVIDERS" type="enum[]">Allowed sign-in methods: `email`, `google`, `azure`, `passkey`, `sso` ([single sign-on](/docs/reference/single-sign-on), Enterprise edition only).</EnvVar>
 <EnvVar name="DOMAIN" type="string">Base domain the apps are served from.</EnvVar>
-<EnvVar name="ERP_URL" type="url">Public URL of the ERP app.</EnvVar>
+<EnvVar name="ERP_URL" type="url">Public URL of the ERP app. Required for the MES: it sends shop-floor postings (material issues, completions, picking) to this address.</EnvVar>
 <EnvVar name="MES_URL" type="url">Public URL of the MES app.</EnvVar>
 <EnvVar name="DEFAULT_LANGUAGE" type="string">Default UI language.</EnvVar>
 <EnvVar name="RATE_LIMIT" type="number">Requests per window allowed against the API.</EnvVar>

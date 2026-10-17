@@ -50,7 +50,7 @@ pub struct CompactReq {
 
 /// zstd level for the retained artifact. Background job, so favour ratio, but
 /// not the glacial max — STEP/xbf/glTF text all compress well at this mid level.
-const ZSTD_LEVEL: i32 = 12;
+pub(crate) const ZSTD_LEVEL: i32 = 12;
 
 pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
     let jobs = state.jobs.clone();
@@ -60,8 +60,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
-        eprintln!("[{job_id}] compact running");
         let started = Instant::now();
 
         let src = http::temp_path("src");
@@ -79,6 +77,15 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&src).await))
                 .await;
+            // The wait may have been long: a job cancelled meanwhile is dropped
+            // before it takes the memory it was granted.
+            if jobs.is_canceled(&job_id).await {
+                let _ = tokio::fs::remove_file(&src).await;
+                return;
+            }
+            // Running from here on: the wait for memory is queue time, not work.
+            jobs.set_status(&job_id, "running").await;
+            eprintln!("[{job_id}] compact running");
             telemetry::in_span("compute", tokio::task::spawn_blocking(move || compress(&src_str, mode, level))).await
         };
         let _ = tokio::fs::remove_file(&src).await;
@@ -178,7 +185,7 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
 
 /// Stream a file through zstd into an owned buffer (the compressed artifact is
 /// small — read is streaming, only the result is held).
-fn zstd_file(path: &str, level: i32) -> Result<Vec<u8>, String> {
+pub(crate) fn zstd_file(path: &str, level: i32) -> Result<Vec<u8>, String> {
     let file = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
     zstd::stream::encode_all(std::io::BufReader::new(file), level)
         .map_err(|e| format!("zstd encode: {e}"))

@@ -371,7 +371,6 @@ export async function syncOnshapeBackfillWorkItem(
   workItem: OnshapeBackfillWorkItem
 ): Promise<{
   modelUploadId: string | null;
-  thumbnailAttached?: boolean; // Onshape-rendered thumbnail stored — no fallback event needed
   skippedTooLarge?: boolean;
 }> {
   try {
@@ -410,10 +409,7 @@ export async function syncOnshapeBackfillWorkItem(
         }),
       workItem.label
     );
-    return {
-      modelUploadId: attached.modelUploadId,
-      thumbnailAttached: attached.thumbnailAttached
-    };
+    return { modelUploadId: attached.modelUploadId };
   } catch (syncError) {
     if (syncError instanceof OnshapeAssetTooLargeError) {
       console.warn(
@@ -507,8 +503,6 @@ export const onshapeBackfillFunction = inngest.createFunction(
       // stays short and a retry resumes at the first unfinished item. A step
       // that exhausts its own retries throws a catchable error here; count it
       // and keep going unless failures look systemic.
-      const optimizeModelUploadIds: string[] = [];
-      const syncedModelUploadIds: string[] = [];
       for (const [workIndex, workItem] of pageResult.workItems.entries()) {
         try {
           const attached = await step.run(
@@ -521,21 +515,8 @@ export const onshapeBackfillFunction = inngest.createFunction(
           } else {
             totals.synced++;
           }
-          // Every attached model is a RAW export — the assembler compresses it
-          // into the viewer GLB via model-optimize.
-          if (attached.modelUploadId) {
-            optimizeModelUploadIds.push(attached.modelUploadId);
-          }
-          // Fallback only: models whose Onshape-rendered thumbnail was stored
-          // during the sync don't need the screenshot pipeline. Selected parts
-          // wait for the optimizer to produce the GLB and fire its thumbnail.
-          if (
-            attached.modelUploadId &&
-            !attached.thumbnailAttached &&
-            workItem.modelElementKind !== "partstudio"
-          ) {
-            syncedModelUploadIds.push(attached.modelUploadId);
-          }
+          // Every attached model is a RAW export. Its new row starts the
+          // optimise that builds the viewer GLB and the thumbnail.
         } catch (syncError) {
           console.error(
             `onshape-backfill: ${workItem.label} failed`,
@@ -553,32 +534,6 @@ export const onshapeBackfillFunction = inngest.createFunction(
             );
           }
         }
-      }
-
-      if (optimizeModelUploadIds.length > 0) {
-        // Same event the manual upload route fires: assembler → meshopt GLB.
-        await step.sendEvent(
-          `model-optimize-${pageIndex}`,
-          optimizeModelUploadIds.map((modelUploadId) => ({
-            name: "carbon/model-optimize" as const,
-            data: {
-              modelUploadId,
-              companyId: payload.companyId,
-              userId: payload.userId
-            }
-          }))
-        );
-      }
-
-      if (syncedModelUploadIds.length > 0) {
-        // Every other model path fires model-thumbnail on upload; keep parity.
-        await step.sendEvent(
-          `model-thumbnails-${pageIndex}`,
-          syncedModelUploadIds.map((modelId) => ({
-            name: "carbon/model-thumbnail" as const,
-            data: { companyId: payload.companyId, modelId }
-          }))
-        );
       }
 
       if (!pageResult.hasMore || !pageResult.nextCursor) {

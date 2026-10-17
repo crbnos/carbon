@@ -9,7 +9,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { getProjects } from "~/modules/accounting";
+import { getProjects } from "~/modules/accounting/accounting.service";
 import { ProjectsTable } from "~/modules/accounting/ui/Projects";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

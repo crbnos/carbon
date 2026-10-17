@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import type { getMaterialTypeList } from "~/modules/items";
+import type { getMaterialTypeList } from "~/modules/items/items.service";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

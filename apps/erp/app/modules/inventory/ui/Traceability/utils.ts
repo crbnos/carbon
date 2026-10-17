@@ -8,8 +8,10 @@ import type {
   Activity,
   ActivityInput,
   ActivityOutput,
+  IssueContainment,
+  StepRecord,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import type { ClusterResult, EntityCluster } from "./cluster";
 import { clusterEntities, DEFAULT_CLUSTER_THRESHOLD, edgeKey } from "./cluster";
 import { NODE_SIZE } from "./constants";
@@ -73,37 +75,11 @@ export type LineageEdgeData = {
 
 export type LineageEdge = Edge<LineageEdgeData>;
 
-export type StepRecord = {
-  id: string;
-  jobOperationStepId: string;
-  index: number;
-  type: string;
-  name: string;
-  value: string | null;
-  numericValue: number | null;
-  booleanValue: boolean | null;
-  userValue: string | null;
-  unitOfMeasureCode: string | null;
-  minValue: number | null;
-  maxValue: number | null;
-  operationId: string;
-  operationDescription: string | null;
-  itemId: string | null;
-  itemReadableId: string | null;
-  createdAt: string;
-  createdBy: string | null;
-};
-
-export type IssueContainmentStatus = "Contained" | "Uncontained";
-
-export type IssueContainment = {
-  id: string;
-  readableId: string | null;
-  containmentStatus: IssueContainmentStatus;
-  status: string;
-  priority: string | null;
-  trackedEntityId: string;
-};
+export type {
+  IssueContainment,
+  IssueContainmentStatus,
+  StepRecord
+} from "~/modules/inventory/types";
 
 export type LineagePayload = {
   entities: TrackedEntity[];

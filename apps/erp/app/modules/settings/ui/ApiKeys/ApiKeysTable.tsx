@@ -27,7 +27,7 @@ import {
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
+import type { ApiKey } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 

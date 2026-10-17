@@ -31,7 +31,7 @@ import type {
   AssetDepreciationHistoryItem,
   FixedAsset,
   FixedAssetRelatedItems
-} from "~/modules/accounting";
+} from "~/modules/accounting/types";
 import ReceiptStatus from "~/modules/inventory/ui/Receipts/ReceiptStatus";
 import ShipmentStatus from "~/modules/inventory/ui/Shipments/ShipmentStatus";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
@@ -41,8 +41,8 @@ import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import RentalStatus from "~/modules/sales/ui/Rentals/RentalStatus";
 import SalesStatus from "~/modules/sales/ui/SalesOrder/SalesStatus";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import DepreciationRunStatus from "./DepreciationRunStatus";

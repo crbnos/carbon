@@ -26,8 +26,11 @@ import { Enumerable } from "~/components/Enumerable";
 import { Ability, InputControlled, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
-import type { Training } from "~/modules/resources";
-import { trainingFrequency, trainingType } from "~/modules/resources";
+import {
+  trainingFrequency,
+  trainingType
+} from "~/modules/resources/resources.models";
+import type { Training } from "~/modules/resources/types";
 import type { action } from "~/routes/x+/training+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";

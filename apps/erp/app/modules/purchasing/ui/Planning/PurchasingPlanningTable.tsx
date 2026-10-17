@@ -54,12 +54,12 @@ import {
   useUser
 } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
-import type { PlanningAction } from "~/modules/production";
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
-} from "~/modules/production";
+} from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import {
   isApplyablePlanningAction,
   isNewSupplyAction,

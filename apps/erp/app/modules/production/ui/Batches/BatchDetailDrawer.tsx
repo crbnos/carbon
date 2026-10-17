@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   BarProgress,
   Button,
@@ -41,7 +42,7 @@ import {
   groupBy
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LuCirclePlay,
   LuCombine,
@@ -59,7 +60,7 @@ import {
   LuUndo2,
   LuX
 } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -69,6 +70,7 @@ import {
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import type { action as batchingAction } from "~/routes/x+/priority+/batching.update";
 import { useCustomers, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -80,6 +82,7 @@ import JobStatus from "../Jobs/JobStatus";
 import { BatchStatus } from "./BatchesTable";
 import { BatchReleaseModal } from "./BatchReleaseModal";
 import { batchPlanBreakdown } from "./batch-builder-logic";
+import { useBatchRelease } from "./useBatchRelease";
 
 const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;
 type EventType = (typeof EVENT_TYPES)[number];
@@ -165,63 +168,27 @@ export function BatchDetailDrawer({
       .map(([itemId]) => itemId);
   }, [batch.status, outputLots]);
 
-  const mergeFetcher = useFetcher<{ success?: boolean; message?: string }>();
-  const wasMerging = useRef(false);
-  useEffect(() => {
-    if (mergeFetcher.state !== "idle") {
-      wasMerging.current = true;
-      return;
+  const mergeFetcher = useAction<typeof batchingAction>({
+    onSuccess: ({ data }) => {
+      const readableId =
+        data && "readableId" in data && typeof data.readableId === "string"
+          ? data.readableId
+          : null;
+      toast.success(
+        readableId ? t`Lots merged into ${readableId}` : t`Lots merged`
+      );
     }
-    if (!wasMerging.current) return;
-    wasMerging.current = false;
-    const d = mergeFetcher.data;
-    if (d?.message) {
-      if (d.success === false) {
-        toast.error(d.message);
-      } else {
-        toast.success(d.message);
-      }
-    }
-  }, [mergeFetcher.state, mergeFetcher.data]);
+  });
 
-  // Release (Planned → Active) / Unrelease (Active → Planned). The server's
-  // refusal (no work center, production already recorded) comes back as
-  // { success: false, message } and lands in the toast; success revalidates
-  // the loader and the badge flips.
-  const releaseFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-  }>();
-  const wasReleasing = useRef(false);
-  useEffect(() => {
-    if (releaseFetcher.state !== "idle") {
-      wasReleasing.current = true;
-      return;
-    }
-    if (!wasReleasing.current) return;
-    wasReleasing.current = false;
-    const d = releaseFetcher.data;
-    if (d?.success === false && d.message) {
-      toast.error(d.message);
-    }
-  }, [releaseFetcher.state, releaseFetcher.data]);
-
+  // Release (Planned → Active) / Unrelease (Active → Planned); a refusal (a
+  // member job not ready, production already recorded) is toasted, success
+  // revalidates the loader and the badge flips.
+  const release = useBatchRelease();
   const [releaseOpen, setReleaseOpen] = useState(false);
   const submitBatchIntent = (
     intent: "release" | "unrelease",
     purchaseOrdersBySupplierId?: Record<string, string>
-  ) => {
-    releaseFetcher.submit(
-      {
-        intent,
-        batchId: batch.id,
-        ...(purchaseOrdersBySupplierId && {
-          purchaseOrdersBySupplierId: JSON.stringify(purchaseOrdersBySupplierId)
-        })
-      },
-      { method: "post", action: path.to.priorityBatchingUpdate }
-    );
-  };
+  ) => release.submit(intent, batch.id, purchaseOrdersBySupplierId);
 
   // Planned durations, batch semantics (mirrors the MES operation view and the
   // scheduler's reservation): ONE shared setup (the largest member's), per-type
@@ -735,8 +702,8 @@ export function BatchDetailDrawer({
               <Button
                 variant="secondary"
                 leftIcon={<LuUndo2 />}
-                isLoading={releaseFetcher.state !== "idle"}
-                isDisabled={releaseFetcher.state !== "idle"}
+                isLoading={release.isPending}
+                isDisabled={release.isPending}
                 onClick={() => submitBatchIntent("unrelease")}
               >
                 {t`Unrelease`}
@@ -788,8 +755,8 @@ export function BatchDetailDrawer({
               <Button
                 variant="primary"
                 leftIcon={<LuCirclePlay />}
-                isLoading={releaseFetcher.state !== "idle"}
-                isDisabled={releaseFetcher.state !== "idle"}
+                isLoading={release.isPending}
+                isDisabled={release.isPending}
                 onClick={() => setReleaseOpen(true)}
               >
                 {t`Release`}
@@ -870,7 +837,7 @@ function SummaryFact({
 // a center that can actually run it.
 function WorkCenterFact({ batch }: { batch: JobOperationBatchDetail }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success?: boolean; message?: string }>();
+  const fetcher = useAction<typeof batchingAction>();
   const { options } = useWorkCenters({
     processId: batch.processId ?? undefined,
     locationId: batch.locationId ?? undefined

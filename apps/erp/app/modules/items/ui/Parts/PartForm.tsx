@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { convertKbToString } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -24,7 +24,6 @@ import {
 import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
@@ -46,7 +45,10 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
-import { UploadProgress } from "~/components/UploadProgress";
+import {
+  InterruptedUploadNotice,
+  UploadProgress
+} from "~/components/UploadProgress";
 import {
   useCompanySettings,
   useCurrencyDecimals,
@@ -87,9 +89,11 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const [modelIsUploading, setModelIsUploading] = useState(false);
   const [modelFile, setModelFile] = useState<File | null>(null);
   const { carbon } = useCarbon();
-  const { upload, runUpload } = useModelUpload();
+  const { upload, runUpload, interrupted, dismissInterrupted } =
+    useModelUpload("new-part");
   const {
-    company: { id: companyId }
+    company: { id: companyId },
+    id: userId
   } = useUser();
 
   const modelUpload = async (file: File) => {
@@ -98,25 +102,27 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
       setModelIsUploading(true);
     });
 
-    const modelId = nanoid();
-    const fileExtension = file.name.split(".").pop();
-    const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
-
     // Resumable (TUS) upload — a standard buffered upload times out on multi-GB
-    // CAD files. Runs in parallel with the record insert.
-    const [{ error: uploadError }, recordInsert] = await Promise.all([
-      runUpload({ bucket: TEMP_STAGING_BUCKET, path: fileName, file }),
-      carbon.from("modelUpload").insert({
-        id: modelId,
-        modelPath: fileName,
-        size: file.size,
-        name: file.name,
-        companyId: companyId,
-        createdBy: "system"
-      })
-    ]);
+    // CAD files. The record goes in after it: inserting it starts the
+    // optimise, which reads the file. The id and path are the upload's: a
+    // resumed upload keeps its own.
+    const {
+      error: uploadError,
+      modelId,
+      modelPath: fileName
+    } = await runUpload(file);
+    const recordInsert = uploadError
+      ? null
+      : await carbon.from("modelUpload").insert({
+          id: modelId,
+          modelPath: fileName,
+          size: file.size,
+          name: file.name,
+          companyId: companyId,
+          createdBy: userId
+        });
 
-    if (uploadError || recordInsert.error) {
+    if (uploadError || !recordInsert || recordInsert.error) {
       toast.error(t`Failed to upload model`);
     } else {
       setModelUploadId(modelId);
@@ -416,6 +422,14 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                       <p className="text-xs text-muted-foreground group-hover:text-foreground">
                         {t`Supports ${supportedModelTypes.join(", ")} files`}
                       </p>
+                      {interrupted && (
+                        <InterruptedUploadNotice
+                          className="mt-3"
+                          name={interrupted.name}
+                          percent={interrupted.percent}
+                          onDismiss={dismissInterrupted}
+                        />
+                      )}
                     </Loading>
                   )}
                 </div>

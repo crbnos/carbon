@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   cn,
@@ -24,6 +24,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  toast,
   useInterval,
   VStack
 } from "@carbon/react";
@@ -47,10 +48,12 @@ import { useFetcher, useParams, useSearchParams } from "react-router";
 import { Empty } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";
+import type { action as replanAction } from "~/routes/x+/assembly+/$id.plan.rerun";
+import type { action as generateAction } from "~/routes/x+/assembly+/$id.steps.generate";
 import { path } from "~/utils/path";
 import { isAssemblyPlanRunning } from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
-import { toViewerStep } from "../../production.service";
+import { toViewerStep } from "../../production.utils";
 import type {
   AssemblyComponentMapping,
   AssemblyInstructionStepRow,
@@ -129,10 +132,28 @@ function AssemblyInstructionExplorer({
   const revalidator = useRevalidator();
 
   const newStepFetcher = useFetcher<{ success: boolean; id?: string }>();
-  const generateFetcher = useFetcher<{
-    success: boolean;
-    planning?: boolean;
-  }>();
+  const generateFetcher = useAction<typeof generateAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.planning) {
+        setIsAwaitingPlan(true);
+        return;
+      }
+      setIsAwaitingPlan(false);
+      const created = data.created;
+      const unmapped = data.unmappedComponentCount;
+      const generated =
+        generateModeRef.current === "regenerate"
+          ? t`Regenerated ${created} steps from the motion plan`
+          : t`Generated ${created} steps from the motion plan`;
+      // Some geometry has no BOM match, so those parts got no material.
+      toast.success(
+        unmapped > 0
+          ? `${generated}. ${t`${unmapped} components have no BOM match — use Match BOM to link their materials.`}`
+          : generated
+      );
+    }
+  });
 
   // Generate Steps needs a motion plan. Planning is lazy (nothing runs until
   // the user asks), so the first click usually lands before plan.json exists —
@@ -214,14 +235,6 @@ function AssemblyInstructionExplorer({
     planJob?.status === "Failed" &&
     planJob.id !== ignoredFailedJobId.current;
 
-  useEffect(() => {
-    if (generateFetcher.data?.planning) {
-      setIsAwaitingPlan(true);
-    } else if (generateFetcher.data?.success) {
-      setIsAwaitingPlan(false);
-    }
-  }, [generateFetcher.data, setIsAwaitingPlan]);
-
   const [showRerunConfirm, setShowRerunConfirm] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   // Which generate mode the pending click asked for — the awaiting-plan effect
@@ -284,7 +297,18 @@ function AssemblyInstructionExplorer({
     solveElapsedSeconds % 60
   ).padStart(2, "0")}`;
 
-  const rerunPlanFetcher = useFetcher<{ success: boolean }>();
+  const rerunPlanFetcher = useAction<typeof replanAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(
+        data.mode === "remotion"
+          ? t`Re-planning motions in the current step order — steps update when it finishes`
+          : data.mode === "fresh"
+            ? t`Re-planning from scratch — steps rebuild automatically when it finishes`
+            : t`Motion planning started — steps generate when it finishes`
+      );
+    }
+  });
   // Any planner work in flight — a re-motion run, a regenerate solve, or the
   // submit round-trips themselves. Drives the footer's planner-menu spinner.
   const isPlannerBusy =

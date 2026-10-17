@@ -15,12 +15,14 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
+import type { action as voidAction } from "~/routes/x+/receipt+/$receiptId.void";
 import { path } from "~/utils/path";
 
 const ReceiptVoidModal = ({
@@ -33,20 +35,20 @@ const ReceiptVoidModal = ({
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
+  const { t } = useLingui();
   const navigation = useNavigation();
-  // A void that succeeds redirects and returns no data; a refusal returns its
-  // message, and the modal stays open to show it.
-  const fetcher = useAction<{ success: boolean; message: string }>({
-    onSettled: (result) => {
-      if (submitted.current && !result) {
-        onClose();
-      }
-    }
+  // A refused void keeps the modal open and shows the reason in place.
+  const fetcher = useAction<typeof voidAction>({
+    onSuccess: () => {
+      toast.success(t`Receipt voided`);
+      if (submitted.current) onClose();
+    },
+    onError: () => {}
   });
   const submitted = useRef(false);
   const refusal =
-    fetcher.state === "idle" && fetcher.data?.success === false
-      ? fetcher.data.message
+    fetcher.state === "idle" && fetcher.data && "error" in fetcher.data
+      ? (fetcher.data.error?.message ?? null)
       : null;
 
   return (

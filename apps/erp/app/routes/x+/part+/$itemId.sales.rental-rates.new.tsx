@@ -11,10 +11,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import { CustomerRentalRateForm } from "~/modules/items/ui/Item";
-import {
-  customerItemRentalRateValidator,
-  upsertCustomerItemRentalRate
-} from "~/modules/sales";
+import { customerItemRentalRateValidator } from "~/modules/sales/sales.models";
+import { upsertCustomerItemRentalRate } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

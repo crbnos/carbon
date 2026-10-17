@@ -6,16 +6,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory";
-import {
-  getCompanySettings,
-  getDocumentTemplateConfig
-} from "~/modules/settings";
+import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory/inventory.service";
 import {
   getCompanyLogoForLabel,
+  getCompanySettings,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

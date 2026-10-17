@@ -25,6 +25,117 @@ pub struct OptimizeReq {
     /// Storage path recorded in the completion pointer (late-mint uploads here).
     pub glb_path: Option<String>,
     pub opts: Opts,
+    /// Ingest: also write the retained raw's compact form (output `raw`), from
+    /// the same download. `Some(path)` records where it goes.
+    pub compact: Option<Option<String>>,
+    /// Ingest: also render the preview thumbnail (output `thumbnail`) from the
+    /// optimised GLB, still in memory.
+    pub thumbnail: Option<ThumbnailOut>,
+}
+
+/// The thumbnail an ingest renders (see `thumbnail` for the camera).
+pub struct ThumbnailOut {
+    pub path: Option<String>,
+    pub size: u32,
+    pub direction: [f32; 3],
+}
+
+/// The retained raw's compact form.
+struct Compacted {
+    bytes: Vec<u8>,
+    /// `xbf` (a STEP as BinXCAF, then zstd) or `zstd` (the raw as it is).
+    kind: &'static str,
+}
+
+/// What an ingest hands the optimiser: the file to tessellate, its format, and
+/// the compacted raw. A STEP becomes BinXCAF once, and the optimiser reads that
+/// (identical geometry, and far faster to parse) instead of parsing the STEP a
+/// second time.
+struct Ingest {
+    load_path: String,
+    declared: String,
+    source_format: &'static str,
+    compacted: Option<Compacted>,
+    xbf: Option<std::path::PathBuf>,
+    warnings: Vec<String>,
+}
+
+fn prepare_ingest(path: &str, declared: &str, ext: Option<&str>) -> Result<Ingest, ActionErr> {
+    use crate::actions::compact::{zstd_file, ZSTD_LEVEL};
+    let head = read_head_bytes(path, 512 * 1024).map_err(|e| ActionErr::new("invalid_input", e))?;
+    let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let (format, _) = formats::resolve(declared, &head, size, ext)
+        .map_err(|e| ActionErr::new(e.code, e.message))?;
+    let mut ingest = Ingest {
+        load_path: path.to_string(),
+        declared: declared.to_string(),
+        source_format: format.name(),
+        compacted: None,
+        xbf: None,
+        warnings: Vec::new(),
+    };
+    match format {
+        // Already the compact form.
+        Format::Xbf => {}
+        Format::Step => {
+            let xbf = http::temp_path("xbf");
+            let xbf_str = xbf.to_string_lossy().to_string();
+            match converter::convert::step_to_xbf(path, &xbf_str) {
+                Ok(()) => {
+                    match zstd_file(&xbf_str, ZSTD_LEVEL) {
+                        Ok(bytes) => ingest.compacted = Some(Compacted { bytes, kind: "xbf" }),
+                        Err(e) => ingest.warnings.push(format!("compact: {e}")),
+                    }
+                    ingest.load_path = xbf_str;
+                    ingest.declared = "xbf".into();
+                    ingest.xbf = Some(xbf);
+                }
+                // The optimiser still reads the STEP; only the compact form is lost.
+                Err(e) => {
+                    let _ = std::fs::remove_file(&xbf);
+                    ingest.warnings.push(format!("compact: {}", e.message));
+                }
+            }
+        }
+        _ => match zstd_file(path, ZSTD_LEVEL) {
+            Ok(bytes) => ingest.compacted = Some(Compacted { bytes, kind: "zstd" }),
+            Err(e) => ingest.warnings.push(format!("compact: {e}")),
+        },
+    }
+    Ok(ingest)
+}
+
+/// Optimise, with the ingest outputs when asked for: the optimised GLB, the
+/// compacted raw, and the thumbnail (or why it failed: a preview never fails
+/// the job).
+fn run_ingest(
+    path: &str,
+    declared: &str,
+    ext: Option<&str>,
+    opts: &Opts,
+    compact: bool,
+    thumbnail: Option<(u32, [f32; 3])>,
+) -> Result<(Outcome, Option<Compacted>, Option<Result<Vec<u8>, String>>), ActionErr> {
+    let ingest = if compact { Some(prepare_ingest(path, declared, ext)?) } else { None };
+    let (load_path, load_declared) = match &ingest {
+        Some(i) => (i.load_path.as_str(), i.declared.as_str()),
+        None => (path, declared),
+    };
+    let outcome = run_optimize(load_path, load_declared, ext, opts);
+    if let Some(xbf) = ingest.as_ref().and_then(|i| i.xbf.as_ref()) {
+        let _ = std::fs::remove_file(xbf);
+    }
+    let mut outcome = outcome?;
+    let mut compacted = None;
+    if let Some(i) = ingest {
+        outcome.detected_format = i.source_format;
+        outcome.warnings.extend(i.warnings);
+        compacted = i.compacted;
+    }
+    let png = thumbnail.map(|(size, direction)| {
+        thumbnail::render_png(&outcome.glb, size, direction).map_err(|e| e.0)
+    });
+    Ok((outcome, compacted, png))
 }
 
 pub struct Opts {
@@ -70,6 +181,7 @@ pub struct Opts {
 }
 
 /// A typed action failure carrying the snake_case API error code.
+#[derive(Debug)]
 struct ActionErr {
     code: &'static str,
     message: String,
@@ -91,11 +203,6 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
-        eprintln!(
-            "[{job_id}] optimize running (codec={:?} format={})",
-            req.opts.codec, req.format
-        );
         let started = Instant::now();
 
         let tmp = http::temp_path("model");
@@ -109,21 +216,35 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         let declared = req.format.clone();
         let ext = url_ext(&req.source_url);
         let mut opts = req.opts;
-        // Charge the download + tessellation already spent against the budget.
-        opts.deadline = opts.budget.map(|b| started + b);
+        let compact = req.compact.is_some();
+        let thumbnail = req.thumbnail.as_ref().map(|t| (t.size, t.direction));
 
         let res = {
             let _grant = admission
                 .acquire(admission::estimate_mb(http::file_len(&tmp).await))
                 .await;
+            // The wait may have been long: a job cancelled meanwhile is dropped
+            // before it takes the memory it was granted.
+            if jobs.is_canceled(&job_id).await {
+                let _ = tokio::fs::remove_file(&tmp).await;
+                return;
+            }
+            // Running from here on: the wait for memory is queue time, not
+            // work, so the budget starts now too.
+            jobs.set_status(&job_id, "running").await;
+            eprintln!(
+                "[{job_id}] optimize running (codec={:?} format={declared})",
+                opts.codec
+            );
+            opts.deadline = opts.budget.map(|b| Instant::now() + b);
             telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
-                run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
+                run_ingest(&tmp_str, &declared, ext.as_deref(), &opts, compact, thumbnail)
             }))
             .await
         };
         let _ = tokio::fs::remove_file(&tmp).await;
 
-        let outcome = match res {
+        let (mut outcome, compacted, png) = match res {
             Ok(Ok(o)) => o,
             Ok(Err(e)) => {
                 eprintln!("[{job_id}] optimize failed ({}): {}", e.code, e.message);
@@ -150,17 +271,39 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             outcome.ratio,
         );
 
+        let png = match png {
+            Some(Ok(png)) => Some(png),
+            Some(Err(e)) => {
+                outcome.warnings.push(format!("thumbnail: {e}"));
+                None
+            }
+            None => None,
+        };
+        let mut result_outputs = json!({
+            "glb": {
+                "path": req.glb_path,
+                "bytes": outcome.glb.len(),
+                "codec": codec_name(outcome.codec),
+            }
+        });
+        if let Some(c) = &compacted {
+            result_outputs["raw"] = json!({
+                "path": req.compact.clone().flatten(),
+                "bytes": c.bytes.len(),
+                "kind": c.kind,
+            });
+        }
+        if let Some(png) = &png {
+            result_outputs["thumbnail"] = json!({
+                "path": req.thumbnail.as_ref().and_then(|t| t.path.clone()),
+                "bytes": png.len(),
+            });
+        }
         let done = Done {
             result: json!({
                 "detected_format": outcome.detected_format,
                 "detected_via": outcome.detected_via,
-                "outputs": {
-                    "glb": {
-                        "path": req.glb_path,
-                        "bytes": outcome.glb.len(),
-                        "codec": codec_name(outcome.codec),
-                    }
-                },
+                "outputs": result_outputs,
                 "warnings": outcome.warnings,
             }),
             stats: json!({
@@ -171,13 +314,29 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 "render_weight_bytes": outcome.stats.decoded_bytes,
                 "simplify_ratio_used": outcome.ratio,
                 "optimise_ms": optimise_ms,
+                "compact_bytes": compacted.as_ref().map(|c| c.bytes.len()),
+                "thumbnail_bytes": png.as_ref().map(|p| p.len()),
             }),
         };
-        let outputs = vec![Output {
+        let mut outputs = vec![Output {
             name: "glb".into(),
             content_type: "model/gltf-binary".into(),
             bytes: outcome.glb.into(),
         }];
+        if let Some(c) = compacted {
+            outputs.push(Output {
+                name: "raw".into(),
+                content_type: "application/zstd".into(),
+                bytes: c.bytes.into(),
+            });
+        }
+        if let Some(png) = png {
+            outputs.push(Output {
+                name: "thumbnail".into(),
+                content_type: "image/png".into(),
+                bytes: png.into(),
+            });
+        }
         jobs.finish(&job_id, outputs, done, None).await;
     });
 }
@@ -603,6 +762,80 @@ fn codec_name(c: optimize::Codec) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn default_opts() -> Opts {
+        crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}))
+    }
+
+    fn fixture_step(name: &str, boxes: u32) -> String {
+        let dir = std::env::temp_dir().join(format!("carbon-ingest-{name}"));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("fixture.step").to_string_lossy().to_string();
+        assert!(occt_bridge::write_test_step(&path, boxes), "write test STEP");
+        path
+    }
+
+    #[test]
+    fn ingest_of_a_step_compacts_to_xbf_and_matches_a_plain_optimise() {
+        let step = fixture_step("step", 3);
+        let opts = default_opts();
+
+        let plain = run_optimize(&step, "step", Some("step"), &opts).expect("plain optimise");
+        let (outcome, compacted, png) = run_ingest(
+            &step,
+            "step",
+            Some("step"),
+            &opts,
+            true,
+            Some((64, thumbnail::DEFAULT_DIRECTION)),
+        )
+        .expect("ingest");
+
+        // The source is reported as what was uploaded, not the xbf read.
+        assert_eq!(outcome.detected_format, "step");
+        // Tessellated from the xbf: the same mesh as from the STEP.
+        assert_eq!(
+            outcome.stats.output_triangles,
+            plain.stats.output_triangles
+        );
+        let compacted = compacted.expect("compacted raw");
+        assert_eq!(compacted.kind, "xbf");
+        let xbf = zstd::decode_all(compacted.bytes.as_slice()).unwrap();
+        assert!(xbf.starts_with(b"BINFILE"), "the compact form is BinXCAF");
+        let png = png.expect("thumbnail asked for").expect("thumbnail rendered");
+        assert!(png.starts_with(b"\x89PNG"));
+    }
+
+    #[test]
+    fn ingest_of_a_mesh_compacts_its_bytes_as_they_are() {
+        let step = fixture_step("mesh", 2);
+        let opts = default_opts();
+        // A plain (unquantized) GLB, as an upload would be.
+        let dir = std::env::temp_dir().join("carbon-ingest-mesh");
+        let xbf = dir.join("fixture.xbf").to_string_lossy().to_string();
+        converter::convert::step_to_xbf(&step, &xbf).unwrap();
+        let glb = converter::convert::convert_xbf(&xbf, opts.lin, opts.ang).unwrap().glb;
+        let glb_path = dir.join("model.glb");
+        std::fs::write(&glb_path, &glb).unwrap();
+        let glb_str = glb_path.to_string_lossy().to_string();
+
+        let (_, compacted, png) =
+            run_ingest(&glb_str, "auto", Some("glb"), &opts, true, None).expect("ingest");
+
+        let compacted = compacted.expect("compacted raw");
+        assert_eq!(compacted.kind, "zstd");
+        assert_eq!(zstd::decode_all(compacted.bytes.as_slice()).unwrap(), glb);
+        assert!(png.is_none(), "no thumbnail asked for");
+    }
+
+    #[test]
+    fn a_plain_optimise_writes_no_ingest_outputs() {
+        let step = fixture_step("plain", 1);
+        let (_, compacted, png) =
+            run_ingest(&step, "step", Some("step"), &default_opts(), false, None).unwrap();
+        assert!(compacted.is_none());
+        assert!(png.is_none());
+    }
 
     #[test]
     #[ignore = "scratch probe: needs real STEP files in .ai/scratch/"]

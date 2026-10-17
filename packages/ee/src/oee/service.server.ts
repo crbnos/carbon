@@ -2,11 +2,11 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { endSensorMachineTime } from "@carbon/database/machine-time";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EntitlementError, requireEntitlement } from "../entitlements.server";
@@ -82,13 +82,9 @@ export async function postEndedMachineEvents(
   args: { companyId: string; userId: string; productionEventIds: string[] }
 ) {
   if (args.productionEventIds.length === 0) return;
-  const functions = serverFns.system({
-    db,
-    companyId: args.companyId,
-    userId: args.userId
-  });
+  const handles = { db, companyId: args.companyId, userId: args.userId };
   for (const productionEventId of args.productionEventIds) {
-    const posted = await functions.invoke("post-production-event", {
+    const posted = await posting("post-production-event", handles, {
       productionEventId
     });
     // `success: false` is an event with nothing to post yet (no duration):

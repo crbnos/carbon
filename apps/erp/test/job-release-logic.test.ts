@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The models import the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 import {
   jobReleaseProblems,
   makeMethodsMissingOperations,
@@ -10,6 +15,7 @@ import {
   resolveOperationSupplier,
   type SupplierProcessRef
 } from "../app/modules/production/ui/Jobs/job-release-logic";
+import { makeToAssetReleaseError } from "../app/modules/production/production.models";
 
 const op = (
   id: string,
@@ -134,5 +140,45 @@ describe("jobReleaseProblems", () => {
       "choose a supplier for Heat Treat on the job",
       "Paint has no supplier"
     ]);
+  });
+});
+
+describe("jobReleaseProblems: what the job page also refuses", () => {
+  const base = {
+    manufacturingBlocked: false,
+    missingAssemblies: [],
+    outsideOperationsWithoutSupplier: []
+  };
+
+  it("names a job with nothing to make and one that cannot complete to its asset", () => {
+    expect(
+      jobReleaseProblems({
+        ...base,
+        nothingToMake: true,
+        makeToAssetError: "Make to Asset needs a serialized item or a quantity of one"
+      })
+    ).toEqual([
+      "nothing to make",
+      "Make to Asset needs a serialized item or a quantity of one"
+    ]);
+  });
+});
+
+describe("makeToAssetReleaseError", () => {
+  it("is null for a job that does not complete to an asset", () => {
+    expect(makeToAssetReleaseError({ quantity: 3 })).toBeNull();
+  });
+
+  it("refuses an asset job on a sales order line, after the item rule", () => {
+    expect(
+      makeToAssetReleaseError({
+        fixedAssetId: "fa-1",
+        itemTrackingType: "Serial",
+        salesOrderLineId: "sol-1"
+      })
+    ).toBe("A job linked to a sales order line cannot complete to a fixed asset");
+    expect(
+      makeToAssetReleaseError({ fixedAssetClassId: "fac-1", salesOrderLineId: "sol-1" })
+    ).toBe("A job that completes to a fixed asset class needs a serialized item");
   });
 });

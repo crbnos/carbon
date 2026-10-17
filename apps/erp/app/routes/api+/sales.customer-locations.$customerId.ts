@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getCustomerLocations } from "~/modules/sales";
+import { getCustomerLocations } from "~/modules/sales/sales.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const authorized = await requirePermissions(request, {

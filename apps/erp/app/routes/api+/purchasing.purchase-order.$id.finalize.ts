@@ -8,8 +8,11 @@ import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getPurchaseOrder, getSupplier } from "~/modules/purchasing";
-import { getCompanySettings } from "~/modules/settings";
+import {
+  getPurchaseOrder,
+  getSupplier
+} from "~/modules/purchasing/purchasing.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "api-purchase-order-finalize");
 

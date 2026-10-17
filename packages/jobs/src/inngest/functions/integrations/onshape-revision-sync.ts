@@ -311,36 +311,8 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
       )
     );
 
-    if (result.synced && result.modelUploadId) {
-      // The sync stores the RAW Onshape export; the assembler turns it into
-      // the meshopt-compressed viewer GLB (same event the manual upload route
-      // fires).
-      await step.sendEvent("model-optimize", {
-        name: "carbon/model-optimize" as const,
-        data: {
-          modelUploadId: result.modelUploadId,
-          companyId: payload.companyId,
-          userId: payload.userId
-        }
-      });
-    }
-
-    if (
-      result.synced &&
-      result.modelUploadId &&
-      !result.thumbnailAttached &&
-      payload.elementType !== 0
-    ) {
-      // Fallback only: the sync stores Onshape's server-rendered thumbnail
-      // itself; the screenshot pipeline runs just when that fetch failed.
-      // Selected parts wait for model-optimize's completion-chained thumbnail:
-      // their new immutable model IDs have no renderable GLB before that step.
-      await step.sendEvent("model-thumbnail", {
-        name: "carbon/model-thumbnail" as const,
-        data: { companyId: payload.companyId, modelId: result.modelUploadId }
-      });
-    }
-
+    // The sync stores the RAW Onshape export. A new model row starts the
+    // optimise that builds the viewer GLB and the thumbnail.
     return result;
   }
 );

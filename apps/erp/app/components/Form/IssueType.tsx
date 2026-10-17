@@ -4,7 +4,7 @@
 
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import type { getIssueTypesList } from "~/modules/quality";
+import type { getIssueTypesList } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 /** The company's issue types, read through the shared client cache. The quality screens

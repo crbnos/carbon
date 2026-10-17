@@ -40,8 +40,7 @@ import type {
 } from "react-router";
 import { data, Form, useFetcher, useSearchParams } from "react-router";
 import { z } from "zod";
-
-import { getEmployeeCompanies } from "~/modules/settings";
+import { getEmployeeCompanies } from "~/modules/settings/settings.service";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 

@@ -36,7 +36,7 @@ import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { loadMethodWriteRefusals } from "~/modules/settings/onshape-draft-method.server";
+import { loadMethodWriteRefusals } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

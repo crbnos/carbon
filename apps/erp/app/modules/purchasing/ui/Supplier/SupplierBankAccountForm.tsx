@@ -32,7 +32,7 @@ import {
 } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { usePermissions } from "~/hooks";
-import { supplierBankAccountValidator } from "~/modules/purchasing";
+import { supplierBankAccountValidator } from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 
 type SupplierBankAccountFormProps = {

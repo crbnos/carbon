@@ -7,10 +7,8 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getItemSerialSequences,
-  ItemSerialSequencesTable
-} from "~/modules/settings";
+import { getItemSerialSequences } from "~/modules/settings/settings.service";
+import { ItemSerialSequencesTable } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

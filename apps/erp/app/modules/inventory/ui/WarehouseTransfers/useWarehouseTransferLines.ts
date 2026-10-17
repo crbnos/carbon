@@ -2,16 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import { useCallback } from "react";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import type { WarehouseTransfer } from "~/modules/inventory";
+import type { WarehouseTransfer } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 export default function useWarehouseTransferLines(
   warehouseTransfer: WarehouseTransfer
 ) {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  // A refused edit is toasted.
+  const fetcher = useAction();
   const permissions = usePermissions();
 
   const isEditable = ["Draft"].includes(warehouseTransfer.status);

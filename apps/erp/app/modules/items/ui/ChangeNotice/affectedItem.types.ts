@@ -3,16 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
-import type { MethodItemType, MethodType } from "../../../shared";
+import type { MethodItemType, MethodType } from "../../../shared/types";
 import type { ChangeNoticeItemDiff } from "../../items.models";
-import type { getRevisionLock } from "../../items.server";
 import type {
   ChangeNoticeAffectedItemWithLabel,
-  getConfigurationParameters,
   getConfigurationRules,
   getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId
+  getMethodOperationsByMakeMethodId,
+  getRevisionLock
 } from "../../items.service";
+import type { getConfigurationParameters } from "../../items.utils";
 import type { MakeMethod } from "../../types";
 import type { PartPropertiesData } from "../Parts/PartProperties";
 

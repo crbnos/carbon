@@ -8,10 +8,10 @@ paths:
   - "packages/database/supabase/migrations/*fleet-bridge*"
   - "packages/database/supabase/migrations/*asset-transfer*"
   - "packages/database/supabase/migrations/*job-to-asset*"
-  - "packages/server-functions/src/post-asset-transfer/**"
-  - "packages/server-functions/src/lib/asset-transfer.ts"
-  - "packages/server-functions/src/post-rental-agreement/**"
-  - "packages/server-functions/src/post-lease/**"
+  - "apps/erp/app/modules/accounting/accounting.service.ts"
+  - "apps/erp/app/modules/shared/shared.service.ts"
+  - "apps/erp/app/modules/sales/sales.service.ts"
+  - "apps/erp/app/modules/purchasing/purchasing.service.ts"
   - "packages/database/supabase/migrations/*rental-agreements*"
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
@@ -188,7 +188,8 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   for Straight Line assets with a useful life, `monthlyDepreciation = round(cost
   × (1 − residual %) / usefulLifeMonths)`), `setFixedAssetOutOfService`,
   `returnFixedAssetToService`, `invokeAssetTransfer`
-  (`serverFns.as({ client, db, companyId, userId }).invoke("post-asset-transfer", …)`).
+  (`invokePosting(…, postAssetTransfer, { as })`: the caller holds the transfer's
+  permission, and `update: accounting` when a capitalization enters its own cost).
 - What a run should hold: `buildDepreciationRunLines()` (`accounting.service.ts`)
   — every Active asset no OTHER run of the period covers, depreciated from the
   last run posted before the period, Units of Production summing the usage
@@ -222,7 +223,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `taxAmount` — decided from the posted lines, not the current setting), returns a Fully Depreciated asset
   above its residual to Active, and returns the run to Draft. A plain
   journal reversal of an `Asset Depreciation` journal is refused.
-- Server transactions (Kysely): `accounting.server.ts` — `postDisposal()`,
+- Server transactions (Kysely): building blocks in `accounting.service.ts` — `postDisposal()`,
   `postDepreciationRun()` and `postAssetRegistration()` build journals and
   update asset rows. `postAssetRegistration` takes an optional `status`
   (`"Active" | "Under Construction"`, default Active) and, for `Under
@@ -230,7 +231,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   row (`sourceType 'Manual'`, `journalId`) so a later capitalization sweeps it.
 - Calc utils: `accounting.utils.ts` — `acquisitionLines()`,
   `buildDepreciationLines()`, `getNextPeriodEnd()`, MACRS data.
-- Shared line builders: `packages/server-functions/src/lib/asset-transfer.ts` —
+- Shared line builders: `apps/erp/app/modules/shared/shared.service.ts` —
   `buildCapitalizationLines` (Dr asset / Cr the account the value came from) and
   `buildReturnToInventoryLines` (Dr inventory NBV / Dr accumulated depreciation
   when non-zero / Cr asset at cost); every amount `round()`ed, every set
@@ -253,9 +254,10 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   the fleet register at `routes/x+/accounting+/fleet.tsx` (nav: Accounting →
   Fixed Assets → Assets / Fleet, and Accounting → Closing → Depreciation,
   `useAccountingSubmodules`).
-- Server functions (`packages/server-functions/src/`): `post-receipt`,
-  `post-purchase-invoice` (acquisition, CIP-aware), `post-shipment`,
-  `post-sales-invoice` (disposal), `post-asset-transfer` (transfers).
+- Postings (ported from server functions to module building blocks): `postReceipt` and
+  `postShipment` (`inventory.service.ts`), `postPurchaseInvoice` (acquisition, CIP-aware) and
+  `postSalesInvoice` (disposal) (`invoicing.service.ts`), `postAssetTransfer` (transfers,
+  `accounting.service.ts`).
 - Outside the module: production `production.models.ts` (`jobValidator`
   carries `fixedAssetClassId` / `fixedAssetId`, refined to at most one:
   "A job completes to a fixed-asset class or to one asset under construction,
@@ -274,8 +276,9 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 `acquisitionCost`, `depreciationStartDate` (if unset), and flip `status`; a
 fifth (5, a lessee lease's purchase option) inserts the asset already Active:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`. For every company the
-   route posts an acquisition journal via `postAssetRegistration()` inside one
+   `fixedAssetRegisterValidator`, which calls `registerFixedAsset`
+   (`accounting.server.ts`). For every company it
+   posts an acquisition journal via `postAssetRegistration()` inside one
    Kysely transaction (Provisional before the accounting cutover, with no period
    and no dimension check; Posted after it) (`sourceType` `'Manual'`, description
    `Asset Registration: <readableId>`) and only then flips the asset (journal
@@ -311,7 +314,7 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    cost — or, for a unit carried at zero, at the cost the user enters; see
    **post-asset-transfer** below.
 5. Exercise a lessee lease's purchase option for one leased asset:
-   `post-lease` `purchase` (`packages/server-functions/src/post-lease/lifecycle.ts`;
+   `post-lease` `purchase` (`apps/erp/app/modules/purchasing/purchasing.service.ts`;
    lease page → the asset in the explorer → its page → **Exercise Purchase Option**,
    `x+/lease+/$id.$lineId.purchase.tsx`, `update: purchasing`). Refused for a
    Short-Term asset (and an open-ended lease, whose assets all are), an
@@ -321,7 +324,7 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    lease's end date, at price 0 (ownership passes for nothing); with neither,
    it is refused ("has no purchase option").
    In ONE transaction it posts a `'Lease'` journal (`purchaseLines`,
-   `post-lease/lessee.ts`): Dr the class's `assetAccountId` at
+   `purchasing.service.ts`): Dr the class's `assetAccountId` at
    `assetCost = ROU cost − accumulated ROU amortization + price − carrying
    liability` (refused below zero), Dr accumulated ROU amortization, Dr lease
    liability (carrying, plus a Pending option row the schedule already counted
@@ -413,12 +416,12 @@ while Under Construction; `$fixedAssetId.attach-job` lists jobs with no
 `salesOrderLineId`, no asset target and status not in Completed / Cancelled /
 Closed; `$fixedAssetId.capitalize` offers only non-CIP classes.
 
-**post-asset-transfer** (`packages/server-functions/src/post-asset-transfer/index.ts`,
-`validators.ts` = the zod contract + pure helpers). One `fixedAssetTransfer`
+**post-asset-transfer** (`postAssetTransfer` in `accounting.service.ts`, ported
+from the server function, with its zod contract and pure helpers). One `fixedAssetTransfer`
 document per call, created and Posted in ONE transaction; the function's permissions are keyed by
 `type`: `create: accounting` for capitalize / return / attachJob /
 capitalizeCip, `update: accounting` for `adjustCost`, and a `capitalize`
-that carries an entered `cost` additionally `authorize`s `update:
+that carries an entered `cost` additionally requires `update:
 accounting` (recosting puts a number of the user's own on the books); business failures are 400
 `InvalidInputError`s with the message the app shows, a record the
 caller's company does not own is a 404. Every action writes its journal for every
@@ -438,12 +441,12 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   (`itemLedger` −1, `entryType 'Negative Adjmt.'`, cost-layer consumption at
   carrying cost, no variance journal); posts Dr class asset / Cr the
   replenishment inventory account for that cost. The cost is decided by the
-  pure `resolveCapitalizationCost` (`validators.ts`): a unit that carries a
+  pure `resolveCapitalizationCost` (`accounting.service.ts`): a unit that carries a
   cost moves at it, and an entered `cost` is refused ("<serial> is carried in
   inventory at a cost…"); a unit whose carrying cost rounds to 0 takes the
   entered `cost` instead and the journal credits `offsetAccountId` (description
   `Capitalized Cost`; always required, an active non-group account
-  of the company group — `getOffsetAccount`, `lib/offset-account.ts`, which
+  of the company group — `getOffsetAccount`, `shared.service.ts`, which
   returns the account's class so `buildCapitalizationLines` signs the credit
   by it: Retained Earnings is Equity, credited +x); with neither it is REFUSED —
   "<serial> has no cost in inventory… Enter what it cost, or set a unit
@@ -458,7 +461,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   book; when it is 0 the form asks for an Acquisition Cost and an Offset
   Account defaulting to
   `accountDefault.retainedEarningsAccount`). That cost comes from the
-  `preview-asset-capitalization` server function (`{ trackedEntityId }`,
+  `previewAssetCapitalization` body (`accounting.service.ts`, `{ trackedEntityId }`,
   `view: accounting`; ERP wrapper `getCapitalizationCost`): the same
   `calculateCOGS` relief in a transaction that always rolls back, so it
   matches the posted amount for every costing method — the unit's own layer,
@@ -501,7 +504,7 @@ Location / FixedAssetClass / Item dimensions. Four payload variants:
   in the transaction). Posts Dr class `assetAccountId` / Cr `offsetAccountId`
   (description `Capitalized Cost`). The offset account is always required:
   the validator types it optional, but `getOffsetAccount`
-  (`lib/offset-account.ts`) refuses a missing one and anything but an active
+  (`shared.service.ts`) refuses a missing one and anything but an active
   posting account of the company group. `acquisitionCost += amount`, and the status from
   `statusAfterCostAdjustment` (Fully Depreciated → Active when NBV is above
   residual again). Fills an unset asset location from `locationId` (the
@@ -525,7 +528,7 @@ line's accounting treatment (`lessorClassification`) is set at activation:
 financing lease; `Financing` has no input). A **`Rental`** line posts no journal at activation, the asset stays `Active` and keeps
 depreciating, and only the derived fleet status changes (Reserved → On Rent →
 Available again, or In Maintenance when the rental receipt line's **Take out of
-service** box is ticked — `returnRentalUnit`, `post-rental-agreement/return-unit.ts`,
+service** box is ticked — `returnRentalUnit` (`sales.service.ts`)
 sets `outOfServiceSince = returnedAt` and the reason). A unit goes On Rent when a
 rental shipment posts (`post-shipment`, source `'Rental Agreement'`) and comes back
 when a rental receipt posts (`post-receipt`); neither writes an `itemLedger` row or a
@@ -542,7 +545,7 @@ live rental line**: `post-asset-transfer` `returnToInventory` checks for a
 transaction and throws "Asset <id> is on rent|reserved on rental agreement
 <RA…>; return it from the agreement first". The fleet table hides the
 Return to Inventory menu item for On Rent and Reserved rows, and Take Out of
-Service for On Rent rows; the server function and the route stay the gates.
+Service for On Rent rows; `postAssetTransfer` and the route stay the gates.
 
 **Sales-type leases dispose the fleet asset.** A line classified **`Sale`**
 (a sales-type lease) at activation (`post-rental-agreement` `commenceSalesTypeLines`) is sold to the
@@ -554,7 +557,7 @@ being activated"), plus a `fixedAssetDisposal` row (`netBookValueAtDisposal`
 = C = cost − accumulated depreciation, `gainLoss` = selling profit, `journalId`
 = the commencement journal). The `'Lease'` journal (Provisional before the
 accounting cutover; pure
-builder `buildCommencementLines`, `post-rental-agreement/lessor.ts`) is: Dr Net
+builder `buildCommencementLines`, `sales.service.ts`) is: Dr Net
 Investment in Leases NI, Dr COGS C − PVres, **Dr class
 `accumulatedDepreciationAccountId`** accumulated depreciation / Cr Lease
 Revenue PVpay, **Cr class `assetAccountId`** at cost; no gain/loss or
@@ -572,7 +575,7 @@ no entry point in v1.
 sequence) in the non-CIP class named "Rental Fleet" (else the class the unit
 left at commencement; neither → "No Rental Fleet asset class to return the
 unit into; create one or return the unit to inventory") with `acquisitionCost`
-= the closing net investment (`netInvestmentAt`, `lessor.ts`: the
+= the closing net investment (`netInvestmentAt`, `sales.service.ts`: the
 `closingNetInvestment` of the last `rentalLeaseScheduleLine` dated on or
 before `returnedAt` — the closing target at or after `endDate` — or
 `initialNetInvestment` when the line has no schedule; read off the schedule,
@@ -597,7 +600,7 @@ future"), and a `Sale` line's billing is not re-cut by a return.
 
 **Purchase option exercise derecognizes the rest.** Posting a `Sale`
 line's `Purchase Option` invoice line (`post-sales-invoice`,
-`purchaseOptionSettlement` in `rental-posting.ts`) credits NI by the option
+`purchaseOptionSettlement` in `invoicing.service.ts`) credits NI by the option
 and settles the difference to the schedule's closing balance (the last
 `rentalLeaseScheduleLine`'s `closingNetInvestment`): shortfall Dr
 `costOfGoodsSoldAccount` / Cr NI, excess Dr NI / Cr `leaseRevenueAccount`,
@@ -607,12 +610,13 @@ created — the unit is the customer's.
 **Out of service.** `outOfServiceSince` / `outOfServiceReason` are set together
 by `setFixedAssetOutOfService` (date = company today) and cleared together by
 `returnFixedAssetToService`; both through `$fixedAssetId.out-of-service.tsx`
-(`update: accounting`; a plain POST takes the asset out with the form's reason,
-POST `?intent=return` returns it). The loader refuses an asset already out of
-service or Disposed. Accounting is untouched: the asset stays `Active` and
+(`update: accounting`; a plain POST takes the asset out with the form's reason
+through `fixedAsset.takeOutOfService`, POST `?intent=return` returns it through
+`fixedAsset.returnToService`). The loader and the operation refuse an asset
+already out of service or Disposed (`outOfServiceRefusal`). Accounting is untouched: the asset stays `Active` and
 keeps depreciating; only the fleet status reads `In Maintenance`, and Return to
 Inventory is blocked until the asset is back in service. A unit On Rent
-cannot be taken out of service: the loader and the action both refuse it
+cannot be taken out of service: the loader and the operation both refuse it
 (`getOnRentLineForAsset`, `sales.service.ts`, read with the service role
 scoped to company + asset — an accountant may lack `sales_view`, and under RLS
 that read as "not on rent"; a failed read refuses) with "The asset is on rent on
@@ -638,14 +642,15 @@ themselves (remaining value over remaining life / cumulative minus taken);
 Units of Production does not catch up. Gated on the adjustment so a mid-life
 registration with an opening accumulated balance is never re-derived.
 
-1. `depreciation-runs.new` action calls `createDepreciationRun()`, which
+1. `depreciation-runs.new` calls the service function `createDepreciationRun`, which calls
+   the building block `createDepreciationRun()`, which
    builds the lines with `buildDepreciationRunLines()` and inserts a
    `depreciationRun` (Draft) + one `depreciationRunLine` per asset per month.
    With no lines it creates nothing.
-2. `$depreciationRunId.post` → `postDepreciationRun()`: locks the run
+2. `$depreciationRunId.post` → the service function `postDepreciationRun` → the building block `postDepreciationRun()`: locks the run
    `FOR UPDATE` and refuses anything but a Draft, re-reads the lines and locks
    the assets inside the transaction (`RunOutOfDateError` when they no longer
-   match what the route checked), then per asset per month posts Debit
+   match what the operation checked), then per asset per month posts Debit
    `depreciationExpenseAccountId` / Credit `accumulatedDepreciationAccountId`
    (`sourceType: 'Asset Depreciation'`; a month with a zero book amount posts
    no journal), adds to `accumulatedDepreciation` in SQL (+ tax / deferred-tax
@@ -658,7 +663,8 @@ NBV** to a distinct non-operating line — never comingled with revenue. Carbon
 uses `gainOnDisposalAccountId` / `lossOnDisposalAccountId` for that gain/loss
 and `writeOffAccountId` as a **disposal clearing / holding account** in the
 two-step (ship → invoice) flow.
-1. Manual scrap: `$fixedAssetId.dispose` → `postDisposal()` (hardcodes
+1. Manual scrap: `$fixedAssetId.dispose` → `disposeFixedAsset` (Active or
+   Fully Depreciated only) → `postDisposal()` (hardcodes
    `Scrapping`). NBV = `acquisitionCost − accumulatedDepreciation`; proceeds = 0,
    so the entire NBV is a loss. Posts Debit accumulated depreciation, **Debit
    `lossOnDisposalAccountId` for the full NBV loss**, Credit asset at cost

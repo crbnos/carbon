@@ -2,505 +2,64 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Json } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import {
-  idsWithLiveStockHistory,
-  releaseReceiptSerialEntities,
-  voidedReceiptIds
-} from "@carbon/database/receipt-serials";
-import { getLogger } from "@carbon/logger";
-import { isUniqueViolation } from "@carbon/utils";
-import { sql } from "kysely";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { planSerialBoxWrite } from "~/modules/inventory";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "receipt", "tracking");
+const line = {
+  receiptId: z.string().min(1),
+  receiptLineId: z.string().min(1)
+};
 
-export async function action({ request, context }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    create: "inventory"
-  });
-
-  const formData = await request.formData();
-  const itemId = formData.get("itemId") as string;
-  const receiptLineId = formData.get("receiptLineId") as string;
-  const receiptId = formData.get("receiptId") as string;
-  const trackingType = formData.get("trackingType") as
-    | "batch"
-    | "serial"
-    | "returnEntity";
-
-  // The batch and serial paths write through service-role RPCs that key on
-  // these form ids alone (and upsert the tracked entity by id), so the receipt
-  // line must belong to this receipt and company before either runs.
-  if (trackingType === "batch" || trackingType === "serial") {
-    await requireCompanyRecord(
-      getCarbonServiceRole(),
-      "receiptLine",
-      companyId,
-      {
-        id: receiptLineId,
-        receiptId
+// One form per tracking type. `returnEntity` assigns (or with
+// `intent=remove` clears) an entity a customer sent back.
+const tracking = z.discriminatedUnion("trackingType", [
+  z.object({
+    trackingType: z.literal("batch"),
+    ...line,
+    batchNumber: z.string(),
+    quantity: zfd.numeric(z.number()),
+    // A JSON object; one that does not parse saves no properties.
+    properties: zfd.text(z.string().optional()).transform((json) => {
+      try {
+        return json ? (JSON.parse(json) as Record<string, unknown>) : {};
+      } catch {
+        return {};
       }
-    );
+    }),
+    trackedEntityId: zfd.text(z.string().optional())
+  }),
+  z.object({
+    trackingType: z.literal("serial"),
+    ...line,
+    serialNumber: z.string(),
+    index: zfd.numeric(z.number()),
+    expiryDate: zfd.text(z.string().optional())
+  }),
+  z.object({
+    trackingType: z.literal("returnEntity"),
+    ...line,
+    intent: z.enum(["assign", "remove"]).default("assign"),
+    trackedEntityId: z.string().min(1),
+    index: zfd.numeric(z.number().optional())
+  })
+]);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(tracking).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const { data } = input;
+  switch (data.trackingType) {
+    case "batch":
+      return api.inventory.setReceiptLineBatch(data);
+    case "serial":
+      return api.inventory.setReceiptLineSerial(data);
+    case "returnEntity":
+      return data.intent === "remove"
+        ? api.inventory.removeReceiptReturnEntity(data)
+        : api.inventory.assignReceiptReturnEntity(data);
   }
-
-  if (trackingType === "batch") {
-    const batchNumber = formData.get("batchNumber") as string;
-    const quantity = Number(formData.get("quantity"));
-    const properties = formData.get("properties") as string | null;
-    const passedTrackedEntityId = formData.get("trackedEntityId") as
-      | string
-      | null;
-
-    // Resolve the tracked entity id. Prefer the id passed from the form (the
-    // existing entity for this receipt line). Fall back to lookup by Receipt
-    // Line so a stale batch-number rename never orphans the prior entity.
-    let trackedEntityId: string | undefined =
-      passedTrackedEntityId ?? undefined;
-    if (trackedEntityId) {
-      // The RPC upserts by this id, so an id from another company would
-      // overwrite that company's lot.
-      await requireCompanyRecord(
-        getCarbonServiceRole(),
-        "trackedEntity",
-        companyId,
-        { id: trackedEntityId }
-      );
-    } else {
-      const { data: existing, error: batchQueryError } = await client
-        .from("trackedEntity")
-        .select("id")
-        .eq("attributes ->> Receipt Line", receiptLineId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-
-      if (batchQueryError) {
-        return data({ error: "Failed to query batch number" }, { status: 500 });
-      }
-      trackedEntityId = existing?.id;
-    }
-
-    let propertiesJson = {};
-    try {
-      propertiesJson = properties ? JSON.parse(properties) : {};
-    } catch (error) {
-      logger.error("Failed to parse tracking properties", { error });
-    }
-
-    const serviceRole = await getCarbonServiceRole();
-    // Use a transaction to ensure data consistency
-    const { error } = await serviceRole.rpc(
-      "update_receipt_line_batch_tracking",
-      {
-        p_tracked_entity_id: trackedEntityId,
-        p_receipt_line_id: receiptLineId,
-        p_receipt_id: receiptId,
-        p_batch_number: batchNumber,
-        p_quantity: quantity,
-        p_properties: propertiesJson
-      }
-    );
-
-    if (error) {
-      logger.error("Failed to update batch tracking", { error });
-      return data({ error: "Failed to update tracking" }, { status: 500 });
-    }
-  } else if (trackingType === "serial") {
-    const serialNumber = (
-      (formData.get("serialNumber") as string | null) ?? ""
-    ).trim();
-    const index = Number(formData.get("index"));
-    const expiryDate = formData.get("expiryDate") as string | null;
-    if (!Number.isInteger(index) || index < 0) {
-      return data({ error: "Invalid serial position" }, { status: 400 });
-    }
-    const db = getDatabaseClient();
-    const selectSerialBox = (trx: Kysely<KyselyDatabase>) =>
-      trx
-        .selectFrom("trackedEntity")
-        .select("id")
-        .where("companyId", "=", companyId)
-        .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
-        .where(
-          sql<string>`attributes->>'Receipt Line Index'`,
-          "=",
-          String(index)
-        )
-        .execute();
-
-    type SerialWrite =
-      | { ok: true }
-      | { ok: false; status: 400 | 404; error: string };
-
-    const writeSerialBox = (): Promise<SerialWrite> =>
-      db.transaction().execute(async (trx) => {
-        const receipt = await trx
-          .selectFrom("receipt")
-          .select("status")
-          .where("id", "=", receiptId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-        if (!receipt) {
-          return { ok: false, status: 404, error: "Receipt not found" };
-        }
-        if (receipt.status === "Posted" || receipt.status === "Voided") {
-          return {
-            ok: false,
-            status: 400,
-            error: "A posted receipt can no longer be changed"
-          };
-        }
-
-        const box = await selectSerialBox(trx);
-
-        const withSerial = serialNumber
-          ? await trx
-              .selectFrom("trackedEntity")
-              .select(["id", "attributes"])
-              .where("sourceDocumentId", "=", itemId)
-              .where("readableId", "=", serialNumber)
-              .where("companyId", "=", companyId)
-              .execute()
-          : [];
-
-        // A serial from a voided receipt was never received: its movements
-        // are the receipt and its void, and the box it names is gone. The new
-        // box takes the same entity, so one unit keeps one history.
-        const history = await idsWithLiveStockHistory(trx, companyId, [
-          ...box.map((entity) => entity.id),
-          ...withSerial.map((entity) => entity.id)
-        ]);
-        const voided = await voidedReceiptIds(
-          trx,
-          companyId,
-          withSerial.flatMap((entity) => {
-            const receipt = (entity.attributes as Record<string, unknown>)
-              ?.Receipt;
-            return typeof receipt === "string" ? [receipt] : [];
-          })
-        );
-
-        const plan = planSerialBoxWrite({
-          receiptLineId,
-          index,
-          serialNumber,
-          box: box.map((entity) => ({
-            id: entity.id,
-            hasHistory: history.has(entity.id)
-          })),
-          withSerial: withSerial.map((entity) => {
-            const attributes = (entity.attributes ?? {}) as Record<
-              string,
-              unknown
-            >;
-            return {
-              id: entity.id,
-              hasHistory: history.has(entity.id),
-              attributes,
-              onVoidedReceipt:
-                typeof attributes.Receipt === "string" &&
-                voided.has(attributes.Receipt)
-            };
-          })
-        });
-
-        if (plan.kind === "write") {
-          await sql`SELECT update_receipt_line_serial_tracking(
-            p_receipt_line_id => ${receiptLineId},
-            p_receipt_id => ${receiptId},
-            p_serial_number => ${serialNumber},
-            p_index => ${index}::int,
-            p_tracked_entity_id => ${plan.targetId ?? null}::text,
-            p_expiry_date => ${expiryDate || null}::text
-          )`.execute(trx);
-        }
-
-        await releaseReceiptSerialEntities(trx, companyId, plan.releaseIds);
-
-        if (plan.kind === "taken") {
-          return {
-            ok: false,
-            status: 400,
-            error:
-              plan.reason === "unit"
-                ? "Serial number already belongs to an existing unit"
-                : "Serial number is already used for a different item or position"
-          };
-        }
-        return { ok: true };
-      });
-
-    let result: SerialWrite;
-    try {
-      result = await writeSerialBox();
-    } catch (error) {
-      logger.error("Failed to update serial tracking", {
-        companyId,
-        receiptLineId,
-        index,
-        error
-      });
-      // The box shows a value that did not save; empty it so its previous
-      // serial cannot post in its place.
-      await db
-        .transaction()
-        .execute(async (trx) => {
-          const box = await selectSerialBox(trx);
-          await releaseReceiptSerialEntities(
-            trx,
-            companyId,
-            box.map((entity) => entity.id)
-          );
-        })
-        .catch((clearError) =>
-          logger.error("Failed to clear the serial box", {
-            companyId,
-            receiptLineId,
-            index,
-            error: clearError
-          })
-        );
-      return data(
-        {
-          error: isUniqueViolation(error)
-            ? "Serial number already exists for this item"
-            : "Failed to update tracking"
-        },
-        { status: isUniqueViolation(error) ? 400 : 500 }
-      );
-    }
-    if (!result.ok) {
-      return data({ error: result.error }, { status: result.status });
-    }
-  } else if (trackingType === "returnEntity") {
-    // Sales-return receipts re-tag an EXISTING (Consumed) tracked entity with
-    // this receipt line's attributes instead of creating a new entity — the
-    // standard serial path rejects a serial that already carries a Receipt
-    // Line Index from its original receipt. post-receipt discovers the entity
-    // through the same attributes and reactivates it On Hold.
-    const trackedEntityId = formData.get("trackedEntityId") as string;
-    const intent = (formData.get("intent") as string) ?? "assign";
-    const indexRaw = formData.get("index") as string | null;
-    const index = indexRaw == null || indexRaw === "" ? null : Number(indexRaw);
-
-    const [receipt, receiptLine, entity] = await Promise.all([
-      client
-        .from("receipt")
-        .select("id, sourceDocument, sourceDocumentId")
-        .eq("id", receiptId)
-        .eq("companyId", companyId)
-        .single(),
-      client
-        .from("receiptLine")
-        .select("id, lineId")
-        .eq("id", receiptLineId)
-        // Scoped to BOTH the company and this receipt: `receiptLineId` is
-        // caller-supplied, and without the receipt link a line belonging to
-        // another receipt of the same return order would tag the entity with a
-        // mismatched Receipt / Receipt Line pair.
-        .eq("receiptId", receiptId)
-        .eq("companyId", companyId)
-        .single(),
-      client
-        .from("trackedEntity")
-        .select("id, status, attributes, itemId")
-        .eq("id", trackedEntityId)
-        .eq("companyId", companyId)
-        .single()
-    ]);
-
-    if (receipt.error || receipt.data.sourceDocument !== "Sales Return Order") {
-      return data(
-        { error: "Return tracking requires a sales-return receipt" },
-        { status: 400 }
-      );
-    }
-    if (receiptLine.error || !receiptLine.data.lineId) {
-      return data({ error: "Receipt line not found" }, { status: 400 });
-    }
-    if (entity.error) {
-      return data({ error: "Tracked entity not found" }, { status: 400 });
-    }
-
-    const serviceRole = await getCarbonServiceRole();
-    const attributes = (entity.data.attributes ?? {}) as Record<
-      string,
-      unknown
-    >;
-
-    if (intent === "remove") {
-      // Only clear tracking that points at THIS receipt line — otherwise a
-      // crafted POST could strip tracking off another receipt's entity.
-      if (attributes["Receipt Line"] !== receiptLineId) {
-        return data(
-          { error: "Entity is not assigned to this receipt line" },
-          { status: 400 }
-        );
-      }
-      delete attributes["Receipt"];
-      delete attributes["Receipt Line"];
-      delete attributes["Receipt Line Index"];
-      const { error } = await serviceRole
-        .from("trackedEntity")
-        .update({ attributes: attributes as Json })
-        .eq("id", trackedEntityId);
-      if (error) {
-        logger.error("Failed to clear return tracking", { error });
-        return data({ error: "Failed to update tracking" }, { status: 500 });
-      }
-      return { success: true };
-    }
-
-    if (entity.data.status !== "Consumed") {
-      return data(
-        { error: "Only shipped (consumed) entities can be returned" },
-        { status: 400 }
-      );
-    }
-
-    // "Which serial is it" lives entirely on the receipt — the RMA does not
-    // pre-pick serials. Authorization is provenance: the entity must be the
-    // return line's item and must have left on a posted shipment to this
-    // return's customer, whatever serial the customer actually sent back.
-    const returnLine = await client
-      .from("salesReturnOrderLine")
-      .select("itemId, salesReturnOrderId")
-      .eq("id", receiptLine.data.lineId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (
-      !returnLine.data ||
-      returnLine.data.salesReturnOrderId !== receipt.data.sourceDocumentId
-    ) {
-      return data(
-        { error: "Return line does not belong to this receipt's return order" },
-        { status: 400 }
-      );
-    }
-    if (entity.data.itemId !== returnLine.data.itemId) {
-      return data(
-        { error: "Entity is a different item than this return line" },
-        { status: 400 }
-      );
-    }
-
-    const returnOrder = await client
-      .from("salesReturnOrder")
-      .select("customerId")
-      .eq("id", returnLine.data.salesReturnOrderId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    const shipmentId = attributes["Shipment"];
-    const shippedToCustomer =
-      returnOrder.data?.customerId && typeof shipmentId === "string"
-        ? await client
-            .from("shipment")
-            .select("id")
-            .eq("id", shipmentId)
-            .eq("companyId", companyId)
-            .eq("customerId", returnOrder.data.customerId)
-            .eq("status", "Posted")
-            .maybeSingle()
-        : { data: null };
-    if (!shippedToCustomer.data) {
-      return data(
-        { error: "Entity was not shipped to this customer" },
-        { status: 400 }
-      );
-    }
-
-    // Refuse to steal a serial another OPEN return receipt has already
-    // claimed: overwriting its Receipt attributes would strip a validated
-    // assignment off that receipt, which then posts with a missing serial.
-    // (A Consumed entity legitimately still carries its ORIGINAL inbound
-    // purchase-receipt attributes — only a claim by another Draft
-    // sales-return receipt blocks.)
-    const existingReceiptLine = attributes["Receipt Line"];
-    if (
-      typeof existingReceiptLine === "string" &&
-      existingReceiptLine !== receiptLineId
-    ) {
-      const otherLine = await client
-        .from("receiptLine")
-        .select("receiptId")
-        .eq("id", existingReceiptLine)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      const otherReceipt = otherLine.data?.receiptId
-        ? await client
-            .from("receipt")
-            .select("id, receiptId, sourceDocument, status")
-            .eq("id", otherLine.data.receiptId)
-            .eq("companyId", companyId)
-            .maybeSingle()
-        : { data: null };
-      if (
-        otherReceipt.data &&
-        otherReceipt.data.id !== receiptId &&
-        otherReceipt.data.sourceDocument === "Sales Return Order" &&
-        otherReceipt.data.status === "Draft"
-      ) {
-        return data(
-          {
-            error: `Entity is already assigned on receipt ${otherReceipt.data.receiptId}. Remove it there first.`
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Clear the slot on any other entity currently occupying it
-    const stale = await client
-      .from("trackedEntity")
-      .select("id, attributes")
-      .eq("attributes ->> Receipt Line", receiptLineId)
-      .eq("companyId", companyId)
-      .neq("id", trackedEntityId);
-    for (const staleEntity of stale.data ?? []) {
-      const staleAttributes = (staleEntity.attributes ?? {}) as Record<
-        string,
-        unknown
-      >;
-      if (
-        index != null &&
-        staleAttributes["Receipt Line Index"] !== index &&
-        staleAttributes["Receipt Line Index"] !== undefined
-      ) {
-        continue;
-      }
-      delete staleAttributes["Receipt"];
-      delete staleAttributes["Receipt Line"];
-      delete staleAttributes["Receipt Line Index"];
-      await serviceRole
-        .from("trackedEntity")
-        .update({ attributes: staleAttributes as Json })
-        .eq("id", staleEntity.id);
-    }
-
-    attributes["Receipt"] = receiptId;
-    attributes["Receipt Line"] = receiptLineId;
-    if (index != null) {
-      attributes["Receipt Line Index"] = index;
-    } else {
-      delete attributes["Receipt Line Index"];
-    }
-
-    const { error } = await serviceRole
-      .from("trackedEntity")
-      .update({ attributes: attributes as Json })
-      .eq("id", trackedEntityId);
-    if (error) {
-      logger.error("Failed to assign return tracking", { error });
-      return data({ error: "Failed to update tracking" }, { status: 500 });
-    }
-  }
-
-  return { success: true };
 }

@@ -7,9 +7,9 @@
 // clock, no random values. Two callers write them:
 // - the ERP's posting (`postDepreciationRun`, `postDisposal`,
 //   `postRevenueRecognitionRun`, apps/erp/app/modules/accounting/
-//   accounting.server.ts): Posted, in the periods the route resolved;
-// - the enable's legacy backfill (packages/server-functions/src/
-//   activate-accounting/legacy/runs.ts): Provisional, from the stored rows.
+//   accounting.service.ts): Posted, in the periods the operation resolved;
+// - the enable's legacy backfill (`buildLegacyDepreciationJournals` and its
+//   siblings, same file): Provisional, from the stored rows.
 // The caller gathers the facts and writes the result. The journal id, the
 // entry number, the period, the status, each line's `journalLineReference`
 // and the dimension ids are the caller's.

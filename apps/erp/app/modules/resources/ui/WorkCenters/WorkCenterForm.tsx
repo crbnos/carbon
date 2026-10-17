@@ -59,8 +59,8 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import type { getWorkCenterCapitalCost } from "~/modules/accounting";
-import { workCenterValidator } from "~/modules/resources";
+import type { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
+import { workCenterValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type ScheduleMode = "all" | "some" | "lightsOut";

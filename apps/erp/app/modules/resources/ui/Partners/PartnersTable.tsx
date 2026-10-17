@@ -17,7 +17,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Partner } from "~/modules/resources";
+import type { Partner } from "~/modules/resources/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 

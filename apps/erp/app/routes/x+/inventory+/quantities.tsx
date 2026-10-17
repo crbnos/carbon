@@ -14,21 +14,21 @@ import {
 import { pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { InventoryItem } from "~/modules/inventory";
 import {
   expandStorageUnitIdsWithDescendants,
   getInventoryItems,
   getStorageTypesList,
   getStorageUnitsList
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
+import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+} from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

@@ -31,7 +31,7 @@ import {
   useParams
 } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
-import type { Company } from "~/modules/settings";
+import type { Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 import { AddCompanyModal } from "./AddCompanyModal";
 

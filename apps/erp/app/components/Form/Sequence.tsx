@@ -6,7 +6,7 @@ import type { SelectProps } from "@carbon/form";
 import { Select } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import type { getSequencesList } from "~/modules/settings";
+import type { getSequencesList } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 type SequenceSelectProps = Omit<SelectProps, "options"> & {

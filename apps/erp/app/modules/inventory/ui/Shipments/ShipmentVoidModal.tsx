@@ -15,20 +15,24 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
+import type { action as voidAction } from "~/routes/x+/shipment+/$shipmentId.void";
 import { path } from "~/utils/path";
 
 const ShipmentVoidModal = ({ onClose }: { onClose: () => void }) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
+  const { t } = useLingui();
   const navigation = useNavigation();
-  const fetcher = useAction<{}>({
+  const fetcher = useAction<typeof voidAction>({
+    onSuccess: () => toast.success(t`Shipment voided`),
     onSettled: () => {
       if (submitted.current) {
         onClose();

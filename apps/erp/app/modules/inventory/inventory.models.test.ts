@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  finishPickingList,
   kanbanValidator,
   planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
@@ -423,5 +424,46 @@ describe("reconcileReceiptLineSerials", () => {
         1
       )
     ).toEqual({ missingIndexes: [], surplusEntityIds: ["blank"] });
+  });
+});
+
+describe("finishPickingList", () => {
+  const finish = (
+    unresolvedItemNames: string[],
+    opts: { hasShort?: boolean; policy?: string; acknowledged?: boolean } = {}
+  ) =>
+    finishPickingList({
+      unresolvedItemNames,
+      hasShort: opts.hasShort ?? false,
+      policy: opts.policy ?? "warn",
+      acknowledged: opts.acknowledged ?? false
+    });
+
+  it("completes a list with every line picked", () => {
+    expect(finish([])).toEqual({ outcome: "finish", status: "Completed" });
+  });
+
+  it("finishes a list with a short line as Partial", () => {
+    expect(finish([], { hasShort: true })).toEqual({
+      outcome: "finish",
+      status: "Partial"
+    });
+  });
+
+  it("refuses unpicked lines under the error policy, even acknowledged", () => {
+    expect(
+      finish(["Bolt", "Nut"], { policy: "error", acknowledged: true })
+    ).toEqual({
+      outcome: "refuse",
+      message: "Can't finish — still unpicked: Bolt, Nut"
+    });
+  });
+
+  it("asks before finishing unpicked lines under warn, then finishes Partial", () => {
+    expect(finish(["Bolt"])).toEqual({ outcome: "ask" });
+    expect(finish(["Bolt"], { acknowledged: true })).toEqual({
+      outcome: "finish",
+      status: "Partial"
+    });
   });
 });

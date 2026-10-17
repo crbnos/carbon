@@ -10,10 +10,8 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  insertSupplierLocation,
-  supplierLocationValidator
-} from "~/modules/purchasing";
+import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
+import { insertSupplierLocation } from "~/modules/purchasing/purchasing.service";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

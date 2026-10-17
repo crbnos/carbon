@@ -2180,6 +2180,9 @@ msgstr "Güncelle"
 msgid "Updated {0}"
 msgstr "{0} tarihinde güncellendi"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
 

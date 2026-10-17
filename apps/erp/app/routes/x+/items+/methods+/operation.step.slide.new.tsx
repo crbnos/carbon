@@ -11,8 +11,8 @@ import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
   upsertMethodOperationStepSlide
-} from "~/modules/items";
-import { operationStepSlideValidator } from "~/modules/shared";
+} from "~/modules/items/items.service";
+import { operationStepSlideValidator } from "~/modules/shared/shared.models";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -6,7 +6,7 @@ paths:
   - "packages/jobs/src/inngest/functions/tasks/company-import.ts"
   - "packages/jobs/src/inngest/functions/tasks/company-restore.ts"
   - "apps/erp/app/modules/settings/backups.service.ts"
-  - "apps/erp/app/modules/settings/backups.server.ts"
+  - "apps/erp/app/modules/settings/settings.service.ts"
   - "apps/erp/app/modules/settings/ui/Backups/**"
   - "apps/erp/app/routes/x+/settings+/backups.tsx"
   - "apps/erp/app/routes/api+/settings.backup-summary.ts"
@@ -28,13 +28,13 @@ is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
 User-facing rules of the feature: backups require `settings` update permission
 (no owner gate — the old `group.ownerId === userId` check was removed; the route
 sends `carbon/company-export` itself via `exportCompanyBackup` in
-`backups.server.ts`), exclude secrets, and a restore is
+`settings.service.ts`), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
 **Backups are a Business/Enterprise feature** (`BACKUPS` in `FEATURE_PLANS`), with
 an internal-staff / local-dev escape hatch. The authoritative gate is
 `canManageBackups(client, companyId, email)`
-(`apps/erp/app/modules/settings/backups.server.ts`) =
+(`apps/erp/app/modules/settings/settings.service.ts`) =
 `canAccessBackups(email) || companyHasFeature(client, companyId, { feature: "BACKUPS" })`.
 `canAccessBackups(email)` (`apps/erp/app/utils/backups.ts`) = `IS_LOCAL_DEV ||
 isInternalEmail(email)` stays a pure browser-safe predicate — the escape hatch, and the
@@ -194,8 +194,8 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   generated row types (`satisfies`), so a renamed/dropped column fails typecheck.
   Neither `db:check:backups` nor any other check detects an UNLISTED new column yet.
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
-  of `private/{companyId}/…` files into a backup's `assets/` folder) and
-  `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +
+  of the company bucket's `{companyId}/…` files into a backup's `assets/` folder) and
+  `restoreAssetsFromBackup` (copy them back into the target company's bucket, rewriting paths +
   guarding every write to the target `{companyId}/` prefix). `removeStoragePrefix`
   recursively deletes a backup's asset folder, which is `backupAssetsDir(name)` =
   `exports/<name>/assets` — derived from the folder name, not from a file suffix.
@@ -203,11 +203,12 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   memory stays flat regardless of asset size.
 
 Buckets (important, two different things):
-- `STORAGE_BUCKET = "private"` — the **shared** bucket holding every company's
-  uploaded assets under a `{companyId}/` prefix.
-- The **per-company bucket named by `companyId`** holds one folder per backup
-  (`exports/<name>/` — its `manifest.json`, `tables/`, `assets/{companyId}/…`) and
-  pre-restore snapshots under the same prefix — see `client.storage.from(companyId)`.
+- The **per-company bucket named by `companyId`** holds the company's uploaded assets
+  under a `{companyId}/` prefix, one folder per backup (`exports/<name>/` — its
+  `manifest.json`, `tables/`, `assets/{companyId}/…`), and pre-restore snapshots under
+  the same prefix — see `client.storage.from(companyId)`.
+- `LEGACY_SHARED_BUCKET = "private"` — the retired shared bucket. Export, backup and
+  restore never read it; only the company purge still deletes what a company left there.
 - `TEMPLATE_BUCKET = "company-templates"`, `TEMPLATE_ASSET_PREFIX = "_templates"`.
 
 ## Export — `company-export.ts`
@@ -274,7 +275,7 @@ in-scope asset paths in `manifest.storage` and returns them; the job then
   intent → `dismissCompanyExportFailure` (service role — the table has no DELETE
   policy), and the next export's `upsertExportMarker` reuses the row.
 - **Asset cap** (`company-export.ts`): no per-file cap (the bucket already bounds
-  uploads — 120MB CAD, 50MB docs; the `private` bucket's own limit is the dev
+  uploads — 120MB CAD, 50MB docs; a company bucket's own limit is the dev
   `50MiB` global in `config.toml`), only a `MAX_STORAGE_TOTAL_BYTES = 1GiB` guard on
   the whole backup. Files are included greedily until the budget is hit; each is
   recorded in `manifest.storage` with `included: true|false`. The cap is storage-cost
@@ -292,7 +293,7 @@ downstream mechanism can do no more than say so.
 
 That is why there is **no stored verdict and no re-check job**: the Backups
 loader computes `reportBackupCompatibility` against the LIVE schema on every
-load (`getCompanyBackups` in `backups.server.ts`), so the badge cannot go
+load (`getCompanyBackups` in `settings.service.ts`), so the badge cannot go
 stale, and the hard refusal is `assertBackupImportable`, which runs against
 the live schema inside `company-restore.ts`. (Two earlier designs died here:
 a nightly re-check that alerted nobody and repaired nothing, and an
@@ -491,7 +492,8 @@ Forward flow:
      `SECRET_TABLES` still carries its rows (e.g. `apiKeyRateLimit` → the stripped
      `apiKey`); they're ignored on load, so the preflight ignores them too.
 5. `restoreAssetsFromBackup` (outside the txn, non-transactional) copies the files
-   from the backup's `assets/` folder back to `private/<rewritten path>`,
+   from the backup's `assets/` folder back into the target company's bucket at the
+   rewritten path,
    server-side. It runs **before** the `ready` marker (step below) so the progress
    dialog only reports "complete" once data AND files are in place — but it never
    throws (per-file warnings), so a storage hiccup still can't fail a committed
@@ -537,14 +539,15 @@ cleanup.
 
 ## ERP layer
 
-- `backups.service.ts` — per-company bucket ops: `exportCompanyBackup`,
+- `backups.service.ts` — per-company bucket ops:
   `listCompanyBackupFolders` (`from(companyId).list("exports")` folders, paged
   with a hard page cap; a folder is "ready" once `manifest.json` exists, else
   "pending"; returns each parsed `Manifest` for the server wrapper),
   `deleteCompanyBackup` (removes the whole `exports/<name>/` folder),
   `getCompanyRestoreRuns` (restore markers), `getCompanyExportRun` (the export
   marker: `status: "running" | "failed"`, `progress`, `startedAt`, `error`).
-- `backups.server.ts` — server-only. `getCompanyBackups` is the loader's list:
+- `settings.service.ts` (server-only) holds the rest. `canManageBackups` is the gate.
+  `exportCompanyBackup` sends `carbon/company-export`. `getCompanyBackups` is the loader's list:
   it reads the live catalog ONCE per load (`getCompanyTableCatalog` over
   `getDatabaseClient()`, via `@carbon/jobs/backups`), diffs every listed
   manifest with `reportBackupCompatibility`, attaches

@@ -63,7 +63,7 @@ import { createPortalSlot } from "~/components/Layout/Mobile/slots";
 import { RecordAction } from "~/components/Layout/RecordHeader";
 import { Confirm } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
   getMethodValidator,
@@ -104,13 +104,8 @@ const MakeMethodTools = ({
 }: MakeMethodToolsProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const fetcher = useAction<{ error: string | null }>({
-    onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error);
-      }
-    }
-  });
+  // Get Method, Save Method and New Version; an error is toasted.
+  const fetcher = useAction();
   const params = useParams();
   const { methodId, makeMethodId } = params;
   const activeMethodId = currentMethodId ?? makeMethodId ?? methodId;

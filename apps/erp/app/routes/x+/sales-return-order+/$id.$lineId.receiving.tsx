@@ -12,7 +12,7 @@ import {
   getSalesReturnOrder,
   getSalesReturnOrderLine,
   shortCloseSalesReturnOrderLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

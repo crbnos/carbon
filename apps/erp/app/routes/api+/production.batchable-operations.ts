@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getBatchableOperations } from "~/modules/production";
+import { getBatchableOperations } from "~/modules/production/production.service";
 import type { BatchCandidate, BatchMaterial } from "~/modules/production/types";
 
 // The base candidate row, derived from the RPC wrapper's return so a column

@@ -2,10 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
-import { getLogger } from "@carbon/logger";
+import { carbon } from "@carbon/api/carbon.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -13,53 +10,18 @@ export const config = {
   runtime: "nodejs"
 };
 
-const logger = getLogger("erp", "integrations-onshape-detach");
-
-/**
- * Remove an item's `onshape-v2` link; the item keeps its model, documents and
- * fields. A sync connection's `onshape` row is BOM-import bookkeeping the BoM
- * Explorer reads, so it is never removed here.
- */
+/** Remove an item's Onshape panel link (`detachOnshapeItem`). */
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
-    update: "parts"
-  });
-
   const formData = await request.formData();
-  const itemId = String(formData.get("itemId") ?? "");
-  if (!itemId) {
-    return data(
-      { success: false, message: "itemId is required" },
-      { status: 400 }
-    );
-  }
-
-  const removed = await getCarbonServiceRole()
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "item")
-    .eq("entityId", itemId)
-    .select("id");
-
-  if (removed.error) {
-    logger.error("Failed to detach an item from Onshape", {
-      companyId,
-      itemId,
-      error: removed.error
-    });
-    return data(
-      { success: false, message: "Failed to detach from Onshape" },
-      { status: 500 }
-    );
-  }
-  if (removed.data.length === 0) {
-    return data(
-      { success: false, message: "This item is not linked to Onshape" },
-      { status: 404 }
-    );
-  }
-
-  return data({ success: true, message: "Detached from Onshape" });
+  const api = await carbon(request);
+  const result = await api.settings.detachOnshapeItem({
+    itemId: String(formData.get("itemId") ?? "")
+  });
+  // The Confirm modal toasts `message`.
+  return result.error
+    ? data(
+        { success: false, message: result.error.message },
+        { status: result.error.status }
+      )
+    : data({ success: true, message: "Detached from Onshape" });
 }

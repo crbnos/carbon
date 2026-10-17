@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { BarProgress, Button } from "@carbon/react";
+import { useAction } from "@carbon/query";
+import { BarProgress, Button, toast } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuCheck, LuLoaderCircle } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import type { action as cancelJobAction } from "~/routes/x+/assembly+/$id.jobs.cancel";
 import { path } from "~/utils/path";
 
 type ConvertStatus = {
@@ -46,7 +49,13 @@ export function ModelConvertProgress({
   modelUploadId: string;
   instructionId: string;
 }) {
-  const cancelFetcher = useFetcher<{ success: boolean }>();
+  const { t } = useLingui();
+  const cancelFetcher = useAction<typeof cancelJobAction>({
+    onSuccess: ({ data }) =>
+      toast.success(
+        data?.cancelled ? t`Job cancelled` : t`No running job to cancel`
+      )
+  });
   const statusFetcher = useFetcher<ConvertStatus>();
   const loadRef = useRef(statusFetcher.load);
   loadRef.current = statusFetcher.load;

@@ -10,13 +10,15 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  pushSubscriptionEndpointValidator,
+  pushSubscriptionValidator
+} from "~/modules/users/users.models";
+import {
   deleteBrowserPushSubscriptions,
   deletePushSubscription,
   getPushSubscription,
-  pushSubscriptionEndpointValidator,
-  pushSubscriptionValidator,
   upsertPushSubscription
-} from "~/modules/account";
+} from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "push-subscription");
 

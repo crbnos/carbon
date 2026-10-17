@@ -10,10 +10,8 @@ import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
 import { Enumerable } from "~/components/Enumerable";
 import { useRouteData } from "~/hooks";
-import type {
-  CustomerStatus as CustomerStatusStatus,
-  getCustomerStatusesList
-} from "~/modules/sales";
+import type { getCustomerStatusesList } from "~/modules/sales/sales.service";
+import type { CustomerStatus as CustomerStatusStatus } from "~/modules/sales/types";
 import CustomerStatusForm from "~/modules/sales/ui/CustomerStatuses/CustomerStatusForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

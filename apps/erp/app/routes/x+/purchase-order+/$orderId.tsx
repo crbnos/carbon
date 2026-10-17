@@ -2,61 +2,44 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { PurchaseOrderEmail } from "@carbon/documents/email";
-import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import {
-  approveRequest,
   canApproveRequest,
   canCancelRequest,
-  getLatestApprovalRequestForDocument,
-  getLowerTierApproverUserIds,
-  rejectRequest
+  getLatestApprovalRequestForDocument
 } from "@carbon/ee/approvals.server";
-import { storage } from "@carbon/files";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
-import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
-import { upsertDocument } from "~/modules/documents";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
-  getPurchaseOrderLocations,
   getSupplier,
-  getSupplierContact,
   getSupplierInteraction,
-  getSupplierInteractionDocuments,
-  purchaseOrderApprovalValidator
-} from "~/modules/purchasing";
+  getSupplierInteractionDocuments
+} from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
   PurchaseOrderHeader,
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getUser } from "~/modules/users/users.server";
-import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
-import { getDatabaseClient } from "~/services/database.server";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "purchase-order");
 
@@ -90,336 +73,22 @@ export const handle: Handle = {
 };
 
 export async function action(args: ActionFunctionArgs) {
-  const { request, params } = args;
-  assertIsPost(request);
-  const { userId, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      update: "purchasing"
-    }
-  );
-
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-
-  const validation = await validator(purchaseOrderApprovalValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    approvalRequestId,
-    decision,
-    notification,
-    supplierContact,
-    cc: ccSelections
-  } = validation.data;
-
-  const serviceRole = getCarbonServiceRole();
-
-  // Verify user can approve this request
-  const approvalRequest = await getLatestApprovalRequestForDocument(
-    serviceRole,
-    "purchaseOrder",
-    orderId
-  );
-
-  // The service role bypasses RLS and orderId comes from the URL: the request
-  // must belong to this company, not just to a purchase order with this id.
-  if (
-    !approvalRequest.data ||
-    approvalRequest.data.id !== approvalRequestId ||
-    approvalRequest.data.companyId !== companyId
-  ) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(request, error(null, "Approval request not found"))
-    );
-  }
-
-  const canApproveResult = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
-
-  if (!canApproveResult) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(null, "You do not have permission to approve this request")
-      )
-    );
-  }
-
-  // Process approval decision
-  const db = getDatabaseClient();
-  const result =
-    decision === "Approved"
-      ? await approveRequest(db, approvalRequestId, userId)
-      : await rejectRequest(db, approvalRequestId, userId);
-
-  if (result.error) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(
-          result.error,
-          result.error?.message ?? "Failed to process approval decision"
-        )
-      )
-    );
-  }
-
-  const requestedBy = approvalRequest.data?.requestedBy;
-  if (requestedBy && requestedBy !== userId) {
-    try {
-      await trigger("notify", {
-        event:
-          decision === "Approved"
-            ? NotificationEvent.ApprovalApproved
-            : NotificationEvent.ApprovalRejected,
-        companyId,
-        documentId: orderId,
-        documentType: "purchaseOrder",
-        recipient: { type: "user", userId: requestedBy },
-        from: userId
-      });
-    } catch (e) {
-      logger.error("Failed to trigger approval decision notification", {
-        error: e
-      });
-    }
-  }
-
-  // Notified-of-spend cascade. Purchase orders use tiered amount rules,
-  // so when a decision is made at a high tier we ping the approvers of
-  // every enabled rule with a strictly lower threshold — they get
-  // visibility into spend that bypassed their tier. Filtered to exclude
-  // the requester (already notified above) and the current approver.
-  try {
-    const lowerTierIds = await getLowerTierApproverUserIds(
-      serviceRole,
-      "purchaseOrder",
-      companyId,
-      approvalRequest.data.amount ?? undefined
-    );
-    const recipients = lowerTierIds.filter(
-      (id) => id !== requestedBy && id !== userId
-    );
-    if (recipients.length > 0) {
-      await trigger("notify", {
-        event:
-          decision === "Approved"
-            ? NotificationEvent.ApprovalApproved
-            : NotificationEvent.ApprovalRejected,
-        companyId,
-        documentId: orderId,
-        documentType: "purchaseOrder",
-        recipient: { type: "users", userIds: recipients },
-        from: userId
-      });
-    }
-  } catch (e) {
-    logger.error(
-      "Failed to trigger lower-tier spend notification for purchase order",
-      { error: e }
-    );
-  }
-
-  // If approved, handle post-approval tasks: PDF generation, document creation, email, price updates
-  if (decision === "Approved") {
-    const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
-    if (purchaseOrder.data) {
-      let fileName: string | undefined;
-      let documentFilePath: string | undefined;
-
-      // Generate PDF and create document
-      try {
-        const pdf = await pdfLoader(args);
-        if (pdf.headers.get("content-type") === "application/pdf") {
-          const file = await pdf.arrayBuffer();
-          fileName = stripSpecialCharacters(
-            `${getPurchaseOrderDisplayId(purchaseOrder.data)} - ${new Date()
-              .toISOString()
-              .slice(0, -5)}.pdf`
-          );
-
-          documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
-
-          const documentFileUpload = await storage(serviceRole)
-            .company(companyId)
-            .upload(documentFilePath, file, {
-              cacheControl: `${12 * 60 * 60}`,
-              contentType: "application/pdf",
-              upsert: true
-            });
-
-          if (!documentFileUpload.error) {
-            await upsertDocument(serviceRole, {
-              path: documentFilePath,
-              name: fileName,
-              size: Math.round(file.byteLength / 1024),
-              sourceDocument: "Purchase Order",
-              sourceDocumentId: orderId,
-              readGroups: [userId],
-              writeGroups: [userId],
-              createdBy: userId,
-              companyId
-            });
-          }
-        }
-      } catch (err) {
-        // Log but don't fail the approval - PDF generation is not critical
-        logger.error("Failed to generate PDF after approval", { error: err });
-      }
-
-      // Send email notification if requested
-      if (
-        notification === "Email" &&
-        supplierContact &&
-        documentFilePath &&
-        fileName
-      ) {
-        try {
-          const acceptLanguage = request.headers.get("accept-language");
-          const locales = parseAcceptLanguage(acceptLanguage, {
-            validate: Intl.DateTimeFormat.supportedLocalesOf
-          });
-
-          const [
-            company,
-            supplier,
-            purchaseOrderLines,
-            purchaseOrderLocations,
-            paymentTerms,
-            buyer
-          ] = await Promise.all([
-            getCompany(serviceRole, companyId),
-            getSupplierContact(serviceRole, supplierContact, companyId),
-            getPurchaseOrderLines(serviceRole, orderId),
-            getPurchaseOrderLocations(serviceRole, orderId),
-            getPaymentTermsList(serviceRole, companyId),
-            getUser(serviceRole, userId)
-          ]);
-
-          // Same decimals the PDF of this order uses.
-          const currencyRow = purchaseOrder.data.currencyCode
-            ? await getCurrencyByCode(
-                serviceRole,
-                companyGroupId,
-                purchaseOrder.data.currencyCode
-              )
-            : null;
-
-          const supplierEmail = supplier?.data?.contact?.email;
-          if (
-            supplierEmail &&
-            company.data &&
-            buyer.data &&
-            purchaseOrderLocations.data &&
-            paymentTerms.data
-          ) {
-            const emailTemplate = PurchaseOrderEmail({
-              // @ts-expect-error TS2739 - TODO: fix type
-              company: company.data,
-              currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
-              locale: locales?.[0] ?? "en-US",
-              purchaseOrder: purchaseOrder.data,
-              purchaseOrderLines: purchaseOrderLines.data ?? [],
-              purchaseOrderLocations: purchaseOrderLocations.data,
-              recipient: {
-                email: supplierEmail,
-                firstName: supplier.data?.contact?.firstName ?? undefined,
-                lastName: supplier.data?.contact?.lastName ?? undefined
-              },
-              sender: {
-                email: buyer.data.email,
-                firstName: buyer.data.firstName,
-                lastName: buyer.data.lastName
-              },
-              paymentTerms: paymentTerms.data
-            });
-
-            const html = await renderAsync(emailTemplate);
-            const text = await renderAsync(emailTemplate, { plainText: true });
-
-            const signed = await storage(serviceRole)
-              .company(companyId)
-              .createSignedUrl(documentFilePath!, 3600);
-            if (signed.error) {
-              logger.error("Failed to create signed URL for attachment", {
-                storagePath: documentFilePath,
-                error: signed.error
-              });
-            }
-
-            await trigger("send-email", {
-              to: [buyer.data.email, supplierEmail],
-              cc: ccSelections?.length ? ccSelections : undefined,
-              from: buyer.data.email,
-              subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
-              html,
-              text,
-              attachments: signed.data
-                ? [
-                    {
-                      path: signed.data.signedUrl,
-                      filename: fileName!
-                    }
-                  ]
-                : undefined,
-              companyId
-            });
-          }
-        } catch (err) {
-          logger.error("Failed to send email after approval", { error: err });
-        }
-      }
-
-      // Check if we should update prices on purchase order approval
-      const companySettings = await getCompanySettings(serviceRole, companyId);
-      if (
-        companySettings.data?.purchasePriceUpdateTiming ===
-        "Purchase Order Finalize"
-      ) {
-        const priceUpdate = await serverFns
-          .system({
-            db: getDatabaseClient(),
-            companyId,
-            userId
-          })
-          .invoke("update-purchased-prices", {
-            purchaseOrderId: orderId,
-            source: "purchaseOrder",
-            updatePrices: true,
-            updateLeadTimes: false
-          });
-
-        if (priceUpdate.error) {
-          logger.error("Failed to update purchased prices", {
-            error: priceUpdate.error
-          });
-        }
-      }
-    }
-  }
-
-  throw redirect(
+  const input = await validator(purchaseOrderApprovalValidator).request(args, {
+    params: ["orderId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.purchasing.decidePurchaseOrderApproval({
+    ...input.data,
+    purchaseOrderId: orderId,
+    locale: getPreferenceHeaders(args.request).locale
+  });
+  return respond(args.request, result).redirect(
     path.to.purchaseOrder(orderId),
-    await flash(
-      request,
-      success(`Approval request ${decision.toLowerCase()} successfully`)
-    )
+    {
+      message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+    }
   );
 }
 

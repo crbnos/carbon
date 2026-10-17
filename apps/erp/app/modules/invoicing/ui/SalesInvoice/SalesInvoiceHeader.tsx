@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
+import { useAction } from "@carbon/query";
 import {
   Button,
   DropdownMenu,
@@ -15,6 +16,7 @@ import {
   HStack,
   MENU_ITEM_SHORTCUTS,
   Status,
+  toast,
   useDisclosure
 } from "@carbon/react";
 import { formatDate, getItemReadableId } from "@carbon/utils";
@@ -35,19 +37,22 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
-import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
-import { isInvoicePayable } from "~/modules/invoicing";
+import { isInvoicePayable } from "~/modules/invoicing/invoicing.models";
+import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing/types";
 import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
+import type { action as sendAction } from "~/routes/x+/sales-invoice+/$invoiceId.send";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import SalesInvoicePostModal from "./SalesInvoicePostModal";
+import SalesInvoicePostModal, {
+  type SalesInvoicePostResult
+} from "./SalesInvoicePostModal";
 import SalesInvoiceStatus from "./SalesInvoiceStatus";
 import SalesInvoiceVoidModal from "./SalesInvoiceVoidModal";
 
@@ -73,11 +78,8 @@ const SalesInvoiceHeader = () => {
   const postRules = useRuleViolations({
     action: path.to.salesInvoicePost(invoiceId ?? "")
   });
-  const postFetcher = postRules.fetcher as FetcherWithComponents<{
-    success?: boolean;
-    message?: string;
-    violations?: unknown[];
-  }>;
+  const postFetcher =
+    postRules.fetcher as FetcherWithComponents<SalesInvoicePostResult>;
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -109,7 +111,9 @@ const SalesInvoiceHeader = () => {
   // Invoice automation outcome: a held draft waits for review; a posted
   // invoice was either sent (emailed or via Stripe) or failed to send (and
   // can be re-sent).
-  const sendFetcher = useFetcher<{}>();
+  const sendFetcher = useAction<typeof sendAction>({
+    onSuccess: () => toast.success(t`Sending invoice`)
+  });
   const isPostedNotVoided = isPosted && !isVoided;
   const holdReason =
     salesInvoice.status === "Draft" ? salesInvoice.automationHoldReason : null;

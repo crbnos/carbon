@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
-import {
-  decideApprovalRequest,
-  getDocumentApprovalState
-} from "@carbon/ee/approvals/document.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
+import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -24,12 +20,11 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getQualityDocument,
   getQualityDocumentVersions
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import QualityDocumentEditor from "~/modules/quality/ui/Documents/QualityDocumentEditor";
 import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumentHeader";
 import QualityDocumentProperties from "~/modules/quality/ui/Documents/QualityDocumentProperties";
-import { getTagsList } from "~/modules/shared";
-import { getDatabaseClient } from "~/services/database.server";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -43,79 +38,21 @@ export const handle: Handle = {
   module: "quality"
 };
 
-// Approving makes the document Active inside approveRequest's transaction;
-// rejecting leaves it in Draft.
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "quality"
+// Approving makes the document Active; rejecting leaves it in Draft.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(approvalDecisionValidator).request(args, {
+    params: ["id"]
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const validation = await validator(approvalDecisionValidator).validate(
-    await request.formData()
-  );
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { approvalRequestId, decision, notes } = validation.data;
-  const result = await decideApprovalRequest(
-    getCarbonServiceRole(),
-    getDatabaseClient(),
-    {
-      documentType: "qualityDocument",
-      documentId: id,
-      companyId,
-      userId,
-      approvalRequestId,
-      decision,
-      notes
-    }
-  );
-
-  if (result.error) {
-    logger.error("Quality document approval decision failed", {
-      companyId,
-      documentId: id,
-      approvalRequestId,
-      error: result.error
-    });
-    throw redirect(
-      path.to.qualityDocument(id),
-      await flash(request, error(result.error, result.error.message))
-    );
-  }
-
-  if (result.requestedBy !== userId) {
-    await trigger("notify", {
-      event:
-        decision === "Approved"
-          ? NotificationEvent.ApprovalApproved
-          : NotificationEvent.ApprovalRejected,
-      companyId,
-      documentId: id,
-      documentType: "qualityDocument",
-      recipient: { type: "user", userId: result.requestedBy },
-      from: userId
-    }).catch((e) =>
-      logger.error("Failed to trigger approval decision notification", {
-        companyId,
-        documentId: id,
-        error: e
-      })
-    );
-  }
-
-  throw redirect(
-    path.to.qualityDocument(id),
-    await flash(
-      request,
-      success(`Approval request ${decision.toLowerCase()} successfully`)
-    )
-  );
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.quality.decideQualityDocumentApproval({
+    ...input.data,
+    qualityDocumentId: id
+  });
+  return respond(args.request, result).redirect(path.to.qualityDocument(id), {
+    message: `Approval request ${input.data.decision.toLowerCase()} successfully`
+  });
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

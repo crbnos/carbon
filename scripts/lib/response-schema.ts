@@ -3,24 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * Derives each operation's RESPONSE schema by reflecting the service function's
- * TypeScript return type.
- *
- * The input side comes from zod validators (`validator-to-json-schema.ts`), but
- * nothing declares a response — it is whatever the service returns. Most services
- * `return client.from(...).select(...)`, and supabase-js infers the SELECTED
- * columns from the select string, so the compiler already knows the exact row
- * shape. This reads it back out with ts-morph.
- *
- * Measured over all 1500 exported service functions: 1423 (95%) yield a non-trivial
- * schema, ~10s to walk. The manifest grows 1.3 -> 1.6 MB, and it is gitignored.
+ * A TypeScript type as a JSON Schema, read with ts-morph: a service
+ * function's input and its response. Nothing declares a response — it is
+ * whatever `run` returns — and supabase-js infers the SELECTED columns from the
+ * select string, so the compiler already knows the exact row shape.
  */
 
-import type { ResultShape } from "@carbon/api";
 import { Node, type Type } from "ts-morph";
-import { MCP_EXPOSURE_TAG } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
-import { resultShapeOf } from "./result-shape";
-import type { ServiceAst } from "./service-ast";
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -56,9 +45,10 @@ const JSON_OPAQUE_COLLECTIONS = new Set([
  * `Promise<PostgrestSingleResponse<T>>` and the hand-rolled
  * `Promise<{ data: T | null; error }>` both reduce to `T`.
  *
- * This mirrors `dispatch.server.ts`, which unwraps the Supabase result to `data`
- * plus an optional `count` before returning it — so the schema describes what lands
- * in the response's `data`, not the driver's envelope.
+ * This mirrors the result readers (`unwrap`, `paged` in
+ * `@carbon/api/service-tools.server`), which unwrap the Supabase result to its
+ * `data` — so the schema describes what a caller receives, not the driver's
+ * envelope.
  */
 export function unwrapResponseType(type: Type, at: Node): Type {
   let current = type;
@@ -105,7 +95,10 @@ export function typeToJsonSchema(
   type: Type,
   at: Node,
   depth = 0,
-  seen: ReadonlySet<string> = new Set()
+  seen: ReadonlySet<string> = new Set(),
+  /** For an INPUT: `undefined` means "may be left out", which `required`
+   *  already says, so it is dropped instead of read as `null`. */
+  undefinedIsAbsent = false
 ): JsonSchema {
   if (depth > MAX_DEPTH) return {};
 
@@ -126,7 +119,9 @@ export function typeToJsonSchema(
     const element = type.getArrayElementType();
     return {
       type: "array",
-      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+      items: element
+        ? typeToJsonSchema(element, at, depth + 1, seen, undefinedIsAbsent)
+        : {}
     };
   }
   // A tuple or a readonly array is a list on the wire too. Neither is
@@ -136,11 +131,15 @@ export function typeToJsonSchema(
     const element = type.getNumberIndexType();
     return {
       type: "array",
-      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+      items: element
+        ? typeToJsonSchema(element, at, depth + 1, seen, undefinedIsAbsent)
+        : {}
     };
   }
 
-  if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen);
+  if (type.isUnion()) {
+    return unionToJsonSchema(type, at, depth, seen, undefinedIsAbsent);
+  }
 
   if (type.isObject()) {
     const symbolName = type.getSymbol()?.getName();
@@ -172,24 +171,22 @@ export function typeToJsonSchema(
     // and the docs SchemaTable already renders it as `Record<string, …>`.
     const indexValue =
       type.getStringIndexType() ?? type.getNumberIndexType() ?? undefined;
-    if (indexValue) {
-      return {
-        type: "object",
-        additionalProperties: typeToJsonSchema(
-          indexValue,
-          at,
-          depth + 1,
-          nextSeen
-        )
-      };
-    }
+    const additional = indexValue
+      ? typeToJsonSchema(indexValue, at, depth + 1, nextSeen, undefinedIsAbsent)
+      : undefined;
 
     // Symbol-keyed members (`[Symbol.iterator]`, reported as `__@iterator@206`)
     // are dropped by JSON.stringify, and their names carry unstable checker ids.
     const properties = type
       .getProperties()
       .filter((property) => !property.getName().startsWith("__@"));
-    if (properties.length === 0) return { type: "object" };
+    // A map with named keys too (a zod `looseObject`: its fields plus any
+    // other key) publishes both; a bare map only its value type.
+    if (properties.length === 0) {
+      return additional
+        ? { type: "object", additionalProperties: additional }
+        : { type: "object" };
+    }
     if (properties.length > MAX_PROPERTIES) return { type: "object" };
 
     const shape: Record<string, unknown> = {};
@@ -200,13 +197,15 @@ export function typeToJsonSchema(
         propertyType,
         at,
         depth + 1,
-        nextSeen
+        nextSeen,
+        undefinedIsAbsent
       );
       if (!property.isOptional()) required.push(property.getName());
     }
 
     const out: JsonSchema = { type: "object", properties: shape };
     if (required.length > 0) out.required = required;
+    if (additional) out.additionalProperties = additional;
     return out;
   }
 
@@ -217,11 +216,14 @@ function unionToJsonSchema(
   type: Type,
   at: Node,
   depth: number,
-  seen: ReadonlySet<string>
+  seen: ReadonlySet<string>,
+  undefinedIsAbsent: boolean
 ): JsonSchema {
   const members = type.getUnionTypes();
   const concrete = members.filter((t) => !t.isNull() && !t.isUndefined());
-  const nullable = concrete.length !== members.length;
+  const nullable = members.some(
+    (t) => t.isNull() || (!undefinedIsAbsent && t.isUndefined())
+  );
 
   // A union of string literals is an enum — the single most useful thing this
   // reflection recovers, and invisible in a hand-written response example.
@@ -238,7 +240,13 @@ function unionToJsonSchema(
   }
 
   if (concrete.length === 1) {
-    const inner = typeToJsonSchema(concrete[0], at, depth, seen);
+    const inner = typeToJsonSchema(
+      concrete[0],
+      at,
+      depth,
+      seen,
+      undefinedIsAbsent
+    );
     if (nullable && typeof inner.type === "string") {
       return { ...inner, type: [inner.type, "null"] };
     }
@@ -250,7 +258,9 @@ function unionToJsonSchema(
   // identical `{type:"boolean"}` members. The all-boolean shortcut above only fires
   // when every member is a boolean literal, so mixed unions need this.
   const anyOf = dedupe(
-    concrete.map((t) => typeToJsonSchema(t, at, depth + 1, seen))
+    concrete.map((t) =>
+      typeToJsonSchema(t, at, depth + 1, seen, undefinedIsAbsent)
+    )
   );
   if (anyOf.length === 1 && !nullable) return anyOf[0];
   return nullable ? { anyOf: [...anyOf, { type: "null" }] } : { anyOf };
@@ -266,72 +276,4 @@ function dedupe(schemas: JsonSchema[]): JsonSchema[] {
     out.push(schema);
   }
   return out;
-}
-
-export interface ResponseSchemaIndex {
-  /** `{module}_{fn}` → response schema, absent when nothing useful was derived. */
-  get(module: string, functionName: string): JsonSchema | null;
-  /** How the function reports failure in its result (`resultShapeOf`). */
-  shape(module: string, functionName: string): ResultShape;
-  readonly stats: { functions: number; derived: number; empty: number };
-}
-
-function isUseful(schema: JsonSchema): boolean {
-  const keys = Object.keys(schema);
-  if (keys.length === 0) return false;
-  // `{ type: "object" }` alone says nothing a reader can use — but the same shape
-  // carrying `additionalProperties` is a typed map and does.
-  return !(keys.length === 1 && schema.type === "object");
-}
-
-/**
- * Reflect the return type of every published service function. Takes the AST
- * `buildServiceAst` already parsed, so the manifest builder and this index share
- * ONE ts-morph project — the type checker is the expensive part of generation,
- * and two projects paid for it twice.
- */
-export function buildResponseSchemaIndex(ast: ServiceAst): ResponseSchemaIndex {
-  ast.project.resolveSourceFileDependencies();
-
-  const schemas = new Map<string, JsonSchema>();
-  const shapes = new Map<string, ResultShape>();
-  const stats = { functions: 0, derived: 0, empty: 0 };
-  const checker = ast.project.getTypeChecker().compilerObject;
-
-  for (const mod of ast.modules.values()) {
-    for (const fn of mod.functions) {
-      stats.functions++;
-      // Only a tool's result is read by dispatch; an unpublished helper may
-      // return whatever it likes.
-      if (fn.tags.some((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG)) {
-        shapes.set(fn.toolName, resultShapeOf(checker, fn));
-      }
-      let schema: JsonSchema;
-      try {
-        schema = typeToJsonSchema(
-          unwrapResponseType(fn.node.getReturnType(), fn.node),
-          fn.node
-        );
-      } catch {
-        stats.empty++;
-        continue;
-      }
-      if (!isUseful(schema)) {
-        stats.empty++;
-        continue;
-      }
-      schemas.set(fn.toolName, schema);
-      stats.derived++;
-    }
-  }
-
-  return {
-    get(module, functionName) {
-      return schemas.get(`${module}_${functionName}`) ?? null;
-    },
-    shape(module, functionName) {
-      return shapes.get(`${module}_${functionName}`) ?? "plain";
-    },
-    stats
-  };
 }

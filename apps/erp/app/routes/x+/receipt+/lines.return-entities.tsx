@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales";
+import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.service";
 
 const logger = getLogger("erp", "receipt", "return-entities");
 

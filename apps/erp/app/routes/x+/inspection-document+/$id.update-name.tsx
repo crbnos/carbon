@@ -2,34 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "quality"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(
+    z.object({ drawingNumber: z.string().optional() })
+  ).request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.quality.setInspectionDocumentDrawingNumber({
+    id: input.params.id,
+    drawingNumber: input.data.drawingNumber
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const drawingNumber = String(formData.get("drawingNumber") ?? "").trim();
-
-  const result = await (client as any)
-    .from("inspectionDocument")
-    .update({
-      drawingNumber: drawingNumber || null,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id);
-
-  if (result.error) {
-    return { success: false };
-  }
-
-  return { success: true };
 }

@@ -7,7 +7,7 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { themeValidator } from "~/modules/settings";
+import { themeValidator } from "~/modules/settings/settings.models";
 import { getTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

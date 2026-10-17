@@ -28,8 +28,9 @@ env:
 
 jobs:
   # erp and mes are their own job so the deploy can need exactly them: a
-  # failed assembler image does not hold back an app release. Both jobs run
-  # the same steps (the anchor below).
+  # failed assembler image does not hold back an app release, and the
+  # assembler is its own job so its deploy needs only its image. Every image
+  # job runs the same steps (the anchor below).
   apps:
     name: carbon/${{ matrix.image }}
     if: vars.IMAGE_REGISTRY != ''
@@ -142,17 +143,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [bootstrap, edge-functions, assembler]
+        image: [bootstrap, edge-functions]
     steps: *image-steps
 
-  # Whether this push changed anything the apps are built from. Runs beside
-  # the builds; a manual run of this workflow never deploys.
+  assembler:
+    name: carbon/assembler
+    if: vars.IMAGE_REGISTRY != ''
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: build-images-${{ matrix.image }}
+      cancel-in-progress: false
+    strategy:
+      matrix:
+        image: [assembler]
+    steps: *image-steps
+
+  # Whether this push changed anything the apps, or the assembler, are built
+  # from. Runs beside the builds; a manual run of this workflow never deploys.
   changes:
     name: Deployable changes
     if: github.event_name == 'push' && vars.IMAGE_REGISTRY != ''
     runs-on: ubuntu-24.04
     outputs:
       deploy: ${{ steps.diff.outputs.deploy }}
+      assembler: ${{ steps.diff.outputs.assembler }}
     steps:
       - uses: actions/checkout@v7
       - id: diff
@@ -163,15 +177,19 @@ jobs:
           # A new branch or a force-push leaves no usable BEFORE: deploy.
           if [[ $BEFORE =~ ^0+$ ]] || ! git fetch --quiet --depth=1 origin "$BEFORE"; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "assembler=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed() { ! git diff --quiet "$BEFORE" "$SHA" -- "$@"; }
           # The erp/mes inputs of .github/scripts/build-images.sh, plus the
           # docs the ERP bundles: a lockfile-only push rebuilds the images too.
-          elif git diff --quiet "$BEFORE" "$SHA" -- Dockerfile .dockerignore \
-              package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json \
-              lingui.config.js apps/erp apps/mes packages patches scripts docs/content; then
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          fi
+          changed Dockerfile .dockerignore package.json pnpm-lock.yaml \
+              pnpm-workspace.yaml .npmrc turbo.json lingui.config.js apps/erp \
+              apps/mes packages patches scripts docs/content &&
+            echo "deploy=true" >> "$GITHUB_OUTPUT" || echo "deploy=false" >> "$GITHUB_OUTPUT"
+          # The assembler inputs of the same script.
+          changed .dockerignore apps/assembler crates Cargo.toml Cargo.lock &&
+            echo "assembler=true" >> "$GITHUB_OUTPUT" || echo "assembler=false" >> "$GITHUB_OUTPUT"
 
   # Starts only once carbon/erp and carbon/mes exist for this commit, and is
   # skipped outright when either failed or was cancelled — a dependency, not
@@ -181,4 +199,16 @@ jobs:
     needs: [apps, changes]
     if: needs.changes.outputs.deploy == 'true'
     uses: ./.github/workflows/deploy.yml
+    with:
+      apps: true
+    secrets: inherit
+
+  # The same for carbon/assembler, deployed only when its files changed.
+  deploy-assembler:
+    name: Deploy assembler
+    needs: [assembler, changes]
+    if: needs.changes.outputs.assembler == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      assembler: true
     secrets: inherit

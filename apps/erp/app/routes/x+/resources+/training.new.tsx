@@ -10,11 +10,9 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  TrainingForm,
-  trainingValidator,
-  upsertTraining
-} from "~/modules/resources";
+import { trainingValidator } from "~/modules/resources/resources.models";
+import { upsertTraining } from "~/modules/resources/resources.service";
+import { TrainingForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

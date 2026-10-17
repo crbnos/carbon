@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { changeNoticeTypeValidator } from "~/modules/items/items.models";
 import {
-  changeNoticeTypeValidator,
   getChangeNoticeType,
   upsertChangeNoticeType
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { ChangeNoticeTypeForm } from "~/modules/items/ui/ChangeNoticeTypes";
 import { path } from "~/utils/path";
 

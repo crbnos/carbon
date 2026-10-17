@@ -9,14 +9,14 @@ import { validationError, validator } from "@carbon/form";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { fixedAssetCapitalizeCipValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetCapitalizeCipValidator,
   getFixedAsset,
   getFixedAssetCipCosts,
   invokeAssetTransfer
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { FixedAssetCapitalizeCipForm } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

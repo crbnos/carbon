@@ -2,40 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, ERP_URL, error } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { lockIssueDispositions } from "@carbon/database/quality";
-import { notifyIssueCreated } from "@carbon/ee/notifications";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
-import { updateChangeNotice } from "~/modules/items";
+import { issueValidator } from "~/modules/quality/quality.models";
 import {
-  deleteIssue,
   getIssueTypesList,
   getIssueWorkflowsList,
-  getRequiredActionsList,
-  insertIssue,
-  issueValidator
-} from "~/modules/quality";
-import { linkEntitiesToIssueItemRow } from "~/modules/quality/quality-disposition.server";
+  getRequiredActionsList
+} from "~/modules/quality/quality.service";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
-import { getCompanyIntegrations } from "~/modules/settings/settings.server";
-import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "issue");
 
 export const handle: Handle = {
   breadcrumb: msg`Issues`,
@@ -60,184 +45,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "quality"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(issueValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  // The "Create Issue from Inspection" button and a change notice's "Linked
+  // Issue" combobox pass these on the query string.
+  const url = new URL(args.request.url);
+  const changeOrderId = url.searchParams.get("changeOrderId") ?? undefined;
+  const api = await carbon(args.request);
+  const result = await api.quality.createIssue({
+    ...input.data,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined,
+    trackedEntityIds: url.searchParams.get("trackedEntityIds")?.split(","),
+    changeOrderId
   });
-
-  const serviceRole = await getCarbonServiceRole();
-
-  const formData = await request.formData();
-  const validation = await validator(issueValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.issues);
   }
-
-  const d = validation.data;
-
-  // insertIssue writes through the service role, and every id below comes
-  // from the form or the query string — each lands in this company's issue as
-  // a reference whose single-column FK accepts another company's row. One
-  // scoped read per table; a miss refuses the whole create.
-  const url = new URL(request.url);
-  const trackedEntityIdsParam = url.searchParams.get("trackedEntityIds");
-  const trackedEntityIds = trackedEntityIdsParam
-    ? [...new Set(trackedEntityIdsParam.split(",").filter(Boolean))]
-    : [];
-  const refs: [string, string[]][] = [
-    ["location", [d.locationId]],
-    ["nonConformanceType", [d.nonConformanceTypeId]],
-    [
-      "nonConformanceWorkflow",
-      d.nonConformanceWorkflowId ? [d.nonConformanceWorkflowId] : []
-    ],
-    ["nonConformanceRequiredAction", [...new Set(d.requiredActionIds ?? [])]],
-    ["item", [...new Set(d.items ?? [])]],
-    ["customer", d.customerId ? [d.customerId] : []],
-    ["trackedEntity", trackedEntityIds]
-  ];
-  const owned = await Promise.all(
-    refs.map(async ([table, ids]) => {
-      if (ids.length === 0) return true;
-      const rows = await serviceRole
-        .from(table as "location")
-        .select("id")
-        .in("id", ids)
-        .eq("companyId", companyId);
-      return !rows.error && (rows.data ?? []).length === ids.length;
-    })
+  const { id, warning } = result.data;
+  return respond(args.request, {
+    error: warning ? { message: warning } : null
+  }).redirect(
+    changeOrderId ? path.to.changeNotice(changeOrderId) : path.to.issue(id)
   );
-  if (owned.some((ok) => !ok)) {
-    logger.error("Issue references records outside the company", {
-      companyId,
-      refs: refs.filter((_, index) => !owned[index])
-    });
-    throw redirect(
-      path.to.issues,
-      await flash(request, error(null, "Failed to insert issue"))
-    );
-  }
-
-  const createResult = await insertIssue(serviceRole, {
-    nonConformanceId: d.nonConformanceId || undefined,
-    name: d.name,
-    priority: d.priority,
-    source: d.source,
-    locationId: d.locationId,
-    nonConformanceTypeId: d.nonConformanceTypeId,
-    openDate: d.openDate,
-    description: d.description,
-    nonConformanceWorkflowId: d.nonConformanceWorkflowId,
-    dueDate: d.dueDate,
-    closeDate: d.closeDate,
-    quantity: d.quantity,
-    requiredActionIds: d.requiredActionIds,
-    approvalRequirements: d.approvalRequirements,
-    items: d.items,
-    jobOperationId: d.jobOperationId,
-    customerId: d.customerId,
-    salesOrderLineId: d.salesOrderLineId,
-    operationSupplierProcessId: d.operationSupplierProcessId,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (createResult.error || !createResult.data) {
-    throw redirect(
-      path.to.issues,
-      await flash(request, error(createResult.error, "Failed to insert issue"))
-    );
-  }
-
-  const ncrId = createResult.data.id;
-
-  // Pre-associate tracked entities passed via query string (used by the
-  // "Create Issue from Inspection" button on inbound inspection lots).
-  if (trackedEntityIds.length > 0) {
-    await serviceRole.from("nonConformanceTrackedEntity").insert(
-      trackedEntityIds.map((trackedEntityId) => ({
-        nonConformanceId: ncrId,
-        trackedEntityId,
-        companyId,
-        createdBy: userId
-      }))
-    );
-  }
-
-  // When the NCR is filed against a specific job operation, surface the
-  // tracked entity produced by that operation's make method onto a
-  // disposition row so the MRB can immediately scrap/rework/use-as-is it.
-  if (validation.data.jobOperationId) {
-    await autoLinkJobOperationDisposition(serviceRole, {
-      nonConformanceId: ncrId,
-      companyId,
-      userId,
-      jobOperationId: validation.data.jobOperationId
-    });
-  }
-
-  const tasks = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("create", {
-      type: "nonConformanceTasks",
-      id: ncrId
-    });
-
-  if (tasks.error) {
-    await deleteIssue(serviceRole, ncrId);
-    throw redirect(
-      path.to.issue(ncrId!),
-      await flash(request, error("Failed to create tasks"))
-    );
-  }
-
-  try {
-    const integrations = await getCompanyIntegrations(client, companyId);
-    await notifyIssueCreated({ client, serviceRole }, integrations, {
-      companyId,
-      userId,
-      carbonUrl: `${ERP_URL}${path.to.issue(ncrId)}`,
-      issue: {
-        id: ncrId,
-        nonConformanceId: createResult.data.nonConformanceId,
-        title: validation.data.name,
-        description: validation.data.description ?? "",
-        severity: validation.data.priority
-      }
-    });
-  } catch (error) {
-    logger.error("Failed to send notifications", { error });
-  }
-
-  // Created from a change notice's "Linked Issue" combobox: link the new issue
-  // back onto the CO and return there instead of the issue detail. The user
-  // `client` update is RLS-scoped, so it only lands if they can edit the CO.
-  const changeOrderId = url.searchParams.get("changeOrderId");
-  if (changeOrderId) {
-    const linkResult = await updateChangeNotice(client, {
-      id: changeOrderId,
-      nonConformanceId: ncrId,
-      updatedBy: userId
-    });
-    if (linkResult.error) {
-      throw redirect(
-        path.to.changeNotice(changeOrderId),
-        await flash(
-          request,
-          error(
-            linkResult.error,
-            "Issue created but failed to link to change notice"
-          )
-        )
-      );
-    }
-    throw redirect(path.to.changeNotice(changeOrderId));
-  }
-
-  throw redirect(path.to.issue(ncrId!));
 }
 
 export default function IssueNewRoute() {
@@ -299,99 +129,4 @@ export default function IssueNewRoute() {
       />
     </NewRecordPage>
   );
-}
-
-async function autoLinkJobOperationDisposition(
-  client: Awaited<ReturnType<typeof getCarbonServiceRole>>,
-  args: {
-    nonConformanceId: string;
-    companyId: string;
-    userId: string;
-    jobOperationId: string;
-  }
-) {
-  const { nonConformanceId, companyId, userId, jobOperationId } = args;
-
-  // Service role and a form id: scope both reads to the company.
-  const operation = await client
-    .from("jobOperation")
-    .select("jobMakeMethodId")
-    .eq("id", jobOperationId)
-    .eq("companyId", companyId)
-    .single();
-  const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
-  if (!jobMakeMethodId) return;
-
-  const makeMethod = await client
-    .from("jobMakeMethod")
-    .select("itemId")
-    .eq("id", jobMakeMethodId)
-    .eq("companyId", companyId)
-    .single();
-  const itemId = makeMethod.data?.itemId ?? null;
-  if (!itemId) return;
-
-  const entities = await client
-    .from("trackedEntity")
-    .select("id, quantity")
-    .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .eq("companyId", companyId);
-  const lotEntities = (entities.data ?? []) as {
-    id: string;
-    quantity: number | null;
-  }[];
-  if (lotEntities.length === 0) return;
-
-  const entityIds = lotEntities.map((e) => e.id);
-
-  // NCR-level link (mirrors the explorer's autoLinkJobOperationContext so the
-  // entities show up under "Tracked Entities" in the issue explorer).
-  const existingNcrLinks = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", entityIds);
-  const alreadyOnNcr = new Set(
-    (existingNcrLinks.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const ncrLinkRows = entityIds
-    .filter((id) => !alreadyOnNcr.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      companyId,
-      createdBy: userId
-    }));
-  if (ncrLinkRows.length > 0) {
-    const ncrInsert = await client
-      .from("nonConformanceTrackedEntity")
-      .insert(ncrLinkRows);
-    if (ncrInsert.error) {
-      logger.error("Issue creation step failed", { error: ncrInsert.error });
-      return;
-    }
-  }
-
-  // Disposition row: find or create (insertIssue may have already inserted
-  // one for this item via the form's `items` array), link the lot, and grow
-  // the row quantity — under the issue lock shared by every link writer.
-  try {
-    await getDatabaseClient()
-      .transaction()
-      .execute(async (trx) => {
-        await lockIssueDispositions(trx, { nonConformanceId, companyId });
-        await linkEntitiesToIssueItemRow(trx, {
-          nonConformanceId,
-          companyId,
-          userId,
-          itemId,
-          entities: lotEntities.map((e) => ({
-            id: e.id,
-            quantity: Number(e.quantity ?? 1)
-          }))
-        });
-      });
-  } catch (err) {
-    logger.error("Issue creation step failed", { error: err });
-  }
 }

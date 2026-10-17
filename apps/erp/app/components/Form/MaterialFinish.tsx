@@ -8,10 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import type {
-  getMaterialFinishList,
-  MaterialFinish as MaterialFinishType
-} from "~/modules/items";
+import type { getMaterialFinishList } from "~/modules/items/items.service";
+import type { MaterialFinish as MaterialFinishType } from "~/modules/items/types";
 import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

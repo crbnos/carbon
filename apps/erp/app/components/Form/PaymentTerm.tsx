@@ -8,7 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
-import type { getPaymentTermsList } from "~/modules/accounting";
+import type { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

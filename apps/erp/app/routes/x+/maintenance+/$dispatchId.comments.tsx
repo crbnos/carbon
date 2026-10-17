@@ -22,11 +22,13 @@ import { data, useFetcher, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
-  getMaintenanceDispatch,
   isMaintenanceDispatchLocked,
-  maintenanceDispatchCommentValidator,
+  maintenanceDispatchCommentValidator
+} from "~/modules/resources/resources.models";
+import {
+  getMaintenanceDispatch,
   upsertMaintenanceDispatchComment
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import type { MaintenanceDispatchComment } from "~/modules/resources/types";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

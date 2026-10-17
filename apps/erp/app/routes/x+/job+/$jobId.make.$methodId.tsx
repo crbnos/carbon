@@ -14,7 +14,6 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Job } from "~/modules/production";
 import {
   getJob,
   getJobMakeMethodById,
@@ -22,7 +21,8 @@ import {
   getJobOperationsByMethodId,
   getPartDocuments,
   getProductionDataByOperations
-} from "~/modules/production";
+} from "~/modules/production/production.service";
+import type { Job } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -30,8 +30,11 @@ import {
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import {
+  getModelByItemId,
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

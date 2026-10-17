@@ -11,7 +11,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
-import { salesRuleValidator } from "~/modules/sales";
+import { salesRuleValidator } from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getParams, path } from "~/utils/path";
 

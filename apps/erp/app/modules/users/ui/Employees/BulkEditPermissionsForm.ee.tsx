@@ -25,8 +25,8 @@ import {
   toCompanyPermissions,
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users";
-import { bulkPermissionsValidator } from "~/modules/users";
+import type { CompanyPermission } from "~/modules/users/types";
+import { bulkPermissionsValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type BulkEditPermissionsProps = {

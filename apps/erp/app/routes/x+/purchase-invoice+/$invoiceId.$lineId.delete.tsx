@@ -2,21 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { isPurchaseInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
-  getPurchaseInvoiceLine,
-  isPurchaseInvoiceLocked
-} from "~/modules/invoicing";
-import { deletePurchaseInvoiceLineReleasingLeases } from "~/modules/purchasing/purchasing.server";
-import { getDatabaseClient } from "~/services/database.server";
+  getPurchaseInvoiceLine
+} from "~/modules/invoicing/invoicing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -50,41 +50,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { purchaseInvoiceLine: purchaseInvoiceLine.data };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["invoiceId", "lineId"]
   });
-
-  const { lineId, invoiceId } = params;
-  if (!lineId) throw notFound("Could not find lineId");
-  if (!invoiceId) throw notFound("Could not find invoiceId");
-
-  const purchaseInvoice = await getPurchaseInvoice(client, invoiceId);
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseInvoiceLocked(purchaseInvoice.data?.status),
-    redirectTo: path.to.purchaseInvoiceDetails(invoiceId),
-    message: "Cannot delete lines on a confirmed purchase invoice."
+  if ("invalid" in input) return input.invalid;
+  const { invoiceId, lineId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.deleteDraftPurchaseInvoiceLine({
+    invoiceId,
+    lineId
   });
-
-  // A Lease line returns the payment row it billed to Pending.
-  try {
-    await deletePurchaseInvoiceLineReleasingLeases(getDatabaseClient(), {
-      companyId,
-      invoiceId,
-      purchaseInvoiceLineId: lineId,
-      userId
-    });
-  } catch (err) {
-    throw redirect(
-      path.to.purchaseInvoiceDetails(invoiceId),
-      await flash(request, error(err, "Failed to delete purchase invoice line"))
-    );
-  }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.purchaseInvoiceDetails(invoiceId),
-    await flash(request, success("Successfully deleted purchase invoice line"))
+    { message: "Successfully deleted purchase invoice line" }
   );
 }
 

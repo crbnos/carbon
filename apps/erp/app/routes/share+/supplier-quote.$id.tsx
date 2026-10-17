@@ -56,6 +56,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
+import { recordSupplierQuoteLinkVisit } from "~/modules/purchasing/purchasing.server";
 import {
   getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
@@ -66,9 +67,10 @@ import type {
   SupplierQuoteLine,
   SupplierQuoteLinePrice
 } from "~/modules/purchasing/types";
-import type { Company } from "~/modules/settings";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { shareLinkContext } from "~/modules/service-context.server";
+import { getCompany } from "~/modules/settings/settings.service";
+import type { Company } from "~/modules/settings/types";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
 
@@ -111,14 +113,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  // Update lastAccessedAt on externalLink when the page is loaded
   if (quote.data.externalLinkId) {
-    await serviceRole
-      .from("externalLink")
-      .update({
-        lastAccessedAt: new Date().toISOString()
-      } as any)
-      .eq("id", quote.data.externalLinkId);
+    const ctx = await shareLinkContext(quote.data);
+    if (ctx) {
+      await recordSupplierQuoteLinkVisit(ctx, {
+        externalLinkId: quote.data.externalLinkId
+      });
+    }
   }
 
   if (

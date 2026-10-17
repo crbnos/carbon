@@ -21,6 +21,7 @@ import { InngestSpanProcessor } from "inngest/experimental";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
+import "./modules/carbon.server";
 
 ensureLoggingConfigured();
 installFormBodyGuard();

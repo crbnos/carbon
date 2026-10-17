@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useParams } from "react-router";
@@ -13,21 +14,12 @@ import type { ClientDocumentLine } from "~/components/DocumentLineEditor";
 import { useRouteData } from "~/hooks";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
 import {
-  getReimbursement,
   isReimbursementLocked,
-  ReimbursementEditForm,
   reimbursementLinesValidator,
-  reimbursementUpdateValidator,
-  updateReimbursement,
-  upsertReimbursementLines
-} from "~/modules/invoicing";
-import {
-  linesBalanceHeader,
-  postReimbursement,
-  REIMBURSEMENT_UNBALANCED_MESSAGE
-} from "~/modules/invoicing/reimbursement.server";
+  reimbursementUpdateValidator
+} from "~/modules/invoicing/invoicing.models";
+import { ReimbursementEditForm } from "~/modules/invoicing/ui";
 import type { loader as reimbursementLoader } from "~/routes/x+/reimbursements+/$reimbursementId";
-import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -76,140 +68,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(reimbursementUpdateValidator).request(args, {
+    params: ["reimbursementId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { reimbursementId } = input.params;
+  const formData = input.formData ?? new FormData();
 
-  const { reimbursementId } = params;
-  if (!reimbursementId) throw new Error("Could not find reimbursementId");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent") as string;
-
-  const validation = await validator(reimbursementUpdateValidator).validate(
-    formData
-  );
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // Hard-guard the status before any write: a readable message beats the raw
-  // 55000 the reimbursement_draft_guard trigger would raise.
-  const existing = await getReimbursement(client, companyId, reimbursementId);
-  if (existing.error || !existing.data) {
-    throw redirect(
-      path.to.reimbursements,
-      await flash(
-        request,
-        error(existing.error, "Failed to load reimbursement")
-      )
-    );
-  }
-  if (existing.data.status !== "Draft") {
-    throw redirect(
-      path.to.reimbursement(reimbursementId),
-      await flash(
-        request,
-        error(null, "A posted reimbursement cannot be edited")
-      )
-    );
-  }
-
+  // The editor posts the whole line set as one JSON field.
   let parsedLines: unknown;
   try {
     parsedLines = JSON.parse(formData.get("lines") as string);
   } catch {
-    return data({}, await flash(request, error(null, "Invalid lines data")));
+    return stay(args.request, "Invalid lines data");
   }
-
   const lines = reimbursementLinesValidator.safeParse(parsedLines);
   if (!lines.success) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          lines.error,
-          lines.error.issues[0]?.message ?? "Invalid lines data"
-        )
-      )
+    return stay(
+      args.request,
+      lines.error.issues[0]?.message ?? "Invalid lines data"
     );
   }
 
-  // The totals guard, BEFORE any server-function call.
-  const willPost = intent === "save-and-post";
-  if (
-    willPost &&
-    !linesBalanceHeader(
-      validation.data.amount,
-      lines.data.map((line) => line.amount)
-    )
-  ) {
-    throw redirect(
-      path.to.reimbursementEdit(reimbursementId),
-      await flash(request, error(null, REIMBURSEMENT_UNBALANCED_MESSAGE))
-    );
-  }
-
-  const update = await updateReimbursement(client, {
-    ...validation.data,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
-  if (update.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(update.error, "Failed to update reimbursement")
-      )
-    );
-  }
-
-  try {
-    // The Kysely client is built HERE and passed in — a route may import a
-    // `.server` module, a `*.service.ts` may not (`no-db-client-in-service`).
-    await upsertReimbursementLines(getDatabaseClient(), {
-      reimbursementId,
-      companyId,
-      createdBy: userId,
-      lines: lines.data
-    });
-  } catch (err) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(err, (err as Error).message ?? "Failed to save coding lines")
-      )
-    );
-  }
-
-  if (willPost) {
-    const result = await postReimbursement({
-      reimbursementId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      throw redirect(
-        path.to.reimbursement(reimbursementId),
-        await flash(request, error(null, result.error))
-      );
-    }
-    throw redirect(
-      path.to.reimbursement(reimbursementId),
-      await flash(request, success("Reimbursement posted"))
-    );
-  }
-
-  throw redirect(
+  const api = await carbon(args.request);
+  const reimbursement = {
+    ...input.data,
+    // The URL reimbursement, not the form's copy.
+    id: reimbursementId,
+    customFields: setCustomFields(formData),
+    lines: lines.data
+  };
+  const willPost = formData.get("intent") === "save-and-post";
+  const result = willPost
+    ? await api.invoicing.saveAndPostReimbursement(reimbursement)
+    : await api.invoicing.saveReimbursement(reimbursement);
+  // A refusal keeps the editor and what was typed in it.
+  if (result.error) return stay(args.request, result.error.message);
+  return respond(args.request, result).redirect(
     path.to.reimbursement(reimbursementId),
-    await flash(request, success("Reimbursement updated"))
+    { message: willPost ? "Reimbursement posted" : "Reimbursement updated" }
   );
+}
+
+async function stay(request: Request, message: string) {
+  return data({}, await flash(request, error(null, message)));
 }
 
 function generateKey() {

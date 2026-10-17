@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getJobReceiptSnapshot } from "~/modules/production";
+import { getJobReceiptSnapshot } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 /**

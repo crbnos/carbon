@@ -6,9 +6,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-
-import { getUnitOfMeasuresList } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+import { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -11,7 +11,7 @@ import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { customerPortalValidator } from "~/modules/sales";
+import { customerPortalValidator } from "~/modules/sales/sales.models";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
 import { getParams, path, requestReferrer } from "~/utils/path";
 

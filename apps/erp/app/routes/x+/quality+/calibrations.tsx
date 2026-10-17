@@ -10,9 +10,9 @@ import { useLoaderData } from "react-router";
 import {
   getGaugeCalibrationRecords,
   getGaugeTypesList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordsTable from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordsTable";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

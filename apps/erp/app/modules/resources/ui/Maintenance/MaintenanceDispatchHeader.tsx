@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
   MENU_ITEM_SHORTCUTS,
+  toast,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -16,10 +18,11 @@ import {
   LuLoaderCircle,
   LuTrash
 } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { action as statusAction } from "~/routes/x+/maintenance+/$dispatchId.status";
 import { path } from "~/utils/path";
 import { isMaintenanceDispatchLocked } from "../../resources.models";
 import type { MaintenanceDispatchDetail } from "../../types";
@@ -37,7 +40,12 @@ const MaintenanceDispatchHeader = () => {
   const status = routeData?.dispatch?.status;
   const isLocked = isMaintenanceDispatchLocked(status);
   const permissions = usePermissions();
-  const statusFetcher = useFetcher<{}>();
+  const statusFetcher = useAction<typeof statusAction>({
+    onSuccess: ({ data }) => {
+      toast.success(t`Updated dispatch status`);
+      if (data?.warning) toast.error(data.warning);
+    }
+  });
   const deleteModal = useDisclosure();
 
   const statusBadge = <MaintenanceStatus status={status} />;

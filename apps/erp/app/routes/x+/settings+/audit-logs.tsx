@@ -2,34 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
 import {
-  disableAuditLog,
   enableAuditLog,
-  getArchiveDownloadUrl,
   getAuditLogArchives,
   isAuditLogEnabled,
   syncAuditSubscriptions
 } from "@carbon/ee/audit.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { getLogger } from "@carbon/logger";
+import { validator } from "@carbon/form";
 import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
-import { redirect, redirectExternal } from "@carbon/utils";
+import { redirectExternal } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuHistory } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import { z } from "zod";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
+import {
+  AuditLogSettings,
+  AuditLogUpgradeOverlay
+} from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "settings-audit-logs");
 
 export const handle: Handle = {
   breadcrumb: msg`Audit Log`,
@@ -91,105 +90,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// The switch posts `action` enable or disable; an archive's row posts download.
+const auditLogForm = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("enable") }),
+  z.object({ action: z.literal("disable") }),
+  z.object({
+    action: z.literal("download"),
+    archiveId: z.string().min(1, { message: "Archive ID is required" })
+  })
+]);
 
-  const formData = await request.formData();
-  const actionType = formData.get("action") as string;
-
-  switch (actionType) {
-    case "enable": {
-      await requireFeature({
-        request,
-        client,
-        companyId,
-        feature: "AUDIT_LOG",
-        redirectTo: path.to.auditLog,
-        message: "Upgrade to Business to enable audit logging"
-      });
-
-      try {
-        await enableAuditLog(client, companyId);
-        throw redirect(
-          path.to.auditLog,
-          await flash(request, success("Audit logging enabled"))
-        );
-      } catch (err) {
-        if (err instanceof Response) throw err;
-        throw redirect(
-          path.to.auditLog,
-          await flash(request, error(err, "Failed to enable audit logging"))
-        );
-      }
-    }
-
-    case "disable": {
-      // Controlled environments cannot turn audit logging off (3.3.1).
-      if (CONTROLLED_ENVIRONMENT) {
-        throw redirect(
-          path.to.auditLog,
-          await flash(
-            request,
-            error(
-              null,
-              "Audit logging cannot be disabled in a controlled environment"
-            )
-          )
-        );
-      }
-      try {
-        await disableAuditLog(client, companyId);
-        throw redirect(
-          path.to.auditLog,
-          await flash(request, success("Audit logging disabled"))
-        );
-      } catch (err) {
-        if (err instanceof Response) throw err;
-        throw redirect(
-          path.to.auditLog,
-          await flash(request, error(err, "Failed to disable audit logging"))
-        );
-      }
-    }
-
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(auditLogForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  switch (input.data.action) {
+    case "enable":
+      return respond(
+        args.request,
+        await api.settings.enableCompanyAuditLog({})
+      ).redirect(path.to.auditLog, { message: "Audit logging enabled" });
+    case "disable":
+      return respond(
+        args.request,
+        await api.settings.disableCompanyAuditLog({})
+      ).redirect(path.to.auditLog, { message: "Audit logging disabled" });
     case "download": {
-      const archiveId = formData.get("archiveId") as string;
-      if (!archiveId) {
-        throw redirect(
-          path.to.auditLog,
-          await flash(request, error(null, "Archive ID is required"))
-        );
+      const result = await api.settings.getAuditArchiveDownloadUrl(input.data);
+      if (result.error) {
+        return respond(args.request, result).redirect(path.to.auditLog);
       }
-
-      try {
-        const serviceRole = getCarbonServiceRole();
-        const downloadUrl = await getArchiveDownloadUrl(
-          serviceRole,
-          archiveId,
-          companyId
-        );
-        // Redirect to the signed URL for download
-        return redirectExternal(downloadUrl);
-      } catch (err) {
-        logger.error("Failed to generate audit archive download URL", {
-          companyId,
-          archiveId,
-          error: err
-        });
-        throw redirect(
-          path.to.auditLog,
-          await flash(request, error(err, "Failed to generate download URL"))
-        );
-      }
+      return redirectExternal(result.data.url);
     }
-
-    default:
-      throw redirect(
-        path.to.auditLog,
-        await flash(request, error(null, "Invalid action"))
-      );
   }
 }
 

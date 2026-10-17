@@ -3,6 +3,7 @@ description: How a manufacturing method's materials are defined and how sourcing
 paths:
   - "apps/erp/app/modules/items/items.service.ts"
   - "apps/erp/app/routes/x+/items+/update.tsx"
+  - "apps/erp/app/modules/items/items.server.ts"
   - "apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx"
   - "packages/database/supabase/migrations/**"
 ---
@@ -54,9 +55,10 @@ types `MethodType` / `SourcingType` in `apps/erp/app/modules/shared/types.ts`
 
 ## Server-side update + sourcing → method-type mapping
 
-Route `apps/erp/app/routes/x+/items+/update.tsx`. The interlocked fields
-`replenishmentSystem`, `defaultMethodType`, `sourcingType` are derived by
-`deriveItemMethodUpdate(field, value)` then applied by
+Route `apps/erp/app/routes/x+/items+/update.tsx` calls `setItemSourcing`
+(`setItemSourcing` in `items.server.ts`). The interlocked fields
+`replenishmentSystem`, `defaultMethodType`, `sourcingType` (exactly one per call)
+are derived by `deriveItemMethodUpdate(field, value)` then applied by
 `updateItemMethodAndSourcing` (one transaction: item write + cascade).
 
 Sourcing drives method type (`sourcingType` case, ~L73-89):
@@ -64,7 +66,8 @@ Sourcing drives method type (`sourcingType` case, ~L73-89):
 - `Ship from Inventory` → `Pull from Inventory`
 - `Specified` → leave `defaultMethodType` as-is
 
-(`itemTrackingType` is a separate case that cascades via `cascadeItemTrackingType`.)
+(`itemTrackingType` is a separate operation, `setItemTrackingType`, that
+cascades via `cascadeItemTrackingType`.)
 
 ## Cascade + derivation (items.service.ts)
 

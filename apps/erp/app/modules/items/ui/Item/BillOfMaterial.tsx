@@ -6,6 +6,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -49,6 +50,7 @@ import {
   LuPackage,
   LuRedoDot,
   LuSquareFunction,
+  LuTrash,
   LuTruck
 } from "react-icons/lu";
 import {
@@ -86,12 +88,12 @@ import {
 } from "~/components/SortableList";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { methodType, sourcingType } from "~/modules/shared/shared.models";
 import type {
   MethodItemType,
   MethodType,
   SourcingType
-} from "~/modules/shared";
-import { methodType, sourcingType } from "~/modules/shared";
+} from "~/modules/shared/types";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -201,6 +203,7 @@ const BillOfMaterial = ({
   const [items] = useItems();
   const itemName = getItemById(items, makeMethod.itemId)?.name;
   const fetcher = useFetcher<{}>();
+  const deleteMaterialFetcher = useAction();
   const [searchParams] = useSearchParams();
 
   const makeMethodId = makeMethod.id;
@@ -302,28 +305,37 @@ const BillOfMaterial = ({
     }));
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (isReadOnly) return;
 
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      fetcher.submit(new FormData(), {
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
+      );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteMaterialFetcher.submit(formData, {
         method: "post",
-        action: path.to.deleteMethodMaterial(id)
+        action: path.to.deleteMethodMaterials
       });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = materials
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const updateSortOrder = useThrottle((updates: Record<string, number>) => {
     let formData = new FormData();
@@ -497,6 +509,16 @@ const BillOfMaterial = ({
 
         <CardAction>
           <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
             <Button
               ref={addItemButtonRef}
               variant="secondary"

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { LEGACY_PRIVATE_BUCKET, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
 import { filterEmpty } from "@carbon/utils";
 import { sql } from "kysely";
@@ -39,20 +39,19 @@ async function listStorageObjects(where: ReturnType<typeof sql>) {
 }
 
 /**
- * The staged names that also exist in their company's bucket or the legacy
- * shared one. One query: probing each name over HTTP was two requests per
- * object, every night, for objects that are referenced and never pruned.
+ * The staged names that also exist in their company's bucket. One query:
+ * probing each name over HTTP was a request per object, every night, for
+ * objects that are referenced and never pruned.
  */
 async function findDurableCopies(names: string[]) {
   const buckets = [
-    LEGACY_PRIVATE_BUCKET,
     ...new Set(filterEmpty(names.map((name) => name.split("/")[0])))
   ];
   const { rows } = await sql<{ name: string }>`
     SELECT DISTINCT name FROM storage.objects
     WHERE bucket_id = ANY(${buckets}::text[])
       AND name = ANY(${names}::text[])
-      AND bucket_id IN (${LEGACY_PRIVATE_BUCKET}, split_part(name, '/', 1))
+      AND bucket_id = split_part(name, '/', 1)
   `.execute(getJobDatabaseClient());
   return new Set(rows.map((row) => row.name));
 }
@@ -511,12 +510,8 @@ export const cleanupFunction = inngest.createFunction(
         if (name.split("/")[1] !== "tmp") continue;
         // A company bucket is named for its company, and its object keys keep
         // the `{companyId}/` prefix — so a key whose first segment is not this
-        // bucket belongs to neither this company nor the legacy bucket layout.
-        if (
-          bucketId !== LEGACY_PRIVATE_BUCKET &&
-          name.split("/")[0] !== bucketId
-        )
-          continue;
+        // bucket is not a company's transient file.
+        if (name.split("/")[0] !== bucketId) continue;
         const existing = byBucket.get(bucketId);
         if (existing) existing.push(name);
         else byBucket.set(bucketId, [name]);

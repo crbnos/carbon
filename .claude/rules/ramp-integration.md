@@ -3,7 +3,7 @@ paths:
   - packages/ee/src/ramp/**
   - packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts
   - packages/jobs/src/inngest/functions/integrations/ramp-sweep.ts
-  - packages/server-functions/src/post-charge/**
+  - apps/erp/app/modules/accounting/accounting.service.ts
   - apps/erp/app/modules/invoicing/ui/Charge/**
   - apps/erp/app/routes/x+/invoicing+/charges*.tsx
   - apps/erp/app/routes/api+/integrations.ramp.oauth.ts
@@ -540,7 +540,7 @@ ambiguous values fail that item instead of becoming zero. The currency's authori
 base → 1). A missing/invalid currency precision or exchange rate fails the affected
 item; Ramp sync never guesses two decimals or posts foreign currency at par. The card
 journal converts document→base by DIVIDING via the shared `toBaseAmount`
-(`build-charge-journal.ts`) — NOT multiplying. Standalone inbound bill and
+(`buildChargeJournal`, `accounting.service.ts`) — NOT multiplying. Standalone inbound bill and
 reimbursement lines use quantity one and write the document amount to
 `purchaseInvoiceLine.supplierUnitPrice`; a linked-PO bill preserves its covered quantity and
 stores `supplierUnitPrice = document amount / covered quantity`. Both forms store the
@@ -941,10 +941,11 @@ attached to the Carbon transaction; only the Rillet adapter currently uploads th
 provider. Full
 rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider objects".
 
-## post-charge server function
+## postCharge (ported from the `post-charge` server function)
 
-`packages/server-functions/src/post-charge/` (`defineServerFn`,
-`permissions: { update: "invoicing" }`). Input `{ type: "post" | "void", chargeId }`;
+`postCharge` in `apps/erp/app/modules/accounting/accounting.service.ts`, a building block
+run through `invokePosting` (`postChargePermission`: `{ update: "invoicing" }`; registered for
+jobs and ee as the `post-charge` posting). Input `{ type: "post" | "void", chargeId }`;
 the context carries `companyId` / `userId`. `postChargeTransaction` opens one Kysely transaction and performs
 the tenant-scoped header `FOR UPDATE` as its first read; every settings, company, line,
 account, period, journal, dimension, and lifecycle write stays inside that transaction.
@@ -969,13 +970,13 @@ race.
   strictly positive line magnitudes summing to the header. Journal line ids are allocated
   before insertion and bound explicitly to dimensions, never inferred from RETURNING order.
 - **void**: only from Posted. First, before any write, `voidCharge`
-  (`post-charge/post-charge-void.ts`) refuses a charge dated before the company's accounting
+  (`accounting.service.ts`) refuses a charge dated before the company's accounting
   cutover (`postingDate ?? transactionDate`) through `refuseVoidBeforeCutover`
-  (`lib/cutover-void.ts`) with `CHARGE_VOID_BEFORE_CUTOVER_ERROR`: "This charge is from before
+  (`shared.service.ts`) with `CHARGE_VOID_BEFORE_CUTOVER_ERROR`: "This charge is from before
   your accounting cutover. Record a journal entry to correct it instead." The enable
   superseded that journal and opened its balances in the opening journal, so a reversal would
   undo nothing. A company with no cutover passes. `voidReimbursement`
-  (`post-reimbursement/post-reimbursement-void.ts`) refuses the same way
+  (`accounting.service.ts`) refuses the same way
   (`postingDate ?? reimbursementDate`, `REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR`). When a
   journal exists, the void then proves the original company-scoped journal is Provisional or
   Posted (`OPEN_ITEM_JOURNAL_STATUSES`), source type `Charge`, and every line points back to
@@ -987,7 +988,7 @@ race.
   each original line's dimension identity even if a database returns inserted rows in another
   order.
 
-### The journal builder (`build-charge-journal.ts`)
+### The journal builder (`buildChargeJournal`, `accounting.service.ts`)
 
 Pure, unit-testable, golden-master-pinned. Amounts are **natural-balance-signed** via
 `credit()`/`debit()` (a balanced entry has debits == credits and does NOT sum to zero in
@@ -1009,8 +1010,8 @@ account is **always booked as a LIABILITY** (a credit card is money owed). The f
 - Routes: `charges.tsx` (list, loader `getCharges`, filters
   search/type/status), `charges.$id.tsx` (read-only Drawer detail with lines +
   receipts + a **Void** action for Posted rows, `update: "invoicing"`),
-  `charges.$id.void.tsx` (action → `postCharge(ServerFnContext.system(...),
-  { type: "void", chargeId })`).
+  `charges.$id.void.tsx` (action → `api.invoicing.voidCharge`, which runs
+  `postCharge` through `invokePosting` with `{ type: "void", chargeId }`).
 - Components: `apps/erp/app/modules/invoicing/ui/Charge/` —
   `ChargesTable.tsx`, `ChargeStatus.tsx`, `index.ts`. Service:
   `getCharge(client, companyId, id)` / `getCharges` in

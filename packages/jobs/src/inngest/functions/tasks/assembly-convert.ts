@@ -4,21 +4,28 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { toJson } from "@carbon/database/json";
 import { storage } from "@carbon/files";
+import { datetime } from "@carbon/utils";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  resolveModelSourceBucket,
+  requireModelSourceBucket,
   runAssemblerJob,
   signSourceUrl
 } from "./assembler-client";
+import {
+  getModelUpload,
+  insertPlanJob,
+  updateModelUpload,
+  updatePlanJobs
+} from "./model-rows";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
-// Total wall-clock budget before giving up, bounded by time (not a poll count)
-// so it holds whether the service long-polls or returns immediately. Convert is
-// far faster than plan, but the job model long-polls the same way.
+// How long a convert may run once the service starts it.
 const MAX_CONVERT_WAIT_MS = 10 * 60 * 1000;
 
 /**
@@ -34,27 +41,17 @@ export const assemblyConvertFunction = inngest.createFunction(
     retries: 2,
     concurrency: ASSEMBLER_CONCURRENCY,
     onFailure: async ({ event }) => {
-      const { modelUploadId } = event.data.event.data;
-      const client = getCarbonServiceRole();
-
-      await client
-        .from("modelUpload")
-        .update({
-          processingStatus: "Failed",
-          processingError: event.data.error.message
-        })
-        .eq("id", modelUploadId);
-
-      await client
-        .from("assemblyPlanJob")
-        .update({
-          status: "Failed",
-          error: event.data.error.message,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("modelUploadId", modelUploadId)
-        .eq("kind", "convert")
-        .eq("status", "Processing");
+      const { modelUploadId, companyId } = event.data.event.data;
+      const error = event.data.error.message;
+      await updateModelUpload(companyId, modelUploadId, {
+        processingStatus: "Failed",
+        processingError: error
+      });
+      await updatePlanJobs(
+        companyId,
+        { modelUploadId, kind: "convert", statuses: ["Processing"] },
+        { status: "Failed", error }
+      );
     }
   },
   { event: "carbon/assembly-convert" },
@@ -72,45 +69,23 @@ export const assemblyConvertFunction = inngest.createFunction(
     }
 
     const job = await step.run("queue", async () => {
-      const client = getCarbonServiceRole();
-
-      const modelUpload = await client
-        .from("modelUpload")
-        .select("id, modelPath, companyId")
-        .eq("id", modelUploadId)
-        .eq("companyId", companyId)
-        .single();
-
-      if (modelUpload.error || !modelUpload.data?.modelPath) {
-        throw new Error(
+      const modelUpload = await getModelUpload(companyId, modelUploadId);
+      if (!modelUpload?.modelPath) {
+        throw new NonRetriableError(
           `Model upload ${modelUploadId} not found or has no file`
         );
       }
-
-      const planJob = await client
-        .from("assemblyPlanJob")
-        .insert({
-          modelUploadId,
-          kind: "convert",
-          status: "Processing",
-          companyId,
-          createdBy: userId
-        })
-        .select("id")
-        .single();
-
-      if (planJob.error) {
-        throw new Error(
-          `Failed to create assembly plan job: ${planJob.error.message}`
-        );
-      }
-
-      await client
-        .from("modelUpload")
-        .update({ processingStatus: "Processing", processingError: null })
-        .eq("id", modelUploadId);
-
-      return { id: planJob.data.id, modelPath: modelUpload.data.modelPath };
+      const id = await insertPlanJob({
+        companyId,
+        modelUploadId,
+        kind: "convert",
+        createdBy: userId
+      });
+      await updateModelUpload(companyId, modelUploadId, {
+        processingStatus: "Processing",
+        processingError: null
+      });
+      return { id, modelPath: modelUpload.modelPath };
     });
 
     // Job-scoped artifact paths. The service late-mint uploads to these via
@@ -130,10 +105,8 @@ export const assemblyConvertFunction = inngest.createFunction(
       logger,
       buildBody: async () => {
         const client = getCarbonServiceRole();
-        // Legacy (pre-assembler) raws live in `private`, current ones in
-        // `temp-staging`; assembly artifacts (glb/graph) are written to `private`.
-        const sourceBucket = await resolveModelSourceBucket(
-          client,
+        const sourceBucket = await requireModelSourceBucket(
+          companyId,
           job.modelPath
         );
         const signedUrl = await signSourceUrl(
@@ -198,27 +171,19 @@ export const assemblyConvertFunction = inngest.createFunction(
     const stats: Json = convert.stats;
 
     await step.run("persist", async () => {
-      const client = getCarbonServiceRole();
-      await client
-        .from("modelUpload")
-        .update({
-          processingStatus: "Success",
-          processingError: null,
-          glbPath,
-          graphPath,
-          componentCount,
-          processedAt: new Date().toISOString()
-        })
-        .eq("id", modelUploadId);
-
-      await client
-        .from("assemblyPlanJob")
-        .update({
-          status: "Success",
-          stats,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", job.id);
+      await updateModelUpload(companyId, modelUploadId, {
+        processingStatus: "Success",
+        processingError: null,
+        glbPath,
+        graphPath,
+        componentCount,
+        processedAt: datetime.timestamp()
+      });
+      await updatePlanJobs(
+        companyId,
+        { id: job.id },
+        { status: "Success", stats: toJson(stats) }
+      );
     });
 
     // Planning is NOT chained here — it's expensive (minutes) and the user may

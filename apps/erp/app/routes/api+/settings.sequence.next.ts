@@ -8,7 +8,7 @@ import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.serv
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.

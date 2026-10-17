@@ -5,17 +5,16 @@
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type {
   DocumentTemplate,
   DocumentTemplateType
 } from "@carbon/documents/template";
 import { toDocumentTemplate } from "@carbon/documents/template";
-import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { erpPosting } from "~/services/erp";
 import type { SuggestedAllocationLot } from "./allocation";
 import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
 
@@ -501,7 +500,6 @@ export async function getPickedTrackedEntitiesForMaterial(
 // one transaction, and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
     companyId: string;
     createdBy: string;
@@ -510,12 +508,14 @@ export async function insertManualInventoryAdjustment(
   const { companyId, createdBy, entryType, ...adjustment } =
     inventoryAdjustment;
 
-  const result = await serverFns
-    .as({ client, db, companyId, userId: createdBy })
-    .invoke("post-inventory-adjustment", {
+  const result = await erpPosting(
+    "post-inventory-adjustment",
+    { client, companyId, userId: createdBy },
+    {
       ...adjustment,
       adjustmentType: entryType
-    });
+    }
+  );
 
   if (result.error) {
     // The route string-matches "Insufficient quantity..." on this message.

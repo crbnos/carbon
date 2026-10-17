@@ -5,7 +5,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
-import { getJobsList, jobStatus } from "~/modules/production";
+import { jobStatus } from "~/modules/production/production.models";
+import { getJobsList } from "~/modules/production/production.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

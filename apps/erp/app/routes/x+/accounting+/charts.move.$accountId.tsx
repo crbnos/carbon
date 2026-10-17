@@ -2,18 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect, unchecked } from "@carbon/utils";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import { moveAccountValidator } from "~/modules/accounting/accounting.models";
 import {
   getAccount,
-  getGroupAccounts,
-  moveAccountValidator
-} from "~/modules/accounting";
+  getGroupAccounts
+} from "~/modules/accounting/accounting.service";
 import { MoveAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 
@@ -79,72 +80,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(moveAccountValidator).request(args, {
+    params: ["accountId"]
   });
-
-  const { accountId } = params;
-  if (!accountId) throw notFound("accountId not found");
-
-  const formData = await request.formData();
-  const validation = await validator(moveAccountValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { parentId } = validation.data;
-
-  // Get the new parent's class and incomeBalance so the moved account inherits them
-  let updateData: Record<string, unknown> = {
-    parentId: parentId || null,
-    updatedBy: userId
-  };
-
-  if (parentId) {
-    const parent = await client
-      .from("account")
-      .select("class, incomeBalance")
-      .eq("id", parentId)
-      .single();
-
-    if (parent.error || !parent.data) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(parent.error, "Failed to get parent account")
-        )
-      );
-    }
-
-    updateData = {
-      ...updateData,
-      class: parent.data.class,
-      incomeBalance: parent.data.incomeBalance
-    };
-  }
-
-  const result = await client
-    .from("account")
-    .update(unchecked(updateData))
-    .eq("id", accountId)
-    .select("id")
-    .single();
-
-  if (result.error) {
-    return data(
-      {},
-      await flash(request, error(result.error, "Failed to move account"))
-    );
-  }
-
-  throw redirect(
-    path.to.chartOfAccounts,
-    await flash(request, success("Account moved"))
-  );
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.accounting.moveAccount({
+    accountId: input.params.accountId,
+    parentId: input.data.parentId || undefined
+  });
 }
 
 export default function MoveAccountRoute() {

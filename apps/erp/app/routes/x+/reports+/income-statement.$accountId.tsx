@@ -11,9 +11,9 @@ import { useLoaderData } from "react-router";
 import {
   getAccount,
   getAccountLedger,
-  getAccountLedgerSummary
-} from "~/modules/accounting";
-import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.server";
+  getAccountLedgerSummary,
+  getConsolidatedAccountLedger
+} from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 

@@ -4,6 +4,7 @@
 
 "use client";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,16 +12,18 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  IconButton
+  IconButton,
+  toast
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { useFetchers, useParams, useSubmit } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import { z } from "zod";
 import { Tags } from "~/components/Form";
 import { OperationStatusIcon } from "~/components/Icons";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
+import type { action as statusAction } from "~/routes/x+/job+/methods+/operation.status";
 import { path } from "~/utils/path";
 import { jobOperationStatus } from "../../production.models";
 import type { Job, JobOperation } from "../../types";
@@ -53,26 +56,24 @@ export function JobOperationStatus({
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const isPaused = routeData?.job?.status === "Paused";
-  const submit = useSubmit();
+  const fetcher = useAction<typeof statusAction>({
+    key: `jobOperation:${operation.id}`,
+    onSuccess: ({ data }) => {
+      if (data?.warning) toast.error(data.warning);
+    }
+  });
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticJobStatus(operation.id!);
 
   const isDisabled = !permissions.can("update", "production");
 
+  const { submit } = fetcher;
   const onOperationStatusChange = useCallback(
     (id: string, status: JobOperation["status"]) => {
       onChange?.(status);
       submit(
-        {
-          id,
-          status
-        },
-        {
-          method: "post",
-          action: path.to.jobOperationStatus,
-          navigate: false,
-          fetcherKey: `jobOperation:${id}`
-        }
+        { id, status },
+        { method: "post", action: path.to.jobOperationStatus }
       );
     },
     [submit, onChange]

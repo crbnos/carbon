@@ -40,8 +40,11 @@ import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewPlacementContext } from "~/components/New";
 import { useUrlParams } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import type { CustomField, CustomFieldsTableType } from "~/modules/settings";
+import type { AttributeDataType } from "~/modules/people/types";
+import type {
+  CustomField,
+  CustomFieldsTableType
+} from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 type CustomFieldCategoryDetailProps = {

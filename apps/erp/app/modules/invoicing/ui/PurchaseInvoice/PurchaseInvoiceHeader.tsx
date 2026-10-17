@@ -37,8 +37,12 @@ import {
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
-import { isInvoicePayable, PurchaseInvoicingStatus } from "~/modules/invoicing";
+import { isInvoicePayable } from "~/modules/invoicing/invoicing.models";
+import type {
+  PurchaseInvoice,
+  PurchaseInvoiceLine
+} from "~/modules/invoicing/types";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
 import { useItems } from "~/stores";
 import { useSuppliers } from "~/stores/suppliers";

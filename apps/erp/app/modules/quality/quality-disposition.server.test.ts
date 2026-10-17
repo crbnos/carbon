@@ -107,21 +107,16 @@ const trx = {
   insertInto: (table: string) => query(table, "insert")
 };
 
-vi.mock("~/services/database.server", () => ({
-  getDatabaseClient: () => ({
-    transaction: () => ({
-      execute: async (fn: (t: typeof trx) => unknown) => fn(trx)
-    })
+const db = {
+  transaction: () => ({
+    execute: async (fn: (t: typeof trx) => unknown) => fn(trx)
   })
-}));
-vi.mock("./quality.server", () => ({
-  errResult: (message: string) => ({ data: null, error: { message } })
-}));
+};
 
 import {
   linkEntitiesToIssueItemRow,
   updateIssueItemQuantity
-} from "./quality-disposition.server";
+} from "./quality.service";
 
 function seed(overrides: Partial<Tables> = {}) {
   tables = {
@@ -143,7 +138,7 @@ function seed(overrides: Partial<Tables> = {}) {
 }
 
 const edit = (quantity: number, expectedQuantity: number) =>
-  updateIssueItemQuantity({
+  updateIssueItemQuantity(db as any, {
     id: "nci-1",
     companyId: "c-1",
     userId: "u-1",

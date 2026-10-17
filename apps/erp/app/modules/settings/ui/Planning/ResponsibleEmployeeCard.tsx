@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -13,9 +14,8 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { LuFactory, LuMapPin, LuTags } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { usePeople } from "~/stores";
 
 // The responsibleEmployee ownership tree (spec §P1.3), configured the way
@@ -47,7 +47,18 @@ export function ResponsibleEmployeeCard({
 }) {
   const { t } = useLingui();
   const [people] = usePeople();
-  const ownershipFetcher = useFetcher<{ success: boolean; message: string }>();
+  const ownershipFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.locationResponsibleEmployee) {
+        toast.success(t`Location ownership updated`);
+      } else if (data.itemGroupResponsibleEmployee) {
+        toast.success(t`Item group ownership updated`);
+      } else {
+        toast.success(t`Company default updated`);
+      }
+    }
+  });
 
   const peopleOptions = useMemo(
     () => [
@@ -75,19 +86,6 @@ export function ResponsibleEmployeeCard({
     }
     return map;
   }, [responsibilities]);
-
-  // On every finished save, as the page's other cards do. Keyed on the
-  // message, a second save answering with the same text showed nothing.
-  useEffect(() => {
-    if (ownershipFetcher.state !== "idle" || !ownershipFetcher.data?.message) {
-      return;
-    }
-    if (ownershipFetcher.data.success) {
-      toast.success(ownershipFetcher.data.message);
-    } else {
-      toast.error(ownershipFetcher.data.message);
-    }
-  }, [ownershipFetcher.state, ownershipFetcher.data]);
 
   const submitOwnership = useCallback(
     (update: OwnershipUpdate) => {

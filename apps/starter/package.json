@@ -69,5 +69,7 @@
     "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./app/zod.client.ts"
+  ]
 }

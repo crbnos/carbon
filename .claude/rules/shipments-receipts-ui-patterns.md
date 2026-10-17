@@ -2,7 +2,8 @@
 paths:
   - apps/erp/app/modules/inventory/ui/{Shipments,Receipts}/**
   - apps/erp/app/routes/x+/{shipment,receipt}+/**
-  - packages/server-functions/src/{post-shipment,post-receipt,create}/**
+  - apps/erp/app/modules/shared/shared.service.ts
+  - apps/erp/app/modules/inventory/inventory.{server,service}.ts
 ---
 
 # Shipments & Receipts UI + Posting Flow
@@ -15,10 +16,16 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 
 ## Routes (per document, e.g. `shipment+/`)
 
-- `new.tsx` — **action only**. Creates the doc by calling the **`create` server function**
-  (`create(ServerFnContext.system({ db, companyId, userId }), { type, locationId, ...sourceIds })`),
+Every action below makes ONE call to an operation in
+`apps/erp/app/modules/inventory/inventory.server.ts` (`api.inventory.<name>` through
+`carbon(request)`; the names are flat, such as `createShipment`, `updateReceipt`,
+`setReceiptLineBatch`); the logic described here lives in that operation, so the API and MCP
+run the same checks. The route only parses the form, and takes the document id from the URL.
+
+- `new.tsx` — **action only** (`createShipment` / `createReceipt`). Creates the doc by calling the **`create` posting**
+  (`invokeCreate(ctx, { type, locationId, ...sourceIds })`, which runs `createDocument` in `shared.service.ts`),
   then `throw redirect(path.to.shipmentDetails(id))`. There is **no `upsert` on create** — the
-  server function allocates the human ID and copies source-document lines. For the
+  posting allocates the human ID and copies source-document lines. For the
   `'Rental Agreement'` source it first redirects to the agreement's existing Draft (one Draft
   rental shipment and one Draft rental receipt per agreement, enforced by the partial unique
   indexes `shipment_oneOpenDraftPerRentalAgreement_idx` / `receipt_oneOpenDraftPerRentalAgreement_idx`),
@@ -27,16 +34,20 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
 - `$id._index.tsx` — redirects to `…/details`.
-- `$id.details.tsx` — renders Form + Lines + Notes. **Action**: validate, then if `sourceDocument`
-  changed re-invoke `create`, else `upsertShipment` / `upsertReceipt` (Supabase upsert, sets `updatedBy`).
+- `$id.details.tsx` — renders Form + Lines + Notes. **Action** (`updateShipment` / `updateReceipt`): if
+  `sourceDocument` or the location changed it re-invokes `create`, else the building block
+  `upsertShipment` / `upsertReceipt` (Supabase update, sets `updatedBy`).
   A rental document refuses a change of source ("A rental shipment keeps its rental agreement.
   Create it from the agreement.").
 - `$id.post.tsx` — see posting flow below.
-- `$id.void.tsx` — guards status, invokes post fn with `type: "void"`.
-- `$id.delete.tsx` — `deleteShipment` / `deleteReceipt` service fn; **guard: blocked once `postingDate` is set**.
-- `lines.update.tsx` — Supabase upsert on `shipmentLine`; only `storageUnitId` + `shippedQuantity`
-  (receipt: `receivedQuantity`). Item/storage rules are NOT evaluated here, only at post.
-- `lines.tracking.tsx` — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
+- `$id.void.tsx` (`voidShipment` / `voidReceipt`) — guards status, invokes the posting with `type: "void"`.
+- `$id.delete.tsx` (`deleteShipment` / `deleteReceipt`) — **guard: blocked once `postingDate` is set**.
+- `lines.update.tsx` (`updateShipmentLines` / `updateReceiptLines`) — one field on the selected
+  lines; only `storageUnitId` + `shippedQuantity` (receipt: `receivedQuantity`). Item/storage rules
+  are NOT evaluated here, only at post.
+- `lines.tracking.tsx` (`assignShipmentLineEntity`; receipt: `setReceiptLineBatch` /
+  `setReceiptLineSerial` / `assignReceiptReturnEntity` / `removeReceiptReturnEntity`, one per
+  `trackingType`) — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
   `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
   shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
@@ -52,27 +63,28 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
   shipped unit's `Shipment` link, which the RMA provenance check reads. `ReceiptLines` sends every
   blur as typed, an empty value included, and shows the server's error: the server, not the page,
   decides a duplicate, so a box is never cleared because another box holds the same text. Enter
-  only moves focus (`data-serial-boxes`) so the blur is the one save. The reads, the write
-  (`update_receipt_line_serial_tracking`, called through Kysely) and the release run in one
-  transaction; a failed write empties the box in a second one. Refused on a Posted or Voided
-  receipt.
-  `$id.post.tsx` refuses a Posted or Voided receipt before any write, and refuses the post when
-  `reconcileReceiptSerialEntities` reports a line still
-  missing serials, returned to the modal as `{ error: { message } }` rather than flashed: a
-  fetcher redirect back to the same page does not reload the root, so a flash is never shown.
-  Lowering `receivedQuantity` (`lines.update`) runs the same cleanup on a Draft receipt, in one
-  Kysely transaction with the quantity update, and returns the failure if either fails. Every
+  only moves focus (`data-serial-boxes`) so the blur is the one save. `setReceiptLineSerial`
+  runs `saveReceiptSerialBox` (`inventory.service.ts`): the reads, the write
+  (`update_receipt_line_serial_tracking`, called through Kysely) and the release in one
+  transaction; a failed write empties the box in a second one (`clearReceiptSerialBox`). Refused
+  unless the receipt is Draft.
+  The `postReceipt` operation refuses a Posted or Voided receipt before any write, and refuses
+  the post (back to Draft) when `reconcileReceiptSerialEntities` reports a line still missing
+  serials ("Serial numbers are missing").
+  Lowering `receivedQuantity` (`updateReceiptLines`) runs the same cleanup on a Draft receipt, in
+  one Kysely transaction with the quantity update, and refuses a non-numeric quantity. Every
   removal goes through `releaseReceiptSerialEntities` (`@carbon/database/receipt-serials`, Kysely,
   set-based; the line split uses it too): an entity with no
   `itemLedger` history is deleted, one with history only loses its receipt attributes — a sales
   return re-tags real shipped units. `lines.return-entities` reports a failed read as an error,
   and `ReturnEntityForm` shows it instead of falling back to typed serials (whose empty save
   would unlink an assigned unit).
-- `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
+- `lines.split.tsx` (`splitShipmentLine` / `splitReceiptLine`) — invokes `create` with
+  `type: "shipmentLineSplit"` / `receiptLineSplit`.
   A serial `receiptLineSplit` drops the line's serials, deleting only entities with no
   `itemLedger` history; a unit with history (a sales return) only loses its receipt link.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
-- `fixed-asset-lines.update.tsx` — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
+- `fixed-asset-lines.update.tsx` (`updateShipmentFixedAssetLine` / `updateReceiptFixedAssetLine`) — update one field of a `shipmentFixedAssetLine` / `receiptFixedAssetLine`,
   parsed by `shipmentFixedAssetLineUpdateValidator` / `receiptFixedAssetLineUpdateValidator`
   (`inventory.models.ts`): `shipped`/`received`, `serialNumber`, `meter`; the receipt also takes
   `notes`, `outOfService` ("" clears the tick, any other text is the reason, so tick and reason save
@@ -141,37 +153,43 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   expect `On Hold` rather than `Available` when the shipment's source is a
   `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
-## Posting flow (`$id.post.tsx` → server function)
+## Posting flow (`$id.post.tsx` → `api.inventory.postShipment` / `postReceipt` → posting body)
 
-The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
-relevant surfaces, optimistically sets `status: "Pending"`, then
-`serverFns.system({ db: getDatabaseClient(), companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
-On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing
-slip PDF; receipt may call `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
+The operation (`postShipment` / `postReceipt` in `inventory.server.ts`): evaluates storage/sales
+rules (`@carbon/ee/rules.server`) over the relevant surfaces — a blocking rule returns
+`{ violations, ruleNames }`, which the route hands to `useRuleViolations` — optimistically sets
+`status: "Pending"`, then
+`invokePosting(ctx, "post-shipment", { type: "post", shipmentId, postingDate }, service.postShipment)`
+(receipt: `invokePosting(ctx, "post-receipt", { receiptId, postingDate }, service.postReceipt)`,
+whose `type` defaults to `"post"`).
+On error it reverts status to `Draft`. May then auto-print and (sales shipment, before the post)
+save a packing slip PDF through `renderPackingSlip` (`inventory/packing-slip.pdf.tsx`, the
+same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
+`updatePurchasedPrices` (`purchasing.service.ts`) when `updateLeadTimesOnReceipt` is set.
 
-`post-receipt` and `post-shipment` (`packages/server-functions/src/`) take
+`postReceipt` and `postShipment` (`inventory.service.ts`, ported from the `post-receipt` and `post-shipment` server functions) take
 `{ type: "post" | "void", {receipt,shipment}Id, postingDate? }` (the context carries `companyId` / `userId`;
-`postingDate` is read only by the rental source, and `$id.post.tsx` passes it from the modal), run
+`postingDate` is read only by the rental source, and `$id.post.tsx` passes it from the modal to the operation), run
 the service-role client + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, `Rental Agreement` (returns each
   ticked unit through `returnRentalUnit` and moves its `fixedAsset.locationId` to the receipt's
-  location; `post-receipt/rental-agreement.ts`), and `Sales Return Order`
+  location; `returnRentalUnit` in `sales.service.ts`), and `Sales Return Order`
   (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s for every
   company (the journal is Provisional before the accounting cutover, Posted after it), advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
-  The PO and sales return journal lines are built by the pure `post-receipt/posting-lines.ts`
-  (`purchaseReceiptLineCosts` values each PO line: shipping share, invoice-first
+  The PO and sales return journal lines are built by pure builders in `inventory.service.ts`
+  (`buildPurchaseReceiptJournalLines`, `buildSalesReturnReceiptJournalLines`; `purchaseReceiptLineCosts` values each PO line: shipping share, invoice-first
   claim; a negative line books what `calculateCOGS` relieved inside the transaction);
-  the legacy backfill (`activate-accounting/legacy/receipt.ts`) calls the same builders
+  the legacy backfill (`activateAccounting`, `accounting.service.ts`) calls the same builders
   with the stored cost rows.
 - **post-shipment** handles `Rental Agreement` (puts each ticked unit On Rent on the delivery
-  date; no `itemLedger`, `costLedger` or journal; `post-shipment/rental-agreement.ts`), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
+  date; no `itemLedger`, `costLedger` or journal), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
-  Cr Inventory / Dr GR/IR; the `create` server function seeds the shipment's tracked entities from
+  Cr Inventory / Dr GR/IR; the `create` posting seeds the shipment's tracked entities from
   `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
   quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
@@ -182,8 +200,8 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   with no stock anywhere refuses the post, and the void restores each unit to the bin its posting
   used.
   The shipment journal lines (SO pairs, fixed asset sale lines, return pairs) are built
-  by the pure `post-shipment/posting-lines.ts` from facts the posting gathers; the
-  accounting cutover's legacy backfill (`activate-accounting/legacy/shipment.ts`) calls
+  by pure builders in `inventory.service.ts` (`buildSalesShipmentJournal`, `buildReturnShipmentJournal`) from facts the posting gathers; the
+  accounting cutover's legacy backfill (`activateAccounting`, `accounting.service.ts`) calls
   the same builders with the stored cost rows.
 **GL dimensions on return journals.** Every return-flow journal (post-shipment
 `Sales Return Order` + `Purchase Return Order`, post-receipt `Sales Return Order`)
@@ -192,7 +210,7 @@ attaches automatic `journalLineDimension` rows — item, item posting group
 built index-parallel to the journal lines, gated by the company group's configured
 `dimension` rows. post-shipment and post-receipt carry them on each built line
 (`dimensions`, by entity type) and write them with `journalLineDimensionRows`
-(`src/lib/journal-line-dimensions.ts`). The journalLine insert must
+(`shared.service.ts`). The journalLine insert must
 `.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
 original lines' dimensions onto the reversing lines (read `journalLineDimension` by
 `journalLineId`, re-attach by position) so a void mirrors the posting. `post-memo`
@@ -204,14 +222,14 @@ applies.
   rolls back source-document quantities, sets `status: "Voided"`. A purchase receipt's void drains
   its tracked entities to quantity 0 / `Consumed` (`Scrapped`/`Rejected` kept) — they were never
   received, so no picker may offer them; a sales-return receipt's void flips the returned units
-  back to `Consumed`. Inside the transaction (`post-receipt/void-guards.ts`) the void locks the
+  back to `Consumed`. Inside the transaction (`lockPostedReceipt`, `assertReceivedStockOnHand`,
+  `assertNoRejectedUntrackedLot` in `inventory.service.ts`) the void locks the
   receipt and re-checks `Posted` (two voids at once cannot both reverse it), refuses when the
   reversal would take a bin below zero — a serial or batch is checked on its own, so a unit that
   was moved, picked or shipped after posting is caught even when the bin holds other stock — and
   refuses a purchase receipt whose untracked inspection lot was rejected (the reject route already
-  wrote that stock off). `$receiptId.void.tsx` returns a refusal as `{ success: false, message }`
-  and `ReceiptVoidModal` shows it in place: a flash on the fetcher's redirect back to the same page
-  is never shown. A serial from a voided receipt can be entered on a new receipt: `lines.tracking`
+  wrote that stock off). `ReceiptVoidModal` shows a refused `voidReceipt` in place and stays
+  open. A serial from a voided receipt can be entered on a new receipt: `saveReceiptSerialBox`
   reuses the same tracked entity (`idsWithLiveStockHistory` ignores the ledger rows of voided
   receipts, `onVoidedReceipt` lifts the "taken by another box" refusal), so one unit keeps one
   history.
@@ -223,12 +241,13 @@ applies.
 ## Gotchas
 
 - **`Pending` is a transient posting state**, not a workflow stage. The action sets it before the
-  server-function call and the action reverts it to `Draft` on failure.
+  posting call and the action reverts it to `Draft` on failure.
 - Status enums are only `Draft / Pending / Posted` in the base migrations; `Voided` was added later
   (`20250828142122_void-shipment.sql`, `20260422100000_receipt-status-voided.sql`). Read newest first.
 - The `sourceDocument` enums list many values (Sales/Purchase Invoice, Return Orders, Manufacturing
   Consumption/Output for receipts), but the post fns only implement the handful above — other source
   documents fall through with no posting effect.
 - Lines persist directly through `lines.update` on edit; the form's submit only saves the header.
-- `create`, post-shipment, and post-receipt run service-role + Kysely (RLS bypassed) — the **route**
-  `requirePermissions({ update: "inventory" })` is the auth gate.
+- `create`, post-shipment, and post-receipt run service-role + Kysely (RLS bypassed) — the
+  **operation's** `permission` (`update: "inventory"`, `create` for `createShipment` /
+  `createReceipt`) is the auth gate, for every caller.

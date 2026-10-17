@@ -10,9 +10,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import {
   invoiceSettlementBase,
-  invoiceSettlementValidator,
-  replaceInvoiceSettlements
-} from "~/modules/invoicing";
+  invoiceSettlementValidator
+} from "~/modules/invoicing/invoicing.models";
+import { replaceInvoiceSettlements } from "~/modules/invoicing/invoicing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

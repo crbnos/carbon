@@ -11,7 +11,7 @@ import {
   getJobOperationBatches,
   getJobOperationBatchMemberStats,
   getJobOperationBatchMembers
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import BatchesTable from "~/modules/production/ui/Batches/BatchesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

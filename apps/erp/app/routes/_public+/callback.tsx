@@ -52,7 +52,10 @@ import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLocation, useSearchParams } from "react-router";
-import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
+import {
+  getCompanies,
+  getEmployeeCompanies
+} from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

@@ -22,12 +22,12 @@ import {
 import type {
   RentalUtilizationRow,
   RentalUtilizationTotals
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   getFixedAssetClassesList,
   getRentalUtilization
-} from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/accounting/accounting.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

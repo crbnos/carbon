@@ -2,8 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { posting } from "@carbon/api/postings.server";
 import type { KyselyTx } from "@carbon/database/client";
-import { serverFns } from "@carbon/server-functions";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { createMappingService } from "./external-mapping";
@@ -256,9 +256,11 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     type: "post" | "void",
     userId: string
   ): Promise<{ error: false } | { error: true; message: string }> {
-    const posted = await serverFns
-      .system({ db: this.database, companyId: this.companyId, userId })
-      .invoke("post-payment", { type, paymentId });
+    const posted = await posting(
+      "post-payment",
+      { db: this.database, companyId: this.companyId, userId },
+      { type, paymentId }
+    );
 
     if (posted.error) {
       const message =

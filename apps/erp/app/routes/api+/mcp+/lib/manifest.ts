@@ -73,7 +73,7 @@ const TOOLS = [
   {
     name: "call_tool",
     description:
-      "Call an operation by name with its arguments. The company and user are taken from the credential, never from the arguments.",
+      "Call an operation by name with its arguments, optionally returning only the named fields of each row. Lists come back as CSV. The company and user are taken from the credential, never from the arguments.",
     readOnly: false
   }
 ] as const;
@@ -145,9 +145,9 @@ export function buildMcpManifest(origin: string) {
           classifications: CLASSIFICATIONS
         },
         documentation: {
-          mcpGuide: `${DOCS_URL}/mcp`,
-          apiReference: `${DOCS_URL}/api-reference`,
-          authentication: `${DOCS_URL}/api-reference/authentication`,
+          mcpGuide: `${DOCS_URL}/api/mcp`,
+          apiReference: `${DOCS_URL}/api`,
+          authentication: `${DOCS_URL}/api/authentication`,
           openapi: `${MARKETING_URL}/openapi.json`
         },
         /** Drop-in config for Claude Desktop, Claude Code and compatible clients. */

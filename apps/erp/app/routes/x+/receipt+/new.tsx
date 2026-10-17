@@ -2,16 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
-import type { ReceiptSourceDocument } from "~/modules/inventory";
-import { getUserDefaults } from "~/modules/users/users.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { receiptSourceDocumentType } from "~/modules/inventory/inventory.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -20,184 +18,39 @@ export const handle: Handle = {
   to: path.to.receipts
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
-  });
+const source = z.object({
+  sourceDocument: zfd.text(z.enum(receiptSourceDocumentType).optional()),
+  sourceDocumentId: zfd.text(z.string().optional())
+});
 
-  const formData = await request.formData();
-  const sourceDocument =
-    (formData.get("sourceDocument") as ReceiptSourceDocument) ?? undefined;
-  const sourceDocumentId = (formData.get("sourceDocumentId") as string) ?? "";
-
-  const defaults = await getUserDefaults(client, userId, companyId);
-
+/** A failed create goes back to the document it started from. */
+function sourcePath({
+  sourceDocument,
+  sourceDocumentId = ""
+}: z.output<typeof source>) {
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await serverFns
-        .system({ db: getDatabaseClient(), companyId, userId })
-        .invoke("create", {
-          type: "receiptFromPurchaseOrder",
-          locationId: defaults.data?.locationId as string | undefined,
-          purchaseOrderId: sourceDocumentId,
-          receiptId: undefined
-        });
-      if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
-        throw redirect(
-          path.to.purchaseOrder(sourceDocumentId),
-          await flash(
-            request,
-            error(purchaseOrderReceipt.error, "Failed to create receipt")
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
+      return path.to.purchaseOrder(sourceDocumentId);
     case "Sales Return Order":
-      // One open draft per RMA: clicking Receive again goes to the existing
-      // draft instead of stacking up duplicates.
-      const existingReturnReceipt = await client
-        .from("receipt")
-        .select("id")
-        .eq("sourceDocument", "Sales Return Order")
-        .eq("sourceDocumentId", sourceDocumentId)
-        .eq("status", "Draft")
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (existingReturnReceipt.error) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              existingReturnReceipt.error,
-              "Failed to check for an existing receipt"
-            )
-          )
-        );
-      }
-      if (existingReturnReceipt.data) {
-        throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
-      }
-
-      // No default-location guard: the create server function falls back to
-      // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await serverFns
-        .system({ db: getDatabaseClient(), companyId, userId })
-        .invoke("create", {
-          type: "receiptFromSalesReturnOrder",
-          locationId: defaults.data?.locationId as string | undefined,
-          salesReturnOrderId: sourceDocumentId,
-          receiptId: undefined
-        });
-      if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              salesReturnOrderReceipt.error,
-              getErrorMessage(
-                salesReturnOrderReceipt.error,
-                "Failed to create receipt"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
+      return path.to.salesReturnOrderDetails(sourceDocumentId);
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await serverFns
-        .system({ db: getDatabaseClient(), companyId, userId })
-        .invoke("create", {
-          type: "receiptFromInboundTransfer",
-          warehouseTransferId: sourceDocumentId,
-          receiptId: undefined
-        });
-      if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
-        throw redirect(
-          path.to.warehouseTransfer(sourceDocumentId),
-          await flash(
-            request,
-            error(warehouseTransferReceipt.error, "Failed to create receipt")
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
+      return path.to.warehouseTransfer(sourceDocumentId);
     case "Rental Agreement":
-      // One open draft per agreement: Deliver or Return again goes to the
-      // existing draft instead of stacking up duplicates.
-      const existingRentalReceipt = await client
-        .from("receipt")
-        .select("id")
-        .eq("sourceDocument", "Rental Agreement")
-        .eq("sourceDocumentId", sourceDocumentId)
-        .eq("status", "Draft")
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (existingRentalReceipt.error) {
-        throw redirect(
-          path.to.rentalAgreementDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              existingRentalReceipt.error,
-              "Failed to check for an existing receipt"
-            )
-          )
-        );
-      }
-      if (existingRentalReceipt.data) {
-        throw redirect(path.to.receiptDetails(existingRentalReceipt.data.id));
-      }
-
-      const rentalAgreementReceipt = await serverFns
-        .system({ db: getDatabaseClient(), companyId, userId })
-        .invoke("create", {
-          type: "receiptFromRentalAgreement",
-          rentalAgreementId: sourceDocumentId
-        });
-      if (!rentalAgreementReceipt.data || rentalAgreementReceipt.error) {
-        throw redirect(
-          path.to.rentalAgreementDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              rentalAgreementReceipt.error,
-              getErrorMessage(
-                rentalAgreementReceipt.error,
-                "Failed to create receipt"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(rentalAgreementReceipt.data.id));
+      return path.to.rentalAgreementDetails(sourceDocumentId);
     default:
-      const defaultReceipt = await serverFns
-        .system({ db: getDatabaseClient(), companyId, userId })
-        .invoke("create", {
-          type: "receiptDefault",
-          locationId: defaults.data?.locationId as string
-        });
-
-      if (!defaultReceipt.data || defaultReceipt.error) {
-        throw redirect(
-          path.to.receipts,
-          await flash(
-            request,
-            error(defaultReceipt.error, "Failed to create receipt")
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(defaultReceipt.data.id));
+      return path.to.receipts;
   }
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(source).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.createReceipt(input.data);
+  if (!result.data) {
+    return respond(args.request, result).redirect(sourcePath(input.data), {
+      message: ""
+    });
+  }
+  throw redirect(path.to.receiptDetails(result.data.id));
 }

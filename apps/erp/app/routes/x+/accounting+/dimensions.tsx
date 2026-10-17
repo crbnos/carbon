@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getDimensions } from "~/modules/accounting";
+import { getDimensions } from "~/modules/accounting/accounting.service";
 import { DimensionsTable } from "~/modules/accounting/ui/Dimensions";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

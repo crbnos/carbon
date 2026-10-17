@@ -2,86 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { isUniqueViolation } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
-import type { MaterialSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import { supplierPartFormValidator } from "~/modules/items/items.models";
+import type { MaterialSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(supplierPartFormValidator).request(args, {
+    params: ["itemId"]
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(supplierPartValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createMaterialSupplier = await upsertSupplierPart(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...supplierPart } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.items.createSupplierPart({
+    ...supplierPart,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  // buyMethod_part_supplier_unique: one supplier part per item and supplier
-  if (isUniqueViolation(createMaterialSupplier.error)) {
+  // One supplier part per item and supplier: shown under the Supplier field.
+  if (result.error?.category === "conflict") {
     return validationError({
-      fieldErrors: {
-        supplierId: "This item already has a supplier part for this supplier"
-      }
+      fieldErrors: { supplierId: result.error.message }
     });
   }
-
-  if (createMaterialSupplier.error) {
-    return {
-      success: false,
-      message: "Failed to create material supplier"
-    };
-  }
-
-  const newSupplierPartId = createMaterialSupplier.data?.id;
-  const priceBreaksRaw = formData.get("priceBreaks");
-  if (newSupplierPartId && priceBreaksRaw) {
-    const priceBreaks = JSON.parse(priceBreaksRaw as string) as {
-      quantity: number;
-      supplierUnitPrice: number;
-      leadTime: number;
-    }[];
-    if (priceBreaks.length > 0) {
-      await client.from("supplierPartPrice").insert(
-        priceBreaks.map((pb) => ({
-          supplierPartId: newSupplierPartId,
-          quantity: pb.quantity,
-          supplierUnitPrice: pb.supplierUnitPrice,
-          leadTime: pb.leadTime ?? 0,
-          sourceType: "Manual Entry" as const,
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        }))
-      );
-    }
-  }
-
-  return { success: true, message: "Material supplier created" };
+  return result;
 }
 
 export default function NewMaterialSupplierRoute() {

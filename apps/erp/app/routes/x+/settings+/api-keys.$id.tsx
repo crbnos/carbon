@@ -2,74 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { upsertApiKey } from "@carbon/ee/api-keys.server";
-import { requireFeature } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { ApiKey } from "~/modules/settings";
-import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
-import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
+import {
+  apiKeyFields,
+  apiKeyValidator
+} from "~/modules/settings/settings.models";
+import type { ApiKey } from "~/modules/settings/types";
+import { ApiKeyForm } from "~/modules/settings/ui";
 import { getParams, path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "users"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(apiKeyValidator).request(args, {
+    params: ["id"]
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "API_KEYS",
-    redirectTo: path.to.apiKeys
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.settings.updateApiKey({
+    ...apiKeyFields(input.data),
+    id: input.params.id
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const validation = await validator(apiKeyValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id: _id, scopes: scopesJson, expiresAt, ...d } = validation.data;
-
-  // Parse scopes from JSON string
-  const scopes = scopesJson ? JSON.parse(scopesJson) : {};
-
-  const updateApiKey = await upsertApiKey(client, {
-    id,
-    ...d,
-    scopes,
-    expiresAt: expiresAt || undefined
-  });
-
-  if (updateApiKey.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateApiKey.error, "Failed to update API key")
-      )
-    );
-  }
-
-  // A scope/expiry edit must not keep authenticating from the 30s auth cache.
-  await invalidateApiKeyCache(id, companyId);
-
-  throw redirect(
-    `${path.to.apiKeys}?${getParams(request)}`,
-    await flash(request, success("Updated API key"))
+  return respond(args.request, result).redirect(
+    `${path.to.apiKeys}?${getParams(args.request)}`,
+    { message: "Updated API key" }
   );
 }
 

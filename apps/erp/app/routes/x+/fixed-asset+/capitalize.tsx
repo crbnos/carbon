@@ -10,16 +10,16 @@ import { getLogger } from "@carbon/logger";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
+import { fixedAssetCapitalizeValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetCapitalizeValidator,
   getCapitalizationCost,
   getDefaultAccounts,
   invokeAssetTransfer
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
-import { getTrackedEntity } from "~/modules/inventory";
-import { getItem } from "~/modules/items";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getTrackedEntity } from "~/modules/inventory/inventory.service";
+import { getItem } from "~/modules/items/items.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

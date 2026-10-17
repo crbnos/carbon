@@ -9,12 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { contractorValidator } from "~/modules/resources/resources.models";
 import {
-  ContractorForm,
-  contractorValidator,
   getContractor,
   upsertContractor
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
+import { ContractorForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -71,6 +71,10 @@ this reason.
 - `integrations.jira.oauth.ts` — OAuth callback: exchanges code → tokens, calls
   `getAccessibleResources` for `cloudId`/`siteUrl` (uses the first resource),
   `upsertCompanyIntegration({ id:"jira", active:true, ... })`, then `config.onInstall`.
+- The POST/DELETE writes below are operations in `apps/erp/app/modules/shared/shared.server.ts`
+  (`createJiraIssue` / `linkJiraIssue` / `unlinkJiraIssue`, called as
+  `api.shared.linkJiraIssue(input)`), gated on the task's module
+  (`actionTaskPermissions`) and refused on a change notice whose workflow is locked.
 - `integrations.jira.issue.link.ts` — POST links an existing issue (syncs assignee by
   email→`user`, pushes the task's notes as the Jira description, creates a Carbon
   remote link); DELETE unlinks (Carbon DB first, then best-effort remote-link cleanup —

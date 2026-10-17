@@ -16,7 +16,7 @@ import { useLingui } from "@lingui/react/macro";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { Enumerable } from "../Enumerable";
 import LinkValue from "../LinkValue";
 import Customer from "./Customer";

@@ -11,7 +11,10 @@ import { useLocale } from "@react-aria/i18n";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteTimeCardEntry, getTimeCardEntry } from "~/modules/people";
+import {
+  deleteTimeCardEntry,
+  getTimeCardEntry
+} from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

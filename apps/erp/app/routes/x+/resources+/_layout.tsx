@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
-import { useResourcesSubmodules } from "~/modules/resources";
+import { useResourcesSubmodules } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

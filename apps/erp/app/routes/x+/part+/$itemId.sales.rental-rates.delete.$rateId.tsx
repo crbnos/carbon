@@ -13,7 +13,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteCustomerItemRentalRate,
   getCustomerItemRentalRate
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

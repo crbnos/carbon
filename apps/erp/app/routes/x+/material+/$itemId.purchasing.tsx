@@ -12,15 +12,15 @@ import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getBatchProperties } from "~/modules/inventory";
+import { getBatchProperties } from "~/modules/inventory/inventory.service";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
-import type { SupplierPart } from "~/modules/items";
+import { itemPurchasingValidator } from "~/modules/items/items.models";
 import {
   getItemCostHistory,
   getItemReplenishment,
-  itemPurchasingValidator,
   upsertItemPurchasing
-} from "~/modules/items";
+} from "~/modules/items/items.service";
+import type { SupplierPart } from "~/modules/items/types";
 import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
 import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { path } from "~/utils/path";

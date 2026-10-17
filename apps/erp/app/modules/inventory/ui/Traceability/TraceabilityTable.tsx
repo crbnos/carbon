@@ -6,7 +6,7 @@ import { Badge, cn, HStack } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import { entityHeadline, type LineagePayload, sourceLinkHref } from "./utils";

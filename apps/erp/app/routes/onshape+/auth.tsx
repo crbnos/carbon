@@ -12,8 +12,8 @@ import { createPanelSession } from "@carbon/ee/onshape/panel-session.server";
 import { getLogger } from "@carbon/logger";
 import { requiresItarEntityCertification } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanySettings } from "~/modules/settings";
-import { getItarCertificationStatus } from "~/modules/users";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getItarCertificationStatus } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export const config = {
