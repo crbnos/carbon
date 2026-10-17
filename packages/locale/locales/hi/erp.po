@@ -2481,6 +2481,9 @@ msgstr "एक लेखांकन बकेट जो विभाग या 
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "एक पूंजीकृत आइटम के लिए एक लेखांकन रिकॉर्ड जिसे आप व्यय की बजाय मूल्यह्रास करते हैं; ड्राफ्ट → सक्रिय → पूर्ण मूल्यह्रासित → निपटाया गया।"
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr ""
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "एक सतर्कता कि कुछ को एक व्यक्ति के ध्यान की आवश्यकता है, कार्बन/सूचित करें घटना से इन-ऐप इनबॉक्स और वैकल्पिक ईमेल और स्लैक में फैला हुआ, प्रति विषय प्रति उपयोगकर्ता म्यूट करने योग्य।"
 
@@ -3239,6 +3242,9 @@ msgstr "क्या आप आपूर्तिकर्ता प्रका
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr ""
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "क्या आप माप की इकाई {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
@@ -3700,6 +3706,9 @@ msgstr "ऑथेंटिकेटर ऐप"
 
 msgid "Authenticator QR code"
 msgstr "प्रमाणकर्ता QR कोड"
+
+msgid "Authority"
+msgstr ""
 
 msgid "Authorized overtime on top of the shift"
 msgstr "शिफ्ट के अतिरिक्त अधिकृत ओवरटाइम"
@@ -4321,6 +4330,9 @@ msgstr "सर्वश्रेष्ठ स्थिति की गणना
 
 msgid "Calculation Method"
 msgstr "गणना विधि"
+
+msgid "Calculation Type"
+msgstr ""
 
 msgid "Calendar"
 msgstr "कैलेंडर"
@@ -5266,6 +5278,9 @@ msgstr "घटक"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "घटक केवल तब छिपे होते हैं जब यह चरण चलता है, जैसे रास्ते में एक फिक्स्चर; घटक टैब में आंख का उपयोग करके एक को छिपाने के लिए।"
+
+msgid "Compound"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "आपूर्तिकर्ता प्रकार संपाद�
 msgid "Edit Tax Authority"
 msgstr ""
 
+msgid "Edit Tax Code"
+msgstr ""
+
 msgid "Edit Tax Registration"
 msgstr ""
 
@@ -8713,6 +8731,10 @@ msgstr "प्रभावी"
 
 msgid "Effective Date"
 msgstr "प्रभावी तारीख"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
@@ -11709,6 +11731,9 @@ msgstr "चालान आईडी"
 msgid "Invoice Location"
 msgstr "चालान स्थान"
 
+msgid "Invoice Message"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "अभी चालान करें"
 
@@ -14122,6 +14147,9 @@ msgstr "नया आपूर्तिकर्ता रिटर्न"
 msgid "New Tax Authority"
 msgstr ""
 
+msgid "New Tax Code"
+msgstr ""
+
 msgid "New Tax Registration"
 msgstr ""
 
@@ -14295,6 +14323,9 @@ msgstr "कोई सक्रिय योजना नहीं"
 
 msgid "No Active Quotes"
 msgstr "कोई सक्रिय उद्धरण नहीं"
+
+msgid "No active tax code for {uncovered}"
+msgstr ""
 
 msgid "No addresses found"
 msgstr "कोई पता नहीं मिला"
@@ -14936,6 +14967,9 @@ msgstr "अभी तक कोई आपूर्तिकर्ता नह�
 
 msgid "No sync operations yet"
 msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
+
+msgid "No tax registration for {unregistered}"
+msgstr ""
 
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
@@ -18051,6 +18085,9 @@ msgstr "लागत पुनः निर्धारित करें"
 msgid "Recost {0}"
 msgstr "{0} की लागत पुनः निर्धारित करें"
 
+msgid "Recoverable"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
 
@@ -18562,6 +18599,9 @@ msgstr "रिपोर्ट"
 msgid "Reporting"
 msgstr "रिपोर्टिंग"
 
+msgid "Reporting Category"
+msgstr ""
+
 msgid "Reporting dimension"
 msgstr "रिपोर्टिंग आयाम"
 
@@ -18822,6 +18862,20 @@ msgstr "प्रतिधारित आय"
 
 msgid "Retained Earnings (default)"
 msgstr "प्रतिधारित आय (डिफ़ॉल्ट)"
+
+msgid "Retire"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr ""
+
+msgid "Retire Tax Code"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "किसी संपत्ति को स्क्रैपिंग या विक्रय द्वारा सेवा से सेवामुक्त करना, किसी भी लाभ या हानि को शुद्ध बही मूल्य के विरुद्ध दर्ज करना और इसकी स्थिति को निपटाया गया पर सेट करना।"
@@ -21922,7 +21976,13 @@ msgstr "कर बही मूल्य"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax Code"
+msgstr ""
+
 msgid "tax codes"
+msgstr ""
+
+msgid "Tax Codes"
 msgstr ""
 
 msgid "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr ""
 msgid "Tax Paid (default)"
 msgstr ""
 
+msgid "Tax Paid Account"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "कर प्रतिशत"
 
@@ -21971,6 +22034,9 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Received Account"
 msgstr ""
 
 msgid "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr ""
 
 msgid "Taxes"
 msgstr "कर"
+
+msgid "Taxes Shipping"
+msgstr ""
 
 msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
@@ -22253,6 +22322,9 @@ msgstr "कंपनी के पास पहले से एक पोस्
 
 msgid "The company has no account defaults."
 msgstr "कंपनी के पास कोई खाता डिफ़ॉल्ट नहीं है।"
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"

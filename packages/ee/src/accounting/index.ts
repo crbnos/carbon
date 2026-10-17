@@ -24,6 +24,7 @@ export * from "./core/remote-trial-balance";
 export * from "./core/service";
 export * from "./core/subscriptions";
 export * from "./core/sync";
+export * from "./core/tax-mapping";
 export * from "./core/trial-balance";
 export * from "./core/types";
 export * from "./core/utils";

@@ -2481,6 +2481,9 @@ msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계�
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "비용 처리가 아닌 감가상각하는 자본화된 품목에 대한 회계 기록; 초안 → 활성 → 상각 완료 → 처분됨"
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr ""
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "누군가의 주의가 필요함을 알리는 경보로서, carbon/notify 이벤트에서 앱 내 받은편지함과 선택적 이메일 및 Slack으로 확산되며, 사용자별 주제별로 음소거할 수 있습니다."
 
@@ -3239,6 +3242,9 @@ msgstr "공급업체 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr ""
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "측정 단위 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -3700,6 +3706,9 @@ msgstr "인증 앱"
 
 msgid "Authenticator QR code"
 msgstr "인증자 QR 코드"
+
+msgid "Authority"
+msgstr ""
 
 msgid "Authorized overtime on top of the shift"
 msgstr "교대조 위의 허가된 초과근무"
@@ -4321,6 +4330,9 @@ msgstr "최선의 경우 계산 중…"
 
 msgid "Calculation Method"
 msgstr "계산 방법"
+
+msgid "Calculation Type"
+msgstr ""
 
 msgid "Calendar"
 msgstr "달력"
@@ -5266,6 +5278,9 @@ msgstr "구성품"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "지그와 같이 방해가 되는 구성품은 이 단계가 재생되는 동안만 숨김됩니다. 구성품 탭의 눈 아이콘을 사용하여 구성품을 숨길 수 있습니다."
+
+msgid "Compound"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "공급업체 유형 편집"
 msgid "Edit Tax Authority"
 msgstr ""
 
+msgid "Edit Tax Code"
+msgstr ""
+
 msgid "Edit Tax Registration"
 msgstr ""
 
@@ -8713,6 +8731,10 @@ msgstr "유효"
 
 msgid "Effective Date"
 msgstr "유효 날짜"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "제거됨"
@@ -11709,6 +11731,9 @@ msgstr "송장 ID"
 msgid "Invoice Location"
 msgstr "송장 사업장"
 
+msgid "Invoice Message"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "지금 송장 작성"
 
@@ -14122,6 +14147,9 @@ msgstr "새 공급업체 반품"
 msgid "New Tax Authority"
 msgstr ""
 
+msgid "New Tax Code"
+msgstr ""
+
 msgid "New Tax Registration"
 msgstr ""
 
@@ -14295,6 +14323,9 @@ msgstr "활성 요금제 없음"
 
 msgid "No Active Quotes"
 msgstr "활성 견적 없음"
+
+msgid "No active tax code for {uncovered}"
+msgstr ""
 
 msgid "No addresses found"
 msgstr "주소가 없습니다"
@@ -14936,6 +14967,9 @@ msgstr "아직 공급업체가 없습니다"
 
 msgid "No sync operations yet"
 msgstr "아직 동기화된 공정이 없습니다"
+
+msgid "No tax registration for {unregistered}"
+msgstr ""
 
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
@@ -18051,6 +18085,9 @@ msgstr "원가 재계산"
 msgid "Recost {0}"
 msgstr "원가 재계산 {0}"
 
+msgid "Recoverable"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "회수 기간"
 
@@ -18562,6 +18599,9 @@ msgstr "보고서"
 msgid "Reporting"
 msgstr "보고"
 
+msgid "Reporting Category"
+msgstr ""
+
 msgid "Reporting dimension"
 msgstr "보고 차원"
 
@@ -18822,6 +18862,20 @@ msgstr "이익잉여금"
 
 msgid "Retained Earnings (default)"
 msgstr "이익잉여금(기본값)"
+
+msgid "Retire"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr ""
+
+msgid "Retire Tax Code"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
@@ -21922,7 +21976,13 @@ msgstr "세금 장부가액"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax Code"
+msgstr ""
+
 msgid "tax codes"
+msgstr ""
+
+msgid "Tax Codes"
 msgstr ""
 
 msgid "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr ""
 msgid "Tax Paid (default)"
 msgstr ""
 
+msgid "Tax Paid Account"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "세금 비율"
 
@@ -21971,6 +22034,9 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Received Account"
 msgstr ""
 
 msgid "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr ""
 
 msgid "Taxes"
 msgstr "세금"
+
+msgid "Taxes Shipping"
+msgstr ""
 
 msgid "Team trained"
 msgstr "팀 교육 완료"
@@ -22253,6 +22322,9 @@ msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 
 msgid "The company has no account defaults."
 msgstr "회사에 계정 기본값이 없습니다."
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."

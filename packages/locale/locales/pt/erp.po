@@ -2481,6 +2481,9 @@ msgstr "Um grupo contábil que agrupa despesas por departamento ou função para
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Um registro contábil de um elemento capitalizado que você deprecia em vez de despesado; Rascunho → Ativo → Totalmente depreciado → Alienado."
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr ""
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "Um alerta de que algo precisa da atenção de uma pessoa, distribuído de um evento carbon/notify para a caixa de entrada no aplicativo mais email e Slack opcionais, silenciável por tópico por usuário."
 
@@ -3239,6 +3242,9 @@ msgstr "Tem certeza de que deseja excluir o tipo de fornecedor: {0}? Isso não p
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr ""
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Tem certeza de que deseja excluir a unidade de medida: {0}? Isso não pode ser desfeito."
@@ -3700,6 +3706,9 @@ msgstr "Aplicação Autenticadora"
 
 msgid "Authenticator QR code"
 msgstr "Código QR do autenticador"
+
+msgid "Authority"
+msgstr ""
 
 msgid "Authorized overtime on top of the shift"
 msgstr "Horas extras autorizadas além do turno"
@@ -4321,6 +4330,9 @@ msgstr "Calculando melhor caso…"
 
 msgid "Calculation Method"
 msgstr "Método de Cálculo"
+
+msgid "Calculation Type"
+msgstr ""
 
 msgid "Calendar"
 msgstr "Calendário"
@@ -5266,6 +5278,9 @@ msgstr "Componentes"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "Componentes ocultados apenas enquanto esta etapa está sendo executada, como um dispositivo de fixação no caminho; use o olho na aba Componentes para ocultar um."
+
+msgid "Compound"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "Editar Tipo de Fornecedor"
 msgid "Edit Tax Authority"
 msgstr ""
 
+msgid "Edit Tax Code"
+msgstr ""
+
 msgid "Edit Tax Registration"
 msgstr ""
 
@@ -8713,6 +8731,10 @@ msgstr "Em vigor"
 
 msgid "Effective Date"
 msgstr "Data de vigência"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "Eliminado"
@@ -11709,6 +11731,9 @@ msgstr "ID da Fatura"
 msgid "Invoice Location"
 msgstr "Local da Fatura"
 
+msgid "Invoice Message"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "Faturar agora"
 
@@ -14122,6 +14147,9 @@ msgstr "Nova Devolução de Fornecedor"
 msgid "New Tax Authority"
 msgstr ""
 
+msgid "New Tax Code"
+msgstr ""
+
 msgid "New Tax Registration"
 msgstr ""
 
@@ -14295,6 +14323,9 @@ msgstr "Nenhum plano ativo"
 
 msgid "No Active Quotes"
 msgstr "Sem Cotações Ativas"
+
+msgid "No active tax code for {uncovered}"
+msgstr ""
 
 msgid "No addresses found"
 msgstr "Nenhum endereço encontrado"
@@ -14936,6 +14967,9 @@ msgstr "Nenhum fornecedor ainda"
 
 msgid "No sync operations yet"
 msgstr "Nenhuma operação de sincronização ainda"
+
+msgid "No tax registration for {unregistered}"
+msgstr ""
 
 msgid "No time entries for this week"
 msgstr "Sem registros de tempo para esta semana"
@@ -18051,6 +18085,9 @@ msgstr "Recalcular Custo"
 msgid "Recost {0}"
 msgstr "Recalcular Custo de {0}"
 
+msgid "Recoverable"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Registrar"
 
@@ -18562,6 +18599,9 @@ msgstr "Relatório"
 msgid "Reporting"
 msgstr "Relatórios"
 
+msgid "Reporting Category"
+msgstr ""
+
 msgid "Reporting dimension"
 msgstr "Dimensão de relatório"
 
@@ -18822,6 +18862,20 @@ msgstr "Lucros acumulados"
 
 msgid "Retained Earnings (default)"
 msgstr "Lucros acumulados (padrão)"
+
+msgid "Retire"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr ""
+
+msgid "Retire Tax Code"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Retirar um ativo de serviço por sucateamento ou venda, registrando qualquer ganho ou perda em relação ao valor contábil líquido e definindo seu status como Alienado."
@@ -21922,7 +21976,13 @@ msgstr "Valor contábil fiscal"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax Code"
+msgstr ""
+
 msgid "tax codes"
+msgstr ""
+
+msgid "Tax Codes"
 msgstr ""
 
 msgid "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr ""
 msgid "Tax Paid (default)"
 msgstr ""
 
+msgid "Tax Paid Account"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "Porcentagem de imposto"
 
@@ -21971,6 +22034,9 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Received Account"
 msgstr ""
 
 msgid "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr ""
 
 msgid "Taxes"
 msgstr "Impostos"
+
+msgid "Taxes Shipping"
+msgstr ""
 
 msgid "Team trained"
 msgstr "Equipa treinada"
@@ -22253,6 +22322,9 @@ msgstr "A empresa já possui um diário de abertura contabilizado."
 
 msgid "The company has no account defaults."
 msgstr "A empresa não tem padrões de conta."
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "O contrato não pode ser cancelado então"

@@ -49,7 +49,7 @@ Slice B — Posting
 - [ ] Task 25: Verify slice B end to end
 
 Slice C — Provider mapping
-- [ ] Task 26: Write `core/tax-mapping.ts` with tests
+- [x] Task 26: Write `core/tax-mapping.ts` with tests
 - [ ] Task 27: Read provider tax catalogs (Xero `/TaxRates`, QuickBooks Online tax codes)
 - [ ] Task 28: Add the Tax Rates tab and the sync gate to the integration drawer
 - [ ] Task 29: Write the shared provider tax-rate resolver with tests

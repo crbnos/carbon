@@ -2481,6 +2481,9 @@ msgstr "Giderleri departman veya işlev tarafından gruplandıran ve Büyük Def
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "Gider yerine amortisman yaptığınız kapitalize edilmiş bir madde için bir muhasebe kaydı; Taslak → Aktif → Amortismanı tamamlanmış → Elden çıkarıldı."
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr ""
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "Bir carbon/notify etkinliğinden uygulama içi gelen kutusu ve isteğe bağlı e-posta ve Slack'e dağıtılan bir uyarı; konu başına ve kullanıcı başına sessize alınabilir."
 
@@ -3239,6 +3242,9 @@ msgstr "Tedarikçi türünü silmek istediğinizden emin misiniz: {0}? Bu geri a
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr ""
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Birim ölçüsünü silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
@@ -3700,6 +3706,9 @@ msgstr "Kimlik Doğrulayıcı Uygulaması"
 
 msgid "Authenticator QR code"
 msgstr "Doğrulayıcı QR kodu"
+
+msgid "Authority"
+msgstr ""
 
 msgid "Authorized overtime on top of the shift"
 msgstr "Vardiyayı çok aşan yetkili fazla mesai"
@@ -4321,6 +4330,9 @@ msgstr "En iyi durum hesaplanıyor…"
 
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
+
+msgid "Calculation Type"
+msgstr ""
 
 msgid "Calendar"
 msgstr "Takvim"
@@ -5266,6 +5278,9 @@ msgstr "Bileşenler"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "Bu adım oynarken yalnızca gizli bileşenler, yolda bir bağlama aparatı gibi; birini gizlemek için Bileşenler sekmesindeki gözü kullanın."
+
+msgid "Compound"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "Tedarikçi Türünü Düzenle"
 msgid "Edit Tax Authority"
 msgstr ""
 
+msgid "Edit Tax Code"
+msgstr ""
+
 msgid "Edit Tax Registration"
 msgstr ""
 
@@ -8713,6 +8731,10 @@ msgstr "Yürürlükte"
 
 msgid "Effective Date"
 msgstr "Yürürlük Tarihi"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
@@ -11709,6 +11731,9 @@ msgstr "Fatura Kimlik Numarası"
 msgid "Invoice Location"
 msgstr "Fatura Konumu"
 
+msgid "Invoice Message"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "Şimdi Fatura Oluştur"
 
@@ -14122,6 +14147,9 @@ msgstr "Yeni Tedarikçi İadesi"
 msgid "New Tax Authority"
 msgstr ""
 
+msgid "New Tax Code"
+msgstr ""
+
 msgid "New Tax Registration"
 msgstr ""
 
@@ -14295,6 +14323,9 @@ msgstr "Aktif bir plan yok"
 
 msgid "No Active Quotes"
 msgstr "Aktif Teklif Yok"
+
+msgid "No active tax code for {uncovered}"
+msgstr ""
 
 msgid "No addresses found"
 msgstr "Adres bulunamadı"
@@ -14936,6 +14967,9 @@ msgstr "Henüz tedarikçi yok"
 
 msgid "No sync operations yet"
 msgstr "Henüz senkronizasyon operasyonu yok"
+
+msgid "No tax registration for {unregistered}"
+msgstr ""
 
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
@@ -18051,6 +18085,9 @@ msgstr "Maliyeti Yeniden Hesapla"
 msgid "Recost {0}"
 msgstr "{0} için Maliyeti Yeniden Hesapla"
 
+msgid "Recoverable"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
 
@@ -18562,6 +18599,9 @@ msgstr "Rapor"
 msgid "Reporting"
 msgstr "Raporlama"
 
+msgid "Reporting Category"
+msgstr ""
+
 msgid "Reporting dimension"
 msgstr "Raporlama boyutu"
 
@@ -18822,6 +18862,20 @@ msgstr "Dağıtılmamış Kârlar"
 
 msgid "Retained Earnings (default)"
 msgstr "Dağıtılmamış Kârlar (varsayılan)"
+
+msgid "Retire"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr ""
+
+msgid "Retire Tax Code"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Bir varlığı hurdaya ayırarak veya satarak hizmetten çekmek; net defter değerine karşı oluşan kâr veya zararı kaydetmek ve durumunu Elden Çıkarıldı olarak ayarlamak."
@@ -21922,7 +21976,13 @@ msgstr "Vergi Defter değeri"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax Code"
+msgstr ""
+
 msgid "tax codes"
+msgstr ""
+
+msgid "Tax Codes"
 msgstr ""
 
 msgid "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr ""
 msgid "Tax Paid (default)"
 msgstr ""
 
+msgid "Tax Paid Account"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "Vergi yüzdesi"
 
@@ -21971,6 +22034,9 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Received Account"
 msgstr ""
 
 msgid "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr ""
 
 msgid "Taxes"
 msgstr "Vergiler"
+
+msgid "Taxes Shipping"
+msgstr ""
 
 msgid "Team trained"
 msgstr "Takım eğitildi"
@@ -22253,6 +22322,9 @@ msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fi�
 
 msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"

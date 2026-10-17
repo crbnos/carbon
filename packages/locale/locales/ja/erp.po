@@ -2481,6 +2481,9 @@ msgstr "部門または機能ごとに費用をグループ化する会計カテ
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "資本化資産の会計記録（費用化ではなく減価償却対象）。下書き → 有効 → 償却済 → 除却済。"
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr ""
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "何かが人の注意が必要であることを示すアラート。carbon/notify イベントからアプリ内インボックスおよびオプションのメールと Slack にファンアウトされ、ユーザーごと、トピックごとにミュート可能です。"
 
@@ -3239,6 +3242,9 @@ msgstr "仕入先タイプ: {0} を削除してもよろしいですか?これ�
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr ""
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "本当に計測単位「{0}」を削除してもよろしいですか？この操作は取り消せません。"
@@ -3700,6 +3706,9 @@ msgstr "認証器アプリ"
 
 msgid "Authenticator QR code"
 msgstr "認証器QRコード"
+
+msgid "Authority"
+msgstr ""
 
 msgid "Authorized overtime on top of the shift"
 msgstr "シフトを超えた認可残業"
@@ -4321,6 +4330,9 @@ msgstr "最良ケースを計算中…"
 
 msgid "Calculation Method"
 msgstr "計算方法"
+
+msgid "Calculation Type"
+msgstr ""
 
 msgid "Calendar"
 msgstr "カレンダー"
@@ -5266,6 +5278,9 @@ msgstr "コンポーネント"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "このステップの再生中にのみ非表示になるコンポーネント（治具など）。コンポーネントタブの目のアイコンを使用して非表示にします。"
+
+msgid "Compound"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "仕入先タイプを編集"
 msgid "Edit Tax Authority"
 msgstr ""
 
+msgid "Edit Tax Code"
+msgstr ""
+
 msgid "Edit Tax Registration"
 msgstr ""
 
@@ -8713,6 +8731,10 @@ msgstr "有効"
 
 msgid "Effective Date"
 msgstr "有効日"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "削除済み"
@@ -11709,6 +11731,9 @@ msgstr "請求書ID"
 msgid "Invoice Location"
 msgstr "請求書の場所"
 
+msgid "Invoice Message"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "今すぐ請求する"
 
@@ -14122,6 +14147,9 @@ msgstr "新規仕入先返品"
 msgid "New Tax Authority"
 msgstr ""
 
+msgid "New Tax Code"
+msgstr ""
+
 msgid "New Tax Registration"
 msgstr ""
 
@@ -14295,6 +14323,9 @@ msgstr "アクティブなプランなし"
 
 msgid "No Active Quotes"
 msgstr "アクティブな見積がありません"
+
+msgid "No active tax code for {uncovered}"
+msgstr ""
 
 msgid "No addresses found"
 msgstr "住所が見つかりません"
@@ -14936,6 +14967,9 @@ msgstr "仕入先がまだありません"
 
 msgid "No sync operations yet"
 msgstr "まだ同期工程はありません"
+
+msgid "No tax registration for {unregistered}"
+msgstr ""
 
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
@@ -18051,6 +18085,9 @@ msgstr "原価を再査定"
 msgid "Recost {0}"
 msgstr "{0}の原価を再査定"
 
+msgid "Recoverable"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "登録"
 
@@ -18562,6 +18599,9 @@ msgstr "レポート"
 msgid "Reporting"
 msgstr "レポーティング"
 
+msgid "Reporting Category"
+msgstr ""
+
 msgid "Reporting dimension"
 msgstr "報告ディメンション"
 
@@ -18822,6 +18862,20 @@ msgstr "利益剰余金"
 
 msgid "Retained Earnings (default)"
 msgstr "利益剰余金 (既定)"
+
+msgid "Retire"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr ""
+
+msgid "Retire Tax Code"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "スクラップまたは販売により資産をサービスから除却し、利益または損失を未償却残高に対して計上し、ステータスを除却済に設定します。"
@@ -21922,7 +21976,13 @@ msgstr "税務帳簿価額"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax Code"
+msgstr ""
+
 msgid "tax codes"
+msgstr ""
+
+msgid "Tax Codes"
 msgstr ""
 
 msgid "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr ""
 msgid "Tax Paid (default)"
 msgstr ""
 
+msgid "Tax Paid Account"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "税率"
 
@@ -21971,6 +22034,9 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Received Account"
 msgstr ""
 
 msgid "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr ""
 
 msgid "Taxes"
 msgstr "税金"
+
+msgid "Taxes Shipping"
+msgstr ""
 
 msgid "Team trained"
 msgstr "チームが訓練を受けた"
@@ -22253,6 +22322,9 @@ msgstr "会社には既に転記済の期首残高仕訳があります。"
 
 msgid "The company has no account defaults."
 msgstr "会社に勘定科目のデフォルト設定がありません。"
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"

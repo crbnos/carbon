@@ -2481,6 +2481,9 @@ msgstr "一个会计分类，按部门或职能对费用进行分组，以便总
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "一条会计记录，记录您折旧而不是当作费用的固定资产；草稿→启用→已提足折旧→已处置。"
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr ""
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "一个提醒，表示某件事需要个人关注，从carbon/notify事件分发到应用内收件箱、可选电子邮件和Slack，用户可按主题静音。"
 
@@ -3239,6 +3242,9 @@ msgstr "您确定要删除供应商类型：{0}？此操作无法撤销。"
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr ""
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "您确定要删除计量单位：{0}？此操作无法撤销。"
@@ -3700,6 +3706,9 @@ msgstr "身份验证器应用"
 
 msgid "Authenticator QR code"
 msgstr "身份验证器二维码"
+
+msgid "Authority"
+msgstr ""
 
 msgid "Authorized overtime on top of the shift"
 msgstr "班次之外的授权加班"
@@ -4321,6 +4330,9 @@ msgstr "正在计算最佳情况…"
 
 msgid "Calculation Method"
 msgstr "计算方法"
+
+msgid "Calculation Type"
+msgstr ""
 
 msgid "Calendar"
 msgstr "日历"
@@ -5266,6 +5278,9 @@ msgstr "组件"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "组件仅在此步骤播放时隐藏，例如挡路的工装夹具；使用「组件」选项卡中的眼睛图标隐藏一个。"
+
+msgid "Compound"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "编辑供应商类型"
 msgid "Edit Tax Authority"
 msgstr ""
 
+msgid "Edit Tax Code"
+msgstr ""
+
 msgid "Edit Tax Registration"
 msgstr ""
 
@@ -8713,6 +8731,10 @@ msgstr "生效"
 
 msgid "Effective Date"
 msgstr "生效日期"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "已消除"
@@ -11709,6 +11731,9 @@ msgstr "发票ID"
 msgid "Invoice Location"
 msgstr "发票地点"
 
+msgid "Invoice Message"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "立即开票"
 
@@ -14122,6 +14147,9 @@ msgstr "新建供应商退货"
 msgid "New Tax Authority"
 msgstr ""
 
+msgid "New Tax Code"
+msgstr ""
+
 msgid "New Tax Registration"
 msgstr ""
 
@@ -14295,6 +14323,9 @@ msgstr "没有启用的计划"
 
 msgid "No Active Quotes"
 msgstr "没有启用的报价单"
+
+msgid "No active tax code for {uncovered}"
+msgstr ""
 
 msgid "No addresses found"
 msgstr "未找到地址"
@@ -14936,6 +14967,9 @@ msgstr "还没有供应商"
 
 msgid "No sync operations yet"
 msgstr "还没有同步操作"
+
+msgid "No tax registration for {unregistered}"
+msgstr ""
 
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
@@ -18051,6 +18085,9 @@ msgstr "重新核算成本"
 msgid "Recost {0}"
 msgstr "重新核算{0}的成本"
 
+msgid "Recoverable"
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "注册"
 
@@ -18562,6 +18599,9 @@ msgstr "报告"
 msgid "Reporting"
 msgstr "报表"
 
+msgid "Reporting Category"
+msgstr ""
+
 msgid "Reporting dimension"
 msgstr "报告维度"
 
@@ -18822,6 +18862,20 @@ msgstr "未分配利润"
 
 msgid "Retained Earnings (default)"
 msgstr "未分配利润（默认）"
+
+msgid "Retire"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr ""
+
+msgid "Retire Tax Code"
+msgstr ""
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "通过报废或出售将资产退出使用，将收益或损失计入账面净值，并将其状态设为已处置。"
@@ -21922,7 +21976,13 @@ msgstr "税务账面价值"
 msgid "tax code"
 msgstr ""
 
+msgid "Tax Code"
+msgstr ""
+
 msgid "tax codes"
+msgstr ""
+
+msgid "Tax Codes"
 msgstr ""
 
 msgid "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr ""
 msgid "Tax Paid (default)"
 msgstr ""
 
+msgid "Tax Paid Account"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "税收百分比"
 
@@ -21971,6 +22034,9 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Received Account"
 msgstr ""
 
 msgid "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr ""
 
 msgid "Taxes"
 msgstr "税"
+
+msgid "Taxes Shipping"
+msgstr ""
 
 msgid "Team trained"
 msgstr "班组已培训"
@@ -22253,6 +22322,9 @@ msgstr "公司已有一份已过账的期初余额凭证。"
 
 msgid "The company has no account defaults."
 msgstr "公司没有账户默认值。"
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"

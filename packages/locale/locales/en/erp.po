@@ -2481,6 +2481,9 @@ msgstr "An accounting bucket that groups expenses by department or function so t
 msgid "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 msgstr "An accounting record for a capitalized item you depreciate rather than expense; Draft → Active → Fully Depreciated → Disposed."
 
+msgid "An active tax code charges tax in these countries, but the company has no tax registration there."
+msgstr "An active tax code charges tax in these countries, but the company has no tax registration there."
+
 msgid "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 msgstr "An alert that something needs a person's attention, fanned out from a carbon/notify event to the in-app inbox plus optional email and Slack, muteable per topic per user."
 
@@ -3239,6 +3242,9 @@ msgstr "Are you sure you want to delete the supplier type: {0}? This cannot be u
 msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
 
+msgid "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+msgstr "Are you sure you want to delete the tax registration: {name}? This cannot be undone."
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
@@ -3700,6 +3706,9 @@ msgstr "Authenticator app"
 
 msgid "Authenticator QR code"
 msgstr "Authenticator QR code"
+
+msgid "Authority"
+msgstr "Authority"
 
 msgid "Authorized overtime on top of the shift"
 msgstr "Authorized overtime on top of the shift"
@@ -4321,6 +4330,9 @@ msgstr "Calculating best case…"
 
 msgid "Calculation Method"
 msgstr "Calculation Method"
+
+msgid "Calculation Type"
+msgstr "Calculation Type"
 
 msgid "Calendar"
 msgstr "Calendar"
@@ -5266,6 +5278,9 @@ msgstr "Components"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
 msgstr "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
+
+msgid "Compound"
+msgstr "Compound"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -8663,6 +8678,9 @@ msgstr "Edit Supplier Type"
 msgid "Edit Tax Authority"
 msgstr "Edit Tax Authority"
 
+msgid "Edit Tax Code"
+msgstr "Edit Tax Code"
+
 msgid "Edit Tax Registration"
 msgstr "Edit Tax Registration"
 
@@ -8713,6 +8731,10 @@ msgstr "Effective"
 
 msgid "Effective Date"
 msgstr "Effective Date"
+
+#. placeholder {0}: percentFormatter.format(effectiveRate)
+msgid "Effective rate today: <0>{0}</0>"
+msgstr "Effective rate today: <0>{0}</0>"
 
 msgid "Eliminated"
 msgstr "Eliminated"
@@ -11709,6 +11731,9 @@ msgstr "Invoice ID"
 msgid "Invoice Location"
 msgstr "Invoice Location"
 
+msgid "Invoice Message"
+msgstr "Invoice Message"
+
 msgid "Invoice Now"
 msgstr "Invoice Now"
 
@@ -14122,6 +14147,9 @@ msgstr "New Supplier Return"
 msgid "New Tax Authority"
 msgstr "New Tax Authority"
 
+msgid "New Tax Code"
+msgstr "New Tax Code"
+
 msgid "New Tax Registration"
 msgstr "New Tax Registration"
 
@@ -14295,6 +14323,9 @@ msgstr "No active plan"
 
 msgid "No Active Quotes"
 msgstr "No Active Quotes"
+
+msgid "No active tax code for {uncovered}"
+msgstr "No active tax code for {uncovered}"
 
 msgid "No addresses found"
 msgstr "No addresses found"
@@ -14936,6 +14967,9 @@ msgstr "No suppliers yet"
 
 msgid "No sync operations yet"
 msgstr "No sync operations yet"
+
+msgid "No tax registration for {unregistered}"
+msgstr "No tax registration for {unregistered}"
 
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
@@ -18051,6 +18085,9 @@ msgstr "Recost"
 msgid "Recost {0}"
 msgstr "Recost {0}"
 
+msgid "Recoverable"
+msgstr "Recoverable"
+
 msgid "Recovery Period"
 msgstr "Recovery Period"
 
@@ -18562,6 +18599,9 @@ msgstr "Report"
 msgid "Reporting"
 msgstr "Reporting"
 
+msgid "Reporting Category"
+msgstr "Reporting Category"
+
 msgid "Reporting dimension"
 msgstr "Reporting dimension"
 
@@ -18822,6 +18862,20 @@ msgstr "Retained Earnings"
 
 msgid "Retained Earnings (default)"
 msgstr "Retained Earnings (default)"
+
+msgid "Retire"
+msgstr "Retire"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire {0}"
+msgstr "Retire {0}"
+
+msgid "Retire Tax Code"
+msgstr "Retire Tax Code"
+
+#. placeholder {0}: taxCode.name
+msgid "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
+msgstr "Retire the tax code {0}? It can no longer be chosen on new lines. Lines that already use it keep it."
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
@@ -21922,8 +21976,14 @@ msgstr "Tax Book Value"
 msgid "tax code"
 msgstr "tax code"
 
+msgid "Tax Code"
+msgstr "Tax Code"
+
 msgid "tax codes"
 msgstr "tax codes"
+
+msgid "Tax Codes"
+msgstr "Tax Codes"
 
 msgid "Tax codes, rates"
 msgstr "Tax codes, rates"
@@ -21961,6 +22021,9 @@ msgstr "Tax Paid"
 msgid "Tax Paid (default)"
 msgstr "Tax Paid (default)"
 
+msgid "Tax Paid Account"
+msgstr "Tax Paid Account"
+
 msgid "Tax percent"
 msgstr "Tax percent"
 
@@ -21972,6 +22035,9 @@ msgstr "Tax Received"
 
 msgid "Tax Received (default)"
 msgstr "Tax Received (default)"
+
+msgid "Tax Received Account"
+msgstr "Tax Received Account"
 
 msgid "Tax Registration"
 msgstr "Tax Registration"
@@ -22008,6 +22074,9 @@ msgstr "Taxable"
 
 msgid "Taxes"
 msgstr "Taxes"
+
+msgid "Taxes Shipping"
+msgstr "Taxes Shipping"
 
 msgid "Team trained"
 msgstr "Team trained"
@@ -22253,6 +22322,9 @@ msgstr "The company already has a posted opening balance journal."
 
 msgid "The company has no account defaults."
 msgstr "The company has no account defaults."
+
+msgid "The company is registered in these countries, but no active tax code charges tax there."
+msgstr "The company is registered in these countries, but no active tax code charges tax there."
 
 msgid "The contract cannot be cancelled then"
 msgstr "The contract cannot be cancelled then"
