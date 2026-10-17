@@ -83,7 +83,7 @@ total.
 | **Inngest `carbon/post-transaction`** | receipt, shipment, purchase-invoice posts | Registered and fully wired, with no in-repo sender. Silent the day one appears. |
 | **Paperless Parts webhook** inserts a `salesOrder` at `Confirmed` | `sales_order_confirmed` | A real integration, entirely outside the confirm route. |
 | **MES inspection-lot disposition** (`inspection-lot.$id.disposition.tsx`) | `scrap_reported` | Scrap that a customer would absolutely call scrap. Emits nothing today. |
-| **MCP tools** — `updateJobStatus`, `updateSalesOrderStatus`, `releaseSalesOrder`, `finalizePurchaseOrder`, `upsert*` | most events | Covered *only* where the capture sits in the service rather than the route, because MCP dispatches into services by name. `quote_sent` gets this right; the route-level captures do not. |
+| **MCP tools** — `updateJobStatus`, `updateSalesOrderStatus`, `confirmSalesOrder`, `finalizePurchaseOrder`, `upsert*` | most events | Covered *only* where the capture sits in the service rather than the route, because MCP dispatches into services by name. `quote_sent` gets this right; the route-level captures do not. |
 
 That last row is the pattern worth acting on: **instrument the service choke
 point, not the route**, wherever the service is the single writer. It covers

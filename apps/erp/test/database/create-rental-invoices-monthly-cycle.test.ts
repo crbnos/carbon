@@ -13,7 +13,10 @@ import { databaseTest } from "./fixtures/local-database";
 import { postReceipt } from "../../app/modules/inventory/inventory.service";
 import { rentalFixture } from "./fixtures/rental";
 import { createRentalInvoices } from "../../app/modules/sales/sales.service";
-import { invokePosting, invokeCreate } from "../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../app/modules/shared/shared.service";
 import { handlesOf } from "./fixtures/handles";
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
@@ -67,10 +70,15 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
 
-      const result = await invokePosting(handlesOf(f.ctx), "create-rental-invoices", {
-              asOf: "2026-10-20",
-              rentalAgreementId: f.agreementId
-            }, createRentalInvoices);
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "create-rental-invoices",
+        {
+          asOf: "2026-10-20",
+          rentalAgreementId: f.agreementId
+        },
+        createRentalInvoices
+      );
       expect(result.error).toBeNull();
       expect(result.data!.failures).toEqual([]);
 
@@ -107,16 +115,21 @@ databaseTest(
     try {
       await putOnRent(f);
       const receipt = await invokeCreate(handlesOf(f.ctx), {
-                    type: "receiptFromRentalAgreement",
-                    rentalAgreementId: f.agreementId,
-                    rentalAgreementLineId: f.lineIds[0]!
-                  });
+        type: "receiptFromRentalAgreement",
+        rentalAgreementId: f.agreementId,
+        rentalAgreementLineId: f.lineIds[0]!
+      });
       expect(receipt.error).toBeNull();
-      const posted = await invokePosting(handlesOf(f.ctx), "post-receipt", {
-              type: "post",
-              receiptId: receipt.data!.id,
-              postingDate: "2026-10-15"
-            }, postReceipt);
+      const posted = await invokePosting(
+        handlesOf(f.ctx),
+        "post-receipt",
+        {
+          type: "post",
+          receiptId: receipt.data!.id,
+          postingDate: "2026-10-15"
+        },
+        postReceipt
+      );
       expect(posted.error).toBeNull();
 
       // 7 – 15 Oct is 9 of the period's 31 days: 300 × 9 ÷ 31 = 87.10.

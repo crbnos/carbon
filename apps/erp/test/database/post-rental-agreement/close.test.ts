@@ -9,7 +9,10 @@ import { expect } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { postRentalAgreement as postRentalAgreement } from "../../../app/modules/sales/sales.service";
 import { rentalFixture } from "../fixtures/rental";
-import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 databaseTest(
   "an open rental receipt refuses the agreement's close",
@@ -23,15 +26,20 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
       const receipt = await invokeCreate(handlesOf(f.ctx), {
-                    type: "receiptFromRentalAgreement",
-                    rentalAgreementId: f.agreementId
-                  });
+        type: "receiptFromRentalAgreement",
+        rentalAgreementId: f.agreementId
+      });
       expect(receipt.error).toBeNull();
 
-      const result = await invokePosting(handlesOf(f.ctx), "post-rental-agreement", {
-              type: "close",
-              rentalAgreementId: f.agreementId
-            }, postRentalAgreement);
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "post-rental-agreement",
+        {
+          type: "close",
+          rentalAgreementId: f.agreementId
+        },
+        postRentalAgreement
+      );
       expect(result.error?.message).toContain("Receipt RCV-");
       expect(result.error?.message).toContain("is still open");
     } finally {

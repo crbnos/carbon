@@ -11,22 +11,30 @@ import { expect } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { postReceipt } from "../../../app/modules/inventory/inventory.service";
 import { rentalFixture } from "../fixtures/rental";
-import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
 async function returnUnitOnSeptember20(f: Fixture) {
   const receipt = await invokeCreate(handlesOf(f.ctx), {
-        type: "receiptFromRentalAgreement",
-        rentalAgreementId: f.agreementId,
-        rentalAgreementLineId: f.lineIds[0]!
-      });
+    type: "receiptFromRentalAgreement",
+    rentalAgreementId: f.agreementId,
+    rentalAgreementLineId: f.lineIds[0]!
+  });
   if (receipt.error) return receipt;
-  return invokePosting(handlesOf(f.ctx), "post-receipt", {
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-receipt",
+    {
       type: "post",
       receiptId: receipt.data.id,
       postingDate: "2026-09-20"
-    }, postReceipt);
+    },
+    postReceipt
+  );
 }
 
 databaseTest(

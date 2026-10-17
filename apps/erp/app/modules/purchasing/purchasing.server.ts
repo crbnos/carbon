@@ -23,12 +23,10 @@ import {
 import {
   approveRequest,
   canApproveRequest,
-  createApprovalRequest,
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
   getLatestApprovalRequestForDocument,
   getLowerTierApproverUserIds,
-  hasPendingApproval,
   isApprovalRequired,
   rejectRequest
 } from "@carbon/ee/approvals.server";
@@ -1933,35 +1931,25 @@ export const deletePurchaseOrders = defineServiceFn({
       }
     }
 
-    if (needsApproval.length > 0) {
-      const cancelled = await system
-        .from("approvalRequest")
-        .update({
-          status: "Cancelled",
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("documentType", "purchaseOrder")
-        .in("documentId", needsApproval)
-        .eq("companyId", companyId)
-        .eq("status", "Pending");
-      if (cancelled.error) {
-        return ctx.error(
-          "internal",
-          "Failed to cancel the approval requests",
-          cancelled.error
-        );
-      }
-    }
-
-    const removed = await ctx.asCaller.supabase
-      .from("purchaseOrder")
-      .delete()
-      .in("id", ids)
-      .eq("companyId", companyId);
-    if (removed.error) {
-      return ctx.error("internal", removed.error.message, removed.error);
-    }
+    // One transaction: a delete that fails (an invoice line still names the
+    // order) must leave its approval requests pending.
+    const removed = await ctx
+      .transaction(async (tx) => {
+        await service.cancelPendingApprovals(tx.asSystem.pg, {
+          companyId,
+          userId,
+          purchaseOrderIds: needsApproval
+        });
+        await tx.asSystem.pg
+          .deleteFrom("purchaseOrder")
+          .where("id", "in", ids)
+          .where("companyId", "=", companyId)
+          .execute();
+      })
+      .catch((err) =>
+        ctx.error("internal", "Failed to delete purchase orders", err)
+      );
+    if (removed instanceof CarbonError) return removed;
     return { purchaseOrderIds: ids };
   }
 });
@@ -2047,6 +2035,13 @@ export const reopenPurchaseOrder = defineServiceFn({
         .eq("status", "Pending")
         .limit(1)
         .maybeSingle();
+      if (latest.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the approval requests",
+          latest.error
+        );
+      }
       // Only the requester or an approver: anyone else would bypass the
       // approval by reopening.
       if (
@@ -2068,47 +2063,49 @@ export const reopenPurchaseOrder = defineServiceFn({
         );
       }
     }
-    if (currentStatus === "Needs Approval" || currentStatus === "Closed") {
-      await service.cancelPendingApprovals(ctx, purchaseOrderId);
-    }
-
-    if (createRevision) {
-      let rows: number;
-      try {
-        rows = await service.reopenPurchaseOrderAsRevision(ctx.asSystem.pg, {
-          id: purchaseOrderId,
-          companyId,
-          updatedBy: userId,
-          status
-        });
-      } catch (err) {
-        return ctx.error("internal", "Failed to create revision", err);
-      }
-      if (rows === 0) {
-        return ctx.error(
-          "conflict",
-          "Only a released purchase order can be revised"
+    // One transaction: a reopen that fails leaves the requests pending.
+    const reopened = await ctx
+      .transaction(async (tx) => {
+        if (currentStatus === "Needs Approval" || currentStatus === "Closed") {
+          await service.cancelPendingApprovals(tx.asSystem.pg, {
+            companyId,
+            userId,
+            purchaseOrderIds: [purchaseOrderId]
+          });
+        }
+        if (!createRevision) {
+          await service.setPurchaseOrderStatus(tx.asSystem.pg, {
+            id: purchaseOrderId,
+            companyId,
+            status,
+            assignee: undefined,
+            updatedBy: userId
+          });
+          return false;
+        }
+        const rows = await service.reopenPurchaseOrderAsRevision(
+          tx.asSystem.pg,
+          { id: purchaseOrderId, companyId, updatedBy: userId, status }
         );
-      }
-      return { purchaseOrderId, status, revision: true };
-    }
-
-    const update = await service.updatePurchaseOrderStatus(
-      ctx.asCaller.supabase,
-      {
-        id: purchaseOrderId,
-        status,
-        assignee: undefined,
-        updatedBy: userId
-      }
-    );
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update purchasing order status",
-        update.error
+        return rows === 0
+          ? tx.error(
+              "conflict",
+              "Only a released purchase order can be revised"
+            )
+          : true;
+      })
+      .catch((err) =>
+        ctx.error(
+          "internal",
+          createRevision
+            ? "Failed to create revision"
+            : "Failed to update purchasing order status",
+          err
+        )
       );
-    }
+    if (reopened instanceof CarbonError) return reopened;
+    if (reopened.error) return reopened.error;
+    if (reopened.data) return { purchaseOrderId, status, revision: true };
 
     // Planned makes the lines MRP supply. An order that already was supply
     // changes nothing MRP reads, so the reopen does not wait on a run.
@@ -2129,13 +2126,15 @@ export const reopenPurchaseOrder = defineServiceFn({
  *
  * @remarks
  * Sets the order Closed and clears its assignee; nothing more is received or
- * invoiced against it. Its pending approval requests are cancelled.
+ * invoiced against it. Its pending approval requests are cancelled. Needs
+ * permission to update and to delete purchase orders.
  *
  * @mcp destructive
  */
 export const closePurchaseOrderAndApprovals = defineServiceFn({
   input: z.object({ purchaseOrderId: z.string() }),
-  permission: { delete: "purchasing" },
+  // The status write runs as the system: update is what RLS demanded of it.
+  permission: { update: "purchasing", delete: "purchasing" },
 
   async run(ctx, { purchaseOrderId }) {
     const owned = await refuseUnlessOwned(ctx, "purchaseOrder", {
@@ -2143,33 +2142,33 @@ export const closePurchaseOrderAndApprovals = defineServiceFn({
     });
     if (owned) return owned;
 
-    const cancelled = await service.cancelPendingApprovals(
-      ctx,
-      purchaseOrderId
-    );
-    if (cancelled.data && cancelled.data.length > 0) {
+    // One transaction: a close that fails leaves the requests pending.
+    const closed = await ctx
+      .transaction(async (tx) => {
+        const requests = await service.cancelPendingApprovals(tx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          purchaseOrderIds: [purchaseOrderId]
+        });
+        await service.setPurchaseOrderStatus(tx.asSystem.pg, {
+          id: purchaseOrderId,
+          companyId: ctx.company.id,
+          status: "Closed",
+          assignee: null,
+          updatedBy: ctx.auditUserId
+        });
+        return requests.length;
+      })
+      .catch((err) =>
+        ctx.error("internal", "Failed to update purchasing order status", err)
+      );
+    if (closed instanceof CarbonError) return closed;
+    if (closed.data) {
       logger.info("Cancelled pending approval requests when closing", {
         companyId: ctx.company.id,
         purchaseOrderId,
-        count: cancelled.data.length
+        count: closed.data
       });
-    }
-
-    const update = await service.updatePurchaseOrderStatus(
-      ctx.asCaller.supabase,
-      {
-        id: purchaseOrderId,
-        status: "Closed",
-        assignee: null,
-        updatedBy: ctx.auditUserId
-      }
-    );
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update purchasing order status",
-        update.error
-      );
     }
     return { purchaseOrderId };
   }
@@ -2206,7 +2205,9 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       message: "Supplier contact is required for email",
       path: ["supplierContact"]
     }),
-  permission: { create: "purchasing" },
+  // Submitting for approval writes as the system: update is what RLS
+  // demanded of that status write.
+  permission: { create: "purchasing", update: "purchasing" },
 
   async run(
     ctx,
@@ -2284,42 +2285,38 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
       !skipsApproval &&
       (await isApprovalRequired(system, "purchaseOrder", companyId, amount));
 
-    const finalize = await service.finalizePurchaseOrder(
-      ctx.asCaller.supabase,
-      purchaseOrderId,
-      userId
-    );
-    if (finalize.error) {
-      return ctx.error(
-        "internal",
-        "Failed to finalize purchase order",
-        finalize.error
-      );
-    }
-    trackWorkEvent(
-      "purchase_order_finalized",
-      {
-        companyId,
-        userId,
-        purchaseOrderId,
-        stage: approvalRequired ? "gated" : "committed"
-      },
-      { discriminator: approvalRequired ? "gated" : "committed" }
-    );
-
-    // The PDF, the email and the prices wait for the approval.
+    // The PDF, the email and the prices wait for the approval. The order is
+    // never released first: the status and the request are one transaction,
+    // so it cannot be left released with no approval.
     if (approvalRequired) {
-      if (
-        !(await hasPendingApproval(system, "purchaseOrder", purchaseOrderId))
-      ) {
-        await createApprovalRequest(system, {
-          documentType: "purchaseOrder",
-          documentId: purchaseOrderId,
-          companyId,
-          requestedBy: userId,
-          createdBy: userId,
-          amount
-        });
+      const orderDate = datetime
+        .today(await getCompanyTimeZone(system, companyId))
+        .toString();
+      const submitted = await ctx
+        .transaction((tx) =>
+          service.submitPurchaseOrderForApproval(tx.asSystem.pg, {
+            id: purchaseOrderId,
+            companyId,
+            userId,
+            amount,
+            orderDate
+          })
+        )
+        .catch((err) =>
+          ctx.error(
+            "internal",
+            "Failed to submit the purchase order for approval",
+            err
+          )
+        );
+      if (submitted instanceof CarbonError) return submitted;
+      trackWorkEvent(
+        "purchase_order_finalized",
+        { companyId, userId, purchaseOrderId, stage: "gated" },
+        { discriminator: "gated" }
+      );
+
+      if (submitted.data) {
         const rule = await getApprovalRuleByAmount(
           system,
           "purchaseOrder",
@@ -2344,24 +2341,26 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
           );
         }
       }
-      const status = await service.updatePurchaseOrderStatus(
-        ctx.asCaller.supabase,
-        {
-          id: purchaseOrderId,
-          status: "Needs Approval",
-          assignee: undefined,
-          updatedBy: userId
-        }
-      );
-      if (status.error) {
-        return ctx.error(
-          "internal",
-          "Failed to submit the purchase order for approval",
-          status.error
-        );
-      }
       return { purchaseOrderId, needsApproval: true };
     }
+
+    const finalize = await service.finalizePurchaseOrder(
+      ctx.asCaller.supabase,
+      purchaseOrderId,
+      userId
+    );
+    if (finalize.error) {
+      return ctx.error(
+        "internal",
+        "Failed to finalize purchase order",
+        finalize.error
+      );
+    }
+    trackWorkEvent(
+      "purchase_order_finalized",
+      { companyId, userId, purchaseOrderId, stage: "committed" },
+      { discriminator: "committed" }
+    );
 
     await service.updatePricesOnFinalize(ctx, purchaseOrderId);
 
@@ -6635,7 +6634,11 @@ export const createPurchaseReturnOrderCredit = defineServiceFn({
 });
 
 /**
- * Create Replacement Purchase Order: a draft PO from the return lines, priced from the linked PO line (purchase-UOM price + conversion factor copied) else the su…
+ * Create a replacement purchase order from a supplier return: a Draft order of
+ * the return lines, priced from the linked order line, else the supplier part.
+ *
+ * @remarks
+ * One replacement per return.
  *
  * @mcp
  */

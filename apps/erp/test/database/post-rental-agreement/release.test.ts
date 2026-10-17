@@ -13,7 +13,10 @@ import { expect } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
 import { postRentalAgreement as postRentalAgreement } from "../../../app/modules/sales/sales.service";
 import { rentalFixture } from "../fixtures/rental";
-import { invokePosting, invokeCreate } from "../../../app/modules/shared/shared.service";
+import {
+  invokePosting,
+  invokeCreate
+} from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 
@@ -21,12 +24,17 @@ type Fixture = Awaited<ReturnType<typeof rentalFixture>>;
 const TIME_ZONE = "America/New_York";
 
 function release(f: Fixture, returnedAt: string) {
-  return invokePosting(handlesOf(f.ctx), "post-rental-agreement", {
+  return invokePosting(
+    handlesOf(f.ctx),
+    "post-rental-agreement",
+    {
       type: "release",
       rentalAgreementId: f.agreementId,
       rentalAgreementLineId: f.lineIds[0]!,
       returnedAt
-    }, postRentalAgreement);
+    },
+    postRentalAgreement
+  );
 }
 
 async function setLine(
@@ -143,9 +151,9 @@ databaseTest("a unit on an open rental shipment is not released", async () => {
   const f = await rentalFixture();
   try {
     const shipment = await invokeCreate(handlesOf(f.ctx), {
-              type: "shipmentFromRentalAgreement",
-              rentalAgreementId: f.agreementId
-            });
+      type: "shipmentFromRentalAgreement",
+      rentalAgreementId: f.agreementId
+    });
     expect(shipment.error).toBeNull();
 
     const result = await release(f, "2026-09-20");

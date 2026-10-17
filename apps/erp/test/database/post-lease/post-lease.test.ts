@@ -17,7 +17,12 @@ async function run(
   f: Fixture,
   payload: Parameters<typeof postLease>[1]
 ): Promise<{ error: unknown }> {
-  const result = await invokePosting(handlesOf(f.ctx), "post-lease", payload, postLease);
+  const result = await invokePosting(
+    handlesOf(f.ctx),
+    "post-lease",
+    payload,
+    postLease
+  );
   return { error: result.error };
 }
 

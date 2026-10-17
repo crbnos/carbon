@@ -176,7 +176,6 @@ import {
 } from "../shared/shared.utils";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
-  customerAccountingValidator,
   customerBankAccountValidator,
   customerContactValidator,
   customerContractInvoiceAutomationValidator,
@@ -200,7 +199,6 @@ import type {
   quotePaymentValidator,
   quoteShipmentValidator,
   quoteStatusType,
-  quoteValidator,
   rentalAgreementChargeValidator,
   rentalAgreementInvoiceAutomationValidator,
   rentalAgreementLineValidator,
@@ -210,10 +208,8 @@ import type {
   salesOrderPaymentValidator,
   salesOrderShipmentValidator,
   salesOrderStatusType,
-  salesOrderValidator,
   salesReturnOrderLineValidator,
   salesReturnOrderStatusType,
-  salesReturnOrderValidator,
   salesRFQStatusType,
   salesRfqLineValidator,
   salesRfqValidator,
@@ -263,33 +259,6 @@ const SALES_ORDERS_LIST_COLUMNS =
   "id,salesOrderId,status,orderDate,customerId,customerReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,locationId,displayStatus,thumbnailPath,itemType,orderTotal,jobs,lines,paymentTermId,shippingMethodId,receiptPromisedDate,dropShipment" as const;
 
 const logger = getLogger("erp", "sales");
-
-export async function closeSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  userId: string
-) {
-  const salesOrder = await client
-    .from("salesOrder")
-    .select("companyId")
-    .eq("id", salesOrderId)
-    .single();
-  const companyTz = await getCompanyTimeZone(
-    client,
-    salesOrder.data?.companyId ?? ""
-  );
-  return client
-    .from("salesOrder")
-    .update({
-      status: "Closed",
-      closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId,
-      updatedBy: userId
-    })
-    .eq("id", salesOrderId)
-    .select("id")
-    .single();
-}
 
 /** Not published: `sales.rfq.convert` gates and prices the quote too. */
 export async function convertSalesRfqToQuote(
@@ -535,24 +504,46 @@ export async function upsertCustomerBankAccount(
       })
 ) {
   const { customerId, companyId } = bankAccount;
+  // Named columns only: an API body can carry any other (isPrimary, active,
+  // createdAt), and this write bypasses row-level security.
+  const fields = {
+    name: bankAccount.name,
+    accountHolderName: bankAccount.accountHolderName,
+    bankName: bankAccount.bankName,
+    bankAddress: bankAccount.bankAddress,
+    countryCode: bankAccount.countryCode,
+    currencyCode: bankAccount.currencyCode,
+    accountNumber: bankAccount.accountNumber,
+    bankCode: bankAccount.bankCode,
+    swiftBic: bankAccount.swiftBic,
+    notes: bankAccount.notes,
+    customFields: bankAccount.customFields
+  };
 
   if ("createdBy" in bankAccount) {
     return await db
       .insertInto("customerBankAccount")
-      .values(bankAccount)
+      .values({
+        ...fields,
+        customerId,
+        companyId,
+        createdBy: bankAccount.createdBy
+      })
       .returning("id")
       .executeTakeFirstOrThrow();
   }
 
-  const { id, ...update } = bankAccount;
-
   // customerId and companyId are scoping columns, not editable fields. They are
-  // also re-asserted in the WHERE clause so a forged form value cannot move
-  // this row to another customer.
+  // re-asserted in the WHERE clause so a forged form value cannot move this
+  // row to another customer.
   return await db
     .updateTable("customerBankAccount")
-    .set({ ...update, updatedAt: datetime.timestamp() })
-    .where("id", "=", id)
+    .set({
+      ...fields,
+      updatedBy: bankAccount.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", bankAccount.id)
     .where("customerId", "=", customerId)
     .where("companyId", "=", companyId)
     .returning("id")
@@ -643,13 +634,6 @@ export async function deleteQuote(
   return client.from("quote").delete().eq("id", quoteId);
 }
 
-export async function deleteQuoteMakeMethod(
-  client: SupabaseClient<Database>,
-  quoteMakeMethodId: string
-) {
-  return client.from("quoteMakeMethod").delete().eq("id", quoteMakeMethodId);
-}
-
 export async function deleteQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -683,13 +667,6 @@ export async function updateQuoteMaterialUnitCosts(
       AND m."companyId" = ${companyId}
       AND m."quoteLineId" = ${quoteLineId}
   `.execute(db);
-}
-
-export async function deleteQuoteOperation(
-  client: SupabaseClient<Database>,
-  quoteOperationId: string
-) {
-  return client.from("quoteOperation").delete().eq("id", quoteOperationId);
 }
 
 export async function deleteQuoteOperationStep(
@@ -1462,16 +1439,6 @@ export async function getQuotesList(
   );
 }
 
-export async function getQuoteAssembliesByLine(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client
-    .from("quoteMakeMethod")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
-}
-
 export async function getQuoteAssemblies(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -1656,13 +1623,6 @@ export async function getQuoteLinePricesByItemIds(
     .limit(10);
 }
 
-export async function getQuoteMaterials(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quoteMaterial").select("*").eq("quoteId", quoteId);
-}
-
 export async function getQuoteMaterial(
   client: SupabaseClient<Database>,
   materialId: string
@@ -1737,13 +1697,6 @@ export async function getQuoteOperationsByMethodId(
     )
     .eq("quoteMakeMethodId", quoteMakeMethodId)
     .order("order", { ascending: true });
-}
-
-export async function getQuoteOperations(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quoteOperation").select("*").eq("quoteId", quoteId);
 }
 
 export async function getQuotePayment(
@@ -1930,13 +1883,6 @@ export async function getSalesOrdersList(
   }>(client, "salesOrder", "id, salesOrderId", (query) =>
     query.eq("companyId", companyId)
   );
-}
-
-export async function getSalesOrdersByIds(
-  client: SupabaseClient<Database>,
-  ids: string[]
-) {
-  return client.from("salesOrder").select("id, salesOrderId").in("id", ids);
 }
 
 export async function getSalesOrderPayment(
@@ -2239,29 +2185,6 @@ export async function insertCustomerLocation(
     .single();
 }
 
-export async function insertSalesOrderLines(
-  client: SupabaseClient<Database>,
-  salesOrderLines: (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-    companyId: string;
-    createdBy: string;
-    customFields?: Json;
-  })[]
-) {
-  // salesOrderLine has no serviceId column.
-  const linesWithDefaults = salesOrderLines.map(
-    ({ serviceId: _serviceId, ...line }) => ({
-      ...line,
-      setupPrice: line.setupPrice ?? 0,
-      unitPrice: line.unitPrice ?? 0,
-      shippingCost: line.shippingCost ?? 0,
-      addOnCost: line.addOnCost ?? 0,
-      nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-      taxPercent: line.taxPercent ?? 0
-    })
-  );
-  return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
-}
-
 /** Not published: `sales.quote.finalize` also gates, links and files the PDF. */
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
@@ -2305,21 +2228,6 @@ export async function finalizeQuote(
   trackWorkEvent("quote_sent", { companyId, userId, quoteId });
 
   return lineUpdate;
-}
-
-export async function releaseSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrder")
-    .update({
-      status: "To Ship and Invoice",
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", salesOrderId);
 }
 
 export async function resolvePrice(
@@ -3280,18 +3188,6 @@ export async function getCustomerItemPriceOverridesList(
   return query;
 }
 
-export async function updateCustomerAccounting(
-  client: SupabaseClient<Database>,
-  customerAccounting: z.infer<typeof customerAccountingValidator> & {
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("customer")
-    .update(sanitize(customerAccounting))
-    .eq("id", customerAccounting.id);
-}
-
 export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
@@ -4000,193 +3896,6 @@ export async function updateQuote(
     .eq("id", id)
     .select("id")
     .single();
-}
-
-/**
- * @deprecated Use insertQuote for new quotes, updateQuote for existing quotes
- */
-export async function upsertQuote(
-  client: SupabaseClient<Database>,
-  quote:
-    | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
-        quoteId: string;
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
-        id: string;
-        quoteId: string;
-        companyGroupId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in quote) {
-    const [customerPayment, customerShipping, employee, opportunity] =
-      await Promise.all([
-        getCustomerPayment(client, quote.customerId),
-        getCustomerShipping(client, quote.customerId),
-        getEmployeeJob(client, quote.createdBy, quote.companyId),
-        client
-          .from("opportunity")
-          .insert([
-            { companyId: quote.companyId, customerId: quote.customerId }
-          ])
-          .select("id")
-          .single()
-      ]);
-
-    if (customerPayment.error) return customerPayment;
-    if (customerShipping.error) return customerShipping;
-    // Without this the quote is inserted with a null opportunityId, and its
-    // detail page then fails to load for good.
-    if (opportunity.error) return opportunity;
-
-    const {
-      paymentTermId,
-      invoiceCustomerId,
-      invoiceCustomerContactId,
-      invoiceCustomerLocationId
-    } = customerPayment.data;
-
-    const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
-      customerShipping.data;
-
-    if (quote.currencyCode) {
-      const exchangeRateResult = await getExchangeRate(
-        client,
-        quote.companyId,
-        quote.currencyCode
-      );
-      if (exchangeRateResult.error) {
-        return { data: null, error: exchangeRateResult.error };
-      }
-      quote.exchangeRate = exchangeRateResult.data;
-      quote.exchangeRateUpdatedAt = new Date().toISOString();
-    } else {
-      quote.exchangeRate = 1;
-      quote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-
-    const locationId = employee?.data?.locationId ?? null;
-    const { companyGroupId: _companyGroupId, ...quoteData } = quote;
-    const insert = await client
-      .from("quote")
-      .insert([
-        {
-          ...quoteData,
-          opportunityId: opportunity.data?.id
-        }
-      ])
-      .select("id, quoteId");
-    if (insert.error) {
-      return insert;
-    }
-
-    const quoteId = insert.data?.[0]?.id;
-    if (!quoteId) return insert;
-
-    const [shipment, payment, externalLink] = await Promise.all([
-      client.from("quoteShipment").insert([
-        {
-          id: quoteId,
-          locationId: locationId,
-          shippingMethodId: shippingMethodId,
-          shippingTermId: shippingTermId,
-          incoterm: incoterm,
-          incotermLocation: incotermLocation,
-          companyId: quote.companyId
-        }
-      ]),
-      client.from("quotePayment").insert([
-        {
-          id: quoteId,
-          invoiceCustomerId: invoiceCustomerId,
-          invoiceCustomerContactId: invoiceCustomerContactId,
-          invoiceCustomerLocationId: invoiceCustomerLocationId,
-          paymentTermId: paymentTermId,
-          companyId: quote.companyId
-        }
-      ]),
-      upsertExternalLink(client, {
-        documentType: "Quote",
-        documentId: quoteId,
-        customerId: quote.customerId,
-        expiresAt: quote.expirationDate,
-        companyId: quote.companyId
-      })
-    ]);
-
-    if (shipment.error) {
-      await deleteQuote(client, quoteId);
-      return payment;
-    }
-    if (payment.error) {
-      await deleteQuote(client, quoteId);
-      return payment;
-    }
-    if (opportunity.error) {
-      await deleteQuote(client, quoteId);
-      return opportunity;
-    }
-    if (externalLink.data) {
-      await client
-        .from("quote")
-        .update({ externalLinkId: externalLink.data.id })
-        .eq("id", quoteId);
-    }
-
-    return insert;
-  } else {
-    // Only update the exchange rate if the currency code has changed
-    const existingQuote = await client
-      .from("quote")
-      .select("companyId, currencyCode, opportunityId")
-      .eq("id", quote.id)
-      .single();
-
-    if (existingQuote.error) return existingQuote;
-
-    const { currencyCode, opportunityId } = existingQuote.data;
-
-    if (quote.currencyCode && currencyCode !== quote.currencyCode) {
-      const exchangeRateResult = await getExchangeRate(
-        client,
-        existingQuote.data.companyId,
-        quote.currencyCode
-      );
-      if (exchangeRateResult.error) {
-        return { data: null, error: exchangeRateResult.error };
-      }
-      quote.exchangeRate = exchangeRateResult.data;
-      quote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-
-    // If customerId is being updated, also update the opportunity's customerId
-    if (quote.customerId && opportunityId) {
-      await client
-        .from("opportunity")
-        .update({ customerId: quote.customerId })
-        .eq("id", opportunityId);
-    }
-
-    // quote has no name column, and stores notes as internalNotes/externalNotes.
-    const {
-      companyGroupId: _cgId,
-      name: _name,
-      notes: _notes,
-      ...quoteUpdateData
-    } = quote;
-    return client
-      .from("quote")
-      .update({
-        ...sanitize(quoteUpdateData),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", quote.id);
-  }
 }
 
 export async function upsertQuoteLine(
@@ -6316,199 +6025,6 @@ export async function cancelSalesOrder(
   };
 }
 
-/**
- * @deprecated Use insertSalesOrder for new orders, updateSalesOrder for existing orders
- */
-export async function upsertSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrder:
-    | (Omit<z.infer<typeof salesOrderValidator>, "id" | "salesOrderId"> & {
-        salesOrderId: string;
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof salesOrderValidator>, "id" | "salesOrderId"> & {
-        id: string;
-        salesOrderId: string;
-        companyGroupId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in salesOrder) {
-    // Only update the exchange rate if the currency code has changed
-    const existingSalesOrder = await client
-      .from("salesOrder")
-      .select("companyId, currencyCode, opportunityId")
-      .eq("id", salesOrder.id)
-      .single();
-
-    if (existingSalesOrder.error) return existingSalesOrder;
-
-    const { currencyCode, opportunityId } = existingSalesOrder.data;
-
-    if (salesOrder.currencyCode && currencyCode !== salesOrder.currencyCode) {
-      const exchangeRateResult = await getExchangeRate(
-        client,
-        existingSalesOrder.data.companyId,
-        salesOrder.currencyCode
-      );
-      if (exchangeRateResult.error) {
-        return { data: null, error: exchangeRateResult.error };
-      }
-      salesOrder.exchangeRate = exchangeRateResult.data;
-      salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-
-    // If customerId is being updated, also update the opportunity's customerId
-    if (salesOrder.customerId && opportunityId) {
-      await client
-        .from("opportunity")
-        .update({ customerId: salesOrder.customerId })
-        .eq("id", opportunityId);
-    }
-
-    // Dates live on salesOrderShipment, the quote link on the opportunity, and
-    // notes as internalNotes/externalNotes; none is a salesOrder column.
-    const {
-      companyGroupId: _cgId,
-      notes: _notes,
-      requestedDate: _requestedDate,
-      promisedDate: _promisedDate,
-      quoteId: _quoteId,
-      ...salesOrderUpdateData
-    } = salesOrder;
-    return client
-      .from("salesOrder")
-      .update(sanitize(salesOrderUpdateData))
-      .eq("id", salesOrder.id)
-      .select("id, salesOrderId");
-  }
-
-  const [customerPayment, customerShipping, employee, opportunity] =
-    await Promise.all([
-      getCustomerPayment(client, salesOrder.customerId),
-      getCustomerShipping(client, salesOrder.customerId),
-      getEmployeeJob(client, salesOrder.createdBy, salesOrder.companyId),
-      client
-        .from("opportunity")
-        .insert([
-          {
-            companyId: salesOrder.companyId,
-            customerId: salesOrder.customerId
-          }
-        ])
-        .select("id")
-        .single()
-    ]);
-
-  if (customerPayment.error) return customerPayment;
-  if (customerShipping.error) return customerShipping;
-  // Without this the sales order is inserted with a null opportunityId, and its
-  // detail page then fails to load for good.
-  if (opportunity.error) return opportunity;
-
-  const {
-    paymentTermId,
-    invoiceCustomerId,
-    invoiceCustomerContactId,
-    invoiceCustomerLocationId
-  } = customerPayment.data;
-
-  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
-    customerShipping.data;
-
-  const locationId = employee?.data?.locationId ?? null;
-
-  if (salesOrder.currencyCode) {
-    const exchangeRateResult = await getExchangeRate(
-      client,
-      salesOrder.companyId,
-      salesOrder.currencyCode
-    );
-    if (exchangeRateResult.error) {
-      return { data: null, error: exchangeRateResult.error };
-    }
-    salesOrder.exchangeRate = exchangeRateResult.data;
-    salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  } else {
-    salesOrder.exchangeRate = 1;
-    salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
-
-  const {
-    requestedDate,
-    promisedDate,
-    companyGroupId: _companyGroupId,
-    ...orderData
-  } = salesOrder;
-
-  const order = await client
-    .from("salesOrder")
-    .insert([{ ...orderData, opportunityId: opportunity.data?.id }])
-    .select("id, salesOrderId");
-
-  if (order.error) {
-    return order;
-  }
-
-  if (!order.data || order.data.length === 0) {
-    return {
-      error: {
-        message: "Sales order insert returned no data",
-        details:
-          "The insert operation completed but returned an empty result set"
-      } as PostgrestError,
-      data: null
-    };
-  }
-
-  const salesOrderId = order.data[0].id;
-
-  const [shipment, payment] = await Promise.all([
-    client.from("salesOrderShipment").insert([
-      {
-        id: salesOrderId,
-        locationId: locationId,
-        shippingMethodId: shippingMethodId,
-        receiptRequestedDate: requestedDate,
-        receiptPromisedDate: promisedDate,
-        shippingTermId: shippingTermId,
-        incoterm: incoterm,
-        incotermLocation: incotermLocation,
-        companyId: salesOrder.companyId
-      }
-    ]),
-    client.from("salesOrderPayment").insert([
-      {
-        id: salesOrderId,
-        invoiceCustomerId: invoiceCustomerId,
-        invoiceCustomerContactId: invoiceCustomerContactId,
-        invoiceCustomerLocationId: invoiceCustomerLocationId,
-        paymentTermId: paymentTermId,
-        companyId: salesOrder.companyId
-      }
-    ])
-  ]);
-
-  if (shipment.error) {
-    await deleteSalesOrder(client, salesOrderId);
-    return shipment;
-  }
-  if (payment.error) {
-    await deleteSalesOrder(client, salesOrderId);
-    return payment;
-  }
-  if (opportunity.error) {
-    await deleteSalesOrder(client, salesOrderId);
-    return opportunity;
-  }
-
-  return order;
-}
-
 export async function upsertSalesOrderShipment(
   client: SupabaseClient<Database>,
   salesOrderShipment:
@@ -7326,26 +6842,6 @@ export async function insertSalesReturnOrder(
     .single();
 
   return order;
-}
-
-export async function updateSalesReturnOrder(
-  client: SupabaseClient<Database>,
-  salesReturnOrder: Omit<
-    z.infer<typeof salesReturnOrderValidator>,
-    "id" | "salesReturnOrderId" | "status"
-  > & {
-    id: string;
-    updatedBy: string;
-    customFields?: Json;
-  }
-) {
-  const { id, ...update } = salesReturnOrder;
-  return client
-    .from("salesReturnOrder")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .select("id")
-    .single();
 }
 
 /** Not published: `sales.returnOrder.line.create` refuses a non-Draft RMA. */

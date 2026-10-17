@@ -31,7 +31,7 @@ import {
   toContractLineTerms,
   toContractTerms
 } from "./contractTerms";
-import { contractDurationOf, useContractLabels } from "./useContractLabels";
+import { useContractLabels } from "./useContractLabels";
 
 export type { ContractSetupStep } from "./ContractSetupSteps";
 export type { ContractScheduleRow } from "./contractTerms";
@@ -61,7 +61,6 @@ export {
   ContractStatus,
   ContractSummary,
   ContractsTable,
-  contractDurationOf,
   contractLineName,
   contractSetupSteps,
   scheduleRows,

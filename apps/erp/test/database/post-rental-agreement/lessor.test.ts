@@ -6,7 +6,13 @@ import { round } from "@carbon/database/precision";
 import {
   buildLessorSchedule,
   generateRentalBillingPeriods,
-  netInvestmentExceedsFairValue, certainPurchaseOption, classifyRentalLine, leasePaymentTerms, salesTypeRequirementError, wholeMonthsInTerm } from "@carbon/utils";
+  netInvestmentExceedsFairValue,
+  certainPurchaseOption,
+  classifyRentalLine,
+  leasePaymentTerms,
+  salesTypeRequirementError,
+  wholeMonthsInTerm
+} from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
   activationBillingThrough,

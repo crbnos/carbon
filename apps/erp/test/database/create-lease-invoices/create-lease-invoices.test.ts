@@ -5,7 +5,10 @@
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../fixtures/local-database";
-import { postLeaseAction as postLease, createLeaseInvoices } from "../../../app/modules/purchasing/purchasing.service";
+import {
+  postLeaseAction as postLease,
+  createLeaseInvoices
+} from "../../../app/modules/purchasing/purchasing.service";
 import { leaseFixture } from "../fixtures/lease";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
@@ -13,7 +16,12 @@ import { handlesOf } from "../fixtures/handles";
 type Fixture = Awaited<ReturnType<typeof leaseFixture>>;
 
 async function draft(f: Fixture, asOf: string) {
-  const result = await invokePosting(handlesOf(f.ctx), "create-lease-invoices", { asOf }, createLeaseInvoices);
+  const result = await invokePosting(
+    handlesOf(f.ctx),
+    "create-lease-invoices",
+    { asOf },
+    createLeaseInvoices
+  );
   expect(result.error).toBeNull();
   return result.data!;
 }
@@ -33,7 +41,14 @@ databaseTest(
     const f = await leaseFixture();
     try {
       expect(
-        (await invokePosting(handlesOf(f.ctx), "post-lease", { type: "activate", leaseId: f.leaseId }, postLease)).error
+        (
+          await invokePosting(
+            handlesOf(f.ctx),
+            "post-lease",
+            { type: "activate", leaseId: f.leaseId },
+            postLease
+          )
+        ).error
       ).toBeNull();
       // The first month was paid outside Carbon.
       const [first] = await payments(f);
@@ -121,7 +136,12 @@ databaseTest(
   async () => {
     const f = await leaseFixture({ assets: [{}, { paymentAmount: 5000 }] });
     try {
-      await invokePosting(handlesOf(f.ctx), "post-lease", { type: "activate", leaseId: f.leaseId }, postLease);
+      await invokePosting(
+        handlesOf(f.ctx),
+        "post-lease",
+        { type: "activate", leaseId: f.leaseId },
+        postLease
+      );
       const result = await draft(f, "2027-01-31");
       expect(result.invoices).toHaveLength(1);
 
@@ -152,7 +172,12 @@ databaseTest(
   async () => {
     const f = await leaseFixture({ endDate: null });
     try {
-      await invokePosting(handlesOf(f.ctx), "post-lease", { type: "activate", leaseId: f.leaseId }, postLease);
+      await invokePosting(
+        handlesOf(f.ctx),
+        "post-lease",
+        { type: "activate", leaseId: f.leaseId },
+        postLease
+      );
       // Set up through 2027-03 (Arrears: the March row is due 2027-03-31).
       expect(await payments(f)).toHaveLength(3);
 

@@ -8,12 +8,7 @@
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
 import { expect } from "vitest";
-import {
-  alwaysPostFixture,
-  seed,
-  USER,
-  unwrap
-} from "./fixtures/always-post";
+import { alwaysPostFixture, seed, USER, unwrap } from "./fixtures/always-post";
 import { databaseTest } from "./fixtures/local-database";
 import {
   convertDocument,
@@ -88,11 +83,16 @@ databaseTest(
       });
 
       const { convertedId } = unwrap(
-        await invokePosting(f.service, "convert", {
-          type: "quoteToSalesOrder",
-          id: quoteId,
-          selectedLines: { [quoteLineId]: { quantity: 4 } }
-        }, convertDocument)
+        await invokePosting(
+          f.service,
+          "convert",
+          {
+            type: "quoteToSalesOrder",
+            id: quoteId,
+            selectedLines: { [quoteLineId]: { quantity: 4 } }
+          },
+          convertDocument
+        )
       );
 
       const order = await f.db

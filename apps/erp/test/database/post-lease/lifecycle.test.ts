@@ -6,7 +6,10 @@
 // (`../lib/lease-payment-rows.test.ts`).
 
 import { describe, expect, it } from "vitest";
-import { leaseMonthStarting, straddledPeriod } from "../../../app/modules/purchasing/purchasing.service";
+import {
+  leaseMonthStarting,
+  straddledPeriod
+} from "../../../app/modules/purchasing/purchasing.service";
 
 describe("leaseMonthStarting", () => {
   it("accepts a lease month that starts on a clamped day", () => {

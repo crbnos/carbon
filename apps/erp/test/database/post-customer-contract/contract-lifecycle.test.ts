@@ -12,7 +12,11 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
-import { createContractInvoices, type ContractCancellationResult, postCustomerContract } from "../../../app/modules/sales/sales.service";
+import {
+  createContractInvoices,
+  type ContractCancellationResult,
+  postCustomerContract
+} from "../../../app/modules/sales/sales.service";
 import {
   connectLocalTestDatabase,
   databaseTest
@@ -338,11 +342,16 @@ databaseTest(
     const { db, ctx, companyId, contractId } = f;
     try {
       // --- Confirm -----------------------------------------------------------
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-10-15"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-10-15"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
       const contract = await db
         .selectFrom("customerContract")
@@ -359,7 +368,12 @@ databaseTest(
       expect(schedule[1]!.total).toBeCloseTo(320, 5);
 
       // --- Draft the 1 Nov invoice -----------------------------------------
-      const first = await invokePosting(handlesOf(ctx), "create-contract-invoices", { asOf: "2026-11-01" }, createContractInvoices);
+      const first = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-11-01" },
+        createContractInvoices
+      );
       expect(first.error).toBeNull();
       expect(first.data!.failures).toEqual([]);
       expect(first.data!.invoices).toHaveLength(1);
@@ -437,22 +451,32 @@ databaseTest(
       );
 
       // Re-running the same day drafts nothing.
-      const again = await invokePosting(handlesOf(ctx), "create-contract-invoices", { asOf: "2026-11-01" }, createContractInvoices);
+      const again = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-11-01" },
+        createContractInvoices
+      );
       expect(again.error).toBeNull();
       expect(again.data!.invoices).toHaveLength(0);
       expect(again.data!.failures).toEqual([]);
 
       // --- Amend: 10 → 15 seats from 12 Nov --------------------------------
-      const amended = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "amend",
-              customerContractId: contractId,
-              asOf: "2026-11-12",
-              amendmentDate: "2026-11-12",
-              effect: "Change Date",
-              contractType: "Expansion",
-              reason: "Five more seats",
-              changes: [{ op: "change", lineId: f.seatsLineId, quantity: 15 }]
-            }, postCustomerContract);
+      const amended = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "amend",
+          customerContractId: contractId,
+          asOf: "2026-11-12",
+          amendmentDate: "2026-11-12",
+          effect: "Change Date",
+          contractType: "Expansion",
+          reason: "Five more seats",
+          changes: [{ op: "change", lineId: f.seatsLineId, quantity: 15 }]
+        },
+        postCustomerContract
+      );
       expect(amended.error).toBeNull();
 
       schedule = await plannedInvoices(db, companyId, contractId);
@@ -475,7 +499,12 @@ databaseTest(
       expect(Number(decemberSeats.amount)).toBeCloseTo(480, 5);
 
       // --- Draft the 1 Dec invoice -----------------------------------------
-      const second = await invokePosting(handlesOf(ctx), "create-contract-invoices", { asOf: "2026-12-01" }, createContractInvoices);
+      const second = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-12-01" },
+        createContractInvoices
+      );
       expect(second.error).toBeNull();
       expect(second.data!.failures).toEqual([]);
       expect(second.data!.invoices).toHaveLength(1);
@@ -505,14 +534,19 @@ databaseTest(
       });
 
       // --- Cancel on 15 Dec, crediting unused time --------------------------
-      const cancelled = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "cancel",
-              customerContractId: contractId,
-              asOf: "2026-12-10",
-              endDate: "2026-12-15",
-              reason: "Customer is consolidating vendors",
-              creditUnusedTime: true
-            }, postCustomerContract);
+      const cancelled = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "cancel",
+          customerContractId: contractId,
+          asOf: "2026-12-10",
+          endDate: "2026-12-15",
+          reason: "Customer is consolidating vendors",
+          creditUnusedTime: true
+        },
+        postCustomerContract
+      );
       expect(cancelled.error).toBeNull();
       // The return type is a union of every action's result.
       const result = cancelled.data as unknown as ContractCancellationResult;
@@ -551,7 +585,12 @@ databaseTest(
       expect(schedule.filter((i) => i.status === "Planned")).toHaveLength(0);
 
       // --- After the end date the contract ends ----------------------------
-      const after = await invokePosting(handlesOf(ctx), "create-contract-invoices", { asOf: "2026-12-16" }, createContractInvoices);
+      const after = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-12-16" },
+        createContractInvoices
+      );
       expect(after.error).toBeNull();
       expect(after.data!.invoices).toHaveLength(0);
       expect(after.data!.failures).toEqual([]);
@@ -590,11 +629,16 @@ databaseTest(
         endDate: null
       });
       for (const { contractId } of [renewing, open]) {
-        const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                  type: "confirm",
-                  customerContractId: contractId,
-                  asOf: "2026-01-01"
-                }, postCustomerContract);
+        const confirmed = await invokePosting(
+          handlesOf(ctx),
+          "post-customer-contract",
+          {
+            type: "confirm",
+            customerContractId: contractId,
+            asOf: "2026-01-01"
+          },
+          postCustomerContract
+        );
         expect(confirmed.error).toBeNull();
       }
       expect(
@@ -603,7 +647,12 @@ databaseTest(
         )
       ).toEqual(["2026-01-01", "2026-02-01"]);
 
-      const run = await invokePosting(handlesOf(ctx), "create-contract-invoices", { asOf: "2026-04-01" }, createContractInvoices);
+      const run = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-04-01" },
+        createContractInvoices
+      );
       expect(run.error).toBeNull();
       expect(run.data!.failures).toEqual([]);
 
@@ -685,7 +734,12 @@ databaseTest(
       expect(run.data!.invoices).toHaveLength(8);
 
       // A second run the same day is a no-op.
-      const again = await invokePosting(handlesOf(ctx), "create-contract-invoices", { asOf: "2026-04-01" }, createContractInvoices);
+      const again = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        { asOf: "2026-04-01" },
+        createContractInvoices
+      );
       expect(again.data!.invoices).toHaveLength(0);
       expect(again.data!.failures).toEqual([]);
     } finally {
@@ -708,19 +762,24 @@ databaseTest(
       // Nothing is persisted yet: the page names the January row by position.
       expect(await plannedInvoices(db, companyId, contractId)).toEqual([]);
 
-      const split = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "split",
-                customerContractInvoiceLineId: `planned:2026-01-01:${lineId}:2026-01-01`,
-                installments: [
-                  { invoiceDate: "2026-01-01", amount: 60 },
-                  { invoiceDate: "2026-01-15", amount: 40 }
-                ]
-              }
-            }, postCustomerContract);
+      const split = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "split",
+            customerContractInvoiceLineId: `planned:2026-01-01:${lineId}:2026-01-01`,
+            installments: [
+              { invoiceDate: "2026-01-01", amount: 60 },
+              { invoiceDate: "2026-01-15", amount: 40 }
+            ]
+          }
+        },
+        postCustomerContract
+      );
       expect(split.error).toBeNull();
 
       const schedule = await plannedInvoices(db, companyId, contractId);
@@ -755,16 +814,26 @@ databaseTest(
         .where("companyId", "=", companyId)
         .execute();
 
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
-      const run = await invokePosting(handlesOf(ctx), "create-contract-invoices", {
-              asOf: "2026-01-01",
-              customerContractId: contractId
-            }, createContractInvoices);
+      const run = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        {
+          asOf: "2026-01-01",
+          customerContractId: contractId
+        },
+        createContractInvoices
+      );
       expect(run.error).toBeNull();
       const invoiceId = run.data!.invoiceIds[0]!;
 
@@ -875,34 +944,49 @@ databaseTest(
       });
 
       // Edit the Draft (materializes through the horizon, end of February).
-      const split = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "split",
-                customerContractInvoiceLineId: `planned:2026-01-01:${oneTimeId}:2026-01-01`,
-                installments: [
-                  { invoiceDate: "2026-01-01", amount: 3000 },
-                  { invoiceDate: "2026-02-01", amount: 2000 }
-                ]
-              }
-            }, postCustomerContract);
+      const split = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "split",
+            customerContractInvoiceLineId: `planned:2026-01-01:${oneTimeId}:2026-01-01`,
+            installments: [
+              { invoiceDate: "2026-01-01", amount: 3000 },
+              { invoiceDate: "2026-02-01", amount: 2000 }
+            ]
+          }
+        },
+        postCustomerContract
+      );
       expect(split.error).toBeNull();
 
       // The one-time line's service window runs to December; the edited
       // schedule is still compared over the months it plans.
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
 
-      const run = await invokePosting(handlesOf(ctx), "create-contract-invoices", {
-              asOf: "2026-04-01",
-              customerContractId: contractId
-            }, createContractInvoices);
+      const run = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        {
+          asOf: "2026-04-01",
+          customerContractId: contractId
+        },
+        createContractInvoices
+      );
       expect(run.error).toBeNull();
       expect(run.data!.failures).toEqual([]);
 
@@ -950,45 +1034,65 @@ databaseTest(
       for (const { contractId } of [amended, plain]) {
         expect(
           (
-            await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                              type: "confirm",
-                              customerContractId: contractId,
-                              asOf: "2026-01-01"
-                            }, postCustomerContract)
+            await invokePosting(
+              handlesOf(ctx),
+              "post-customer-contract",
+              {
+                type: "confirm",
+                customerContractId: contractId,
+                asOf: "2026-01-01"
+              },
+              postCustomerContract
+            )
           ).error
         ).toBeNull();
         expect(
           (
-            await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                              type: "cancel",
-                              customerContractId: contractId,
-                              asOf: "2026-03-10",
-                              endDate: "2026-03-31",
-                              reason: "Budget cut",
-                              creditUnusedTime: false
-                            }, postCustomerContract)
+            await invokePosting(
+              handlesOf(ctx),
+              "post-customer-contract",
+              {
+                type: "cancel",
+                customerContractId: contractId,
+                asOf: "2026-03-10",
+                endDate: "2026-03-31",
+                reason: "Budget cut",
+                creditUnusedTime: false
+              },
+              postCustomerContract
+            )
           ).error
         ).toBeNull();
       }
 
       // An amendment after the cancellation (its reason even reads like one).
-      const change = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "amend",
-              customerContractId: amended.contractId,
-              asOf: "2026-03-10",
-              amendmentDate: "2026-03-15",
-              effect: "Change Date",
-              contractType: "Expansion",
-              reason: "Cancellation of the discount",
-              changes: [{ op: "change", lineId: amended.lineId, quantity: 2 }]
-            }, postCustomerContract);
+      const change = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "amend",
+          customerContractId: amended.contractId,
+          asOf: "2026-03-10",
+          amendmentDate: "2026-03-15",
+          effect: "Change Date",
+          contractType: "Expansion",
+          reason: "Cancellation of the discount",
+          changes: [{ op: "change", lineId: amended.lineId, quantity: 2 }]
+        },
+        postCustomerContract
+      );
       expect(change.error).toBeNull();
 
-      const refused = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "revert-cancellation",
-              customerContractId: amended.contractId,
-              asOf: "2026-03-12"
-            }, postCustomerContract);
+      const refused = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "revert-cancellation",
+          customerContractId: amended.contractId,
+          asOf: "2026-03-12"
+        },
+        postCustomerContract
+      );
       expect(refused.error?.message).toContain("amended after");
       const stillCancelled = await db
         .selectFrom("customerContract")
@@ -998,11 +1102,16 @@ databaseTest(
       expect(stillCancelled.endDate).toEqual("2026-03-31");
 
       // With no later amendment the revert restores the line and the end.
-      const reverted = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "revert-cancellation",
-              customerContractId: plain.contractId,
-              asOf: "2026-03-12"
-            }, postCustomerContract);
+      const reverted = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "revert-cancellation",
+          customerContractId: plain.contractId,
+          asOf: "2026-03-12"
+        },
+        postCustomerContract
+      );
       expect(reverted.error).toBeNull();
       const lines = await contractLines(db, companyId, plain.contractId);
       expect(lines.map((l) => l.endDate)).toEqual([null]);
@@ -1026,39 +1135,49 @@ databaseTest(
       });
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "confirm",
-                          customerContractId: added.contractId,
-                          asOf: "2026-01-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "confirm",
+              customerContractId: added.contractId,
+              asOf: "2026-01-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
-      const amendment = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "amend",
-              customerContractId: added.contractId,
-              asOf: "2026-03-15",
-              amendmentDate: "2026-04-01",
-              effect: "Change Date",
-              contractType: "Expansion",
-              reason: "Add support",
-              changes: [
-                {
-                  op: "add",
-                  line: {
-                    revenueType: "Recurring",
-                    itemId: await contractItemId(db, companyId, added.lineId),
-                    quantity: 1,
-                    rate: 100,
-                    rateUnit: "Month",
-                    discountPercent: 50,
-                    discountEndsOn: "2026-06-30",
-                    taxPercent: 0,
-                    startDate: "2026-04-01",
-                    revenueMethod: "Daily"
-                  }
-                }
-              ]
-            }, postCustomerContract);
+      const amendment = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "amend",
+          customerContractId: added.contractId,
+          asOf: "2026-03-15",
+          amendmentDate: "2026-04-01",
+          effect: "Change Date",
+          contractType: "Expansion",
+          reason: "Add support",
+          changes: [
+            {
+              op: "add",
+              line: {
+                revenueType: "Recurring",
+                itemId: await contractItemId(db, companyId, added.lineId),
+                quantity: 1,
+                rate: 100,
+                rateUnit: "Month",
+                discountPercent: 50,
+                discountEndsOn: "2026-06-30",
+                taxPercent: 0,
+                startDate: "2026-04-01",
+                revenueMethod: "Daily"
+              }
+            }
+          ]
+        },
+        postCustomerContract
+      );
       expect(amendment.error).toBeNull();
       const addedLines = (
         await contractLines(db, companyId, added.contractId)
@@ -1099,17 +1218,27 @@ databaseTest(
         .execute();
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "confirm",
-                          customerContractId: renewing.contractId,
-                          asOf: "2026-01-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "confirm",
+              customerContractId: renewing.contractId,
+              asOf: "2026-01-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
-      const run = await invokePosting(handlesOf(ctx), "create-contract-invoices", {
-              asOf: "2026-04-01",
-              customerContractId: renewing.contractId
-            }, createContractInvoices);
+      const run = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        {
+          asOf: "2026-04-01",
+          customerContractId: renewing.contractId
+        },
+        createContractInvoices
+      );
       expect(run.error).toBeNull();
       expect(run.data!.failures).toEqual([]);
       const renewed = await plannedInvoices(db, companyId, renewing.contractId);
@@ -1140,17 +1269,27 @@ databaseTest(
         .execute();
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "confirm",
-                          customerContractId: uplifted.contractId,
-                          asOf: "2026-01-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "confirm",
+              customerContractId: uplifted.contractId,
+              asOf: "2026-01-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
-      const upliftRun = await invokePosting(handlesOf(ctx), "create-contract-invoices", {
-              asOf: "2026-04-01",
-              customerContractId: uplifted.contractId
-            }, createContractInvoices);
+      const upliftRun = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        {
+          asOf: "2026-04-01",
+          customerContractId: uplifted.contractId
+        },
+        createContractInvoices
+      );
       expect(upliftRun.error).toBeNull();
       expect(upliftRun.data!.failures).toEqual([]);
       const copy = (
@@ -1191,19 +1330,24 @@ databaseTest(
         startDate: "2026-01-01",
         endDate: "2026-03-31"
       });
-      const zero = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: draft.contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "split",
-                customerContractInvoiceLineId: `planned:2026-01-01:${draft.lineId}:2026-01-01`,
-                installments: [
-                  { invoiceDate: "2026-01-01", amount: 100 },
-                  { invoiceDate: "2026-01-15", amount: 0 }
-                ]
-              }
-            }, postCustomerContract);
+      const zero = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: draft.contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "split",
+            customerContractInvoiceLineId: `planned:2026-01-01:${draft.lineId}:2026-01-01`,
+            installments: [
+              { invoiceDate: "2026-01-01", amount: 100 },
+              { invoiceDate: "2026-01-15", amount: 0 }
+            ]
+          }
+        },
+        postCustomerContract
+      );
       expect(zero.error).not.toBeNull();
 
       // --- Billed through must fall on a period end ------------------------
@@ -1213,11 +1357,16 @@ databaseTest(
         .where("id", "=", draft.contractId)
         .where("companyId", "=", companyId)
         .execute();
-      const offGrid = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: draft.contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const offGrid = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: draft.contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(offGrid.error?.message).toContain("2026-02-28");
       await db
         .updateTable("customerContract")
@@ -1227,11 +1376,16 @@ databaseTest(
         .execute();
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "confirm",
-                          customerContractId: draft.contractId,
-                          asOf: "2026-01-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "confirm",
+              customerContractId: draft.contractId,
+              asOf: "2026-01-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
 
@@ -1253,11 +1407,16 @@ databaseTest(
       });
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "confirm",
-                          customerContractId: active.contractId,
-                          asOf: "2026-01-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "confirm",
+              customerContractId: active.contractId,
+              asOf: "2026-01-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
       const amend = (
@@ -1267,16 +1426,21 @@ databaseTest(
             : never
           : never
       ) =>
-        invokePosting(handlesOf(ctx), "post-customer-contract", {
-                    type: "amend",
-                    customerContractId: active.contractId,
-                    asOf: "2026-03-10",
-                    amendmentDate: "2026-04-01",
-                    effect: "Change Date",
-                    contractType: "Existing",
-                    reason: "Checks",
-                    changes
-                  }, postCustomerContract);
+        invokePosting(
+          handlesOf(ctx),
+          "post-customer-contract",
+          {
+            type: "amend",
+            customerContractId: active.contractId,
+            asOf: "2026-03-10",
+            amendmentDate: "2026-04-01",
+            effect: "Change Date",
+            contractType: "Existing",
+            reason: "Checks",
+            changes
+          },
+          postCustomerContract
+        );
 
       const rateUnit = await amend([
         { op: "change", lineId: oneTimeId, rateUnit: "Month" }
@@ -1374,17 +1538,22 @@ databaseTest(
       expect(await plannedInvoices(db, companyId, contractId)).toEqual([]);
 
       // The page names the February invoice by position.
-      const set = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "setAmount",
-                customerContractInvoiceId: "planned:2026-02-01",
-                customerContractLineId: lineId,
-                amount: 60
-              }
-            }, postCustomerContract);
+      const set = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "setAmount",
+            customerContractInvoiceId: "planned:2026-02-01",
+            customerContractLineId: lineId,
+            amount: 60
+          }
+        },
+        postCustomerContract
+      );
       expect(set.error).toBeNull();
       let schedule = await plannedInvoices(db, companyId, contractId);
       expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
@@ -1409,25 +1578,35 @@ databaseTest(
       expect(february.isEdited).toBe(true);
 
       // 40 is on no invoice: Confirm refuses.
-      const refused = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const refused = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(refused.error).not.toBeNull();
       expect(errorBody(refused).residuals).toEqual({ [lineId]: 40 });
 
       // An invoice prefilled with the residual restores the balance.
-      const added = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "addInvoice",
-                invoiceDate: "2026-02-15",
-                amounts: [{ customerContractLineId: lineId, amount: 40 }]
-              }
-            }, postCustomerContract);
+      const added = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "addInvoice",
+            invoiceDate: "2026-02-15",
+            amounts: [{ customerContractLineId: lineId, amount: 40 }]
+          }
+        },
+        postCustomerContract
+      );
       expect(added.error).toBeNull();
       schedule = await plannedInvoices(db, companyId, contractId);
       const mid = schedule.find((i) => i.invoiceDate === "2026-02-15")!;
@@ -1439,11 +1618,16 @@ databaseTest(
         "2026-02-28"
       ]);
 
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
     } finally {
       await f.cleanup();
@@ -1462,38 +1646,53 @@ databaseTest(
         startDate: "2026-01-01",
         endDate: "2026-03-31"
       });
-      const deleted = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "delete",
-                customerContractInvoiceId: "planned:2026-03-01"
-              }
-            }, postCustomerContract);
+      const deleted = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "delete",
+            customerContractInvoiceId: "planned:2026-03-01"
+          }
+        },
+        postCustomerContract
+      );
       expect(deleted.error).toBeNull();
       let schedule = await plannedInvoices(db, companyId, contractId);
       expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
         ["2026-01-01", 100],
         ["2026-02-01", 100]
       ]);
-      const refused = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const refused = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(errorBody(refused).residuals).toEqual({ [lineId]: 100 });
 
-      const added = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "addInvoice",
-                invoiceDate: "2026-02-01",
-                amounts: [{ customerContractLineId: lineId, amount: 100 }]
-              }
-            }, postCustomerContract);
+      const added = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "addInvoice",
+            invoiceDate: "2026-02-01",
+            amounts: [{ customerContractLineId: lineId, amount: 100 }]
+          }
+        },
+        postCustomerContract
+      );
       expect(added.error).toBeNull();
       schedule = await plannedInvoices(db, companyId, contractId);
       expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
@@ -1504,17 +1703,22 @@ databaseTest(
       expect(schedule[1]!.rows).toHaveLength(1);
 
       // An amount of 0 removes the cell; the invoice left empty goes too.
-      const cleared = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "edit-schedule",
-              customerContractId: contractId,
-              asOf: "2026-01-01",
-              edit: {
-                intent: "setAmount",
-                customerContractInvoiceId: schedule[1]!.id,
-                customerContractLineId: lineId,
-                amount: 0
-              }
-            }, postCustomerContract);
+      const cleared = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "edit-schedule",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit: {
+            intent: "setAmount",
+            customerContractInvoiceId: schedule[1]!.id,
+            customerContractLineId: lineId,
+            amount: 0
+          }
+        },
+        postCustomerContract
+      );
       expect(cleared.error).toBeNull();
       schedule = await plannedInvoices(db, companyId, contractId);
       expect(schedule.map((i) => i.invoiceDate)).toEqual(["2026-01-01"]);
@@ -1542,12 +1746,17 @@ databaseTest(
           { type: "edit-revenue" }
         >["edit"]
       ) =>
-        invokePosting(handlesOf(ctx), "post-customer-contract", {
-                    type: "edit-revenue",
-                    customerContractId: contractId,
-                    asOf: "2026-01-01",
-                    edit
-                  }, postCustomerContract);
+        invokePosting(
+          handlesOf(ctx),
+          "post-customer-contract",
+          {
+            type: "edit-revenue",
+            customerContractId: contractId,
+            asOf: "2026-01-01",
+            edit
+          },
+          postCustomerContract
+        );
 
       const set = await editRevenue({
         intent: "setAmount",
@@ -1583,11 +1792,16 @@ databaseTest(
         ).error
       ).not.toBeNull();
 
-      const refused = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const refused = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(refused.error).not.toBeNull();
       expect(errorBody(refused).revenueResiduals).toEqual({ [lineId]: 50 });
 
@@ -1615,11 +1829,16 @@ databaseTest(
         ).error
       ).toBeNull();
 
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
       expect(
         (await revenueRows(db, companyId, contractId)).map((r) => [
@@ -1661,11 +1880,16 @@ databaseTest(
         .where("companyId", "=", companyId)
         .execute();
 
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-04-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-04-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
 
       const rows = await revenueRows(db, companyId, contractId);
@@ -1722,11 +1946,16 @@ databaseTest(
         endDate: "2026-12-31"
       });
       await setEvenPeriodRevenue(db, companyId, lineId);
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
       expect(await revenueRows(db, companyId, contractId)).toHaveLength(12);
 
@@ -1740,26 +1969,36 @@ databaseTest(
         .execute();
 
       // A preview changes nothing.
-      const preview = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "cancel",
-              customerContractId: contractId,
-              asOf: "2026-02-01",
-              endDate: "2026-02-14",
-              reason: "Preview",
-              creditUnusedTime: false,
-              preview: true
-            }, postCustomerContract);
+      const preview = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "cancel",
+          customerContractId: contractId,
+          asOf: "2026-02-01",
+          endDate: "2026-02-14",
+          reason: "Preview",
+          creditUnusedTime: false,
+          preview: true
+        },
+        postCustomerContract
+      );
       expect(preview.error).toBeNull();
       expect(await revenueRows(db, companyId, contractId)).toHaveLength(12);
 
-      const cancelled = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "cancel",
-              customerContractId: contractId,
-              asOf: "2026-02-01",
-              endDate: "2026-02-14",
-              reason: "Closing the account",
-              creditUnusedTime: false
-            }, postCustomerContract);
+      const cancelled = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "cancel",
+          customerContractId: contractId,
+          asOf: "2026-02-01",
+          endDate: "2026-02-14",
+          reason: "Closing the account",
+          creditUnusedTime: false
+        },
+        postCustomerContract
+      );
       expect(cancelled.error).toBeNull();
 
       // Billed: January 100 + 1–14 Feb (100 × 14/28 = 50) = 150. The new
@@ -1794,11 +2033,16 @@ databaseTest(
         endDate: null
       });
       await setEvenPeriodRevenue(db, companyId, lineId);
-      const confirmed = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "confirm",
-              customerContractId: contractId,
-              asOf: "2026-01-01"
-            }, postCustomerContract);
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
       expect(
         (await revenueRows(db, companyId, contractId)).map((r) => [
@@ -1810,10 +2054,15 @@ databaseTest(
         ["2026-02-01", 100]
       ]);
 
-      const run = await invokePosting(handlesOf(ctx), "create-contract-invoices", {
-              asOf: "2026-03-01",
-              customerContractId: contractId
-            }, createContractInvoices);
+      const run = await invokePosting(
+        handlesOf(ctx),
+        "create-contract-invoices",
+        {
+          asOf: "2026-03-01",
+          customerContractId: contractId
+        },
+        createContractInvoices
+      );
       expect(run.error).toBeNull();
       expect(run.data!.failures).toEqual([]);
       expect(
@@ -1867,24 +2116,34 @@ databaseTest(
         .execute();
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "confirm",
-                          customerContractId: contractId,
-                          asOf: "2026-01-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "confirm",
+              customerContractId: contractId,
+              asOf: "2026-01-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
 
-      const amended = await invokePosting(handlesOf(ctx), "post-customer-contract", {
-              type: "amend",
-              customerContractId: contractId,
-              asOf: "2026-03-15",
-              amendmentDate: "2026-04-01",
-              effect: "Change Date",
-              contractType: "Expansion",
-              reason: "One more seat",
-              changes: [{ op: "change", lineId, quantity: 2 }]
-            }, postCustomerContract);
+      const amended = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "amend",
+          customerContractId: contractId,
+          asOf: "2026-03-15",
+          amendmentDate: "2026-04-01",
+          effect: "Change Date",
+          contractType: "Expansion",
+          reason: "One more seat",
+          changes: [{ op: "change", lineId, quantity: 2 }]
+        },
+        postCustomerContract
+      );
       expect(amended.error).toBeNull();
       expect(await revenueDates(contractId)).toMatchObject([
         {
@@ -1905,14 +2164,19 @@ databaseTest(
       // A cancellation clamps the copy's revenue end; reverting restores it.
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "cancel",
-                          customerContractId: contractId,
-                          asOf: "2026-05-01",
-                          endDate: "2026-06-30",
-                          reason: "Closing the account",
-                          creditUnusedTime: false
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "cancel",
+              customerContractId: contractId,
+              asOf: "2026-05-01",
+              endDate: "2026-06-30",
+              reason: "Closing the account",
+              creditUnusedTime: false
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
       expect((await revenueDates(contractId))[1]).toMatchObject({
@@ -1921,11 +2185,16 @@ databaseTest(
       });
       expect(
         (
-          await invokePosting(handlesOf(ctx), "post-customer-contract", {
-                          type: "revert-cancellation",
-                          customerContractId: contractId,
-                          asOf: "2026-05-01"
-                        }, postCustomerContract)
+          await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "revert-cancellation",
+              customerContractId: contractId,
+              asOf: "2026-05-01"
+            },
+            postCustomerContract
+          )
         ).error
       ).toBeNull();
       expect((await revenueDates(contractId))[1]).toMatchObject({

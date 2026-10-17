@@ -68,7 +68,7 @@ async function fixture() {
     db,
     companyId,
     ids,
-    ctx: ({ db, companyId, userId: "system" }),
+    ctx: { db, companyId, userId: "system" },
     supplierPart: () =>
       db
         .selectFrom("supplierPart")
@@ -98,10 +98,15 @@ databaseTest(
   async () => {
     const f = await fixture();
     try {
-      const result = await invokePosting(f.ctx, "update-purchased-prices", {
-        source: "purchaseOrder",
-        purchaseOrderId: f.ids.order
-      }, updatePurchasedPrices);
+      const result = await invokePosting(
+        f.ctx,
+        "update-purchased-prices",
+        {
+          source: "purchaseOrder",
+          purchaseOrderId: f.ids.order
+        },
+        updatePurchasedPrices
+      );
       expect(result.error).toBeNull();
 
       const part = await f.supplierPart();
@@ -133,10 +138,15 @@ databaseTest(
         })
         .execute();
 
-      const result = await invokePosting(f.ctx, "update-purchased-prices", {
-        source: "purchaseOrder",
-        purchaseOrderId: f.ids.order
-      }, updatePurchasedPrices);
+      const result = await invokePosting(
+        f.ctx,
+        "update-purchased-prices",
+        {
+          source: "purchaseOrder",
+          purchaseOrderId: f.ids.order
+        },
+        updatePurchasedPrices
+      );
       expect(result.error).toBeNull();
 
       const part = await f.supplierPart();

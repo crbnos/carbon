@@ -80,7 +80,15 @@ const grant = (...modules: string[]): Permissions =>
 function serviceRole(rows: Record<string, unknown> = {}) {
   const from = (table: string) => {
     const chain: Record<string, any> = {};
-    for (const method of ["select", "eq", "in", "limit", "order", "not", "update"]) {
+    for (const method of [
+      "select",
+      "eq",
+      "in",
+      "limit",
+      "order",
+      "not",
+      "update"
+    ]) {
       chain[method] = () => chain;
     }
     chain.insert = (rows: { outcome: string }[]) => {
@@ -124,12 +132,19 @@ const error = (lineId?: string) => ({
   message: "Not to this country",
   lineId
 });
-const warning = { ruleId: "rule-warn", severity: "warn" as const, message: "Check" };
+const warning = {
+  ruleId: "rule-warn",
+  severity: "warn" as const,
+  message: "Check"
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
   recorded.length = 0;
-  invoke.mockResolvedValue({ data: { convertedId: "converted-1" }, error: null });
+  invoke.mockResolvedValue({
+    data: { convertedId: "converted-1" },
+    error: null
+  });
 });
 
 describe("the document sales-rule gate", () => {
@@ -145,7 +160,9 @@ describe("the document sales-rule gate", () => {
 
   it("holds a warning until it is acknowledged", async () => {
     evaluate.mockResolvedValue({ violations: [warning], ruleNames: {} });
-    expect((await convert(false)).data).toMatchObject({ violations: [warning] });
+    expect((await convert(false)).data).toMatchObject({
+      violations: [warning]
+    });
     expect((await convert(true)).data).toEqual({ quoteId: "converted-1" });
   });
 
@@ -153,7 +170,9 @@ describe("the document sales-rule gate", () => {
     evaluate.mockRejectedValue(new Error("rules unreachable"));
     const result = await convert(true);
     expect(result.data).toMatchObject({
-      violations: [{ ruleId: "__evaluation-error__", message: "rules unreachable" }]
+      violations: [
+        { ruleId: "__evaluation-error__", message: "rules unreachable" }
+      ]
     });
     expect(invoke).not.toHaveBeenCalled();
   });
@@ -196,12 +215,15 @@ describe("setting a document status", () => {
 
 describe("answering a digital quote", () => {
   it("refuses a quote that is no longer Sent", async () => {
-    const result = await acceptDigitalQuote(shareLinkFor({ status: "Ordered" }), {
-      quoteId: "quote-1",
-      selectedLines: {},
-      acceptedBy: "Ada",
-      acceptedByEmail: "ada@example.com"
-    });
+    const result = await acceptDigitalQuote(
+      shareLinkFor({ status: "Ordered" }),
+      {
+        quoteId: "quote-1",
+        selectedLines: {},
+        acceptedBy: "Ada",
+        acceptedByEmail: "ada@example.com"
+      }
+    );
     expect(result.error?.category).toBe("rule");
     expect(result.error?.message).toBe(
       "This quote is no longer available for a response."

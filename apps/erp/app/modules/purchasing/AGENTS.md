@@ -4,7 +4,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, procur
 
 ## Key Domain Concepts
 
-- **Purchase Order (PO)** — document sent to a supplier. Statuses (`purchaseOrderStatusType`, `purchasing.models.ts`): Draft → Planned (from a planning suggestion) → Needs Approval → To Review → To Receive → To Receive and Invoice → To Invoice → Completed, plus Rejected and Closed. MUST use `closePurchaseOrder` to close manually.
+- **Purchase Order (PO)** — document sent to a supplier. Statuses (`purchaseOrderStatusType`, `purchasing.models.ts`): Draft → Planned (from a planning suggestion) → Needs Approval → To Review → To Receive → To Receive and Invoice → To Invoice → Completed, plus Rejected and Closed. Close one manually with `closePurchaseOrderAndApprovals` (`purchasing.server.ts`).
 - **PO Revision** — `purchaseOrder.revisionId` counts amendments to a released order. Created ONLY when the header dropdown's "Create PO Revision" action posts `createRevision=true`; a plain Reopen never bumps. The write is `reopenPurchaseOrderAsRevision` (Kysely, `purchasing.service.ts`): a compare-and-swap that sets `revisionId = revisionId + 1` **in SQL** with the eligibility conditions (locked status + non-null `orderDate`) in the WHERE clause, so concurrent requests can't collide and an ineligible order matches 0 rows. `canCreatePurchaseOrderRevision` (`purchasing.models.ts`) is the matching pure predicate used to gate the menu item — keep the two in sync. Unlike quotes, a PO revision is in-place: no new row, receipts/invoices stay attached. Displayed as `PO000123-1` when > 0 via `getPurchaseOrderDisplayId` (`@carbon/documents/utils`) on the PDF, email, filenames, and UI; the two-tone in-app rendering uses `<RevisionSuffix>` (`~/components`).
 - **Supplier Interaction** — umbrella entity linking a supplier quote to RFQs, POs, and documents. A supplier quote always lives under an interaction.
 - **Supplier Quote** — vendor-side pricing with line-level price breaks (`supplierQuoteLinePrice`). Can be finalized (`finalizeSupplierQuote`) and converted to POs via `convertDocument` (`shared.service.ts`, ported from the `convert` server function).
@@ -30,7 +30,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, procur
 ### Never
 - Bypass the approval workflow by directly setting status to `To Receive`.
 - Delete receipt lines that have already been posted to inventory.
-- Directly INSERT into `purchaseOrder` — MUST use `insertPurchaseOrder` / `upsertPurchaseOrder`.
+- Directly INSERT into `purchaseOrder` — MUST use `insertPurchaseOrder` / `updatePurchaseOrder`.
 
 ## Validation Commands
 
@@ -61,7 +61,8 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 ## Key Service Functions
 
 - `getPurchaseOrder` / `getPurchaseOrders` / `getPurchaseOrderLines` — read POs
-- `closePurchaseOrder` — marks a PO closed
+- `submitPurchaseOrderForApproval(db, …)` — Needs Approval, the order date when it has none, and the approval request unless one is pending, inside the caller's transaction (the status update locks the order first)
+- `setPurchaseOrderStatus(db, …)` / `cancelPendingApprovals(db, …)` — the Kysely status write and approval-request cancel that `reopenPurchaseOrder`, `closePurchaseOrderAndApprovals` and `deletePurchaseOrders` run in ONE transaction, so a status change or delete that fails leaves the requests Pending
 - `shortClosePurchaseOrderLine` — Kysely transaction; sets a line's `receivedComplete` ("Stop/Resume Receiving") and recomputes the header status. Open-PO supply queries (`get_inventory_quantities`, `openPurchaseOrderLines`, `get_job_quantity_on_hand`) exclude `receivedComplete` lines, so short-closed remainders stop counting as incoming stock
 - `convertSupplierQuoteToOrder` — calls `convertDocument` (`shared.service.ts`, ported from the `convert` server function)
 - `duplicatePurchaseOrder` — copies a PO with new sequence
@@ -74,7 +75,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
 - `getDefaultAttachmentsForPO` — default document attachments for PO creation
-- `getPurchaseReturnOrders` / `insertPurchaseReturnOrder` / `upsertPurchaseReturnOrderLine` — supplier-return CRUD; `confirmPurchaseReturnOrder` (Kysely row-locked caps: receiptLine received → PO line received×factor → invoice line×factor), `cancelPurchaseReturnOrder` / `completePurchaseReturnOrder` / `shortClosePurchaseReturnOrderLine`
+- `getPurchaseReturnOrders` / `insertPurchaseReturnOrder` / `upsertPurchaseReturnOrderLine` — supplier-return CRUD; `confirmPurchaseReturnOrder` (Kysely row-locked caps: receiptLine received → PO line received×factor → invoice line×factor), `cancelPurchaseReturnOrder` / `shortClosePurchaseReturnOrderLine` (the header status follows the lines through `getPurchaseReturnOrderStatus`, `@carbon/utils`; there is no complete function)
 - `getReturnableLinesForSupplier` (posted receipt lines minus already-authorized) — thin wrapper over the `get_returnable_receipt_lines` RPC, which does the `received − authorized > 0` filter, the search (receipt #, PO #, item readable id, item name), recency ordering, and limit/offset paging in SQL and returns `totalCount` on each row. Scales to thousands of receipt lines; the "Add lines from receipt" modal (`ReturnableReceiptLinesModal`) shows the 5 most recent and searches for the rest. / `getReturnableEntitiesForSupplier` (Available entities whose `attributes ->> Receipt` resolves to a posted receipt from the supplier) / `getReturnableEntitiesForReceiptLine` (Available entities from ONE receipt line, via `attributes ->> Receipt Line`) — the `$id.new` action uses it to auto-select the single entity when a tracked line is added from a specific receipt, persisting it at creation so it flows onto the shipment
 - `createPurchaseReturnOrderCredit` (Kysely, shipped-minus-credited cap) / `getCreditableQuantitiesForPurchaseReturn` / `createReplacementPurchaseOrder` (linked-PO-line / supplierPart pricing)
 - `createSupplierInteractionDocumentUploadUrl` / `createSupplierInteractionLineDocumentUploadUrl` — MCP file upload (step 1): presigned URLs for supplier-interaction (`supplier-interaction/{interactionId}`) and interaction-line documents; pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
@@ -83,7 +84,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 
 Each is a `defineServiceFn` const in `purchasing.server.ts`. The route calls it as `api.purchasing.<name>(input)`; the API and MCP publish the ones tagged `@mcp` as `purchasing_<name>`. It holds every check the route made. Routes validate the request, call one, and answer with `respond(request, result).redirect(…)` (a flash) or the result.
 
-- Purchase orders — `updatePurchaseOrders` (one field of the properties panel, refused on a released order except `deliveryDate`), `deletePurchaseOrders` (Draft / Planned, or Needs Approval by its requester — `purchaseOrderDeleteRefusal` in `purchasing.models.ts`; cancels the pending approvals), `finalizePurchaseOrderAndNotify` (party contact and supplier approval rules, the approval rule or the planning bypass, then prices, the PDF document and the email), `decidePurchaseOrderApproval`, `reopenPurchaseOrder` (Draft / Planned, optionally as a revision; `delete` permission from a released status), `closePurchaseOrderAndApprovals`. The status route takes only Draft, Planned and Closed.
+- Purchase orders — `updatePurchaseOrders` (one field of the properties panel, refused on a released order except `deliveryDate`), `deletePurchaseOrders` (Draft / Planned, or Needs Approval by its requester — `purchaseOrderDeleteRefusal` in `purchasing.models.ts`; cancels the pending approvals in the delete's transaction), `finalizePurchaseOrderAndNotify` (party contact and supplier approval rules, the approval rule or the planning bypass, then prices, the PDF document and the email; an order that needs approval is never released: `submitPurchaseOrderForApproval` sets Needs Approval and opens the request in one transaction, and the approvers are notified after it commits), `decidePurchaseOrderApproval`, `reopenPurchaseOrder` (Draft / Planned, optionally as a revision; `delete` permission from a released status), `closePurchaseOrderAndApprovals`. The status route takes only Draft, Planned and Closed.
 - Return orders — `updateReturnOrders`, `confirmReturnOrder` (stores the PDF; a failed PDF is a `warning`), `cancelReturnOrder`, `reopenReturnOrder`, `addReturnOrderLine` (Draft only), `updateReturnOrderLine` (post-confirm locks: `lockedReturnLineField`).
 - RFQs — `createPurchasingRfq`, `updatePurchasingRfqs`, `cancelPurchasingRfq` (cancels the linked supplier quotes), `finalizePurchasingRfqAndNotify` (`service.finalizePurchasingRfq`, ported from `finalize-purchasing-rfq`, then the emails).
 - Supplier quotes — `updateSupplierQuotes`, `finalizeSupplierQuoteWithLink`, `sendSupplierQuoteToSupplier`; `submitDigitalSupplierQuote` / `declineDigitalSupplierQuote` / `updateDigitalSupplierQuoteLineNotes` / `recordSupplierQuoteLinkVisit` (system only, not published: the supplier's share link runs them through `shareLinkContext`, `~/modules/service-context.server`; submit refuses a line that is not the quote's).
@@ -96,7 +97,7 @@ The PO and return order PDFs render in `purchasing.pdf.tsx` (`renderPurchaseOrde
 ## Key Exports
 
 ```typescript
-import { getPurchaseOrder, upsertPurchaseOrder, getSuppliers } from "~/modules/purchasing/purchasing.service";
+import { getPurchaseOrder, insertPurchaseOrder, getSuppliers } from "~/modules/purchasing/purchasing.service";
 import { purchaseOrderValidator, supplierValidator } from "~/modules/purchasing/purchasing.models";
 ```
 

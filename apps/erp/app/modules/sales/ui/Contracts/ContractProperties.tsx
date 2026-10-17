@@ -43,6 +43,7 @@ import {
   contractBillingAlignments,
   contractBillingFrequencies,
   contractBillingTimings,
+  contractDurationOf,
   contractDurations,
   contractRenewals,
   customerContractTypes,
@@ -50,7 +51,7 @@ import {
 } from "../../sales.models";
 import ContractProject from "./ContractProject";
 import type { Contract, ContractRouteData } from "./types";
-import { contractDurationOf, useContractLabels } from "./useContractLabels";
+import { useContractLabels } from "./useContractLabels";
 
 type Term =
   | "name"

@@ -20,7 +20,6 @@ import type {
   getPricingRules,
   getQuoteLinePrices,
   getQuoteMakeMethod,
-  getQuoteMaterials,
   getQuoteMethodTrees,
   getQuoteOperation,
   getQuotePayment,
@@ -234,10 +233,6 @@ export type QuotationListItem = NonNullable<
 
 export type QuotationLine = NonNullable<
   Awaited<ReturnType<typeof getQuoteLines>>["data"]
->[number];
-
-export type QuotationMaterial = NonNullable<
-  Awaited<ReturnType<typeof getQuoteMaterials>>["data"]
 >[number];
 
 export type QuotationOperation = NonNullable<

@@ -146,20 +146,16 @@ import type {
   purchaseOrderPaymentValidator,
   purchaseOrderStatusType,
   purchaseOrderTypeType,
-  purchaseOrderValidator,
   purchaseReturnOrderLineValidator,
   purchaseReturnOrderStatusType,
-  purchaseReturnOrderValidator,
   purchasingRfqStatusType,
   selectedLinesValidator,
-  supplierAccountingValidator,
   supplierBankAccountValidator,
   supplierContactValidator,
   supplierPaymentValidator,
   supplierProcessValidator,
   supplierQuoteLineValidator,
   supplierQuoteStatusType,
-  supplierQuoteValidator,
   supplierShippingValidator,
   supplierTaxValidator,
   supplierTypeValidator,
@@ -185,33 +181,6 @@ const PURCHASE_ORDERS_LIST_COLUMNS =
 
 const logger = getLogger("erp", "purchasing-service");
 
-export async function closePurchaseOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrderId: string,
-  userId: string
-) {
-  const purchaseOrder = await client
-    .from("purchaseOrder")
-    .select("companyId")
-    .eq("id", purchaseOrderId)
-    .single();
-  const companyTz = await getCompanyTimeZone(
-    client,
-    purchaseOrder.data?.companyId ?? ""
-  );
-  return client
-    .from("purchaseOrder")
-    .update({
-      status: "Closed",
-      closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId,
-      updatedBy: userId
-    })
-    .eq("id", purchaseOrderId)
-    .select("id")
-    .single();
-}
-
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -226,10 +195,8 @@ export async function convertSupplierQuoteToOrder(
   return invokePosting(
     { client, db, companyId, userId },
     "convert",
-    {
-      type: "supplierQuoteToPurchaseOrder",
-      ...input
-    },
+    // The type last: a loose payload must not pick another conversion.
+    { ...input, type: "supplierQuoteToPurchaseOrder" },
     sharedPostings.convertDocument,
     { as: sharedPostings.convertDocumentPermission }
   );
@@ -478,24 +445,46 @@ export async function upsertSupplierBankAccount(
       })
 ) {
   const { supplierId, companyId } = bankAccount;
+  // Named columns only: an API body can carry any other (isPrimary, active,
+  // createdAt), and this write bypasses row-level security.
+  const fields = {
+    name: bankAccount.name,
+    accountHolderName: bankAccount.accountHolderName,
+    bankName: bankAccount.bankName,
+    bankAddress: bankAccount.bankAddress,
+    countryCode: bankAccount.countryCode,
+    currencyCode: bankAccount.currencyCode,
+    accountNumber: bankAccount.accountNumber,
+    bankCode: bankAccount.bankCode,
+    swiftBic: bankAccount.swiftBic,
+    notes: bankAccount.notes,
+    customFields: bankAccount.customFields
+  };
 
   if ("createdBy" in bankAccount) {
     return await db
       .insertInto("supplierBankAccount")
-      .values(bankAccount)
+      .values({
+        ...fields,
+        supplierId,
+        companyId,
+        createdBy: bankAccount.createdBy
+      })
       .returning("id")
       .executeTakeFirstOrThrow();
   }
 
-  const { id, ...update } = bankAccount;
-
   // supplierId and companyId are scoping columns, not editable fields. They are
-  // also re-asserted in the WHERE clause so a forged form value cannot move
-  // this row to another supplier.
+  // re-asserted in the WHERE clause so a forged form value cannot move this
+  // row to another supplier.
   return await db
     .updateTable("supplierBankAccount")
-    .set({ ...update, updatedAt: datetime.timestamp() })
-    .where("id", "=", id)
+    .set({
+      ...fields,
+      updatedBy: bankAccount.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", bankAccount.id)
     .where("supplierId", "=", supplierId)
     .where("companyId", "=", companyId)
     .returning("id")
@@ -1397,21 +1386,6 @@ export async function sendSupplierQuote(
   return { data: null, error: null };
 }
 
-/** @deprecated Use updatePurchaseOrderStatus or the new updatePurchaseOrder instead */
-export async function updatePurchaseOrderStatusLegacy(
-  client: SupabaseClient<Database>,
-  purchaseOrder: {
-    id: string;
-    status: (typeof purchaseOrderStatusType)[number];
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("purchaseOrder")
-    .update(purchaseOrder)
-    .eq("id", purchaseOrder.id);
-}
-
 export async function updatePurchaseOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1463,6 +1437,96 @@ export async function updatePurchaseOrderStatus(
   return client.from("purchaseOrder").update(update).eq("id", update.id);
 }
 
+/** `updatePurchaseOrderStatus` on a Kysely handle, for a status change that
+ *  must share a transaction with other writes. Returns the rows updated. */
+export async function setPurchaseOrderStatus(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    status,
+    assignee,
+    updatedBy
+  }: {
+    id: string;
+    companyId: string;
+    status: (typeof purchaseOrderStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  const result = await db
+    .updateTable("purchaseOrder")
+    .set({ status, assignee, updatedBy, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows ?? 0);
+}
+
+/**
+ * Sends a purchase order to Needs Approval and opens its approval request,
+ * unless one is already pending. Call it inside a transaction, so an order
+ * never waits for an approval that was not requested. The status update
+ * locks the order first, which serialises two finalizes of one order.
+ * Returns whether a request was opened; throws when the order is not found.
+ */
+export async function submitPurchaseOrderForApproval(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    userId,
+    amount,
+    orderDate
+  }: {
+    id: string;
+    companyId: string;
+    userId: string;
+    amount: number;
+    /** Today in the company's timezone: set only when the order has none. */
+    orderDate: string;
+  }
+) {
+  const updated = await db
+    .updateTable("purchaseOrder")
+    .set({
+      status: "Needs Approval",
+      orderDate: sql<string>`COALESCE("orderDate", ${orderDate})`,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (Number(updated.numUpdatedRows ?? 0) !== 1) {
+    throw new NotFoundError("Purchase order not found");
+  }
+
+  const pending = await db
+    .selectFrom("approvalRequest")
+    .select("id")
+    .where("documentType", "=", "purchaseOrder")
+    .where("documentId", "=", id)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Pending")
+    .executeTakeFirst();
+  if (pending) return false;
+
+  await db
+    .insertInto("approvalRequest")
+    .values({
+      documentType: "purchaseOrder",
+      documentId: id,
+      requestedBy: userId,
+      amount,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+  return true;
+}
+
 /**
  * Reopens a released purchase order as its next revision — to Draft from the
  * PO page, or to Planned from planning (see `PURCHASE_ORDER_REOPEN_STATUSES`).
@@ -1503,18 +1567,6 @@ export async function reopenPurchaseOrderAsRevision(
     .executeTakeFirst();
 
   return Number(result.numUpdatedRows ?? 0);
-}
-
-export async function updateSupplierAccounting(
-  client: SupabaseClient<Database>,
-  supplierAccounting: z.infer<typeof supplierAccountingValidator> & {
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("supplier")
-    .update(sanitize(supplierAccounting))
-    .eq("id", supplierAccounting.id);
 }
 
 export async function updateSupplierContact(
@@ -1899,156 +1951,6 @@ export async function updatePurchaseOrder(
     .eq("id", id)
     .select("id")
     .single();
-}
-
-/**
- * @deprecated Use insertPurchaseOrder for new orders, updatePurchaseOrder for existing orders
- */
-export async function upsertPurchaseOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrder:
-    | (Omit<
-        z.infer<typeof purchaseOrderValidator>,
-        "id" | "purchaseOrderId"
-      > & {
-        purchaseOrderId: string;
-        status?: (typeof purchaseOrderStatusType)[number];
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<
-        z.infer<typeof purchaseOrderValidator>,
-        "id" | "purchaseOrderId"
-      > & {
-        id: string;
-        purchaseOrderId: string;
-        companyGroupId?: string;
-        updatedBy: string;
-        customFields?: Json;
-      }),
-  receiptRequestedDate?: string
-) {
-  if ("id" in purchaseOrder) {
-    // locationId belongs on the delivery record, as in the insert below, and
-    // notes are stored as internalNotes/externalNotes. companyGroupId is not a
-    // column of the order at all.
-    const {
-      locationId: _locationId,
-      companyGroupId: _companyGroupId,
-      notes: _notes,
-      ...orderUpdate
-    } = purchaseOrder;
-    return client
-      .from("purchaseOrder")
-      .update(sanitize(orderUpdate))
-      .eq("id", purchaseOrder.id)
-      .select("id, purchaseOrderId");
-  }
-
-  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
-  // failure must not leave an orphaned interaction row behind.
-  if (purchaseOrder.currencyCode) {
-    const rate = await getExchangeRate(
-      client,
-      purchaseOrder.companyId,
-      purchaseOrder.currencyCode
-    );
-    if (rate.error) return { data: null, error: rate.error };
-    purchaseOrder.exchangeRate = rate.data;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  } else {
-    purchaseOrder.exchangeRate = 1;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
-
-  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
-    await Promise.all([
-      insertSupplierInteraction(
-        client,
-        purchaseOrder.companyId,
-        purchaseOrder.supplierId
-      ),
-      getSupplierPayment(client, purchaseOrder.supplierId),
-      getSupplierShipping(client, purchaseOrder.supplierId),
-      getEmployeeJob(client, purchaseOrder.createdBy, purchaseOrder.companyId)
-    ]);
-
-  if (supplierInteraction.error) return supplierInteraction;
-  if (supplierPayment.error) return supplierPayment;
-  if (supplierShipping.error) return supplierShipping;
-
-  const {
-    paymentTermId,
-    invoiceSupplierId,
-    invoiceSupplierContactId,
-    invoiceSupplierLocationId
-  } = supplierPayment.data;
-
-  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
-    supplierShipping.data;
-
-  const locationId =
-    purchaseOrder.locationId ?? purchaser?.data?.locationId ?? null;
-
-  // locationId is not a column on purchaseOrder -- it belongs on the delivery record
-  const {
-    locationId: _locationId,
-    companyGroupId: _companyGroupId,
-    ...purchaseOrderData
-  } = purchaseOrder;
-
-  const order = await client
-    .from("purchaseOrder")
-    .insert([
-      {
-        ...purchaseOrderData,
-        supplierInteractionId: supplierInteraction.data?.id,
-        status: purchaseOrder.status ?? "Draft"
-      }
-    ])
-    .select("id, purchaseOrderId");
-
-  if (order.error) return order;
-
-  const purchaseOrderId = order.data[0].id;
-
-  const [delivery, payment] = await Promise.all([
-    client.from("purchaseOrderDelivery").insert([
-      {
-        id: purchaseOrderId,
-        receiptRequestedDate: receiptRequestedDate ?? null,
-        locationId: locationId,
-        shippingMethodId: shippingMethodId,
-        shippingTermId: shippingTermId,
-        incoterm: incoterm,
-        incotermLocation: incotermLocation,
-        companyId: purchaseOrder.companyId
-      }
-    ]),
-    client.from("purchaseOrderPayment").insert([
-      {
-        id: purchaseOrderId,
-        invoiceSupplierId: invoiceSupplierId,
-        invoiceSupplierContactId: invoiceSupplierContactId,
-        invoiceSupplierLocationId: invoiceSupplierLocationId,
-        paymentTermId: paymentTermId,
-        companyId: purchaseOrder.companyId
-      }
-    ])
-  ]);
-
-  if (delivery.error) {
-    await deletePurchaseOrder(client, purchaseOrderId);
-    return payment;
-  }
-  if (payment.error) {
-    await deletePurchaseOrder(client, purchaseOrderId);
-    return payment;
-  }
-
-  return order;
 }
 
 export async function upsertPurchaseOrderDelivery(
@@ -2865,152 +2767,6 @@ export async function updateSupplierQuote(
     .single();
 }
 
-/** @deprecated Use insertSupplierQuote for new quotes, updateSupplierQuote for existing quotes */
-export async function upsertSupplierQuote(
-  client: SupabaseClient<Database>,
-  supplierQuote:
-    | (Omit<
-        z.infer<typeof supplierQuoteValidator>,
-        "id" | "supplierQuoteId"
-      > & {
-        supplierQuoteId: string;
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<
-        z.infer<typeof supplierQuoteValidator>,
-        "id" | "supplierQuoteId"
-      > & {
-        id: string;
-        supplierQuoteId: string;
-        companyGroupId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in supplierQuote) {
-    if (supplierQuote.currencyCode) {
-      const rate = await getExchangeRate(
-        client,
-        supplierQuote.companyId,
-        supplierQuote.currencyCode
-      );
-      if (rate.error) return { data: null, error: rate.error };
-      supplierQuote.exchangeRate = rate.data;
-      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-    } else {
-      supplierQuote.exchangeRate = 1;
-      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-
-    const supplierInteraction = await insertSupplierInteraction(
-      client,
-      supplierQuote.companyId,
-      supplierQuote.supplierId
-    );
-
-    if (supplierInteraction.error) return supplierInteraction;
-
-    // supplierQuote stores notes as internalNotes/externalNotes, not `notes`.
-    const {
-      companyGroupId: _companyGroupId,
-      notes: _notes,
-      ...supplierQuoteData
-    } = supplierQuote;
-    const insert = await client
-      .from("supplierQuote")
-      .insert([
-        {
-          ...supplierQuoteData,
-          status: supplierQuoteData.status ?? "Draft",
-          supplierInteractionId: supplierInteraction.data?.id
-        }
-      ])
-      .select("id, supplierQuoteId, externalLinkId")
-      .single();
-
-    if (insert.error) {
-      return insert;
-    }
-
-    const supplierQuoteId = insert.data?.id;
-    if (!supplierQuoteId) return insert;
-
-    // Only create external link if one doesn't exist
-    if (!insert.data.externalLinkId) {
-      const externalLink = await upsertExternalLink(client, {
-        documentType: "SupplierQuote",
-        documentId: supplierQuoteId,
-        supplierId: supplierQuote.supplierId,
-        expiresAt: supplierQuote.expirationDate,
-        companyId: supplierQuote.companyId
-      });
-
-      if (externalLink.data) {
-        const update = await client
-          .from("supplierQuote")
-          .update({ externalLinkId: externalLink.data.id })
-          .eq("id", supplierQuoteId);
-
-        if (update.error) {
-          return update;
-        }
-      }
-    }
-
-    return insert;
-  } else {
-    // Only update the exchange rate if the currency code has changed
-    const existingQuote = await client
-      .from("supplierQuote")
-      .select("currencyCode, status, companyId")
-      .eq("id", supplierQuote.id)
-      .single();
-
-    if (existingQuote.error) return existingQuote;
-
-    const {
-      currencyCode,
-      status: existingStatus,
-      companyId
-    } = existingQuote.data;
-
-    if (
-      supplierQuote.currencyCode &&
-      currencyCode !== supplierQuote.currencyCode
-    ) {
-      const rate = await getExchangeRate(
-        client,
-        companyId,
-        supplierQuote.currencyCode
-      );
-      if (rate.error) return { data: null, error: rate.error };
-      supplierQuote.exchangeRate = rate.data;
-      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-    const {
-      companyGroupId: _companyGroupId2,
-      notes: _notes,
-      ...supplierQuoteUpdateData
-    } = supplierQuote;
-    const companyTz = await getCompanyTimeZone(client, companyId);
-    return client
-      .from("supplierQuote")
-      .update({
-        ...sanitize(supplierQuoteUpdateData),
-        status:
-          supplierQuote.expirationDate &&
-          datetime.today(companyTz).toString() > supplierQuote.expirationDate
-            ? "Expired"
-            : (supplierQuote.status ?? existingStatus ?? "Draft"),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierQuote.id);
-  }
-}
-
 export async function upsertSupplierQuoteLine(
   client: SupabaseClient<Database>,
   supplierQuoteLine:
@@ -3478,34 +3234,6 @@ export async function getLinkedPurchasingRfqs(
     .eq("supplierQuoteId", supplierQuoteId);
 }
 
-export async function getLinkedPurchasingRfqsForInteraction(
-  client: SupabaseClient<Database>,
-  supplierInteractionId: string
-) {
-  // First get all supplier quote IDs in this interaction
-  const { data: quotes, error: quotesError } = await client
-    .from("supplierQuote")
-    .select("id")
-    .eq("supplierInteractionId", supplierInteractionId);
-
-  if (quotesError || !quotes || quotes.length === 0) {
-    return { data: [], error: quotesError };
-  }
-
-  const quoteIds = quotes.map((q) => q.id);
-
-  // Then get all purchasing RFQs linked to any of these quotes
-  return client
-    .from("purchasingRfqToSupplierQuote")
-    .select(
-      `
-      purchasingRfqId,
-      purchasingRfq:purchasingRfqId (*)
-    `
-    )
-    .in("supplierQuoteId", quoteIds);
-}
-
 // Get sibling quotes (quotes sharing any RFQ with current quote)
 export async function getSiblingQuotesForQuote(
   client: SupabaseClient<Database>,
@@ -3537,22 +3265,6 @@ export async function getSiblingQuotesForQuote(
     )
     .in("purchasingRfqId", rfqIds)
     .neq("supplierQuoteId", supplierQuoteId);
-}
-
-// Direct Order→RFQ lookup (more efficient than going through interaction)
-export async function getLinkedPurchasingRfqsForOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrderId: string
-) {
-  return client
-    .from("purchasingRfqToPurchaseOrder")
-    .select(
-      `
-      purchasingRfqId,
-      purchasingRfq:purchasingRfqId (*)
-    `
-    )
-    .eq("purchaseOrderId", purchaseOrderId);
 }
 
 export async function getSupplierQuotesForComparison(
@@ -4001,26 +3713,6 @@ export async function insertPurchaseReturnOrder(
     .single();
 
   return order;
-}
-
-export async function updatePurchaseReturnOrder(
-  client: SupabaseClient<Database>,
-  purchaseReturnOrder: Omit<
-    z.infer<typeof purchaseReturnOrderValidator>,
-    "id" | "purchaseReturnOrderId" | "status"
-  > & {
-    id: string;
-    updatedBy: string;
-    customFields?: Json;
-  }
-) {
-  const { id, ...update } = purchaseReturnOrder;
-  return client
-    .from("purchaseReturnOrder")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .select("id")
-    .single();
 }
 
 /** Not published: `purchasing_addReturnOrderLine` / `_updateLine` write a line, with the Draft and post-confirm checks this skips. */
@@ -6450,24 +6142,31 @@ export async function writeClassificationOverride(
   return null;
 }
 
-/** Cancels the order's pending approval requests. Approved and Rejected ones
- *  stay: they are the audit trail. */
+/** Cancels the orders' pending approval requests. Approved and Rejected ones
+ *  stay: they are the audit trail. Run it in the transaction that changes the
+ *  orders, so a failed change leaves the requests pending. */
 export async function cancelPendingApprovals(
-  ctx: ServiceContext,
-  purchaseOrderId: string
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderIds
+  }: { companyId: string; userId: string; purchaseOrderIds: string[] }
 ) {
-  return ctx.asSystem.supabase
-    .from("approvalRequest")
-    .update({
+  if (purchaseOrderIds.length === 0) return [];
+  return db
+    .updateTable("approvalRequest")
+    .set({
       status: "Cancelled",
-      updatedBy: ctx.auditUserId,
+      updatedBy: userId,
       updatedAt: datetime.timestamp()
     })
-    .eq("documentType", "purchaseOrder")
-    .eq("documentId", purchaseOrderId)
-    .eq("companyId", ctx.company.id)
-    .eq("status", "Pending")
-    .select("id");
+    .where("documentType", "=", "purchaseOrder")
+    .where("documentId", "in", purchaseOrderIds)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Pending")
+    .returning("id")
+    .execute();
 }
 
 /** A file's size as the documents table stores it: whole kilobytes. */

@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { type BilledTotals, changedRevenueLines } from "../../../app/modules/sales/sales.service";
+import {
+  type BilledTotals,
+  changedRevenueLines
+} from "../../../app/modules/sales/sales.service";
 import type { ContractLineRow } from "../../../app/modules/sales/sales.service";
 
 const line = (overrides: Partial<ContractLineRow>): ContractLineRow =>

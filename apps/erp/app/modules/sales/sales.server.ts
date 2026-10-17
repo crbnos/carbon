@@ -67,6 +67,7 @@ import { sanitize } from "~/utils/supabase";
 import { invokeCreate, invokePosting } from "../shared/shared.service";
 import {
   contractAmendmentChangeValidator,
+  contractDurationOf,
   customerContractAmendmentValidator,
   customerContractTypes,
   customerContractValidator,
@@ -102,18 +103,8 @@ import type {
 import * as service from "./sales.service";
 import * as utils from "./sales.utils";
 import { reconcileQuantityBreaks } from "./sales.utils";
-import { contractDurationOf } from "./ui/Contracts/useContractLabels";
 
 const logger = getLogger("erp", "sales-server");
-// ---------------------------------------------------------------------------
-// Sales-rule outcome evidence
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Rental invoices
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// Contracts
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------
@@ -6603,7 +6594,8 @@ export const getSalesOrderInvoicePaymentsByIds = defineServiceFn({
 });
 
 /**
- * Sales order lines eligible for a job to link to: lines whose item matches the job's item, on sales orders that are still open (not Completed/Invoiced/ Cancelle…
+ * Sales order lines a job can link to: lines for the job's item on sales
+ * orders that are still open (not Completed, Invoiced, Cancelled or Closed).
  *
  * @mcp read
  */
@@ -9347,7 +9339,8 @@ export const getReturnableLinesForCustomer = defineServiceFn({
 });
 
 /**
- * Entity picker source for RMA lines: serials/batches shipped to this customer (Consumed entities tagged with a posted shipment's id — the attributes->>X query p…
+ * Serials and batches shipped to a customer, for the lines of a return:
+ * consumed tracked entities tagged with one of its posted shipments.
  *
  * @mcp read
  */
@@ -9423,7 +9416,12 @@ export const createSalesReturnOrderCredit = defineServiceFn({
 });
 
 /**
- * Create Replacement Order: a draft sales order pre-filled from the RMA lines, priced via resolvePrice (user adjusts on the draft — e.g
+ * Create a replacement sales order from a return: a Draft order of the return
+ * lines at their resolved prices, which the user can change (to zero for a
+ * warranty).
+ *
+ * @remarks
+ * One replacement per return: calling it again returns the existing order.
  *
  * @mcp
  */
@@ -9944,7 +9942,9 @@ export const upsertItemRentalRate = defineServiceFn({
 });
 
 /**
- * The rate each item starts at on a rental line for this customer, per frequency — the customer's own rate, else its customer type's, else the item's (`defaultRe…
+ * The rate each item starts at on a rental line for this customer, per
+ * frequency: the customer's own rate, else its customer type's, else the
+ * item's, in effect on `asOf`. Keyed by item id.
  *
  * @mcp read
  */

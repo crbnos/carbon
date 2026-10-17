@@ -8,12 +8,12 @@ import { redirect, round, tiptapToText } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { customerContractValidator } from "~/modules/sales/sales.models";
-import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
-  ContractDetailsForm,
-  contractDurationOf
-} from "~/modules/sales/ui/Contracts";
+  contractDurationOf,
+  customerContractValidator
+} from "~/modules/sales/sales.models";
+import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
+import { ContractDetailsForm } from "~/modules/sales/ui/Contracts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
