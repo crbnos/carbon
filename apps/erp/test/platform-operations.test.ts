@@ -72,7 +72,7 @@ describe("uploading a model", () => {
     name: "bracket.step",
     size: 1024
   };
-  const ctx = contextFor(user(grants(["parts", "update"])));
+  const ctx = contextFor(user(grants(["parts", "create"], ["parts", "update"])));
 
   it("refuses a path under another company's prefix", async () => {
     const result = await insertModelUpload(ctx, {
