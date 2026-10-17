@@ -7691,6 +7691,12 @@ msgstr "変更の説明"
 msgid "Description of Issue"
 msgstr "問題の説明"
 
+msgid "Detach"
+msgstr "リンク解除"
+
+msgid "Detach from Onshape?"
+msgstr "Onshapeからリンク解除しますか？"
+
 msgid "Detail"
 msgstr "詳細"
 
@@ -8306,6 +8312,10 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
+
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
@@ -12261,6 +12271,9 @@ msgstr "前回の{when}の送信は失敗しました: {0}"
 msgid "Last push {when}:"
 msgstr "最後のプッシュ {when}:"
 
+msgid "Last pushed {lastPushed}."
+msgstr "最終プッシュ: {lastPushed}"
+
 msgid "Last Quarter"
 msgstr "前四半期"
 
@@ -12627,6 +12640,9 @@ msgstr "このCarbonの得意先をいずれかにリンクするか、別のStr
 
 msgid "Link to sales order line"
 msgstr "受注明細へのリンク"
+
+msgid "Linked"
+msgstr "リンク済み"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -15532,6 +15548,9 @@ msgstr "変更通知{ids}で開いています。新しいバージョンまた�
 msgid "Open in MES"
 msgstr "MESで開く"
 
+msgid "Open in Onshape"
+msgstr "Onshapeで開く"
+
 msgid "Open Issues"
 msgstr "未解決の問題"
 
@@ -17430,6 +17449,15 @@ msgstr "ディメンションなしで仕訳を転記する"
 
 msgid "Push to accounting"
 msgstr "会計にプッシュ"
+
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr ""
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"

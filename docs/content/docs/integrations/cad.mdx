@@ -1,38 +1,153 @@
 ---
 title: CAD
 plan: Business
-description: Sync CAD data from Onshape and Onshape Government into Carbon.
+description: Sync CAD data from Onshape and Onshape Government into Carbon, or push it from inside Onshape.
 ---
 
-## Onshape
+## Two Onshape integrations
 
-Connect **Onshape** through **OAuth** to import CAD data into Carbon.
+Carbon ships two Onshape integrations side by side. They share nothing: each is its
+own Onshape OAuth application, with its own connection, its own credentials and its
+own record of which Carbon items are linked. A company can connect either, both, or
+neither, and disconnecting one never affects the other.
+
+| Integration | Id | Direction | What it does |
+| --- | --- | --- | --- |
+| **Onshape** | `onshape` | Pull | Carbon lists documents and pulls models. With **Sync released assets** on, a webhook attaches released drawings and CAD models to Carbon items that already exist, matched by part number. It never creates items. |
+| **Onshape V2** | `onshape-v2` | Push | A Carbon panel inside Onshape. You push parts, assemblies and releases from the CAD document when they are ready. Carbon never pulls on its own. |
+
+**Onshape Government** is a third, pull-only variant of **Onshape** for the ITAR and
+FedRAMP edition, connected through a private OAuth app your Enterprise owns; see
+[Onshape Government](#onshape-government).
+
+**Onshape V2** is the one to use for the panel. If the Carbon icon appears in
+Onshape but the panel reports that nothing is connected, the company connected
+**Onshape** and not **Onshape V2** — connect V2 as well.
+
+<Callout type="warn">
+Each card needs its own OAuth client configured server-side: **Onshape V2** reads
+`ONSHAPE_V2_CLIENT_ID`, **Onshape** reads `ONSHAPE_CLIENT_ID`. Without it the card
+reads **Not Configured** and cannot be installed. Connect also needs that
+integration's client secret and redirect URL. See
+[Environment variables](/docs/platform/self-hosting/environment-variables) and the
+setup section below.
+</Callout>
+
+## Set up the Onshape applications
+
+Everything below is done once per Carbon deployment, by whoever operates it. It is
+the same for cloud and self-hosted Carbon. Each integration has its own OAuth
+application in the Onshape developer portal, and each reads only its own variables:
+
+| | Onshape V2 (panel) | Onshape (pull) |
+| --- | --- | --- |
+| Client id | `ONSHAPE_V2_CLIENT_ID` | `ONSHAPE_CLIENT_ID` |
+| Client secret | `ONSHAPE_V2_CLIENT_SECRET` | `ONSHAPE_CLIENT_SECRET` |
+| Redirect URL | `ONSHAPE_V2_OAUTH_REDIRECT_URL` | `ONSHAPE_OAUTH_REDIRECT_URL` |
+| Redirect URI to register | `https://<erp-host>/api/integrations/onshape-v2/oauth` | `https://<erp-host>/api/integrations/onshape/oauth` |
+| Panel extension | Yes | No |
+
+Set up **Onshape V2** to use the panel. Set up **Onshape** only if you want
+released-asset sync.
 
 <Steps>
   <Step>
-  ### Authorize over OAuth
+  ### Create an OAuth application for each integration
 
-  Start the connection and Carbon opens an Onshape popup.
+  Sign in at [dev-portal.onshape.com](https://dev-portal.onshape.com), create an
+  OAuth application, and grant it both the read scope (`OAuth2Read`) and the write
+  scope (`OAuth2Write`, labelled **Application can write to your documents**). The
+  panel writes nothing to Onshape, but Onshape refuses the authorization with
+  `invalid_scope` unless the application holds every scope Carbon asks for, and
+  Carbon asks for both.
+
+  Copy the application's client id and secret into that integration's variables
+  from the table above.
   </Step>
   <Step>
-  ### Approve read access
+  ### Register each application's redirect URI
 
-  Approve read access to your Onshape documents in the popup.
+  Each integration completes OAuth at its own callback. On each application,
+  register that integration's redirect URI from the table above, with your Carbon
+  ERP origin as the host, and put the same value in its redirect URL variable.
+
+  The value in each env var must match the registered URI character for character.
+  A mismatch fails the token exchange, which the Connect popup reports as a
+  connection error.
   </Step>
   <Step>
-  ### Tokens stored
+  ### Add an extension for the panel
 
-  Carbon stores the access and refresh tokens and can then read your Onshape documents.
+  On the **Onshape V2** application, add an extension with location **Element right
+  panel** and this action URL, again with your Carbon ERP origin:
+
+  ```
+  https://<erp-host>/onshape/panel?documentId={$documentId}&wv={$workspaceOrVersion}&wvId={$workspaceOrVersionId}&elementId={$elementId}&partNumber={$partNumber}&revision={$revision}&nodeId={$nodeId}&occurrencePath={$occurrencePath}&configuration={$configuration}
+  ```
+
+  Carbon reads the parameters by the names on the left of each `=`; the `{$…}`
+  placeholders are substituted by Onshape. Onshape appends `server`, `companyId`,
+  `userId`, `locale` and `clientId` on its own; do not add them. The panel tells
+  Onshape it is ready at the `server` origin. Without `server` it shows "Open this
+  panel from Onshape".
+  </Step>
+  <Step>
+  ### Subscribe the users who should see the panel
+
+  An extension renders only for Onshape users who are **subscribed** to the
+  **Onshape V2** application. Publish it to your private App Store and have each
+  user open it there and choose **Get for free**. Completing OAuth in Carbon does
+  not do this — a user with a working Carbon connection and no subscription sees no
+  Carbon icon in Onshape at all.
+  </Step>
+  <Step>
+  ### Restart Carbon with the new environment
+
+  The env vars are read at boot. On the Carbon side the `onshape-v2` integration
+  row is seeded by a database migration, so a deployment that is behind on
+  migrations shows only the **Onshape** card.
+
+  A connection belongs to the application that authorized it. If you change an
+  integration's client id, every company must connect that integration again.
   </Step>
 </Steps>
 
-| Setting | What it controls |
-| --- | --- |
-| Connection | Established by OAuth — no keys to paste. Carbon stores the access and refresh tokens for you. |
-
-<Callout type="warn">
-Onshape appears only when `ONSHAPE_CLIENT_ID` is configured server-side. See [Environment variables](/docs/platform/self-hosting/environment-variables).
+<Callout type="note">
+Private Onshape applications debit the application owner's annual API quota on every
+call. A publicly listed App Store application is exempt.
 </Callout>
+
+## Connect a company
+
+In Carbon, open **Settings → Integrations**. Both Onshape cards are in the CAD
+category.
+
+<Steps>
+  <Step>
+  ### Connect Onshape V2
+
+  Press **Connect** on **Onshape V2**. A popup opens on Onshape; approve access. The
+  popup closes on its own and the card switches to Installed. The card holds the
+  connection only; the property map and the push defaults are on the panel's
+  **Fields** page.
+  </Step>
+  <Step>
+  ### Optionally connect Onshape
+
+  Only if you want released-asset sync. **Sync released assets** and **Backfill
+  released assets** are on this card. This connection is independent of V2.
+  </Step>
+</Steps>
+
+If the popup ends in an error:
+
+| Message | Cause | Fix |
+| --- | --- | --- |
+| *Onshape isn't configured* | The integration's client id, client secret or redirect URL env var is missing. Each integration reads only its own three variables. | Set the variable for that integration and restart. |
+| *Onshape denied the connection*, mentioning write permission | Onshape returned `invalid_scope`. | Grant `OAuth2Write` on the OAuth application. |
+| *Onshape rejected the authorization* | The token exchange failed: redirect URI mismatch, wrong client secret, or the redirect URI is registered on the other integration's application. | Compare the env var to the URI registered on that integration's own application, character for character. |
+| *Couldn't save the Onshape connection* | Onshape authorized but the database write failed. | Check the server logs; retry. |
+| Nothing happens on Connect | The browser blocked the popup. | Allow popups for the Carbon origin and retry. |
 
 ## Onshape Government
 
@@ -75,6 +190,224 @@ leave it off if your allowance is tight.
 
 A company can connect to only one Onshape environment. Disconnect the current integration before connecting the other.
 
+## The Carbon panel in Onshape
+
+Open a Part Studio, an assembly or a drawing and click the Carbon icon in the right
+panel. Press **Sign in to Carbon**: a popup on Carbon's own origin signs you in (or
+sends you through the normal login first) and closes itself. The session lasts up to
+12 hours and is held only in that browser tab.
+
+The panel works in the Carbon **company you are signed in to** in the Carbon tab the
+popup used; the top of the panel shows which. To push into a different company,
+switch company in Carbon, then press **Sign out** and **Sign in to Carbon** in the
+panel.
+
+The panel has three pages:
+
+- **Parts**, **Assembly** or **Push**, after the element you have open. A drawing
+  has nothing to push here; its PDF comes in with a release.
+- **Releases**, for the whole document.
+- **Fields**, on a Part Studio or an assembly, for users with the
+  **settings: update** permission in Carbon.
+
+Pushing works in a workspace or a version. In a microversion the panel shows status
+only.
+
+### Status
+
+Each part or BOM line shows its state before anything is pushed:
+
+| State | Meaning |
+| --- | --- |
+| **Linked** | A panel push linked this Onshape part to a Carbon item. |
+| **Conflict** | Carbon has an item with this part number that is not linked to this part. A push uses that item. |
+| **Unlinked** | Carbon has no item with this part number. A push creates one. |
+| **Released** | The part is released in Onshape. Push it from **Releases**; its Push button is off. |
+
+An assembly's bill of materials shows as a tree, collapsed to the top level, the way
+Onshape's structured BOM does.
+
+### Review before anything is written
+
+Every push is two steps. Pressing **Push** shows a review of what Carbon would do;
+nothing is written yet:
+
+- items that will be **created**, with the values they will get. Replenishment,
+  default method type and tracking type can be changed here; the item ID and
+  revision come from Onshape. Each mapped value shows the Onshape property it came
+  from (see [Fields](#fields)); anything not mapped starts from the push defaults.
+- items that will be **linked** to an existing Carbon item by part number, or
+  **updated** because Onshape changed. The review lists the values the push replaces
+  (fields set to *Update on every push*) and the Onshape values Carbon keeps (fields
+  set to *Set at creation*).
+- for an assembly, each make method with the lines it gains, the lines a previous
+  push wrote that change, the lines added by hand that the push takes over, and the
+  ones it keeps.
+- for a release, every revision it creates and the change notice it uses.
+
+**Push _n_ to Carbon** applies the review as shown; **Cancel** writes nothing. A
+review is held for 15 minutes; after that, **Review again**. A choice made in the
+review is written to Carbon only; Onshape keeps its values.
+
+### Push a part
+
+Creates or updates the Carbon item for an Onshape part: the part number becomes the
+item ID, plus name, description, revision, the 3D model and a thumbnail. Pushing again
+after a change updates the item. Pushing an unchanged part writes only mapped values
+that differ, and exports nothing. Parts need a part number in Onshape first. **Push
+all** pushes every numbered part in the Part Studio, at most 50.
+
+After the push the item is a Carbon item like any other, and every field stays
+editable. A later push replaces only the fields set to *Update on every push* on the
+[Fields](#fields) page. The item page shows an **Onshape card** with the link, the
+fields a push replaces, **Open in Onshape**, and **Detach**, which removes the link
+so pushes stop updating the item. The card shows links made by the panel only.
+
+### Push an assembly
+
+Pushes the assembly and its bill of materials: every item in the BOM is created if
+missing, and the BOM lands on the assembly's make methods, sub-assemblies included.
+A push changes only what Onshape changed: lines a previous push wrote are updated or
+removed. A line you added by hand for a part Onshape's BOM also lists is taken over;
+its quantity follows Onshape, and its operation and scrap stay. A hand-added line for
+a part Onshape doesn't list is left alone.
+
+An assembly with more than 1,500 distinct parts is refused as a whole; **Push this
+level only** pushes its top-level BOM, with each sub-assembly as one line.
+
+Items in the BOM that are not yet linked to an Onshape part are linked to theirs.
+Every item linked to its BOM row takes the values set to *Update on every push*. Only
+values Onshape has are written, so an empty Name or Description cell never blanks
+Carbon's text. An item already linked to a different Onshape part keeps that link,
+and the push writes nothing to it.
+
+**Buy or Make.** For a new item, the first of these that gives a value wins:
+
+1. your choice in the review,
+2. the Onshape property mapped to Replenishment (see [Fields](#fields)),
+3. a BOM row with components is Make,
+4. a part from Onshape's Standard content library is Buy,
+5. the push default.
+
+A sub-assembly whose **Subassembly BOM behavior** is *Show assembly only* is listed
+without components, so the push writes no BOM for it. It says nothing about Buy or
+Make. The review warns when an item's Buy or Make and Onshape's BOM disagree: a Buy
+item that would get a BOM, or a Make item Onshape shows as one unit.
+
+**A released make method is never edited.** When an assembly's method is Active and
+Onshape's BOM differs from it, the push takes a new **Draft** version and writes
+there, the same way a Version change works in Carbon. Nothing live moves until
+someone releases the Draft. Pushing again writes into the same Draft. The push result
+lists each new Draft as *not yet live*.
+
+### Push a release
+
+The **Releases** page lists the document's 20 newest Onshape releases, each marked
+**In Carbon**, **Partial** or **Not in Carbon**. Pushing one:
+
+- creates a Carbon **revision** of every released part and assembly at the released
+  revision letter, copied from the revision below it when Carbon has one,
+- writes each released assembly's BOM, as of the released version, to the new
+  revision's method,
+- takes each released item's mapped values at its released version,
+- attaches models and thumbnails at the released version, and each released drawing
+  as a PDF named `<part number>-<revision>.pdf` on its part.
+
+The new revisions go on one draft **change notice**, named after the release. They
+stay inactive until you release that notice in Carbon, which activates them and
+supersedes each previous revision. Pushing the release again adds to the same notice
+while it is open and not waiting for approval, and creates nothing twice; otherwise
+the push starts a new notice. BOM components the push has to create are not on the
+notice.
+
+A release with only a drawing reads **In Carbon** once its PDF is attached. Release
+management needs an Onshape company account; without one the page says so.
+
+### Fields
+
+The **Fields** page maps Onshape properties (Vendor, Project, Material, your
+company's custom properties) onto Carbon. A property can set an **item field** or a
+**custom field** on the part. The page lists the properties of the element you have
+open, but the mappings belong to the company and apply to every push. It lives in
+the panel because Onshape lists properties only from inside a document.
+
+The page starts with fixed rows: Part number and Revision always come from Onshape,
+and Name and Description each have a mode (below). Then come the item fields with
+their **push defaults**, the values a new item gets when no property sets them:
+
+| Item field | Values | Push default |
+| --- | --- | --- |
+| Replenishment | Buy, Make, Buy and Make | Make |
+| Default Method Type | Make to Order, Pull from Inventory, Purchase to Order | Make to Order (Make), Pull from Inventory (Buy) |
+| Tracking Type | Inventory, Non-Inventory, Serial, Batch | Inventory |
+| Unit of Measure | your company's units | EA, or your company's first unit |
+| Manufacturer Part Number | the property's text | none |
+| Sourcing | Specified, Drop Ship, Ship from Inventory (Buy and Make items only) | none |
+
+- A list field has a **translation**: each row turns an Onshape value into a Carbon
+  value. The rows start with Carbon's own values, so an Onshape list with the same
+  options needs no setup. Set a row to *No value* to leave the field to the next
+  rule. An Onshape value with no row is called out in the review and not written.
+- A Unit of Measure value that matches a unit's code or name needs no row.
+- Item fields are written the way the item page writes them. Changing Replenishment
+  also sets the method that goes with it. A change of Replenishment, method or
+  sourcing also updates the item's lines on Draft BOMs; a change of tracking type
+  also updates open jobs, receipts, shipments and transfers.
+
+**Custom fields:** create the field in Carbon first, then select it here. Text, list
+and object properties map to Text fields, booleans to Yes/No, numbers to Numeric,
+dates to Date. Onshape's computed, user, file and category properties can't be
+mapped; the page names them under the list. A property with no Carbon field of its
+type says which part custom field type to add.
+
+Each Carbon field takes one property. A field another property already sets stays in
+the list, greyed out, with that property's name.
+
+**When Onshape writes a field.** Each mapping, and the item's Name and Description,
+has one of two modes:
+
+- **Set at creation** (the default): Onshape fills the field when a push creates the
+  item. After that, Carbon owns the field and later pushes don't change it.
+- **Update on every push**: every push replaces Carbon's value with Onshape's,
+  including edits made in Carbon. An empty custom field property clears the Carbon
+  field; an empty item field or description is never written.
+
+**Set up Buy or Make.** Onshape has no Buy/Make property. Create a list property in
+Onshape, for example *Make or buy*, with the options Buy, Make, and Buy and Make. Map
+it to Replenishment here and set the value on the parts your company buys. Parts from
+Onshape's Standard content library (fasteners and other hardware) come in as Buy when
+no property gives a value.
+
+- Carbon matches a list value by its display name in Onshape, or by its value when it
+  has no display name.
+- An Onshape default is a value: every part with no value of its own sends the
+  default. With **Update on every push**, a default replaces Carbon's value on every
+  linked item nobody set in Onshape. Leave the Onshape default empty to let the push
+  defaults decide for new items.
+- A property that applies only to parts has no value on assembly rows. Carbon writes
+  nothing there.
+
+**Refresh** re-reads the properties and the field list. **Save** saves the map and
+the push defaults together.
+
+## Troubleshooting the panel
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| No Carbon icon in the Onshape right panel | The Onshape user is not subscribed to the **Onshape V2** application, or the extension is missing from it. | Subscribe via the private App Store; check the extension exists with location Element right panel. |
+| *Open this panel from Onshape* | The page was opened outside Onshape, so no Onshape `server` origin arrived with it. | Open the panel from the Onshape right panel; check the extension's action URL points at the ERP host. |
+| Panel is blank inside Onshape | The route is framed from an origin other than `*.onshape.com`, or the ERP host is unreachable from the browser. | Carbon only allows Onshape to frame it; check the ERP origin in the action URL. |
+| Sign-in popup shows *Open this page from the Carbon panel in Onshape* | The popup was opened directly, not from the panel. | Use the **Sign in to Carbon** button. |
+| The panel returns to **Sign in to Carbon** | The panel session ended: 12 hours, the controlled-environment session limit, or Sign out. | Sign in again. |
+| *Carbon is not reachable* | The panel's first request to Carbon failed: the ERP host is unreachable or answered with an error, shown under the title. | **Retry**, or **Sign in again**; check the ERP host and the server logs. |
+| *The yearly API limit for Carbon's Onshape app is used up* | Onshape answers every call with HTTP 402 once the yearly API limit of the account that owns the OAuth application is spent. | Raise the limit with Onshape. The owner sees its usage under **Company settings → Developer**. A publicly listed App Store application is exempt. |
+| *Onshape is not connected for this company* | Only **Onshape** (sync) is connected, or no Onshape integration is. | Connect **Onshape V2**. |
+| The review fails to open with a 503 | Carbon could not store the review in Redis. | Check `REDIS_URL`. |
+| *Review again* after **Push to Carbon** | The 15-minute review expired, or it was already applied. | Press **Review again**. |
+| A part shows **Conflict** | Carbon already has an item with that part number, made by hand, by an import or by the sync integration. | Push it: the panel links and updates that item instead of creating a duplicate. |
+| The push result says *New Draft version, not yet live* | The assembly's make method was released, so the push wrote to a Draft version. | Release the Draft in Carbon when ready. |
+| `invalid_scope` on Connect | The OAuth application lacks `OAuth2Write`. | Grant it in the developer portal. |
+
 ## Related
 
 <Cards>
@@ -83,5 +416,11 @@ A company can connect to only one Onshape environment. Disconnect the current in
   </Card>
   <Card title="Methods & sourcing" href="/docs/reference/methods">
     How a part's bill of materials is built up.
+  </Card>
+  <Card title="Revisions" href="/docs/reference/items#revisions">
+    Why each revision of a part is its own item record.
+  </Card>
+  <Card title="Environment variables" href="/docs/platform/self-hosting/environment-variables">
+    The Onshape variables a deployment needs.
   </Card>
 </Cards>

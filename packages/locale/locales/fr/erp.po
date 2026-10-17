@@ -7691,6 +7691,12 @@ msgstr "Description du changement"
 msgid "Description of Issue"
 msgstr "Description du problème"
 
+msgid "Detach"
+msgstr "Détacher"
+
+msgid "Detach from Onshape?"
+msgstr "Détacher d'Onshape ?"
+
 msgid "Detail"
 msgstr "Détail"
 
@@ -8306,6 +8312,10 @@ msgstr "Chaque période dure un mois, pour le tarif mensuel."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
+
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr ""
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Le commercial de chaque accord de location ou contrat (ou son créateur) reçoit un résumé quotidien de ses factures."
@@ -12261,6 +12271,9 @@ msgstr "Le dernier envoi {when} a échoué : {0}"
 msgid "Last push {when}:"
 msgstr "Dernier envoi {when} :"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Dernière mise à jour le {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
 
@@ -12627,6 +12640,9 @@ msgstr "Liez ce client Carbon à l'un d'entre eux, ou créez un client Stripe di
 
 msgid "Link to sales order line"
 msgstr "Lier à la ligne de commande client"
+
+msgid "Linked"
+msgstr "Lié"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -15532,6 +15548,9 @@ msgstr "Ouverts dans les avis de modification {ids}. Lancez-les pour créer de n
 msgid "Open in MES"
 msgstr "Ouvrir dans MES"
 
+msgid "Open in Onshape"
+msgstr "Ouvrir dans Onshape"
+
 msgid "Open Issues"
 msgstr "Problèmes ouverts"
 
@@ -17430,6 +17449,15 @@ msgstr "Envoyer l'écriture sans l'axe analytique"
 
 msgid "Push to accounting"
 msgstr "Envoyer vers la comptabilité"
+
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr ""
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr ""
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr ""
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Mettre cette charge sur sa propre facture, en attente de Revue avant d'être comptabilisée. Sinon, elle va sur la prochaine facture de l'accord."
