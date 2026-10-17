@@ -5900,6 +5900,9 @@ msgstr "复制服务编号"
 msgid "Copy service unique identifier"
 msgstr "复制服务唯一标识符"
 
+msgid "Copy signing secret"
+msgstr "复制签名密钥"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "复制供应商报价唯一标识符"
 
@@ -7549,6 +7552,9 @@ msgstr "已交付"
 
 msgid "Delivered on"
 msgstr "交付于"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "投递将立即使用新密钥进行签名。请使用此密钥配置您的端点。"
 
 msgid "Delivery Date"
 msgstr "交货日期"
@@ -9204,6 +9210,9 @@ msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不
 msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。验证该标头以确认请求来自 Carbon。"
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
 
@@ -9828,6 +9837,12 @@ msgstr "调整图像大小失败：{errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "未能检索 CSV 列数据。"
+
+msgid "Failed to reveal the secret"
+msgstr "无法显示该密钥"
+
+msgid "Failed to roll the secret"
+msgstr "无法轮换该密钥"
 
 msgid "Failed to save configuration rule"
 msgstr "保存配置规则失败"
@@ -18892,6 +18907,9 @@ msgstr "修订版 {revision}"
 msgid "Rev {revisionId}"
 msgstr "修订 {revisionId}"
 
+msgid "Reveal"
+msgstr "显示"
+
 msgid "Reveal account number"
 msgstr "显示账户号码"
 
@@ -19157,6 +19175,12 @@ msgstr "角色和职责"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "为新员工设置默认权限的角色"
+
+msgid "Roll secret"
+msgstr "轮换密钥"
+
+msgid "Rolled the signing secret"
+msgstr "已轮换签名密钥"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "无需添加更多工具即可扩展"
@@ -20767,6 +20791,9 @@ msgstr "登录还需要来自您的身份验证器应用的一次性代码"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
+
+msgid "Signing secret"
+msgstr "签名密钥"
 
 msgid "Simultaneous"
 msgstr "同时"

@@ -5900,6 +5900,9 @@ msgstr "サービス番号をコピー"
 msgid "Copy service unique identifier"
 msgstr "サービスの一意な識別子をコピー"
 
+msgid "Copy signing secret"
+msgstr "署名シークレットをコピー"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "仕入先見積の一意識別子をコピー"
 
@@ -7549,6 +7552,9 @@ msgstr "配送済"
 
 msgid "Delivered on"
 msgstr "配送日"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "配信は新しいシークレットで直ちに署名されます。エンドポイントを更新してください。"
 
 msgid "Delivery Date"
 msgstr "納期"
@@ -9204,6 +9210,9 @@ msgstr "会社に属するすべてのレコード。認証情報、連携トー
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "すべての配信にはこのシークレットで署名されたCarbon-Signatureヘッダーが含まれます。Carbonからのリクエストであることを検証してください。"
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
 
@@ -9828,6 +9837,12 @@ msgstr "画像のリサイズに失敗しました: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "CSVの列データの取得に失敗しました。"
+
+msgid "Failed to reveal the secret"
+msgstr "シークレットの表示に失敗しました"
+
+msgid "Failed to roll the secret"
+msgstr "シークレットのロールに失敗しました"
 
 msgid "Failed to save configuration rule"
 msgstr "設定ルールの保存に失敗しました"
@@ -18892,6 +18907,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "改版 {revisionId}"
 
+msgid "Reveal"
+msgstr "表示"
+
 msgid "Reveal account number"
 msgstr "銀行口座番号を表示"
 
@@ -19157,6 +19175,12 @@ msgstr "役割と責任"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "新しい従業員のデフォルト権限を設定するロール"
+
+msgid "Roll secret"
+msgstr "シークレットをロール"
+
+msgid "Rolled the signing secret"
+msgstr "署名シークレットをロールしました"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "さらに多くのツールを追加することなく成長する余地"
@@ -20767,6 +20791,9 @@ msgstr "サインインには認証アプリからのワンタイムコードも
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
+
+msgid "Signing secret"
+msgstr "署名シークレット"
 
 msgid "Simultaneous"
 msgstr "同時"

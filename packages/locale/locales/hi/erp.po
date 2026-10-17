@@ -5900,6 +5900,9 @@ msgstr "सेवा संख्या कॉपी करें"
 msgid "Copy service unique identifier"
 msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
 
+msgid "Copy signing secret"
+msgstr "हस्ताक्षर रहस्य की प्रतिलिपि बनाएं"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "आपूर्तिकर्ता कोटेशन की विशिष्ट पहचान नकल करें"
 
@@ -7549,6 +7552,9 @@ msgstr "डिलीवर किया गया"
 
 msgid "Delivered on"
 msgstr "को डिलीवर किया गया"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "डिलीवरीज़ नए रहस्य के साथ तुरंत हस्ताक्षरित की जाती हैं। अपना एंडपॉइंट इससे अपडेट करें।"
 
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
@@ -9204,6 +9210,9 @@ msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। �
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "प्रत्येक डिलीवरी इस रहस्य के साथ हस्ताक्षरित एक Carbon-Signature हेडर ले जाती है। यह सत्यापित करें कि अनुरोध Carbon से आया है।"
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
@@ -9828,6 +9837,12 @@ msgstr "छवि को पुनः आकार देने में वि
 
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV कॉलम डेटा प्राप्त करने में विफल।"
+
+msgid "Failed to reveal the secret"
+msgstr "रहस्य को प्रकट करने में विफल"
+
+msgid "Failed to roll the secret"
+msgstr "रहस्य को रोल करने में विफल"
 
 msgid "Failed to save configuration rule"
 msgstr "कॉन्फ़िगरेशन नियम सहेजने में विफल"
@@ -18892,6 +18907,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "संस्करण {revisionId}"
 
+msgid "Reveal"
+msgstr "प्रकट करें"
+
 msgid "Reveal account number"
 msgstr "खाता संख्या दिखाएँ"
 
@@ -19157,6 +19175,12 @@ msgstr "भूमिकाएं और जिम्मेदारियां"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "नई कर्मचारियों के लिए डिफ़ॉल्ट अनुमतियां सेट करने वाली भूमिकाएं"
+
+msgid "Roll secret"
+msgstr "रहस्य को रोल करें"
+
+msgid "Rolled the signing secret"
+msgstr "हस्ताक्षर रहस्य को रोल कर दिया"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
@@ -20767,6 +20791,9 @@ msgstr "साइन इन करने के लिए आपके प्र
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
+
+msgid "Signing secret"
+msgstr "हस्ताक्षर रहस्य"
 
 msgid "Simultaneous"
 msgstr "समवर्ती"

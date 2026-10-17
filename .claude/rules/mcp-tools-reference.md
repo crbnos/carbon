@@ -739,6 +739,14 @@ the model context or the MCP dispatch.
   so the `private` bucket's storage RLS will refuse the signed-URL mint — same class
   of limitation as the blocked note-table tools. OAuth is the supported path.
 
+**CAD models** follow the same two steps with their own pair:
+`items_createModelUploadUrl` (`{ name }` → `{ signedUrl, token, path, modelId }`,
+signed into the `temp-staging` bucket, 2.5 GB) and `items_insertModelUpload`
+(`{ modelId, path, name, size, itemId?, jobId?, salesRfqLineId?, quoteLineId?,
+salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the key's
+scopes (`parts_create` / `parts_update`), so an API key with those scopes can mint
+the URL and upload — unlike the document pair above, which signs into a company bucket.
+
 ## Gotchas
 
 - The generator takes a service's parameters from the AST (name, optionality,

@@ -5900,6 +5900,9 @@ msgstr "Skopiuj numer usługi"
 msgid "Copy service unique identifier"
 msgstr "Skopiuj unikalny identyfikator usługi"
 
+msgid "Copy signing secret"
+msgstr "Skopiuj tajny klucz podpisywania"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Skopiuj unikalny identyfikator oferty dostawcy"
 
@@ -7549,6 +7552,9 @@ msgstr "Dostarczona"
 
 msgid "Delivered on"
 msgstr "Dostarczono dnia"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Dostawy są podpisywane nowym tajnym kluczem natychmiast. Aktualizuj swój punkt końcowy za jego pomocą."
 
 msgid "Delivery Date"
 msgstr "Data dostawy"
@@ -9204,6 +9210,9 @@ msgstr "Wszystkie rekordy firmy. Dane uwierzytelniające, tokeny integracji i we
 msgid "Every condition must match"
 msgstr "Każdy warunek musi się zgadzać"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Każda dostawa zawiera nagłówek Carbon-Signature podpisany tym tajnym kluczem. Zweryfikuj go, aby wiedzieć, że żądanie pochodzi z Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Każdy test w zakresie przechodzi w Twoim skonfigurowanym systemie, z Twoimi danymi."
 
@@ -9828,6 +9837,12 @@ msgstr "Nie udało się zmienić rozmiaru obrazu: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "Nie udało się pobrać danych kolumn CSV."
+
+msgid "Failed to reveal the secret"
+msgstr "Nie udało się ujawnić tajnego klucza"
+
+msgid "Failed to roll the secret"
+msgstr "Nie udało się obrócić tajnego klucza"
 
 msgid "Failed to save configuration rule"
 msgstr "Nie udało się zapisać reguły konfiguracji"
@@ -18892,6 +18907,9 @@ msgstr "Wer. {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
+msgid "Reveal"
+msgstr "Ujawnij"
+
 msgid "Reveal account number"
 msgstr "Odsłoń numer konta"
 
@@ -19157,6 +19175,12 @@ msgstr "Role i odpowiedzialności"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Role, które ustawiają domyślne uprawnienia dla nowych pracowników"
+
+msgid "Roll secret"
+msgstr "Obróć tajny klucz"
+
+msgid "Rolled the signing secret"
+msgstr "Obrócono tajny klucz podpisywania"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Miejsce do wzrostu bez dodawania kolejnych narzędzi"
@@ -20767,6 +20791,9 @@ msgstr "Logowanie wymaga również kodu jednorazowego z aplikacji authenticator"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Logowanie nie będzie już wymagać kodu. Wpisz bieżący 6-cyfrowy kod z aplikacji Authenticator, aby potwierdzić."
+
+msgid "Signing secret"
+msgstr "Tajny klucz podpisywania"
 
 msgid "Simultaneous"
 msgstr "Jednocześnie"

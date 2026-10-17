@@ -5900,6 +5900,9 @@ msgstr "Копировать номер услуги"
 msgid "Copy service unique identifier"
 msgstr "Копировать уникальный идентификатор услуги"
 
+msgid "Copy signing secret"
+msgstr "Скопировать подписывающий секрет"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Скопировать уникальный идентификатор предложения поставщика"
 
@@ -7549,6 +7552,9 @@ msgstr "Доставлено"
 
 msgid "Delivered on"
 msgstr "Доставлено"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Доставки подписаны новым секретом сразу же. Обновите конечную точку этим секретом."
 
 msgid "Delivery Date"
 msgstr "Дата поставки"
@@ -9204,6 +9210,9 @@ msgstr "Все записи компании. Учётные данные, то�
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Каждая доставка содержит заголовок Carbon-Signature, подписанный этим секретом. Проверьте его, чтобы узнать, что запрос поступил от Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
@@ -9828,6 +9837,12 @@ msgstr "Не удалось изменить размер изображения
 
 msgid "Failed to retrieve CSV column data."
 msgstr "Не удалось получить данные столбцов CSV."
+
+msgid "Failed to reveal the secret"
+msgstr "Не удалось показать секрет"
+
+msgid "Failed to roll the secret"
+msgstr "Не удалось обновить секрет"
 
 msgid "Failed to save configuration rule"
 msgstr "Ошибка при сохранении правила конфигурации"
@@ -18892,6 +18907,9 @@ msgstr "Ред. {revision}"
 msgid "Rev {revisionId}"
 msgstr "Ревизия {revisionId}"
 
+msgid "Reveal"
+msgstr "Показать"
+
 msgid "Reveal account number"
 msgstr "Раскрыть номер счета"
 
@@ -19157,6 +19175,12 @@ msgstr "Роли и ответственность"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Роли, устанавливающие права доступа по умолчанию для новых сотрудников"
+
+msgid "Roll secret"
+msgstr "Обновить секрет"
+
+msgid "Rolled the signing secret"
+msgstr "Подписывающий секрет обновлен"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Место для роста без добавления новых инструментов"
@@ -20767,6 +20791,9 @@ msgstr "При входе также требуется одноразовый �
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
+
+msgid "Signing secret"
+msgstr "Подписывающий секрет"
 
 msgid "Simultaneous"
 msgstr "Одновременный"

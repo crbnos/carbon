@@ -5900,6 +5900,9 @@ msgstr "서비스 번호 복사"
 msgid "Copy service unique identifier"
 msgstr "서비스 고유 식별자 복사"
 
+msgid "Copy signing secret"
+msgstr "서명 비밀키 복사"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "공급업체 견적 고유 식별자 복사"
 
@@ -7549,6 +7552,9 @@ msgstr "배송됨"
 
 msgid "Delivered on"
 msgstr "배송일"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "전달이 즉시 새 비밀키로 서명됩니다. 엔드포인트를 업데이트하세요."
 
 msgid "Delivery Date"
 msgstr "납기일"
@@ -9204,6 +9210,9 @@ msgstr "모든 회사 범위의 레코드. 자격증명, 연동 토큰 및 웹�
 msgid "Every condition must match"
 msgstr "모든 조건이 일치해야 함"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "모든 전달은 이 비밀키로 서명된 Carbon-Signature 헤더를 포함합니다. 이를 검증하여 요청이 Carbon에서 온 것을 확인할 수 있습니다."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테스트를 통과합니다."
 
@@ -9828,6 +9837,12 @@ msgstr "이미지 크기를 조정하지 못했습니다: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV 열 데이터를 가져오지 못했습니다."
+
+msgid "Failed to reveal the secret"
+msgstr "비밀키 표시에 실패했습니다"
+
+msgid "Failed to roll the secret"
+msgstr "비밀키 갱신에 실패했습니다"
 
 msgid "Failed to save configuration rule"
 msgstr "설정 규칙을 저장하지 못했습니다"
@@ -18892,6 +18907,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "개정 {revisionId}"
 
+msgid "Reveal"
+msgstr "표시"
+
 msgid "Reveal account number"
 msgstr "계좌번호 표시"
 
@@ -19157,6 +19175,12 @@ msgstr "역할 및 책임"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "신규 직원의 기본 권한을 설정하는 역할"
+
+msgid "Roll secret"
+msgstr "비밀키 갱신"
+
+msgid "Rolled the signing secret"
+msgstr "서명 비밀키를 갱신했습니다"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "추가 도구 없이도 성장할 수 있는 여유"
@@ -20767,6 +20791,9 @@ msgstr "로그인에는 인증자 앱의 일회용 코드도 필요합니다"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "로그인할 때 더 이상 코드가 필요하지 않습니다. 확인하려면 인증 앱의 현재 6자리 코드를 입력하세요."
+
+msgid "Signing secret"
+msgstr "서명 비밀키"
 
 msgid "Simultaneous"
 msgstr "동시"

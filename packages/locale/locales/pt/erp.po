@@ -5900,6 +5900,9 @@ msgstr "Copiar número do serviço"
 msgid "Copy service unique identifier"
 msgstr "Copiar identificador exclusivo do serviço"
 
+msgid "Copy signing secret"
+msgstr "Copiar chave de assinatura"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Copiar identificador único da cotação do fornecedor"
 
@@ -7549,6 +7552,9 @@ msgstr "Entregue"
 
 msgid "Delivered on"
 msgstr "Entregue em"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "As entregas são assinadas com a nova chave imediatamente. Atualize seu endpoint com ela."
 
 msgid "Delivery Date"
 msgstr "Data de Entrega"
@@ -9204,6 +9210,9 @@ msgstr "Todos os registros da empresa. Credenciais, tokens de integração e web
 msgid "Every condition must match"
 msgstr "Todas as condições devem corresponder"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Toda entrega carrega um cabeçalho Carbon-Signature assinado com esta chave. Verifique-o para confirmar que a requisição veio de Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todos os testes no escopo passam no seu sistema configurado, com seus dados."
 
@@ -9828,6 +9837,12 @@ msgstr "Falha ao redimensionar imagem: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "Falha ao recuperar dados de coluna CSV."
+
+msgid "Failed to reveal the secret"
+msgstr "Falha ao revelar a chave"
+
+msgid "Failed to roll the secret"
+msgstr "Falha ao renovar a chave"
 
 msgid "Failed to save configuration rule"
 msgstr "Falha ao salvar regra de configuração"
@@ -18892,6 +18907,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
+msgid "Reveal"
+msgstr "Revelar"
+
 msgid "Reveal account number"
 msgstr "Revelar número da conta"
 
@@ -19157,6 +19175,12 @@ msgstr "Funções e Responsabilidades"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Funções que definem permissões padrão para novos funcionários"
+
+msgid "Roll secret"
+msgstr "Renovar chave"
+
+msgid "Rolled the signing secret"
+msgstr "Chave de assinatura renovada"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Espaço para crescer sem adicionar mais ferramentas"
@@ -20767,6 +20791,9 @@ msgstr "Entrar também requer um código único do seu aplicativo autenticador"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Iniciar sessão deixará de exigir um código. Introduza o código de 6 dígitos atual da sua aplicação autenticadora para confirmar."
+
+msgid "Signing secret"
+msgstr "Chave de assinatura"
 
 msgid "Simultaneous"
 msgstr "Simultâneo"

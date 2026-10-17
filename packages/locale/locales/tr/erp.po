@@ -5900,6 +5900,9 @@ msgstr "Hizmet numarasını kopyala"
 msgid "Copy service unique identifier"
 msgstr "Hizmet benzersiz tanımlayıcısını kopyala"
 
+msgid "Copy signing secret"
+msgstr "İmza sırrını kopyala"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Tedarikçi teklifi benzersiz tanıtıcısını kopyala"
 
@@ -7549,6 +7552,9 @@ msgstr "Teslim Edildi"
 
 msgid "Delivered on"
 msgstr "Teslim Tarihi"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Teslimatlar yeni sır ile hemen imzalanır. Uç noktanızı bununla güncelleyin."
 
 msgid "Delivery Date"
 msgstr "Teslimat Tarihi"
@@ -9204,6 +9210,9 @@ msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon beli
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Her teslimat bu sır ile imzalanmış bir Carbon-Signature başlığı taşır. Carbon'dan geldiğini bilmek için bunu doğrulayın."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
 
@@ -9828,6 +9837,12 @@ msgstr "Görüntü yeniden boyutlandırılamadı: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "CSV sütun verileri alınamadı."
+
+msgid "Failed to reveal the secret"
+msgstr "Sır gösterilmesi başarısız oldu"
+
+msgid "Failed to roll the secret"
+msgstr "Sır döndürülmesi başarısız oldu"
 
 msgid "Failed to save configuration rule"
 msgstr "Yapılandırma kuralını kaydetme başarısız oldu"
@@ -18892,6 +18907,9 @@ msgstr "Sürüm {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
+msgid "Reveal"
+msgstr "Göster"
+
 msgid "Reveal account number"
 msgstr "Hesap numarasını göster"
 
@@ -19157,6 +19175,12 @@ msgstr "Roller ve Sorumluluklar"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Yeni çalışanlar için varsayılan izinleri ayarlayan roller"
+
+msgid "Roll secret"
+msgstr "Sırrı Döndür"
+
+msgid "Rolled the signing secret"
+msgstr "İmza sırrı döndürüldü"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Daha fazla araç eklemeden büyüme için yer"
@@ -20767,6 +20791,9 @@ msgstr "Oturum açma ayrıca doğrulayıcı uygulamanızdan bir kerelik kod gere
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Oturum açma artık kod gerektirmez. Onaylamak için kimlik doğrulayıcı uygulamanızdan mevcut 6 haneli kodu girin."
+
+msgid "Signing secret"
+msgstr "İmza sırrı"
 
 msgid "Simultaneous"
 msgstr "Eşzamanlı"

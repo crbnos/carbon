@@ -215,6 +215,7 @@ export const attachments = {
   maintenanceDispatchEvent: { events: true },
   maintenanceSchedule: { events: true },
   maintenanceScheduleItem: { events: true },
+  makeMethod: { events: true },
   material: { statement: ["broadcast_table_changes"] },
   materialForm: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
@@ -224,7 +225,11 @@ export const attachments = {
     before: ["sync_check_method_material_self_reference"],
     events: true
   },
-  modelUpload: { statement: ["broadcast_table_changes", "log_table_changes"] },
+  methodOperation: { events: true },
+  modelUpload: {
+    events: true,
+    statement: ["broadcast_table_changes", "log_table_changes"]
+  },
   nonConformance: {
     after: ["sync_advance_document_sequence"],
     events: true,

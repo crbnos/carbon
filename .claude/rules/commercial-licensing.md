@@ -142,7 +142,9 @@ Refactor one at a time; each PR should leave the tree green.
 - ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
 - ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
-  (`requireEntitlement("WEBHOOKS")`); delivery degrades at runtime via `companyHasFeature`.
+  (`requireEntitlement("WEBHOOKS")`, including `revealWebhookSigningSecret` /
+  `rotateWebhookSigningSecret`); delivery degrades at runtime via `companyHasFeature` and
+  signs with the ungated `getWebhookSigningSecret`.
 - ✅ **Two-factor** — the `requireMfa` company policy in `packages/ee/src/two-factor.server.ts`,
   `requireEntitlement("TWO_FACTOR")` scoped to ENABLING only (a downgrade can still disable).
 - ✅ **Forecast** — `upsert/deleteDemandForecasts` + `upsert/deleteDemandProjections` in

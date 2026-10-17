@@ -2613,6 +2613,8 @@ export const path = {
       generatePath(`${x}/warehouse-transfer/${id}/status`),
     warehouseTransfers: `${x}/inventory/warehouse-transfers`,
     webhook: (id: string) => generatePath(`${x}/settings/webhooks/${id}`),
+    webhookSigningSecret: (id: string) =>
+      generatePath(`${x}/settings/webhooks/secret/${id}`),
     webhooks: `${x}/settings/webhooks`,
     workCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/${id}`),

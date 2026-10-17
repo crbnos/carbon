@@ -5900,6 +5900,9 @@ msgstr "Copiar número de servicio"
 msgid "Copy service unique identifier"
 msgstr "Copiar identificador único del servicio"
 
+msgid "Copy signing secret"
+msgstr "Copiar secreto de firma"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Copiar identificador único de cotización del proveedor"
 
@@ -7549,6 +7552,9 @@ msgstr "Entregado"
 
 msgid "Delivered on"
 msgstr "Entregado el"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Las entregas se firman con el nuevo secreto inmediatamente. Actualiza tu punto final con él."
 
 msgid "Delivery Date"
 msgstr "Fecha de Entrega"
@@ -9204,6 +9210,9 @@ msgstr "Todos los registros de la empresa. Las credenciales, los tokens de integ
 msgid "Every condition must match"
 msgstr "Todas las condiciones deben coincidir"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Cada entrega lleva un encabezado Carbon-Signature firmado con este secreto. Verifica que provino de Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todas las pruebas dentro del alcance se aprueban en su sistema configurado, con sus datos."
 
@@ -9828,6 +9837,12 @@ msgstr "Error al redimensionar la imagen: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "Error al recuperar los datos de columna del CSV."
+
+msgid "Failed to reveal the secret"
+msgstr "No se pudo revelar el secreto"
+
+msgid "Failed to roll the secret"
+msgstr "No se pudo cambiar el secreto"
 
 msgid "Failed to save configuration rule"
 msgstr "Error al guardar la regla de configuración"
@@ -18892,6 +18907,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev. {revisionId}"
 
+msgid "Reveal"
+msgstr "Revelar"
+
 msgid "Reveal account number"
 msgstr "Revelar número de cuenta"
 
@@ -19157,6 +19175,12 @@ msgstr "Roles y Responsabilidades"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Roles que establecen permisos predeterminados para nuevos empleados"
+
+msgid "Roll secret"
+msgstr "Cambiar secreto"
+
+msgid "Rolled the signing secret"
+msgstr "Se cambió el secreto de firma"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Espacio para crecer sin añadir más herramientas"
@@ -20767,6 +20791,9 @@ msgstr "Iniciar sesión también requiere un código de un solo uso de tu aplica
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Iniciar sesión ya no requerirá un código. Ingrese el código de 6 dígitos actual de su aplicación de autenticación para confirmar."
+
+msgid "Signing secret"
+msgstr "Secreto de firma"
 
 msgid "Simultaneous"
 msgstr "Simultáneo"

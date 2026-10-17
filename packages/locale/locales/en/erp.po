@@ -5900,6 +5900,9 @@ msgstr "Copy service number"
 msgid "Copy service unique identifier"
 msgstr "Copy service unique identifier"
 
+msgid "Copy signing secret"
+msgstr "Copy signing secret"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Copy supplier quote unique identifier"
 
@@ -7549,6 +7552,9 @@ msgstr "Delivered"
 
 msgid "Delivered on"
 msgstr "Delivered on"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Deliveries are signed with the new secret at once. Update your endpoint with it."
 
 msgid "Delivery Date"
 msgstr "Delivery Date"
@@ -9204,6 +9210,9 @@ msgstr "Every company-scoped record. Credentials, integration tokens and webhook
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
 
@@ -9828,6 +9837,12 @@ msgstr "Failed to resize image: {errorMessage}"
 
 msgid "Failed to retrieve CSV column data."
 msgstr "Failed to retrieve CSV column data."
+
+msgid "Failed to reveal the secret"
+msgstr "Failed to reveal the secret"
+
+msgid "Failed to roll the secret"
+msgstr "Failed to roll the secret"
 
 msgid "Failed to save configuration rule"
 msgstr "Failed to save configuration rule"
@@ -18892,6 +18907,9 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
+msgid "Reveal"
+msgstr "Reveal"
+
 msgid "Reveal account number"
 msgstr "Reveal account number"
 
@@ -19157,6 +19175,12 @@ msgstr "Roles and Responsibilities"
 
 msgid "Roles that set default permissions for new employees"
 msgstr "Roles that set default permissions for new employees"
+
+msgid "Roll secret"
+msgstr "Roll secret"
+
+msgid "Rolled the signing secret"
+msgstr "Rolled the signing secret"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "Room to grow without bolting on more tools"
@@ -20767,6 +20791,9 @@ msgstr "Signing in also requires a one-time code from your authenticator app"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+
+msgid "Signing secret"
+msgstr "Signing secret"
 
 msgid "Simultaneous"
 msgstr "Simultaneous"
