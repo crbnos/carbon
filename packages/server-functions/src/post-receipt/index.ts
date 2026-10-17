@@ -36,7 +36,6 @@ import {
   debit,
   resolveReturnUnitCost,
   round,
-  settleQuantity,
   type TrackedEntityAttributes
 } from "@carbon/utils";
 import type { Insertable } from "kysely";
@@ -68,6 +67,12 @@ import {
 } from "./posting-lines";
 import { postRentalReceipt } from "./rental-agreement";
 import { planReceiptVoidCostLedger } from "./void-cost-ledger";
+import {
+  assertNoRejectedUntrackedLot,
+  assertReceivedStockOnHand,
+  lockPostedReceipt,
+  toReversingRow
+} from "./void-guards";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -419,7 +424,13 @@ const postReceipt = defineServerFn({
               : null;
 
           await db.transaction().execute(async (trx) => {
+            await lockPostedReceipt(trx, companyId, receiptId);
             await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+            await assertReceivedStockOnHand(
+              trx,
+              companyId,
+              reversingItemLedger.map(toReversingRow)
+            );
             // Refuse to void when this receipt's cost layers were already
             // (partially) consumed — the returned stock moved on (dispositioned,
             // sold, scrapped), so reversing the full receipt would drive stock
@@ -893,28 +904,29 @@ const postReceipt = defineServerFn({
           purchaseOrderStatusVoid = "To Invoice";
         }
 
-        const trackedEntityUpdatesVoid =
-          receiptLineTracking.data?.reduce<
-            Record<
-              string,
-              Database["public"]["Tables"]["trackedEntity"]["Update"]
-            >
-          >((acc, trackedEntity) => {
-            // Voiding restores the lot, but a lot with nothing in it must not
-            // come back Available — that is the zero-quantity husk the drain
-            // rule forbids. Scrapped/Rejected are terminal quality states and
-            // must survive a void, so keep them; everything else returns to
-            // Available (the helper then drains a zero-quantity lot to Consumed).
-            acc[trackedEntity.id] = settleQuantity({
-              quantity: Number(trackedEntity.quantity ?? 0),
+        // The receipt's serials and batches were never received, so the void
+        // drains them to zero: they leave every on-hand list and no picker
+        // offers them. Leaving them at their received quantity made them
+        // Available again (even one On Hold for inspection), pickable on a
+        // shipment or job with no stock behind them. Scrapped/Rejected are
+        // quality markers, already off on-hand, and survive the void at zero
+        // (as update_receipt_line_batch_tracking keeps them); everything else
+        // is Consumed. Not settleQuantity: its drain turns Rejected into
+        // Consumed.
+        const trackedEntitiesVoid = (receiptLineTracking.data ?? []).map(
+          (trackedEntity) => ({
+            id: trackedEntity.id,
+            voidedQuantity: Number(trackedEntity.quantity ?? 0),
+            update: {
+              quantity: 0,
               status:
                 trackedEntity.status === "Scrapped" ||
                 trackedEntity.status === "Rejected"
                   ? trackedEntity.status
-                  : ("Available" as const)
-            });
-            return acc;
-          }, {}) ?? {};
+                  : ("Consumed" as const)
+            }
+          })
+        );
 
         // A Provisional journal has no accounting period.
         const accountingPeriodId =
@@ -923,7 +935,14 @@ const postReceipt = defineServerFn({
             : null;
 
         await db.transaction().execute(async (trx) => {
+          await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
+          await assertReceivedStockOnHand(
+            trx,
+            companyId,
+            reversingItemLedger.map(toReversingRow)
+          );
           // The cost layers this receipt wrote. Without this, a voided
           // receipt's layer stayed open and later issues consumed stock that
           // was never there.
@@ -1069,7 +1088,7 @@ const postReceipt = defineServerFn({
               .execute();
           }
 
-          if (Object.keys(trackedEntityUpdatesVoid).length > 0) {
+          if (trackedEntitiesVoid.length > 0) {
             const voidActivity = await trx
               .insertInto("trackedActivity")
               .values({
@@ -1091,9 +1110,11 @@ const postReceipt = defineServerFn({
 
             const voidActivityId = voidActivity[0]!.id;
 
-            for await (const [id, update] of Object.entries(
-              trackedEntityUpdatesVoid
-            )) {
+            for await (const {
+              id,
+              voidedQuantity,
+              update
+            } of trackedEntitiesVoid) {
               await trx
                 .updateTable("trackedEntity")
                 .set(update)
@@ -1107,7 +1128,7 @@ const postReceipt = defineServerFn({
                   .values({
                     trackedActivityId: voidActivityId,
                     trackedEntityId: id,
-                    quantity: update.quantity ?? 0,
+                    quantity: voidedQuantity,
                     companyId,
                     createdBy: userId,
                     createdAt: today

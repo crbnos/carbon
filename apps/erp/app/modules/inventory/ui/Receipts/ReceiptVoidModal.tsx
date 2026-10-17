@@ -23,19 +23,31 @@ import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
 import { path } from "~/utils/path";
 
-const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
+const ReceiptVoidModal = ({
+  isSalesReturn,
+  onClose
+}: {
+  isSalesReturn: boolean;
+  onClose: () => void;
+}) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
   const navigation = useNavigation();
-  const fetcher = useAction<{}>({
-    onSettled: () => {
-      if (submitted.current) {
+  // A void that succeeds redirects and returns no data; a refusal returns its
+  // message, and the modal stays open to show it.
+  const fetcher = useAction<{ success: boolean; message: string }>({
+    onSettled: (result) => {
+      if (submitted.current && !result) {
         onClose();
       }
     }
   });
   const submitted = useRef(false);
+  const refusal =
+    fetcher.state === "idle" && fetcher.data?.success === false
+      ? fetcher.data.message
+      : null;
 
   return (
     <Modal
@@ -73,14 +85,29 @@ const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
                   <Trans>Reverse the related journal entries</Trans>
                 </li>
                 <li>
-                  <Trans>Restore tracked entities to available</Trans>
+                  <Trans>
+                    Remove the received serial and batch numbers from stock
+                  </Trans>
                 </li>
                 <li>
-                  <Trans>Update the purchase order quantities</Trans>
+                  {isSalesReturn ? (
+                    <Trans>Update the return order quantities</Trans>
+                  ) : (
+                    <Trans>Update the purchase order quantities</Trans>
+                  )}
                 </li>
               </ul>
             </AlertDescription>
           </Alert>
+          {refusal && (
+            <Alert variant="destructive" className="mt-4">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>
+                <Trans>The receipt was not voided</Trans>
+              </AlertTitle>
+              <AlertDescription>{refusal}</AlertDescription>
+            </Alert>
+          )}
         </ModalBody>
         <ModalFooter>
           <HStack>

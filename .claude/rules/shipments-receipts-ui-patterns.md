@@ -201,7 +201,20 @@ applies.
 
 - **`void`** (post fn, `type: "void"`): requires `status === "Posted"`; receipt also blocks if
   `invoiced` (and only PO-sourced receipts can void). Posts reversing `itemLedger` + `journalLine`s,
-  rolls back source-document quantities, restores tracked entities to `Available`, sets `status: "Voided"`.
+  rolls back source-document quantities, sets `status: "Voided"`. A purchase receipt's void drains
+  its tracked entities to quantity 0 / `Consumed` (`Scrapped`/`Rejected` kept) — they were never
+  received, so no picker may offer them; a sales-return receipt's void flips the returned units
+  back to `Consumed`. Inside the transaction (`post-receipt/void-guards.ts`) the void locks the
+  receipt and re-checks `Posted` (two voids at once cannot both reverse it), refuses when the
+  reversal would take a bin below zero — a serial or batch is checked on its own, so a unit that
+  was moved, picked or shipped after posting is caught even when the bin holds other stock — and
+  refuses a purchase receipt whose untracked inspection lot was rejected (the reject route already
+  wrote that stock off). `$receiptId.void.tsx` returns a refusal as `{ success: false, message }`
+  and `ReceiptVoidModal` shows it in place: a flash on the fetcher's redirect back to the same page
+  is never shown. A serial from a voided receipt can be entered on a new receipt: `lines.tracking`
+  reuses the same tracked entity (`idsWithLiveStockHistory` ignores the ledger rows of voided
+  receipts, `onVoidedReceipt` lifts the "taken by another box" refusal), so one unit keeps one
+  history.
   A rental shipment voids while every unit is still On Rent and no `Accrual` row of its lines is
   Posted or held by a Draft run: the units go back to Pending. `post-receipt` refuses a rental
   receipt void ("A rental return cannot be voided. Correct the unit by hand.").

@@ -577,7 +577,11 @@ export function planSerialBoxWrite(args: {
   index: number;
   serialNumber: string;
   box: SerialBoxEntity[];
-  withSerial: (SerialBoxEntity & { attributes: Record<string, unknown> })[];
+  withSerial: (SerialBoxEntity & {
+    attributes: Record<string, unknown>;
+    /** Its `Receipt` is voided: the box it names no longer holds it. */
+    onVoidedReceipt?: boolean;
+  })[];
 }): SerialBoxWrite {
   const boxIds = args.box.map((entity) => entity.id);
   if (!args.serialNumber.trim()) return { kind: "clear", releaseIds: boxIds };
@@ -588,6 +592,7 @@ export function planSerialBoxWrite(args: {
 
   const takenElsewhere = args.withSerial.some(
     (entity) =>
+      !entity.onVoidedReceipt &&
       "Receipt Line Index" in entity.attributes &&
       !isInThisBox(entity.attributes)
   );

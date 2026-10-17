@@ -35,6 +35,56 @@ export async function idsWithStockHistory(
 }
 
 /**
+ * The tracked entities among `entityIds` with stock movements outside voided
+ * receipts. A serial whose only movements are a receipt and that receipt's void
+ * was never received, so a new receipt can take it again; a void writes its
+ * reversal under the receipt's own `documentId`.
+ */
+export async function idsWithLiveStockHistory(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  entityIds: string[]
+): Promise<Set<string>> {
+  if (entityIds.length === 0) return new Set();
+  const rows = await db
+    .selectFrom("itemLedger")
+    .select("itemLedger.trackedEntityId")
+    .distinct()
+    .where("itemLedger.trackedEntityId", "in", entityIds)
+    .where("itemLedger.companyId", "=", companyId)
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("receipt")
+            .select("receipt.id")
+            .whereRef("receipt.id", "=", "itemLedger.documentId")
+            .whereRef("receipt.companyId", "=", "itemLedger.companyId")
+            .where("receipt.status", "=", "Voided")
+        )
+      )
+    )
+    .execute();
+  return new Set(rows.flatMap((row) => row.trackedEntityId ?? []));
+}
+
+/** The receipts among `receiptIds` that are voided. */
+export async function voidedReceiptIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  receiptIds: string[]
+): Promise<Set<string>> {
+  if (receiptIds.length === 0) return new Set();
+  const rows = await db
+    .selectFrom("receipt")
+    .select("id")
+    .where("id", "in", receiptIds)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Voided")
+    .execute();
+  return new Set(rows.map((row) => row.id));
+}
+
+/**
  * Takes serial tracked entities off a receipt: one with no stock history is
  * deleted, one with history only loses its receipt link. Run it inside a
  * transaction.

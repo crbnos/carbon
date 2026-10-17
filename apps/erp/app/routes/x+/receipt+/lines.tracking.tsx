@@ -7,8 +7,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
-  idsWithStockHistory,
-  releaseReceiptSerialEntities
+  idsWithLiveStockHistory,
+  releaseReceiptSerialEntities,
+  voidedReceiptIds
 } from "@carbon/database/receipt-serials";
 import { getLogger } from "@carbon/logger";
 import { isUniqueViolation } from "@carbon/utils";
@@ -169,10 +170,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
               .execute()
           : [];
 
-        const history = await idsWithStockHistory(trx, companyId, [
+        // A serial from a voided receipt was never received: its movements
+        // are the receipt and its void, and the box it names is gone. The new
+        // box takes the same entity, so one unit keeps one history.
+        const history = await idsWithLiveStockHistory(trx, companyId, [
           ...box.map((entity) => entity.id),
           ...withSerial.map((entity) => entity.id)
         ]);
+        const voided = await voidedReceiptIds(
+          trx,
+          companyId,
+          withSerial.flatMap((entity) => {
+            const receipt = (entity.attributes as Record<string, unknown>)
+              ?.Receipt;
+            return typeof receipt === "string" ? [receipt] : [];
+          })
+        );
 
         const plan = planSerialBoxWrite({
           receiptLineId,
@@ -182,11 +195,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
             id: entity.id,
             hasHistory: history.has(entity.id)
           })),
-          withSerial: withSerial.map((entity) => ({
-            id: entity.id,
-            hasHistory: history.has(entity.id),
-            attributes: (entity.attributes ?? {}) as Record<string, unknown>
-          }))
+          withSerial: withSerial.map((entity) => {
+            const attributes = (entity.attributes ?? {}) as Record<
+              string,
+              unknown
+            >;
+            return {
+              id: entity.id,
+              hasHistory: history.has(entity.id),
+              attributes,
+              onVoidedReceipt:
+                typeof attributes.Receipt === "string" &&
+                voided.has(attributes.Receipt)
+            };
+          })
         });
 
         if (plan.kind === "write") {

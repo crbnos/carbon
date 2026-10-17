@@ -356,6 +356,25 @@ describe("planSerialBoxWrite", () => {
     ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["shipped"] });
   });
 
+  it("takes back the serial of a voided receipt as the same unit", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-A",
+        box: [],
+        withSerial: [
+          {
+            id: "voided",
+            hasHistory: false,
+            attributes: { ...box("lineOld", 0), Receipt: "recVoided" },
+            onVoidedReceipt: true
+          }
+        ]
+      })
+    ).toEqual({ kind: "write", targetId: "voided", releaseIds: [] });
+  });
+
   it("reuses a serial entity with no box and no history", () => {
     expect(
       planSerialBoxWrite({
