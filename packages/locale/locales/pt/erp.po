@@ -3584,6 +3584,9 @@ msgstr "Atribua o tempo de execução de máquina que nenhuma operação carrega
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Atribua impressoras a locais. Envio, recebimento e centros de trabalho herdam o padrão do local, a menos que sejam substituídos."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "Atribuir a"
 

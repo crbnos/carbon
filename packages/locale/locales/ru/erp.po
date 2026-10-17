@@ -3584,6 +3584,9 @@ msgstr "Назначьте машинное время обработки, ко�
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "Назначить"
 

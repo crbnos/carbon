@@ -3584,6 +3584,9 @@ msgstr "読み込まれた工程に割り当てられていない機械加工時
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "割り当て先"
 

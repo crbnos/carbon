@@ -33,7 +33,7 @@ Slice A — Foundation
 - [x] Task 11: Resolve tax codes on sales document lines
 - [x] Task 12: Resolve tax codes on purchase document lines
 - [x] Task 13: Carry tax codes through rentals, contracts, fixed assets, conversions and billing generators
-- [ ] Task 14: Accept a tax code in the customer and supplier CSV import
+- [x] Task 14: Accept a tax code in the customer and supplier CSV import
 - [x] Task 15: Seed tax codes in the demo datasets
 
 Slice B — Posting

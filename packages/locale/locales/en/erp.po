@@ -3584,6 +3584,9 @@ msgstr "Assign machine run time that no loaded operation claimed to the right jo
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
+msgid "Assign Tax Code"
+msgstr "Assign Tax Code"
+
 msgid "Assign To"
 msgstr "Assign To"
 

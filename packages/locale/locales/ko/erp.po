@@ -3584,6 +3584,9 @@ msgstr "로드된 공정이 청구하지 않은 기계 시간을 올바른 작�
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "할당"
 

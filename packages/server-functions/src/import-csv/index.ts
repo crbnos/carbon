@@ -198,6 +198,7 @@ type ReferencedTable =
   | "supplierType"
   | "paymentTerm"
   | "shippingMethod"
+  | "taxCode"
   | "supplier"
   | "location"
   | "materialSubstance"
@@ -228,7 +229,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
     { column: "customerStatusId", table: "customerStatus", label: "Status" },
     { column: "customerTypeId", table: "customerType", label: "Type" },
-    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" }
+    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" },
+    { column: "taxCodeId", table: "taxCode", label: "Tax Code" }
   ],
   supplier: [
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
@@ -238,7 +240,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
       column: "shippingMethodId",
       table: "shippingMethod",
       label: "Shipping Method"
-    }
+    },
+    { column: "taxCodeId", table: "taxCode", label: "Tax Code" }
   ],
   part: itemReferences,
   tool: itemReferences,
@@ -1170,7 +1173,12 @@ async function writeItemPlanningOrderMultiples(
 async function upsertTaxIdentifiers(
   trx: Kysely<KyselyDatabase>,
   table: "customerTax" | "supplierTax",
-  records: Array<{ entityId: string; taxId: string | null | undefined }>,
+  records: Array<{
+    entityId: string;
+    taxId: string | null | undefined;
+    /** A CSV sets a tax code but never clears one. */
+    taxCodeId?: string | null;
+  }>,
   cId: string,
   userId: string
 ): Promise<void> {
@@ -1182,6 +1190,7 @@ async function upsertTaxIdentifiers(
       records.map((r) => ({
         customerId: r.entityId,
         taxId: r.taxId ?? null,
+        taxCodeId: r.taxCodeId || null,
         companyId: cId,
         updatedAt: now,
         updatedBy: userId
@@ -1193,6 +1202,7 @@ async function upsertTaxIdentifiers(
           .onConflict((oc) =>
             oc.column("customerId").doUpdateSet({
               taxId: sql`excluded."taxId"`,
+              taxCodeId: sql`COALESCE(excluded."taxCodeId", "customerTax"."taxCodeId")`,
               updatedAt: now,
               updatedBy: userId
             })
@@ -1205,6 +1215,7 @@ async function upsertTaxIdentifiers(
     records.map((r) => ({
       supplierId: r.entityId,
       taxId: r.taxId ?? null,
+      taxCodeId: r.taxCodeId || null,
       companyId: cId,
       updatedAt: now,
       updatedBy: userId
@@ -1216,6 +1227,7 @@ async function upsertTaxIdentifiers(
         .onConflict((oc) =>
           oc.column("supplierId").doUpdateSet({
             taxId: sql`excluded."taxId"`,
+            taxCodeId: sql`COALESCE(excluded."taxCodeId", "supplierTax"."taxCodeId")`,
             updatedAt: now,
             updatedBy: userId
           })
@@ -1349,6 +1361,7 @@ const importCsv = defineServerFn({
             [];
           const customerTaxForInserts: Array<{
             taxId: string | null | undefined;
+            taxCodeId: string | null | undefined;
           }> = [];
           const csvIdsForInserts: string[] = [];
           const customerUpdates: {
@@ -1358,6 +1371,7 @@ const importCsv = defineServerFn({
           const customerTaxUpdates: Array<{
             entityId: string;
             taxId: string | null | undefined;
+            taxCodeId: string | null | undefined;
           }> = [];
           // Updates matched by name (no pre-existing csv mapping). After the
           // updates run, we add csv mappings for these so the next import takes
@@ -1377,6 +1391,7 @@ const importCsv = defineServerFn({
             const {
               id,
               taxId,
+              taxCodeId,
               locationName: _ln,
               addressLine1: _a1,
               addressLine2: _a2,
@@ -1424,7 +1439,11 @@ const importCsv = defineServerFn({
                   updatedBy: userId
                 }
               });
-              customerTaxUpdates.push({ entityId: decision.entityId, taxId });
+              customerTaxUpdates.push({
+                entityId: decision.entityId,
+                taxId,
+                taxCodeId
+              });
               extForUpdates.push({ entityId: decision.entityId, ext });
               // Only attach a CSV->entity mapping when there is a real external id.
               if (matchedByCsvId === undefined && id) {
@@ -1443,7 +1462,7 @@ const importCsv = defineServerFn({
                 createdAt: datetime.timestamp(),
                 createdBy: userId
               } as Database["public"]["Tables"]["customer"]["Insert"]);
-              customerTaxForInserts.push({ taxId });
+              customerTaxForInserts.push({ taxId, taxCodeId });
               csvIdsForInserts.push(id!);
               extForInserts.push(ext);
             }
@@ -1476,7 +1495,8 @@ const importCsv = defineServerFn({
               "customerTax",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                taxId: customerTaxForInserts[i]?.taxId
+                taxId: customerTaxForInserts[i]?.taxId,
+                taxCodeId: customerTaxForInserts[i]?.taxCodeId
               })),
               companyId,
               userId
@@ -1560,6 +1580,7 @@ const importCsv = defineServerFn({
             [];
           const supplierTaxForInserts: Array<{
             taxId: string | null | undefined;
+            taxCodeId: string | null | undefined;
           }> = [];
           const csvIdsForInserts: string[] = [];
           const supplierUpdates: {
@@ -1569,6 +1590,7 @@ const importCsv = defineServerFn({
           const supplierTaxUpdates: Array<{
             entityId: string;
             taxId: string | null | undefined;
+            taxCodeId: string | null | undefined;
           }> = [];
           const csvIdsForNameMatchedUpdates: Array<{
             entityId: string;
@@ -1588,6 +1610,7 @@ const importCsv = defineServerFn({
             const {
               id,
               taxId,
+              taxCodeId,
               locationName: _ln,
               addressLine1: _a1,
               addressLine2: _a2,
@@ -1635,7 +1658,11 @@ const importCsv = defineServerFn({
                   updatedBy: userId
                 }
               });
-              supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
+              supplierTaxUpdates.push({
+                entityId: decision.entityId,
+                taxId,
+                taxCodeId
+              });
               extForUpdates.push({ entityId: decision.entityId, ext });
               // Only attach a CSV->entity mapping when there is a real external id.
               if (matchedByCsvId === undefined && id) {
@@ -1654,7 +1681,7 @@ const importCsv = defineServerFn({
                 createdAt: datetime.timestamp(),
                 createdBy: userId
               } as Database["public"]["Tables"]["supplier"]["Insert"]);
-              supplierTaxForInserts.push({ taxId });
+              supplierTaxForInserts.push({ taxId, taxCodeId });
               csvIdsForInserts.push(id!);
               extForInserts.push(ext);
             }
@@ -1687,7 +1714,8 @@ const importCsv = defineServerFn({
               "supplierTax",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                taxId: supplierTaxForInserts[i]?.taxId
+                taxId: supplierTaxForInserts[i]?.taxId,
+                taxCodeId: supplierTaxForInserts[i]?.taxCodeId
               })),
               companyId,
               userId

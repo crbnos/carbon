@@ -3584,6 +3584,9 @@ msgstr "असाइन करें मशीन रन समय जो कि
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "को असाइन करें"
 

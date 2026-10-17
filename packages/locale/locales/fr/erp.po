@@ -3584,6 +3584,9 @@ msgstr "Attribuer au bon ordre de fabrication le temps machine qu'aucune opérat
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Attribuer des imprimantes aux sites. L'expédition, la réception et les postes de travail héritent du paramètre par défaut du site sauf s'ils sont remplacés."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "Attribuer à"
 

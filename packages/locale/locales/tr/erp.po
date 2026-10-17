@@ -3584,6 +3584,9 @@ msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe ata
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "Ata"
 

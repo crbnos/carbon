@@ -3584,6 +3584,9 @@ msgstr "Przypisz czas obróbki, który żadna załadowana operacja nie roszczył
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Przypisz drukarki do lokalizacji. Wysyłka, otrzymywanie i stanowiska robocze dziedziczą domyślne lokalizacje, chyba że nastąpi nadpisanie."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "Przypisz do"
 

@@ -3584,6 +3584,9 @@ msgstr "Weisen Sie die Maschinenbearbeitungszeit, die kein geladener Arbeitsgang
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Weisen Sie Druckern Standorte zu. Versand, Wareneingang und Arbeitsplätze erben die Standort-Standardeinstellungen, sofern nicht manuell überschrieben."
 
+msgid "Assign Tax Code"
+msgstr ""
+
 msgid "Assign To"
 msgstr "Zuweisen an"
 
