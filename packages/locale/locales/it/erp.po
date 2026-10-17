@@ -20411,6 +20411,9 @@ msgstr "Imposta la versione {0} come versione attiva?"
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "Imposta la tua ubicazione predefinita nelle impostazioni del profilo per scegliere un'unità di stoccaggio."
 
+msgid "Sets the tax percent to the code's rate"
+msgstr ""
+
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Definisce il valore con cui questa unità è riportata nel magazzino. La differenza è registrata tra il magazzino e il conto da cui è stato speso il costo: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
 

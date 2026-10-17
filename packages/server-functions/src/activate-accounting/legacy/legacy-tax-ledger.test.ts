@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The enable writes the tax ledger of each legacy invoice beside its journal,
 // as the posting writes it (.ai/specs/2026-10-16-multi-jurisdiction-tax.md,
 // "The tax subledger"): the same rows, now on the rebuilt journal.
