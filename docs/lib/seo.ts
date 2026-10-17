@@ -47,7 +47,8 @@ export const SEO = {
     },
     mcp: {
       title: "Connect over MCP",
-      description: "Connect Carbon to Claude, Cursor, and other AI clients over MCP.",
+      description:
+        "Connect Carbon to Grok Build, Cursor, and Grok Bot over MCP, including a private network.",
     },
     auth: {
       title: "Carbon API authentication",
