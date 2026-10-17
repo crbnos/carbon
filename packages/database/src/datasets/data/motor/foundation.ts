@@ -277,28 +277,32 @@ export const CUSTOMERS = [
     type: "Industrial OEM",
     status: "Active",
     phone: "+1-616-555-0110",
-    website: "https://ridgelinedrives.com"
+    website: "https://ridgelinedrives.com",
+    taxCode: "IN – State"
   },
   {
     name: "Cardinal Motorworks",
     type: "Automotive",
     status: "Active",
     phone: "+1-317-555-0220",
-    website: "https://cardinalmotorworks.com"
+    website: "https://cardinalmotorworks.com",
+    taxCode: "IN – State"
   },
   {
     name: "Halcyon Aerospace Actuation",
     type: "Aerospace",
     status: "Active",
     phone: "+1-316-555-0330",
-    website: "https://halcyonactuation.com"
+    website: "https://halcyonactuation.com",
+    taxCode: "IN – State"
   },
   {
     name: "Wabash Industrial Supply",
     type: "Distribution",
     status: "Lead",
     phone: "+1-765-555-0440",
-    website: "https://wabashindustrial.com"
+    website: "https://wabashindustrial.com",
+    taxCode: "IN – State"
   }
 ];
 
@@ -952,6 +956,49 @@ export const motorFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  // Indiana has one statewide rate and no local sales tax.
+  taxAuthorities: [{ name: "Indiana Department of Revenue" }],
+  taxCodes: [
+    {
+      name: "IN – State",
+      countryCode: "US",
+      state: "IN",
+      components: [
+        {
+          name: "Indiana State",
+          authority: "Indiana Department of Revenue",
+          taxPercent: 7
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Indiana sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Indiana Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 7%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "IN",
+      components: [
+        {
+          name: "Indiana Use Tax",
+          authority: "Indiana Department of Revenue",
+          taxPercent: 7
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,

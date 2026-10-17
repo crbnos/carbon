@@ -34,7 +34,7 @@ Slice A — Foundation
 - [ ] Task 12: Resolve tax codes on purchase document lines
 - [ ] Task 13: Carry tax codes through rentals, contracts, fixed assets, conversions and billing generators
 - [ ] Task 14: Accept a tax code in the customer and supplier CSV import
-- [ ] Task 15: Seed tax codes in the demo datasets
+- [x] Task 15: Seed tax codes in the demo datasets
 
 Slice B — Posting
 - [x] Task 16: Post sales tax per component, with header-shipping tax
@@ -882,6 +882,16 @@ pnpm db:check:datasets
 ```
 
 **Out of scope:** `taxLedger` floors (slice B adds them after posting writes rows).
+
+**Deviation (executed):**
+- Only satellite is Houston-based, so each dataset gets the codes of its own plant's state:
+  - TX – Houston (6.25 + 2);
+  - PA – Allegheny (6 + 1);
+  - IL – Rockford (6.25 + 2.5);
+  - IN – State (7). Indiana has no local rate, so motor has one authority.
+- Every dataset also gets "Out of State – Exempt" and a Use Tax code (Reverse Charge, 0% recoverable).
+- Each domestic customer gets the local code. A government customer and a non-USD customer get the exempt code.
+- Floors are the measured minimum: `taxAuthority: 1`, `taxCode: 3`, `taxCodeComponent: 3`.
 
 ---
 

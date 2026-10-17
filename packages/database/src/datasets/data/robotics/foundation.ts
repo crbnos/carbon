@@ -255,28 +255,32 @@ export const CUSTOMERS = [
     type: "Automotive",
     status: "Active",
     phone: "+1-313-555-0100",
-    website: "https://lakeshoreauto.com"
+    website: "https://lakeshoreauto.com",
+    taxCode: "PA – Allegheny"
   },
   {
     name: "Cascade Integration Group",
     type: "System Integrator",
     status: "Active",
     phone: "+1-503-555-0200",
-    website: "https://cascadeintegration.com"
+    website: "https://cascadeintegration.com",
+    taxCode: "PA – Allegheny"
   },
   {
     name: "Northwind Electronics",
     type: "Electronics",
     status: "Active",
     phone: "+1-408-555-0300",
-    website: "https://northwindelectronics.com"
+    website: "https://northwindelectronics.com",
+    taxCode: "PA – Allegheny"
   },
   {
     name: "Alpine Research Institute",
     type: "Research",
     status: "Lead",
     phone: "+1-608-555-0400",
-    website: "https://alpineresearch.edu"
+    website: "https://alpineresearch.edu",
+    taxCode: "PA – Allegheny"
   }
 ];
 
@@ -818,6 +822,56 @@ export const roboticsFoundation: FoundationData = {
   workCenterProcessLinks: WORK_CENTER_PROCESS_LINKS,
   customerTypes: CUSTOMER_TYPES,
   supplierTypes: SUPPLIER_TYPES,
+  taxAuthorities: [
+    { name: "Pennsylvania Department of Revenue" },
+    { name: "Allegheny County" }
+  ],
+  taxCodes: [
+    {
+      name: "PA – Allegheny",
+      countryCode: "US",
+      state: "PA",
+      components: [
+        {
+          name: "Pennsylvania State",
+          authority: "Pennsylvania Department of Revenue",
+          taxPercent: 6
+        },
+        {
+          name: "Allegheny County",
+          authority: "Allegheny County",
+          taxPercent: 1
+        }
+      ]
+    },
+    {
+      name: "Out of State – Exempt",
+      reportingCategory: "Exempt",
+      invoiceMessage: "Exempt from Pennsylvania sales tax",
+      countryCode: "US",
+      components: [
+        {
+          name: "Exempt",
+          authority: "Pennsylvania Department of Revenue",
+          taxPercent: 0
+        }
+      ]
+    },
+    {
+      name: "Use Tax 7%",
+      calculationType: "Reverse Charge",
+      reportingCategory: "Reverse Charge",
+      countryCode: "US",
+      state: "PA",
+      components: [
+        {
+          name: "Pennsylvania Use Tax",
+          authority: "Pennsylvania Department of Revenue",
+          taxPercent: 7
+        }
+      ]
+    }
+  ],
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
