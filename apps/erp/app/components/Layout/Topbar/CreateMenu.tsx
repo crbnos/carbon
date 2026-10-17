@@ -160,7 +160,7 @@ export function useCreate(): CreateLink[] {
     if (permissions.can("create", "users")) {
       links.push({
         name: t`Employee`,
-        to: path.to.newEmployee,
+        to: path.to.bulkInviteEmployees,
         shortcut: CREATE_SHORTCUTS.employee,
         icon: <LuUsers />
       });

@@ -11647,6 +11647,9 @@ msgstr "Stocks, en tant que produits finis"
 msgid "Invite"
 msgstr "Inviter"
 
+msgid "Invite Employees"
+msgstr "Inviter des employés"
+
 msgid "Invite Expired"
 msgstr "Invitation expirée"
 
@@ -18333,6 +18336,9 @@ msgstr "Retirer les données corrompues et appliquer"
 
 msgid "Remove corrupted data and restore"
 msgstr "Retirer les données corrompues et restaurer"
+
+msgid "Remove employee"
+msgstr "Supprimer l'employé"
 
 msgid "Remove Employee"
 msgstr "Supprimer l'employé"

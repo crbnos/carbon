@@ -495,6 +495,7 @@ export const path = {
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     billing: `${x}/settings/billing`,
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
+    bulkInviteEmployees: `${x}/users/employees/bulk-invite`,
     bulkReleaseJob: `${x}/job/release`,
     bulkUpdateIssue: `${x}/issue/update`,
     bulkUpdateIssueWorkflow: `${x}/issue-workflow/update`,
