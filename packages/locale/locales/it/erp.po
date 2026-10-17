@@ -3235,6 +3235,10 @@ msgstr "Sei sicuro di voler eliminare l'unità di stoccaggio: {0}? Questa azione
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare il tipo di fornitore: {0}? Questa azione non può essere annullata."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare l'unità di misura: {0}? Questa azione non può essere annullata."
@@ -6397,6 +6401,12 @@ msgstr "Tipo di archiviazione creato"
 msgid "Created supplier: {0}"
 msgstr "Fornitore creato: {0}"
 
+msgid "Created tax authority"
+msgstr ""
+
+msgid "Created tax registration"
+msgstr ""
+
 msgid "Created tool"
 msgstr "Strumento creato"
 
@@ -7484,6 +7494,12 @@ msgstr "Elimina Reso Fornitore"
 
 msgid "Delete Supplier Type"
 msgstr "Elimina Tipo Fornitore"
+
+msgid "Delete Tax Authority"
+msgstr ""
+
+msgid "Delete Tax Registration"
+msgstr ""
 
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
@@ -8644,6 +8660,12 @@ msgstr "Modifica processo del fornitore"
 msgid "Edit Supplier Type"
 msgstr "Modifica Tipo Fornitore"
 
+msgid "Edit Tax Authority"
+msgstr ""
+
+msgid "Edit Tax Registration"
+msgstr ""
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Modifica la regola per rimuovere il flag \"Applies to all\""
 
@@ -9662,6 +9684,14 @@ msgstr "Impossibile creare il tipo di archiviazione: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Impossibile creare il fornitore: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14088,6 +14118,12 @@ msgstr "Nuovo Fornitore Parte"
 
 msgid "New Supplier Return"
 msgstr "Nuovo Reso Fornitore"
+
+msgid "New Tax Authority"
+msgstr ""
+
+msgid "New Tax Registration"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Nuovo Foglio Presenze"
@@ -21874,6 +21910,12 @@ msgstr "Imposta e spedizione"
 msgid "Tax Amount"
 msgstr "Importo Imposta"
 
+msgid "Tax Authorities"
+msgstr ""
+
+msgid "Tax Authority"
+msgstr ""
+
 msgid "Tax Book Value"
 msgstr "Valore contabile fiscale"
 
@@ -21929,6 +21971,12 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Registration"
+msgstr ""
+
+msgid "Tax Registrations"
 msgstr ""
 
 msgid "Tax Residual Value"
@@ -23014,6 +23062,9 @@ msgstr "Il fornitore che la pianificazione suggerisce per primo quando questo ar
 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "Il record del fornitore a cui è collegato questo account del portale; solo i contatti già su quel fornitore possono essere selezionati come titolare dell'account di seguito."
+
+msgid "The supplier you pay this authority's tax to"
+msgstr ""
 
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "Il numero di quotazione/proposta del fornitore; registrato per la tracciabilità su PO che si converte da questo preventivo."

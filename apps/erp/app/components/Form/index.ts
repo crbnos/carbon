@@ -86,6 +86,7 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import TaxCode, { useTaxCodes } from "./TaxCode";
 import { TaxFields, useTaxPair } from "./TaxFields";
 import Timezone from "./Timezone";
 import Tool from "./Tool";
@@ -175,6 +176,7 @@ export {
   Suppliers,
   SupplierType,
   Tags,
+  TaxCode,
   TaxFields,
   TextArea,
   TimePicker,
@@ -187,6 +189,7 @@ export {
   useAssetClasses,
   useConfigurableItems,
   useEmptyState,
+  useTaxCodes,
   useTaxPair,
   WorkCenter,
   WorkCenters

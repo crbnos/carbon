@@ -3235,6 +3235,10 @@ msgstr "Depolama birimini silmek istediğinizden emin misiniz: {0}? Bu geri alı
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Tedarikçi türünü silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Birim ölçüsünü silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
@@ -6397,6 +6401,12 @@ msgstr "Depolama türü oluşturuldu"
 msgid "Created supplier: {0}"
 msgstr "Oluşturulan tedarikçi: {0}"
 
+msgid "Created tax authority"
+msgstr ""
+
+msgid "Created tax registration"
+msgstr ""
+
 msgid "Created tool"
 msgstr "Oluşturulan araç"
 
@@ -7484,6 +7494,12 @@ msgstr "Tedarikçi İadesini Sil"
 
 msgid "Delete Supplier Type"
 msgstr "Tedarikçi Türünü Sil"
+
+msgid "Delete Tax Authority"
+msgstr ""
+
+msgid "Delete Tax Registration"
+msgstr ""
 
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
@@ -8644,6 +8660,12 @@ msgstr "Tedarikçi Prosesi Düzenle"
 msgid "Edit Supplier Type"
 msgstr "Tedarikçi Türünü Düzenle"
 
+msgid "Edit Tax Authority"
+msgstr ""
+
+msgid "Edit Tax Registration"
+msgstr ""
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Kuralı düzenleyerek \"Tümüne uygulanır\" işaretini kaldırın"
 
@@ -9662,6 +9684,14 @@ msgstr "Depolama türü oluşturulamadı: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Tedarikçi oluşturulamadı: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14088,6 +14118,12 @@ msgstr "Yeni Tedarikçi Parçası"
 
 msgid "New Supplier Return"
 msgstr "Yeni Tedarikçi İadesi"
+
+msgid "New Tax Authority"
+msgstr ""
+
+msgid "New Tax Registration"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Yeni Vardiya"
@@ -21874,6 +21910,12 @@ msgstr "Vergi ve Nakliye"
 msgid "Tax Amount"
 msgstr "Vergi Tutarı"
 
+msgid "Tax Authorities"
+msgstr ""
+
+msgid "Tax Authority"
+msgstr ""
+
 msgid "Tax Book Value"
 msgstr "Vergi Defter değeri"
 
@@ -21929,6 +21971,12 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Registration"
+msgstr ""
+
+msgid "Tax Registrations"
 msgstr ""
 
 msgid "Tax Residual Value"
@@ -23014,6 +23062,9 @@ msgstr "Bu öğenin satın alınması gerektiğinde planlamanın ilk olarak öne
 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "Bu portal hesabının bağlandığı tedarikçi kaydı; yalnızca o tedarikçi üzerinde olan ilgili kişiler hesap sahibi olarak seçilebilir."
+
+msgid "The supplier you pay this authority's tax to"
+msgstr ""
 
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "Tedarikçinin kendi alıntı/teklif numarası; bu alıntıdan dönüştürülen PO'da izlenebilirlik için kaydedilmiştir."

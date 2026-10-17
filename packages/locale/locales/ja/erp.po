@@ -3235,6 +3235,10 @@ msgstr "保管ユニット: {0} を削除してもよろしいですか?これ�
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "仕入先タイプ: {0} を削除してもよろしいですか?これは元に戻せません。"
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "本当に計測単位「{0}」を削除してもよろしいですか？この操作は取り消せません。"
@@ -6397,6 +6401,12 @@ msgstr "ストレージタイプを作成しました"
 msgid "Created supplier: {0}"
 msgstr "仕入先を作成しました: {0}"
 
+msgid "Created tax authority"
+msgstr ""
+
+msgid "Created tax registration"
+msgstr ""
+
 msgid "Created tool"
 msgstr "ツールを作成しました"
 
@@ -7484,6 +7494,12 @@ msgstr "仕入先返品を削除"
 
 msgid "Delete Supplier Type"
 msgstr "仕入先タイプを削除"
+
+msgid "Delete Tax Authority"
+msgstr ""
+
+msgid "Delete Tax Registration"
+msgstr ""
 
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
@@ -8644,6 +8660,12 @@ msgstr "仕入先工法を編集"
 msgid "Edit Supplier Type"
 msgstr "仕入先タイプを編集"
 
+msgid "Edit Tax Authority"
+msgstr ""
+
+msgid "Edit Tax Registration"
+msgstr ""
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "ルールを編集して、\"すべてに適用\" フラグを削除します"
 
@@ -9662,6 +9684,14 @@ msgstr "ストレージタイプの作成に失敗しました: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "仕入先を作成できませんでした: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14088,6 +14118,12 @@ msgstr "新規仕入先部品"
 
 msgid "New Supplier Return"
 msgstr "新規仕入先返品"
+
+msgid "New Tax Authority"
+msgstr ""
+
+msgid "New Tax Registration"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "新しいタイムカード"
@@ -21874,6 +21910,12 @@ msgstr "税金と配送"
 msgid "Tax Amount"
 msgstr "税額"
 
+msgid "Tax Authorities"
+msgstr ""
+
+msgid "Tax Authority"
+msgstr ""
+
 msgid "Tax Book Value"
 msgstr "税務帳簿価額"
 
@@ -21929,6 +21971,12 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Registration"
+msgstr ""
+
+msgid "Tax Registrations"
 msgstr ""
 
 msgid "Tax Residual Value"
@@ -23014,6 +23062,9 @@ msgstr "このアイテムが購買される必要があるときに計画が最
 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "このポータルアカウントがリンクする仕入先レコード。その仕入先上にある担当者のみが以下のアカウント保有者として選択できます。"
+
+msgid "The supplier you pay this authority's tax to"
+msgstr ""
 
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "仕入先独自の見積/提案番号。この見積から変換されるPOのトレーサビリティのために記録されます。"

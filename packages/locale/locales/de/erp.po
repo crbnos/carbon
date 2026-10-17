@@ -3235,6 +3235,10 @@ msgstr "Sind Sie sicher, dass Sie die Lagereinheit: {0} löschen möchten? Dies 
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den Lieferantentyp: {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie die Mengeneinheit: {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
@@ -6397,6 +6401,12 @@ msgstr "Speichertyp erstellt"
 msgid "Created supplier: {0}"
 msgstr "Lieferant erstellt: {0}"
 
+msgid "Created tax authority"
+msgstr ""
+
+msgid "Created tax registration"
+msgstr ""
+
 msgid "Created tool"
 msgstr "Werkzeug erstellt"
 
@@ -7484,6 +7494,12 @@ msgstr "Lieferantenrückgabe löschen"
 
 msgid "Delete Supplier Type"
 msgstr "Lieferantentyp löschen"
+
+msgid "Delete Tax Authority"
+msgstr ""
+
+msgid "Delete Tax Registration"
+msgstr ""
 
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
@@ -8644,6 +8660,12 @@ msgstr "Lieferantenverfahren bearbeiten"
 msgid "Edit Supplier Type"
 msgstr "Lieferantentyp bearbeiten"
 
+msgid "Edit Tax Authority"
+msgstr ""
+
+msgid "Edit Tax Registration"
+msgstr ""
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Bearbeiten Sie die Regel, um das Flag \"Applies to all\" zu entfernen"
 
@@ -9662,6 +9684,14 @@ msgstr "Fehler beim Erstellen des Speichertyps: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Fehler beim Erstellen des Lieferanten: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14088,6 +14118,12 @@ msgstr "Neuer Lieferantenteil"
 
 msgid "New Supplier Return"
 msgstr "Neue Lieferantenrückgabe"
+
+msgid "New Tax Authority"
+msgstr ""
+
+msgid "New Tax Registration"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Neue Zeiterfassung"
@@ -21874,6 +21910,12 @@ msgstr "Steuern & Versand"
 msgid "Tax Amount"
 msgstr "Steuerbetrag"
 
+msgid "Tax Authorities"
+msgstr ""
+
+msgid "Tax Authority"
+msgstr ""
+
 msgid "Tax Book Value"
 msgstr "Steuerlicher Buchwert"
 
@@ -21929,6 +21971,12 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Registration"
+msgstr ""
+
+msgid "Tax Registrations"
 msgstr ""
 
 msgid "Tax Residual Value"
@@ -23014,6 +23062,9 @@ msgstr "Der Lieferant, den die Planung zuerst vorschlägt, wenn dieser Artikel g
 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "Der Lieferantendatensatz, mit dem dieses Portal-Konto verknüpft ist; nur Kontakte, die bereits bei diesem Lieferanten sind, können als Kontoinhaber unten ausgewählt werden."
+
+msgid "The supplier you pay this authority's tax to"
+msgstr ""
 
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "Die Quote-/Angebotsnummer des Lieferants; aufgezeichnet für die Rückverfolgbarkeit auf der PO, die aus diesem Angebot umgewandelt wird."

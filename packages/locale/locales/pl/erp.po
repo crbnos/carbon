@@ -3235,6 +3235,10 @@ msgstr "Czy na pewno chcesz usunąć jednostkę magazynową: {0}? Tej operacji n
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć typ dostawcy: {0}? Tej czynności nie można cofnąć."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć jednostkę miary: {0}? Tej czynności nie można cofnąć."
@@ -6397,6 +6401,12 @@ msgstr "Utworzony typ magazynu"
 msgid "Created supplier: {0}"
 msgstr "Utworzony dostawca: {0}"
 
+msgid "Created tax authority"
+msgstr ""
+
+msgid "Created tax registration"
+msgstr ""
+
 msgid "Created tool"
 msgstr "Narzędzie utworzone"
 
@@ -7484,6 +7494,12 @@ msgstr "Usuń zwrot dostawcy"
 
 msgid "Delete Supplier Type"
 msgstr "Usuń typ dostawcy"
+
+msgid "Delete Tax Authority"
+msgstr ""
+
+msgid "Delete Tax Registration"
+msgstr ""
 
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
@@ -8644,6 +8660,12 @@ msgstr "Edytuj proces dostawcy"
 msgid "Edit Supplier Type"
 msgstr "Edytuj typ dostawcy"
 
+msgid "Edit Tax Authority"
+msgstr ""
+
+msgid "Edit Tax Registration"
+msgstr ""
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "Edytuj regułę, aby usunąć flagę „Dotyczy wszystkich\""
 
@@ -9662,6 +9684,14 @@ msgstr "Nie udało się utworzyć typu magazynu: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Nie udało się utworzyć dostawcy: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14088,6 +14118,12 @@ msgstr "Nowa część dostawcy"
 
 msgid "New Supplier Return"
 msgstr "Nowy zwrot dostawcy"
+
+msgid "New Tax Authority"
+msgstr ""
+
+msgid "New Tax Registration"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Nowy Timecard"
@@ -21874,6 +21910,12 @@ msgstr "Podatek i wysyłka"
 msgid "Tax Amount"
 msgstr "Kwota podatku"
 
+msgid "Tax Authorities"
+msgstr ""
+
+msgid "Tax Authority"
+msgstr ""
+
 msgid "Tax Book Value"
 msgstr "Podatkowa wartość księgowa"
 
@@ -21929,6 +21971,12 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Registration"
+msgstr ""
+
+msgid "Tax Registrations"
 msgstr ""
 
 msgid "Tax Residual Value"
@@ -23014,6 +23062,9 @@ msgstr "Dostawca, którego planowanie sugeruje w pierwszej kolejności, gdy ten 
 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "Rekord dostawcy, do którego jest powiązane to konto portalu; tylko kontakty już na tym dostawcy mogą być wybrane jako posiadacz konta poniżej."
+
+msgid "The supplier you pay this authority's tax to"
+msgstr ""
 
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "Numer własnej oferty / propozycji dostawcy; zanotowany dla identyfikowalności na zamówieniu, które się z tej oferty konwertuje."

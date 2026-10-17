@@ -3235,6 +3235,10 @@ msgstr "보관 단위를 삭제하시겠습니까: {0}? 이 작업은 취소할 
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "공급업체 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: taxAuthority.name
+msgid "Are you sure you want to delete the tax authority: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
 msgstr "측정 단위 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -6397,6 +6401,12 @@ msgstr "저장 유형 생성됨"
 msgid "Created supplier: {0}"
 msgstr "공급업체 생성됨: {0}"
 
+msgid "Created tax authority"
+msgstr ""
+
+msgid "Created tax registration"
+msgstr ""
+
 msgid "Created tool"
 msgstr "공구 생성됨"
 
@@ -7484,6 +7494,12 @@ msgstr "공급업체 반품 삭제"
 
 msgid "Delete Supplier Type"
 msgstr "공급업체 유형 삭제"
+
+msgid "Delete Tax Authority"
+msgstr ""
+
+msgid "Delete Tax Registration"
+msgstr ""
 
 #. placeholder {0}: formatDate(deleting.invoiceDate)
 msgid "Delete the {0} invoice"
@@ -8644,6 +8660,12 @@ msgstr "공급업체 공법 편집"
 msgid "Edit Supplier Type"
 msgstr "공급업체 유형 편집"
 
+msgid "Edit Tax Authority"
+msgstr ""
+
+msgid "Edit Tax Registration"
+msgstr ""
+
 msgid "Edit the rule to remove the \"Applies to all\" flag"
 msgstr "규칙을 편집하여 「모든 항목에 적용」 플래그를 제거하세요"
 
@@ -9662,6 +9684,14 @@ msgstr "저장 유형 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "공급업체 생성 실패: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax authority: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tax registration: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14088,6 +14118,12 @@ msgstr "새 공급업체 부품"
 
 msgid "New Supplier Return"
 msgstr "새 공급업체 반품"
+
+msgid "New Tax Authority"
+msgstr ""
+
+msgid "New Tax Registration"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "새 근무기록"
@@ -21874,6 +21910,12 @@ msgstr "세금 및 배송비"
 msgid "Tax Amount"
 msgstr "세금 금액"
 
+msgid "Tax Authorities"
+msgstr ""
+
+msgid "Tax Authority"
+msgstr ""
+
 msgid "Tax Book Value"
 msgstr "세금 장부가액"
 
@@ -21929,6 +21971,12 @@ msgid "Tax Received"
 msgstr ""
 
 msgid "Tax Received (default)"
+msgstr ""
+
+msgid "Tax Registration"
+msgstr ""
+
+msgid "Tax Registrations"
 msgstr ""
 
 msgid "Tax Residual Value"
@@ -23014,6 +23062,9 @@ msgstr "이 품목을 구매해야 할 때 계획에서 먼저 제안하는 공�
 
 msgid "The supplier record this portal account links to; only contacts already on that supplier can be selected as the account holder below."
 msgstr "이 포털 계정이 연결되는 공급업체 레코드입니다. 아래에서 계정 소유자로 선택할 수 있는 것은 해당 공급업체에 이미 등록된 담당자뿐입니다."
+
+msgid "The supplier you pay this authority's tax to"
+msgstr ""
 
 msgid "The supplier's own quote / proposal number; recorded for traceability on the PO that converts from this quote."
 msgstr "공급업체 자신의 견적서 / 제안 번호; 이 견적서에서 전환되는 구매발주의 추적성을 위해 기록됩니다."
