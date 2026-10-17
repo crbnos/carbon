@@ -17,7 +17,7 @@ import type { ActionFunctionArgs } from "react-router";
 import {
   changeNoticeStageEvent,
   notifyChangeNoticeTransition
-} from "~/modules/items/items.server";
+} from "~/modules/items";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

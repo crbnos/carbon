@@ -1,5 +1,5 @@
 {
-  "totalTools": 1558,
+  "totalTools": 1560,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -370,6 +370,7 @@
     {"name":"items_copyItem","classification":"WRITE","paramCount":8,"schema":"9c8674273b59","response":"4e1a8f1febce","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"parts:create","paginates":false},
     {"name":"items_copyMakeMethod","classification":"WRITE","paramCount":8,"schema":"9c8674273b59","response":"4e1a8f1febce","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"parts:create","paginates":false},
     {"name":"items_createItemDocumentUploadUrl","classification":"WRITE","paramCount":2,"schema":"6dcd390c3681","response":"4ad76afe0777","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create","paginates":false},
+    {"name":"items_createItemThumbnailUploadUrl","classification":"WRITE","paramCount":2,"schema":"6dcd390c3681","response":"e7dd9ea63165","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create","paginates":false},
     {"name":"items_createModelUploadUrl","classification":"WRITE","paramCount":1,"schema":"098974972159","response":"56f546fd3bc7","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create","paginates":false},
     {"name":"items_createRevision","classification":"WRITE","paramCount":3,"schema":"59340adc1219","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create","paginates":false},
     {"name":"items_deleteChangeNotice","classification":"DESTRUCTIVE","paramCount":1,"schema":"29578070edb2","response":"bcde375ebd4c","injectAuth":"companyId","permission":"parts:delete","paginates":false},
@@ -525,6 +526,7 @@
     {"name":"items_updateItem","classification":"WRITE","paramCount":18,"schema":"f24ba73701ab","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_updateItemCost","classification":"WRITE","paramCount":2,"schema":"c55de757a7e4","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_updateItemMethodAndSourcing","classification":"WRITE","paramCount":3,"schema":"1165eb54378a","response":"none","injectAuth":"companyId+updatedBy+userId","permission":"parts:update","paginates":false},
+    {"name":"items_updateItemThumbnail","classification":"WRITE","paramCount":2,"schema":"023aafe5b1be","response":"f806de8159c8","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_updateMaterialOrder","classification":"WRITE","paramCount":1,"schema":"c822495a7892","response":"646de62ab761","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false,"result":"envelopes"},
     {"name":"items_updateMaterialProperties","classification":"WRITE","paramCount":7,"schema":"ba2c8db7ad05","response":"82322ed42796","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_updateOperationOrder","classification":"WRITE","paramCount":1,"schema":"c822495a7892","response":"646de62ab761","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false,"result":"envelopes"},
