@@ -17885,6 +17885,9 @@ msgstr "Yeniden Hesapla"
 msgid "Recalculate Run"
 msgstr "Yeniden Hesapla Çalıştırması"
 
+msgid "Recalculate taxes"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "Birim Maliyetini Yeniden Hesapla"
 

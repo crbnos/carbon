@@ -23,6 +23,7 @@ import {
   updateRows
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
+import { buildTaxLedgerRows } from "@carbon/database/tax-ledger";
 import { getLogger } from "@carbon/logger";
 import {
   calculateDueDate,
@@ -38,6 +39,7 @@ import {
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { currencyDecimals } from "../lib/currency-decimals";
 import {
   PURCHASE_INVOICE_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
@@ -49,6 +51,7 @@ import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
 import { loadTaxCodes } from "../lib/tax-codes";
+import { negateDocumentTaxLedger } from "../lib/tax-ledger-writes";
 import { loadLeasePostingFacts, resolveLeasePostingLine } from "./lease-lines";
 import {
   buildPurchaseInvoicePostingLines,
@@ -599,6 +602,15 @@ const postPurchaseInvoice = defineServerFn({
                 }))
               )
               .execute();
+
+            await negateDocumentTaxLedger(trx, {
+              companyId,
+              documentType: "Purchase Invoice",
+              documentId: invoiceId,
+              journalId,
+              postingDate: today,
+              createdBy: userId
+            });
           }
 
           if (reversingItemLedger.length > 0) {
@@ -1854,6 +1866,58 @@ const postPurchaseInvoice = defineServerFn({
             )
             .returning(["id"])
             .execute();
+
+          // The tax ledger: one row per line per component, from the same
+          // split the journal posted (the amounts' tax legs).
+          const ledgerCurrencyCode =
+            purchaseInvoice.data?.currencyCode ??
+            (
+              await trx
+                .selectFrom("company")
+                .select("baseCurrencyCode")
+                .where("id", "=", companyId)
+                .executeTakeFirstOrThrow()
+            ).baseCurrencyCode;
+          const taxLedgerRows = buildTaxLedgerRows({
+            companyId,
+            createdBy: userId,
+            source: "Purchase",
+            documentType: "Purchase Invoice",
+            documentId: invoiceId,
+            journalId,
+            postingDate: today,
+            supplierId: purchaseInvoice.data?.supplierId ?? null,
+            currencyCode: ledgerCurrencyCode,
+            exchangeRate: purchaseInvoice.data?.exchangeRate ?? 1,
+            currencyDecimals: await currencyDecimals(
+              trx,
+              companyId,
+              ledgerCurrencyCode
+            ),
+            sign: 1,
+            lines: purchaseInvoiceLines.data
+              .filter((line) => line.invoiceLineType !== "Comment")
+              .map((line) => {
+                const amounts = amountsByLineId.get(line.id);
+                const legs = amounts?.taxLegs ?? [];
+                const selfAssessed = legs.some((leg) => leg.selfAssessed);
+                return {
+                  documentLineId: line.id,
+                  taxCodeId: line.taxCodeId,
+                  taxableBase:
+                    (amounts?.nominalBaseCost ?? 0) + (line.shippingCost ?? 0),
+                  components: legs.map((leg) => leg.part),
+                  taxPercent: line.taxPercent ?? 0,
+                  taxAmount: selfAssessed
+                    ? (amounts?.selfAssessedTaxBase ?? 0)
+                    : (line.taxAmount ?? 0),
+                  exempt: null
+                };
+              })
+          });
+          if (taxLedgerRows.length > 0) {
+            await trx.insertInto("taxLedger").values(taxLedgerRows).execute();
+          }
 
           if (dimensionMap.size > 0) {
             const journalLineDimensionInserts = journalLineDimensionRows({

@@ -17885,6 +17885,9 @@ msgstr "Przelicz ponownie"
 msgid "Recalculate Run"
 msgstr "Przelicz przebieg"
 
+msgid "Recalculate taxes"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "Przelicz koszt jednostkowy"
 

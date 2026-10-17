@@ -25,6 +25,7 @@ import {
   updateRows
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
+import { buildTaxLedgerRows } from "@carbon/database/tax-ledger";
 import { getLogger } from "@carbon/logger";
 import {
   allocateSalesHeaderShipping,
@@ -59,7 +60,9 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { salesTaxLedgerLines } from "../lib/sales-tax-ledger";
 import { loadTaxCodes } from "../lib/tax-codes";
+import { negateDocumentTaxLedger } from "../lib/tax-ledger-writes";
 import {
   netInvestmentInLeasesAccount,
   planSalesInvoiceAccounts,
@@ -473,6 +476,38 @@ const postSalesInvoice = defineServerFn({
             ),
             today
           );
+          // What the tax ledger snapshots: the customer's exemption and the
+          // lines' non-taxable items.
+          const invoiceItemIds = [
+            ...new Set(
+              salesInvoiceLines.data
+                .map((line: InvoiceLineRecord) => line.itemId)
+                .filter((id: string | null): id is string => !!id)
+            )
+          ];
+          const [customerTaxRecord, nonTaxableItems] = await Promise.all([
+            invoiceHeader.customerId
+              ? db
+                  .selectFrom("customerTax")
+                  .select([
+                    "taxExempt",
+                    "taxExemptionReason",
+                    "taxExemptionCertificateNumber"
+                  ])
+                  .where("customerId", "=", invoiceHeader.customerId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst()
+              : undefined,
+            invoiceItemIds.length > 0
+              ? db
+                  .selectFrom("item")
+                  .select("id")
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", invoiceItemIds)
+                  .where("taxable", "=", false)
+                  .execute()
+              : []
+          ]);
           const taxAccountIds = [...taxCodes.values()].flatMap((code) =>
             code.components.flatMap((component) =>
               component.taxReceivedAccountId
@@ -1066,6 +1101,42 @@ const postSalesInvoice = defineServerFn({
                 )
                 .returning(["id"])
                 .execute();
+
+              const taxLedgerRows = buildTaxLedgerRows({
+                companyId,
+                createdBy: userId,
+                source: "Sales",
+                documentType: "Sales Invoice",
+                documentId: invoiceId,
+                journalId: journalResult.id,
+                postingDate: today,
+                customerId: invoiceHeader.customerId,
+                currencyCode: invoiceCurrencyCode,
+                exchangeRate: invoiceExchangeRate,
+                currencyDecimals: invoiceCurrencyDecimals,
+                sign: 1,
+                lines: salesTaxLedgerLines({
+                  lines: salesInvoiceLines.data,
+                  headerShipping: headerShippingAllocations,
+                  taxCodes,
+                  nonTaxableItemIds: new Set(
+                    nonTaxableItems.map((item) => item.id)
+                  ),
+                  exemption: customerTaxRecord?.taxExempt
+                    ? {
+                        reason: customerTaxRecord.taxExemptionReason,
+                        certificateNumber:
+                          customerTaxRecord.taxExemptionCertificateNumber
+                      }
+                    : null
+                })
+              });
+              if (taxLedgerRows.length > 0) {
+                await trx
+                  .insertInto("taxLedger")
+                  .values(taxLedgerRows)
+                  .execute();
+              }
 
               const journalLineDimensionInserts = journalLineDimensionRows({
                 journalLineIds: journalLineResults.map((line) => line.id),
@@ -2031,6 +2102,15 @@ const postSalesInvoice = defineServerFn({
                 )
                 .returning(["id"])
                 .execute();
+
+              await negateDocumentTaxLedger(trx, {
+                companyId,
+                documentType: "Sales Invoice",
+                documentId: invoiceId,
+                journalId: voidJournalResult.id,
+                postingDate: today,
+                createdBy: userId
+              });
 
               if (contractVoidEntries.length > 0) {
                 await trx

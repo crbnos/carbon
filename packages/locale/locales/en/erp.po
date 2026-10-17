@@ -17885,6 +17885,9 @@ msgstr "Recalculate"
 msgid "Recalculate Run"
 msgstr "Recalculate Run"
 
+msgid "Recalculate taxes"
+msgstr "Recalculate taxes"
+
 msgid "Recalculate Unit Cost"
 msgstr "Recalculate Unit Cost"
 

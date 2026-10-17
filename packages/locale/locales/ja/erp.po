@@ -17885,6 +17885,9 @@ msgstr "再計算"
 msgid "Recalculate Run"
 msgstr "再計算実行"
 
+msgid "Recalculate taxes"
+msgstr ""
+
 msgid "Recalculate Unit Cost"
 msgstr "単位原価を再計算"
 
