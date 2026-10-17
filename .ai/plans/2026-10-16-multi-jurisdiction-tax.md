@@ -27,8 +27,8 @@ Slice A — Foundation
 - [x] Task 5: Write the pure tax-component helpers with tests
 - [x] Task 6: Add tax models and service functions, with the resolver
 - [x] Task 7: Add the tax code API route and the `TaxCode` select
-- [ ] Task 8: Build the Tax Codes screens
-- [ ] Task 9: Build the Tax Authorities and Tax Registrations screens
+- [x] Task 8: Build the Tax Codes screens
+- [x] Task 9: Build the Tax Authorities and Tax Registrations screens
 - [ ] Task 10: Add code assignment to customers, suppliers, locations and items
 - [ ] Task 11: Resolve tax codes on sales document lines
 - [ ] Task 12: Resolve tax codes on purchase document lines
