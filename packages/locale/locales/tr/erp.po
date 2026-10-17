@@ -3502,6 +3502,9 @@ msgstr "Varlık hesabı"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Mallar veya hizmetler alınmadan önce tedarikçilere yapılan ön ödemeler için varlık hesabı"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "Varlık Edinme Maliyeti"
 
@@ -10524,9 +10527,6 @@ msgstr "Banka hizmet bedelleri ve benzeri ücretler için muhasebe hesabı."
 msgid "GL account for interest income or expense."
 msgstr "Faiz geliri veya gideri için GL hesabı."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Tedarikçilere ödenen satın alma vergisi için GL hesabı (veya geri alınabilir)."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "Alıcının kendisini değerlendirdiği ters masraf kuralları altında tahakkuk eden Vergi için Muhasebe hesabı."
 
@@ -10569,6 +10569,9 @@ msgstr "Müşterilere verilen erken ödeme iskontolarının kaydedildiği muhase
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Tedarikçilerden alınan erken ödeme iskontolarının kaydedildiği muhasebe hesabı."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Amortisman muhasebeleştirildiğinde her dönem alacağa kaydedilen ve varlık satıldığında veya hurda hale getirildiğinde tam olarak borca kaydedilen muhasebe kontra-varlık hesabı."
 
@@ -10590,8 +10593,8 @@ msgstr "Bir varlığın defter değeri zayıflamaya maruz kaldığında, yani ge
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Stok dışı satın almalar (malzeme, hizmet) için muhasebe gider hesabı."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "Müşterilerden toplanan satış vergisi için alacağa kaydedilen muhasebe yükümlülük hesabı."
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "Muhasebe mutabakatı"
@@ -12451,11 +12454,8 @@ msgstr "Çalışanlara ödenen gider geri ödemelerine ait borç tutarları içi
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Hızlandırılmış amortisman nedeniyle ertelenen vergiler için borç hesabı"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "Müşterilerden toplanan satış vergisi için borç hesabı"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "Satın almalar üzerinde ödenen vergi için borç hesabı"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Hizmet tarihli veya kiralama fatura satırı, hasılat kazanılmadan önce faturalandırıldığında kredi verilen yükümlülük; muhasebe tanıma çalıştırmaları tarafından serbest bırakılır"
@@ -17338,12 +17338,6 @@ msgstr "Satın alma mal kabulü"
 msgid "Purchase Return"
 msgstr "Satın alma iadesi"
 
-msgid "Purchase Tax Payable"
-msgstr "Satın Alma Vergisi Ödenecek (varsayılan)"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "Ödenecek satın alma vergisi (varsayılan)"
-
 msgid "Purchase to Order"
 msgstr "Siparişe göre satın alma"
 
@@ -19432,12 +19426,6 @@ msgstr "Satış Kuralları"
 
 msgid "Sales shipments"
 msgstr "Satış sevkiyatları"
-
-msgid "Sales Tax Payable"
-msgstr "Ödenmesi gereken satış vergisi"
-
-msgid "Sales Tax Payable (default)"
-msgstr "Ödenmesi gereken satış vergisi (varsayılan)"
 
 msgid "Sales-type lease"
 msgstr "Satış tipi kiralama"
@@ -21919,11 +21907,23 @@ msgstr "Vergi Yöntemi"
 msgid "Tax Method (default)"
 msgstr "Vergi Yöntemi (varsayılan)"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "Vergi yüzdesi"
 
 msgid "Tax Percent"
 msgstr "Vergi Yüzdesi"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "Vergi Kalıntı değeri"
@@ -21948,6 +21948,9 @@ msgstr "Vergi Faydalı ömür (Ay)"
 
 msgid "Tax:"
 msgstr "Vergi:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "Vergiler"

@@ -3502,6 +3502,9 @@ msgstr "자산 계정"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "공급업체에 상품 또는 서비스를 받기 전에 선금으로 지불한 금액을 기록하는 자산 계정"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "자산 취득원가"
 
@@ -10524,9 +10527,6 @@ msgstr "은행 서비스 요금 및 유사 수수료를 위한 계정과목입�
 msgid "GL account for interest income or expense."
 msgstr "이자 수익 또는 비용을 위한 총계정원장 계정입니다."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "공급업체에 납부한 매입세(또는 환급 가능)를 위한 계정과목입니다."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "구매자가 자체 평가하는 역계산 규칙에 따라 누적된 세금의 계정과목"
 
@@ -10569,6 +10569,9 @@ msgstr "고객에게 제공한 조기결제 할인이 기록되는 총계정원�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "공급업체로부터 받은 조기결제 할인이 기록되는 총계정원장 계정입니다."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "각 기간에 감가상각이 전기될 때 대변되고 자산이 판매 또는 폐기될 때 전액 차변되는 자산 상계 계정과목입니다."
 
@@ -10590,8 +10593,8 @@ msgstr "자산의 순장부가액이 손상으로 인해 감소할 때(즉, 회�
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "비재고성 구매(소모품, 서비스)를 위한 총계정원장 비용 계정입니다."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "고객에게서 징수한 판매세를 위해 대변되는 부채 계정과목입니다."
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "총계정원장 대사"
@@ -12451,11 +12454,8 @@ msgstr "직원 비용 환급에 대해 직원에게 빚진 금액의 부채 계�
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "가속 감가상각으로 인한 이연법인세 부채 계정"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "고객으로부터 수집한 판매세 부채 계정"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "구매 시 납부한 세금 부채 계정"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "서비스 날짜가 있는 송장 라인 또는 리스 라인이 매출 창출 전에 송장이 발행될 때 차변에 기입되는 부채로, 인식 실행으로 해제됩니다."
@@ -17338,12 +17338,6 @@ msgstr "구매 입고"
 msgid "Purchase Return"
 msgstr "구매 반품"
 
-msgid "Purchase Tax Payable"
-msgstr "매입 세금 미지급"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "매입 세금 미지급 (기본값)"
-
 msgid "Purchase to Order"
 msgstr "주문 구매"
 
@@ -19432,12 +19426,6 @@ msgstr "판매 규칙"
 
 msgid "Sales shipments"
 msgstr "판매 출하"
-
-msgid "Sales Tax Payable"
-msgstr "매출 세금 납부"
-
-msgid "Sales Tax Payable (default)"
-msgstr "매출 세금 납부 (기본값)"
 
 msgid "Sales-type lease"
 msgstr "판매-유형 리스"
@@ -21919,11 +21907,23 @@ msgstr "세금 방식"
 msgid "Tax Method (default)"
 msgstr "세금 방식(기본값)"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "세금 비율"
 
 msgid "Tax Percent"
 msgstr "세금 비율"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "세금 잔존가액"
@@ -21948,6 +21948,9 @@ msgstr "세금 내용연수 (개월)"
 
 msgid "Tax:"
 msgstr "세금:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "세금"

@@ -3502,6 +3502,9 @@ msgstr "Asset Account"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Asset account for advance payments made to suppliers before goods or services are received"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr "Asset account for the recoverable share of tax paid on purchases"
+
 msgid "Asset Acquisition Cost"
 msgstr "Asset Acquisition Cost"
 
@@ -10524,9 +10527,6 @@ msgstr "GL account for bank service charges and similar fees."
 msgid "GL account for interest income or expense."
 msgstr "GL account for interest income or expense."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "GL account for purchase tax paid to suppliers (or reclaimable)."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 
@@ -10569,6 +10569,9 @@ msgstr "GL account where early-payment discounts given to customers are recorded
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL account where early-payment discounts taken from suppliers are recorded."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr "GL asset account debited with the recoverable share of tax paid to suppliers."
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 
@@ -10590,8 +10593,8 @@ msgstr "GL expense account debited when an asset's carrying value is reduced by 
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "GL expense account for non-inventory purchases (supplies, services)."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "GL liability account credited for sales tax collected from customers."
+msgid "GL liability account credited with tax collected from customers."
+msgstr "GL liability account credited with tax collected from customers."
 
 msgid "GL tie-out"
 msgstr "GL tie-out"
@@ -12451,11 +12454,8 @@ msgstr "Liability account for amounts owed to employees for expense reimbursemen
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Liability account for deferred taxes from accelerated depreciation"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "Liability account for sales tax collected from customers"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "Liability account for tax paid on purchases"
+msgid "Liability account for tax collected from customers"
+msgstr "Liability account for tax collected from customers"
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
@@ -17338,12 +17338,6 @@ msgstr "Purchase receipts"
 msgid "Purchase Return"
 msgstr "Purchase Return"
 
-msgid "Purchase Tax Payable"
-msgstr "Purchase Tax Payable"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "Purchase Tax Payable (default)"
-
 msgid "Purchase to Order"
 msgstr "Purchase to Order"
 
@@ -19432,12 +19426,6 @@ msgstr "Sales Rules"
 
 msgid "Sales shipments"
 msgstr "Sales shipments"
-
-msgid "Sales Tax Payable"
-msgstr "Sales Tax Payable"
-
-msgid "Sales Tax Payable (default)"
-msgstr "Sales Tax Payable (default)"
 
 msgid "Sales-type lease"
 msgstr "Sales-type lease"
@@ -21919,11 +21907,23 @@ msgstr "Tax Method"
 msgid "Tax Method (default)"
 msgstr "Tax Method (default)"
 
+msgid "Tax Paid"
+msgstr "Tax Paid"
+
+msgid "Tax Paid (default)"
+msgstr "Tax Paid (default)"
+
 msgid "Tax percent"
 msgstr "Tax percent"
 
 msgid "Tax Percent"
 msgstr "Tax Percent"
+
+msgid "Tax Received"
+msgstr "Tax Received"
+
+msgid "Tax Received (default)"
+msgstr "Tax Received (default)"
 
 msgid "Tax Residual Value"
 msgstr "Tax Residual Value"
@@ -21948,6 +21948,9 @@ msgstr "Tax Useful Life (Months)"
 
 msgid "Tax:"
 msgstr "Tax:"
+
+msgid "Taxable"
+msgstr "Taxable"
 
 msgid "Taxes"
 msgstr "Taxes"

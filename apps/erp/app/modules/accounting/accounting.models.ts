@@ -478,11 +478,11 @@ export const defaultBalanceSheetAccountValidator = z.object({
   // `payablesAccount`, and a required field would break saves on every company
   // whose chart has no Employee Reimbursements Payable account.
   employeeReimbursementsPayableAccount: z.string().optional(),
-  salesTaxPayableAccount: z.string().min(1, {
-    message: "Sales tax payable account is required"
+  taxReceivedAccount: z.string().min(1, {
+    message: "Tax Received account is required"
   }),
-  purchaseTaxPayableAccount: z.string().min(1, {
-    message: "Purchase tax payable account is required"
+  taxPaidAccount: z.string().min(1, {
+    message: "Tax Paid account is required"
   }),
   reverseChargeSalesTaxPayableAccount: z.string().min(1, {
     message: "Reverse charge sales tax payable account is required"

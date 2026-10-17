@@ -71,7 +71,7 @@ export function planSalesInvoiceAccounts(
     receivables.intercompany,
     defaults.salesAccount,
     shippingAccountId,
-    defaults.salesTaxPayableAccount
+    defaults.taxReceivedAccount
   );
 
   // A dated line with no deferral account refuses to post rather than book
@@ -292,7 +292,7 @@ export function resolveSalesInvoiceAccounts(
       receivables: account(receivablesAccountId(intercompany)),
       sales: account(plan.defaults.salesAccount),
       shipping: account(plan.shippingAccountId),
-      tax: account(plan.defaults.salesTaxPayableAccount)
+      tax: account(plan.defaults.taxReceivedAccount)
     }),
     deferredRevenue,
     rental,

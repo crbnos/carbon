@@ -57,7 +57,7 @@ The July spec designed most of this but none of it was built. Its posting paths 
   - `reportingCategory` (`Standard` | `Reduced` | `Zero-Rated` | `Exempt` | `Reverse Charge` | `Export` | `Out of Scope`), which return layouts filter on
   - `taxesShipping`, default false (see Header shipping)
   - an optional `invoiceMessage` (the VAT clause a document prints)
-  - optional `countryId` and `state`, which drive suggestions only
+  - optional `countryCode` and `state`, which drive suggestions only
 - **`taxCodeComponent`** — one or more rows per code. Each row holds a name ("TX State", "City of Austin"), an optional `taxAuthorityId`, `taxPercent`, `sequence`, `isCompound` (tax on tax), `recoverablePercent`, optional account overrides, and `effectiveDate` / `expirationDate`.
 - **`taxAuthority`** — who the company pays (HMRC, the Texas Comptroller). An optional `supplierId` lets Phase 2 pay a return through AP.
 - **`taxRegistration`** — the company's own registration numbers by country and state, with dates. Sales documents print the matching one.
@@ -86,7 +86,7 @@ Carbon removed the posting-group matrix on purpose (`20260229000000_drop-posting
 
 A purchase line uses `supplierTax.taxCodeId`, else `supplier.taxPercent`.
 
-When a user creates or edits a customer, a location or a supplier, Carbon suggests active codes whose `countryId` and `state` match the address. The user confirms. A document never reads the address to pick a code, so a posted line's tax always traces to two fields.
+When a user creates or edits a customer, a location or a supplier, Carbon suggests active codes whose `countryCode` and `state` match the address. The user confirms. A document never reads the address to pick a code, so a posted line's tax always traces to two fields.
 
 The resolver runs on every in-scope document (grill 3):
 
@@ -319,7 +319,7 @@ CREATE TABLE "taxCode" (
     "reportingCategory" "taxReportingCategory" NOT NULL DEFAULT 'Standard',
     "taxesShipping" BOOLEAN NOT NULL DEFAULT FALSE,   -- grill 4
     "invoiceMessage" TEXT,
-    "countryId" INTEGER REFERENCES "country"("id"),   -- suggestion only
+    "countryCode" TEXT REFERENCES "country"("alpha2"),   -- suggestion only
     "state" TEXT,                                     -- suggestion only
     "active" BOOLEAN NOT NULL DEFAULT TRUE,
     -- audit columns, "customFields" JSONB
@@ -354,7 +354,7 @@ CREATE TABLE "taxCodeComponent" (
 CREATE TABLE "taxRegistration" (
     "id" TEXT NOT NULL DEFAULT id('txr'),
     "companyId" TEXT NOT NULL,
-    "countryId" INTEGER NOT NULL REFERENCES "country"("id"),
+    "countryCode" TEXT NOT NULL REFERENCES "country"("alpha2"),
     "state" TEXT,
     "registrationNumber" TEXT NOT NULL,
     "effectiveDate" DATE,
@@ -454,7 +454,7 @@ In `apps/erp/app/modules/accounting/` (models and service, no new service file):
 
 - CRUD for `taxCode` (with a batch upsert of components), `taxAuthority`, `taxRegistration`, and in Phase 2 `taxReturnLayout`. Standard `(client, companyId, …)` → `{data, error}` shape, with list variants that take `GenericQueryFilters`.
 - `resolveLineTaxes(client, companyId, { source, customerId?, customerLocationId?, supplierId?, itemId?, date })` returns `{ taxCodeId, taxPercent, components[], exempt, exemptionReason }`. It writes nothing. Phase 3 sends it to Avalara when the company enables that.
-- `suggestTaxCodes(client, companyId, { countryId?, state? })`.
+- `suggestTaxCodes(client, companyId, { countryCode?, state? })`.
 - `getEffectiveTaxComponents(client, companyId, taxCodeId, date)` does the effective-date filter and the compound rate math. The resolver, the form preview, posting and the tests share it.
 - `getTaxLiability(client, companyId, { startDate, endDate, taxAuthorityId? })`.
 - Validators: `taxCodeValidator`, `taxCodeComponentValidator` (rate and recoverable percent 0–1, expiry after effective), `taxAuthorityValidator`, `taxRegistrationValidator`. Phase 2 adds `taxReturnValidator` and `taxReturnLayoutLineValidator`.

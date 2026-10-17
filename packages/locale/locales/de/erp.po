@@ -3502,6 +3502,9 @@ msgstr "Vermögenskonto"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Aktivkonto für Vorauszahlungen an Lieferanten vor Erhalt von Waren oder Dienstleistungen"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "Vermögensanschaffungskosten"
 
@@ -10524,9 +10527,6 @@ msgstr "Sachkonto für Bankgebühren und ähnliche Servicegebühren."
 msgid "GL account for interest income or expense."
 msgstr "Sachkonto für Zinsenerträge oder -aufwendungen."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "GL-Konto für die an Lieferanten gezahlte Vorsteuer (abzugsfähig bzw. erstattungsfähig)."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "Sachkonto für Steuern, die unter Umkehrbuchungsregeln aufgelaufen sind, bei denen der Einkäufer eine Selbstveranlagung durchführt."
 
@@ -10569,6 +10569,9 @@ msgstr "GL-Konto, auf dem den Kunden gewährte Frühzahlungsrabatte erfasst werd
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL-Konto, auf dem von Lieferanten in Anspruch genommene Frühzahlungsrabatte erfasst werden."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Gegenpositions-Sachkonto zur Bilanzaktiva, das gutgeschrieben wird, wenn Abschreibung in jeder Periode gebucht wird, und vollständig belastet wird, wenn das Anlagegut verkauft oder abgegangen ist."
 
@@ -10590,8 +10593,8 @@ msgstr "Aufwands-Sachkonto, das belastet wird, wenn der Buchwert eines Anlagegut
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Aufwandssachkonto für Käufe nicht lagergeführter Artikel (Verbrauchsmaterial, Dienstleistungen)."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "Verbindlichkeiten-Sachkonto, das für eingezogene Umsatzsteuer von Kunden gutgeschrieben wird."
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "Sachkontoabstimmung"
@@ -12451,11 +12454,8 @@ msgstr "Verbindlichkeitskonto für Beträge, die Mitarbeitern für Aufwanderstat
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Verbindlichkeitskonto für latente Steuern aus beschleunigter Abschreibung"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "Verbindlichkeitskonto für eingezogene Umsatzsteuer von Kunden"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "Haftungskonto für Steuern auf Einkäufe"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Verbindlichkeit, die verbucht wird, wenn eine Position mit Leistungsdatum oder eine Miete vor Verdienungsdatum fakturiert wird; wird durch Anerkennungsläufe freigegeben."
@@ -17338,12 +17338,6 @@ msgstr "Wareneingänge"
 msgid "Purchase Return"
 msgstr "Rückgabe"
 
-msgid "Purchase Tax Payable"
-msgstr "Umsatzsteuer Verbindlichkeiten (Standard)"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "Zahlbare Einkaufssteuer (Standard)"
-
 msgid "Purchase to Order"
 msgstr "Einzelbeschaffung"
 
@@ -19432,12 +19426,6 @@ msgstr "Verkaufsregeln"
 
 msgid "Sales shipments"
 msgstr "Verkaufslieferungen"
-
-msgid "Sales Tax Payable"
-msgstr "Umsatzsteuer zu zahlen"
-
-msgid "Sales Tax Payable (default)"
-msgstr "Umsatzsteuer zu zahlen (Standard)"
 
 msgid "Sales-type lease"
 msgstr "Mietkauf"
@@ -21919,11 +21907,23 @@ msgstr "Steuermethode"
 msgid "Tax Method (default)"
 msgstr "Steuermethode (Standard)"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "Steuerprozentsatz"
 
 msgid "Tax Percent"
 msgstr "Steuerprozentsatz"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "Steuerlicher Restwert"
@@ -21948,6 +21948,9 @@ msgstr "Steuerliche Nutzungsdauer (Monate)"
 
 msgid "Tax:"
 msgstr "Steuern:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "Steuern"

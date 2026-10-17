@@ -3502,6 +3502,9 @@ msgstr "संपत्ति खाता"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "आपूर्तिकर्ताओं को माल या सेवाएं प्राप्त करने से पहले किए गए अग्रिम भुगतान के लिए संपत्ति खाता"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "परिसंपत्ति अधिग्रहण लागत"
 
@@ -10524,9 +10527,6 @@ msgstr "बैंक सेवा शुल्क और समान शुल�
 msgid "GL account for interest income or expense."
 msgstr "ब्याज आय या व्यय के लिए GL खाता।"
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "आपूर्तिकर्ताओं को भुगतान किया गया खरीद कर के लिए GL खाता (या वसूली योग्य)।"
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "लेजर खाता रिवर्स-चार्ज नियमों के तहत अर्जित कर के लिए जहां क्रेता स्वयं मूल्यांकन करता है।"
 
@@ -10569,6 +10569,9 @@ msgstr "GL खाता जहां ग्राहकों को दी ग�
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "GL खाता जहां आपूर्तिकर्ताओं से ली गई जल्दी भुगतान छूट दर्ज की जाती है।"
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "लेजर विरोधी-संपत्ति खाता जमा किया जाता है जब प्रत्येक अवधि में मूल्यह्रास पोस्ट होता है और पूरी तरह से डेबिट किया जाता है जब संपत्ति को बेचा या स्क्रैप किया जाता है।"
 
@@ -10590,8 +10593,8 @@ msgstr "सामान्य खाता बही व्यय खाता �
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "गैर-इन्वेंटरी खरीद (आपूर्ति, सेवाएं) के लिए सामान्य खाता बही व्यय खाता।"
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "ग्राहकों से एकत्र किए गए बिक्री कर के लिए सामान्य खाता बही देयता खाता जमा किया गया।"
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "सामान्य खाता बही समन्वय"
@@ -12451,11 +12454,8 @@ msgstr "कर्मचारियों को व्यय प्रतिप
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "त्वरित मूल्यह्रास से आस्थगित कर के लिए देयता खाता"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "ग्राहकों से एकत्र किए गए बिक्री कर के लिए दायित्व खाता"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "खरीद पर भुगतान किए गए कर के लिए दायित्व खाता"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "देयता जमा की जाती है जब सेवा-तारीखित या किराये की चालान पंक्ति राजस्व अर्जित होने से पहले बिल किया जाता है; पहचान रन द्वारा जारी किया जाता है।"
@@ -17338,12 +17338,6 @@ msgstr "क्रय प्राप्ति"
 msgid "Purchase Return"
 msgstr "क्रय रिटर्न"
 
-msgid "Purchase Tax Payable"
-msgstr "खरीद कर देय (डिफ़ॉल्ट)"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "क्रय"
-
 msgid "Purchase to Order"
 msgstr "खरीद से ऑर्डर"
 
@@ -19432,12 +19426,6 @@ msgstr "बिक्री नियम"
 
 msgid "Sales shipments"
 msgstr "बिक्री शिपमेंट"
-
-msgid "Sales Tax Payable"
-msgstr "देय बिक्रय कर"
-
-msgid "Sales Tax Payable (default)"
-msgstr "देय बिक्रय कर (डिफ़ॉल्ट)"
 
 msgid "Sales-type lease"
 msgstr "बिक्रय-प्रकार लीज"
@@ -21919,11 +21907,23 @@ msgstr "कर पद्धति"
 msgid "Tax Method (default)"
 msgstr "कर पद्धति (डिफ़ॉल्ट)"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "कर प्रतिशत"
 
 msgid "Tax Percent"
 msgstr "कर प्रतिशत"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "कर अवशिष्ट मूल्य"
@@ -21948,6 +21948,9 @@ msgstr "कर उपयोगी जीवन (महीने)"
 
 msgid "Tax:"
 msgstr "कर:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "कर"

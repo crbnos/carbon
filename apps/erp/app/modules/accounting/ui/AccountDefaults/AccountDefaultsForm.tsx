@@ -303,18 +303,18 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
         description: t`Default accounts for tax-related transactions`,
         fields: [
           {
-            name: "salesTaxPayableAccount",
-            label: t`Sales Tax Payable`,
-            description: t`Liability account for sales tax collected from customers`,
+            name: "taxReceivedAccount",
+            label: t`Tax Received`,
+            description: t`Liability account for tax collected from customers`,
             badgeType: "Liability",
-            termId: "account-default-sales-tax-payable"
+            termId: "account-default-tax-received"
           },
           {
-            name: "purchaseTaxPayableAccount",
-            label: t`Purchase Tax Payable`,
-            description: t`Liability account for tax paid on purchases`,
-            badgeType: "Liability",
-            termId: "account-default-purchase-tax-payable"
+            name: "taxPaidAccount",
+            label: t`Tax Paid`,
+            description: t`Asset account for the recoverable share of tax paid on purchases`,
+            badgeType: "Asset",
+            termId: "account-default-tax-paid"
           },
           {
             name: "reverseChargeSalesTaxPayableAccount",

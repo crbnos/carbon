@@ -899,6 +899,18 @@ export const accounts = [
     consolidatedRate: "Current",
     createdBy: "system"
   },
+  {
+    key: "1170",
+    number: "1170",
+    name: "Tax Paid",
+    isGroup: false,
+    parentKey: "receivables",
+    accountType: "Other Current Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
 
   // Inventory
   {
@@ -1336,19 +1348,7 @@ export const accounts = [
   {
     key: "2210",
     number: "2210",
-    name: "Sales Tax Payable",
-    isGroup: false,
-    parentKey: "tax-liabilities",
-    accountType: "Tax",
-    incomeBalance: "Balance Sheet",
-    class: "Liability",
-    consolidatedRate: "Current",
-    createdBy: "system"
-  },
-  {
-    key: "2220",
-    number: "2220",
-    name: "Purchase Tax Payable",
+    name: "Tax Received",
     isGroup: false,
     parentKey: "tax-liabilities",
     accountType: "Tax",
@@ -2282,8 +2282,8 @@ export const accountDefaults = {
   payablesAccount: "2010",
   intercompanyPayablesAccount: "2020",
   goodsReceivedNotInvoicedAccount: "2125",
-  salesTaxPayableAccount: "2210",
-  purchaseTaxPayableAccount: "2220",
+  taxReceivedAccount: "2210",
+  taxPaidAccount: "1170",
   reverseChargeSalesTaxPayableAccount: "2230",
   retainedEarningsAccount: "3100",
   migrationClearingAccount: "3400",

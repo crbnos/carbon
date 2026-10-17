@@ -1408,6 +1408,7 @@ async function amend(
               discountPercent: fraction(line.discountPercent),
               discountEndsOn: line.discountEndsOn ?? null,
               taxPercent: fraction(line.taxPercent),
+              taxCodeId: null,
               startDate,
               endDate: line.endDate ?? null,
               goLiveDate: line.goLiveDate ?? null,

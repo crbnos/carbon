@@ -3502,6 +3502,9 @@ msgstr "Conta de ativo"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Conta de ativo para pagamentos antecipados feitos a fornecedores antes de receber bens ou serviços"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "Custo de aquisição do ativo"
 
@@ -10524,9 +10527,6 @@ msgstr "Conta GL para taxas de serviços bancários e despesas semelhantes."
 msgid "GL account for interest income or expense."
 msgstr "Conta GL para receitas ou despesas de juros."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Conta GL para imposto de compra pago a fornecedores (ou recuperável)."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "Conta GL para impostos acumulados sob regras de cobrança reversa onde o comprador faz autoavaliação."
 
@@ -10569,6 +10569,9 @@ msgstr "Conta GL onde são registrados os descontos de pagamento antecipado conc
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Conta GL onde são registrados os descontos de pagamento antecipado obtidos dos fornecedores."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Conta contra-ativo contábil creditada quando a depreciação é contabilizada a cada período e debitada integralmente quando o ativo é vendido ou sucateado."
 
@@ -10590,8 +10593,8 @@ msgstr "Conta de despesa contábil debitada quando o valor contábil de um ativo
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Conta de despesa contábil para compras não estocáveis (suprimentos, serviços)."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "Conta de passivo contábil creditada por impostos sobre vendas coletados de clientes."
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "Reconciliação da Razão"
@@ -12451,11 +12454,8 @@ msgstr "Conta de passivo para valores devidos a funcionários por reembolso de d
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Conta de passivo para impostos diferidos por depreciação acelerada"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "Conta de passivo para imposto sobre vendas cobrado de clientes"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "Conta de passivo para imposto pago em compras"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Passivo creditado quando uma linha da fatura com data de serviço ou de aluguel é faturada antes da receita ser auferida; liberado por execuções de reconhecimento"
@@ -17338,12 +17338,6 @@ msgstr "Recebimentos de compra"
 msgid "Purchase Return"
 msgstr "Devolução de compra"
 
-msgid "Purchase Tax Payable"
-msgstr "Imposto de Compra a Pagar (padrão)"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "Imposto sobre compras a pagar (padrão)"
-
 msgid "Purchase to Order"
 msgstr "Compra sob encomenda"
 
@@ -19432,12 +19426,6 @@ msgstr "Regras de Vendas"
 
 msgid "Sales shipments"
 msgstr "Remessas de venda"
-
-msgid "Sales Tax Payable"
-msgstr "Imposto sobre vendas a pagar"
-
-msgid "Sales Tax Payable (default)"
-msgstr "Imposto sobre vendas a pagar (padrão)"
 
 msgid "Sales-type lease"
 msgstr "Aluguel do tipo de venda"
@@ -21919,11 +21907,23 @@ msgstr "Método fiscal"
 msgid "Tax Method (default)"
 msgstr "Método fiscal (padrão)"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "Porcentagem de imposto"
 
 msgid "Tax Percent"
 msgstr "Percentual de Imposto"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "Valor residual fiscal"
@@ -21948,6 +21948,9 @@ msgstr "Vida útil fiscal (meses)"
 
 msgid "Tax:"
 msgstr "Imposto:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "Impostos"

@@ -3502,6 +3502,9 @@ msgstr "资产账户"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "供应商在收到商品或服务前预先支付的预付款的资产科目"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "资产购置成本"
 
@@ -10524,9 +10527,6 @@ msgstr "用于银行服务费及类似费用的GL账户。"
 msgid "GL account for interest income or expense."
 msgstr "利息收入或费用的总账科目。"
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "支付给供应商的购买税的GL账户（或可收回）。"
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "根据买方自评的反向征税规则计提的税款总账科目。"
 
@@ -10569,6 +10569,9 @@ msgstr "记录给予客户的提前付款折扣的GL账户。"
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "记录从供应商那里获取的提前付款折扣的GL账户。"
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "资产对冲类总账科目，在每期折旧过账时贷方记录，当资产出售或报废时整额借方记录。"
 
@@ -10590,8 +10593,8 @@ msgstr "资产因减值（即其可收回金额低于账面净值）而减少其
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非库存采购（物品、服务）的费用类总账科目。"
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "从客户处收取销售税贷方记录的负债类总账科目。"
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "总账对账"
@@ -12451,11 +12454,8 @@ msgstr "员工费用报销应付账户。如未设置，则回退到应付款项
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速折旧产生的递延所得税的负债账户"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "从客户征收的销售税的负债账户"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "采购支付的税款的负债账户"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "当具有服务日期或租赁的发票行在收入实现前开票时所应计的负债；由收益确认凭证实现"
@@ -17338,12 +17338,6 @@ msgstr "采购收货"
 msgid "Purchase Return"
 msgstr "采购退货"
 
-msgid "Purchase Tax Payable"
-msgstr "应付采购税（默认）"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "应交税金（默认）"
-
 msgid "Purchase to Order"
 msgstr "按订单采购"
 
@@ -19432,12 +19426,6 @@ msgstr "销售规则"
 
 msgid "Sales shipments"
 msgstr "销售发货"
-
-msgid "Sales Tax Payable"
-msgstr "应付销售税"
-
-msgid "Sales Tax Payable (default)"
-msgstr "应付销售税 (默认)"
 
 msgid "Sales-type lease"
 msgstr "销售型租赁"
@@ -21919,11 +21907,23 @@ msgstr "税务方法"
 msgid "Tax Method (default)"
 msgstr "税务方法（默认）"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "税收百分比"
 
 msgid "Tax Percent"
 msgstr "税收百分比"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "税务残值"
@@ -21948,6 +21948,9 @@ msgstr "税使用年限（月份）"
 
 msgid "Tax:"
 msgstr "税:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "税"

@@ -58,7 +58,7 @@ const defaultsWith = (overrides: Partial<AccountDefaults> = {}) =>
     intercompanyReceivablesAccount: "ic-ar",
     salesAccount: "sales",
     salesShippingRevenueAccount: "shipping",
-    salesTaxPayableAccount: "tax",
+    taxReceivedAccount: "tax",
     deferredRevenueAccount: "deferred",
     contractAssetAccount: null,
     rentalIncomeAccount: null,

@@ -3502,6 +3502,9 @@ msgstr "資産勘定"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "仕入先に対する前払い金の資産勘定（商品またはサービスが受け取られる前に行われた支払い）"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "資産取得原価"
 
@@ -10524,9 +10527,6 @@ msgstr "銀行のサービス料および同様の手数料用の勘定科目"
 msgid "GL account for interest income or expense."
 msgstr "利息収入または利息費用の勘定科目。"
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "仕入先に支払った購入税のGLアカウント（または回収可能）。"
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "買い手が自己評価する逆請求ルールに基づいて発生した税の勘定科目。"
 
@@ -10569,6 +10569,9 @@ msgstr "得意先に付与された早期支払割引が記録される勘定科
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "仕入先から受け取った早期支払割引が記録される勘定科目。"
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "毎期減価償却が転記されるときにクレジットされ、固定資産が売却または除却されるときに全額がデビットされる対資産勘定科目。"
 
@@ -10590,8 +10593,8 @@ msgstr "固定資産の簿価が減損によって削減されるとき、つま
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "非在庫品購入（物資、外注サービス）のGL費用勘定。"
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "得意先から徴収した売上税がクレジットされるGL負債勘定。"
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "GL試算表"
@@ -12451,11 +12454,8 @@ msgstr "従業員への費用払戻に対する負債勘定です。未設定の
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速度的な減価償却による繰延税金の負債勘定"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "得意先から徴収した売上税の負債勘定"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "購入に支払う税金の負債勘定"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "サービス日付またはレンタル請求書明細が売上高計上前に請求された場合にクレジットされた負債。収益認識実行で解放されます。"
@@ -17338,12 +17338,6 @@ msgstr "購入入荷"
 msgid "Purchase Return"
 msgstr "購買返品"
 
-msgid "Purchase Tax Payable"
-msgstr "仕入税金支払い（デフォルト）"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "仕入税支払相当額（デフォルト）"
-
 msgid "Purchase to Order"
 msgstr "受注購買"
 
@@ -19432,12 +19426,6 @@ msgstr "販売ルール"
 
 msgid "Sales shipments"
 msgstr "販売出荷"
-
-msgid "Sales Tax Payable"
-msgstr "支払い売上税"
-
-msgid "Sales Tax Payable (default)"
-msgstr "支払い売上税（デフォルト）"
 
 msgid "Sales-type lease"
 msgstr "セールスタイプリース"
@@ -21919,11 +21907,23 @@ msgstr "税務方法"
 msgid "Tax Method (default)"
 msgstr "税務方法（デフォルト）"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "税率"
 
 msgid "Tax Percent"
 msgstr "税率"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "税務残存価額"
@@ -21948,6 +21948,9 @@ msgstr "税務耐用年数（月）"
 
 msgid "Tax:"
 msgstr "税:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "税金"

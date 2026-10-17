@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS "taxCode" (
   "reportingCategory" "taxReportingCategory" NOT NULL DEFAULT 'Standard',
   "taxesShipping" BOOLEAN NOT NULL DEFAULT FALSE,
   "invoiceMessage" TEXT,
-  "countryId" INTEGER REFERENCES "country"("id"),
+  "countryCode" TEXT REFERENCES "country"("alpha2"),
   "state" TEXT,
   "active" BOOLEAN NOT NULL DEFAULT TRUE,
   "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS "taxCode" (
   CONSTRAINT "taxCode_name_key" UNIQUE ("companyId", "name")
 );
 CREATE INDEX IF NOT EXISTS "taxCode_companyId_idx" ON "taxCode" ("companyId");
-CREATE INDEX IF NOT EXISTS "taxCode_countryId_idx" ON "taxCode" ("countryId");
+CREATE INDEX IF NOT EXISTS "taxCode_countryCode_idx" ON "taxCode" ("countryCode");
 CREATE INDEX IF NOT EXISTS "taxCode_createdBy_idx" ON "taxCode" ("createdBy");
 
 -- Components
@@ -215,7 +215,7 @@ CREATE INDEX IF NOT EXISTS "taxCodeComponent_createdBy_idx" ON "taxCodeComponent
 CREATE TABLE IF NOT EXISTS "taxRegistration" (
   "id" TEXT NOT NULL DEFAULT id('txr'),
   "companyId" TEXT NOT NULL,
-  "countryId" INTEGER NOT NULL REFERENCES "country"("id"),
+  "countryCode" TEXT NOT NULL REFERENCES "country"("alpha2"),
   "state" TEXT,
   "registrationNumber" TEXT NOT NULL,
   "effectiveDate" DATE,
@@ -230,7 +230,7 @@ CREATE TABLE IF NOT EXISTS "taxRegistration" (
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE INDEX IF NOT EXISTS "taxRegistration_companyId_idx" ON "taxRegistration" ("companyId");
-CREATE INDEX IF NOT EXISTS "taxRegistration_countryId_idx" ON "taxRegistration" ("countryId");
+CREATE INDEX IF NOT EXISTS "taxRegistration_countryCode_idx" ON "taxRegistration" ("countryCode");
 CREATE INDEX IF NOT EXISTS "taxRegistration_createdBy_idx" ON "taxRegistration" ("createdBy");
 
 -- Ledger
@@ -588,9 +588,9 @@ pnpm exec turbo run typecheck --filter=@carbon/database --filter=@carbon/utils
 **Steps:**
 1. Add validators to `accounting.models.ts`:
    - `taxCodeComponentValidator`: `id` optional, `name`, `taxAuthorityId` optional, `taxPercent` 0–1, `recoverablePercent` 0–1, `sequence`, `isCompound`, `taxReceivedAccountId` optional, `taxPaidAccountId` optional, `effectiveDate` optional, `expirationDate` optional. Refine: expiration on or after effective.
-   - `taxCodeValidator`: `id` optional, `name`, `description`, `calculationType`, `reportingCategory`, `taxesShipping` (`zfd.checkbox()`), `invoiceMessage`, `countryId`, `state`, `active`, `components: zfd.repeatableOfType(taxCodeComponentValidator)` with at least one row.
+   - `taxCodeValidator`: `id` optional, `name`, `description`, `calculationType`, `reportingCategory`, `taxesShipping` (`zfd.checkbox()`), `invoiceMessage`, `countryCode`, `state`, `active`, `components: zfd.repeatableOfType(taxCodeComponentValidator)` with at least one row.
    - `taxAuthorityValidator`: `id` optional, `name`, `supplierId` optional.
-   - `taxRegistrationValidator`: `id` optional, `countryId`, `state`, `registrationNumber`, `effectiveDate`, `endDate`.
+   - `taxRegistrationValidator`: `id` optional, `countryCode`, `state`, `registrationNumber`, `effectiveDate`, `endDate`.
    - Export `taxCalculationTypes` and `taxReportingCategories` as `const` arrays typed from `Database["public"]["Enums"]`.
 2. Add service functions to `accounting.service.ts`. Each takes `client` first and returns `{ data, error }`. Add `/** @mcp read */` or `/** @mcp upsert */` tags as the payment-term functions do.
    - `getTaxCodes(client, companyId, args)`, `getTaxCodesList(client, companyId)` (id, name, effective rate, `taxesShipping`), `getTaxCode(client, taxCodeId)` (selects `"*, taxCodeComponent(*)"`).
@@ -598,7 +598,7 @@ pnpm exec turbo run typecheck --filter=@carbon/database --filter=@carbon/utils
    - `deleteTaxCode(client, taxCodeId)`. Set `active = false`. Never delete a code that a line references.
    - `getTaxAuthorities`, `getTaxAuthoritiesList`, `getTaxAuthority`, `upsertTaxAuthority`, `deleteTaxAuthority`.
    - `getTaxRegistrations`, `getTaxRegistration`, `upsertTaxRegistration`, `deleteTaxRegistration`.
-   - `suggestTaxCodes(client, companyId, { countryId, state })`. Return active codes whose `countryId` matches, and whose `state` matches or is null.
+   - `suggestTaxCodes(client, companyId, { countryCode, state })`. Return active codes whose `countryCode` matches, and whose `state` matches or is null.
    - `resolveLineTaxes(client, companyId, args)` with the signature from the spec ("API / Service Changes").
 3. Make `resolveLineTaxes` a thin loader around a pure function in `accounting.service.ts`:
 

@@ -725,13 +725,13 @@ export const terms = {
     term: msg`GR/IR Clearing (default)`,
     definition: msg`Clearing account between goods receipt and supplier invoice; balances when both have posted.`
   },
-  "account-default-sales-tax-payable": {
-    term: msg`Sales Tax Payable (default)`,
-    definition: msg`GL liability account credited for sales tax collected from customers.`
+  "account-default-tax-received": {
+    term: msg`Tax Received (default)`,
+    definition: msg`GL liability account credited with tax collected from customers.`
   },
-  "account-default-purchase-tax-payable": {
-    term: msg`Purchase Tax Payable (default)`,
-    definition: msg`GL account for purchase tax paid to suppliers (or reclaimable).`
+  "account-default-tax-paid": {
+    term: msg`Tax Paid (default)`,
+    definition: msg`GL asset account debited with the recoverable share of tax paid to suppliers.`
   },
   "account-default-reverse-charge-sales-tax": {
     term: msg`Reverse Charge Sales Tax (default)`,

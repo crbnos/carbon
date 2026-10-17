@@ -3502,6 +3502,9 @@ msgstr "Счет активов"
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Счет активов для авансовых платежей поставщикам до получения товаров или услуг"
 
+msgid "Asset account for the recoverable share of tax paid on purchases"
+msgstr ""
+
 msgid "Asset Acquisition Cost"
 msgstr "Стоимость приобретения основного средства"
 
@@ -10524,9 +10527,6 @@ msgstr "Счет учета для банковских сервисных сб�
 msgid "GL account for interest income or expense."
 msgstr "Счет для процентных доходов или расходов."
 
-msgid "GL account for purchase tax paid to suppliers (or reclaimable)."
-msgstr "Счет для налога на приобретение, уплаченного поставщикам (или подлежащего возврату)."
-
 msgid "GL account for tax accrued under reverse-charge rules where the buyer self-assesses."
 msgstr "Счет учета для налога, начисленного в соответствии с правилами обратного начисления, где закупщик производит самооценку."
 
@@ -10569,6 +10569,9 @@ msgstr "Счет учета для скидок за досрочную опла
 msgid "GL account where early-payment discounts taken from suppliers are recorded."
 msgstr "Счет GL, на котором фиксируются скидки на досрочную оплату, полученные от поставщиков."
 
+msgid "GL asset account debited with the recoverable share of tax paid to suppliers."
+msgstr ""
+
 msgid "GL contra-asset account credited as depreciation posts each period and debited in full when the asset is sold or scrapped."
 msgstr "Контрактивный счет учета основных средств, который кредитуется по мере начисления амортизации в каждом периоде и полностью дебетуется при продаже или списании основного средства."
 
@@ -10590,8 +10593,8 @@ msgstr "Счет учета расходов, по которому произв
 msgid "GL expense account for non-inventory purchases (supplies, services)."
 msgstr "Счет учета расходов для покупок нескладских товаров (материалы, услуги)."
 
-msgid "GL liability account credited for sales tax collected from customers."
-msgstr "Счет учета обязательств, по которому кредитуется налог с продаж, собранный у покупателей."
+msgid "GL liability account credited with tax collected from customers."
+msgstr ""
 
 msgid "GL tie-out"
 msgstr "Выверка главной книги"
@@ -12451,11 +12454,8 @@ msgstr "Счет обязательств для сумм, причитающи�
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Счет обязательств по отложенным налогам от ускоренной амортизации"
 
-msgid "Liability account for sales tax collected from customers"
-msgstr "Счет обязательств по налогу на продажи, собранному от покупателей"
-
-msgid "Liability account for tax paid on purchases"
-msgstr "Счет обязательств по налогам, уплаченным при покупках"
+msgid "Liability account for tax collected from customers"
+msgstr ""
 
 msgid "Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs"
 msgstr "Обязательство, возникающее при выставлении счета-фактуры с датой услуги или аренды до получения выручки; выпускается процессами признания выручки"
@@ -17338,12 +17338,6 @@ msgstr "Поступления"
 msgid "Purchase Return"
 msgstr "Возврат товара"
 
-msgid "Purchase Tax Payable"
-msgstr "Налог на покупку подлежащий уплате (по умолчанию)"
-
-msgid "Purchase Tax Payable (default)"
-msgstr "Налог к оплате (по умолчанию)"
-
 msgid "Purchase to Order"
 msgstr "Закупка под заказ"
 
@@ -19432,12 +19426,6 @@ msgstr "Правила продаж"
 
 msgid "Sales shipments"
 msgstr "Отгрузки"
-
-msgid "Sales Tax Payable"
-msgstr "Налог на продажи к уплате"
-
-msgid "Sales Tax Payable (default)"
-msgstr "Налог на продажи к уплате (по умолчанию)"
 
 msgid "Sales-type lease"
 msgstr "Аренда типа продажи"
@@ -21919,11 +21907,23 @@ msgstr "Метод налогообложения"
 msgid "Tax Method (default)"
 msgstr "Метод налогообложения (по умолчанию)"
 
+msgid "Tax Paid"
+msgstr ""
+
+msgid "Tax Paid (default)"
+msgstr ""
+
 msgid "Tax percent"
 msgstr "Налоговый процент"
 
 msgid "Tax Percent"
 msgstr "Процент налога"
+
+msgid "Tax Received"
+msgstr ""
+
+msgid "Tax Received (default)"
+msgstr ""
 
 msgid "Tax Residual Value"
 msgstr "Налоговая ликвидационная стоимость"
@@ -21948,6 +21948,9 @@ msgstr "Налоговый срок полезного использовани�
 
 msgid "Tax:"
 msgstr "Налог:"
+
+msgid "Taxable"
+msgstr ""
 
 msgid "Taxes"
 msgstr "Налоги"
