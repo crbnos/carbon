@@ -138,6 +138,7 @@ const QuoteLineForm = ({
   );
 
   const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
 
   const [itemData, setItemData] = useState<{
     customerPartId: string;
@@ -255,7 +256,7 @@ const QuoteLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId, taxable"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -280,6 +281,11 @@ const QuoteLineForm = ({
 
     if (item.data?.type) {
       setLineType(item.data.type as ItemType);
+    }
+    // A non-taxable item takes no tax.
+    if (item.data?.taxable === false) {
+      setTaxCodeId("");
+      setTaxPercent(0);
     }
     const newItemData = {
       ...itemData,
@@ -556,7 +562,9 @@ const QuoteLineForm = ({
                       <TaxCode
                         name="taxCodeId"
                         label={t`Tax Code`}
+                        value={taxCodeId}
                         onChange={(option) => {
+                          setTaxCodeId(option?.value ?? "");
                           if (option)
                             setTaxPercent(
                               taxCodeRateOn(option.value) ?? option.rate

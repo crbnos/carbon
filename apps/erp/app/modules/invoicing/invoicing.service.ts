@@ -18,6 +18,7 @@ import {
   assertCurrencyDecimals,
   assertExchangeRate,
   calculateDueDate,
+  chargedTaxPercent,
   chunkArray,
   datetime,
   type FundingConsumptionRow,
@@ -28,7 +29,6 @@ import {
   fundingScopeOf,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
-  memoAmounts,
   PAYABLE_POSTING_DESCRIPTIONS,
   RECEIVABLE_POSTING_DESCRIPTIONS,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
@@ -55,7 +55,7 @@ import {
   getExchangeRate,
   getTaxCode
 } from "../accounting/accounting.service";
-import { taxCodeRate, toTaxCodeInput } from "../accounting/accounting.utils";
+import { toTaxCodeInput } from "../accounting/accounting.utils";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,
@@ -75,10 +75,12 @@ import type {
   ReimbursementStatusType,
   reimbursementLineValidator,
   reimbursementUpdateValidator,
+  StoredMemoTax,
   salesInvoiceLineValidator,
   salesInvoiceShipmentValidator,
   salesInvoiceValidator
 } from "./invoicing.models";
+import { resolveMemoTaxAmounts } from "./invoicing.models";
 
 const logger = getLogger("erp", "invoicing");
 
@@ -3973,6 +3975,25 @@ export async function upsertMemo(
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
   const { companyGroupId, netAmount, taxCodeId, amount, ...rest } = memo;
+
+  // An update keeps the tax the memo already stores unless its code changes;
+  // read it before deciding.
+  let stored: StoredMemoTax | null = null;
+  if (!("createdBy" in memo)) {
+    const existing = await client
+      .from("memo")
+      .select("amount, taxAmount, taxCodeId")
+      .eq("id", memo.id)
+      .eq("companyId", memo.companyId)
+      .single();
+    if (existing.error) return { data: null, error: existing.error };
+    stored = {
+      amount: Number(existing.data.amount ?? 0),
+      taxAmount: Number(existing.data.taxAmount ?? 0),
+      taxCodeId: existing.data.taxCodeId ?? null
+    };
+  }
+
   const amounts = await memoTaxAmounts(client, {
     companyId: memo.companyId,
     companyGroupId,
@@ -3980,7 +4001,8 @@ export async function upsertMemo(
     memoDate: memo.memoDate,
     netAmount,
     taxCodeId,
-    amount
+    amount,
+    stored
   });
   if ("error" in amounts) {
     return {
@@ -4011,10 +4033,10 @@ export async function upsertMemo(
 
 /**
  * The stored amounts of a memo (spec "Memo tax"). The tax is computed here,
- * forward from the net at the code's rate on the memo date — a tax sent by a
- * client is never trusted, and tax is never worked out backwards from a
- * gross. `amount` is the gross on AR or AP. A caller that sends only `amount`
- * keeps the old meaning: a gross with no tax.
+ * forward from the net — a tax sent by a client is never trusted, and tax is
+ * never worked out backwards from a gross. `amount` is the gross on AR or AP.
+ * Which rate applies, and when a gross-only update is refused, is decided by
+ * `resolveMemoTaxAmounts`.
  */
 async function memoTaxAmounts(
   client: SupabaseClient<Database>,
@@ -4026,16 +4048,13 @@ async function memoTaxAmounts(
     netAmount: number | undefined;
     taxCodeId: string | undefined;
     amount: number | undefined;
+    stored: StoredMemoTax | null;
   }
 ): Promise<
   | { amount: number; taxAmount: number; taxCodeId: string | null }
   | { error: string }
 > {
-  if (args.netAmount === undefined) {
-    if (args.amount === undefined) return { error: "Net amount is required" };
-    if (args.taxCodeId) return { error: "A tax code needs a net amount" };
-    return { amount: args.amount, taxAmount: 0, taxCodeId: null };
-  }
+  const taxCodeId = args.taxCodeId || null;
 
   const currency = await getCurrencyByCode(
     client,
@@ -4048,21 +4067,31 @@ async function memoTaxAmounts(
     };
   }
 
-  let taxPercent = 0;
-  if (args.taxCodeId) {
-    const taxCode = await getTaxCode(client, args.taxCodeId);
+  let codeRate = 0;
+  if (taxCodeId && args.netAmount !== undefined) {
+    const taxCode = await getTaxCode(client, taxCodeId);
     if (taxCode.error || taxCode.data?.companyId !== args.companyId) {
       return { error: "Tax code not found" };
     }
-    taxPercent = taxCodeRate(toTaxCodeInput(taxCode.data), args.memoDate);
+    // The charged rate: 0 for a Reverse Charge code, which only posting
+    // self-assesses.
+    codeRate = chargedTaxPercent(toTaxCodeInput(taxCode.data), args.memoDate);
   }
 
-  const { amount, taxAmount } = memoAmounts(
-    args.netAmount,
-    taxPercent,
-    currency.data.decimalPlaces
-  );
-  return { amount, taxAmount, taxCodeId: args.taxCodeId ?? null };
+  const resolved = resolveMemoTaxAmounts({
+    stored: args.stored,
+    netAmount: args.netAmount,
+    amount: args.amount,
+    taxCodeId,
+    codeRate,
+    decimals: currency.data.decimalPlaces
+  });
+  if ("error" in resolved) return resolved;
+  return {
+    amount: resolved.amount,
+    taxAmount: resolved.taxAmount,
+    taxCodeId
+  };
 }
 
 // RLS DELETE policy on memo restricts to status='Draft'.

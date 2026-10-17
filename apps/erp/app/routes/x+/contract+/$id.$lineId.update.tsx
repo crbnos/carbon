@@ -15,6 +15,7 @@ import {
   getContractLine,
   upsertContractLine
 } from "~/modules/sales";
+import { isItemTaxable } from "~/modules/sales/sales.server";
 
 const logger = getLogger("erp", "contract-line-update");
 
@@ -134,9 +135,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...values } = validation.data;
+  // A non-taxable item carries no tax, whatever the line stored.
+  const taxable = await isItemTaxable(client, companyId, values.itemId);
   // Refuses a contract that is not a Draft and an item that is not a Service.
   const update = await upsertContractLine(client, {
     ...values,
+    ...(taxable ? {} : { taxPercent: 0, taxCodeId: null }),
     customerContractId: id,
     id: lineId,
     updatedBy: userId

@@ -48,7 +48,14 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `memo.taxAmount` hold the tax inside it. `MemoForm` posts **Net Amount** + **Tax Code**
   (Tax and Gross are read-only). `upsertMemo` recomputes the tax server-side from the code's
   rate on `memoDate` (`memoTaxAmounts` → `memoAmounts`, `@carbon/utils`) and refuses a code
-  with no net ("A tax code needs a net amount"). Never trust a client tax amount, and never
+  with no net ("A tax code needs a net amount"). Stored tax is never dropped silently
+  (`resolveMemoTaxAmounts`, `invoicing.models.ts`, shared with `MemoForm`): an UPDATE that
+  keeps the code (both null counts) of a memo with tax keeps the stored rate
+  (`deriveRate(taxAmount, amount − taxAmount)`, applied with `applyRate`; an unchanged net
+  keeps the tax exactly) — a codeless RMA / return credit with a bare percent, or a coded
+  memo whose source line overrode the percent; a changed code takes the new code's rate;
+  a gross-only update of a memo with tax or a code is refused ("This memo carries tax;
+  send netAmount"). Never trust a client tax amount, and never
   infer tax from a gross. Posting is `post-memo` `planMemoTax`: a customer memo moves ALL its
   tax through Tax Received; a supplier memo moves only the recoverable share through Tax
   Paid and leaves the rest in the reason leg; a codeless supplier memo moves none (its tax

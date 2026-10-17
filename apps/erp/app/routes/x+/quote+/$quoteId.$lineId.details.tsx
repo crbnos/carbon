@@ -49,6 +49,7 @@ import {
   reconcileQuantityBreaks
 } from "~/modules/sales";
 import {
+  isItemTaxable,
   recordSalesRuleOutcome,
   saveQuoteLineWithPrices
 } from "~/modules/sales/sales.server";
@@ -213,6 +214,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
+
+  // A non-taxable item carries no tax, whatever the form posted.
+  if (!(await isItemTaxable(viewClient, companyId, d.itemId))) {
+    d.taxCodeId = undefined;
+    d.taxPercent = 0;
+  }
 
   // The line update and its price reconciliation have to land together. Prices
   // are COMPUTED first (the builders only read), so a pricing failure aborts

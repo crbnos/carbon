@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import { applyRate, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
@@ -29,7 +29,10 @@ import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
   memoDirection,
-  memoValidator
+  memoKeepsStoredTaxRate,
+  memoValidator,
+  resolveMemoTaxAmounts,
+  type StoredMemoTax
 } from "~/modules/invoicing";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
@@ -46,6 +49,9 @@ export type MemoType = "creditMemo" | "supplierCredit";
 type MemoFormProps = {
   /** `taxAmount` is the stored tax, shown until the tax codes load. */
   initialValues: MemoFormValues & { status?: string; taxAmount?: number };
+  /** The saved memo's tax. While its code is unchanged the form keeps the
+   *  rate it implies, as `upsertMemo` does. Absent on a new memo. */
+  storedTax?: StoredMemoTax;
   type: MemoType;
 };
 
@@ -53,7 +59,7 @@ type MemoFormProps = {
  * The memo's own fields, laid flat. On the detail page they sit under the
  * memo's header; the new-memo page frames them itself. Posting locks them.
  */
-const MemoForm = ({ initialValues, type }: MemoFormProps) => {
+const MemoForm = ({ initialValues, storedTax, type }: MemoFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   // The memo's amounts are in its own currency, so they are entered and
@@ -65,21 +71,32 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
 
   // Net, code and date are the user's input; the tax and the gross are derived
   // from them during render (spec "Memo tax"), as `useTaxPair` derives its
-  // base. Neither is submitted: `upsertMemo` computes the tax again from the
-  // code's rate on the memo date and stores amount = net + tax.
+  // base. Neither is submitted: `upsertMemo` computes the tax again with the
+  // same `resolveMemoTaxAmounts` and stores amount = net + tax. A saved memo
+  // whose code is unchanged keeps the rate its stored tax implies.
   const [netAmount, setNetAmount] = useState(initialValues.netAmount ?? 0);
   const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
   const [memoDate, setMemoDate] = useState(initialValues.memoDate);
   const taxCodeRateOn = useTaxCodeRateOn(memoDate);
-  const rate = taxCodeId ? taxCodeRateOn(taxCodeId) : 0;
+  const keepsStoredRate =
+    storedTax !== undefined && memoKeepsStoredTaxRate(storedTax, taxCodeId);
+  const codeRate = taxCodeId && !keepsStoredRate ? taxCodeRateOn(taxCodeId) : 0;
   // An emptied number input commits NaN; it reads as no amount (NaN > 0 is
   // false), never as a NaN tax.
   const net = netAmount > 0 ? netAmount : 0;
+  const resolved = resolveMemoTaxAmounts({
+    stored: storedTax ?? null,
+    netAmount: net,
+    amount: undefined,
+    taxCodeId: taxCodeId || null,
+    codeRate: codeRate ?? 0,
+    decimals: currencyDecimals
+  });
   // Until the codes load the rate is unknown; show the stored tax meanwhile.
   const taxAmount =
-    rate === null
+    codeRate === null || "error" in resolved
       ? (initialValues.taxAmount ?? 0)
-      : applyRate(net, rate, currencyDecimals);
+      : resolved.taxAmount;
   const grossAmount = round(net + taxAmount, currencyDecimals);
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const permissions = usePermissions();

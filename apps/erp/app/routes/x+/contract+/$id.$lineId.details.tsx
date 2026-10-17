@@ -16,6 +16,7 @@ import {
   getContractLine,
   upsertContractLine
 } from "~/modules/sales";
+import { isItemTaxable } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineForm } from "~/modules/sales/ui/Contracts";
 import { path, requestReferrer } from "~/utils/path";
@@ -72,13 +73,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...line } = validation.data;
+  // A non-taxable item carries no tax, whatever the form posted.
+  const taxable = await isItemTaxable(client, companyId, line.itemId);
 
   // `upsertContractLine` refuses a line of another contract, a contract that
   // is not a Draft and an item that is not a Service.
   const update = await upsertContractLine(client, {
     ...line,
+    taxPercent: taxable ? line.taxPercent : 0,
     // The form always posts the field: an empty one clears the code.
-    taxCodeId: formData.has("taxCodeId") ? (line.taxCodeId ?? null) : undefined,
+    taxCodeId: !taxable
+      ? null
+      : formData.has("taxCodeId")
+        ? (line.taxCodeId ?? null)
+        : undefined,
     customerContractId: id,
     id: lineId,
     updatedBy: userId

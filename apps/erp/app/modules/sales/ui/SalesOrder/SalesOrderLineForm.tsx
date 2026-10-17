@@ -211,6 +211,9 @@ const SalesOrderLineForm = ({
   const [itemTaxPercent, setItemTaxPercent] = useState(
     initialValues.taxPercent ?? 0
   );
+  const [itemTaxCodeId, setItemTaxCodeId] = useState(
+    initialValues.taxCodeId ?? ""
+  );
 
   const [assetOptions, setAssetOptions] = useState<
     { value: string; label: string }[]
@@ -399,7 +402,7 @@ const SalesOrderLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId, taxable"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -433,6 +436,11 @@ const SalesOrderLineForm = ({
 
     if (item.data?.type) {
       setLineType(item.data.type as typeof lineType);
+    }
+    // A non-taxable item takes no tax.
+    if (item.data?.taxable === false) {
+      setItemTaxCodeId("");
+      setItemTaxPercent(0);
     }
     setItemData({
       itemId,
@@ -932,7 +940,9 @@ const SalesOrderLineForm = ({
                               <TaxCode
                                 name="taxCodeId"
                                 label={t`Tax Code`}
+                                value={itemTaxCodeId}
                                 onChange={(option) => {
+                                  setItemTaxCodeId(option?.value ?? "");
                                   if (option)
                                     setItemTaxPercent(
                                       taxCodeRateOn(option.value) ?? option.rate

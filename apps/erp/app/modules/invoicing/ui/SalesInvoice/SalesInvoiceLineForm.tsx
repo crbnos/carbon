@@ -228,6 +228,10 @@ const SalesInvoiceItemLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
+  const [itemTaxCodeId, setItemTaxCodeId] = useState(
+    initialValues.taxCodeId ?? ""
+  );
+
   // Tax is charged on the discounted merchandise, so the pair's base takes the
   // NET unit price.
   const itemTax = useTaxPair({
@@ -356,7 +360,7 @@ const SalesInvoiceItemLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, itemCost(unitCost)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, taxable, itemCost(unitCost)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -396,6 +400,9 @@ const SalesInvoiceItemLineForm = ({
           return;
         }
 
+        // A non-taxable item takes no tax.
+        const isTaxable = item.data?.taxable !== false;
+        if (!isTaxable) setItemTaxCodeId("");
         setItemData((prev) => ({
           ...prev,
           itemId: itemId,
@@ -413,8 +420,8 @@ const SalesInvoiceItemLineForm = ({
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           // The rate the line opened with (the document's resolved tax) stays;
           // useTaxPair re-derives the amount from the new price.
-          taxAmount: prev.taxAmount,
-          taxPercent: prev.taxPercent
+          taxAmount: isTaxable ? prev.taxAmount : 0,
+          taxPercent: isTaxable ? prev.taxPercent : 0
         }));
 
         if (item.data?.type) {
@@ -851,7 +858,9 @@ const SalesInvoiceItemLineForm = ({
                             <TaxCode
                               name="taxCodeId"
                               label={t`Tax Code`}
+                              value={itemTaxCodeId}
                               onChange={(option) => {
+                                setItemTaxCodeId(option?.value ?? "");
                                 if (!option) return;
                                 // Through the pair, so the amount re-derives
                                 // from the code's rate.

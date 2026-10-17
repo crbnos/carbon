@@ -156,6 +156,15 @@ export default function MemoDetailRoute() {
     status: memo.status ?? undefined
   };
 
+  // The saved tax: while the code is unchanged the form, like `upsertMemo`,
+  // keeps the rate it implies (a memo made from lines with a bare percent has
+  // tax and no code).
+  const storedTax = {
+    amount: Number(memo.amount ?? 0),
+    taxAmount: Number(memo.taxAmount ?? 0),
+    taxCodeId: memo.taxCodeId ?? null
+  };
+
   const type = memo.supplierId ? "supplierCredit" : "creditMemo";
 
   return (
@@ -172,7 +181,11 @@ export default function MemoDetailRoute() {
         />
       }
     >
-      <MemoForm initialValues={initialValues} type={type} />
+      <MemoForm
+        initialValues={initialValues}
+        storedTax={storedTax}
+        type={type}
+      />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}

@@ -16,6 +16,7 @@ import {
   getContract,
   upsertContractLine
 } from "~/modules/sales";
+import { isItemTaxable } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineForm } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
@@ -100,6 +101,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       line.taxCodeId = tax.data.taxCodeId ?? undefined;
       line.taxPercent = round(tax.data.taxPercent * 100);
     }
+  }
+  // A non-taxable item carries no tax, whatever the form posted.
+  if (!(await isItemTaxable(client, companyId, line.itemId))) {
+    line.taxCodeId = undefined;
+    line.taxPercent = 0;
   }
 
   // `upsertContractLine` refuses a contract that is not a Draft and an item

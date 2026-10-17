@@ -9,6 +9,7 @@ import {
   memoValidator,
   paymentValidator,
   purchaseInvoiceSupplierChange,
+  resolveMemoTaxAmounts,
   salesInvoiceCustomerChange
 } from "./invoicing.models";
 
@@ -454,5 +455,142 @@ describe("purchaseInvoiceSupplierChange", () => {
         exchangeRate: 0.92
       })
     ).toMatchObject({ currencyCode: "EUR", exchangeRate: 0.92 });
+  });
+});
+
+describe("resolveMemoTaxAmounts", () => {
+  const base = { amount: undefined, decimals: 2 };
+
+  it("creates a memo at the code's rate", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: null,
+        netAmount: 100,
+        taxCodeId: "tax_1",
+        codeRate: 0.2
+      })
+    ).toEqual({ netAmount: 100, taxAmount: 20, amount: 120 });
+  });
+
+  it("creates a gross-only memo with no tax", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: null,
+        netAmount: undefined,
+        amount: 108,
+        taxCodeId: null,
+        codeRate: 0
+      })
+    ).toEqual({ netAmount: 108, taxAmount: 0, amount: 108 });
+  });
+
+  // (a) A credit made from lines with a bare percent: tax and no code.
+  const codeless = { amount: 108, taxAmount: 8, taxCodeId: null };
+
+  it("keeps the stored tax of a codeless memo saved unchanged", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: codeless,
+        netAmount: 100,
+        taxCodeId: null,
+        codeRate: 0
+      })
+    ).toEqual({ netAmount: 100, taxAmount: 8, amount: 108 });
+  });
+
+  it("applies a codeless memo's stored rate to a new net", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: codeless,
+        netAmount: 50,
+        taxCodeId: null,
+        codeRate: 0
+      })
+    ).toEqual({ netAmount: 50, taxAmount: 4, amount: 54 });
+  });
+
+  // (b) A coded memo whose source line overrode the code's percent.
+  const overridden = { amount: 105, taxAmount: 5, taxCodeId: "tax_1" };
+
+  it("keeps an overridden rate while the code is unchanged", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: overridden,
+        netAmount: 200,
+        taxCodeId: "tax_1",
+        codeRate: 0.2
+      })
+    ).toEqual({ netAmount: 200, taxAmount: 10, amount: 210 });
+  });
+
+  it("takes the new code's rate when the code changes", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: overridden,
+        netAmount: 100,
+        taxCodeId: "tax_2",
+        codeRate: 0.1
+      })
+    ).toEqual({ netAmount: 100, taxAmount: 10, amount: 110 });
+  });
+
+  it("drops the tax when the code is removed", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: overridden,
+        netAmount: 100,
+        taxCodeId: null,
+        codeRate: 0
+      })
+    ).toEqual({ netAmount: 100, taxAmount: 0, amount: 100 });
+  });
+
+  it("uses the code's rate when the stored memo has no tax", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: { amount: 100, taxAmount: 0, taxCodeId: "tax_1" },
+        netAmount: 100,
+        taxCodeId: "tax_1",
+        codeRate: 0.2
+      })
+    ).toEqual({ netAmount: 100, taxAmount: 20, amount: 120 });
+  });
+
+  // (c) An update that sends only a gross would drop the stored tax.
+  it.each([
+    ["tax", codeless],
+    ["a code", { amount: 100, taxAmount: 0, taxCodeId: "tax_1" }]
+  ])("refuses a gross-only update of a memo with %s", (_label, stored) => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored,
+        netAmount: undefined,
+        amount: 120,
+        taxCodeId: null,
+        codeRate: 0
+      })
+    ).toEqual({ error: "This memo carries tax; send netAmount" });
+  });
+
+  it("accepts a gross-only update of a memo with no tax", () => {
+    expect(
+      resolveMemoTaxAmounts({
+        ...base,
+        stored: { amount: 100, taxAmount: 0, taxCodeId: null },
+        netAmount: undefined,
+        amount: 120,
+        taxCodeId: null,
+        codeRate: 0
+      })
+    ).toEqual({ netAmount: 120, taxAmount: 0, amount: 120 });
   });
 });

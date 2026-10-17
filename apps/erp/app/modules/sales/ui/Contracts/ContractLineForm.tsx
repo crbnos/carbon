@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -36,7 +37,12 @@ import {
 } from "~/components/Form";
 import { useTaxCodeRateOn } from "~/components/Form/RecoverableTax";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCompanyToday, useCurrencyDecimals, usePermissions } from "~/hooks";
+import {
+  useCompanyToday,
+  useCurrencyDecimals,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import {
   contractRateUnits,
@@ -75,6 +81,8 @@ const ContractLineForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
+  const { carbon } = useCarbon();
+  const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const isEditing = initialValues.id !== undefined;
@@ -82,6 +90,7 @@ const ContractLineForm = ({
   const [startDate, setStartDate] = useState(initialValues.startDate);
   // Percent points (0–100), as the field types it.
   const [taxPercent, setTaxPercent] = useState(initialValues.taxPercent ?? 0);
+  const [taxCodeId, setTaxCodeId] = useState(initialValues.taxCodeId ?? "");
   // A picked code's rate on the line's start date, not today's.
   const companyToday = useCompanyToday();
   const taxCodeRateOn = useTaxCodeRateOn(startDate || companyToday);
@@ -131,6 +140,21 @@ const ContractLineForm = ({
   const canDelete =
     isEditing && !isLocked && permissions.can("delete", "sales");
 
+  // A non-taxable item takes no tax.
+  const onItemChange = async (itemId: string | undefined) => {
+    if (!itemId || !carbon) return;
+    const item = await carbon
+      .from("item")
+      .select("taxable")
+      .eq("id", itemId)
+      .eq("companyId", company.id)
+      .maybeSingle();
+    if (item.data?.taxable === false) {
+      setTaxCodeId("");
+      setTaxPercent(0);
+    }
+  };
+
   const minDate = startDate ? safeParseDate(startDate) : undefined;
   const lineName = title ?? t`Line`;
 
@@ -177,6 +201,7 @@ const ContractLineForm = ({
                     label={t`Service`}
                     type="Service"
                     isReadOnly={isLocked}
+                    onChange={(option) => onItemChange(option?.value)}
                   />
                   <Select
                     name="revenueType"
@@ -245,7 +270,9 @@ const ContractLineForm = ({
                   <TaxCode
                     name="taxCodeId"
                     label={t`Tax Code`}
+                    value={taxCodeId}
                     onChange={(option) => {
+                      setTaxCodeId(option?.value ?? "");
                       // A code's rate is a 0–1 fraction; this field types
                       // percent points.
                       if (option)

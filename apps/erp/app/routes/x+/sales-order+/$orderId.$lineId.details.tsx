@@ -40,7 +40,10 @@ import {
   salesOrderLineValidator,
   upsertSalesOrderLine
 } from "~/modules/sales";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+import {
+  isItemTaxable,
+  recordSalesRuleOutcome
+} from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -152,6 +155,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     d.accountId = undefined;
     d.assetId = undefined;
+  }
+
+  // A non-taxable item carries no tax, whatever the form posted.
+  if (!(await isItemTaxable(client, companyId, d.itemId))) {
+    d.taxCodeId = undefined;
+    d.taxPercent = 0;
   }
 
   // Sales-rule enforcement — only for lines that reference an item (Comment

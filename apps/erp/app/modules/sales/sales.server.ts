@@ -24,6 +24,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { resolveLineTaxes } from "~/modules/accounting";
 import type { LineTaxDecision } from "~/modules/accounting/accounting.utils";
+import { getItemTaxable } from "~/modules/items/items.service";
 import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -116,16 +117,44 @@ export async function resolveSalesDocumentTaxes(
 }
 
 /**
+ * Whether a line on `itemId` may carry tax. `item.taxable = false` means the
+ * item is never taxed: its line stores `taxPercent` 0 and no code, whatever a
+ * form or a caller posted — a code, a percent or the document's default. The
+ * item flag wins (`decideLineTax` order: an exempt customer, then the item).
+ * A line with no item is taxable. One read of the item; a read failure is
+ * logged and keeps what was sent.
+ */
+export async function isItemTaxable(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string | null | undefined
+): Promise<boolean> {
+  if (!itemId) return true;
+  const item = await getItemTaxable(client, itemId, companyId);
+  if (item.error) {
+    logger.error("Failed to read whether an item is taxable", {
+      companyId,
+      itemId,
+      error: item.error
+    });
+    return true;
+  }
+  return item.data?.taxable !== false;
+}
+
+/**
  * The tax a line created on a sales document keeps.
  *
+ * - A line on a non-taxable item takes none (`isItemTaxable`), whatever was
+ *   posted.
  * - A form that posts the field decides. A code it sends is kept, unless it
- *   is the document's default the form opened with and the line's item is
- *   not taxable, which zeroes the line. An empty field means the user cleared
- *   the code: the form's own percent stands.
+ *   is the document's default the form opened with and the customer is
+ *   exempt, which zeroes the line. An empty field means the user cleared the
+ *   code: the form's own percent stands.
  * - A caller that does not post the field (the API, an MCP tool) gets the
- *   resolver's decision for the line's item. A decision with no code that
- *   does not zero the line is only the customer's bare percent, so the
- *   caller's percent stands — the behavior from before tax codes.
+ *   resolver's decision. A decision with no code that does not zero the line
+ *   is only the customer's bare percent, so the caller's percent stands —
+ *   the behavior from before tax codes.
  *
  * A read failure keeps what was sent.
  */
@@ -142,25 +171,27 @@ export async function resolveCreatedLineTax(
     taxPercent: number;
   }
 ): Promise<{ taxCodeId: string | undefined; taxPercent: number }> {
+  if (!(await isItemTaxable(client, companyId, args.itemId))) {
+    return { taxCodeId: undefined, taxPercent: 0 };
+  }
+
   const submitted = {
     taxCodeId: args.taxCodeId || undefined,
     taxPercent: args.taxPercent
   };
   if (args.sentTaxCode && !submitted.taxCodeId) return submitted;
 
+  // The item is taxable (or there is none), so the line takes the document's
+  // decision: no second read of the item.
   const tax = await resolveSalesDocumentTaxes(client, companyId, {
     document: args.document,
-    documentId: args.documentId,
-    itemIds: [args.itemId]
+    documentId: args.documentId
   });
   if (!tax.data) return submitted;
-  const decision =
-    (args.itemId ? tax.data.byItem.get(args.itemId) : undefined) ??
-    tax.data.document;
+  const decision = tax.data.document;
 
   if (submitted.taxCodeId) {
-    const isDocumentDefault =
-      submitted.taxCodeId === tax.data.document.taxCodeId;
+    const isDocumentDefault = submitted.taxCodeId === decision.taxCodeId;
     return isDocumentDefault && decision.exempt
       ? { taxCodeId: undefined, taxPercent: decision.taxPercent }
       : submitted;
