@@ -1262,26 +1262,17 @@ function SerialForm({
     [serialNumbers]
   );
 
-  const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; number: string }) => {
-      if (!receipt?.id || !serialNumber.number.trim()) return;
-
-      const error = validateSerialNumber(
-        serialNumber.number,
-        serialNumber.index
-      );
-      if (error) {
-        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
-        return;
-      }
+  const saveSerialNumber = useCallback(
+    async (index: number, value: string) => {
+      if (!receipt?.id) return { ok: true, error: null };
 
       const formData = new FormData();
       formData.append("itemId", line.itemId!);
       formData.append("receiptId", receipt.id);
       formData.append("receiptLineId", line.id!);
       formData.append("trackingType", "serial");
-      formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumber", serialNumber.number.trim());
+      formData.append("index", index.toString());
+      formData.append("serialNumber", value);
       if (expiryDate) {
         formData.append("expiryDate", expiryDate);
       }
@@ -1295,31 +1286,30 @@ function SerialForm({
         const result: { error: { message: string } | null } | null = response.ok
           ? await response.json()
           : null;
-
-        if (result && !result.error) {
-          // Clear error if submission was successful
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors[serialNumber.index];
-            return newErrors;
-          });
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]:
-              result?.error?.message ?? "Serial number already exists"
-          }));
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("duplicate")) {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number already exists for this item"
-          }));
-        }
+        if (result && !result.error) return { ok: true, error: null };
+        return {
+          ok: false,
+          error: result?.error?.message ?? "Failed to save the serial number"
+        };
+      } catch {
+        return { ok: false, error: "Failed to save the serial number" };
       }
     },
-    [line.id, line.itemId, receipt?.id, validateSerialNumber, expiryDate]
+    [line.id, line.itemId, receipt?.id, expiryDate]
+  );
+
+  const updateSerialNumber = useCallback(
+    async (serialNumber: { index: number; number: string }) => {
+      const { index } = serialNumber;
+      const saved = await saveSerialNumber(index, serialNumber.number.trim());
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (saved.error) next[index] = saved.error;
+        else delete next[index];
+        return next;
+      });
+    },
+    [saveSerialNumber]
   );
 
   const propertiesDisclosure = useDisclosure();
@@ -1364,7 +1354,10 @@ function SerialForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
+      <div
+        data-serial-boxes
+        className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3"
+      >
         {serialNumbers.map((serialNumber, index) => (
           <div
             key={`${line.id}-${index}-serial`}
@@ -1396,22 +1389,18 @@ function SerialForm({
                 onSerialNumbersChange(newSerialNumbers);
               }}
               onBlur={() => {
-                if (serialNumber.number.trim()) {
-                  updateSerialNumber(serialNumber);
-                }
+                updateSerialNumber(serialNumber);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  if (serialNumber.number.trim()) {
-                    updateSerialNumber(serialNumber);
-                  }
                   const nextInput = e.currentTarget
-                    .closest("div")
-                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                  if (nextInput) {
-                    (nextInput as HTMLElement).focus();
-                  }
+                    .closest("[data-serial-boxes]")
+                    ?.querySelector<HTMLInputElement>(
+                      `input[placeholder="Serial ${index + 2}"]`
+                    );
+                  if (nextInput) nextInput.focus();
+                  else e.currentTarget.blur();
                 }
               }}
               className={cn(errors[index] && "border-destructive")}

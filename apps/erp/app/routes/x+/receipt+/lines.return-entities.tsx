@@ -3,8 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { getShippedTrackedEntitiesForCustomer } from "~/modules/sales/sales.service";
+
+const logger = getLogger("erp", "receipt", "return-entities");
 
 // Candidate serials/batches for a sales-return receipt line — the picker
 // source for return-receipt tracking (ReturnEntityForm). "Which serial is it"
@@ -22,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const lineId = url.searchParams.get("lineId");
   const receiptLineId = url.searchParams.get("receiptLineId");
   if (!lineId) {
-    return { candidates: [], assigned: [] };
+    return { candidates: [], assigned: [], error: null };
   }
 
   const line = await client
@@ -62,8 +65,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] })
   ]);
 
+  const error =
+    line.error ??
+    ("error" in order ? order.error : null) ??
+    candidates.error ??
+    ("error" in assigned ? assigned.error : null);
+  if (error) {
+    logger.error("Failed to load return entities", {
+      companyId,
+      lineId,
+      receiptLineId,
+      error
+    });
+    return {
+      candidates: [],
+      assigned: [],
+      error: "The returned units could not be loaded"
+    };
+  }
+
   return {
     candidates: candidates.data ?? [],
-    assigned: assigned.data ?? []
+    assigned: assigned.data ?? [],
+    error: null
   };
 }
