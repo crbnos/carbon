@@ -55,9 +55,9 @@ decisions the user made on 2026-10-17. Built in commit `d956b0be11`.
 - [x] 6. Port the 10 functions and `lib/` into ERP modules. Repoint the ERP, jobs and ee callers. Move the fixtures and tests to `apps/erp/test`.
 - [x] 7. Delete `packages/server-functions`, the `server-fn-authorizes-caller` check and `loadServerFunctions`.
 - [x] 8. Docs: rules, AGENTS.md files and product docs (`ff9f6d8edb`).
-- [ ] 9. Verify against the local stack:
+- [x] 9. Verify against the local stack:
   - [x] Run the database tests (results below).
-  - [ ] Run an MES issue and a complete in the browser. The browser pane blocked every script of `erp.service-functions.dev` (`ERR_BLOCKED_BY_CLIENT`), so the page did not hydrate.
+  - [x] Run the MES flows in a browser (`agent-browser`; the browser pane blocks every script of `*.service-functions.dev`). Six flows pass; `.ai/playbooks/mes-postings-through-erp.md`.
   - [x] Run the MCP smoke test (results below).
   - [x] Measure the round trip (results below).
 - [ ] 10. Decide `scripts/one-off/journal-legacy-documents.ts` (see Open items).
@@ -80,6 +80,12 @@ decisions the user made on 2026-10-17. Built in commit `d956b0be11`.
 | Signed calls to the live ERP dev server, signed as `erpPosting` signs them | `recalculate` 200. A real `issue` of one unit on an operation wrote 3 ledger rows. A bad input is 400, an unsigned call 401, a posting off the list 404, a repeated call 409. |
 | Round trip, `recalculate`, local dev over portless HTTPS | 36 to 45 ms |
 | MES `erpPosting` (`apps/mes/app/services/erp.test.ts`, `fetch` stubbed) | The ERP verifies what MES signs. A service-role client runs as the system. A user's client forwards its token in caller mode. A refusal keeps its status and body. An unreachable ERP is a 502. |
+| MES in the browser: pick and unpick (`post-picking`, as the user) | `quantityPicked` 0 → 4 → 0 with Transfer pairs. ERP call 50 ms and 37 ms; the MES action 150 ms and 84 ms. |
+| MES: issue material (`issue` partToOperation) | `quantityIssued` 1 → 2, a Consumption row. ERP call 86 ms; MES 208 ms. |
+| MES: log 1 completed (`issue` jobOperation) | `quantityComplete` 0 → 1, a Production row, a backflush of each material. ERP call 111 ms; MES 202 ms. |
+| MES: mark the operation done | `post-picking` returnOperationRemainders (36 ms) and `post-production-event` (28 ms, in the background). The labor event is posted to the GL. |
+| MES: complete a maintenance dispatch (`post-maintenance-event`) | Dispatch Completed. Labor lines of 939.13 and −939.13. ERP call 41 ms. |
+| ERP: pick and unpick on its own picking page (in process, as the user) | `quantityPicked` 0 → 1 → 0 |
 | MCP, with two local API keys deleted afterwards | `initialize`: 1610 tools across 14 modules. `tools/list`, `search_tools`, `describe_tool` answer. `call_tool production_getJobs` returns jobs in 46 ms. A key with no scopes, and a write with view-only scopes, are refused. A missing argument is a validation error. An unknown key is a 401. |
 
 ## Open items
