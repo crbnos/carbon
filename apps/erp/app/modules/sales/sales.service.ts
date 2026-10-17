@@ -12329,10 +12329,10 @@ export async function salesDocumentGate(
 }
 
 /**
- * Move a file dropped on a quote or RFQ line into place. A 3D model gets a
- * `modelUpload` row (linked to the line through `setModel`), its raw file in
- * the staging bucket the optimise job reads, and that job queued. Any other
- * file moves under `documentFolder`.
+ * Move a file dropped on a quote or RFQ line into place. A 3D model gets its
+ * raw file in the staging bucket the optimise job reads, then a `modelUpload`
+ * row (linked to the line through `setModel`); inserting the row starts the
+ * optimise. Any other file moves under `documentFolder`.
  */
 export async function placeDroppedFile(
   ctx: ServiceContext,
@@ -12365,6 +12365,24 @@ export async function placeDroppedFile(
 
   const modelId = nanoid();
   const newPath = `${companyId}/models/${modelId}.${fileName?.split(".").pop()}`;
+
+  // Attachments live in the company bucket, raw models in `temp-staging`
+  // (2.5 GB) for the optimise and assembly jobs; storage has no cross-bucket
+  // move. Staged BEFORE the row: inserting it starts the optimise, which
+  // reads the file.
+  const raw = await storage(client)
+    .company(companyId)
+    .download(args.documentPath);
+  if (!raw.data) {
+    return ctx.error("internal", "Failed to read model file", raw.error);
+  }
+  const staged = await client.storage
+    .from(TEMP_STAGING_BUCKET)
+    .upload(newPath, raw.data, { upsert: true });
+  if (staged.error) {
+    return ctx.error("internal", "Failed to stage model file", staged.error);
+  }
+
   const recordCreate = await client.from("modelUpload").insert({
     id: modelId,
     modelPath: newPath,
@@ -12389,29 +12407,7 @@ export async function placeDroppedFile(
     );
   }
 
-  // Attachments live in the company bucket, raw models in `temp-staging`
-  // (2.5 GB) for the optimise and assembly jobs; storage has no
-  // cross-bucket move.
-  const raw = await storage(client)
-    .company(companyId)
-    .download(args.documentPath);
-  if (!raw.data) {
-    return ctx.error("internal", "Failed to read model file", raw.error);
-  }
-  const staged = await client.storage
-    .from(TEMP_STAGING_BUCKET)
-    .upload(newPath, raw.data, { upsert: true });
-  if (staged.error) {
-    return ctx.error("internal", "Failed to stage model file", staged.error);
-  }
   await storage(client).company(companyId).remove([args.documentPath]);
-
-  // The thumbnail is rendered by model-optimize on success.
-  await trigger("model-optimize", {
-    modelUploadId: modelId,
-    companyId,
-    userId: ctx.auditUserId
-  });
   return null;
 }
 

@@ -9376,21 +9376,6 @@ export async function insertModelUpload(
       });
     }
   }
-  // Optimises a mesh model into a compact GLB and renders the thumbnail. The
-  // job derives the format from the stored file and skips other inputs.
-  try {
-    await trigger("model-optimize", {
-      modelUploadId: modelId,
-      companyId,
-      userId: createdBy
-    });
-  } catch (e) {
-    logger.error("Failed to start model optimisation", {
-      companyId,
-      modelUploadId: modelId,
-      error: e
-    });
-  }
 
   if (failedTable) {
     // The model row stands (and is processed); only the link is missing.

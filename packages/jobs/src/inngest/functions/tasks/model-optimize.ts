@@ -80,7 +80,7 @@ export const modelOptimizeFunction = inngest.createFunction(
     const force = event.data.force === true;
 
     // Feature-gated: no assembler configured -> skip before touching the row,
-    // so the viewer just serves the raw model tier (optimizeStatus stays null).
+    // so the viewer just serves the raw model tier (optimizeStatus stays Idle).
     // model-compact still copies the raw out of staging (no assembler needed).
     if (!assemblerEnabled()) {
       await step.sendEvent("compact", {

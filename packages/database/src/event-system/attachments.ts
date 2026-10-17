@@ -228,7 +228,11 @@ export const attachments = {
   methodOperation: { events: true },
   modelUpload: {
     events: true,
-    statement: ["broadcast_table_changes", "log_table_changes"]
+    statement: [
+      "broadcast_table_changes",
+      "log_table_changes",
+      "queue_model_pipeline"
+    ]
   },
   nonConformance: {
     after: ["sync_advance_document_sequence"],

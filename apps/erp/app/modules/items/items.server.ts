@@ -538,19 +538,6 @@ export const createPart = defineServiceFn({
       return ctx.error("internal", "Failed to insert part", created.error);
     }
 
-    if (part.modelUploadId) {
-      await trigger("model-optimize", {
-        modelUploadId: part.modelUploadId,
-        companyId,
-        userId: ctx.auditUserId
-      }).catch((err) =>
-        logger.error("Failed to queue the new part's model optimisation", {
-          companyId,
-          itemId: id,
-          error: err
-        })
-      );
-    }
     return { id };
   }
 });
